@@ -553,3 +553,4 @@ class DimensionDrawer extends paper.Group {
 }
 
 EditorInvisible.DimensionDrawer = DimensionDrawer;
+EditorInvisible.DimensionLayer = DimensionLayer;

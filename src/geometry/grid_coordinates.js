@@ -234,3 +234,5 @@ class GridCoordinates extends paper.Group {
   }
 
 }
+
+EditorInvisible.GridCoordinates = GridCoordinates;

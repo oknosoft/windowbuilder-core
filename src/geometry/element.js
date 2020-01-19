@@ -1,16 +1,5 @@
 /**
  * ### Базовый класс элементов построителя
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 24.07.2015
- *
- * @module geometry
- * @submodule element
- */
-
-
-/**
- * ### Базовый класс элементов построителя
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
@@ -651,6 +640,4 @@ class BuilderElement extends paper.Group {
   }
 }
 
-
 EditorInvisible.BuilderElement = BuilderElement;
-

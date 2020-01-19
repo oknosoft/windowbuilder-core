@@ -137,3 +137,5 @@ const AbstractFilling = (superclass) => class extends superclass {
   }
 
 };
+
+EditorInvisible.AbstractFilling = AbstractFilling;

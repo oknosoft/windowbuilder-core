@@ -151,3 +151,5 @@ class DimensionLineImpost extends DimensionLineCustom {
   }
 
 }
+
+EditorInvisible.DimensionLineImpost = DimensionLineImpost;

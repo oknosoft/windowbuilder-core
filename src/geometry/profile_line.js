@@ -1,16 +1,5 @@
 /**
  * ### Опорная линия
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 16.05.2016
- *
- * @module geometry
- * @submodule line
- *
- */
-
-/**
- * ### Опорная линия
  * Вспомогательная линия для привязки узлов и уравнивания
  *
  * - у линии есть координаты конца и начала
@@ -163,4 +152,6 @@ BaseLine.oxml = {
   'Начало': ['x1', 'y1'],
   'Конец': ['x2', 'y2']
 };
+
+EditorInvisible.BaseLine = BaseLine;
 

@@ -406,3 +406,4 @@ class Sectional extends GeneratrixElement {
 
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
+EditorInvisible.AngleText = AngleText;

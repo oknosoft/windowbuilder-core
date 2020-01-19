@@ -2363,3 +2363,4 @@ class Contour extends AbstractFilling(paper.Layer) {
  * @type function
  */
 EditorInvisible.Contour = Contour;
+EditorInvisible.GlassSegment = GlassSegment;

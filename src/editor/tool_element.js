@@ -38,7 +38,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
     const {project, eve} = this._scope;
     if (!project.contours.length) {
       // создаём пустой новый слой
-      new Editor.Contour({parent: undefined});
+      new EditorInvisible.Contour({parent: undefined});
       // оповещаем мир о новых слоях
       eve.emit_async('rows', project.ox, {constructions: true});
     }

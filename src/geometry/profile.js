@@ -2537,3 +2537,5 @@ class Profile extends ProfileItem {
 
 EditorInvisible.Profile = Profile;
 EditorInvisible.ProfileItem = ProfileItem;
+EditorInvisible.ProfileRays = ProfileRays;
+EditorInvisible.CnnPoint = CnnPoint;

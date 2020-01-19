@@ -236,3 +236,5 @@ class FreeText extends paper.PointText {
 
 }
 
+EditorInvisible.FreeText = FreeText;
+

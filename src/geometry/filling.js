@@ -1,14 +1,4 @@
 /**
- * Created 24.07.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author	Evgeniy Malyarov
- *
- * @module geometry
- * @submodule filling
- */
-
-
-/**
  * ### Заполнение
  * - Инкапсулирует поведение элемента заполнения
  * - У заполнения есть коллекция рёбер, образующая путь контура

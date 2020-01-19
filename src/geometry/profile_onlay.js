@@ -1,16 +1,5 @@
 /**
  * ### Раскладка
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 16.05.2016
- *
- * @module geometry
- * @submodule profile_onlay
- *
- */
-
-/**
- * ### Раскладка
  * Класс описывает поведение элемента раскладки
  *
  * - у раскладки есть координаты конца и начала
@@ -326,4 +315,6 @@ class Onlay extends ProfileItem {
   }
 
 }
+
+EditorInvisible.Onlay = Onlay;
 

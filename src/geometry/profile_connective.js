@@ -1,16 +1,4 @@
 /**
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 16.05.2016
- *
- * @author	Evgeniy Malyarov
- * @module geometry
- * @submodule profile_connective
- */
-
-
-/**
  * ### Соединительный профиль
  * Класс описывает поведение соединительного профиля
  *
@@ -232,3 +220,4 @@ class ConnectiveLayer extends paper.Layer {
 }
 
 EditorInvisible.ProfileConnective = ProfileConnective;
+EditorInvisible.ConnectiveLayer = ConnectiveLayer;

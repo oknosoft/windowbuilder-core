@@ -211,7 +211,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   check_layer() {
     const {project, eve} = this._scope;
     if (!project.contours.length) {
-      new Editor.Contour({parent: undefined});
+      new EditorInvisible.Contour({parent: undefined});
       eve.emit_async('rows', project.ox, {constructions: true});
     }
   }
@@ -351,6 +351,8 @@ const AbstractFilling = (superclass) => class extends superclass {
   }
 
 };
+
+EditorInvisible.AbstractFilling = AbstractFilling;
 
 
 
@@ -2315,6 +2317,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 }
 
 EditorInvisible.Contour = Contour;
+EditorInvisible.GlassSegment = GlassSegment;
 
 
 class DimensionGroup {
@@ -2800,6 +2803,7 @@ class DimensionDrawer extends paper.Group {
 }
 
 EditorInvisible.DimensionDrawer = DimensionDrawer;
+EditorInvisible.DimensionLayer = DimensionLayer;
 
 
 
@@ -3496,6 +3500,8 @@ class DimensionLineImpost extends DimensionLineCustom {
 
 }
 
+EditorInvisible.DimensionLineImpost = DimensionLineImpost;
+
 
 class DimensionRadius extends DimensionLineCustom {
 
@@ -3581,10 +3587,6 @@ class DimensionRadius extends DimensionLineCustom {
 
 EditorInvisible.DimensionRadius = DimensionRadius;
 
-
-
-
-
 class BuilderElement extends paper.Group {
 
   constructor(attr) {
@@ -3639,14 +3641,12 @@ class BuilderElement extends paper.Group {
 
   }
 
-
   get owner() {
     return this._attr.owner;
   }
   set owner(v) {
     this._attr.owner = v;
   }
-
 
   get generatrix() {
     return this._attr.generatrix;
@@ -3696,7 +3696,6 @@ class BuilderElement extends paper.Group {
       }
     }
   }
-
 
   get path() {
     return this._attr.path;
@@ -3899,7 +3898,6 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
-
   get nom() {
     return this.inset.nom(this);
   }
@@ -3933,7 +3931,6 @@ class BuilderElement extends paper.Group {
     return this.nom.sizefurn || 20;
   }
 
-
   get cnn3(){
     const cnn_ii = this.selected_cnn_ii();
     return cnn_ii ? cnn_ii.row.cnn : $p.cat.cnns.get();
@@ -3966,7 +3963,6 @@ class BuilderElement extends paper.Group {
     this.set_clr(v);
   }
 
-
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
@@ -3978,7 +3974,6 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   set_clr(v, ignore_select) {
     if(this._row.clr != v) {
       this._row.clr = v;
@@ -3989,11 +3984,9 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   t_parent(be) {
     return this;
   }
-
 
   attache_wnd(cell) {
     if(!this._attr._grid || !this._attr._grid.cell){
@@ -4019,7 +4012,6 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   detache_wnd() {
     const {_grid} = this._attr;
     if(_grid && _grid.destructor && _grid._owner_cell){
@@ -4027,7 +4019,6 @@ class BuilderElement extends paper.Group {
       delete this._attr._grid;
     }
   }
-
 
   selected_cnn_ii() {
     const {project, elm} = this;
@@ -4063,7 +4054,6 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   remove() {
     this.detache_wnd();
     const {parent, project, observer, _row} = this;
@@ -4083,7 +4073,6 @@ class BuilderElement extends paper.Group {
 
     super.remove();
   }
-
 
   err_spec_row(nom, text) {
     if(!nom){
@@ -4145,11 +4134,7 @@ class BuilderElement extends paper.Group {
   }
 }
 
-
 EditorInvisible.BuilderElement = BuilderElement;
-
-
-
 
 
 class Filling extends AbstractFilling(BuilderElement) {
@@ -5061,6 +5046,8 @@ class FreeText extends paper.PointText {
 
 }
 
+EditorInvisible.FreeText = FreeText;
+
 
 class GeneratrixElement extends BuilderElement {
 
@@ -5544,6 +5531,8 @@ class GridCoordinates extends paper.Group {
 
 }
 
+EditorInvisible.GridCoordinates = GridCoordinates;
+
 
 class Magnetism {
 
@@ -5715,6 +5704,8 @@ class Magnetism {
   }
 
 }
+
+EditorInvisible.Magnetism = Magnetism;
 
 
 Object.defineProperties(paper.Path.prototype, {
@@ -8233,6 +8224,8 @@ class Profile extends ProfileItem {
 
 EditorInvisible.Profile = Profile;
 EditorInvisible.ProfileItem = ProfileItem;
+EditorInvisible.ProfileRays = ProfileRays;
+EditorInvisible.CnnPoint = CnnPoint;
 
 
 
@@ -8469,8 +8462,6 @@ class ProfileAddl extends ProfileItem {
 
 EditorInvisible.ProfileAddl = ProfileAddl;
 
-
-
 class ProfileConnective extends ProfileItem {
 
   constructor(attr) {
@@ -8614,7 +8605,7 @@ class ConnectiveLayer extends paper.Layer {
 }
 
 EditorInvisible.ProfileConnective = ProfileConnective;
-
+EditorInvisible.ConnectiveLayer = ConnectiveLayer;
 
 class BaseLine extends ProfileItem {
 
@@ -8728,6 +8719,7 @@ BaseLine.oxml = {
   'Конец': ['x2', 'y2']
 };
 
+EditorInvisible.BaseLine = BaseLine;
 
 
 class Onlay extends ProfileItem {
@@ -8982,6 +8974,7 @@ class Onlay extends ProfileItem {
 
 }
 
+EditorInvisible.Onlay = Onlay;
 
 
 
@@ -10684,6 +10677,7 @@ class Sectional extends GeneratrixElement {
 
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
+EditorInvisible.AngleText = AngleText;
 
 
 class Pricing {

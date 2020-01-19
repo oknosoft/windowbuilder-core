@@ -196,3 +196,5 @@ class Magnetism {
   }
 
 }
+
+EditorInvisible.Magnetism = Magnetism;
