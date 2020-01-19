@@ -1,0 +1,58 @@
+{
+  "name": "windowbuilder-core",
+  "version": "2.1.252",
+  "description": "Order dealer core library",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oknosoft/windowbuilder-core.git"
+  },
+  "engines": {
+    "node": "^8.15",
+    "npm": "^6.12"
+  },
+  "keywords": [
+    "metadata",
+    "order dealer",
+    "cad",
+    "crm",
+    "window builder",
+    "windows calculator"
+  ],
+  "author": "Evgeniy Malyarov <info@oknosoft.ru> (http://www.oknosoft.ru)",
+  "license": "SEE LICENSE IN LICENSE.en.md",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/oknosoft/windowbuilder/issues"
+  },
+  "homepage": "https://light.oknosoft.ru/",
+  "dependencies": {
+    "metadata-abstract-ui": "2.0.22-beta.1",
+    "metadata-core": "2.0.22-beta.1",
+    "metadata-pouchdb": "2.0.22-beta.1",
+    "paper-jsdom-canvas": "^0.12.4"
+  },
+  "devDependencies": {
+    "fs-extra": "7.0.1",
+    "glob": "^7.1.6",
+    "gulp": "^3.9",
+    "gulp-base64": "^0.1",
+    "gulp-concat": "^2.6",
+    "gulp-csso": "^3.0.1",
+    "gulp-rename": "^1.4.0",
+    "gulp-replace": "^1.0",
+    "gulp-strip-comments": "^2.5.2",
+    "gulp-umd": "^2.0",
+    "gulp-wrap": "^0.15.0",
+    "md5-file": "^4.0.0"
+  },
+  "files": [
+    "dist/drawer.js",
+    "dist/init.js",
+    "LICENSE",
+    "LICENSE.ru.md"
+  ],
+  "scripts": {
+    "meta:prebuild": "node scripts/meta.prebuild.js",
+    "meta:link": "node scripts/meta.link.js"
+  }
+}
