@@ -234,8 +234,8 @@ $p.CatProduction_params.prototype.__define({
             }
 
             if(changed) {
-              if(!project && paper) {
-                project = paper.project;
+              if(!project && typeof window !== 'undefined' && window.paper) {
+                project = window.paper.project;
               }
               const contour = project && project.getItem({cnstr: row.cnstr});
               if(contour) {

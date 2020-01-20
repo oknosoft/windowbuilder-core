@@ -2885,8 +2885,8 @@ class DimensionLine extends paper.Group {
 
   _click(event) {
     event.stop();
-    if(typeof RulerWnd === 'function') {
-      this.wnd = new RulerWnd(null, this);
+    if(typeof EditorInvisible.RulerWnd === 'function') {
+      this.wnd = new EditorInvisible.RulerWnd(null, this);
       this.wnd.size = this.size;
     }
   }
@@ -13743,61 +13743,6 @@ $p.CatElm_visualization.prototype.__define({
 });
 
 
-Object.defineProperties($p.cat.furns, {
-
-  sql_selection_list_flds: {
-    value(initial_value){
-      return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.parent, case when _t_.is_folder then '' else _t_.id end as id, _t_.name as presentation, _k_.synonym as open_type, \
-					 case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_furns AS _t_ \
-					 left outer join enm_open_types as _k_ on _k_.ref = _t_.open_type %3 %4 LIMIT 300";
-    }
-  },
-
-  get_option_list: {
-    value(selection, val) {
-
-      const {characteristic, sys} = paper.project._dp;
-      const {furn} = $p.job_prm.properties;
-
-      if(furn && sys && !sys.empty()){
-
-        const links = furn.params_links({
-          grid: {selection: {cnstr: 0}},
-          obj: {_owner: {_owner: characteristic}}
-        });
-
-        if(links.length){
-          const list = [];
-          links.forEach((link) => link.values.forEach((row) => list.push(this.get(row._obj.value))));
-
-          function check(v){
-            if($p.utils.is_equal(v.value, val))
-              v.selected = true;
-            return v;
-          }
-
-          const l = [];
-          $p.utils._find_rows.call(this, list, selection, (v) => l.push(check({text: v.presentation, value: v.ref})));
-
-          l.sort((a, b) => {
-            if (a.text < b.text){
-              return -1;
-            }
-            else if (a.text > b.text){
-              return 1;
-            }
-            return 0;
-          });
-          return Promise.resolve(l);
-        }
-      }
-      return this.constructor.prototype.get_option_list.call(this, selection, val);
-    },
-    configurable: true
-  }
-
-});
-
 $p.cat.furns.metadata('selection_params').index = 'elm';
 
 $p.CatFurns = class CatFurns extends $p.CatFurns {
@@ -15067,9 +15012,7 @@ $p.CatPartners.prototype.__define({
 });
 
 
-
 $p.cat.production_params.__define({
-
 
 	slist: function(prop, is_furn){
 		var res = [], rt, at, pmgr,
@@ -15099,7 +15042,6 @@ $p.cat.production_params.__define({
 
 $p.CatProduction_params.prototype.__define({
 
-
 	noms: {
 		get(){
 			const noms = [];
@@ -15107,7 +15049,6 @@ $p.CatProduction_params.prototype.__define({
 			return noms;
 		}
 	},
-
 
   furns: {
     value(ox, cnstr = 0){
@@ -15129,7 +15070,6 @@ $p.CatProduction_params.prototype.__define({
       return list;
     }
   },
-
 
 	inserts: {
 		value(elm_types, by_default){
@@ -15175,7 +15115,6 @@ $p.CatProduction_params.prototype.__define({
 			return __noms.map((e) => e.nom);
 		}
 	},
-
 
 	refill_prm: {
 		value(ox, cnstr = 0, force, project) {
@@ -15259,8 +15198,8 @@ $p.CatProduction_params.prototype.__define({
             }
 
             if(changed) {
-              if(!project && paper) {
-                project = paper.project;
+              if(!project && typeof window !== 'undefined' && window.paper) {
+                project = window.paper.project;
               }
               const contour = project && project.getItem({cnstr: row.cnstr});
               if(contour) {

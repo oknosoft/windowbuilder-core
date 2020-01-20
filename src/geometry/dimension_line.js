@@ -101,8 +101,8 @@ class DimensionLine extends paper.Group {
 
   _click(event) {
     event.stop();
-    if(typeof RulerWnd === 'function') {
-      this.wnd = new RulerWnd(null, this);
+    if(typeof EditorInvisible.RulerWnd === 'function') {
+      this.wnd = new EditorInvisible.RulerWnd(null, this);
       this.wnd.size = this.size;
     }
   }
