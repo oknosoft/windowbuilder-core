@@ -290,11 +290,11 @@ Object.defineProperties(paper.Path.prototype, {
      * @for Path
      * @param path {paper.Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
-     * @param elongate {Boolean} - если истина, пути будут продолжены до пересечения
-     * @return point {paper.Point}
+     * @param elongate {Boolean|Number} - если истина, пути будут продолжены до пересечения
+     * @return other_point {paper.Point} - если указано, контролируем вектор пересечения
      */
   intersect_point: {
-      value(path, point, elongate) {
+      value(path, point, elongate, other_point) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
 
@@ -311,8 +311,15 @@ Object.defineProperties(paper.Path.prototype, {
             point = this.getPointAt(this.length /2);
           }
 
+          // здесь надо учесть не только близость пересечения к точке, но в первую очередь, вектор пересечения
           intersections.forEach((o) => {
             tdelta = o.point.getDistance(point, true);
+            if(other_point) {
+              const d2 = o.point.getDistance(other_point, true);
+              if(d2 < tdelta) {
+                return;
+              }
+            }
             if(tdelta < delta){
               delta = tdelta;
               tpoint = o.point;
@@ -359,7 +366,7 @@ Object.defineProperties(paper.Path.prototype, {
             }
           }
 
-          return this.intersect_point(path, point);
+          return this.intersect_point(path, point, false, other_point);
 
         }
       }

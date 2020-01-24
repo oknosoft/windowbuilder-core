@@ -5933,7 +5933,7 @@ Object.defineProperties(paper.Path.prototype, {
     },
 
   intersect_point: {
-      value(path, point, elongate) {
+      value(path, point, elongate, other_point) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
 
@@ -5952,6 +5952,12 @@ Object.defineProperties(paper.Path.prototype, {
 
           intersections.forEach((o) => {
             tdelta = o.point.getDistance(point, true);
+            if(other_point) {
+              const d2 = o.point.getDistance(other_point, true);
+              if(d2 < tdelta) {
+                return;
+              }
+            }
             if(tdelta < delta){
               delta = tdelta;
               tpoint = o.point;
@@ -5996,7 +6002,7 @@ Object.defineProperties(paper.Path.prototype, {
             }
           }
 
-          return this.intersect_point(path, point);
+          return this.intersect_point(path, point, false, other_point);
 
         }
       }
