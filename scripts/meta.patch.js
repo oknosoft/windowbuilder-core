@@ -39,7 +39,7 @@ module.exports = function(meta) {
       }
 
       if(name === 'branches' && cls === 'cat') {
-        'back_server,owner,mode,server'.split(',').forEach((fld) => delete mgrs[name].fields[fld]);
+        'back_server,repl_server,owner,mode,server'.split(',').forEach((fld) => delete mgrs[name].fields[fld]);
         delete mgrs[name].has_owners;
       }
 
