@@ -1282,7 +1282,7 @@ class CatBranchesManager extends CatManager {
 
       // если отделы не загружены и полноправный пользователь...
       let next = Promise.resolve();
-      if(current_user.branch.empty() && !/ram$/.test(this.cachable)) {
+      if((!current_user || current_user.branch.empty()) && !/ram$/.test(this.cachable)) {
         next = this.find_rows_remote({_top: 10000})
           .then(() => this.metadata().cachable = 'ram');
       }
