@@ -15844,7 +15844,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         editor && editor.unload();
         return (get_imgs.length ? Promise.all(get_imgs) : Promise.resolve([]))
           .then(() => {
-            if(typeof QRCode === 'undefined') {
+            if(typeof QRCode === 'function') {
               const svg = document.createElement('SVG');
               svg.innerHTML = '<g />';
               const qrcode = new QRCode(svg, {

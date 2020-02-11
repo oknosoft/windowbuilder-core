@@ -680,7 +680,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           .then(() => {
             // https://www.npmjs.com/package/qrcodejs
             // /dist/qrcodejs/qrcode.min.js
-            if(typeof QRCode === 'undefined') {
+            if(typeof QRCode === 'function') {
               const svg = document.createElement('SVG');
               svg.innerHTML = '<g />';
               const qrcode = new QRCode(svg, {
