@@ -130,7 +130,7 @@ exports.CatFormulas = class CatFormulas extends Object {
       return _formula(obj, $p, attr)
 
       // показываем отчет в отдельном окне
-        .then((doc) => doc instanceof $p.SpreadsheetDocument && doc.print());
+        .then((doc) => $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print());
 
     }
     else {
@@ -140,9 +140,12 @@ exports.CatFormulas = class CatFormulas extends Object {
   }
 
   get _template() {
-    const {_data} = this;
+    const {_data, _manager} = this;
     if(!_data._template){
-      _data._template = new this._manager._owner.$p.SpreadsheetDocument(this.template);
+      const {SpreadsheetDocument} = _manager._owner.$p;
+      if(SpreadsheetDocument) {
+        _data._template = new SpreadsheetDocument(this.template);
+      }
     }
     return _data._template;
   }
