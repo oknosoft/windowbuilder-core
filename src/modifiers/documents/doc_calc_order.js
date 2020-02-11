@@ -677,21 +677,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       return imgs.then(() => {
         editor && editor.unload();
         return (get_imgs.length ? Promise.all(get_imgs) : Promise.resolve([]))
-          .then(() => typeof QRCode === 'undefined' && $p.load_script('/dist/qrcodejs/qrcode.min.js', 'script'))
           .then(() => {
-
-            const svg = document.createElement('SVG');
-            svg.innerHTML = '<g />';
-            const qrcode = new QRCode(svg, {
-              text: 'http://www.oknosoft.ru/zd/',
-              width: 100,
-              height: 100,
-              colorDark: '#000000',
-              colorLight: '#ffffff',
-              correctLevel: QRCode.CorrectLevel.H,
-              useSVG: true
-            });
-            res.qrcode = svg.innerHTML;
+            // https://www.npmjs.com/package/qrcodejs
+            // /dist/qrcodejs/qrcode.min.js
+            if(typeof QRCode === 'undefined') {
+              const svg = document.createElement('SVG');
+              svg.innerHTML = '<g />';
+              const qrcode = new QRCode(svg, {
+                text: 'http://www.oknosoft.ru/zd/',
+                width: 100,
+                height: 100,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H,
+                useSVG: true
+              });
+              res.qrcode = svg.innerHTML;
+            }
 
             return res;
           });
