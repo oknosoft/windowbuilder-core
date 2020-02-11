@@ -43,6 +43,10 @@ module.exports = function(meta) {
         delete mgrs[name].has_owners;
       }
 
+      if(name === 'http_apis' && cls === 'cat') {
+        delete mgrs[name].fields.server;
+      }
+
       if(!writable.includes('*') && !writable.includes(`${cls}.${name}`)) {
         mgrs[name].read_only = true;
       }
