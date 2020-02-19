@@ -135,8 +135,8 @@ class FreeText extends paper.PointText {
   }
 
   // виртуальные метаданные для автоформ
-  _metadata() {
-    return $p.dp.builder_text.metadata();
+  _metadata(fld) {
+    return $p.dp.builder_text.metadata(fld);
   }
 
   // виртуальный датаменеджер для автоформ

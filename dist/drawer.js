@@ -2871,8 +2871,8 @@ class DimensionLine extends paper.Group {
     return font_size + (size > 0 ? size : 0);
   }
 
-  _metadata() {
-    return $p.dp.builder_size.metadata();
+  _metadata(fld) {
+    return $p.dp.builder_size.metadata(fld);
   }
 
   get _manager() {
@@ -4955,8 +4955,8 @@ class FreeText extends paper.PointText {
     return $p.enm.elm_types.Текст;
   }
 
-  _metadata() {
-    return $p.dp.builder_text.metadata();
+  _metadata(fld) {
+    return $p.dp.builder_text.metadata(fld);
   }
 
   get _manager() {

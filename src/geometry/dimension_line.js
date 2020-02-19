@@ -86,8 +86,8 @@ class DimensionLine extends paper.Group {
   }
 
   // виртуальные метаданные для автоформ
-  _metadata() {
-    return $p.dp.builder_size.metadata();
+  _metadata(fld) {
+    return $p.dp.builder_size.metadata(fld);
   }
 
   // виртуальный датаменеджер для автоформ
