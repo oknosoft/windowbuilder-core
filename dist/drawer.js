@@ -13110,7 +13110,7 @@ $p.cat.clrs.__define({
                 clr_group = sys.project._dp.sys.clr_group;
               }
 						}
-            else if(sys.hasOwnProperty('sys') && sys.hasOwnProperty('profile') && sys.profile.inset) {
+            else if(sys.hasOwnProperty('sys') && sys.profile && sys.profile.inset) {
               const sclr_group = sys.sys.clr_group;
               const iclr_group = sys.profile.inset.clr_group;
               clr_group = iclr_group.empty() ? sclr_group : iclr_group;
