@@ -26,9 +26,9 @@
   },
   "homepage": "https://light.oknosoft.ru/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.22-beta.2",
-    "metadata-core": "2.0.22-beta.2",
-    "metadata-pouchdb": "2.0.22-beta.2",
+    "metadata-abstract-ui": "2.0.22-beta.3",
+    "metadata-core": "2.0.22-beta.3",
+    "metadata-pouchdb": "2.0.22-beta.3",
     "paper-jsdom-canvas": "^0.12.4"
   },
   "devDependencies": {
