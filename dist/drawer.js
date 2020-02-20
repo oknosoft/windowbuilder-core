@@ -3722,12 +3722,14 @@ class BuilderElement extends paper.Group {
       cnn2 = Object.assign({}, cnn1),
       cnn3 = Object.assign({}, cnn1);
 
+    const {iface, utils, cat: {inserts, cnns, clrs}, enm, cch} = $p;
+
     function cnn_choice_links(o, cnn_point){
 
-      const nom_cnns = $p.cat.cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types);
+      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types);
 
-      if($p.utils.is_data_obj(o)){
-        return nom_cnns.some((cnn) => o == cnn);
+      if(!iface || utils.is_data_obj(o)){
+        return nom_cnns.some((cnn) => o.ref == cnn);
       }
       else{
         let refs = "";
@@ -3742,7 +3744,9 @@ class BuilderElement extends paper.Group {
     }
 
 
-    const {_inserts_types_filling} = $p.cat.inserts;
+    const {_inserts_types_filling} = inserts;
+
+
     inset.choice_links = [{
       name: ["selection",	"ref"],
       path: [(o, f) => {
@@ -3751,16 +3755,16 @@ class BuilderElement extends paper.Group {
           let selection;
 
           if(this instanceof Filling){
-            if($p.utils.is_data_obj(o)){
-              const {thickness, insert_type, insert_glass_type} = o;
+            if(!iface || utils.is_data_obj(o)){
+              const {thickness, insert_type, insert_glass_type} = inserts.get(o);
               return _inserts_types_filling.indexOf(insert_type) != -1 &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == $p.enm.inserts_glass_types.Заполнение);
+                (insert_glass_type.empty() || insert_glass_type == enm.inserts_glass_types.Заполнение);
             }
             else{
               let refs = "";
-              $p.cat.inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == $p.enm.inserts_glass_types.Заполнение){
+              inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
+                if(o.insert_glass_type.empty() || o.insert_glass_type == enm.inserts_glass_types.Заполнение){
                   if(refs){
                     refs += ", ";
                   }
@@ -3772,19 +3776,19 @@ class BuilderElement extends paper.Group {
           }
           else if(this instanceof Profile){
             if(this.nearest()){
-              selection = {elm_type: {in: [$p.enm.elm_types.Створка, $p.enm.elm_types.Добор]}};
+              selection = {elm_type: {in: [enm.elm_types.Створка, enm.elm_types.Добор]}};
             }
             else{
-              selection = {elm_type: {in: [$p.enm.elm_types.Рама, $p.enm.elm_types.Импост, $p.enm.elm_types.Добор]}};
+              selection = {elm_type: {in: [enm.elm_types.Рама, enm.elm_types.Импост, enm.elm_types.Добор]}};
             }
           }
           else{
             selection = {elm_type: this.nom.elm_type};
           }
 
-          if($p.utils.is_data_obj(o)){
+          if(!iface || utils.is_data_obj(o)){
             let ok = false;
-            selection.nom = o;
+            selection.nom = inserts.get(o);
             sys.elmnts.find_rows(selection, (row) => {
               ok = true;
               return false;
@@ -3818,25 +3822,25 @@ class BuilderElement extends paper.Group {
       name: ["selection",	"ref"],
       path: [(o) => {
         const cnn_ii = this.selected_cnn_ii();
-        let nom_cnns = [$p.utils.blank.guid];
+        let nom_cnns = [utils.blank.guid];
 
         if(cnn_ii){
           if (cnn_ii.elm instanceof Filling) {
-            nom_cnns = $p.cat.cnns.nom_cnn(cnn_ii.elm, this, $p.enm.cnn_types.acn.ii);
+            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, enm.cnn_types.acn.ii);
           }
-          else if (cnn_ii.elm.elm_type == $p.enm.elm_types.Створка && this.elm_type != $p.enm.elm_types.Створка) {
-            nom_cnns = $p.cat.cnns.nom_cnn(cnn_ii.elm, this, $p.enm.cnn_types.acn.ii);
+          else if (cnn_ii.elm.elm_type == enm.elm_types.Створка && this.elm_type != enm.elm_types.Створка) {
+            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, enm.cnn_types.acn.ii);
           }
           else {
-            nom_cnns = $p.cat.cnns.nom_cnn(this, cnn_ii.elm, $p.enm.cnn_types.acn.ii);
+            nom_cnns = cnns.nom_cnn(this, cnn_ii.elm, enm.cnn_types.acn.ii);
           }
         }
 
-        if ($p.utils.is_data_obj(o)) {
-          return nom_cnns.some((cnn) => o == cnn);
+        if (!iface || utils.is_data_obj(o)) {
+          return nom_cnns.some((cnn) => o.ref == cnn);
         }
         else {
-          var refs = "";
+          let refs = "";
           nom_cnns.forEach((cnn) => {
             if (refs) {
               refs += ", ";
@@ -3848,7 +3852,7 @@ class BuilderElement extends paper.Group {
       }]
     }];
 
-    $p.cat.clrs.selection_exclude_service(_xfields.clr, this);
+    clrs.selection_exclude_service(_xfields.clr, this);
 
     const mfields = {
       info: info,
@@ -3875,7 +3879,7 @@ class BuilderElement extends paper.Group {
           if(target[prop]) {
             return target[prop];
           }
-          const param = $p.cch.properties.get(prop);
+          const param = cch.properties.get(prop);
           if(param) {
             const mf = {
               type: param.type,
@@ -4086,7 +4090,7 @@ class BuilderElement extends paper.Group {
         spec: ox.specification,
         ox,
       });
-    };
+    }
     if(text){
 
     }
