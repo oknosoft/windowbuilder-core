@@ -741,6 +741,7 @@ class Scheme extends paper.Project {
     }
 
     super.clear();
+    new paper.Layer();
   }
 
   /**
