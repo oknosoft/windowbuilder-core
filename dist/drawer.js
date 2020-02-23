@@ -6538,29 +6538,48 @@ class ProfileItem extends GeneratrixElement {
   }
 
   get cnn1() {
-    return this.cnn_point('b').cnn || $p.cat.cnns.get();
+    return this.getcnnn('b');
   }
 
   set cnn1(v) {
-    const {rays} = this;
-    const cnn = $p.cat.cnns.get(v);
-    if(rays.b.cnn != cnn) {
-      rays.b.cnn = cnn;
-      this.project.register_change();
-    }
+    this.setcnnn(v, 'b');
   }
 
   get cnn2() {
-    return this.cnn_point('e').cnn || $p.cat.cnns.get();
+    return this.getcnnn('e');
   }
 
   set cnn2(v) {
+    this.setcnnn(v, 'e');
+  }
+
+  getcnnn(n) {
+    return this.cnn_point(n).cnn || $p.cat.cnns.get();
+  }
+
+  setcnnn(v, n) {
     const {rays} = this;
     const cnn = $p.cat.cnns.get(v);
-    if(rays.e.cnn != cnn) {
-      rays.e.cnn = cnn;
+    if(rays[n].cnn != cnn) {
+      rays[n].cnn = cnn;
       this.project.register_change();
     }
+  }
+
+  get gb() {
+    return this.gn('b');
+  }
+
+  get ge() {
+    return this.gn('e');
+  }
+
+  gn(n) {
+    const {profile, is_t} = this.cnn_point(n);
+    if(is_t && profile) {
+      return profile.generatrix.getNearestPoint(this[n]);
+    }
+    return this[n];
   }
 
   angle_at(p) {
@@ -8610,6 +8629,10 @@ class ConnectiveLayer extends paper.Layer {
     return [];
   }
 
+  get profiles() {
+    return this.children.filter((elm) => elm instanceof Profile);
+  }
+
   notify(obj, type = 'update') {
   }
 }
@@ -10335,6 +10358,29 @@ class Scheme extends paper.Project {
     return this.getItems({class: Filling});
   }
 
+  get skeleton() {
+    for(const layer of this.layers) {
+      if(layer instanceof Skeleton) {
+        return layer;
+      }
+    }
+  }
+
+  set skeleton(v) {
+    const {skeleton} = this;
+    if(!v && skeleton) {
+      skeleton.remove();
+    }
+    else if(v) {
+      if(skeleton) {
+        skeleton.initialize();
+      }
+      else {
+        new Skeleton();
+      }
+    }
+  }
+
 }
 
 EditorInvisible.Scheme = Scheme;
@@ -10688,6 +10734,129 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
+
+
+class Skeleton extends paper.Layer {
+
+  constructor() {
+    super();
+    this.initialize();
+  }
+
+  by_nodes({gb, ge}, layer) {
+    for(const rib of this.children) {
+      const {b, e, generatrix} = rib;
+      if((b.is_nearest(gb) && e.is_nearest(ge)) || (b.is_nearest(ge) && e.is_nearest(gb))) {
+        return rib;
+      }
+      if(layer && generatrix.is_nearest(gb) && generatrix.is_nearest(ge)) {
+        return rib;
+      }
+    }
+  }
+
+  initialize() {
+    this.selections = [];
+    this.nodes = [];
+    for(const layer of this.project.layers) {
+      if(layer === this) {
+        continue;
+      }
+      layer.visible = false;
+      if(layer instanceof ConnectiveLayer || layer instanceof Contour) {
+        this.add_ribs(layer);
+      }
+    }
+    this.project.deselectAll();
+  }
+
+  add_ribs({contours, profiles, layer}) {
+    for(const profile of profiles) {
+      const rib = this.by_nodes(profile, layer) || new SkeletonRib({parent: this, profile});
+      rib.select_by(profile);
+    }
+    if(contours) {
+      for(const layer of contours) {
+        this.add_ribs(layer);
+      }
+    }
+  }
+
+  remove() {
+    const {layers} = this.project;
+    super.remove();
+    for(const layer of layers) {
+      layer.visible = true;
+    }
+  }
+
+}
+
+EditorInvisible.Skeleton = Skeleton;
+
+
+class SkeletonRib extends paper.Group {
+
+  constructor({parent, profile}) {
+    super({parent});
+    const def = {
+      parent: this,
+      strokeColor: '#333',
+      strokeScaling: false,
+      guide: true,
+    };
+    let {generatrix: {segments}, b, e, gb, ge} = profile;
+    if(segments.length < 2) {
+      this.remove;
+      return;
+    }
+    if(b !== gb || e !== ge) {
+      segments = [gb, ...segments, ge];
+    }
+    this.generatrix = new paper.Path(Object.assign({segments}, def));
+    this.pb = new paper.Path.Circle(Object.assign({center: this.b, radius: 30}, def));
+    this.pe = new paper.Path.Circle(Object.assign({center: this.e, radius: 30}, def));
+  }
+
+  get b() {
+    return this.generatrix.firstSegment.point;
+  }
+
+  get e() {
+    return this.generatrix.lastSegment.point;
+  }
+
+  select_by(profile) {
+    if(profile.selected && (!profile.b.selected && !profile.e.selected || profile.b.selected && profile.e.selected)) {
+      this.generatrix.strokeColor = '#00c';
+      this.generatrix.strokeWidth = 2;
+      this.pb.strokeColor = '#00c';
+      this.pe.strokeColor = '#00c';
+      this.pb.fillColor = '#00c';
+      this.pe.fillColor = '#00c';
+      this.save_selection(profile);
+    }
+    else if(profile.b.selected) {
+      const pt = this.b.is_nearest(profile.gb) ? 'pb' : 'pe';
+      this[pt].strokeColor = '#00c';
+      this[pt].fillColor = '#00c';
+      this.save_selection(profile);
+    }
+    else if(profile.e.selected) {
+      const pt = this.e.is_nearest(profile.ge) ? 'pe' : 'pb';
+      this[pt].strokeColor = '#00c';
+      this[pt].fillColor = '#00c';
+      this.save_selection(profile);
+    }
+  }
+
+  save_selection(profile) {
+    this.layer.selections.push({profile, selected: profile.selected, b: profile.b.selected, e: profile.e.selected});
+  }
+
+}
+
+EditorInvisible.SkeletonRib = SkeletonRib;
 
 
 class Pricing {

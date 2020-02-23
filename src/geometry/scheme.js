@@ -1787,6 +1787,29 @@ class Scheme extends paper.Project {
     return this.getItems({class: Filling});
   }
 
+  get skeleton() {
+    for(const layer of this.layers) {
+      if(layer instanceof Skeleton) {
+        return layer;
+      }
+    }
+  }
+
+  set skeleton(v) {
+    const {skeleton} = this;
+    if(!v && skeleton) {
+      skeleton.remove();
+    }
+    else if(v) {
+      if(skeleton) {
+        skeleton.initialize();
+      }
+      else {
+        new Skeleton();
+      }
+    }
+  }
+
 }
 
 EditorInvisible.Scheme = Scheme;

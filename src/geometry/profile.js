@@ -454,16 +454,11 @@ class ProfileItem extends GeneratrixElement {
    * @private
    */
   get cnn1() {
-    return this.cnn_point('b').cnn || $p.cat.cnns.get();
+    return this.getcnnn('b');
   }
 
   set cnn1(v) {
-    const {rays} = this;
-    const cnn = $p.cat.cnns.get(v);
-    if(rays.b.cnn != cnn) {
-      rays.b.cnn = cnn;
-      this.project.register_change();
-    }
+    this.setcnnn(v, 'b');
   }
 
   /**
@@ -474,16 +469,48 @@ class ProfileItem extends GeneratrixElement {
    * @private
    */
   get cnn2() {
-    return this.cnn_point('e').cnn || $p.cat.cnns.get();
+    return this.getcnnn('e');
   }
 
   set cnn2(v) {
+    this.setcnnn(v, 'e');
+  }
+
+  getcnnn(n) {
+    return this.cnn_point(n).cnn || $p.cat.cnns.get();
+  }
+
+  setcnnn(v, n) {
     const {rays} = this;
     const cnn = $p.cat.cnns.get(v);
-    if(rays.e.cnn != cnn) {
-      rays.e.cnn = cnn;
+    if(rays[n].cnn != cnn) {
+      rays[n].cnn = cnn;
       this.project.register_change();
     }
+  }
+
+  /**
+   * Проекция точки b на образующую родительского элемента
+   * Для рам и створок, совпадает с 'b', для импостов - отличается
+   */
+  get gb() {
+    return this.gn('b');
+  }
+
+  /**
+   * Проекция точки e на образующую родительского элемента
+   * Для рам и створок, совпадает с 'e', для импостов - отличается
+   */
+  get ge() {
+    return this.gn('e');
+  }
+
+  gn(n) {
+    const {profile, is_t} = this.cnn_point(n);
+    if(is_t && profile) {
+      return profile.generatrix.getNearestPoint(this[n]);
+    }
+    return this[n];
   }
 
   angle_at(p) {

@@ -211,6 +211,16 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   /**
+   * Возвращает массив профилей текущего контура
+   * @property profiles
+   * @for Contour
+   * @returns {Array.<Profile>}
+   */
+  get profiles() {
+    return this.children.filter((elm) => elm instanceof Profile);
+  }
+
+  /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
    */
