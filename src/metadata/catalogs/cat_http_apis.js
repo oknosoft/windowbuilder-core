@@ -2,25 +2,26 @@
 exports.CatHttp_apis = class CatHttp_apis extends Object {
   prm(identifier) {
     const {_data} = this;
-    if(!_data[name]) {
+    const key = `prm_${identifier}`;
+    if(!_data[key]) {
       const prow = this.params.find({identifier});
       if(prow) {
-        let {type, values} = prow;
+        let {type, values, name} = prow;
         if(values) {
           try {
             values = JSON.parse(values);
           }
           catch (e) {}
         }
-        _data[name] = {type, values};
+        _data[key] = {type, values, name};
         if(type === 'enum' && values && values.length) {
-          _data[name].subtype = typeof values[0];
+          _data[key].subtype = typeof values[0];
         }
       }
       else {
-        _data[name] = {};
+        _data[key] = {};
       }
     }
-    return _data[name];
+    return _data[key];
   }
 };
