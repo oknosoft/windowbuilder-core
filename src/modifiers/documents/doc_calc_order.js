@@ -337,32 +337,33 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   // удаление строки
   del_row(row) {
-    const {characteristic} = row;
-    if(!characteristic.empty() && !characteristic.calc_order.empty()) {
-      const {production, presentation, _data} = this;
+    if(row instanceof $p.DocCalc_orderProductionRow) {
+      const {characteristic} = row;
+      if(!characteristic.empty() && !characteristic.calc_order.empty()) {
+        const {production, presentation, _data} = this;
 
-      // запрет удаления подчиненной продукции
-      const {msg} = $p;
-      const {leading_elm, leading_product, origin} = characteristic;
-      if(!leading_product.empty() && leading_product.calc_order_row && leading_product.inserts.find({cnstr: -leading_elm, inset: origin})) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
-          text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
-            leading_product.prod_name(true)}</i> и отредактируйте доп. вставки`,
-          title: presentation
+        // запрет удаления подчиненной продукции
+        const {msg} = $p;
+        const {leading_elm, leading_product, origin} = characteristic;
+        if(!leading_product.empty() && leading_product.calc_order_row && leading_product.inserts.find({cnstr: -leading_elm, inset: origin})) {
+          msg.show_msg && msg.show_msg({
+            type: 'alert-warning',
+            text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
+              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки`,
+            title: presentation
+          });
+          return false;
+        }
+
+        // циклическое удаление ведомых при удалении основного изделия
+        const {_loading} = _data;
+        _data._loading = true;
+        production.find_rows({ordn: characteristic}).forEach(({_row}) => {
+          production.del(_row.row - 1);
         });
-        return false;
+        _data._loading = _loading;
       }
-
-      // циклическое удаление ведомых при удалении основного изделия
-      const {_loading} = _data;
-      _data._loading = true;
-      production.find_rows({ordn: characteristic}).forEach(({_row}) => {
-        production.del(_row.row - 1);
-      });
-      _data._loading = _loading;
     }
-
     return this;
   }
 
