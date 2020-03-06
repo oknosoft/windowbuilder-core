@@ -116,13 +116,14 @@ exports.CatFormulas = class CatFormulas extends Object {
         return Promise.resolve();
       }
 
-      // jsx на время отладки рендерим в глобальный диалог, TODO: придумать лучшее место
+      // рендерим jsx в новое окно
       if(this.jsx) {
-        const CustomComponent = _formula;
-        return $p.ui.dialogs.alert({
-          title: 'Demo JSX',
-          text: $p.ui.React.createElement(CustomComponent, {obj, attr}),
-          initFullScreen: true,
+        return $p.ui.dialogs.window({
+          Component: _formula,
+          title: this.name,
+          print: true,
+          obj,
+          attr,
         });
       }
 
