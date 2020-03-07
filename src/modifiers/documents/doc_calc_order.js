@@ -1261,14 +1261,15 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
 
       // если это следящая вставка, рассчитаем спецификацию
-      if(!characteristic.origin.empty() && characteristic.origin.slave) {
+      const {origin} = characteristic;
+      if(origin && !origin.empty() && origin.slave) {
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
         characteristic.s = this.s || this.len * this.width / 1000000;
-        const len_angl = new FakeLenAngl({len: this.len, inset: characteristic.origin});
+        const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
-        characteristic.origin.calculate_spec({elm, len_angl, ox: characteristic});
+        origin.calculate_spec({elm, len_angl, ox: characteristic});
         recalc = true;
       }
 
@@ -1363,7 +1364,9 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       if(!_slave_recalc){
         _owner._owner._slave_recalc = true;
         _owner.forEach((row) => {
-          if(row !== this && !row.characteristic.origin.empty() && row.characteristic.origin.slave) {
+          if(row === this) return;
+          const {origin} = row.characteristic;
+          if(origin && !origin.empty() && origin.slave) {
             row.value_change('quantity', 'update', row.quantity, no_extra_charge);
           }
         });
