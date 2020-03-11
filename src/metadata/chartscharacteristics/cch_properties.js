@@ -281,8 +281,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
    */
-  linked_values(links, prow) {
-    const values = [];
+  linked_values(links, prow, values = []) {
     let changed;
     // собираем все доступные значения в одном массиве
     links.forEach((link) => link.values.forEach((row) => values.push(row)));
