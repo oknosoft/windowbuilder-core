@@ -9,6 +9,9 @@
 $p.md.once('predefined_elmnts_inited', () => {
   const {DocCalc_order, doc: {calc_order}, cat: {destinations}, cch: {properties}, enm: {obj_delivery_states}, job_prm} = $p;
   const dst = destinations.predefined('Документ_Расчет');
+  if(!dst) {
+    return;
+  }
   const predefined = [
     {
       class_name: 'cch.properties',

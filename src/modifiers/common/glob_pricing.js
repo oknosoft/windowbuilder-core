@@ -508,7 +508,7 @@ class Pricing {
    */
   calc_amount (prm) {
 
-    const {calc_order_row, price_type} = prm;
+    const {calc_order_row, price_type, first_cost} = prm;
     const {marginality_in_spec, not_update} = $p.job_prm.pricing;
     const {rounding} = calc_order_row._owner._owner;
 
@@ -525,7 +525,7 @@ class Pricing {
       if(price_cost){
         calc_order_row.price = price_cost.round(rounding);
       }
-      else if(marginality_in_spec) {
+      else if(marginality_in_spec && !first_cost) {
         calc_order_row.price = this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {});
       }
       else{

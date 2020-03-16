@@ -11275,7 +11275,7 @@ class Pricing {
 
   calc_amount (prm) {
 
-    const {calc_order_row, price_type} = prm;
+    const {calc_order_row, price_type, first_cost} = prm;
     const {marginality_in_spec, not_update} = $p.job_prm.pricing;
     const {rounding} = calc_order_row._owner._owner;
 
@@ -11290,7 +11290,7 @@ class Pricing {
       if(price_cost){
         calc_order_row.price = price_cost.round(rounding);
       }
-      else if(marginality_in_spec) {
+      else if(marginality_in_spec && !first_cost) {
         calc_order_row.price = this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {});
       }
       else{
@@ -12837,8 +12837,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       if(!sys.empty()) {
         name += '/' + sys.name;
       }
-      else if(!origin.empty()) {
-        name += '/' + origin.name;
+      else if(origin && !origin.empty()) {
+        name += '/' + (origin.name || origin.number_doc);
       }
 
       if(!short) {
@@ -12916,10 +12916,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     });
     if(!cx) {
       cx = $p.cat.characteristics.create({
-        calc_order: calc_order,
+        calc_order,
         leading_product: this,
         leading_elm: elm,
-        origin: origin
+        origin
       }, false, true)._set_loaded();
     }
 
@@ -15694,7 +15694,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.contract = $p.cat.contracts.by_partner_and_org(value, this.organization);
     }
     const ads = ['contract'];
-    if(field === 'obj_delivery_state') {
+    if(field === 'obj_delivery_state' && this.clear_templates_props) {
       ads.push('extra_fields');
       if(value != 'Шаблон') {
         this.clear_templates_props();
@@ -16526,7 +16526,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       };
       const {price} = _obj;
       $p.pricing.price_type(fake_prm);
-      $p.pricing.calc_first_cost(fake_prm);
+      if(origin instanceof $p.DocPurchase_order) {
+        fake_prm.first_cost = _obj.first_cost;
+      }
+      else {
+        $p.pricing.calc_first_cost(fake_prm);
+      }
       $p.pricing.calc_amount(fake_prm);
       if(price && !_obj.price) {
         _obj.price = price;
@@ -16643,6 +16648,9 @@ $p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_
 $p.md.once('predefined_elmnts_inited', () => {
   const {DocCalc_order, doc: {calc_order}, cat: {destinations}, cch: {properties}, enm: {obj_delivery_states}, job_prm} = $p;
   const dst = destinations.predefined('Документ_Расчет');
+  if(!dst) {
+    return;
+  }
   const predefined = [
     {
       class_name: 'cch.properties',

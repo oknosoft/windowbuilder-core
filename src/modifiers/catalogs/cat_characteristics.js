@@ -154,8 +154,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       if(!sys.empty()) {
         name += '/' + sys.name;
       }
-      else if(!origin.empty()) {
-        name += '/' + origin.name;
+      else if(origin && !origin.empty()) {
+        name += '/' + (origin.name || origin.number_doc);
       }
 
       if(!short) {
@@ -245,10 +245,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     });
     if(!cx) {
       cx = $p.cat.characteristics.create({
-        calc_order: calc_order,
+        calc_order,
         leading_product: this,
         leading_elm: elm,
-        origin: origin
+        origin
       }, false, true)._set_loaded();
     }
 

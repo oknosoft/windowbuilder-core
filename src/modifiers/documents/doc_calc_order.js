@@ -325,7 +325,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     // если изменение инициировано человеком, дополним список изменённых полей
     const ads = ['contract'];
-    if(field === 'obj_delivery_state') {
+    if(field === 'obj_delivery_state' && this.clear_templates_props) {
       ads.push('extra_fields');
       if(value != 'Шаблон') {
         this.clear_templates_props();
@@ -1280,7 +1280,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       };
       const {price} = _obj;
       $p.pricing.price_type(fake_prm);
-      $p.pricing.calc_first_cost(fake_prm);
+      if(origin instanceof $p.DocPurchase_order) {
+        fake_prm.first_cost = _obj.first_cost;
+      }
+      else {
+        $p.pricing.calc_first_cost(fake_prm);
+      }
       $p.pricing.calc_amount(fake_prm);
       if(price && !_obj.price) {
         _obj.price = price;
