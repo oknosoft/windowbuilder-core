@@ -134,6 +134,10 @@
               }
               super.value_change(field, type, value);
             }
+
+            get elm() {
+              return this.row;
+            }
           }
 
           this.ProductionRow = ItemRow;
