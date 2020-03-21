@@ -12846,6 +12846,9 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         if(!clr.empty()) {
           name += '/' + this.clr.name;
         }
+        else if(origin instanceof $p.DocPurchase_order && this.note) {
+          name += '/' + this.note;
+        }
 
         if(this.x && this.y) {
           name += '/' + this.x.toFixed(0) + 'x' + this.y.toFixed(0);

@@ -164,6 +164,9 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         if(!clr.empty()) {
           name += '/' + this.clr.name;
         }
+        else if(origin instanceof $p.DocPurchase_order && this.note) {
+          name += '/' + this.note;
+        }
 
         // добавляем размеры
         if(this.x && this.y) {
