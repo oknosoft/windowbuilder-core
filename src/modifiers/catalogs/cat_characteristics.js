@@ -155,7 +155,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         name += '/' + sys.name;
       }
       else if(origin && !origin.empty()) {
-        name += '/' + (origin.name || origin.number_doc);
+        name += '/' + (origin instanceof $p.DocPurchase_order ? this.note : (origin.name || origin.number_doc));
       }
 
       if(!short) {
@@ -163,9 +163,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         // добавляем название цвета
         if(!clr.empty()) {
           name += '/' + this.clr.name;
-        }
-        else if(origin instanceof $p.DocPurchase_order && this.note) {
-          name += '/' + this.note;
         }
 
         // добавляем размеры

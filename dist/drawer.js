@@ -12838,16 +12838,13 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         name += '/' + sys.name;
       }
       else if(origin && !origin.empty()) {
-        name += '/' + (origin.name || origin.number_doc);
+        name += '/' + (origin instanceof $p.DocPurchase_order ? this.note : (origin.name || origin.number_doc));
       }
 
       if(!short) {
 
         if(!clr.empty()) {
           name += '/' + this.clr.name;
-        }
-        else if(origin instanceof $p.DocPurchase_order && this.note) {
-          name += '/' + this.note;
         }
 
         if(this.x && this.y) {
@@ -15715,7 +15712,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {characteristic} = row;
       if(!characteristic.empty() && !characteristic.calc_order.empty()) {
-        const {production, presentation, _data} = this;
+        const {production, orders, presentation, _data} = this;
 
         const {msg} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
@@ -15733,6 +15730,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         _data._loading = true;
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
+        });
+        orders.forEach(({invoice}) => {
+          if(!invoice.empty()) {
+            invoice.goods.find_rows({nom_characteristic: characteristic}).forEach(({_row}) => {
+              invoice.goods.del(_row.row - 1);
+            });
+          }
         });
         _data._loading = _loading;
       }
