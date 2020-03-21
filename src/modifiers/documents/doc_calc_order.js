@@ -340,7 +340,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {characteristic} = row;
       if(!characteristic.empty() && !characteristic.calc_order.empty()) {
-        const {production, presentation, _data} = this;
+        const {production, orders, presentation, _data} = this;
 
         // запрет удаления подчиненной продукции
         const {msg} = $p;
@@ -360,6 +360,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         _data._loading = true;
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
+        });
+        orders.forEach(({invoice}) => {
+          if(!invoice.empty()) {
+            invoice.goods.find_rows({nom_characteristic: characteristic}).forEach(({_row}) => {
+              invoice.goods.del(_row.row - 1);
+            });
+          }
         });
         _data._loading = _loading;
       }
