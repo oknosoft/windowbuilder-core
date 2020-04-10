@@ -37,8 +37,6 @@ class Scheme extends paper.Project {
      */
     this._dp = $p.dp.buyers_order.create();
 
-    this.magnetism = new Magnetism(this);
-
     const isBrowser = typeof requestAnimationFrame === 'function';
 
     /**
