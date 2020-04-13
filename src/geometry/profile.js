@@ -839,7 +839,7 @@ class ProfileItem extends GeneratrixElement {
         {id: 'info', path: 'o.info', type: 'ro'},
         'inset',
         'clr',
-        'offset'
+        this instanceof Onlay ? 'region' : 'offset',
       ],
       'Начало': ['x1','y1','a1','cnn1'],
       'Конец': ['x2','y2','a2','cnn2']

@@ -3874,6 +3874,7 @@ class BuilderElement extends paper.Group {
       a1: Object.assign({}, _xfields.x1, {synonym: "Угол1"}),
       a2: Object.assign({}, _xfields.x1, {synonym: "Угол2"}),
       offset: Object.assign({}, _xfields.x1, {synonym: "Смещение"}),
+      region: _xfields.region,
     };
 
     return {
@@ -6641,7 +6642,7 @@ class ProfileItem extends GeneratrixElement {
         {id: 'info', path: 'o.info', type: 'ro'},
         'inset',
         'clr',
-        'offset'
+        this instanceof Onlay ? 'region' : 'offset',
       ],
       'Начало': ['x1','y1','a1','cnn1'],
       'Конец': ['x2','y2','a2','cnn2']
@@ -8593,6 +8594,9 @@ class Onlay extends ProfileItem {
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
     }
+    if(attr.region) {
+      this.region = attr.region;
+    }
   }
 
   get d0() {
@@ -8601,6 +8605,33 @@ class Onlay extends ProfileItem {
 
   get elm_type() {
     return $p.enm.elm_types.Раскладка;
+  }
+
+  get region() {
+    const {_row, parent} = this;
+    let region = _row && _row.region;
+    return region && !region.empty() ? region : $p.enm.lay_regions.r2;
+  }
+
+  set region(v) {
+    this.set_region(v);
+  }
+
+  set_region(v, ignore_select) {
+    if(!ignore_select) {
+      const {selectedItems} = this.project;
+      if(selectedItems.length > 1) {
+        selectedItems.forEach((elm) => {
+          if(elm instanceof Onlay && elm != this) {
+            elm.set_region(v, true);
+          }
+        });
+      }
+    }
+    const {_row} = this;
+    if(_row && _row.region !== v) {
+      _row.region = v;
+    }
   }
 
   nearest() {

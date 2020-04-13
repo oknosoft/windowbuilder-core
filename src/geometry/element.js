@@ -327,6 +327,7 @@ class BuilderElement extends paper.Group {
       a1: Object.assign({}, _xfields.x1, {synonym: "Угол1"}),
       a2: Object.assign({}, _xfields.x1, {synonym: "Угол2"}),
       offset: Object.assign({}, _xfields.x1, {synonym: "Смещение"}),
+      region: _xfields.region,
     };
 
     return {

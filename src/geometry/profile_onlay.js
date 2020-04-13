@@ -24,6 +24,9 @@ class Onlay extends ProfileItem {
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
     }
+    if(attr.region) {
+      this.region = attr.region;
+    }
   }
 
   /**
@@ -40,6 +43,37 @@ class Onlay extends ProfileItem {
    */
   get elm_type() {
     return $p.enm.elm_types.Раскладка;
+  }
+
+  /**
+   * Слой раскладки в стеклопакете
+   * @return {EnmLay_regions}
+   */
+  get region() {
+    const {_row, parent} = this;
+    let region = _row && _row.region;
+    return region && !region.empty() ? region : $p.enm.lay_regions.r2;
+  }
+
+  set region(v) {
+    this.set_region(v);
+  }
+
+  set_region(v, ignore_select) {
+    if(!ignore_select) {
+      const {selectedItems} = this.project;
+      if(selectedItems.length > 1) {
+        selectedItems.forEach((elm) => {
+          if(elm instanceof Onlay && elm != this) {
+            elm.set_region(v, true);
+          }
+        });
+      }
+    }
+    const {_row} = this;
+    if(_row && _row.region !== v) {
+      _row.region = v;
+    }
   }
 
   /**
