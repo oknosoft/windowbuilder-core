@@ -3076,7 +3076,7 @@ class DimensionLine extends paper.Group {
 
   get path() {
 
-    const {parent, project, children, _attr, pos} = this;
+    const {parent, children, _attr, pos} = this;
     if(!children.length){
       return;
     }
@@ -3176,7 +3176,7 @@ class DimensionLine extends paper.Group {
     return !!this._attr.hide_c1;
   }
   set hide_c1(v) {
-    const {children, hide_c1, _attr} = this
+    const {children, _attr} = this
     _attr.hide_c1 = v;
     v && children.callout1.setSelection(false);
     this.redraw();
@@ -3186,7 +3186,7 @@ class DimensionLine extends paper.Group {
     return !!this._attr.hide_c2;
   }
   set hide_c2(v) {
-    const {children, hide_c2, _attr} = this
+    const {children, _attr} = this
     _attr.hide_c2 = v;
     v && children.callout2.setSelection(false);
     this.redraw();
@@ -3196,7 +3196,7 @@ class DimensionLine extends paper.Group {
     return !!this._attr.hide_line;
   }
   set hide_line(v) {
-    const {children, hide_line, _attr} = this
+    const {children, _attr} = this
     _attr.hide_line = v;
     v && children.scale.setSelection(false);
     this.redraw();
@@ -3274,30 +3274,33 @@ class DimensionLineCustom extends DimensionLine {
     _row.path_data = JSON.stringify(path_data);
   }
 
+  get is_ruler() {
+    const {ToolRuler} = EditorInvisible;
+    return typeof ToolRuler === 'function' && this.project._scope.tool instanceof ToolRuler;
+  }
+
   setSelection(selection) {
     super.setSelection(selection);
-    const {project, children, hide_c1, hide_c2, hide_line} = this
+    const {project, children, hide_c1, hide_c2, hide_line, is_ruler} = this
     const {tool} = project._scope;
     if(selection) {
       hide_c1 && children.callout1.setSelection(false);
       hide_c2 && children.callout2.setSelection(false);
       hide_line && children.scale.setSelection(false);
     }
-    typeof ToolRuler === 'function' && tool instanceof ToolRuler && tool.wnd.attach(this);
+    is_ruler && tool.wnd.attach(this);
   }
 
   _click(event) {
     event.stop();
-    const {tool} = this.project._scope;
-    if(tool && typeof ToolRuler === 'function' && tool instanceof ToolRuler){
+    if(this.is_ruler){
       this.selected = true;
     }
   }
 
   _mouseenter() {
-    const {_scope} = this.project;
-    const {tool} = _scope;
-    if(tool && typeof ToolRuler === 'function' && tool instanceof ToolRuler){
+    const {project: {_scope}, is_ruler} = this;
+    if(is_ruler){
       _scope.canvas_cursor('cursor-arrow-ruler');
     }
     else{
