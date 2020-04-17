@@ -32,18 +32,13 @@
     "paper-jsdom-canvas": "^0.12.4"
   },
   "devDependencies": {
-    "fs-extra": "7.0.1",
-    "glob": "^7.1.6",
     "gulp": "^3.9",
-    "gulp-base64": "^0.1",
     "gulp-concat": "^2.6",
     "gulp-csso": "^3.0.1",
-    "gulp-rename": "^1.4.0",
     "gulp-replace": "^1.0",
     "gulp-strip-comments": "^2.5.2",
     "gulp-umd": "^2.0",
-    "gulp-wrap": "^0.15.0",
-    "md5-file": "^4.0.0"
+    "md5-file": "^5.0.0"
   },
   "files": [
     "dist/drawer.js",
