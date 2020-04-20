@@ -254,18 +254,27 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (cnstr) {
 
       const {coordinates} = ox;
+      const {elm_types} = $p.enm;
 
-      // профили и доборы
-      coordinates.find_rows({cnstr, elm_type: {in: $p.enm.elm_types.profiles}}, (row) => new Profile({row, parent: this}));
+      coordinates.find_rows({cnstr}, (row) => {
+        // профили и доборы
+        if(elm_types.profiles.includes(row.elm_type)) {
+          new Profile({row, parent: this});
+        }
+        // заполнения
+        else if(elm_types.glasses.includes(row.elm_type)) {
+          new Filling({row, parent: this})
+        }
+        // разрезы
+        else if(row.elm_type === elm_types.Водоотлив) {
+          new Sectional({row, parent: this})
+        }
+        // остальные элементы (текст)
+        else if(row.elm_type === elm_types.Текст) {
+          new FreeText({row, parent: this.l_text})
+        }
 
-      // заполнения
-      coordinates.find_rows({cnstr, elm_type: {in: $p.enm.elm_types.glasses}}, (row) => new Filling({row, parent: this}));
-
-      // разрезы
-      coordinates.find_rows({cnstr, elm_type: $p.enm.elm_types.Водоотлив}, (row) => new Sectional({row, parent: this}));
-
-      // остальные элементы (текст)
-      coordinates.find_rows({cnstr, elm_type: $p.enm.elm_types.Текст}, (row) => new FreeText({row, parent: this.l_text}));
+      });
     }
 
     l_connective.bringToFront();
@@ -1914,10 +1923,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.children.filter((elm) => elm instanceof Profile);
   }
 
+  /**
+   * Массив разрезов
+   * @return {Array.<Sectional>}
+   */
   get sectionals() {
     return this.children.filter((elm) => elm instanceof Sectional);
   }
 
+  /**
+   * Массив раскладок
+   * @return {Array.<Onlay>}
+   */
   get onlays() {
     const res = [];
     this.fillings.forEach((filling) => {
@@ -2356,11 +2373,5 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 }
 
-/**
- * Экспортируем конструктор Contour, чтобы фильтровать инстанции этого типа
- * @property Contour
- * @for MetaEngine
- * @type function
- */
 EditorInvisible.Contour = Contour;
 EditorInvisible.GlassSegment = GlassSegment;

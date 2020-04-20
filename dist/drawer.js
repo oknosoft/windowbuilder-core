@@ -551,14 +551,23 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (cnstr) {
 
       const {coordinates} = ox;
+      const {elm_types} = $p.enm;
 
-      coordinates.find_rows({cnstr, elm_type: {in: $p.enm.elm_types.profiles}}, (row) => new Profile({row, parent: this}));
+      coordinates.find_rows({cnstr}, (row) => {
+        if(elm_types.profiles.includes(row.elm_type)) {
+          new Profile({row, parent: this});
+        }
+        else if(elm_types.glasses.includes(row.elm_type)) {
+          new Filling({row, parent: this})
+        }
+        else if(row.elm_type === elm_types.Водоотлив) {
+          new Sectional({row, parent: this})
+        }
+        else if(row.elm_type === elm_types.Текст) {
+          new FreeText({row, parent: this.l_text})
+        }
 
-      coordinates.find_rows({cnstr, elm_type: {in: $p.enm.elm_types.glasses}}, (row) => new Filling({row, parent: this}));
-
-      coordinates.find_rows({cnstr, elm_type: $p.enm.elm_types.Водоотлив}, (row) => new Sectional({row, parent: this}));
-
-      coordinates.find_rows({cnstr, elm_type: $p.enm.elm_types.Текст}, (row) => new FreeText({row, parent: this.l_text}));
+      });
     }
 
     l_connective.bringToFront();
@@ -2320,6 +2329,29 @@ EditorInvisible.Contour = Contour;
 EditorInvisible.GlassSegment = GlassSegment;
 
 
+class ContourNested extends Contour {
+
+  constructor(attr) {
+    super(attr);
+  }
+
+  remove() {
+
+    super.remove();
+  }
+
+}
+
+EditorInvisible.ContourNested = ContourNested;
+
+
+class ContourVirtual extends Contour {
+
+}
+
+EditorInvisible.ContourVirtual = ContourVirtual;
+
+
 class DimensionGroup {
 
   clear() {
@@ -3642,6 +3674,8 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
+    this.on('doubleclick', this.elm_dblclick);
+
   }
 
   get owner() {
@@ -3751,7 +3785,7 @@ class BuilderElement extends paper.Group {
 
 
     inset.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o, f) => {
         const {sys} = this.project._dp;
 
@@ -3812,17 +3846,17 @@ class BuilderElement extends paper.Group {
     ];
 
     cnn1.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o, f) => cnn_choice_links(o, this.rays.b)]
     }];
 
     cnn2.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o, f) => cnn_choice_links(o, this.rays.e)]
     }];
 
     cnn3.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o) => {
         const cnn_ii = this.selected_cnn_ii();
         let nom_cnns = [utils.blank.guid];
@@ -3996,38 +4030,6 @@ class BuilderElement extends paper.Group {
     return this;
   }
 
-  attache_wnd(cell) {
-    if(!this._attr._grid || !this._attr._grid.cell){
-
-      this._attr._grid = cell.attachHeadFields({
-        obj: this,
-        oxml: this.oxml
-      });
-      this._attr._grid.attachEvent('onRowSelect', function (id) {
-        if(['x1', 'y1', 'a1', 'cnn1'].indexOf(id) != -1) {
-          this._obj.select_node('b');
-        }
-        else if(['x2', 'y2', 'a2', 'cnn2'].indexOf(id) != -1) {
-          this._obj.select_node('e');
-        }
-      });
-    }
-    else if(this._attr._grid._obj != this){
-      this._attr._grid.attach({
-        obj: this,
-        oxml: this.oxml
-      });
-    }
-  }
-
-  detache_wnd() {
-    const {_grid} = this._attr;
-    if(_grid && _grid.destructor && _grid._owner_cell){
-      _grid._owner_cell.detachObject(true);
-      delete this._attr._grid;
-    }
-  }
-
   selected_cnn_ii() {
     const {project, elm} = this;
     const sel = project.getSelectedItems();
@@ -4063,7 +4065,8 @@ class BuilderElement extends paper.Group {
   }
 
   remove() {
-    this.detache_wnd();
+    this.detache_wnd && this.detache_wnd();
+
     const {parent, project, observer, _row} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
@@ -4100,6 +4103,9 @@ class BuilderElement extends paper.Group {
     }
   }
 
+  elm_dblclick(event) {
+    this.project._scope.eve.emit('elm_dblclick', this, event);
+  }
 
   static clr_by_clr(clr, view_out) {
     let {clr_str, clr_in, clr_out} = clr;
@@ -4320,21 +4326,29 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   create_leaf(furn, direction) {
 
-    const {project} = this;
+    const {project, _row} = this;
 
     project.cnns.clear({elm1: this.elm});
 
-    const contour = new Contour( {parent: this.parent});
+    const Constructor = furn === 'virtual' ? ContourVirtual : (furn === 'nested' ? ContourNested : Contour);
+    const contour = new Constructor({parent: this.parent});
 
     contour.path = this.profiles;
 
-    this.parent = contour;
-    this._row.cnstr = contour.cnstr;
+    if(furn === 'nested') {
+      this.remove();
+    }
+    else {
+      this.parent = contour;
+      _row.cnstr = contour.cnstr;
+    }
 
     if(direction) {
       contour.direction = direction;
     }
-    contour.furn = furn || project.default_furn;
+    if(typeof furn !== 'string') {
+      contour.furn = furn || project.default_furn;
+    }
 
     project.notify(contour, 'rows', {constructions: true});
 

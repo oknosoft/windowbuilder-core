@@ -1034,7 +1034,7 @@ set params(v){this._setter_ts('params',v)}
         return $p.ui.dialogs.window({
           Component: _formula,
           title: this.name,
-          print: true,
+          //print: true,
           obj,
           attr,
         });
@@ -1072,12 +1072,12 @@ class CatFormulasManager extends CatManager {
     this._owner.$p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
   }
 
-  load_formulas() {
+  load_formulas(src) {
     const {md, utils, wsql} = this._owner.$p;
     const {isNode, isBrowser} = wsql.alasql.utils;
     const parents = [this.predefined('printing_plates'), this.predefined('modifiers')];
     const filtered = [];
-    this.forEach((v) => {
+    (src || this).forEach((v) => {
       if(!v.disabled && parents.includes(v.parent)){
         if(v.context === 1 && !isBrowser || v.context === 2 && !isNode) {
           return;

@@ -69,6 +69,8 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
+    this.on('doubleclick', this.elm_dblclick);
+
   }
 
   /**
@@ -201,7 +203,7 @@ class BuilderElement extends paper.Group {
 
 
     inset.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o, f) => {
         const {sys} = this.project._dp;
 
@@ -264,17 +266,17 @@ class BuilderElement extends paper.Group {
     ];
 
     cnn1.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o, f) => cnn_choice_links(o, this.rays.b)]
     }];
 
     cnn2.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o, f) => cnn_choice_links(o, this.rays.e)]
     }];
 
     cnn3.choice_links = [{
-      name: ["selection",	"ref"],
+      name: ['selection', 'ref'],
       path: [(o) => {
         const cnn_ii = this.selected_cnn_ii();
         let nom_cnns = [utils.blank.guid];
@@ -483,44 +485,6 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Подключает окно редактор свойств текущего элемента, выбранного инструментом
-   */
-  attache_wnd(cell) {
-    if(!this._attr._grid || !this._attr._grid.cell){
-
-      this._attr._grid = cell.attachHeadFields({
-        obj: this,
-        oxml: this.oxml
-      });
-      this._attr._grid.attachEvent('onRowSelect', function (id) {
-        if(['x1', 'y1', 'a1', 'cnn1'].indexOf(id) != -1) {
-          this._obj.select_node('b');
-        }
-        else if(['x2', 'y2', 'a2', 'cnn2'].indexOf(id) != -1) {
-          this._obj.select_node('e');
-        }
-      });
-    }
-    else if(this._attr._grid._obj != this){
-      this._attr._grid.attach({
-        obj: this,
-        oxml: this.oxml
-      });
-    }
-  }
-
-  /**
-   * Отключает и выгружает из памяти окно свойств элемента
-   */
-  detache_wnd() {
-    const {_grid} = this._attr;
-    if(_grid && _grid.destructor && _grid._owner_cell){
-      _grid._owner_cell.detachObject(true);
-      delete this._attr._grid;
-    }
-  }
-
-  /**
    * Возвращает примыкающий элемент и строку табчасти соединений
    */
   selected_cnn_ii() {
@@ -563,7 +527,8 @@ class BuilderElement extends paper.Group {
    * @method remove
    */
   remove() {
-    this.detache_wnd();
+    this.detache_wnd && this.detache_wnd();
+
     const {parent, project, observer, _row} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
@@ -605,6 +570,9 @@ class BuilderElement extends paper.Group {
     }
   }
 
+  elm_dblclick(event) {
+    this.project._scope.eve.emit('elm_dblclick', this, event);
+  }
 
   static clr_by_clr(clr, view_out) {
     let {clr_str, clr_in, clr_out} = clr;

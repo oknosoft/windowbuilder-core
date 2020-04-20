@@ -207,26 +207,34 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   create_leaf(furn, direction) {
 
-    const {project} = this;
+    const {project, _row} = this;
 
     // прибиваем соединения текущего заполнения
     project.cnns.clear({elm1: this.elm});
 
     // создаём пустой новый слой
-    const contour = new Contour( {parent: this.parent});
+    const Constructor = furn === 'virtual' ? ContourVirtual : (furn === 'nested' ? ContourNested : Contour);
+    const contour = new Constructor({parent: this.parent});
 
     // задаём его путь - внутри будут созданы профили
     contour.path = this.profiles;
 
     // помещаем себя вовнутрь нового слоя
-    this.parent = contour;
-    this._row.cnstr = contour.cnstr;
+    if(furn === 'nested') {
+      this.remove();
+    }
+    else {
+      this.parent = contour;
+      _row.cnstr = contour.cnstr;
+    }
 
     // фурнитура и параметры по умолчанию
     if(direction) {
       contour.direction = direction;
     }
-    contour.furn = furn || project.default_furn;
+    if(typeof furn !== 'string') {
+      contour.furn = furn || project.default_furn;
+    }
 
     // оповещаем мир о новых слоях
     project.notify(contour, 'rows', {constructions: true});
