@@ -11,6 +11,10 @@ class ContourNested extends Contour {
 
   constructor(attr) {
     super(attr);
+    if(!this._row.kind) {
+      this._row.kind = 2;
+    }
+
     // находим или создаём строку заказа с вложенным изделием
   }
 

@@ -32,7 +32,14 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this.project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
+      this._row.elm = this.project.ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+    }
+
+    if(attr._nearest){
+      this._attr._nearest = attr._nearest;
+      this._attr.binded = true;
+      this._attr.simulated = true;
+      this._row.elm_type = $p.enm.elm_types.Створка;
     }
 
     if(attr.proto){

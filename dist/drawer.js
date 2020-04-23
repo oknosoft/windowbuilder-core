@@ -555,7 +555,12 @@ class Contour extends AbstractFilling(paper.Layer) {
 
       coordinates.find_rows({cnstr}, (row) => {
         if(elm_types.profiles.includes(row.elm_type)) {
-          new Profile({row, parent: this});
+          if(row.parent) {
+            new ProfileVirtual({row, parent: this});
+          }
+          else {
+            new Profile({row, parent: this});
+          }
         }
         else if(elm_types.glasses.includes(row.elm_type)) {
           new Filling({row, parent: this})
@@ -1139,7 +1144,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 
   profile_by_nodes(n1, n2, point) {
-    const profiles = this.profiles;
+    const {profiles} = this;
     for (let i = 0; i < profiles.length; i++) {
       const {generatrix} = profiles[i];
       if (generatrix.getNearestPoint(n1).is_nearest(n1) && generatrix.getNearestPoint(n2).is_nearest(n2)) {
@@ -1853,18 +1858,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     if (need_bind) {
+      const ProfileConstructor = this instanceof ContourVirtual ? ProfileVirtual : Profile;
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
         if (curr.binded) {
           continue;
         }
-        elm = new Profile({
+        elm = new ProfileConstructor({
           generatrix: curr.profile.generatrix.get_subpath(curr.b, curr.e),
           proto: outer_nodes.length ? outer_nodes[0] : {parent: this, clr: curr.profile.clr},
+          _nearest: curr.profile,
         });
-        elm._attr._nearest = curr.profile;
-        elm._attr.binded = true;
-        elm._attr.simulated = true;
 
         curr.profile = elm;
         delete curr.outer;
@@ -2067,7 +2071,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         if (elm.save_coordinates) {
           elm.save_coordinates();
         }
-        else if (elm == l_text || elm == l_dimensions) {
+        else if (elm === l_text || elm === l_dimensions) {
           elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
         }
       }
@@ -2333,6 +2337,10 @@ class ContourNested extends Contour {
 
   constructor(attr) {
     super(attr);
+    if(!this._row.kind) {
+      this._row.kind = 2;
+    }
+
   }
 
   remove() {
@@ -2345,7 +2353,32 @@ class ContourNested extends Contour {
 EditorInvisible.ContourNested = ContourNested;
 
 
+
 class ContourVirtual extends Contour {
+
+  constructor(attr) {
+    super(attr);
+    if(!this._row.kind) {
+      this._row.kind = 1;
+    }
+  }
+
+  save_coordinates(short) {
+
+    if (!short) {
+      const {l_text, l_dimensions} = this;
+      for (let elm of this.children) {
+        if (elm === l_text || elm === l_dimensions) {
+          elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
+        }
+        else if (elm.save_coordinates && !(elm instanceof ProfileVirtual)) {
+          elm.save_coordinates();
+        }
+      }
+    }
+
+    super.save_coordinates(true);
+  }
 
 }
 
@@ -3637,7 +3670,14 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this.project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
+      this._row.elm = this.project.ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+    }
+
+    if(attr._nearest){
+      this._attr._nearest = attr._nearest;
+      this._attr.binded = true;
+      this._attr.simulated = true;
+      this._row.elm_type = $p.enm.elm_types.Створка;
     }
 
     if(attr.proto){
@@ -7590,7 +7630,7 @@ class ProfileItem extends GeneratrixElement {
   redraw() {
     const bcnn = this.postcalc_cnn('b');
     const ecnn = this.postcalc_cnn('e');
-    const {path, generatrix, rays, project} = this;
+    const {path, generatrix, rays} = this;
 
     this.path_points(bcnn, 'b');
     this.path_points(ecnn, 'e');
@@ -8883,6 +8923,149 @@ class Onlay extends ProfileItem {
 
 EditorInvisible.Onlay = Onlay;
 
+
+
+class ProfileVirtual extends Profile {
+
+  constructor(attr) {
+    super(attr);
+    Object.defineProperty(this._attr, '_nearest_cnn', {
+      get() {
+        return ProfileVirtual.nearest_cnn;
+      },
+      set(v) {
+
+      }
+    });
+    this.path.strokeColor = 'darkgreen';
+    this.path.dashArray = [8, 4, 2, 4];
+  }
+
+  nearest() {
+    return this._attr._nearest;
+  }
+
+  default_inset(all) {
+
+  }
+
+  get inset() {
+    return this.nearest().inset;
+  }
+  set inset(v) {}
+
+  get clr() {
+    return this.nearest(true).clr;
+  }
+  set clr(v) {}
+
+  get sizeb() {
+    return 0;
+  }
+
+  path_points(cnn_point, profile_point) {
+
+    const {_attr: {_corns}, generatrix, layer: {bounds}} = this;
+    if(!generatrix.curves.length) {
+      return cnn_point;
+    }
+    const {rays} = this.nearest();
+    const prays = cnn_point.profile.nearest().rays;
+
+    function intersect_point(path1, path2, index, ipoint = cnn_point.point) {
+      const intersections = path1.getIntersections(path2);
+      let delta = Infinity, tdelta, point, tpoint;
+
+      if(intersections.length == 1) {
+        if(index) {
+          _corns[index] = intersections[0].point;
+        }
+        else {
+          return intersections[0].point.getDistance(ipoint, true);
+        }
+      }
+      else if(intersections.length > 1) {
+        intersections.forEach((o) => {
+          tdelta = o.point.getDistance(ipoint, true);
+          if(tdelta < delta) {
+            delta = tdelta;
+            point = o.point;
+          }
+        });
+        if(index) {
+          _corns[index] = point;
+        }
+        else {
+          return delta;
+        }
+      }
+    }
+
+    const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
+      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.outer : prays.inner;
+
+    const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
+    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.outer : rays.inner;
+
+    const offset = -2;
+    if(profile_point == 'b') {
+      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 1);
+      intersect_point(pinner, inner, 4);
+    }
+    else if(profile_point == 'e') {
+      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 2);
+      intersect_point(pinner, inner, 3);
+    }
+
+    return cnn_point;
+  }
+
+  redraw() {
+    const bcnn = this.cnn_point('b');
+    const ecnn = this.cnn_point('e');
+    const {rays} = this.nearest();
+    const {path, generatrix} = this;
+
+    this.path_points(bcnn, 'b');
+    this.path_points(ecnn, 'e');
+
+    path.removeSegments();
+
+    path.add(this.corns(1));
+
+      path.add(this.corns(2));
+      path.add(this.corns(3));
+
+    path.add(this.corns(4));
+    path.closePath();
+    path.reduce();
+
+    this.children.forEach((elm) => {
+      if(elm instanceof ProfileAddl) {
+        elm.observer(elm.parent);
+        elm.redraw();
+      }
+    });
+
+    return this;
+  }
+}
+
+ProfileVirtual.nearest_cnn = {
+  size(profile) {
+    return profile.nearest().width;
+  },
+  empty() {
+    return false;
+  },
+  get cnn_type() {
+    return $p.enm.cnn_types.ii;
+  },
+  specification: [],
+  selection_params: [],
+}
+
+EditorInvisible.ProfileVirtual = ProfileVirtual;
 
 
 class Scheme extends paper.Project {

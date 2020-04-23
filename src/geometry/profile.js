@@ -1947,7 +1947,7 @@ class ProfileItem extends GeneratrixElement {
     // получаем узлы
     const bcnn = this.postcalc_cnn('b');
     const ecnn = this.postcalc_cnn('e');
-    const {path, generatrix, rays, project} = this;
+    const {path, generatrix, rays} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями
     this.path_points(bcnn, 'b');

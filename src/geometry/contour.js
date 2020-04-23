@@ -259,7 +259,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       coordinates.find_rows({cnstr}, (row) => {
         // профили и доборы
         if(elm_types.profiles.includes(row.elm_type)) {
-          new Profile({row, parent: this});
+          if(row.parent) {
+            new ProfileVirtual({row, parent: this});
+          }
+          else {
+            new Profile({row, parent: this});
+          }
         }
         // заполнения
         else if(elm_types.glasses.includes(row.elm_type)) {
@@ -964,7 +969,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {Profile}
    */
   profile_by_nodes(n1, n2, point) {
-    const profiles = this.profiles;
+    const {profiles} = this;
     for (let i = 0; i < profiles.length; i++) {
       const {generatrix} = profiles[i];
       if (generatrix.getNearestPoint(n1).is_nearest(n1) && generatrix.getNearestPoint(n2).is_nearest(n2)) {
@@ -1776,18 +1781,17 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // четвертый проход - добавляем
     if (need_bind) {
+      const ProfileConstructor = this instanceof ContourVirtual ? ProfileVirtual : Profile;
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
         if (curr.binded) {
           continue;
         }
-        elm = new Profile({
+        elm = new ProfileConstructor({
           generatrix: curr.profile.generatrix.get_subpath(curr.b, curr.e),
           proto: outer_nodes.length ? outer_nodes[0] : {parent: this, clr: curr.profile.clr},
+          _nearest: curr.profile,
         });
-        elm._attr._nearest = curr.profile;
-        elm._attr.binded = true;
-        elm._attr.simulated = true;
 
         curr.profile = elm;
         delete curr.outer;
@@ -2051,7 +2055,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         if (elm.save_coordinates) {
           elm.save_coordinates();
         }
-        else if (elm == l_text || elm == l_dimensions) {
+        else if (elm === l_text || elm === l_dimensions) {
           elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
         }
       }
