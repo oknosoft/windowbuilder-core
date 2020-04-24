@@ -14739,7 +14739,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {_row} = elm;
       const len = len_angl ? len_angl.len : _row.len;
       const is_linear = elm.is_linear ? elm.is_linear() : true;
-      let is_tabular = true;
 
       if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
         return false;
@@ -14753,22 +14752,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return false;
       }
 
-      if(utils.is_data_obj(row)){
-
-        if(row.impost_fixation == enm.impost_mount_options.ДолжныБытьКрепленияИмпостов){
-          if(!elm.joined_imposts(true)){
-            return false;
-          }
-        }
-        else if(row.impost_fixation == enm.impost_mount_options.НетКрепленийИмпостовИРам){
-          if(elm.joined_imposts(true)){
-            return false;
-          }
-        }
-        is_tabular = false;
-      }
-
-      if(!is_tabular || by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру){
+      if(!utils.is_data_obj(row) || by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру){
         if(row.lmin > len || (row.lmax < len && row.lmax > 0)){
           return false;
         }
