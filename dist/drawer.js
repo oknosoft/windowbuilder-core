@@ -447,14 +447,14 @@ class GlassSegment {
 
     let curr_profile = this.profile;
     let segm_profile = segm.profile;
-    while (curr_profile.parent instanceof ProfileItem) {
+    while (curr_profile instanceof ProfileAddl) {
       curr_profile = curr_profile.parent;
     }
-    while (segm_profile.parent instanceof ProfileItem) {
+    while (segm_profile instanceof ProfileAddl) {
       segm_profile = segm_profile.parent;
     }
 
-    if(curr_profile.b.is_nearest(point, true)) {
+    if(curr_profile.gb.is_nearest(point, true)) {
       const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);
       if(by_angle) {
         return false;
@@ -464,7 +464,7 @@ class GlassSegment {
       }
     }
 
-    if(curr_profile.e.is_nearest(point, true)) {
+    if(curr_profile.ge.is_nearest(point, true)) {
       const by_angle = this.break_by_angle(nodes, segments, point, curr_profile.generatrix.length, curr_profile, segm_profile);
       if(by_angle) {
         return false;
@@ -474,7 +474,7 @@ class GlassSegment {
       }
     }
 
-    if(segm_profile.b.is_nearest(point, true)) {
+    if(segm_profile.gb.is_nearest(point, true)) {
       const by_angle = segm.break_by_angle(nodes, segments, point, 0, segm_profile, curr_profile)
       if(by_angle) {
         return false;
@@ -484,7 +484,7 @@ class GlassSegment {
       }
     }
 
-    if(segm_profile.e.is_nearest(point, true)) {
+    if(segm_profile.ge.is_nearest(point, true)) {
       const by_angle = segm.break_by_angle(nodes, segments, point, segm_profile.generatrix.length, segm_profile, curr_profile);
       if(by_angle) {
         return false;
@@ -662,26 +662,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     const res = [];
     let curr, acurr;
 
-    function find_next(curr) {
-      if (!curr.anext) {
-        curr.anext = [];
-        segments.forEach((segm) => {
-          if (segm == curr || segm.profile == curr.profile){
-            return;
-          }
-          if (curr.has_cnn(segm, nodes, segments)) {
-            const angle = curr.e.subtract(curr.b).getDirectedAngle(segm.e.subtract(segm.b));
-            if (segments.length < 3 || angle >= 0 || Math.abs(angle + 180) < 1)
-              curr.anext.push(segm);
-          }
-
-        });
-      }
-      return curr.anext;
-    }
-
     function go_go(segm) {
-      const anext = find_next(segm);
+      const anext = GlassSegment.next(segm, nodes, segments);
       for (const next of anext) {
         if (next === curr) {
           return anext;
@@ -746,8 +728,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (!bind)
         continue;
 
-      if (node1 == node2)
+      if(node1 === node2) {
         continue;
+      }
       findedb = false;
       for (let n in curve_nodes) {
         if (curve_nodes[n].node1 == node1 && curve_nodes[n].node2 == node2) {
@@ -903,24 +886,12 @@ class Contour extends AbstractFilling(paper.Layer) {
   get glass_segments() {
     const nodes = [];
 
-    function fn_sort(a, b) {
-      const da = this.getOffsetOf(a.point);
-      const db = this.getOffsetOf(b.point);
-      if (da < db) {
-        return -1;
-      }
-      else if (da > db) {
-        return 1;
-      }
-      return 0;
-    }
-
     function push_new(profile, b, e, outer = false) {
       if(b.is_nearest(e, 0)){
         return;
       }
       for(const segm of nodes) {
-        if(segm.profile === profile && segm.b.equals(b) && segm.e.equals(e) && segm.outer == outer){
+        if(segm.profile === profile && segm.b.is_nearest(b, 0) && segm.e.is_nearest(e, 0) && segm.outer == outer){
           return;
         }
       }
@@ -929,7 +900,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this.profiles.forEach((p) => {
 
-      const sort = fn_sort.bind(p.generatrix);
+      const sort = GlassSegment.fn_sort.bind(p.generatrix);
 
       const ip = p.joined_imposts();
       const pb = p.cnn_point('b');
@@ -2327,6 +2298,35 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
+}
+
+GlassSegment.fn_sort = function sort_segments(a, b) {
+  const da = this.getOffsetOf(a.point);
+  const db = this.getOffsetOf(b.point);
+  if (da < db) {
+    return -1;
+  }
+  else if (da > db) {
+    return 1;
+  }
+  return 0;
+};
+
+GlassSegment.next = function next_segments(curr, nodes, segments) {
+  if (!curr.anext) {
+    curr.anext = [];
+    for(const segm of segments) {
+      if (segm === curr || segm.profile === curr.profile){
+        continue;
+      }
+      if (curr.has_cnn(segm, nodes, segments)) {
+        const angle = curr.e.subtract(curr.b).getDirectedAngle(segm.e.subtract(segm.b));
+        if (segments.length < 3 || angle >= 0 || Math.abs(angle + 180) < 1)
+          curr.anext.push(segm);
+      }
+    }
+  }
+  return curr.anext;
 }
 
 EditorInvisible.Contour = Contour;
@@ -6459,9 +6459,11 @@ class ProfileItem extends GeneratrixElement {
   }
 
   gn(n) {
-    const {profile, is_t} = this.cnn_point(n);
-    if(is_t && profile) {
-      return profile.generatrix.getNearestPoint(this[n]);
+    if(this.layer.layer) {
+      const {profile, is_t} = this.cnn_point(n);
+      if(is_t && profile) {
+        return profile.generatrix.getNearestPoint(this[n]);
+      }
     }
     return this[n];
   }
@@ -10146,7 +10148,8 @@ class Scheme extends paper.Project {
   }
 
   check_distance(element, profile, res, point, check_only) {
-    const {acn} = $p.enm.cnn_types;
+    const {elm_types, cnn_types: {acn}} = $p.enm;
+
 
     let distance, cnns, addls,
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
@@ -10222,7 +10225,9 @@ class Scheme extends paper.Project {
     res.profile_point = '';
 
 
-    const gp = element.generatrix.getNearestPoint(point);
+    const gp = element._attr._nearest && (!profile || !profile._attr._nearest) ?
+      element.rays.outer.getNearestPoint(point) :
+      element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
 
     if(distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l)) {

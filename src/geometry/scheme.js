@@ -1421,7 +1421,8 @@ class Scheme extends paper.Project {
    */
   check_distance(element, profile, res, point, check_only) {
     //const {allow_open_cnn} = this._dp.sys;
-    const {acn} = $p.enm.cnn_types;
+    const {elm_types, cnn_types: {acn}} = $p.enm;
+
 
     let distance, cnns, addls,
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
@@ -1533,7 +1534,10 @@ class Scheme extends paper.Project {
     // }
 
     // если к доборам не привязались - проверяем профиль
-    const gp = element.generatrix.getNearestPoint(point);
+    //const gp = element.generatrix.getNearestPoint(point);
+    const gp = element._attr._nearest && (!profile || !profile._attr._nearest) ?
+      element.rays.outer.getNearestPoint(point) :
+      element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
 
     if(distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l)) {

@@ -506,9 +506,11 @@ class ProfileItem extends GeneratrixElement {
   }
 
   gn(n) {
-    const {profile, is_t} = this.cnn_point(n);
-    if(is_t && profile) {
-      return profile.generatrix.getNearestPoint(this[n]);
+    if(this.layer.layer) {
+      const {profile, is_t} = this.cnn_point(n);
+      if(is_t && profile) {
+        return profile.generatrix.getNearestPoint(this[n]);
+      }
     }
     return this[n];
   }
