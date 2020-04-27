@@ -278,6 +278,9 @@ $p.CatCnns.prototype.__define({
 		}
 	},
 
+  /**
+   * Параметрический размер соединения
+   */
   size: {
 	  value(elm) {
 	    let {sz, sizes} = this;
@@ -286,6 +289,20 @@ $p.CatCnns.prototype.__define({
           sz = prm_row.elm;
           return false;
         }
+      });
+      return sz;
+    }
+  },
+
+  /**
+   * Укорочение для конкретной номенклатуры из спецификации
+   */
+  nom_size: {
+    value(nom) {
+      let sz = 0;
+      this.specification.find_rows({nom, quantity: 0}, (row) => {
+        sz = row.sz;
+        return false;
       });
       return sz;
     }

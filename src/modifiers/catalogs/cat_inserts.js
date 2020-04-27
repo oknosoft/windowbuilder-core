@@ -609,7 +609,7 @@
     calculate_spec({elm, len_angl, ox, spec, clr}) {
 
       const {_row} = elm;
-      const {ПоПериметру, ПоШагам, ПоФормуле, ДляЭлемента, ПоПлощади, ДлинаПоПарам, ГабаритыПоПарам} = enm.count_calculating_ways;
+      const {ПоПериметру, ПоШагам, ПоФормуле, ДляЭлемента, ПоПлощади, ДлинаПоПарам, ГабаритыПоПарам, ПоСоединениям} = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
@@ -628,7 +628,7 @@
         let row_spec;
 
         // добавляем строку спецификации, если профиль или не про шагам
-        if((count_calc_method != ПоПериметру && count_calc_method != ПоШагам) || profile_items.indexOf(_row.elm_type) != -1){
+        if((count_calc_method != ПоПериметру && count_calc_method != ПоШагам) || profile_items.includes(_row.elm_type)){
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
         }
 
@@ -637,8 +637,15 @@
           row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox});
         }
         // для вставок в профиль способ расчета количества не учитывается
-        else if(profile_items.indexOf(_row.elm_type) != -1 || count_calc_method == ДляЭлемента){
+        else if(profile_items.includes(_row.elm_type) || count_calc_method == ДляЭлемента){
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
+          if(count_calc_method == ПоСоединениям){
+            for(const {cnn} of [elm.cnn_point('b'), elm.cnn_point('e')]) {
+              if(cnn) {
+                row_spec.len -= cnn.nom_size(row_spec.nom) * coefficient;
+              }
+            }
+          }
         }
         else{
 
