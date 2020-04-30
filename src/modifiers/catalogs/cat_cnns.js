@@ -21,7 +21,7 @@ $p.cat.cnns.__define({
   },
 
   sort_cnns: {
-    value(a, b) {
+    value: function sort_cnns(a, b) {
       const {t, xx} = $p.enm.cnn_types;
       const sides = [$p.enm.cnn_sides.Изнутри, $p.enm.cnn_sides.Снаружи];
       // отдаём предпочтение соединениям, для которых задана сторона
@@ -73,7 +73,7 @@ $p.cat.cnns.__define({
    * @return {Array}
    */
   nom_cnn: {
-    value(nom1, nom2, cnn_types, ign_side, is_outer){
+    value: function nom_cnn(nom1, nom2, cnn_types, ign_side, is_outer){
 
       const {ProfileItem, BuilderElement, Filling} = $p.Editor;
       const {orientations: {Вертикальная}, cnn_types: {acn}} = $p.enm;
@@ -182,7 +182,7 @@ $p.cat.cnns.__define({
    * @param [is_outer] {Boolean}
    */
   elm_cnn: {
-    value(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer){
+    value: function elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer){
 
       // если установленное ранее соединение проходит по типу и стороне, нового не ищем
       if(curr_cnn && cnn_types && (cnn_types.indexOf(curr_cnn.cnn_type) != -1) && (cnn_types != $p.enm.cnn_types.acn.ii)){
@@ -234,7 +234,7 @@ $p.CatCnns.prototype.__define({
 	 * Возвращает основную строку спецификации соединения между элементами
 	 */
 	main_row: {
-		value(elm) {
+		value: function main_row(elm) {
 
       let ares, nom = elm.nom;
 
@@ -270,7 +270,7 @@ $p.CatCnns.prototype.__define({
 	 * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
 	 */
 	check_nom2: {
-		value(nom) {
+		value: function check_nom2(nom) {
 			let ref = $p.utils.is_data_obj(nom) ? nom.ref : nom;
 			return this.cnn_elmnts._obj.some(function (row) {
 				return row.nom == ref;
@@ -282,7 +282,7 @@ $p.CatCnns.prototype.__define({
    * Параметрический размер соединения
    */
   size: {
-	  value(elm) {
+	  value: function size(elm) {
 	    let {sz, sizes} = this;
       sizes.forEach((prm_row) => {
         if(prm_row.param.check_condition({row_spec: {}, prm_row, elm, cnstr: 0, ox: elm.project.ox})) {
@@ -298,7 +298,7 @@ $p.CatCnns.prototype.__define({
    * Укорочение для конкретной номенклатуры из спецификации
    */
   nom_size: {
-    value(nom) {
+    value: function nom_size(nom) {
       let sz = 0;
       this.specification.find_rows({nom, quantity: 0}, (row) => {
         sz = row.sz;

@@ -11,6 +11,7 @@
  * Индекс в табчасти selection_params
  */
 $p.cat.furns.metadata('selection_params').index = 'elm';
+$p.cat.furns.metadata('specification').index = 'elm';
 
 /**
  * Методы объекта фурнитуры
@@ -129,7 +130,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // ищем строки дополнительной спецификации
       if(!exclude_dop){
-        this.specification.find_rows({is_main_specification_row: false, elm: row_furn.elm}, (dop_row) => {
+        this.specification.find_rows({dop: {not: 0}, elm: row_furn.elm}, (dop_row) => {
 
           if(!dop_row.check_restrictions(contour, cache)){
             return;

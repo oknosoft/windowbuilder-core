@@ -19,7 +19,7 @@ class Scheme extends paper.Project {
     // создаём объект проекта paperjs
     super(_canvas);
 
-    const _scheme = _editor.project = this;
+    _editor.project = this;
 
     const _attr = this._attr = {
       _silent,
@@ -45,19 +45,20 @@ class Scheme extends paper.Project {
      */
     this.redraw = () => {
 
-      _attr._opened && !_attr._silent && _scheme._scope && isBrowser && requestAnimationFrame(_scheme.redraw);
+      _attr._opened && !_attr._silent && this._scope && isBrowser && requestAnimationFrame(this.redraw);
 
-      if(!_attr._opened || _attr._saving || !_changes.length) {
+      const {length} = this._ch;
+
+      if(!_attr._opened || _attr._saving || !length) {
         return;
       }
 
-      _changes.length = 0;
-      const {contours} = _scheme;
+      const {contours} = this;
 
       if(contours.length) {
 
         // перерисовываем соединительные профили
-        _scheme.l_connective.redraw();
+        this.l_connective.redraw();
 
         // обновляем связи параметров изделия
         isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
@@ -65,7 +66,7 @@ class Scheme extends paper.Project {
         // перерисовываем все контуры
         for (let contour of contours) {
           contour.redraw();
-          if(_changes.length) {
+          if(this._ch.length > length) {
             return;
           }
         }
@@ -82,15 +83,17 @@ class Scheme extends paper.Project {
         });
 
         // перерисовываем габаритные размерные линии изделия
-        _scheme.draw_sizes();
+        this.draw_sizes();
 
-        // обновляем изображение на эуране
-        _scheme.view.update();
+        // обновляем изображение на экране
+        this.view.update();
 
       }
       else {
-        _scheme.draw_sizes();
+        this.draw_sizes();
       }
+
+      this._ch.length = 0;
 
     };
 
@@ -247,15 +250,10 @@ class Scheme extends paper.Project {
    * @return {*}
    */
   elm_cnn(elm1, elm2) {
-    let res;
-    this.cnns.find_rows({
-      elm1: elm1.elm,
-      elm2: elm2.elm
-    }, (row) => {
-      res = row.cnn;
-      return false;
-    });
-    return res;
+    elm1 = elm1.elm;
+    elm2 = elm2.elm;
+    const res = this.cnns._obj.find((row) => row.elm1 === elm1 && row.elm2 === elm2);
+    return res && res._row.cnn;
   }
 
   /**
@@ -852,7 +850,8 @@ class Scheme extends paper.Project {
     }
     // иначе перерисовываем контуры
     else if(!this._attr._from_service) {
-      setTimeout(() => this.contours.forEach(l => l.redraw()), 70);
+      //setTimeout(() => this.contours.forEach(l => l.redraw()), 70);
+      this.register_change(true);
     }
 
     _dp._manager.emit_async('update', {}, {x1: true, x2: true, y1: true, y2: true, a1: true, a2: true, cnn1: true, cnn2: true, info: true});
@@ -866,32 +865,39 @@ class Scheme extends paper.Project {
    */
   save_coordinates(attr) {
 
-    const {_attr, bounds, ox} = this;
+    try {
+      const {_attr, bounds, ox} = this;
 
-    if(!bounds) {
-      return;
+      if(!bounds) {
+        return;
+      }
+
+      _attr._saving = true;
+      ox._data._loading = true;
+
+      // устанавливаем размеры в характеристике
+      ox.x = bounds.width.round(1);
+      ox.y = bounds.height.round(1);
+      ox.s = this.area;
+
+      // чистим табчасти, которые будут перезаполнены
+      ox.cnn_elmnts.clear();
+      ox.glasses.clear();
+
+      // вызываем метод save_coordinates в дочерних слоях
+      this.contours.forEach((contour) => contour.save_coordinates());
+
+      // вызываем метод save_coordinates в слое соединителей
+      this.l_connective.save_coordinates();
+
+      // пересчет спецификации и цен
+      return $p.products_building.recalc(this, attr);
     }
-
-    _attr._saving = true;
-    ox._data._loading = true;
-
-    // устанавливаем размеры в характеристике
-    ox.x = bounds.width.round(1);
-    ox.y = bounds.height.round(1);
-    ox.s = this.area;
-
-    // чистим табчасти, которые будут перезаполнены
-    ox.cnn_elmnts.clear();
-    ox.glasses.clear();
-
-    // вызываем метод save_coordinates в дочерних слоях
-    this.contours.forEach((contour) => contour.save_coordinates());
-
-    // вызываем метод save_coordinates в слое соединителей
-    this.l_connective.save_coordinates();
-
-    // пересчет спецификации и цен
-    return $p.products_building.recalc(this, attr);
+    catch (err) {
+      const {msg, ui} = $p;
+      ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
+      throw err;
+    }
 
   }
 

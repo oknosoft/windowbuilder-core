@@ -19,7 +19,7 @@ Object.defineProperties(paper.Path.prototype, {
      * @return {number}
      */
   getDirectedAngle: {
-    value(point) {
+    value: function getDirectedAngle(point) {
       if(!point) {
         point = this.interiorPoint;
       }
@@ -35,7 +35,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @return {Array}
    */
   self_intersections: {
-    value(first) {
+    value: function self_intersections(first) {
       const {curves} = this;
       const res = [];
       curves.some((crv1, i1) => {
@@ -73,7 +73,7 @@ Object.defineProperties(paper.Path.prototype, {
    * Является ли путь самопересекающимся
    */
   is_self_intersected: {
-    value() {
+    value: function is_self_intersected() {
       return this.self_intersections(true).length > 0;
     }
   },
@@ -82,7 +82,7 @@ Object.defineProperties(paper.Path.prototype, {
      * Угол по отношению к соседнему пути _other_ в точке _point_
      */
   angle_to: {
-      value : function(other, point, interior, round){
+      value : function angle_to(other, point, interior, round){
         const p1 = this.getNearestPoint(point),
           p2 = other.getNearestPoint(point),
           t1 = this.getTangentAt(this.getOffsetOf(p1)),
@@ -95,8 +95,7 @@ Object.defineProperties(paper.Path.prototype, {
           res = 180 - (res - 180);
         }
         return round ? res.round(round) : res.round(1);
-      },
-      enumerable : false
+      }
     },
 
   /**
@@ -104,10 +103,10 @@ Object.defineProperties(paper.Path.prototype, {
      * @return {Boolean}
      */
   is_linear: {
-    value() {
+    value: function is_linear() {
       const {curves, firstCurve} = this;
       // если в пути единственная кривая и она прямая - путь прямой
-      if(curves.length === 1 && firstCurve.isLinear()) {
+      if(curves.length === 1 && (!firstCurve.hasHandles() || firstCurve.isLinear())) {
         return true;
       }
       // если в пути есть искривления, путь кривой
@@ -135,7 +134,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @return {Boolean}
    */
   is_nearest: {
-    value(point, sticking) {
+    value: function is_nearest(point, sticking) {
       return point.is_nearest(this.getNearestPoint(point), sticking);
     }
   },
@@ -147,7 +146,7 @@ Object.defineProperties(paper.Path.prototype, {
      * @return {paper.Path}
      */
   get_subpath: {
-      value(point1, point2) {
+      value: function get_subpath(point1, point2) {
         let tmp;
 
         if(!this.length || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
@@ -211,7 +210,7 @@ Object.defineProperties(paper.Path.prototype, {
      * @return {paper.Path}
      */
   equidistant: {
-      value(delta, elong) {
+      value: function equidistant(delta, elong) {
 
         let normal = this.getNormalAt(0);
         const res = new paper.Path({
@@ -265,7 +264,7 @@ Object.defineProperties(paper.Path.prototype, {
      * Удлиняет путь касательными в начальной и конечной точках
      */
   elongation: {
-      value(delta) {
+      value: function elongation(delta) {
 
         if(delta){
           if(this.is_linear()) {
@@ -294,7 +293,7 @@ Object.defineProperties(paper.Path.prototype, {
      * @return other_point {paper.Point} - если указано, контролируем вектор пересечения
      */
   intersect_point: {
-      value(path, point, elongate, other_point) {
+      value: function intersect_point(path, point, elongate, other_point) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
 
@@ -376,7 +375,7 @@ Object.defineProperties(paper.Path.prototype, {
    * Определяет положение точки относительно пути в окрестности interior
    */
   point_pos: {
-    value(point, interior) {
+    value: function point_pos(point, interior) {
       const np = this.getNearestPoint(interior);
       const offset = this.getOffsetOf(np);
       const line = new paper.Line(np, np.add(this.getTangentAt(offset)));
@@ -456,7 +455,7 @@ Object.defineProperties(paper.Point.prototype, {
 	 * @return {Boolean}
 	 */
 	is_nearest: {
-		value(point, sticking) {
+		value: function is_nearest(point, sticking) {
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }
@@ -473,7 +472,7 @@ Object.defineProperties(paper.Point.prototype, {
 	 * @return {number}
 	 */
 	point_pos: {
-		value(x1,y1, x2,y2){
+		value: function point_pos(x1,y1, x2,y2){
 			if (Math.abs(x1-x2) < 0.2){
 				// вертикаль  >0 - справа, <0 - слева,=0 - на линии
 				return (this.x-x1)*(y1-y2);
@@ -598,7 +597,7 @@ Object.defineProperties(paper.Point.prototype, {
 	 * @return {paper.Point}
 	 */
 	snap_to_angle: {
-		value(snapAngle) {
+		value: function snap_to_angle(snapAngle) {
 
 			if(!snapAngle){
         snapAngle = Math.PI*2/8;
@@ -611,12 +610,12 @@ Object.defineProperties(paper.Point.prototype, {
 				diry = Math.sin(angle),
 				d = dirx*this.x + diry*this.y;
 
-			return new paper.Point(dirx*d, diry*d);
+			return new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
 
   bind_to_nodes: {
-	  value(sticking, {activeLayer}) {
+	  value: function bind_to_nodes(sticking, {activeLayer}) {
       return activeLayer && activeLayer.nodes.some((point) => {
         if(point.is_nearest(this, sticking)){
           this.x = point.x;

@@ -61,7 +61,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
       // проверяем заполненность системы
       if(this.project._dp.sys.empty()) {
         const {msg, ui} = $p;
-        ui.dialogs.alert({text: msg.bld_not_sys, title: msg.bld_title});
+        ui && ui.dialogs.alert({text: msg.bld_not_sys, title: msg.bld_title});
       }
     }
   }

@@ -123,7 +123,7 @@ class GlassSegment {
 
     // если узлы не совпадают - дальше не смотрим
     const point = segm.b;
-    if(!this.e.is_nearest(point)) {
+    if(!this.e.is_nearest(point, 0)) {
       return false;
     }
 
@@ -144,7 +144,7 @@ class GlassSegment {
         return false;
       }
       // проверяем для обычного узла
-      else if(by_angle === undefined || curr_profile.cnn_point('b').profile === segm_profile) {
+      else if(by_angle === undefined || curr_profile.rays.b.profile === segm_profile) {
         return true;
       }
     }
@@ -156,7 +156,7 @@ class GlassSegment {
         return false;
       }
       // проверяем для обычного узла
-      else if(by_angle === undefined || curr_profile.cnn_point('e').profile === segm_profile) {
+      else if(by_angle === undefined || curr_profile.rays.e.profile === segm_profile) {
         return true;
       }
     }
@@ -168,7 +168,7 @@ class GlassSegment {
         return false;
       }
       // проверяем для обычного узла
-      else if(by_angle === undefined || segm_profile.cnn_point('b').profile == curr_profile) {
+      else if(by_angle === undefined || segm_profile.rays.b.profile == curr_profile) {
         return true;
       }
     }
@@ -180,7 +180,7 @@ class GlassSegment {
         return false;
       }
       // проверяем для обычного узла
-      else if(by_angle === undefined || segm_profile.cnn_point('e').profile == curr_profile) {
+      else if(by_angle === undefined || segm_profile.rays.e.profile == curr_profile) {
         return true;
       }
     }
@@ -212,7 +212,7 @@ class PointMap extends Map {
 
   byPoint(point) {
     for(const [key, value] of this) {
-      if(point.is_nearest(key)) {
+      if(point.is_nearest(key, 0)) {
         return value.length > 2 && value;
       }
     }
@@ -520,6 +520,49 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Вычисляет рейтинг контура для заполнения
+   * @param glcontour
+   * @param glass
+   * @return {number}
+   */
+  calck_rating(glcontour, glass) {
+
+    const {outer_profiles} = glass;
+    let crating = 0;
+
+    // если есть привязанные профили, используем их. иначе - координаты узлов
+    if (outer_profiles.length) {
+      for(const cnt of glcontour) {
+        for(const curr of outer_profiles) {
+          if(cnt.profile == curr.profile && cnt.b.is_nearest(curr.b) && cnt.e.is_nearest(curr.e)) {
+            crating++;
+            break;
+          }
+        }
+        if (crating > 2) {
+          break;
+        }
+      }
+    }
+    else {
+      const {nodes} = glass;
+      for(const cnt of glcontour) {
+        for(const node of nodes) {
+          if (cnt.b.is_nearest(node)) {
+            crating++;
+            break;
+          }
+        }
+        if (crating > 2) {
+          break;
+        }
+      }
+    }
+
+    return crating;
+  }
+
+  /**
    * Получает замкнутые контуры, ищет подходящие створки или заполнения, при необходимости создаёт новые
    * @method glass_recalc
    * @for Contour
@@ -529,79 +572,36 @@ class Contour extends AbstractFilling(paper.Layer) {
     const glasses = this.glasses(true); // массив старых заполнений
     const binded = new Set();
 
-    function calck_rating(glcontour, glass) {
-
-      const {outer_profiles} = glass;
-
-      // вычисляем рейтинг
-      let crating = 0;
-
-      // если есть привязанные профили, используем их. иначе - координаты узлов
-      if (outer_profiles.length) {
-        glcontour.some((cnt) => {
-          outer_profiles.some((curr) => {
-            if (cnt.profile == curr.profile &&
-              cnt.b.is_nearest(curr.b) &&
-              cnt.e.is_nearest(curr.e)) {
-              crating++;
-              return true;
-            }
-          });
-          if (crating > 2) {
-            return true;
-          }
-        });
-      }
-      else {
-        const {nodes} = glass;
-        glcontour.some((cnt) => {
-          nodes.some((node) => {
-            if (cnt.b.is_nearest(node)) {
-              crating++;
-              return true;
-            }
-          });
-          if (crating > 2) {
-            return true;
-          }
-        });
-      }
-
-      return crating;
-
-    }
-
     // сначала, пробегаем по заполнениям и пытаемся оставить их на месте
-    glasses.forEach((glass) => {
+    for(const glass of glasses) {
       if (glass.visible) {
-        return;
+        continue;
       }
-      glass_contours.some((glcontour) => {
+      for(const glcontour of glass_contours) {
         if (binded.has(glcontour)) {
-          return;
+          continue;
         }
-        if (calck_rating(glcontour, glass) > 2) {
+        if (this.calck_rating(glcontour, glass) > 2) {
           glass.path = glcontour;
           glass.visible = true;
           if (glass instanceof Filling) {
             glass.redraw();
           }
           binded.add(glcontour);
-          return true;
+          break;
         }
-      });
-    });
+      }
+    }
 
     // бежим по найденным контурам заполнений и выполняем привязку
-    glass_contours.forEach((glcontour) => {
-
+    for(const glcontour of glass_contours) {
       if (binded.has(glcontour)) {
-        return;
+        continue;
       }
 
       let rating = 0, glass, crating, cglass, glass_center;
 
-      for (let g in glasses) {
+      for (const g in glasses) {
 
         glass = glasses[g];
         if (glass.visible) {
@@ -609,7 +609,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
 
         // вычисляем рейтинг
-        crating = calck_rating(glcontour, glass);
+        crating = this.calck_rating(glcontour, glass);
 
         if (crating > rating || !cglass) {
           rating = crating;
@@ -649,7 +649,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         cglass = new Filling({proto: glass, parent: this, path: glcontour});
         cglass.redraw();
       }
-    });
+    }
   }
 
   /**
@@ -674,14 +674,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // для всех профилей контура
-    this.profiles.forEach((p) => {
-
+    for(const p of this.profiles) {
       const sort = GlassSegment.fn_sort.bind(p.generatrix);
 
       // ищем примыкания T к текущему профилю
       const ip = p.joined_imposts();
-      const pb = p.cnn_point('b');
-      const pe = p.cnn_point('e');
+      const {b: pb, e: pe} = p.rays;
 
       // для створочных импостов используем не координаты их b и e, а ближайшие точки примыкающих образующих
       const pbg = pb.is_t && pb.profile.d0 ? pb.profile.generatrix.getNearestPoint(p.b) : p.b;
@@ -738,8 +736,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(pb.is_x || pe.is_x) {
         push_new(p, peg, pbg, true);
       }
-
-    });
+    }
 
     return nodes;
   }
@@ -769,22 +766,22 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get nodes() {
     const nodes = [];
-    this.profiles.forEach((p) => {
+    this.profiles.forEach(({b, e}) => {
       let findedb;
       let findede;
       nodes.forEach((n) => {
-        if (p.b.is_nearest(n)) {
+        if (b && b.is_nearest(n)) {
           findedb = true;
         }
-        if (p.e.is_nearest(n)) {
+        if (e && e.is_nearest(n)) {
           findede = true;
         }
       });
-      if (!findedb) {
-        nodes.push(p.b.clone());
+      if (!findedb && b) {
+        nodes.push(b.clone());
       }
-      if (!findede) {
-        nodes.push(p.e.clone());
+      if (!findede && e) {
+        nodes.push(e.clone());
       }
     });
     return nodes;
@@ -801,19 +798,19 @@ class Contour extends AbstractFilling(paper.Layer) {
       let findedb;
       let findede;
       for(const [key, value] of nodes) {
-        if (b.is_nearest(key)) {
+        if (b && b.is_nearest(key)) {
           value.push({profile, point: 'b'})
           findedb = true;
         }
-        if (e.is_nearest(key)) {
+        if (e && e.is_nearest(key)) {
           value.push({profile, point: 'e'})
           findede = true;
         }
       }
-      if (!findedb) {
+      if (!findedb && b) {
         nodes.set(b.clone(), [{profile, point: 'b'}]);
       }
-      if (!findede) {
+      if (!findede && e) {
         nodes.set(e.clone(), [{profile, point: 'e'}]);
       }
     });
@@ -1935,23 +1932,33 @@ class Contour extends AbstractFilling(paper.Layer) {
     _by_insets.removeChildren();
     !this.project._attr._saving && _by_spec.removeChildren();
 
+    //$p.job_prm.debug && console.profile();
+
     // сначала перерисовываем все профили контура
-    this.profiles.forEach((elm) => elm.redraw());
+    for(const elm of this.profiles) {
+      elm.redraw();
+    }
 
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
+
+    //$p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
     this.draw_opening();
 
     // перерисовываем вложенные контуры
-    this.contours.forEach((elm) => elm.redraw());
+    for(const elm of this.contours) {
+      elm.redraw();
+    }
 
     // рисуем ошибки соединений
     this.draw_cnn_errors();
 
     // перерисовываем все водоотливы контура
-    this.sectionals.forEach((elm) => elm.redraw());
+    for(const elm of this.sectionals) {
+      elm.redraw();
+    }
 
     // информируем мир о новых размерах нашего контура
     this.notify(this, 'contour_redrawed', this._attr._bounds);

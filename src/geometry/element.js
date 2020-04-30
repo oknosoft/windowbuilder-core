@@ -380,7 +380,7 @@ class BuilderElement extends paper.Group {
 
   // номер элемента - свойство только для чтения
   get elm() {
-    return this._row ? this._row.elm : 0;
+    return (this._row && this._row._obj.elm) || 0;
   }
 
   // информация для редактора свойств
@@ -396,7 +396,7 @@ class BuilderElement extends paper.Group {
 
   // ширина
   get width() {
-    return this.nom.width || 80;
+    return this.inset.width(this);
   }
 
   // толщина (для заполнений и, возможно, профилей в 3D)
@@ -437,7 +437,7 @@ class BuilderElement extends paper.Group {
 
   // вставка
   get inset() {
-    return (this._row ? this._row.inset : null) || $p.cat.inserts.get();
+    return $p.cat.inserts.get(this._row && this._row._obj.inset);
   }
   set inset(v) {
     this.set_inset(v);

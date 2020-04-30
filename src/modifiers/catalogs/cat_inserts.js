@@ -324,36 +324,32 @@
         return _data.nom;
       }
 
-      const main_rows = [];
       let _nom;
-
-      const {check_params} = ProductsBuilding;
-
-      this.specification.find_rows({is_main_elm: true}, (row) => {
-        // если есть элемент, фильтруем по параметрам
-        if(elm && !check_params({
-          params: this.selection_params,
-          ox: elm.project.ox,
-          elm: elm,
-          row_spec: row,
-          cnstr: 0,
-          origin: elm.fake_origin || 0,
-        })) {
-          return;
-        }
-        main_rows.push(row)
-      });
+      let main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+      if(main_rows.length > 1 && elm) {
+        const {check_params} = ProductsBuilding;
+        main_rows = main_rows.filter((row) => {
+          return check_params({
+            params: this.selection_params,
+            ox: elm.project.ox,
+            elm: elm,
+            row_spec: row,
+            cnstr: 0,
+            origin: elm.fake_origin || 0,
+          });
+        });
+      }
 
       if(!main_rows.length && !strict && this.specification.count()){
         main_rows.push(this.specification.get(0))
       }
 
       if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
-        if(main_rows[0].nom == this){
-          _nom = cat.nom.get()
+        if(main_rows[0].nom == this) {
+          _nom = cat.nom.get();
         }
-        else{
-          _nom = main_rows[0].nom.nom(elm, strict)
+        else {
+          _nom = main_rows[0].nom.nom(elm, strict);
         }
       }
       else if(main_rows.length){
@@ -384,6 +380,28 @@
       }
 
       return _data.nom;
+    }
+
+    /**
+     * Ширина основной номенклатуры вставки
+     * @param elm
+     * @param strict
+     * @return {*|number}
+     */
+    width(elm, strict) {
+      const {_data} = this;
+      if(!_data.width) {
+        // если у всех основных номенклатур одинаковая ширина, её и возвращаем без фильтра
+        const widths = new Set();
+        this.specification._obj.filter(({is_main_elm}) => is_main_elm).forEach(({_row}) => widths.add(_row.nom.width));
+        if(widths.size === 1) {
+          _data.width = widths.values()[0];
+        }
+        else {
+          _data.width = -1;
+        }
+      }
+      return (_data.width > 0 ? _data.width : this.nom(elm, strict).width) || 80;
     }
 
     /**
@@ -639,6 +657,7 @@
         // для вставок в профиль способ расчета количества не учитывается
         else if(profile_items.includes(_row.elm_type) || count_calc_method == ДляЭлемента){
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
+          // размер может уточняться по соединениям
           if(count_calc_method == ПоСоединениям){
             for(const {cnn} of [elm.cnn_point('b'), elm.cnn_point('e')]) {
               if(cnn) {
