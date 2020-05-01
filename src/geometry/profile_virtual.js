@@ -161,7 +161,6 @@ class ProfileVirtual extends Profile {
 
     this.children.forEach((elm) => {
       if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
         elm.redraw();
       }
     });

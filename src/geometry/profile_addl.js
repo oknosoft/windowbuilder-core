@@ -297,16 +297,6 @@ class ProfileAddl extends ProfileItem {
 
     }
 
-    // если мы в обсервере и есть T и в массиве обработанных есть примыкающий T - пересчитываем
-    if(moved && moved_fact){
-      // imposts = this.joined_imposts();
-      // imposts = imposts.inner.concat(imposts.outer);
-      // for(var i in imposts){
-      // 	if(moved.profiles.indexOf(imposts[i]) == -1){
-      // 		imposts[i].profile.observer(this);
-      // 	}
-      // }
-    }
   }
 
   glass_segment() {

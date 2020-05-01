@@ -237,6 +237,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this._attr = {};
 
+    // узлы и рёбра текущего слоя
+    this._skeleton = new Skeleton(this);
+
     const {ox, l_connective} = this.project;
 
     // строка в таблице конструкций
@@ -1932,7 +1935,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     _by_insets.removeChildren();
     !this.project._attr._saving && _by_spec.removeChildren();
 
-    //$p.job_prm.debug && console.profile();
+    $p.job_prm.debug && console.profile();
 
     // сначала перерисовываем все профили контура
     for(const elm of this.profiles) {
@@ -1942,7 +1945,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
 
-    //$p.job_prm.debug && console.profileEnd();
+    $p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
     this.draw_opening();

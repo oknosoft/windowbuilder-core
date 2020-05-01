@@ -16,7 +16,7 @@ module.exports = gulp;
 gulp.task('build-drawer', function () {
   return gulp.src([
     './src/editor/*.js',
-    './src/geometry/*.js',
+    './src/geometry/**/*.js',
     './src/modifiers/common/*.js',
     './src/modifiers/enums/*.js',
     './src/modifiers/catalogs/*.js',

@@ -198,6 +198,12 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  constructor(attr) {
+    super(attr);
+    // узлы и рёбра слоя соединителей
+    this._skeleton = new Skeleton(this);
+  }
+
   redraw() {
     this.children.forEach((elm) => elm.redraw());
   }

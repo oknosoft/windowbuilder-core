@@ -536,14 +536,9 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row} = this;
+    const {parent, project, _row} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
-
-    if (observer){
-      project._scope.eve.off(consts.move_points, observer);
-      delete this.observer;
-    }
 
     if(_row && _row._owner && project.ox === _row._owner._owner){
       _row._owner.del(_row);

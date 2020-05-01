@@ -337,6 +337,10 @@ const AbstractFilling = (superclass) => class extends superclass {
     return this.children.filter((elm) => elm instanceof Contour);
   }
 
+  get skeleton() {
+    return this._skeleton;
+  }
+
   get l_dimensions() {
     const {_attr} = this;
     return _attr._dimlns || (_attr._dimlns = new DimensionDrawer({parent: this}));
@@ -535,6 +539,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     super({parent: attr.parent});
 
     this._attr = {};
+
+    this._skeleton = new Skeleton(this);
 
     const {ox, l_connective} = this.project;
 
@@ -1966,6 +1972,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     _by_insets.removeChildren();
     !this.project._attr._saving && _by_spec.removeChildren();
 
+    $p.job_prm.debug && console.profile();
 
     for(const elm of this.profiles) {
       elm.redraw();
@@ -1973,6 +1980,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this.glass_recalc();
 
+    $p.job_prm.debug && console.profileEnd();
 
     this.draw_opening();
 
@@ -4107,14 +4115,9 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row} = this;
+    const {parent, project, _row} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
-
-    if (observer){
-      project._scope.eve.off(consts.move_points, observer);
-      delete this.observer;
-    }
 
     if(_row && _row._owner && project.ox === _row._owner._owner){
       _row._owner.del(_row);
@@ -4211,6 +4214,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   initialize(attr) {
+
+    this._skeleton = new Skeleton(this);
 
     const _row = attr.row;
     const {_attr, project} = this;
@@ -6944,7 +6949,7 @@ class ProfileItem extends GeneratrixElement {
 
   initialize(attr) {
 
-    const {project, _attr, _row} = this;
+    const {project, _attr, _row, skeleton} = this;
     const h = project.bounds.height + project.bounds.y;
 
     if(attr.r) {
@@ -6989,27 +6994,15 @@ class ProfileItem extends GeneratrixElement {
     this.addChild(_attr.path);
     this.addChild(_attr.generatrix);
 
+    skeleton.addProfile(this);
+
   }
 
-  observer(an) {
-    const {profiles} = an;
-    if(profiles) {
-      let binded;
-      if(!profiles.includes(this)) {
-        for(const profile of profiles) {
-          if(profile instanceof Onlay && !(this instanceof Onlay)) {
-            continue;
-          }
-          binded = true;
-          this.do_bind(profile, this.cnn_point('b'), this.cnn_point('e'), an);
-        }
-        binded && profiles.push(this);
-      }
-    }
-    else if(an instanceof Profile || an instanceof ProfileConnective) {
-      this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
-    }
+  get skeleton() {
+    return this.parent.skeleton;
   }
+
+
 
   do_bind(profile, bcnn, ecnn, moved) {
 
@@ -7095,14 +7088,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
 
-    if(moved && moved_fact) {
-      const imposts = this.joined_imposts();
-      imposts.inner.concat(imposts.outer).forEach((impost) => {
-        if(moved.profiles.indexOf(impost) == -1) {
-          impost.profile.observer(this);
-        }
-      });
-    }
   }
 
   cnn_side(profile, interior, rays) {
@@ -7680,7 +7665,6 @@ class ProfileItem extends GeneratrixElement {
 
     this.children.forEach((elm) => {
       if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
         elm.redraw();
       }
     });
@@ -7854,10 +7838,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}, observer} = this;
-
-      this.observer = observer.bind(this);
-      _scope.eve.on(consts.move_points, this.observer);
+      const {project: {_scope, ox}} = this;
 
       this.layer.on_insert_elm(this);
 
@@ -8368,8 +8349,6 @@ class ProfileAddl extends ProfileItem {
 
     }
 
-    if(moved && moved_fact){
-    }
   }
 
   glass_segment() {
@@ -8505,6 +8484,11 @@ class ProfileConnective extends ProfileItem {
 
 
 class ConnectiveLayer extends paper.Layer {
+
+  constructor(attr) {
+    super(attr);
+    this._skeleton = new Skeleton(this);
+  }
 
   redraw() {
     this.children.forEach((elm) => elm.redraw());
@@ -8648,11 +8632,7 @@ class Onlay extends ProfileItem {
 
   constructor(attr) {
     super(attr);
-    if(this.parent) {
-      const {project: {_scope}, observer} = this;
-      this.observer = observer.bind(this);
-      _scope.eve.on(consts.move_points, this.observer);
-    }
+
     if(attr.region) {
       this.region = attr.region;
     }
@@ -9047,7 +9027,6 @@ class ProfileVirtual extends Profile {
 
     this.children.forEach((elm) => {
       if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
         elm.redraw();
       }
     });
@@ -9089,7 +9068,9 @@ class Scheme extends paper.Project {
       _vis_timer: 0,
     };
 
-    const _changes = this._ch = [];
+    this._ch = [];
+
+    this._skeleton = new Skeleton(this);
 
     this._dp = $p.dp.buyers_order.create();
 
@@ -10428,26 +10409,12 @@ class Scheme extends paper.Project {
   }
 
   get skeleton() {
-    for(const layer of this.layers) {
-      if(layer instanceof Skeleton) {
-        return layer;
-      }
-    }
+    return this._skeleton;
   }
 
   set skeleton(v) {
-    const {skeleton} = this;
-    if(!v && skeleton) {
-      skeleton.remove();
-    }
-    else if(v) {
-      if(skeleton) {
-        skeleton.initialize();
-      }
-      else {
-        new Skeleton();
-      }
-    }
+    const {_skeleton} = this;
+    _skeleton.skeleton = !!v;
   }
 
 }
@@ -10805,127 +10772,480 @@ EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
 
 
-class Skeleton extends paper.Layer {
-
-  constructor() {
-    super();
-    this.initialize();
+class Comparator {
+  constructor(compareFunction) {
+    this.compare = compareFunction || Comparator.defaultCompareFunction;
   }
 
-  by_nodes({gb, ge}, layer) {
-    for(const rib of this.children) {
-      const {b, e, generatrix} = rib;
-      if((b.is_nearest(gb) && e.is_nearest(ge)) || (b.is_nearest(ge) && e.is_nearest(gb))) {
-        return rib;
-      }
-      if(layer && generatrix.is_nearest(gb) && generatrix.is_nearest(ge)) {
-        return rib;
-      }
+  static defaultCompareFunction(a, b) {
+    if (a === b) {
+      return 0;
     }
+
+    return a < b ? -1 : 1;
   }
 
-  initialize() {
-    this.selections = [];
-    this.nodes = [];
-    for(const layer of this.project.layers) {
-      if(layer === this) {
-        continue;
-      }
-      layer.visible = false;
-      if(layer instanceof ConnectiveLayer || layer instanceof Contour) {
-        this.add_ribs(layer);
-      }
-    }
-    this.project.deselectAll();
+  equal(a, b) {
+    return this.compare(a, b) === 0;
   }
 
-  add_ribs({contours, profiles, layer}) {
-    for(const profile of profiles) {
-      const rib = this.by_nodes(profile, layer) || new SkeletonRib({parent: this, profile});
-      rib.select_by(profile);
-    }
-    if(contours) {
-      for(const layer of contours) {
-        this.add_ribs(layer);
-      }
-    }
+  lessThan(a, b) {
+    return this.compare(a, b) < 0;
   }
 
-  remove() {
-    const {layers} = this.project;
-    super.remove();
-    for(const layer of layers) {
-      layer.visible = true;
-    }
+  greaterThan(a, b) {
+    return this.compare(a, b) > 0;
   }
 
+  lessThanOrEqual(a, b) {
+    return this.lessThan(a, b) || this.equal(a, b);
+  }
+
+  greaterThanOrEqual(a, b) {
+    return this.greaterThan(a, b) || this.equal(a, b);
+  }
+
+  reverse() {
+    const compareOriginal = this.compare;
+    this.compare = (a, b) => compareOriginal(b, a);
+  }
 }
 
-EditorInvisible.Skeleton = Skeleton;
+
+class GraphEdge {
+  constructor(startVertex, endVertex, weight = 0) {
+    this.startVertex = startVertex;
+    this.endVertex = endVertex;
+    this.weight = weight;
+  }
+
+  getKey() {
+    const startVertexKey = this.startVertex.getKey();
+    const endVertexKey = this.endVertex.getKey();
+
+    return `${startVertexKey}_${endVertexKey}`;
+  }
+
+  reverse() {
+    const tmp = this.startVertex;
+    this.startVertex = this.endVertex;
+    this.endVertex = tmp;
+
+    return this;
+  }
+
+  toString() {
+    return this.getKey();
+  }
+}
 
 
-class SkeletonRib extends paper.Group {
+class Graph {
+  constructor(owner) {
+    this.vertices = {};
+    this.edges = {};
+    this.isDirected = true;
+    this.owner = owner;
+  }
 
-  constructor({parent, profile}) {
-    super({parent});
-    const def = {
-      parent: this,
-      strokeColor: '#333',
-      strokeScaling: false,
-      guide: true,
+  addVertex(newVertex) {
+    this.vertices[newVertex.getKey()] = newVertex;
+
+    return this;
+  }
+
+  getVertexByKey(vertexKey) {
+    return this.vertices[vertexKey];
+  }
+
+  getNeighbors(vertex) {
+    return vertex.getNeighbors();
+  }
+
+  getAllVertices() {
+    return Object.values(this.vertices);
+  }
+
+  getAllEdges() {
+    return Object.values(this.edges);
+  }
+
+  addEdge(edge) {
+    let startVertex = this.getVertexByKey(edge.startVertex.getKey());
+    let endVertex = this.getVertexByKey(edge.endVertex.getKey());
+
+    if (!startVertex) {
+      this.addVertex(edge.startVertex);
+      startVertex = this.getVertexByKey(edge.startVertex.getKey());
+    }
+
+    if (!endVertex) {
+      this.addVertex(edge.endVertex);
+      endVertex = this.getVertexByKey(edge.endVertex.getKey());
+    }
+
+    if (this.edges[edge.getKey()]) {
+      throw new Error('Edge has already been added before');
+    } else {
+      this.edges[edge.getKey()] = edge;
+    }
+
+    if (this.isDirected) {
+      startVertex.addEdge(edge);
+    } else {
+      startVertex.addEdge(edge);
+      endVertex.addEdge(edge);
+    }
+
+    return this;
+  }
+
+  deleteEdge(edge) {
+    if (this.edges[edge.getKey()]) {
+      delete this.edges[edge.getKey()];
+    } else {
+      throw new Error('Edge not found in graph');
+    }
+
+    const startVertex = this.getVertexByKey(edge.startVertex.getKey());
+    const endVertex = this.getVertexByKey(edge.endVertex.getKey());
+
+    startVertex.deleteEdge(edge);
+    endVertex.deleteEdge(edge);
+  }
+
+  findEdge(startVertex, endVertex) {
+    const vertex = this.getVertexByKey(startVertex.getKey());
+
+    if (!vertex) {
+      return null;
+    }
+
+    return vertex.findEdge(endVertex);
+  }
+
+  getWeight() {
+    return this.getAllEdges().reduce((weight, graphEdge) => {
+      return weight + graphEdge.weight;
+    }, 0);
+  }
+
+  reverse() {
+    this.getAllEdges().forEach((edge) => {
+      this.deleteEdge(edge);
+
+      edge.reverse();
+
+      this.addEdge(edge);
+    });
+
+    return this;
+  }
+
+  getVerticesIndices() {
+    const verticesIndices = {};
+    this.getAllVertices().forEach((vertex, index) => {
+      verticesIndices[vertex.getKey()] = index;
+    });
+
+    return verticesIndices;
+  }
+
+  getAdjacencyMatrix() {
+    const vertices = this.getAllVertices();
+    const verticesIndices = this.getVerticesIndices();
+
+    const adjacencyMatrix = Array(vertices.length).fill(null).map(() => {
+      return Array(vertices.length).fill(Infinity);
+    });
+
+    vertices.forEach((vertex, vertexIndex) => {
+      vertex.getNeighbors().forEach((neighbor) => {
+        const neighborIndex = verticesIndices[neighbor.getKey()];
+        adjacencyMatrix[vertexIndex][neighborIndex] = this.findEdge(vertex, neighbor).weight;
+      });
+    });
+
+    return adjacencyMatrix;
+  }
+
+  toString() {
+    return Object.keys(this.vertices).toString();
+  }
+}
+
+
+class LinkedList {
+  constructor(comparatorFunction) {
+    this.head = null;
+
+    this.tail = null;
+
+    this.compare = new Comparator(comparatorFunction);
+  }
+
+  prepend(value) {
+    const newNode = new LinkedListNode(value, this.head);
+    this.head = newNode;
+
+    if (!this.tail) {
+      this.tail = newNode;
+    }
+
+    return this;
+  }
+
+  append(value) {
+    const newNode = new LinkedListNode(value);
+
+    if (!this.head) {
+      this.head = newNode;
+      this.tail = newNode;
+
+      return this;
+    }
+
+    this.tail.next = newNode;
+    this.tail = newNode;
+
+    return this;
+  }
+
+  delete(value) {
+    if (!this.head) {
+      return null;
+    }
+
+    let deletedNode = null;
+
+    while (this.head && this.compare.equal(this.head.value, value)) {
+      deletedNode = this.head;
+      this.head = this.head.next;
+    }
+
+    let currentNode = this.head;
+
+    if (currentNode !== null) {
+      while (currentNode.next) {
+        if (this.compare.equal(currentNode.next.value, value)) {
+          deletedNode = currentNode.next;
+          currentNode.next = currentNode.next.next;
+        } else {
+          currentNode = currentNode.next;
+        }
+      }
+    }
+
+    if (this.compare.equal(this.tail.value, value)) {
+      this.tail = currentNode;
+    }
+
+    return deletedNode;
+  }
+
+  find({ value = undefined, callback = undefined }) {
+    if (!this.head) {
+      return null;
+    }
+
+    let currentNode = this.head;
+
+    while (currentNode) {
+      if (callback && callback(currentNode.value)) {
+        return currentNode;
+      }
+
+      if (value !== undefined && this.compare.equal(currentNode.value, value)) {
+        return currentNode;
+      }
+
+      currentNode = currentNode.next;
+    }
+
+    return null;
+  }
+
+  deleteTail() {
+    const deletedTail = this.tail;
+
+    if (this.head === this.tail) {
+      this.head = null;
+      this.tail = null;
+
+      return deletedTail;
+    }
+
+
+    let currentNode = this.head;
+    while (currentNode.next) {
+      if (!currentNode.next.next) {
+        currentNode.next = null;
+      } else {
+        currentNode = currentNode.next;
+      }
+    }
+
+    this.tail = currentNode;
+
+    return deletedTail;
+  }
+
+  deleteHead() {
+    if (!this.head) {
+      return null;
+    }
+
+    const deletedHead = this.head;
+
+    if (this.head.next) {
+      this.head = this.head.next;
+    } else {
+      this.head = null;
+      this.tail = null;
+    }
+
+    return deletedHead;
+  }
+
+  fromArray(values) {
+    values.forEach(value => this.append(value));
+
+    return this;
+  }
+
+  toArray() {
+    const nodes = [];
+
+    let currentNode = this.head;
+    while (currentNode) {
+      nodes.push(currentNode);
+      currentNode = currentNode.next;
+    }
+
+    return nodes;
+  }
+
+  toString(callback) {
+    return this.toArray().map(node => node.toString(callback)).toString();
+  }
+
+  reverse() {
+    let currNode = this.head;
+    let prevNode = null;
+    let nextNode = null;
+
+    while (currNode) {
+      nextNode = currNode.next;
+
+      currNode.next = prevNode;
+
+      prevNode = currNode;
+      currNode = nextNode;
+    }
+
+    this.tail = this.head;
+    this.head = prevNode;
+
+    return this;
+  }
+}
+
+
+
+class Skeleton extends Graph {
+
+  addProfile(profile) {
+    console.log(`b: ${profile.b}`);
+  }
+}
+
+
+class GraphVertex {
+  constructor(value) {
+    if (value === undefined) {
+      throw new Error('Graph vertex must have a value');
+    }
+
+    const edgeComparator = (edgeA, edgeB) => {
+      if (edgeA.getKey() === edgeB.getKey()) {
+        return 0;
+      }
+
+      return edgeA.getKey() < edgeB.getKey() ? -1 : 1;
     };
-    let {generatrix: {segments}, b, e, gb, ge} = profile;
-    if(segments.length < 2) {
-      this.remove;
-      return;
-    }
-    if(b !== gb || e !== ge) {
-      segments = [gb, ...segments, ge];
-    }
-    this.generatrix = new paper.Path(Object.assign({segments}, def));
-    this.pb = new paper.Path.Circle(Object.assign({center: this.b, radius: 30}, def));
-    this.pe = new paper.Path.Circle(Object.assign({center: this.e, radius: 30}, def));
+
+    this.value = value;
+    this.edges = new LinkedList(edgeComparator);
   }
 
-  get b() {
-    return this.generatrix.firstSegment.point;
+  addEdge(edge) {
+    this.edges.append(edge);
+
+    return this;
   }
 
-  get e() {
-    return this.generatrix.lastSegment.point;
+  deleteEdge(edge) {
+    this.edges.delete(edge);
   }
 
-  select_by(profile) {
-    if(profile.selected && (!profile.b.selected && !profile.e.selected || profile.b.selected && profile.e.selected)) {
-      this.generatrix.strokeColor = '#00c';
-      this.generatrix.strokeWidth = 2;
-      this.pb.strokeColor = '#00c';
-      this.pe.strokeColor = '#00c';
-      this.pb.fillColor = '#00c';
-      this.pe.fillColor = '#00c';
-      this.save_selection(profile);
-    }
-    else if(profile.b.selected) {
-      const pt = this.b.is_nearest(profile.gb) ? 'pb' : 'pe';
-      this[pt].strokeColor = '#00c';
-      this[pt].fillColor = '#00c';
-      this.save_selection(profile);
-    }
-    else if(profile.e.selected) {
-      const pt = this.e.is_nearest(profile.ge) ? 'pe' : 'pb';
-      this[pt].strokeColor = '#00c';
-      this[pt].fillColor = '#00c';
-      this.save_selection(profile);
-    }
+  getNeighbors() {
+    const edges = this.edges.toArray();
+
+    const neighborsConverter = (node) => {
+      return node.value.startVertex === this ? node.value.endVertex : node.value.startVertex;
+    };
+
+    return edges.map(neighborsConverter);
   }
 
-  save_selection(profile) {
-    this.layer.selections.push({profile, selected: profile.selected, b: profile.b.selected, e: profile.e.selected});
+  getEdges() {
+    return this.edges.toArray().map(linkedListNode => linkedListNode.value);
   }
 
+  getDegree() {
+    return this.edges.toArray().length;
+  }
+
+  hasEdge(requiredEdge) {
+    const edgeNode = this.edges.find({
+      callback: edge => edge === requiredEdge,
+    });
+
+    return !!edgeNode;
+  }
+
+  hasNeighbor(vertex) {
+    const vertexNode = this.edges.find({
+      callback: edge => edge.startVertex === vertex || edge.endVertex === vertex,
+    });
+
+    return !!vertexNode;
+  }
+
+  findEdge(vertex) {
+    const edgeFinder = (edge) => {
+      return edge.startVertex === vertex || edge.endVertex === vertex;
+    };
+
+    const edge = this.edges.find({ callback: edgeFinder });
+
+    return edge ? edge.value : null;
+  }
+
+  getKey() {
+    return this.value;
+  }
+
+  deleteAllEdges() {
+    this.getEdges().forEach(edge => this.deleteEdge(edge));
+
+    return this;
+  }
+
+  toString(callback) {
+    return callback ? callback(this.value) : `${this.value}`;
+  }
 }
-
-EditorInvisible.SkeletonRib = SkeletonRib;
 
 
 class Pricing {

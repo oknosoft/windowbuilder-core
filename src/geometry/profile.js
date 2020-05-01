@@ -1117,7 +1117,7 @@ class ProfileItem extends GeneratrixElement {
    */
   initialize(attr) {
 
-    const {project, _attr, _row} = this;
+    const {project, _attr, _row, skeleton} = this;
     const h = project.bounds.height + project.bounds.y;
 
     if(attr.r) {
@@ -1164,35 +1164,20 @@ class ProfileItem extends GeneratrixElement {
     this.addChild(_attr.path);
     this.addChild(_attr.generatrix);
 
+    // добавляем профиль в скелетон
+    skeleton.addProfile(this);
+
   }
 
   /**
-   * ### Обсервер
-   * Наблюдает за изменениями контура и пересчитывает путь элемента при изменении соседних элементов
-   *
-   * @method observer
-   * @private
+   * Возвращает скелетон родителя
+   * @return {Skeleton}
    */
-  observer(an) {
-    const {profiles} = an;
-    if(profiles) {
-      let binded;
-      if(!profiles.includes(this)) {
-        // если среди профилей есть такой, к которму примыкает текущий, пробуем привязку
-        for(const profile of profiles) {
-          if(profile instanceof Onlay && !(this instanceof Onlay)) {
-            continue;
-          }
-          binded = true;
-          this.do_bind(profile, this.cnn_point('b'), this.cnn_point('e'), an);
-        }
-        binded && profiles.push(this);
-      }
-    }
-    else if(an instanceof Profile || an instanceof ProfileConnective) {
-      this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
-    }
+  get skeleton() {
+    return this.parent.skeleton;
   }
+
+
 
   /**
    * Вспомогательная функция обсервера, выполняет привязку узлов
@@ -1287,15 +1272,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
 
-    // если мы в обсервере и есть T и в массиве обработанных есть примыкающий T - пересчитываем
-    if(moved && moved_fact) {
-      const imposts = this.joined_imposts();
-      imposts.inner.concat(imposts.outer).forEach((impost) => {
-        if(moved.profiles.indexOf(impost) == -1) {
-          impost.profile.observer(this);
-        }
-      });
-    }
   }
 
   /**
@@ -2001,7 +1977,6 @@ class ProfileItem extends GeneratrixElement {
 
     this.children.forEach((elm) => {
       if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
         elm.redraw();
       }
     });
@@ -2227,11 +2202,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}, observer} = this;
-
-      // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
-      this.observer = observer.bind(this);
-      _scope.eve.on(consts.move_points, this.observer);
+      const {project: {_scope, ox}} = this;
 
       // Информируем контур о том, что у него появился новый ребёнок
       this.layer.on_insert_elm(this);
