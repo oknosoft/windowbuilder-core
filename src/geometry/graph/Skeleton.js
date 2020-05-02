@@ -86,8 +86,8 @@ class Skeleton extends Graph {
       const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
       if(left.length == 1 && right.length == 1) {
         // Если сторона соединения изнутри, делим в прямом направлении
-        if(cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint()) === $p.enm.cnn_sides.Изнутри) {
-          let edge = this.findEdge(left[0].vertex, right[0].vertex);
+        if(cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint) === $p.enm.cnn_sides.Изнутри) {
+          const edge = this.findEdge(left[0].vertex, right[0].vertex);
           if(edge) {
             this.deleteEdge(edge);
           }
@@ -95,12 +95,12 @@ class Skeleton extends Graph {
           this.addEdge(new GraphEdge({startVertex: vertex, endVertex: right[0].vertex, profile: cnn.profile}));
         }
         else {
-          edge = this.findEdge(right[0].vertex, left[0].vertex);
+          const edge = this.findEdge(right[0].vertex, left[0].vertex);
           if(edge) {
             this.deleteEdge(edge);
-            this.addEdge(new GraphEdge({startVertex: right[0].vertex, endVertex: vertex, profile: cnn.profile}));
-            this.addEdge(new GraphEdge({startVertex: vertex, endVertex: left[0].vertex, profile: cnn.profile}));
           }
+          this.addEdge(new GraphEdge({startVertex: right[0].vertex, endVertex: vertex, profile: cnn.profile}));
+          this.addEdge(new GraphEdge({startVertex: vertex, endVertex: left[0].vertex, profile: cnn.profile}));
         }
       }
       else {
