@@ -1,14 +1,18 @@
-
+/**
+ * Class representing a dot.
+ * @extends Point
+ */
 class GraphEdge {
   /**
    * @param {GraphVertex} startVertex
    * @param {GraphVertex} endVertex
-   * @param {number} [weight=1]
+   * @param {profile} ProfileItem
    */
-  constructor(startVertex, endVertex, weight = 0) {
+  constructor({startVertex, endVertex, profile}) {
     this.startVertex = startVertex;
     this.endVertex = endVertex;
-    this.weight = weight;
+    this.profile = profile;
+    this.weight = 0;
   }
 
   /**

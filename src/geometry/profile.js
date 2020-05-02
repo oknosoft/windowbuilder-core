@@ -765,6 +765,7 @@ class ProfileItem extends GeneratrixElement {
    */
   elm_props() {
     const {_attr, _row, project} = this;
+    const {blank} = $p.utils;
     // получаем список свойств
     const props = [];
     project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
@@ -786,7 +787,7 @@ class ProfileItem extends GeneratrixElement {
             project.ox.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
-              inset: $p.utils.blank.guid
+              inset: blank.guid
             }, (row) => {
               if(!prow || row.cnstr) {
                 prow = row;
@@ -799,7 +800,7 @@ class ProfileItem extends GeneratrixElement {
             project.ox.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
-              inset: $p.utils.blank.guid
+              inset: blank.guid
             }, (row) => {
               if(row.cnstr) {
                 prow = row;
@@ -819,7 +820,7 @@ class ProfileItem extends GeneratrixElement {
               project.ox.params.add({
                 param: prop,
                 cnstr: -_row.row,
-                inset: $p.utils.blank.guid,
+                inset: blank.guid,
                 value: v,
               });
             }
@@ -1119,6 +1120,7 @@ class ProfileItem extends GeneratrixElement {
 
     const {project, _attr, _row, skeleton} = this;
     const h = project.bounds.height + project.bounds.y;
+    const {job_prm, utils} = $p;
 
     if(attr.r) {
       _row.r = attr.r;
@@ -1159,14 +1161,29 @@ class ProfileItem extends GeneratrixElement {
     _attr.path.strokeColor = 'black';
     _attr.path.strokeWidth = 1;
     _attr.path.strokeScaling = false;
-    this.clr = _row.clr.empty() ? $p.job_prm.builder.base_clr : _row.clr;
+    this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
 
     this.addChild(_attr.path);
     this.addChild(_attr.generatrix);
 
     // добавляем профиль в скелетон
-    skeleton.addProfile(this);
-
+    if(!(this instanceof ProfileAddl)) {
+      if(utils.is_data_obj(attr.proto)) {
+        const {b, e} = _attr._rays;
+        for(const profile of this.parent.profiles) {
+          if(profile === this) {
+            continue;
+          }
+          if(!b.profile && profile.generatrix.is_nearest(this.b)) {
+            b.profile = profile;
+          }
+          if(!e.profile && profile.generatrix.is_nearest(this.e)) {
+            e.profile = profile;
+          }
+        }
+      }
+      skeleton.addProfile(this);
+    }
   }
 
   /**
@@ -1284,11 +1301,12 @@ class ProfileItem extends GeneratrixElement {
     if(!rays) {
       rays = this.rays;
     }
+    const {Изнутри, Снаружи} = $p.enm.cnn_sides;
     if(!rays || !interior || !rays.inner.length || ! rays.outer.length) {
-      return $p.enm.cnn_sides.Изнутри;
+      return Изнутри;
     }
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
-    rays.outer.getNearestPoint(interior).getDistance(interior, true) ? $p.enm.cnn_sides.Изнутри : $p.enm.cnn_sides.Снаружи;
+      rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
 
   /**
@@ -2106,6 +2124,21 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * Выясняет по таблице соединений, являются ли соединения на концах угловыми
+   */
+  is_corner() {
+    const {project, elm} = this;
+    const {_obj} = project.cnns;
+    const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
+      (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
+    );
+    return {
+      ab: rows.find(({node1}) => node1 === 'b'),
+      ae: rows.find(({node1}) => node1 === 'e')
+    }
+  }
+
+  /**
    * Вызывает одноименную функцию _scheme в контексте текущего профиля
    */
   check_distance(element, res, point, check_only) {
@@ -2163,6 +2196,12 @@ class ProfileItem extends GeneratrixElement {
 
   }
 
+  remove() {
+    if(!(this instanceof ProfileAddl)) {
+      skeleton.removeProfile(this);
+    }
+    super.remove();
+  }
 }
 
 

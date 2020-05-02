@@ -8,6 +8,7 @@ class Graph {
     this.edges = {};
     this.isDirected = true;
     this.owner = owner;
+    this.project = owner.project || owner;
   }
 
   /**

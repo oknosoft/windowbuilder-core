@@ -6633,6 +6633,7 @@ class ProfileItem extends GeneratrixElement {
 
   elm_props() {
     const {_attr, _row, project} = this;
+    const {blank} = $p.utils;
     const props = [];
     project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
       props.push(param);
@@ -6651,7 +6652,7 @@ class ProfileItem extends GeneratrixElement {
             project.ox.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
-              inset: $p.utils.blank.guid
+              inset: blank.guid
             }, (row) => {
               if(!prow || row.cnstr) {
                 prow = row;
@@ -6664,7 +6665,7 @@ class ProfileItem extends GeneratrixElement {
             project.ox.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
-              inset: $p.utils.blank.guid
+              inset: blank.guid
             }, (row) => {
               if(row.cnstr) {
                 prow = row;
@@ -6683,7 +6684,7 @@ class ProfileItem extends GeneratrixElement {
               project.ox.params.add({
                 param: prop,
                 cnstr: -_row.row,
-                inset: $p.utils.blank.guid,
+                inset: blank.guid,
                 value: v,
               });
             }
@@ -6951,6 +6952,7 @@ class ProfileItem extends GeneratrixElement {
 
     const {project, _attr, _row, skeleton} = this;
     const h = project.bounds.height + project.bounds.y;
+    const {job_prm, utils} = $p;
 
     if(attr.r) {
       _row.r = attr.r;
@@ -6989,13 +6991,28 @@ class ProfileItem extends GeneratrixElement {
     _attr.path.strokeColor = 'black';
     _attr.path.strokeWidth = 1;
     _attr.path.strokeScaling = false;
-    this.clr = _row.clr.empty() ? $p.job_prm.builder.base_clr : _row.clr;
+    this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
 
     this.addChild(_attr.path);
     this.addChild(_attr.generatrix);
 
-    skeleton.addProfile(this);
-
+    if(!(this instanceof ProfileAddl)) {
+      if(utils.is_data_obj(attr.proto)) {
+        const {b, e} = _attr._rays;
+        for(const profile of this.parent.profiles) {
+          if(profile === this) {
+            continue;
+          }
+          if(!b.profile && profile.generatrix.is_nearest(this.b)) {
+            b.profile = profile;
+          }
+          if(!e.profile && profile.generatrix.is_nearest(this.e)) {
+            e.profile = profile;
+          }
+        }
+      }
+      skeleton.addProfile(this);
+    }
   }
 
   get skeleton() {
@@ -7097,11 +7114,12 @@ class ProfileItem extends GeneratrixElement {
     if(!rays) {
       rays = this.rays;
     }
+    const {Изнутри, Снаружи} = $p.enm.cnn_sides;
     if(!rays || !interior || !rays.inner.length || ! rays.outer.length) {
-      return $p.enm.cnn_sides.Изнутри;
+      return Изнутри;
     }
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
-    rays.outer.getNearestPoint(interior).getDistance(interior, true) ? $p.enm.cnn_sides.Изнутри : $p.enm.cnn_sides.Снаружи;
+      rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
 
   set_generatrix_radius(height) {
@@ -7780,6 +7798,18 @@ class ProfileItem extends GeneratrixElement {
     return false;
   }
 
+  is_corner() {
+    const {project, elm} = this;
+    const {_obj} = project.cnns;
+    const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
+      (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
+    );
+    return {
+      ab: rows.find(({node1}) => node1 === 'b'),
+      ae: rows.find(({node1}) => node1 === 'e')
+    }
+  }
+
   check_distance(element, res, point, check_only) {
     return this.project.check_distance(element, this, res, point, check_only);
   }
@@ -7826,6 +7856,12 @@ class ProfileItem extends GeneratrixElement {
 
   }
 
+  remove() {
+    if(!(this instanceof ProfileAddl)) {
+      skeleton.removeProfile(this);
+    }
+    super.remove();
+  }
 }
 
 
@@ -10811,12 +10847,12 @@ class Comparator {
   }
 }
 
-
 class GraphEdge {
-  constructor(startVertex, endVertex, weight = 0) {
+  constructor({startVertex, endVertex, profile}) {
     this.startVertex = startVertex;
     this.endVertex = endVertex;
-    this.weight = weight;
+    this.profile = profile;
+    this.weight = 0;
   }
 
   getKey() {
@@ -10846,6 +10882,7 @@ class Graph {
     this.edges = {};
     this.isDirected = true;
     this.owner = owner;
+    this.project = owner.project || owner;
   }
 
   addVertex(newVertex) {
@@ -10974,6 +11011,17 @@ class Graph {
   }
 }
 
+
+class LinkedListNode {
+  constructor(value, next = null) {
+    this.value = value;
+    this.next = next;
+  }
+
+  toString(callback) {
+    return callback ? callback(this.value) : `${this.value}`;
+  }
+}
 
 class LinkedList {
   constructor(comparatorFunction) {
@@ -11151,31 +11199,119 @@ class LinkedList {
 }
 
 
-
 class Skeleton extends Graph {
 
+  vertexByPoint(point, vertices) {
+    return (vertices || this.getAllVertices())
+      .find((vertex) => vertex.point.is_nearest(point, 0));
+  }
+
+  vertexesByProfile(profile) {
+    const res = new Set();
+    this.getAllEdges().forEach((edge) => {
+      if(edge.profile === profile) {
+        res.add(edge.startVertex);
+        res.add(edge.endVertex);
+      }
+    });
+    return Array.from(res);
+  }
+
+  splitVertexes(profile, point) {
+    const {generatrix} = profile;
+    const res = {
+      left: [],
+      right: [],
+      offset: generatrix.getOffsetOf(generatrix.getNearestPoint(point)),
+    };
+    for(const vertex of this.vertexesByProfile(profile)) {
+      const offset = generatrix.getOffsetOf(generatrix.getNearestPoint(vertex.point));
+      if(offset < res.offset) {
+        res.left.push({vertex, offset});
+      }
+      else {
+        res.right.push({vertex, offset});
+      }
+    }
+    return res;
+  }
+
+  createVertexByPoint(point) {
+    const vertices = this.getAllVertices();
+    let vertex = this.vertexByPoint(point, vertices);
+    if(!vertex) {
+      vertex = new GraphVertex(vertices.length + 1, point);
+      this.addVertex(vertex);
+    }
+    return vertex;
+  }
+
+  addImpostEdges(cnn, vertex) {
+    if(cnn.profile && !cnn.profile_point) {
+      const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
+      if(left.length == 1 && right.length == 1) {
+        if(cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint()) === $p.enm.cnn_sides.Изнутри) {
+          let edge = this.findEdge(left[0].vertex, right[0].vertex);
+          if(edge) {
+            this.deleteEdge(edge);
+          }
+          this.addEdge(new GraphEdge({startVertex: left[0].vertex, endVertex: vertex, profile: cnn.profile}));
+          this.addEdge(new GraphEdge({startVertex: vertex, endVertex: right[0].vertex, profile: cnn.profile}));
+        }
+        else {
+          edge = this.findEdge(right[0].vertex, left[0].vertex);
+          if(edge) {
+            this.deleteEdge(edge);
+            this.addEdge(new GraphEdge({startVertex: right[0].vertex, endVertex: vertex, profile: cnn.profile}));
+            this.addEdge(new GraphEdge({startVertex: vertex, endVertex: left[0].vertex, profile: cnn.profile}));
+          }
+        }
+      }
+      else {
+      }
+    }
+  }
+
   addProfile(profile) {
-    console.log(`b: ${profile.b}`);
+    const b = this.createVertexByPoint(profile.b);
+    const e = this.createVertexByPoint(profile.e);
+    if(this.findEdge(b, e)) {
+      throw new Error('Edge has already been added before');
+    }
+    this.addEdge(new GraphEdge({startVertex: b, endVertex: e, profile}));
+
+    const {ab, ae} = profile.is_corner();
+    const {_rays} = profile._attr;
+    if(ab && ae) {
+      return;
+    }
+
+    let add;
+    if(_rays.b.profile && !_rays.b.profile.e.is_nearest(profile.b) && !_rays.b.profile.b.is_nearest(profile.b)) {
+      this.addImpostEdges(_rays.b, b);
+      add = true;
+    }
+    if(_rays.e.profile && !_rays.e.profile.b.is_nearest(profile.e) && !_rays.e.profile.e.is_nearest(profile.e)) {
+      this.addImpostEdges(_rays.e, e);
+      add = true;
+    }
+    if(add) {
+      this.addEdge(new GraphEdge({startVertex: e, endVertex: b, profile}));
+    }
+
+  }
+
+  removeProfile(profile) {
+
   }
 }
 
 
 class GraphVertex {
-  constructor(value) {
-    if (value === undefined) {
-      throw new Error('Graph vertex must have a value');
-    }
-
-    const edgeComparator = (edgeA, edgeB) => {
-      if (edgeA.getKey() === edgeB.getKey()) {
-        return 0;
-      }
-
-      return edgeA.getKey() < edgeB.getKey() ? -1 : 1;
-    };
-
+  constructor(value, point) {
     this.value = value;
-    this.edges = new LinkedList(edgeComparator);
+    this.point = point;
+    this.edges = new LinkedList(GraphVertex.edgeComparator);
   }
 
   addEdge(edge) {
@@ -11246,6 +11382,14 @@ class GraphVertex {
     return callback ? callback(this.value) : `${this.value}`;
   }
 }
+
+GraphVertex.edgeComparator = (edgeA, edgeB) => {
+  if (edgeA.getKey() === edgeB.getKey()) {
+    return 0;
+  }
+
+  return edgeA.getKey() < edgeB.getKey() ? -1 : 1;
+};
 
 
 class Pricing {
