@@ -17,11 +17,6 @@
  */
 class ProfileConnective extends ProfileItem {
 
-  constructor(attr) {
-    super(attr);
-    this.parent = this.project.l_connective;
-  }
-
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
    * @property d0
@@ -198,10 +193,8 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
-  constructor(attr) {
-    super(attr);
-    // узлы и рёбра слоя соединителей
-    this._skeleton = new Skeleton(this);
+  get skeleton() {
+    return this.project._skeleton;
   }
 
   redraw() {

@@ -430,7 +430,7 @@ class Scheme extends paper.Project {
       // первым делом создаём соединители и опорные линии
       o.coordinates.forEach((row) => {
         if(row.elm_type === $p.enm.elm_types.Соединитель) {
-          new ProfileConnective({row});
+          new ProfileConnective({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === $p.enm.elm_types.Линия) {
           new BaseLine({row});

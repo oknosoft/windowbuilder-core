@@ -143,6 +143,9 @@ class GlassSegment {
       segm_profile = segm_profile.parent;
     }
 
+    if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {
+      return false;
+    }
     if(curr_profile.gb.is_nearest(point, true)) {
       // проверяем для узла с несколькими профилями
       const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);

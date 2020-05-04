@@ -464,6 +464,9 @@ class GlassSegment {
       segm_profile = segm_profile.parent;
     }
 
+    if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {
+      return false;
+    }
     if(curr_profile.gb.is_nearest(point, true)) {
       const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);
       if(by_angle) {
@@ -5710,7 +5713,7 @@ Object.defineProperties(paper.Path.prototype, {
       value: function get_subpath(point1, point2) {
         let tmp;
 
-        if(!this.length || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
+        if(!this.length || !point1 || !point2 || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
           tmp = this.clone(false);
         }
         else if(point2.is_nearest(this.firstSegment.point) && point1.is_nearest(this.lastSegment.point)){
@@ -8403,11 +8406,6 @@ EditorInvisible.ProfileAddl = ProfileAddl;
 
 class ProfileConnective extends ProfileItem {
 
-  constructor(attr) {
-    super(attr);
-    this.parent = this.project.l_connective;
-  }
-
   get d0() {
     return 0;
   }
@@ -8527,9 +8525,8 @@ class ProfileConnective extends ProfileItem {
 
 class ConnectiveLayer extends paper.Layer {
 
-  constructor(attr) {
-    super(attr);
-    this._skeleton = new Skeleton(this);
+  get skeleton() {
+    return this.project._skeleton;
   }
 
   redraw() {
@@ -9408,7 +9405,7 @@ class Scheme extends paper.Project {
 
       o.coordinates.forEach((row) => {
         if(row.elm_type === $p.enm.elm_types.Соединитель) {
-          new ProfileConnective({row});
+          new ProfileConnective({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === $p.enm.elm_types.Линия) {
           new BaseLine({row});
