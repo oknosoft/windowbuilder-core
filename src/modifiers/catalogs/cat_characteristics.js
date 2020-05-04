@@ -191,10 +191,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
         // подмешиваем значения параметров
         let sprm = '';
-        this.params.find_rows({cnstr: 0}, (row) => {
-          if(row.param.include_to_name && sprm.indexOf(String(row.value)) == -1) {
+        this.params.find_rows({cnstr: 0}, ({param, value}) => {
+          if(param.include_to_name && sprm.indexOf(String(value)) == -1) {
             sprm && (sprm += ';');
-            sprm += String(row.value);
+            sprm += String(value);
           }
         });
         if(sprm) {
