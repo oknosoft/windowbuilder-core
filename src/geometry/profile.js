@@ -2198,7 +2198,7 @@ class ProfileItem extends GeneratrixElement {
 
   remove() {
     if(!(this instanceof ProfileAddl)) {
-      skeleton.removeProfile(this);
+      this.skeleton.removeProfile(this);
     }
     super.remove();
   }

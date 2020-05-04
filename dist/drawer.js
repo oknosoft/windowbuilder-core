@@ -452,9 +452,15 @@ class GlassSegment {
     let curr_profile = this.profile;
     let segm_profile = segm.profile;
     while (curr_profile instanceof ProfileAddl) {
+      if(!this.outer) {
+        this.outer = !curr_profile.is_collinear(curr_profile.parent);
+      }
       curr_profile = curr_profile.parent;
     }
     while (segm_profile instanceof ProfileAddl) {
+      if(!segm.outer) {
+        segm.outer = !segm_profile.is_collinear(segm_profile.parent);
+      }
       segm_profile = segm_profile.parent;
     }
 
@@ -7858,7 +7864,7 @@ class ProfileItem extends GeneratrixElement {
 
   remove() {
     if(!(this instanceof ProfileAddl)) {
-      skeleton.removeProfile(this);
+      this.skeleton.removeProfile(this);
     }
     super.remove();
   }
@@ -13403,10 +13409,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         }
 
         let sprm = '';
-        this.params.find_rows({cnstr: 0}, (row) => {
-          if(row.param.include_to_name && sprm.indexOf(String(row.value)) == -1) {
+        this.params.find_rows({cnstr: 0}, ({param, value}) => {
+          if(param.include_to_name && sprm.indexOf(String(value)) == -1) {
             sprm && (sprm += ';');
-            sprm += String(row.value);
+            sprm += String(value);
           }
         });
         if(sprm) {
