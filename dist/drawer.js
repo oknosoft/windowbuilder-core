@@ -13317,7 +13317,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     });
 
     const {product_params} = inset;
-    inset.used_params.forEach((param) => {
+    inset.used_params().forEach((param) => {
       if((!param.is_calculated || param.show_calculated) && !params.includes(param)) {
         const value = product_params.find({param});
         ts_params.add({
@@ -14477,9 +14477,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm({project, furn, cnstr}) {
 
     const fprms = project.ox.params;
-    const {direction} = $p.job_prm.properties;
+    const {CatNom, job_prm: {properties: {direction}}} = $p;
 
-    const aprm = furn.furn_set.add_furn_prm();
+    const aprm = furn.furn_set.used_params();
     aprm.sort((a, b) => {
       if (a.presentation > b.presentation) {
         return 1;
@@ -14506,17 +14506,15 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
 
       const {param} = prm_row;
-      project._dp.sys.furn_params.forEach((row) => {
-        if(row.param == param){
-          if(row.forcibly || forcibly){
-            prm_row.value = row.value;
-          }
-          prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
-          return false;
+      project._dp.sys[param instanceof CatNom ? 'params' : 'furn_params'].find_rows({param}, (row) => {
+        if(row.forcibly || forcibly){
+          prm_row.value = row.value;
         }
+        prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
+        return false;
       });
 
-      param.linked_values(param.params_links({
+      param.linked_values && param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}}
       }), prm_row);
@@ -14533,17 +14531,40 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   }
 
-  add_furn_prm(aprm = [], afurn_set = []) {
+  used_params(aprm = [], aset) {
 
-    if(afurn_set.indexOf(this.ref)!=-1){
+    if(!aset){
+      aset = new Set();
+    }
+    if(aset.has(this)) {
       return;
     }
+    aset.add(this);
 
-    afurn_set.push(this.ref);
+    if(this._data.used_params) {
+      return this._data.used_params;
+    }
 
-    this.selection_params.forEach((row) => {aprm.indexOf(row.param)==-1 && !row.param.is_calculated && aprm.push(row.param)});
+    const sprms = [];
 
-    this.specification.forEach((row) => {row.nom instanceof $p.CatFurns && row.nom.add_furn_prm(aprm, afurn_set)});
+    this.selection_params.forEach(({param}) => {
+      !param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param) && sprms.push(param);
+    });
+
+    const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
+    this.specification.forEach(({nom, algorithm}) => {
+      if(nom instanceof CatFurns) {
+        nom.used_params(aprm, aset);
+      }
+      else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {
+        sprms.push(nom);
+      }
+    });
+
+    this._data.used_params = sprms;
+    sprms.forEach((param) => {
+      !aprm.includes(param) && sprms.push(param);
+    });
 
     return aprm;
 
@@ -14831,16 +14852,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       value(insert_type) {
         const prms = new Set();
         this.find_rows({available: true, insert_type}, (inset) => {
-          inset.used_params.forEach((param) => {
+          inset.used_params().forEach((param) => {
             !param.is_calculated && prms.add(param);
-          });
-          inset.specification.forEach(({nom}) => {
-            if(nom){
-              const {used_params} = nom;
-              used_params && used_params.forEach((param) => {
-                !param.is_calculated && prms.add(param);
-              });
-            }
           });
         });
         return prms;
@@ -14879,16 +14892,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
 
               const prms = new Set();
-              inset.used_params.forEach((param) => {
+              inset.used_params().forEach((param) => {
                 !param.is_calculated && prms.add(param);
-              });
-              inset.specification.forEach(({nom}) => {
-                if(nom){
-                  const {used_params} = nom;
-                  used_params && used_params.forEach((param) => {
-                    !param.is_calculated && prms.add(param);
-                  });
-                }
               });
               mf.read_only = !prms.has(prm);
 
@@ -15604,19 +15609,50 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return _data.thickness;
     }
 
-    get used_params() {
-      const res = [];
+    used_params(aprm = [], aset) {
+
+      if(!aset){
+        aset = new Set();
+      }
+      if(aset.has(this)) {
+        return;
+      }
+      aset.add(this);
+
+      if(this._data.used_params) {
+        return this._data.used_params;
+      }
+
+      const sprms = [];
+
       this.selection_params.forEach(({param}) => {
-        if(!param.empty() && res.indexOf(param) == -1){
-          res.push(param)
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
         }
       });
+
       this.product_params.forEach(({param}) => {
-        if(!param.empty() && res.indexOf(param) == -1){
-          res.push(param)
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
         }
       });
-      return res;
+
+      const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
+      this.specification.forEach(({nom, algorithm}) => {
+        if(nom instanceof CatInserts) {
+          nom.used_params(aprm, aset);
+        }
+        else if(algorithm === cx_prm && !sprms.includes(nom)) {
+          sprms.push(nom);
+        }
+      });
+
+      this._data.used_params = sprms;
+      sprms.forEach((param) => {
+        !aprm.includes(param) && sprms.push(param);
+      });
+
+      return aprm;
     }
 
   }
@@ -16837,20 +16873,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
           if(params) {
 
-            const used_params = new Set();
-            row_spec.inset.used_params.forEach((param) => {
-              !param.is_calculated && used_params.add(param);
-            });
-            row_spec.inset.specification.forEach(({nom}) => {
-              if(nom instanceof $p.CatInserts){
-                nom.used_params.forEach((param) => {
-                  !param.is_calculated && used_params.add(param);
-                });
-              }
-            });
+            const used_params = row_spec.inset.used_params();
 
             params.find_rows({elm: row_spec.row}, (prow) => {
-              if(used_params.has(prow.param)) {
+              if(used_params.includes(prow.param)) {
                 ox.params.add(prow, true).inset = row_spec.inset;
               }
             });

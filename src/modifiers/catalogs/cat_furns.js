@@ -24,10 +24,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm({project, furn, cnstr}) {
 
     const fprms = project.ox.params;
-    const {direction} = $p.job_prm.properties;
+    const {CatNom, job_prm: {properties: {direction}}} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
-    const aprm = furn.furn_set.add_furn_prm();
+    const aprm = furn.furn_set.used_params();
     aprm.sort((a, b) => {
       if (a.presentation > b.presentation) {
         return 1;
@@ -57,18 +57,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // умолчания и скрытость по табчасти системы
       const {param} = prm_row;
-      project._dp.sys.furn_params.forEach((row) => {
-        if(row.param == param){
-          if(row.forcibly || forcibly){
-            prm_row.value = row.value;
-          }
-          prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
-          return false;
+      project._dp.sys[param instanceof CatNom ? 'params' : 'furn_params'].find_rows({param}, (row) => {
+        if(row.forcibly || forcibly){
+          prm_row.value = row.value;
         }
+        prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
+        return false;
       });
 
       // умолчания по связям параметров
-      param.linked_values(param.params_links({
+      param.linked_values && param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}}
       }), prm_row);
@@ -89,18 +87,41 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   /**
    * Вытягивает массив используемых фурнитурой и вложенными наборами параметров
    */
-  add_furn_prm(aprm = [], afurn_set = []) {
+  used_params(aprm = [], aset) {
 
     // если параметры этого набора уже обработаны - пропускаем
-    if(afurn_set.indexOf(this.ref)!=-1){
+    if(!aset){
+      aset = new Set();
+    }
+    if(aset.has(this)) {
       return;
     }
+    aset.add(this);
 
-    afurn_set.push(this.ref);
+    if(this._data.used_params) {
+      return this._data.used_params;
+    }
 
-    this.selection_params.forEach((row) => {aprm.indexOf(row.param)==-1 && !row.param.is_calculated && aprm.push(row.param)});
+    const sprms = [];
 
-    this.specification.forEach((row) => {row.nom instanceof $p.CatFurns && row.nom.add_furn_prm(aprm, afurn_set)});
+    this.selection_params.forEach(({param}) => {
+      !param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param) && sprms.push(param);
+    });
+
+    const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
+    this.specification.forEach(({nom, algorithm}) => {
+      if(nom instanceof CatFurns) {
+        nom.used_params(aprm, aset);
+      }
+      else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {
+        sprms.push(nom);
+      }
+    });
+
+    this._data.used_params = sprms;
+    sprms.forEach((param) => {
+      !aprm.includes(param) && sprms.push(param);
+    });
 
     return aprm;
 

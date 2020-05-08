@@ -93,7 +93,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     });
 
     const {product_params} = inset;
-    inset.used_params.forEach((param) => {
+    inset.used_params().forEach((param) => {
       if((!param.is_calculated || param.show_calculated) && !params.includes(param)) {
         const value = product_params.find({param});
         ts_params.add({

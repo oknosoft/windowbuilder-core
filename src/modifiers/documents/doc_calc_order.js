@@ -991,21 +991,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           if(params) {
 
             // получаем набор параметров, используемых текущей вставкой
-            const used_params = new Set();
-            row_spec.inset.used_params.forEach((param) => {
-              !param.is_calculated && used_params.add(param);
-            });
-            row_spec.inset.specification.forEach(({nom}) => {
-              if(nom instanceof $p.CatInserts){
-                nom.used_params.forEach((param) => {
-                  !param.is_calculated && used_params.add(param);
-                });
-              }
-            });
+            const used_params = row_spec.inset.used_params();
 
             // добавляем параметр в характеристику, если используется в текущей вставке
             params.find_rows({elm: row_spec.row}, (prow) => {
-              if(used_params.has(prow.param)) {
+              if(used_params.includes(prow.param)) {
                 ox.params.add(prow, true).inset = row_spec.inset;
               }
             });

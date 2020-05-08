@@ -32,16 +32,8 @@
       value(insert_type) {
         const prms = new Set();
         this.find_rows({available: true, insert_type}, (inset) => {
-          inset.used_params.forEach((param) => {
+          inset.used_params().forEach((param) => {
             !param.is_calculated && prms.add(param);
-          });
-          inset.specification.forEach(({nom}) => {
-            if(nom){
-              const {used_params} = nom;
-              used_params && used_params.forEach((param) => {
-                !param.is_calculated && prms.add(param);
-              });
-            }
           });
         });
         return prms;
@@ -84,16 +76,8 @@
 
               // если параметр не используется в текущей вставке, делаем ячейку readonly
               const prms = new Set();
-              inset.used_params.forEach((param) => {
+              inset.used_params().forEach((param) => {
                 !param.is_calculated && prms.add(param);
-              });
-              inset.specification.forEach(({nom}) => {
-                if(nom){
-                  const {used_params} = nom;
-                  used_params && used_params.forEach((param) => {
-                    !param.is_calculated && prms.add(param);
-                  });
-                }
               });
               mf.read_only = !prms.has(prm);
 
@@ -891,22 +875,55 @@
 
     /**
      * Возвращает массив задействованных во вставке параметров
-     * @property used_params
+     * @param aprm
+     * @param aset
      * @return {Array}
      */
-    get used_params() {
-      const res = [];
+    used_params(aprm = [], aset) {
+
+      // если параметры этого набора уже обработаны - пропускаем
+      if(!aset){
+        aset = new Set();
+      }
+      if(aset.has(this)) {
+        return;
+      }
+      aset.add(this);
+
+      if(this._data.used_params) {
+        return this._data.used_params;
+      }
+
+      const sprms = [];
+
       this.selection_params.forEach(({param}) => {
-        if(!param.empty() && res.indexOf(param) == -1){
-          res.push(param)
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
         }
       });
+
       this.product_params.forEach(({param}) => {
-        if(!param.empty() && res.indexOf(param) == -1){
-          res.push(param)
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
         }
       });
-      return res;
+
+      const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
+      this.specification.forEach(({nom, algorithm}) => {
+        if(nom instanceof CatInserts) {
+          nom.used_params(aprm, aset);
+        }
+        else if(algorithm === cx_prm && !sprms.includes(nom)) {
+          sprms.push(nom);
+        }
+      });
+
+      this._data.used_params = sprms;
+      sprms.forEach((param) => {
+        !aprm.includes(param) && sprms.push(param);
+      });
+
+      return aprm;
     }
 
   }
