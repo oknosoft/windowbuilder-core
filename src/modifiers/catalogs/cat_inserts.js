@@ -643,7 +643,7 @@
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
           // размер может уточняться по соединениям
           if(count_calc_method == ПоСоединениям){
-            for(const {cnn} of [elm.cnn_point('b'), elm.cnn_point('e')]) {
+            for(const {cnn} of [elm.rays.b, elm.rays.e]) {
               if(cnn) {
                 row_spec.len -= cnn.nom_size(row_spec.nom) * coefficient;
               }

@@ -300,9 +300,19 @@ $p.CatCnns.prototype.__define({
   nom_size: {
     value: function nom_size(nom) {
       let sz = 0;
-      this.specification.find_rows({nom, quantity: 0}, (row) => {
-        sz = row.sz;
-        return false;
+      const {CatInserts} = $p;
+      this.specification.find_rows({quantity: 0}, (row) => {
+        const {nom: rnom} = row;
+        if(rnom === nom) {
+          sz = row.sz;
+          return false;
+        }
+        else if(rnom instanceof CatInserts) {
+          if(rnom.specification.find({nom})) {
+            sz = row.sz;
+            return false;
+          }
+        }
       });
       return sz;
     }
