@@ -114,12 +114,20 @@ class Skeleton extends Graph {
    * @param profile
    */
   addProfile(profile) {
+    // заглушка
+    return;
+
     const b = this.createVertexByPoint(profile.b);
     const e = this.createVertexByPoint(profile.e);
     if(this.findEdge(b, e)) {
       throw new Error('Edge has already been added before');
     }
     this.addEdge(new GraphEdge({startVertex: b, endVertex: e, profile}));
+
+    // заглушка для раскладок
+    if(profile instanceof Onlay) {
+      return;
+    }
 
     // если импост, добавляем ребро в обратную сторону
     const {ab, ae} = profile.is_corner();

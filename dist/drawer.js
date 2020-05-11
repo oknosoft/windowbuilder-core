@@ -8869,6 +8869,9 @@ class Onlay extends ProfileItem {
       const res_bind = this.bind_node(point);
       if(res_bind.binded){
         res._mixin(res_bind, ["point","profile","cnn_types","profile_point"]);
+        if(!this[res.node].is_nearest(res.point, 0)) {
+          this[res.node] = res.point;
+        }
       }
     }
     return res;
@@ -11276,12 +11279,18 @@ class Skeleton extends Graph {
   }
 
   addProfile(profile) {
+    return;
+
     const b = this.createVertexByPoint(profile.b);
     const e = this.createVertexByPoint(profile.e);
     if(this.findEdge(b, e)) {
       throw new Error('Edge has already been added before');
     }
     this.addEdge(new GraphEdge({startVertex: b, endVertex: e, profile}));
+
+    if(profile instanceof Onlay) {
+      return;
+    }
 
     const {ab, ae} = profile.is_corner();
     const {_rays} = profile._attr;

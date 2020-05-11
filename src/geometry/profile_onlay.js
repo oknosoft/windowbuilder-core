@@ -260,6 +260,9 @@ class Onlay extends ProfileItem {
       const res_bind = this.bind_node(point);
       if(res_bind.binded){
         res._mixin(res_bind, ["point","profile","cnn_types","profile_point"]);
+        if(!this[res.node].is_nearest(res.point, 0)) {
+          this[res.node] = res.point;
+        }
       }
     }
     return res;
