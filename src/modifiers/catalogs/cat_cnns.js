@@ -8,10 +8,6 @@
 
 $p.cat.cnns.__define({
 
-  _nomcache: {
-    value: {}
-  },
-
   sql_selection_list_flds: {
     value(initial_value){
       return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as cnn_type," +
@@ -20,47 +16,6 @@ $p.cat.cnns.__define({
     }
   },
 
-  sort_cnns: {
-    value: function sort_cnns(a, b) {
-      const {t, xx} = $p.enm.cnn_types;
-      const sides = [$p.enm.cnn_sides.Изнутри, $p.enm.cnn_sides.Снаружи];
-      // отдаём предпочтение соединениям, для которых задана сторона
-      if(sides.indexOf(a.sd1) != -1 && sides.indexOf(b.sd1) == -1){
-        return 1;
-      }
-      if(sides.indexOf(b.sd1) != -1 && sides.indexOf(a.sd1) == -1){
-        return -1;
-      }
-      // далее, учитываем приоритет
-      if (a.priority > b.priority) {
-        return -1;
-      }
-      if (a.priority < b.priority) {
-        return 1;
-      }
-      // соединения с одинаковым приоритетом сортируем по типу - опускаем вниз крест и Т
-      if(a.cnn_type === xx && b.cnn_type !== xx){
-        return 1;
-      }
-      if(b.cnn_type === xx && a.cnn_type !== xx){
-        return -1;
-      }
-      if(a.cnn_type === t && b.cnn_type !== t){
-        return 1;
-      }
-      if(b.cnn_type === t && a.cnn_type !== t){
-        return -1;
-      }
-      // в последнюю очередь, сортируем по имени
-      if (a.name > b.name) {
-        return -1;
-      }
-      if (a.name < b.name) {
-        return 1;
-      }
-      return 0;
-    }
-  },
 
   /**
    * Возвращает массив соединений, доступный для сочетания номенклатур.
@@ -225,87 +180,3 @@ $p.cat.cnns.__define({
 
 });
 
-$p.cat.cnns.metadata('selection_params').index = 'elm';
-
-// публичные методы объекта
-$p.CatCnns.prototype.__define({
-
-	/**
-	 * Возвращает основную строку спецификации соединения между элементами
-	 */
-	main_row: {
-		value: function main_row(elm) {
-
-      let ares, nom = elm.nom;
-
-			// если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
-			if($p.enm.cnn_types.acn.a.indexOf(this.cnn_type) != -1){
-
-        let art12 = elm.orientation == $p.enm.orientations.Вертикальная ? $p.job_prm.nom.art1 : $p.job_prm.nom.art2;
-
-				ares = this.specification.find_rows({nom: art12});
-				if(ares.length)
-					return ares[0]._row;
-			}
-
-			// в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
-			if(this.cnn_elmnts.find_rows({nom1: nom}).length){
-				ares = this.specification.find_rows({nom: $p.job_prm.nom.art1});
-				if(ares.length)
-					return ares[0]._row;
-			}
-			if(this.cnn_elmnts.find_rows({nom2: nom}).length){
-				ares = this.specification.find_rows({nom: $p.job_prm.nom.art2});
-				if(ares.length)
-					return ares[0]._row;
-			}
-			ares = this.specification.find_rows({nom: nom});
-			if(ares.length)
-				return ares[0]._row;
-
-		}
-	},
-
-	/**
-	 * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
-	 */
-	check_nom2: {
-		value: function check_nom2(nom) {
-			let ref = $p.utils.is_data_obj(nom) ? nom.ref : nom;
-			return this.cnn_elmnts._obj.some(function (row) {
-				return row.nom == ref;
-			})
-		}
-	},
-
-  /**
-   * Параметрический размер соединения
-   */
-  size: {
-	  value: function size(elm) {
-	    let {sz, sizes} = this;
-      sizes.forEach((prm_row) => {
-        if(prm_row.param.check_condition({row_spec: {}, prm_row, elm, cnstr: 0, ox: elm.project.ox})) {
-          sz = prm_row.elm;
-          return false;
-        }
-      });
-      return sz;
-    }
-  },
-
-  /**
-   * Укорочение для конкретной номенклатуры из спецификации
-   */
-  nom_size: {
-    value: function nom_size(nom) {
-      let sz = 0;
-      this.specification.find_rows({nom, quantity: 0}, (row) => {
-        sz = row.sz;
-        return false;
-      });
-      return sz;
-    }
-  }
-
-});

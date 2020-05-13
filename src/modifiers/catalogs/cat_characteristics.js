@@ -19,6 +19,7 @@
     }
     return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);
   }
+  characteristics._direct_ram = true;
 })($p);
 
 // при старте приложения, загружаем в ОЗУ обычные характеристики (без ссылок на заказы)
@@ -93,7 +94,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     });
 
     const {product_params} = inset;
-    inset.used_params.forEach((param) => {
+    inset.used_params().forEach((param) => {
       if((!param.is_calculated || param.show_calculated) && !params.includes(param)) {
         const value = product_params.find({param});
         ts_params.add({
@@ -191,10 +192,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
         // подмешиваем значения параметров
         let sprm = '';
-        this.params.find_rows({cnstr: 0}, (row) => {
-          if(row.param.include_to_name && sprm.indexOf(String(row.value)) == -1) {
+        this.params.find_rows({cnstr: 0}, ({param, value}) => {
+          if(param.include_to_name && sprm.indexOf(String(value)) == -1) {
             sprm && (sprm += ';');
-            sprm += String(row.value);
+            sprm += String(value);
           }
         });
         if(sprm) {

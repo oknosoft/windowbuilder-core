@@ -252,4 +252,30 @@ exports.CatNom = class CatNom extends Object {
     // Пересчитать из валюты в валюту
     return pricing.from_currency_to_currency(price, attr.date, currency, attr.currency);
   }
+
+  /**
+   * Возвращает массив связей текущей номенклатуры
+   */
+  params_links(attr) {
+    const {CchProperties} = this._manager._owner.$p;
+    return CchProperties.prototype.params_links.call(this, attr);
+  }
+
+  /**
+   * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
+   */
+  linked_values(links, prow, values = []) {
+    const {CchProperties} = this._manager._owner.$p;
+    return CchProperties.prototype.linked_values.call(this, links, prow, values);
+  }
+
+  filter_params_links(filter, attr, links) {
+    const {CchProperties} = this._manager._owner.$p;
+    return CchProperties.prototype.filter_params_links.call(this, filter, attr, links);
+  }
+
+  get type() {
+    return {is_ref: true, types: ["cat.characteristics"]};
+  }
+
 };

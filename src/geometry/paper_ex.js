@@ -149,7 +149,7 @@ Object.defineProperties(paper.Path.prototype, {
       value: function get_subpath(point1, point2) {
         let tmp;
 
-        if(!this.length || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
+        if(!this.length || !point1 || !point2 || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
           tmp = this.clone(false);
         }
         else if(point2.is_nearest(this.firstSegment.point) && point1.is_nearest(this.lastSegment.point)){

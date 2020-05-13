@@ -17,11 +17,6 @@
  */
 class ProfileConnective extends ProfileItem {
 
-  constructor(attr) {
-    super(attr);
-    this.parent = this.project.l_connective;
-  }
-
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
    * @property d0

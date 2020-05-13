@@ -17,7 +17,12 @@ class CnnPoint {
   constructor(parent, node) {
 
     this._parent = parent;
-    this._node = node;
+
+    /**
+     * Имя точки соединения (b или e)
+     * @type String
+     */
+    this.node = node;
 
     this.initialize();
   }
@@ -97,14 +102,6 @@ class CnnPoint {
     return this._parent;
   }
 
-  /**
-   * Имя точки соединения (b или e)
-   * @type String
-   */
-  get node() {
-    return this._node;
-  }
-
   clear() {
     if(this.profile_point) {
       this.profile_point = '';
@@ -147,10 +144,10 @@ class CnnPoint {
    * @param style
    */
   check_err(style) {
-    const {_node, _parent} = this;
+    const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
-    const len = _node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
-    const angle = _parent.angle_at(_node);
+    const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
+    const angle = _parent.angle_at(node);
     const {cnn} = this;
     if(!cnn ||
       (cnn.lmin && cnn.lmin > len) ||
@@ -160,7 +157,7 @@ class CnnPoint {
     ) {
       if(style) {
         Object.assign(new paper.Path.Circle({
-          center: _node == 'b' ? _corns[4].add(_corns[1]).divide(2) : _corns[2].add(_corns[3]).divide(2),
+          center: node == 'b' ? _corns[4].add(_corns[1]).divide(2) : _corns[2].add(_corns[3]).divide(2),
           radius: style.radius || 70,
         }), style);
       }
@@ -199,15 +196,28 @@ class CnnPoint {
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
 
+  /**
+   * fake-структура для расчета спецификации
+   * @return {{art2: boolean, art1: boolean, angle: number}}
+   */
+  len_angl() {
+    const {is_t} = this;
+    return {
+      angle: 90,
+      art1: is_t,
+      art2: !is_t,
+    };
+  }
+
   initialize() {
 
-    const {_parent, _node} = this;
+    const {_parent, node} = this;
 
     //  массив ошибок соединения
     this._err = [];
 
     // строка в таблице соединений
-    this._row = _parent.project.cnns.find({elm1: _parent.elm, node1: _node});
+    this._row = _parent.project.cnns.find({elm1: _parent.elm, node1: node});
 
     // примыкающий профиль
     this._profile;
@@ -765,6 +775,7 @@ class ProfileItem extends GeneratrixElement {
    */
   elm_props() {
     const {_attr, _row, project} = this;
+    const {blank} = $p.utils;
     // получаем список свойств
     const props = [];
     project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
@@ -786,7 +797,7 @@ class ProfileItem extends GeneratrixElement {
             project.ox.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
-              inset: $p.utils.blank.guid
+              inset: blank.guid
             }, (row) => {
               if(!prow || row.cnstr) {
                 prow = row;
@@ -799,7 +810,7 @@ class ProfileItem extends GeneratrixElement {
             project.ox.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
-              inset: $p.utils.blank.guid
+              inset: blank.guid
             }, (row) => {
               if(row.cnstr) {
                 prow = row;
@@ -819,7 +830,7 @@ class ProfileItem extends GeneratrixElement {
               project.ox.params.add({
                 param: prop,
                 cnstr: -_row.row,
-                inset: $p.utils.blank.guid,
+                inset: blank.guid,
                 value: v,
               });
             }
@@ -1119,6 +1130,7 @@ class ProfileItem extends GeneratrixElement {
 
     const {project, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
+    const {job_prm, utils} = $p;
 
     if(attr.r) {
       _row.r = attr.r;
@@ -1159,7 +1171,7 @@ class ProfileItem extends GeneratrixElement {
     _attr.path.strokeColor = 'black';
     _attr.path.strokeWidth = 1;
     _attr.path.strokeScaling = false;
-    this.clr = _row.clr.empty() ? $p.job_prm.builder.base_clr : _row.clr;
+    this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
 
     this.addChild(_attr.path);
     this.addChild(_attr.generatrix);
@@ -1308,11 +1320,12 @@ class ProfileItem extends GeneratrixElement {
     if(!rays) {
       rays = this.rays;
     }
+    const {Изнутри, Снаружи} = $p.enm.cnn_sides;
     if(!rays || !interior || !rays.inner.length || ! rays.outer.length) {
-      return $p.enm.cnn_sides.Изнутри;
+      return Изнутри;
     }
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
-    rays.outer.getNearestPoint(interior).getDistance(interior, true) ? $p.enm.cnn_sides.Изнутри : $p.enm.cnn_sides.Снаружи;
+      rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
 
   /**

@@ -85,7 +85,7 @@ class ProductsBuilding {
       const sign = cnn.cnn_type == enm.cnn_types.ii ? -1 : 1;
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
-      cnn_filter_spec(cnn, elm, len_angl).forEach((row_cnn_spec) => {
+      cnn.filtered_spec({elm, len_angl, ox}).forEach((row_cnn_spec) => {
 
         const {nom} = row_cnn_spec;
 
@@ -157,66 +157,6 @@ class ProductsBuilding {
         }
 
       });
-    }
-
-    /**
-     * ПолучитьСпецификациюСоединенияСФильтром
-     * @param cnn
-     * @param elm
-     * @param len_angl
-     */
-    function cnn_filter_spec(cnn, elm, len_angl) {
-
-      const res = [];
-      const {angle_hor} = elm;
-      const {job_prm: {nom: {art1, art2}}, enm} = $p;
-      const {САртикулом1, САртикулом2} = enm.specification_installation_methods;
-      const {check_params} = ProductsBuilding;
-
-      const {cnn_type, specification, selection_params} = cnn;
-      const {ii, xx, acn, t} = enm.cnn_types;
-
-      specification.forEach((row) => {
-        const {nom} = row;
-        if(!nom || nom.empty() || nom == art1 || nom == art2) {
-          return;
-        }
-
-        // только для прямых или только для кривых профилей
-        if((row.for_direct_profile_only > 0 && !elm.is_linear()) ||
-          (row.for_direct_profile_only < 0 && elm.is_linear())) {
-          return;
-        }
-
-        //TODO: реализовать фильтрацию
-        if(cnn_type == ii) {
-          if(row.amin > angle_hor || row.amax < angle_hor || row.sz_min > len_angl.len || row.sz_max < len_angl.len) {
-            return;
-          }
-        }
-        else {
-          if(row.amin > len_angl.angle || row.amax < len_angl.angle) {
-            return;
-          }
-        }
-
-        // "устанавливать с" проверяем только для соединений профиля
-        if((row.set_specification == САртикулом1 && len_angl.art2) || (row.set_specification == САртикулом2 && len_angl.art1)) {
-          return;
-        }
-        // для угловых, разрешаем art2 только явно для art2
-        if(len_angl.art2 && acn.a.indexOf(cnn_type) != -1 && row.set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
-          return;
-        }
-
-        // проверяем параметры изделия и добавляем, если проходит по ограничениям
-        if(check_params({params: selection_params, row_spec: row, elm, ox})) {
-          res.push(row);
-        }
-
-      });
-
-      return res;
     }
 
 

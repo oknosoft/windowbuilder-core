@@ -304,11 +304,6 @@ $p.cat.clrs.__define({
             get_option_list: get_option_list
           });
 
-          const clr_in_title = document.createElement('DIV');
-          clr_in_title.innerHTML = 'Со стороны петель';
-          clr_in_title.style = 'position: absolute;top: -4px;padding-left: 2px;font-size: small;color: gray;';
-          tb_filter.div.obj.appendChild(clr_in_title);
-
           clr_in.DOMelem.style.float = 'left';
           clr_in.DOMelem_input.placeholder = 'Цвет изнутри';
           clr_out.DOMelem_input.placeholder = 'Цвет снаружи';

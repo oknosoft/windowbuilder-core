@@ -5,7 +5,9 @@
  */
 
 class ParamsRow extends TabularSectionRow{
-  get param(){return this._getter('param')}
+  get param(){
+    return this._getter('param') || this._manager._owner.$p.cch.properties.get();
+  }
   set param(v){this._setter('param',v)}
   get value(){return this._getter('value')}
   set value(v){this._setter('value',v)}
@@ -83,7 +85,12 @@ class CatFurnsSelection_paramsRow extends SelectionParamsRow{
   set dop(v){this._setter('dop',v)}
 }
 
-
+class CatCharacteristicsParamsRow extends HideParamsRow{
+  get cnstr(){return this._getter('cnstr')}
+  set cnstr(v){this._setter('cnstr',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
+}
 
 class DocCredit_card_orderPayment_detailsRow extends Payment_detailsRow{}
 class DocDebit_bank_orderPayment_detailsRow extends Payment_detailsRow{}
@@ -111,6 +118,7 @@ class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 
 Object.assign($p, {
   CatFormulasParamsRow,
+  CatCharacteristicsParamsRow,
   DpBuyers_orderProduct_paramsRow,
   CatProduction_paramsFurn_paramsRow,
   CatProduction_paramsProduct_paramsRow,

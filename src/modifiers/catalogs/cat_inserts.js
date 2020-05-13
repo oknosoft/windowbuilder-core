@@ -32,16 +32,8 @@
       value(insert_type) {
         const prms = new Set();
         this.find_rows({available: true, insert_type}, (inset) => {
-          inset.used_params.forEach((param) => {
+          inset.used_params().forEach((param) => {
             !param.is_calculated && prms.add(param);
-          });
-          inset.specification.forEach(({nom}) => {
-            if(nom){
-              const {used_params} = nom;
-              used_params && used_params.forEach((param) => {
-                !param.is_calculated && prms.add(param);
-              });
-            }
           });
         });
         return prms;
@@ -84,16 +76,8 @@
 
               // если параметр не используется в текущей вставке, делаем ячейку readonly
               const prms = new Set();
-              inset.used_params.forEach((param) => {
+              inset.used_params().forEach((param) => {
                 !param.is_calculated && prms.add(param);
-              });
-              inset.specification.forEach(({nom}) => {
-                if(nom){
-                  const {used_params} = nom;
-                  used_params && used_params.forEach((param) => {
-                    !param.is_calculated && prms.add(param);
-                  });
-                }
               });
               mf.read_only = !prms.has(prm);
 
@@ -659,9 +643,10 @@
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
           // размер может уточняться по соединениям
           if(count_calc_method == ПоСоединениям){
-            for(const {cnn} of [elm.cnn_point('b'), elm.cnn_point('e')]) {
+            for(const node of [elm.rays.b, elm.rays.e]) {
+              const {cnn} = node;
               if(cnn) {
-                row_spec.len -= cnn.nom_size(row_spec.nom) * coefficient;
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
               }
             }
           }
@@ -891,22 +876,55 @@
 
     /**
      * Возвращает массив задействованных во вставке параметров
-     * @property used_params
+     * @param aprm
+     * @param aset
      * @return {Array}
      */
-    get used_params() {
-      const res = [];
+    used_params(aprm = [], aset) {
+
+      // если параметры этого набора уже обработаны - пропускаем
+      if(!aset){
+        aset = new Set();
+      }
+      if(aset.has(this)) {
+        return;
+      }
+      aset.add(this);
+
+      if(this._data.used_params) {
+        return this._data.used_params;
+      }
+
+      const sprms = [];
+
       this.selection_params.forEach(({param}) => {
-        if(!param.empty() && res.indexOf(param) == -1){
-          res.push(param)
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
         }
       });
+
       this.product_params.forEach(({param}) => {
-        if(!param.empty() && res.indexOf(param) == -1){
-          res.push(param)
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
         }
       });
-      return res;
+
+      const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
+      this.specification.forEach(({nom, algorithm}) => {
+        if(nom instanceof CatInserts) {
+          nom.used_params(aprm, aset);
+        }
+        else if(algorithm === cx_prm && !sprms.includes(nom)) {
+          sprms.push(nom);
+        }
+      });
+
+      this._data.used_params = sprms;
+      sprms.forEach((param) => {
+        !aprm.includes(param) && aprm.push(param);
+      });
+
+      return aprm;
     }
 
   }

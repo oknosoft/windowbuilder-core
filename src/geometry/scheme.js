@@ -30,7 +30,7 @@ class Scheme extends paper.Project {
     };
 
     // массив с моментами времени изменений изделия
-    const _changes = this._ch = [];
+    this._ch = [];
 
     /**
      * Объект обработки с табличными частями
@@ -429,7 +429,7 @@ class Scheme extends paper.Project {
       // первым делом создаём соединители и опорные линии
       o.coordinates.forEach((row) => {
         if(row.elm_type === $p.enm.elm_types.Соединитель) {
-          new ProfileConnective({row});
+          new ProfileConnective({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === $p.enm.elm_types.Линия) {
           new BaseLine({row});
@@ -1797,26 +1797,12 @@ class Scheme extends paper.Project {
   }
 
   get skeleton() {
-    for(const layer of this.layers) {
-      if(layer instanceof Skeleton) {
-        return layer;
-      }
-    }
+    return this._skeleton;
   }
 
   set skeleton(v) {
-    const {skeleton} = this;
-    if(!v && skeleton) {
-      skeleton.remove();
-    }
-    else if(v) {
-      if(skeleton) {
-        skeleton.initialize();
-      }
-      else {
-        new Skeleton();
-      }
-    }
+    const {_skeleton} = this;
+    _skeleton.skeleton = !!v;
   }
 
 }
