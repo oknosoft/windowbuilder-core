@@ -19,6 +19,7 @@
     }
     return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);
   }
+  characteristics._direct_ram = true;
 })($p);
 
 // при старте приложения, загружаем в ОЗУ обычные характеристики (без ссылок на заказы)

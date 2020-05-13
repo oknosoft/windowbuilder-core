@@ -66,7 +66,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       });
 
       // умолчания по связям параметров
-      param.linked_values && param.linked_values(param.params_links({
+      param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}}
       }), prm_row);
@@ -120,7 +120,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     this._data.used_params = sprms;
     sprms.forEach((param) => {
-      !aprm.includes(param) && sprms.push(param);
+      !aprm.includes(param) && aprm.push(param);
     });
 
     return aprm;

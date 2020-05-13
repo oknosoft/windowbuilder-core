@@ -17,7 +17,6 @@ class Graph {
    */
   addVertex(newVertex) {
     this.vertices[newVertex.getKey()] = newVertex;
-
     return this;
   }
 
@@ -42,6 +41,15 @@ class Graph {
    */
   getAllVertices() {
     return Object.values(this.vertices);
+  }
+
+  /**
+   * @param {GraphVertex} vertex
+   * @return {Graph}
+   */
+  deleteVertex(vertex) {
+    delete this.vertices[vertex.getKey()];
+    return this;
   }
 
   /**
@@ -83,10 +91,15 @@ class Graph {
     if (this.isDirected) {
       // If graph IS directed then add the edge only to start vertex.
       startVertex.addEdge(edge);
-    } else {
+      endVertex.addEndEdge(edge);
+    }
+    else {
       // If graph ISN'T directed then add the edge to both vertices.
       startVertex.addEdge(edge);
+      endVertex.addEndEdge(edge);
+
       endVertex.addEdge(edge);
+      startVertex.addEndEdge(edge);
     }
 
     return this;
@@ -109,6 +122,7 @@ class Graph {
 
     startVertex.deleteEdge(edge);
     endVertex.deleteEdge(edge);
+
   }
 
   /**
@@ -133,26 +147,6 @@ class Graph {
     return this.getAllEdges().reduce((weight, graphEdge) => {
       return weight + graphEdge.weight;
     }, 0);
-  }
-
-  /**
-   * Reverse all the edges in directed graph.
-   * @return {Graph}
-   */
-  reverse() {
-    /** @param {GraphEdge} edge */
-    this.getAllEdges().forEach((edge) => {
-      // Delete straight edge from graph and from vertices.
-      this.deleteEdge(edge);
-
-      // Reverse the edge.
-      edge.reverse();
-
-      // Add reversed edge back to the graph and its vertices.
-      this.addEdge(edge);
-    });
-
-    return this;
   }
 
   /**

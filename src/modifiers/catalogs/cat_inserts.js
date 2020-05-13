@@ -643,9 +643,10 @@
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
           // размер может уточняться по соединениям
           if(count_calc_method == ПоСоединениям){
-            for(const {cnn} of [elm.rays.b, elm.rays.e]) {
+            for(const node of [elm.rays.b, elm.rays.e]) {
+              const {cnn} = node;
               if(cnn) {
-                row_spec.len -= cnn.nom_size(row_spec.nom) * coefficient;
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
               }
             }
           }
@@ -920,7 +921,7 @@
 
       this._data.used_params = sprms;
       sprms.forEach((param) => {
-        !aprm.includes(param) && sprms.push(param);
+        !aprm.includes(param) && aprm.push(param);
       });
 
       return aprm;

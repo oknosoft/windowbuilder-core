@@ -17,7 +17,12 @@ class CnnPoint {
   constructor(parent, node) {
 
     this._parent = parent;
-    this._node = node;
+
+    /**
+     * Имя точки соединения (b или e)
+     * @type String
+     */
+    this.node = node;
 
     this.initialize();
   }
@@ -97,14 +102,6 @@ class CnnPoint {
     return this._parent;
   }
 
-  /**
-   * Имя точки соединения (b или e)
-   * @type String
-   */
-  get node() {
-    return this._node;
-  }
-
   clear() {
     if(this.profile_point) {
       this.profile_point = '';
@@ -147,10 +144,10 @@ class CnnPoint {
    * @param style
    */
   check_err(style) {
-    const {_node, _parent} = this;
+    const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
-    const len = _node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
-    const angle = _parent.angle_at(_node);
+    const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
+    const angle = _parent.angle_at(node);
     const {cnn} = this;
     if(!cnn ||
       (cnn.lmin && cnn.lmin > len) ||
@@ -160,7 +157,7 @@ class CnnPoint {
     ) {
       if(style) {
         Object.assign(new paper.Path.Circle({
-          center: _node == 'b' ? _corns[4].add(_corns[1]).divide(2) : _corns[2].add(_corns[3]).divide(2),
+          center: node == 'b' ? _corns[4].add(_corns[1]).divide(2) : _corns[2].add(_corns[3]).divide(2),
           radius: style.radius || 70,
         }), style);
       }
@@ -199,15 +196,28 @@ class CnnPoint {
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
 
+  /**
+   * fake-структура для расчета спецификации
+   * @return {{art2: boolean, art1: boolean, angle: number}}
+   */
+  len_angl() {
+    const {is_t} = this;
+    return {
+      angle: 90,
+      art1: is_t,
+      art2: !is_t,
+    };
+  }
+
   initialize() {
 
-    const {_parent, _node} = this;
+    const {_parent, node} = this;
 
     //  массив ошибок соединения
     this._err = [];
 
     // строка в таблице соединений
-    this._row = _parent.project.cnns.find({elm1: _parent.elm, node1: _node});
+    this._row = _parent.project.cnns.find({elm1: _parent.elm, node1: node});
 
     // примыкающий профиль
     this._profile;

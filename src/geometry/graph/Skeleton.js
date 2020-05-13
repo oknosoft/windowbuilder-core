@@ -11,7 +11,7 @@ class Skeleton extends Graph {
   /**
    * Ищет узел по координатам точки
    * @param point
-   * @param vertices
+   * @param {GraphVertex[]} vertices
    * @return {GraphVertex}
    */
   vertexByPoint(point, vertices) {
@@ -33,6 +33,15 @@ class Skeleton extends Graph {
       }
     });
     return Array.from(res);
+  }
+
+  /**
+   * Возвращает массив рёбер, связанных с текущим профилем
+   * @param profile
+   * @return {GraphEdge[]}
+   */
+  edgesByProfile(profile) {
+    return this.getAllEdges().filter((edge) => edge.profile === profile);
   }
 
   /**
@@ -69,7 +78,7 @@ class Skeleton extends Graph {
     const vertices = this.getAllVertices();
     let vertex = this.vertexByPoint(point, vertices);
     if(!vertex) {
-      vertex = new GraphVertex(vertices.length + 1, point);
+      vertex = new GraphVertex((vertices.length + 1).toString(), point);
       this.addVertex(vertex);
     }
     return vertex;
@@ -84,29 +93,35 @@ class Skeleton extends Graph {
     if(cnn.profile && !cnn.profile_point) {
       // находим точки на ведущем профиле
       const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
-      if(left.length == 1 && right.length == 1) {
+      if(left.length === 1 && right.length === 1) {
         // Если сторона соединения изнутри, делим в прямом направлении
         if(cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint) === $p.enm.cnn_sides.Изнутри) {
-          const edge = this.findEdge(left[0].vertex, right[0].vertex);
-          if(edge) {
-            this.deleteEdge(edge);
-          }
-          this.addEdge(new GraphEdge({startVertex: left[0].vertex, endVertex: vertex, profile: cnn.profile}));
-          this.addEdge(new GraphEdge({startVertex: vertex, endVertex: right[0].vertex, profile: cnn.profile}));
+          this.addFragment({startVertex: left[0].vertex, endVertex: right[0].vertex, vertex, profile: cnn.profile});
         }
         else {
-          const edge = this.findEdge(right[0].vertex, left[0].vertex);
-          if(edge) {
-            this.deleteEdge(edge);
-          }
-          this.addEdge(new GraphEdge({startVertex: right[0].vertex, endVertex: vertex, profile: cnn.profile}));
-          this.addEdge(new GraphEdge({startVertex: vertex, endVertex: left[0].vertex, profile: cnn.profile}));
+          this.addFragment({endVertex: left[0].vertex, startVertex: right[0].vertex, vertex, profile: cnn.profile});
         }
       }
       else {
         //throw new Error('Пересечение узлов');
       }
     }
+  }
+
+  /**
+   * Вспомогательный метод дл addImpostEdges
+   * @param startVertex
+   * @param endVertex
+   * @param vertex
+   * @param profile
+   */
+  addFragment({startVertex, endVertex, vertex, profile}) {
+    const edge = this.findEdge(startVertex, endVertex);
+    if(edge) {
+      this.deleteEdge(edge);
+    }
+    this.addEdge(new GraphEdge({startVertex, endVertex: vertex, profile}));
+    this.addEdge(new GraphEdge({startVertex: vertex, endVertex, profile}));
   }
 
   /**
@@ -153,10 +168,44 @@ class Skeleton extends Graph {
   }
 
   /**
+   * Объединяет сегменты при удалении или отрыве импоста или склейке профилей
+   * @param edges
+   * @param vertex
+   */
+  unSplitEdges(vertex) {
+    const from = vertex.getEdges();
+    const to = vertex.getEndEdges();
+    for(const toEdge of to) {
+      for(const fromEdge of from) {
+        if(fromEdge.profile === toEdge.profile && fromEdge.startVertex === vertex && toEdge.endVertex === vertex) {
+          this.deleteEdge(fromEdge);
+          this.deleteEdge(toEdge);
+          this.addEdge(new GraphEdge({startVertex: toEdge.startVertex, endVertex: fromEdge.endVertex, profile: fromEdge.profile}));
+        }
+      }
+    }
+  }
+
+  /**
    * Удаляет профиль из графа
    * @param profile
    */
   removeProfile(profile) {
-
+    // если к профилю есть примыкания импостов, удалять нельзя
+    const vertexes = this.vertexesByProfile(profile);
+    if(vertexes.length > 2) {
+      throw new Error('Сначала удалите примыкающие импосты');
+    }
+    this.edgesByProfile(profile).some((edge) => {
+      this.deleteEdge(edge);
+      this.unSplitEdges(edge.startVertex);
+      this.unSplitEdges(edge.endVertex);
+    });
+    // если узел не содержит профилей, удаляем
+    for(const vertex of vertexes) {
+      if(!vertex.edges.head && !vertex.endEdges.head) {
+        this.deleteVertex(vertex);
+      }
+    }
   }
 }
