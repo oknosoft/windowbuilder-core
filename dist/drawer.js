@@ -12666,7 +12666,10 @@ $p.spec_building = new SpecBuilding($p);
       return nom;
     }
     return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);
-  }
+  };
+  characteristics.extra_fields = function() {
+    return [];
+  };
   characteristics._direct_ram = true;
 })($p);
 
