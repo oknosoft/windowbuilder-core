@@ -86,20 +86,14 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Вытягивает массив используемых фурнитурой и вложенными наборами параметров
+   * @return {Array}
    */
-  used_params(aprm = [], aset) {
+  used_params() {
 
+    const {_data} = this;
     // если параметры этого набора уже обработаны - пропускаем
-    if(!aset){
-      aset = new Set();
-    }
-    if(aset.has(this)) {
-      return;
-    }
-    aset.add(this);
-
-    if(this._data.used_params) {
-      return this._data.used_params;
+    if(_data.used_params) {
+      return _data.used_params;
     }
 
     const sprms = [];
@@ -111,19 +105,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
     this.specification.forEach(({nom, algorithm}) => {
       if(nom instanceof CatFurns) {
-        nom.used_params(aprm, aset);
+        for(const param of nom.used_params()) {
+          !sprms.includes(param) && sprms.push(param);
+        }
       }
       else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {
         sprms.push(nom);
       }
     });
 
-    this._data.used_params = sprms;
-    sprms.forEach((param) => {
-      !aprm.includes(param) && aprm.push(param);
-    });
-
-    return aprm;
+    return _data.used_params = sprms;
 
   }
 

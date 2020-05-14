@@ -13827,18 +13827,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   }
 
-  used_params(aprm = [], aset) {
+  used_params() {
 
-    if(!aset){
-      aset = new Set();
-    }
-    if(aset.has(this)) {
-      return;
-    }
-    aset.add(this);
-
-    if(this._data.used_params) {
-      return this._data.used_params;
+    const {_data} = this;
+    if(_data.used_params) {
+      return _data.used_params;
     }
 
     const sprms = [];
@@ -13850,19 +13843,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
     this.specification.forEach(({nom, algorithm}) => {
       if(nom instanceof CatFurns) {
-        nom.used_params(aprm, aset);
+        for(const param of nom.used_params()) {
+          !sprms.includes(param) && sprms.push(param);
+        }
       }
       else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {
         sprms.push(nom);
       }
     });
 
-    this._data.used_params = sprms;
-    sprms.forEach((param) => {
-      !aprm.includes(param) && aprm.push(param);
-    });
-
-    return aprm;
+    return _data.used_params = sprms;
 
   }
 
@@ -14906,18 +14896,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return _data.thickness;
     }
 
-    used_params(aprm = [], aset) {
-
-      if(!aset){
-        aset = new Set();
-      }
-      if(aset.has(this)) {
-        return;
-      }
-      aset.add(this);
-
-      if(this._data.used_params) {
-        return this._data.used_params;
+    used_params() {
+      const {_data} = this;
+      if(_data.used_params) {
+        return _data.used_params;
       }
 
       const sprms = [];
@@ -14937,19 +14919,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
       this.specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
-          nom.used_params(aprm, aset);
+          for(const param of nom.used_params()) {
+            !sprms.includes(param) && sprms.push(param);
+          }
         }
         else if(algorithm === cx_prm && !sprms.includes(nom)) {
           sprms.push(nom);
         }
       });
 
-      this._data.used_params = sprms;
-      sprms.forEach((param) => {
-        !aprm.includes(param) && aprm.push(param);
-      });
-
-      return aprm;
+      return _data.used_params = sprms;
     }
 
   }
