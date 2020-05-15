@@ -2476,7 +2476,7 @@ set sizes(v){this._setter_ts('sizes',v)}
    * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
    */
   check_nom2(nom) {
-    let ref = this._manager._owner.$p.utils.is_data_obj(nom) ? nom.ref : nom;
+    const ref = nom.valueOf();
     return this.cnn_elmnts._obj.some((row) => row.nom == ref);
   }
 
@@ -2566,7 +2566,7 @@ set sizes(v){this._setter_ts('sizes',v)}
         return;
       }
       // для угловых, разрешаем art2 только явно для art2
-      if(len_angl.art2 && acn.a.includes(cnn_type) && set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
+      if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
         return;
       }
 

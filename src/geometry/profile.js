@@ -201,11 +201,12 @@ class CnnPoint {
    * @return {{art2: boolean, art1: boolean, angle: number}}
    */
   len_angl() {
-    const {is_t} = this;
+    const {is_t, cnn} = this;
+    const invert = cnn && cnn.cnn_type === $p.enm.cnn_types.av;
     return {
       angle: 90,
-      art1: is_t,
-      art2: !is_t,
+      art1: invert ? !is_t : is_t,
+      art2: invert ? is_t : !is_t,
     };
   }
 

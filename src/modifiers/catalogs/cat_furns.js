@@ -142,7 +142,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // ищем строки дополнительной спецификации
       if(!exclude_dop){
-        this.specification.find_rows({dop: {not: 0}, elm: row_furn.elm}, (dop_row) => {
+        this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
 
           if(!dop_row.check_restrictions(contour, cache)){
             return;
@@ -166,7 +166,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             // длина с поправкой на фурнпаз
             const faltz = len - 2 * sizefurn;
 
-            let invert_nearest = false, coordin = 0;
+            let coordin = 0;
 
             if(dop_row.offset_option == offset_options.Формула){
               if(!dop_row.formula.empty()){
@@ -289,16 +289,38 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
       else{
         if(row_furn.quantity){
-          const row_spec = res.add(row_furn);
-          row_spec.origin = this;
-          if(!row_furn.formula.empty() && !row_furn.formula.condition_formula){
-            row_furn.formula.execute({ox, contour, row_furn, row_spec});
-          }
+          this.add_with_algorithm(res, ox, contour, row_furn);
         }
       }
     });
 
     return res;
+  }
+
+  /**
+   * Добавляет строку в спецификацию с учетом алгоритма
+   * @param {TabularSection} res
+   * @param {CatCharacteristics} ox
+   * @param {Contour} contour
+   * @param {CatFurnsSpecificationRow} row_furn
+   */
+  add_with_algorithm(res, ox, contour, row_furn) {
+    const {algorithm, formula} = row_furn;
+    let cx;
+    if(algorithm == 'cx_prm') {
+      cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
+      if(cx.toString().toLowerCase() === 'нет') {
+        return;
+      }
+    }
+    const row_spec = res.add(row_furn);
+    row_spec.origin = this;
+    if(algorithm == 'cx_prm') {
+      row_spec.nom_characteristic = cx;
+    }
+    if(!formula.empty() && !formula.condition_formula){
+      formula.execute({ox, contour, row_furn, row_spec});
+    }
   }
 
   /**

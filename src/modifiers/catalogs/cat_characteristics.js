@@ -495,6 +495,22 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       });
   }
 
+  /**
+   * Значение параметра для текущего слоя или вставки
+   * @param cnstr
+   * @param inset
+   * @param param
+   * @return {*}
+   */
+  extract_value({cnstr, inset, param}) {
+    const {utils: {blank}, CatNom, cat} = $p;
+    inset = inset ? inset.valueOf() : blank.guid;
+    param = param ? param.valueOf() : blank.guid;
+    const row = this.params._obj.find((row) =>
+      row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
+    return param instanceof CatNom ? cat.characteristics.get(row.value) : row.value;
+  }
+
 };
 
 $p.CatCharacteristics.builder_props_defaults = {
