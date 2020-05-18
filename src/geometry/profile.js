@@ -1434,9 +1434,13 @@ class ProfileItem extends GeneratrixElement {
         const {inner, outer} = this.joined_imposts();
         const elm2 = this.elm;
         for (const {profile} of inner.concat(outer)) {
-          const {b, e} = profile.rays;
-          b.profile == this && b.clear(true);
-          e.profile == this && e.clear(true);
+          for(const node of ['b', 'e']) {
+            const n = profile.rays[node];
+            if(n.profile == this && n.cnn) {
+              cnns.clear({elm1: profile, elm2: this});
+              n.cnn = null;
+            }
+          }
         }
 
         // для соединительных профилей и элементов со створками, пересчитываем соседей
