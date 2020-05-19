@@ -378,12 +378,7 @@
         // если у всех основных номенклатур одинаковая ширина, её и возвращаем без фильтра
         const widths = new Set();
         this.specification._obj.filter(({is_main_elm}) => is_main_elm).forEach(({_row}) => widths.add(_row.nom.width));
-        if(widths.size === 1) {
-          _data.width = widths.values()[0];
-        }
-        else {
-          _data.width = -1;
-        }
+        _data.width = widths.size === 1 ? widths.values()[0] : -1;
       }
       return (_data.width > 0 ? _data.width : this.nom(elm, strict).width) || 80;
     }
