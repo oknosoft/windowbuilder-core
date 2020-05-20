@@ -1522,8 +1522,13 @@ class ProfileItem extends GeneratrixElement {
 
     if(nearest || all) {
       // импост может оказаться штульпом
-      if(elm_type === elm_types.Импост && this.nom.elm_type === elm_types.Штульп) {
-        elm_type = elm_types.Штульп;
+      if(elm_type === elm_types.Импост){
+        if (this.nom.elm_type === elm_types.Штульп) {
+          elm_type = elm_types.Штульп;
+        }
+        // else if (this.joined_nearests().some(({layer}) => layer.furn.shtulp_kind())) {
+        //
+        // }
       }
       let pos = nearest && project._dp.sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
       if(pos == positions.Центр) {

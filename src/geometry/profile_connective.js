@@ -100,6 +100,15 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
+   * К соединителям ипосты не крепятся
+   */
+  joined_imposts(check_only) {
+    const tinner = [];
+    const touter = [];
+    return check_only ? false : {inner: tinner, outer: touter};
+  }
+
+  /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
    * @property nearest
    */

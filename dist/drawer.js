@@ -3816,7 +3816,7 @@ class BuilderElement extends paper.Group {
       cnn2 = Object.assign({}, cnn1),
       cnn3 = Object.assign({}, cnn1);
 
-    const {iface, utils, cat: {inserts, cnns, clrs}, enm, cch} = $p;
+    const {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
 
     function cnn_choice_links(o, cnn_point){
 
@@ -3853,12 +3853,12 @@ class BuilderElement extends paper.Group {
               const {thickness, insert_type, insert_glass_type} = inserts.get(o);
               return _inserts_types_filling.indexOf(insert_type) != -1 &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == enm.inserts_glass_types.Заполнение);
+                (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
             }
             else{
               let refs = "";
               inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == enm.inserts_glass_types.Заполнение){
+                if(o.insert_glass_type.empty() || o.insert_glass_type == inserts_glass_types.Заполнение){
                   if(refs){
                     refs += ", ";
                   }
@@ -3870,10 +3870,10 @@ class BuilderElement extends paper.Group {
           }
           else if(this instanceof Profile){
             if(this.nearest()){
-              selection = {elm_type: {in: [enm.elm_types.Створка, enm.elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Створка, elm_types.Добор]}};
             }
             else{
-              selection = {elm_type: {in: [enm.elm_types.Рама, enm.elm_types.Импост, enm.elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
             }
           }
           else{
@@ -3920,13 +3920,13 @@ class BuilderElement extends paper.Group {
 
         if(cnn_ii){
           if (cnn_ii.elm instanceof Filling) {
-            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, enm.cnn_types.acn.ii);
+            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
-          else if (cnn_ii.elm.elm_type == enm.elm_types.Створка && this.elm_type != enm.elm_types.Створка) {
-            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, enm.cnn_types.acn.ii);
+          else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
+            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else {
-            nom_cnns = cnns.nom_cnn(this, cnn_ii.elm, enm.cnn_types.acn.ii);
+            nom_cnns = cnns.nom_cnn(this, cnn_ii.elm, cnn_types.acn.ii);
           }
         }
 
@@ -4208,7 +4208,6 @@ class BuilderElement extends paper.Group {
 EditorInvisible.BuilderElement = BuilderElement;
 
 
-
 class Filling extends AbstractFilling(BuilderElement) {
 
   constructor(attr) {
@@ -4290,18 +4289,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     if (attr.proto) {
       const tmp = [];
       project.ox.glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
-        tmp.push({
-          clr: row.clr,
-          elm: this.elm,
-          gno: row.gno,
-          inset: row.inset
-        });
+        tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
       });
       tmp.forEach((row) => project.ox.glass_specification.add(row));
     }
 
   }
-
 
   save_coordinates() {
 
@@ -4383,7 +4376,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     imposts.forEach((curr) => curr.save_coordinates());
   }
 
-
   create_leaf(furn, direction) {
 
     const {project, _row} = this;
@@ -4416,11 +4408,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     return contour;
   }
 
-
   cnn_side() {
     return $p.enm.cnn_sides.Изнутри;
   }
-
 
   nearest() {
     return null;
@@ -4457,7 +4447,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
   }
-
 
   redraw() {
 
@@ -4522,7 +4511,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
 
-
   draw_fragment() {
     const {l_dimensions, layer, path} = this;
     this.visible = true;
@@ -4541,7 +4529,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     lv.visible = true;
     layer.zoom_fit();
   }
-
 
   set_inset(v, ignore_select) {
 
@@ -4567,7 +4554,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.set_inset(inset);
   }
 
-
   set_clr(v, ignore_select) {
     if(!ignore_select && this.project.selectedItems.length > 1){
       this.project.selected_glasses().forEach((elm) => {
@@ -4578,7 +4564,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     super.set_clr(v);
   }
-
 
   purge_paths() {
     const paths = this.children.filter((child) => child instanceof paper.Path);
@@ -4594,7 +4579,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       destination: path.bounds.topRight
     });
   }
-
 
   formula(by_art) {
     let res;
@@ -4617,7 +4601,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res || (by_art ? this.inset.article || this.inset.name : this.inset.name);
   }
 
-
   deselect_onlay_points() {
     for(const {generatrix} of this.imposts) {
       generatrix.segments.forEach((segm) => {
@@ -4631,7 +4614,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
 
-
   get imposts() {
     return this.getItems({class: Onlay});
   }
@@ -4640,13 +4622,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr._profiles || [];
   }
 
-
   remove_onlays() {
     for(let onlay of this.imposts){
       onlay.remove();
     }
   }
-
 
   remove() {
     this.remove_onlays();
@@ -4655,21 +4635,17 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
 
-
   get area() {
     return (this.bounds.area / 1e6).round(5);
   }
-
 
   get form_area() {
     return (this.path.area/1e6).round(5);
   }
 
-
   interiorPoint() {
     return this.path.interiorPoint;
   }
-
 
   get is_rectangular() {
     const {profiles, path} = this;
@@ -4679,7 +4655,6 @@ class Filling extends AbstractFilling(BuilderElement) {
   get generatrix() {
     return this.path;
   }
-
 
   get path() {
     return this._attr.path;
@@ -4801,11 +4776,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res;
   }
 
-
   get outer_profiles() {
     return this.profiles;
   }
-
 
   get perimeter() {
     const res = [];
@@ -4827,7 +4800,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {path} = this;
     return path ? path.bounds : new paper.Rectangle();
   }
-
 
   perimeter_inner(size = 0) {
     const {center} = this.bounds;
@@ -4866,7 +4838,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
   }
 
-
   bounds_light(size = 0) {
     const path = new paper.Path({insert: false});
     for (const {sub_path} of this.perimeter_inner(size)) {
@@ -4879,32 +4850,26 @@ class Filling extends AbstractFilling(BuilderElement) {
     return path.bounds;
   }
 
-
   get x1() {
     return (this.bounds.left - this.project.bounds.x).round(1);
   }
-
 
   get x2() {
     return (this.bounds.right - this.project.bounds.x).round(1);
   }
 
-
   get y1() {
     return (this.project.bounds.height + this.project.bounds.y - this.bounds.bottom).round(1);
   }
-
 
   get y2() {
     return (this.project.bounds.height + this.project.bounds.y - this.bounds.top).round(1);
   }
 
-
   get info() {
     const {elm, bounds, thickness} = this;
     return "№" + elm + " w:" + bounds.width.toFixed(0) + " h:" + bounds.height.toFixed(0) + " z:" + thickness.toFixed(0);
   }
-
 
   get oxml() {
     const oxml = {
@@ -7320,27 +7285,29 @@ class ProfileItem extends GeneratrixElement {
   }
 
   default_inset(all) {
-    const {orientation, project, _attr, elm_type} = this;
+    let {orientation, project, _attr, elm_type} = this;
     const nearest = this.nearest(true);
+    const {positions, orientations, elm_types, cnn_types} = $p.enm;
 
     if(nearest || all) {
-      let pos = nearest && project._dp.sys.flap_pos_by_impost && elm_type == $p.enm.elm_types.Створка ? nearest.pos : this.pos;
-      if(pos == $p.enm.positions.Центр) {
-        if(orientation == $p.enm.orientations.vert) {
-          pos = [pos, $p.enm.positions.ЦентрВертикаль];
-        }
-        if(orientation == $p.enm.orientations.hor) {
-          pos = [pos, $p.enm.positions.ЦентрГоризонталь];
+      if(elm_type === elm_types.Импост){
+        if (this.nom.elm_type === elm_types.Штульп) {
+          elm_type = elm_types.Штульп;
         }
       }
-      this.set_inset(this.project.default_inset({
-        elm_type: elm_type,
-        pos: pos,
-        inset: this.inset
-      }), true);
+      let pos = nearest && project._dp.sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
+      if(pos == positions.Центр) {
+        if(orientation == orientations.vert) {
+          pos = [pos, positions.ЦентрВертикаль];
+        }
+        if(orientation == orientations.hor) {
+          pos = [pos, positions.ЦентрГоризонталь];
+        }
+      }
+      this.set_inset(this.project.default_inset({elm_type, pos, inset: this.inset}), true);
     }
     if(nearest) {
-      _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, $p.enm.cnn_types.acn.ii, _attr._nearest_cnn);
+      _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
     }
   }
 
@@ -7944,16 +7911,17 @@ class Profile extends ProfileItem {
 
   get elm_type() {
     const {_rays, _nearest} = this._attr;
+    const {elm_types} = $p.enm;
 
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
-      return $p.enm.elm_types.Импост;
+      return elm_types.Импост;
     }
 
     if(this.layer.parent instanceof Contour) {
-      return $p.enm.elm_types.Створка;
+      return elm_types.Створка;
     }
 
-    return $p.enm.elm_types.Рама;
+    return elm_types.Рама;
   }
 
   get pos() {
@@ -8489,6 +8457,12 @@ class ProfileConnective extends ProfileItem {
 
     return res;
 
+  }
+
+  joined_imposts(check_only) {
+    const tinner = [];
+    const touter = [];
+    return check_only ? false : {inner: tinner, outer: touter};
   }
 
   nearest() {
@@ -10126,7 +10100,7 @@ class Scheme extends paper.Project {
   }
 
   default_inset(attr) {
-
+    const {positions, elm_types} = $p.enm;
     let rows;
 
     if(!attr.pos) {
@@ -10152,7 +10126,7 @@ class Scheme extends paper.Project {
       return attr.pos == pos;
     }
 
-    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == $p.enm.positions.Любое))) {
+    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
       return attr.inset;
     }
 
@@ -10171,14 +10145,18 @@ class Scheme extends paper.Project {
     }
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == $p.enm.positions.Любое && row.by_default) {
+        if(row.pos == positions.Любое && row.by_default) {
           return inset = row.nom;
         }
       });
     }
     if(!inset) {
+      if(attr.elm_type === elm_types.Штульп) {
+        attr.elm_type = elm_types.Импост;
+        return this.default_inset(attr);
+      }
       rows.some((row) => {
-        if(row.pos == $p.enm.positions.Любое) {
+        if(row.pos == positions.Любое) {
           return inset = row.nom;
         }
       });
@@ -12522,7 +12500,7 @@ $p.spec_building = new SpecBuilding($p);
 		rama_impost: {
 			get(){
 				return cache.rama_impost
-					|| ( cache.rama_impost = [ _mgr.Рама, _mgr.Импост] );
+					|| ( cache.rama_impost = [ _mgr.Рама, _mgr.Импост, _mgr.Штульп] );
 			}
 		},
 
