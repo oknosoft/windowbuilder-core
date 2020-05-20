@@ -1314,7 +1314,7 @@ class Scheme extends paper.Project {
    * @returns {Array.<ProfileItem>}
    */
   default_inset(attr) {
-
+    const {positions, elm_types} = $p.enm;
     let rows;
 
     if(!attr.pos) {
@@ -1343,7 +1343,7 @@ class Scheme extends paper.Project {
     }
 
     // если подходит текущая, возвращаем текущую
-    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == $p.enm.positions.Любое))) {
+    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
       return attr.inset;
     }
 
@@ -1365,15 +1365,20 @@ class Scheme extends paper.Project {
     // ищем по умолчанию + любое
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == $p.enm.positions.Любое && row.by_default) {
+        if(row.pos == positions.Любое && row.by_default) {
           return inset = row.nom;
         }
       });
     }
     // ищем любое без умолчаний
     if(!inset) {
+      // если не нашлось штульпа, ищем импост
+      if(attr.elm_type === elm_types.Штульп) {
+        attr.elm_type = elm_types.Импост;
+        return this.default_inset(attr);
+      }
       rows.some((row) => {
-        if(row.pos == $p.enm.positions.Любое) {
+        if(row.pos == positions.Любое) {
           return inset = row.nom;
         }
       });
