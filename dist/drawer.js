@@ -3670,7 +3670,6 @@ class DimensionRadius extends DimensionLineCustom {
 
 EditorInvisible.DimensionRadius = DimensionRadius;
 
-
 class BuilderElement extends paper.Group {
 
   constructor(attr) {
@@ -3730,10 +3729,11 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
-    this.on('doubleclick', this.elm_dblclick);
+    if(this.getView()._countItemEvent) {
+      this.on('doubleclick', this.elm_dblclick);
+    }
 
   }
-
 
   get owner() {
     return this._attr.owner;
@@ -3741,7 +3741,6 @@ class BuilderElement extends paper.Group {
   set owner(v) {
     this._attr.owner = v;
   }
-
 
   get generatrix() {
     return this._attr.generatrix;
@@ -3791,7 +3790,6 @@ class BuilderElement extends paper.Group {
       }
     }
   }
-
 
   get path() {
     return this._attr.path;
@@ -3999,7 +3997,6 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
-
   get nom() {
     return this.inset.nom(this);
   }
@@ -4033,7 +4030,6 @@ class BuilderElement extends paper.Group {
     return this.nom.sizefurn || 20;
   }
 
-
   get cnn3(){
     const cnn_ii = this.selected_cnn_ii();
     return cnn_ii ? cnn_ii.row.cnn : $p.cat.cnns.get();
@@ -4066,7 +4062,6 @@ class BuilderElement extends paper.Group {
     this.set_clr(v);
   }
 
-
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
@@ -4078,7 +4073,6 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   set_clr(v, ignore_select) {
     if(this._row.clr != v) {
       this._row.clr = v;
@@ -4089,11 +4083,9 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   t_parent(be) {
     return this;
   }
-
 
   selected_cnn_ii() {
     const {project, elm} = this;
@@ -4129,7 +4121,6 @@ class BuilderElement extends paper.Group {
     }
   }
 
-
   remove() {
     this.detache_wnd && this.detache_wnd();
 
@@ -4150,7 +4141,6 @@ class BuilderElement extends paper.Group {
 
     super.remove();
   }
-
 
   err_spec_row(nom, text) {
     if(!nom){
@@ -13091,11 +13081,12 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   extract_value({cnstr, inset, param}) {
     const {utils: {blank}, CatNom, cat} = $p;
+    const is_nom = param instanceof CatNom;
     inset = inset ? inset.valueOf() : blank.guid;
     param = param ? param.valueOf() : blank.guid;
     const row = this.params._obj.find((row) =>
       row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
-    return param instanceof CatNom ? cat.characteristics.get(row.value) : row.value;
+    return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
 };
@@ -14506,11 +14497,15 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         const irow = main_rows[0],
           sizes = {},
           sz_keys = {},
-          sz_prms = ['length', 'width', 'thickness'].map((name) => {
-            const prm = job_prm.properties[name];
-            sz_keys[prm.ref] = name;
-            return prm;
-          });
+          sz_prms = ['length', 'width', 'thickness']
+            .map((name) => {
+              const prm = job_prm.properties[name];
+              if(prm) {
+                sz_keys[prm.ref] = name;
+                return prm;
+              }
+            })
+            .filter((prm) => prm);
 
         res.owner = irow.nom instanceof $p.CatInserts ? irow.nom.nom() : irow.nom;
 

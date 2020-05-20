@@ -504,11 +504,12 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    */
   extract_value({cnstr, inset, param}) {
     const {utils: {blank}, CatNom, cat} = $p;
+    const is_nom = param instanceof CatNom;
     inset = inset ? inset.valueOf() : blank.guid;
     param = param ? param.valueOf() : blank.guid;
     const row = this.params._obj.find((row) =>
       row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
-    return param instanceof CatNom ? cat.characteristics.get(row.value) : row.value;
+    return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
 };

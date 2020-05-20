@@ -76,7 +76,9 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
-    this.on('doubleclick', this.elm_dblclick);
+    if(this.getView()._countItemEvent) {
+      this.on('doubleclick', this.elm_dblclick);
+    }
 
   }
 

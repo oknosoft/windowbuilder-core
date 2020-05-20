@@ -400,11 +400,15 @@
         const irow = main_rows[0],
           sizes = {},
           sz_keys = {},
-          sz_prms = ['length', 'width', 'thickness'].map((name) => {
-            const prm = job_prm.properties[name];
-            sz_keys[prm.ref] = name;
-            return prm;
-          });
+          sz_prms = ['length', 'width', 'thickness']
+            .map((name) => {
+              const prm = job_prm.properties[name];
+              if(prm) {
+                sz_keys[prm.ref] = name;
+                return prm;
+              }
+            })
+            .filter((prm) => prm);
 
         // установим номенклатуру продукции
         res.owner = irow.nom instanceof $p.CatInserts ? irow.nom.nom() : irow.nom;
