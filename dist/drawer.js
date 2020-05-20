@@ -8547,7 +8547,11 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   get profiles() {
-    return this.children.filter((elm) => elm instanceof Profile);
+    return this.children.filter((elm) => elm instanceof ProfileItem);
+  }
+
+  on_sys_changed() {
+    this.profiles.forEach((elm) => elm.default_inset(true));
   }
 
   notify(obj, type = 'update') {
@@ -9217,6 +9221,7 @@ class Scheme extends paper.Project {
 
       obj._manager.emit_async('rows', obj, {extra_fields: true});
 
+      this.l_connective.on_sys_changed();
       for (const contour of this.contours) {
         contour.on_sys_changed();
       }

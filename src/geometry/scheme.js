@@ -151,6 +151,7 @@ class Scheme extends paper.Project {
       obj._manager.emit_async('rows', obj, {extra_fields: true});
 
       // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
+      this.l_connective.on_sys_changed();
       for (const contour of this.contours) {
         contour.on_sys_changed();
       }
