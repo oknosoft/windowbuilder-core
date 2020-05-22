@@ -553,9 +553,22 @@ get type(){const {type} = this._obj; return typeof type === 'object' ? type : {t
   linked_values(links, prow, values = []) {
     let changed;
     // собираем все доступные значения в одном массиве
-    links.forEach((link) => link.values.forEach((row) => values.push(row)));
+    links.forEach((link) => link.values.forEach((row) => {
+      if(row.value.is_folder) {
+        row.value._children().forEach((value) => {
+          !value.is_folder && values.push({
+            value,
+            _obj: {value: value.valueOf()},
+            by_default: row.by_default,
+          });
+        });
+      }
+      else {
+        values.push(row);
+      }
+    }));
     // если значение доступно в списке - спокойно уходим
-    if(values.some((row) => row._obj.value == prow.value)) {
+    if(values.some(({_obj}) => _obj.value == prow.value)) {
       return;
     }
     // если есть явный default - устанавливаем
