@@ -596,13 +596,15 @@ get type(){const {type} = this._obj; return typeof type === 'object' ? type : {t
     if(!links) {
       links = this.params_links(attr);
     }
+    const {types} = this.type;
+    const with_clr_grp = types.length === 2 && types.includes('cat.clrs');
     links.forEach((link) => {
       // если ключ найден в параметрах, добавляем фильтр
       if(!filter.ref) {
         filter.ref = {in: []};
       }
       if(filter.ref.in) {
-        link.append_values().forEach(({_obj}) => {
+        link.append_values([], with_clr_grp).forEach(({_obj}) => {
           if(!filter.ref.in.includes(_obj.value)) {
             filter.ref.in.push(_obj.value);
           }
@@ -715,15 +717,29 @@ get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
 
 
-  append_values(values = []) {
+  /**
+   * Дополеняет массив разрешенными в текущей связи значениями
+   * @param values {Array}
+   * @param with_clr_grp {Boolean} - с учетом цветоценовых групп
+   * @return {*[]}
+   */
+  append_values(values = [], with_clr_grp) {
     this.values.forEach((row) => {
       if(row.value.is_folder) {
-        row.value._children().forEach((value) => {
+        row.value._manager.find_rows({parent: row.value}, (value) => {
           !value.is_folder && values.push({
             value,
             _obj: {value: value.valueOf()},
           });
         });
+      }
+      else if(with_clr_grp && row.value.clrs) {
+        for(const value of row.value.clrs()) {
+          values.push({
+            value,
+            _obj: {value: value.valueOf()},
+          });
+        }
       }
       else {
         values.push(row);
@@ -2912,7 +2928,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
   default_clr(obj = {}) {
     const {clr_conformity, _manager} = this;
     const {cat: {clrs}, CatClrs, CatColor_price_groups} = _manager._owner.$p;
-    
+
     // а надо ли устанавливать? если не задано ограничение, выходим
     if(!clr_conformity.count()) {
       return clrs.get();
@@ -2949,6 +2965,33 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       }
     });
     return obj.clr;
+  }
+
+  /**
+   * Извлекает доступные цвета
+   * @return {Array.<CatClrs>}
+   */
+  clrs() {
+    const {cat, CatClrs, CatColor_price_groups} = this._manager._owner.$p;
+    const res = [];
+    this.clr_conformity.forEach(({clr1}) => {
+      if(clr1 instanceof CatClrs) {
+        if(clr1.is_folder) {
+          cat.clrs.find_rows({parent: clr1}, (clr) => {
+            !clr.is_folder && res.push(clr);
+          });
+        }
+        else {
+          res.push(clr1);
+        }
+      }
+      else if(clr1 instanceof CatColor_price_groups) {
+        for(const clr of clr1.clrs()) {
+          res.push(clr1);
+        }
+      }
+    });
+    return res;
   }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{

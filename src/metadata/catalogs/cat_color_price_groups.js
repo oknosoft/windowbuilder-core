@@ -14,7 +14,7 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
   default_clr(obj = {}) {
     const {clr_conformity, _manager} = this;
     const {cat: {clrs}, CatClrs, CatColor_price_groups} = _manager._owner.$p;
-    
+
     // а надо ли устанавливать? если не задано ограничение, выходим
     if(!clr_conformity.count()) {
       return clrs.get();
@@ -51,5 +51,32 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
       }
     });
     return obj.clr;
+  }
+
+  /**
+   * Извлекает доступные цвета
+   * @return {Array.<CatClrs>}
+   */
+  clrs() {
+    const {cat, CatClrs, CatColor_price_groups} = this._manager._owner.$p;
+    const res = [];
+    this.clr_conformity.forEach(({clr1}) => {
+      if(clr1 instanceof CatClrs) {
+        if(clr1.is_folder) {
+          cat.clrs.find_rows({parent: clr1}, (clr) => {
+            !clr.is_folder && res.push(clr);
+          });
+        }
+        else {
+          res.push(clr1);
+        }
+      }
+      else if(clr1 instanceof CatColor_price_groups) {
+        for(const clr of clr1.clrs()) {
+          res.push(clr1);
+        }
+      }
+    });
+    return res;
   }
 };
