@@ -486,16 +486,14 @@
         return false;
       }
 
-      if (!utils.is_data_obj(row)) {
-    if (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру) {
-      if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
-        return false;
+      if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
+        if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
+          return false;
+        }
+        if (row.ahmin > _row.angle_hor || row.ahmax < _row.angle_hor) {
+          return false;
+        }
       }
-      if (row.ahmin > _row.angle_hor || row.ahmax < _row.angle_hor) {
-        return false;
-      }
-    }
-  }
 
       //// Включить проверку размеров и углов, поля "Устанавливать с..." и т.д.
 
