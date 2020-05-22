@@ -549,24 +549,15 @@ get type(){const {type} = this._obj; return typeof type === 'object' ? type : {t
 
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
+   * @param links {Array}
+   * @param prow {Object}
+   * @param values {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
+   * @return {boolean}
    */
   linked_values(links, prow, values = []) {
     let changed;
     // собираем все доступные значения в одном массиве
-    links.forEach((link) => link.values.forEach((row) => {
-      if(row.value.is_folder) {
-        row.value._children().forEach((value) => {
-          !value.is_folder && values.push({
-            value,
-            _obj: {value: value.valueOf()},
-            by_default: row.by_default,
-          });
-        });
-      }
-      else {
-        values.push(row);
-      }
-    }));
+    links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
     if(values.some(({_obj}) => _obj.value == prow.value)) {
       return;
@@ -611,9 +602,9 @@ get type(){const {type} = this._obj; return typeof type === 'object' ? type : {t
         filter.ref = {in: []};
       }
       if(filter.ref.in) {
-        link.values._obj.forEach((row) => {
-          if(filter.ref.in.indexOf(row.value) == -1) {
-            filter.ref.in.push(row.value);
+        link.append_values().forEach(({_obj}) => {
+          if(!filter.ref.in.includes(_obj.value)) {
+            filter.ref.in.push(_obj.value);
           }
         });
       }
@@ -722,7 +713,24 @@ get leadings(){return this._getter_ts('leadings')}
 set leadings(v){this._setter_ts('leadings',v)}
 get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
-}
+
+
+  append_values(values = []) {
+    this.values.forEach((row) => {
+      if(row.value.is_folder) {
+        row.value._children().forEach((value) => {
+          !value.is_folder && values.push({
+            value,
+            _obj: {value: value.valueOf()},
+          });
+        });
+      }
+      else {
+        values.push(row);
+      }
+    });
+    return values;
+  }}
 $p.CatParams_links = CatParams_links;
 class CatParams_linksLeadingsRow extends TabularSectionRow{
 get key(){return this._getter('key')}

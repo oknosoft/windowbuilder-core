@@ -288,20 +288,7 @@ exports.CchProperties = class CchProperties extends Object {
   linked_values(links, prow, values = []) {
     let changed;
     // собираем все доступные значения в одном массиве
-    links.forEach((link) => link.values.forEach((row) => {
-      if(row.value.is_folder) {
-        row.value._children().forEach((value) => {
-          !value.is_folder && values.push({
-            value,
-            _obj: {value: value.valueOf()},
-            by_default: row.by_default,
-          });
-        });
-      }
-      else {
-        values.push(row);
-      }
-    }));
+    links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
     if(values.some(({_obj}) => _obj.value == prow.value)) {
       return;
@@ -346,9 +333,9 @@ exports.CchProperties = class CchProperties extends Object {
         filter.ref = {in: []};
       }
       if(filter.ref.in) {
-        link.values._obj.forEach((row) => {
-          if(filter.ref.in.indexOf(row.value) == -1) {
-            filter.ref.in.push(row.value);
+        link.append_values().forEach(({_obj}) => {
+          if(!filter.ref.in.includes(_obj.value)) {
+            filter.ref.in.push(_obj.value);
           }
         });
       }
