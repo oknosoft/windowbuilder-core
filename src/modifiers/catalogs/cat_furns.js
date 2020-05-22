@@ -280,12 +280,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {
           if(sub_row.is_procedure_row){
             res.add(sub_row);
-            return;
           }
-          else if(!sub_row.quantity){
-            return;
+          else if(sub_row.quantity){
+            res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
-          res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
         });
       }
       else{

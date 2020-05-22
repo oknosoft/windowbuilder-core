@@ -13985,10 +13985,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           if(sub_row.is_procedure_row){
             res.add(sub_row);
           }
-          else if(!sub_row.quantity){
-            return;
+          else if(sub_row.quantity){
+            res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
-          res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
         });
       }
       else{
