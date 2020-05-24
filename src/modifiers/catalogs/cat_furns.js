@@ -8,10 +8,17 @@
  */
 
 /**
- * Индекс в табчасти selection_params
+ * корректируем метаданные табчастей фурнитуры
  */
-$p.cat.furns.metadata('selection_params').index = 'elm';
-$p.cat.furns.metadata('specification').index = 'elm';
+(({md}) => {
+  const {selection_params, specification} = md.get('cat.furns').tabular_sections;
+  // индексы
+  selection_params.index = 'elm';
+  specification.index = 'elm';
+  // устаревшее поле nom_set для совместимости
+  const {fields} = specification;
+  fields.nom_set = fields.nom;
+})($p);
 
 /**
  * Методы объекта фурнитуры
@@ -353,7 +360,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    * @param cache {Object}
    */
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side} = this;
+    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
     const {direction, h_ruch, cnstr} = contour;
 
     // проверка по высоте ручки
@@ -364,6 +371,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     // проверка по формуле
     if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
       return false;
+    }
+
+    // по моменту на петлях (в текущей реализации - просто по массе)
+    if(mmin || mmax) {
+      if(cache.hasOwnProperty(weight)) {
+        cache.weight = cache.ox.elm_weight(-cnstr);
+      }
+      if(mmin && mmin < cache.weight || mmax && mmax > cache.weight) {
+        return false;
+      }
     }
 
     // получаем связанные табличные части
@@ -441,8 +458,4 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
 };
 
-// корректируем метаданные табчасти фурнитуры
-(({md}) => {
-  const {fields} = md.get("cat.furns").tabular_sections.specification;
-  fields.nom_set = fields.nom;
-})($p);
+

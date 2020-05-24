@@ -204,30 +204,12 @@ class ProductsBuilding {
       });
 
       // если задано ограничение по массе - проверяем
-      if(furn.furn_set.flap_weight_max) {
-        const map = new Map();
-        let weight = 0;
-        spec.forEach((row) => {
-          // отбрасываем лишние строки
-          if(row.elm > 0) {
-            if(!map.get(row.elm)) {
-              const crow = ox.coordinates.find({elm: row.elm});
-              map.set(row.elm, crow ? crow.cnstr : Infinity);
-            }
-            if(map.get(row.elm) !== cnstr) return;
-          }
-          else if(row.elm !== -cnstr) {
-            return;
-          }
-          weight += row.nom.density * row.totqty;
+      if(furn.furn_set.flap_weight_max && ox.elm_weight(-cnstr) > furn.furn_set.flap_weight_max) {
+        // Визуализируем все стороны
+        const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
+        contour.profiles.forEach(elm => {
+          new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
-        if(weight > furn.furn_set.flap_weight_max) {
-          // Визуализируем все стороны
-          const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
-          contour.profiles.forEach(elm => {
-            new_spec_row({elm, row_base, origin: furn, spec, ox});
-          });
-        }
       }
     }
 

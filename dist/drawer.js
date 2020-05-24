@@ -11632,28 +11632,11 @@ class ProductsBuilding {
         }
       });
 
-      if(furn.furn_set.flap_weight_max) {
-        const map = new Map();
-        let weight = 0;
-        spec.forEach((row) => {
-          if(row.elm > 0) {
-            if(!map.get(row.elm)) {
-              const crow = ox.coordinates.find({elm: row.elm});
-              map.set(row.elm, crow ? crow.cnstr : Infinity);
-            }
-            if(map.get(row.elm) !== cnstr) return;
-          }
-          else if(row.elm !== -cnstr) {
-            return;
-          }
-          weight += row.nom.density * row.totqty;
+      if(furn.furn_set.flap_weight_max && ox.elm_weight(-cnstr) > furn.furn_set.flap_weight_max) {
+        const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
+        contour.profiles.forEach(elm => {
+          new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
-        if(weight > furn.furn_set.flap_weight_max) {
-          const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
-          contour.profiles.forEach(elm => {
-            new_spec_row({elm, row_base, origin: furn, spec, ox});
-          });
-        }
       }
     }
 
@@ -12874,40 +12857,39 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   }
 
   get prod_nom() {
-    if(!this.sys.empty()) {
+    const {sys, params} = this;
+    if(!sys.empty()) {
 
-      var setted,
-        param = this.params;
+      let setted;
 
-      if(this.sys.production.count() == 1) {
-        this.owner = this.sys.production.get(0).nom;
-
+      if(sys.production.count() === 1) {
+        this.owner = sys.production.get(0).nom;
       }
-      else if(this.sys.production.count() > 1) {
-        this.sys.production.forEach((row) => {
+      else {
+        sys.production.forEach((row) => {
 
           if(setted) {
             return false;
           }
 
           if(row.param && !row.param.empty()) {
-            param.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
+            params.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
               setted = true;
-              param._owner.owner = row.nom;
+              this.owner = row.nom;
               return false;
             });
           }
 
         });
         if(!setted) {
-          this.sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
+          sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
             setted = true;
-            param._owner.owner = row.nom;
+            this.owner = row.nom;
             return false;
           });
         }
         if(!setted) {
-          this.owner = this.sys.production.get(0).nom;
+          this.owner = sys.production.get(0).nom;
         }
       }
     }
@@ -13072,6 +13054,28 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
+  elm_weight(elmno) {
+    const {coordinates, specification} = this;
+    const map = new Map();
+    let weight = 0;
+    specification.forEach(({elm, nom, totqty}) => {
+      if(elm !== elmno) {
+        if(elmno < 0 && elm > 0) {
+          if(!map.get(elm)) {
+            const crow = coordinates.find({elm});
+            map.set(elm, crow ? -crow.cnstr : Infinity);
+          }
+          if(map.get(elm) !== elmno) return;
+        }
+        else {
+          return;
+        }
+      }
+      weight += nom.density * totqty;
+    });
+    return weight;
+  }
+
 };
 
 $p.CatCharacteristics.builder_props_defaults = {
@@ -13083,6 +13087,7 @@ $p.CatCharacteristics.builder_props_defaults = {
   rounding: 0,
   mosquito: true,
   jalousie: true,
+  grid: 50,
 };
 
 $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, value) {
@@ -13756,8 +13761,13 @@ $p.CatElm_visualization.prototype.__define({
 });
 
 
-$p.cat.furns.metadata('selection_params').index = 'elm';
-$p.cat.furns.metadata('specification').index = 'elm';
+(({md}) => {
+  const {selection_params, specification} = md.get('cat.furns').tabular_sections;
+  selection_params.index = 'elm';
+  specification.index = 'elm';
+  const {fields} = specification;
+  fields.nom_set = fields.nom;
+})($p);
 
 $p.CatFurns = class CatFurns extends $p.CatFurns {
 
@@ -14037,7 +14047,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurnsSpecificationRow {
 
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side} = this;
+    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
     const {direction, h_ruch, cnstr} = contour;
 
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
@@ -14046,6 +14056,15 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
       return false;
+    }
+
+    if(mmin || mmax) {
+      if(cache.hasOwnProperty(weight)) {
+        cache.weight = cache.ox.elm_weight(-cnstr);
+      }
+      if(mmin && mmin < cache.weight || mmax && mmax > cache.weight) {
+        return false;
+      }
     }
 
     const {selection_params, specification_restrictions} = this._owner._owner;
@@ -14116,10 +14135,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
 };
 
-(({md}) => {
-  const {fields} = md.get("cat.furns").tabular_sections.specification;
-  fields.nom_set = fields.nom;
-})($p);
+
 
 
 
