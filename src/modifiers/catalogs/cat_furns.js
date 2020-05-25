@@ -375,10 +375,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     // по моменту на петлях (в текущей реализации - просто по массе)
     if(mmin || mmax) {
-      if(cache.hasOwnProperty('weight')) {
-        cache.weight = cache.ox.elm_weight(-cnstr);
+      if(!cache.hasOwnProperty('weight')) {
+        cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
       }
-      if(mmin && mmin < cache.weight || mmax && mmax > cache.weight) {
+      if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {
         return false;
       }
     }
