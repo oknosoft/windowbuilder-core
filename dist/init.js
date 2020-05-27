@@ -1161,11 +1161,11 @@ class CatFormulasManager extends CatManager {
     const res = super.load_array(aattr.filter((v) => !v.disabled || v.is_folder), forse);
     const modifiers = this.predefined('modifiers');
     for(const doc of res) {
-      const {_data, _owner, parent} = doc;
+      const {_data, parent} = doc;
       if(_data._formula) {
         _data._formula = null;
         if(parent === modifiers) {
-          _owner.$p.record_log(`runtime modifier '${doc.name}'`);
+          this._owner.$p.record_log(`runtime modifier '${doc.name}'`);
         }
       }
       if(_data._template) {
