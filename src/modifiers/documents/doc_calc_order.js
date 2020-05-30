@@ -639,7 +639,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
-    return this.load_production().then(() => {
+    return this.load_linked_refs().then(() => {
 
       // получаем эскизы продукций, параллельно накапливаем количество и площадь изделий
       let editor, imgs = Promise.resolve();
@@ -1113,8 +1113,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     let tmp = Promise.resolve();
 
     // получаем массив продукций в озу
-    return this.load_production()
-      .then((prod) => {
+    return this.load_linked_refs()
+      .then(() => {
         // бежим по табчасти, если продукция, пересчитываем в рисовалке, если материал или paramrtric - пересчитываем строку
         this.production.forEach((row) => {
           const {characteristic: cx} = row;

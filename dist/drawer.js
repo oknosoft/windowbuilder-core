@@ -15866,7 +15866,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
-    return this.load_production().then(() => {
+    return this.load_linked_refs().then(() => {
 
       let editor, imgs = Promise.resolve();
       const builder_props = attr.builder_props && Object.assign({}, $p.CatCharacteristics.builder_props_defaults, attr.builder_props);
@@ -16266,8 +16266,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const project = editor.create_scheme();
     let tmp = Promise.resolve();
 
-    return this.load_production()
-      .then((prod) => {
+    return this.load_linked_refs()
+      .then(() => {
         this.production.forEach((row) => {
           const {characteristic: cx} = row;
           if(cx.empty() || cx.calc_order !== this) {

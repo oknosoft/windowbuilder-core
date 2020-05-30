@@ -41,8 +41,7 @@
     "md5-file": "^4.0"
   },
   "files": [
-    "dist/drawer.js",
-    "dist/init.js",
+    "dist/**",
     "LICENSE",
     "LICENSE.ru.md"
   ],
