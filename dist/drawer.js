@@ -2008,23 +2008,21 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
+    const {_dp} = this.project;
+    const {sys} = _dp;
     let notify;
 
-    this.params.find_rows({
-      cnstr,
-      inset: $p.utils.blank.guid,
-    }, (prow) => {
+    this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
       const {param} = prow;
       const links = param.params_links({grid: {selection: {cnstr}}, obj: prow});
-      let hide = !param.show_calculated && param.is_calculated;
-      if(!hide){
-        if(links.length) {
-          hide = links.some((link) => link.hide);
+
+      let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);
+      if(!hide) {
+        const drow = sys.prm_defaults(param, cnstr);
+        if(drow && drow.hide) {
+          hide = true;
         }
-        else {
-          hide = prow.hide;
-        }
-      };
+      }
 
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
@@ -2038,7 +2036,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(notify) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
-        const {_dp} = this.project;
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
       }
     };
@@ -13774,6 +13771,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm({project, furn, cnstr}) {
 
     const fprms = project.ox.params;
+    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction}}} = $p;
 
     const aprm = furn.furn_set.used_params();
@@ -13803,13 +13801,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
 
       const {param} = prm_row;
-      project._dp.sys[param instanceof CatNom ? 'params' : 'furn_params'].find_rows({param}, (row) => {
-        if(row.forcibly || forcibly){
-          prm_row.value = row.value;
-        }
-        prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
-        return false;
-      });
+      const drow = sys.prm_defaults(param, cnstr);
+      if(drow && (drow.forcibly || forcibly)) {
+        prm_row.value = drow.value;
+      }
+      prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
 
       param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
@@ -15091,9 +15087,10 @@ $p.cat.production_params.__define({
 					if(pmgr){
 						if(pmgr.class_name=="enm.open_directions")
 							pmgr.forEach(function(v){
-								if(v.name!=$p.enm.tso.folding)
-									res.push({value: v.ref, text: v.synonym});
-							});
+                if(v.name != $p.enm.tso.folding) {
+                  res.push({value: v.ref, text: v.synonym});
+                }
+              });
 						else
 							pmgr.find_rows({owner: prop}, function(v){
 								res.push({value: v.ref, text: v.presentation});
@@ -15117,11 +15114,10 @@ $p.CatProduction_params.prototype.__define({
 
   furns: {
     value(ox, cnstr = 0){
-      const {furn} = $p.job_prm.properties;
-      const {furns} = $p.cat;
+      const {job_prm: {properties}, cat: {furns}} = $p;
       const list = [];
-      if(furn){
-        const links = furn.params_links({
+      if(properties.furn){
+        const links = properties.furn.params_links({
           grid: {selection: {cnstr}},
           obj: {_owner: {_owner: ox}}
         });
@@ -15137,18 +15133,19 @@ $p.CatProduction_params.prototype.__define({
   },
 
 	inserts: {
-		value(elm_types, by_default){
-			var __noms = [];
-			if(!elm_types)
-				elm_types = $p.enm.elm_types.rama_impost;
+		value: function inserts(elm_types, by_default){
+			const __noms = [];
+      if(!elm_types) {
+        elm_types = $p.enm.elm_types.rama_impost;
+      }
+      else if(typeof elm_types == 'string') {
+        elm_types = $p.enm.elm_types[elm_types];
+      }
+      else if(!Array.isArray(elm_types)) {
+        elm_types = [elm_types];
+      }
 
-			else if(typeof elm_types == "string")
-				elm_types = $p.enm.elm_types[elm_types];
-
-			else if(!Array.isArray(elm_types))
-				elm_types = [elm_types];
-
-			this.elmnts.forEach((row) => {
+      this.elmnts.forEach((row) => {
 				if(!row.nom.empty() && elm_types.indexOf(row.elm_type) != -1 &&
 					(by_default == "rows" || !__noms.some((e) => row.nom == e.nom)))
 					__noms.push(row);
@@ -15182,7 +15179,7 @@ $p.CatProduction_params.prototype.__define({
 	},
 
 	refill_prm: {
-		value(ox, cnstr = 0, force, project) {
+		value: function refill_prm(ox, cnstr = 0, force, project) {
 
 			const prm_ts = !cnstr ? this.product_params : this.furn_params;
 			const adel = [];
@@ -15279,7 +15276,14 @@ $p.CatProduction_params.prototype.__define({
         });
 			}
 		}
-	}
+	},
+
+	prm_defaults: {
+	  value: function prm_defaults(param, cnstr) {
+	    const ts = param instanceof $p.CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
+	    return ts.find({param});
+    }
+  }
 
 });
 

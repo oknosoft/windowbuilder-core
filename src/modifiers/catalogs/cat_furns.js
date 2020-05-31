@@ -31,6 +31,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm({project, furn, cnstr}) {
 
     const fprms = project.ox.params;
+    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction}}} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
@@ -64,13 +65,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // умолчания и скрытость по табчасти системы
       const {param} = prm_row;
-      project._dp.sys[param instanceof CatNom ? 'params' : 'furn_params'].find_rows({param}, (row) => {
-        if(row.forcibly || forcibly){
-          prm_row.value = row.value;
-        }
-        prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
-        return false;
-      });
+      const drow = sys.prm_defaults(param, cnstr);
+      if(drow && (drow.forcibly || forcibly)) {
+        prm_row.value = drow.value;
+      }
+      prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
 
       // умолчания по связям параметров
       param.linked_values(param.params_links({
