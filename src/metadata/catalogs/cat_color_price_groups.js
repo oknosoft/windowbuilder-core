@@ -12,44 +12,16 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    * @return CatClrs
    */
   default_clr(obj = {}) {
-    const {clr_conformity, _manager} = this;
-    const {cat: {clrs}, CatClrs, CatColor_price_groups} = _manager._owner.$p;
 
     // а надо ли устанавливать? если не задано ограничение, выходим
-    if(!clr_conformity.count()) {
-      return clrs.get();
-    }
+    const available = this.clrs();
 
     // бежим по строкам ограничения цветов
-    let ok;
-    clr_conformity.forEach(({clr1}) => {
-      if(clr1 === obj.clr || clr1 === obj.clr.parent) {
-        ok = true;
-        return false;
-      }
-    });
-    if(ok) {
-      return obj.clr;
+    if(!available.includes(obj.clr) && available.length) {
+      // подставляем первый разрешенный
+      obj.clr = available[0];
     }
-    // подставляем первый разрешенный
-    clr_conformity.forEach(({clr1}) => {
-      if(clr1 instanceof CatClrs) {
-        if(clr1.is_folder) {
-          clrs.find_rows({parent: clr1}, (v) => {
-            obj.clr = v;
-            return false;
-          });
-        }
-        else {
-          obj.clr = clr1;
-        }
-        return false;
-      }
-      else if(clr1 instanceof CatColor_price_groups) {
-        clr1.default_clr(obj);
-        return false;
-      }
-    });
+
     return obj.clr;
   }
 
@@ -58,9 +30,10 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    * @return {Array.<CatClrs>}
    */
   clrs() {
-    const {cat, CatClrs, CatColor_price_groups} = this._manager._owner.$p;
+    const {_manager: {_owner}, condition_formula: formula, mode, clr_conformity} = this;
+    const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
     const res = [];
-    this.clr_conformity.forEach(({clr1}) => {
+    clr_conformity.forEach(({clr1}) => {
       if(clr1 instanceof CatClrs) {
         if(clr1.is_folder) {
           cat.clrs.find_rows({parent: clr1}, (clr) => {
@@ -77,6 +50,24 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
         }
       }
     });
+
+    // уточним по формуле условия
+    if(!formula.empty()) {
+      if(!mode) {
+        return res.filter((clr) => formula.execute(clr));
+      }
+      else {
+        cat.clrs.forEach((clr) => {
+          if(clr.predefined_name || clr.parent.predefined_name || res.includes(clr)) {
+            return;
+          }
+          if(formula.execute(clr)) {
+            res.push(clr);
+          }
+        })
+      }
+    }
+
     return res;
   }
 };

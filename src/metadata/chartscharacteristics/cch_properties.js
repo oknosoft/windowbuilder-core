@@ -327,15 +327,13 @@ exports.CchProperties = class CchProperties extends Object {
     if(!links) {
       links = this.params_links(attr);
     }
-    const {types} = this.type;
-    const with_clr_grp = types.length === 2 && types.includes('cat.clrs');
     links.forEach((link) => {
       // если ключ найден в параметрах, добавляем фильтр
       if(!filter.ref) {
         filter.ref = {in: []};
       }
       if(filter.ref.in) {
-        link.append_values([], with_clr_grp).forEach(({_obj}) => {
+        link.append_values([]).forEach(({_obj}) => {
           if(!filter.ref.in.includes(_obj.value)) {
             filter.ref.in.push(_obj.value);
           }

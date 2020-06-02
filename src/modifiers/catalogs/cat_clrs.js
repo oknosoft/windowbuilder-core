@@ -119,7 +119,7 @@ $p.cat.clrs.__define({
                 }
               }
               else if(clr instanceof $p.CatColor_price_groups){
-                clr.clr_conformity.forEach(({clr1}) => add_by_clr(clr1));
+                clr.clrs().forEach(add_by_clr);
               }
             }
 
@@ -142,7 +142,7 @@ $p.cat.clrs.__define({
 							clr_group = sys.clr_group;
 						}
 
-						if(clr_group.empty() || !clr_group.clr_conformity.count()){
+						if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())){
               return {not: ''};
 						}
             add_by_clr(clr_group);
