@@ -30,44 +30,47 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    * @return {Array.<CatClrs>}
    */
   clrs() {
-    const {_manager: {_owner}, condition_formula: formula, mode, clr_conformity} = this;
+    const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
     const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
-    const res = [];
-    clr_conformity.forEach(({clr1}) => {
-      if(clr1 instanceof CatClrs) {
-        if(clr1.is_folder) {
-          cat.clrs.find_rows({parent: clr1}, (clr) => {
-            !clr.is_folder && res.push(clr);
-          });
+    if(!_data.clrs || !_data.clrs.size) {
+      _data.clrs = new Set();
+
+      clr_conformity.forEach(({clr1}) => {
+        if(clr1 instanceof CatClrs) {
+          if(clr1.is_folder) {
+            cat.clrs.find_rows({parent: clr1}, (clr) => {
+              !clr.is_folder && _data.clrs.add(clr);
+            });
+          }
+          else {
+            _data.clrs.add(clr1);
+          }
+        }
+        else if(clr1 instanceof CatColor_price_groups) {
+          for(const clr of clr1.clrs()) {
+            _data.clrs.add(clr1);
+          }
+        }
+      });
+
+      // уточним по формуле условия
+      if(!formula.empty()) {
+        if(!mode) {
+          const res = Array.from(_data.clrs);
+          _data.clrs = new Set(res.filter((clr) => formula.execute(clr)));
         }
         else {
-          res.push(clr1);
+          cat.clrs.forEach((clr) => {
+            if(clr.parent.predefined_name || _data.clrs.has(clr)) {
+              return;
+            }
+            if(formula.execute(clr)) {
+              _data.clrs.add(clr);
+            }
+          })
         }
-      }
-      else if(clr1 instanceof CatColor_price_groups) {
-        for(const clr of clr1.clrs()) {
-          res.push(clr1);
-        }
-      }
-    });
-
-    // уточним по формуле условия
-    if(!formula.empty()) {
-      if(!mode) {
-        return res.filter((clr) => formula.execute(clr));
-      }
-      else {
-        cat.clrs.forEach((clr) => {
-          if(clr.predefined_name || clr.parent.predefined_name || res.includes(clr)) {
-            return;
-          }
-          if(formula.execute(clr)) {
-            res.push(clr);
-          }
-        })
       }
     }
-
-    return res;
+    return Array.from(_data.clrs);
   }
 };
