@@ -29,7 +29,7 @@
     "metadata-abstract-ui": "2.0.22-beta.7",
     "metadata-core": "2.0.22-beta.7",
     "metadata-pouchdb": "2.0.22-beta.7",
-    "paper-jsdom-canvas": "^0.12.4"
+    "paper-jsdom-canvas": "^0.12.8"
   },
   "devDependencies": {
     "gulp": "^3.9",
