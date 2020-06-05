@@ -620,7 +620,8 @@ class ProductsBuilding {
       added_cnn_spec = {};
 
       // для всех контуров изделия
-      for (const contour of scheme.getItems({class: Contour})) {
+      const contours = scheme.getItems({class: Contour});
+      for (const contour of contours) {
 
         // для всех профилей контура
         for (const elm of contour.children) {
@@ -638,12 +639,14 @@ class ProductsBuilding {
           }
         }
 
-        // фурнитура контура
-        furn_spec(contour);
-
         // спецификация вставок в контур
         inset_contour_spec(contour);
 
+      }
+
+      // фурнитуру обсчитываем в отдельном цикле, т.к. могут потребоваться свойства соседних слоёв
+      for (const contour of contours) {
+        furn_spec(contour);
       }
 
       // для всех соединительных профилей

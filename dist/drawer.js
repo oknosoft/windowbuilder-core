@@ -11975,7 +11975,8 @@ class ProductsBuilding {
 
       added_cnn_spec = {};
 
-      for (const contour of scheme.getItems({class: Contour})) {
+      const contours = scheme.getItems({class: Contour});
+      for (const contour of contours) {
 
         for (const elm of contour.children) {
           elm instanceof Profile && base_spec_profile(elm);
@@ -11990,10 +11991,12 @@ class ProductsBuilding {
           }
         }
 
-        furn_spec(contour);
-
         inset_contour_spec(contour);
 
+      }
+
+      for (const contour of contours) {
+        furn_spec(contour);
       }
 
       for (const elm of scheme.l_connective.children) {
@@ -14044,7 +14047,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr} = contour;
+    const {direction, h_ruch, cnstr, project} = contour;
 
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
       return false;
@@ -14054,9 +14057,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return false;
     }
 
-    if(mmin || mmax) {
+    if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {
-        cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
+        if(project._dp.sys.flap_weight_max) {
+          const weights = [];
+          for(const cnt of contour.layer.contours) {
+            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+          }
+          cache.weight = Math.max(...weights);
+        }
+        else {
+          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
+        }
       }
       if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {
         return false;
