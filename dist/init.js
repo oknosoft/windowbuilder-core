@@ -2936,7 +2936,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
   clrs() {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
     const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
-    if(!_data.clrs || !_data.clrs.size) {
+    if(!_data.clrs) {
       _data.clrs = new Set();
 
       clr_conformity.forEach(({clr1}) => {
@@ -2952,7 +2952,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
         }
         else if(clr1 instanceof CatColor_price_groups) {
           for(const clr of clr1.clrs()) {
-            _data.clrs.add(clr1);
+            _data.clrs.add(clr);
           }
         }
       });

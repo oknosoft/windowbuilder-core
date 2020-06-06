@@ -32,7 +32,7 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
   clrs() {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
     const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
-    if(!_data.clrs || !_data.clrs.size) {
+    if(!_data.clrs) {
       _data.clrs = new Set();
 
       clr_conformity.forEach(({clr1}) => {
@@ -48,7 +48,7 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
         }
         else if(clr1 instanceof CatColor_price_groups) {
           for(const clr of clr1.clrs()) {
-            _data.clrs.add(clr1);
+            _data.clrs.add(clr);
           }
         }
       });
