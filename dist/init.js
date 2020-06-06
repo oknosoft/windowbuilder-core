@@ -2942,9 +2942,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       clr_conformity.forEach(({clr1}) => {
         if(clr1 instanceof CatClrs) {
           if(clr1.is_folder) {
-            cat.clrs.find_rows({parent: clr1}, (clr) => {
-              !clr.is_folder && _data.clrs.add(clr);
-            });
+            clr1._children().forEach((clr) => _data.clrs.add(clr));
           }
           else {
             _data.clrs.add(clr1);
