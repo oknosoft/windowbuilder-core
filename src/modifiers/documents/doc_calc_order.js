@@ -462,10 +462,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * рассчитывает итоги диспетчеризации
-   * @return {Promise.<TResult>|*}
+   * @return {Promise}
    */
   dispatching_totals() {
-    var options = {
+    const options = {
       reduce: true,
       limit: 10000,
       group: true,
@@ -874,7 +874,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Загружает в RAM данные характеристик продукций заказа
-   * @return {Promise.<TResult>|*}
+   * @return {Promise}
    */
   load_production(forse) {
     const prod = [];
@@ -938,7 +938,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @param params
    * @param create
    * @param grid
-   * @return {Promise.<TResult>}
+   * @return {Promise}
    */
   create_product_row({row_spec, elm, len_angl, params, create, grid}) {
 
@@ -1070,6 +1070,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         const elm = new FakeElm(row_dp);
         // создаём или получаем строку заказа с уникальной харктеристикой
         res = res
+          .then(() => row_dp.inset.check_prm_restrictions({elm, len_angl,
+            params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
             // рассчитываем спецификацию

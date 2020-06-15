@@ -458,6 +458,51 @@
     }
 
     /**
+     * Проверяет ограничения вставки параметрика
+     * @param elm {BuilderElement}
+     * @param len_angl {Object}
+     * @param params {Array}
+     */
+    check_prm_restrictions({elm, len_angl, params}) {
+      const {lmin, lmax, hmin, hmax, smin, smax} = this;
+      const {len, height, s} = elm;
+
+      let name = this.name + ':', err = false;
+
+      if(lmin && len < lmin) {
+        err = true;
+        name += `\nдлина ${len} < ${lmin}`;
+      }
+      if(lmax && len > lmax) {
+        err = true;
+        name += `\nдлина ${len} > ${lmax}`;
+      }
+      if(hmin && height < hmin) {
+        err = true;
+        name += `\nвысота ${height} < ${hmin}`;
+      }
+      if(hmax && height > hmax) {
+        err = true;
+        name += `\nвысота ${height} > ${hmax}`;
+      }
+
+      // получаем набор параметров, используемых текущей вставкой
+      const used_params = this.used_params();
+
+      // добавляем параметр в характеристику, если используется в текущей вставке
+      params.forEach(({param, value}) => {
+        if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {
+          err = true;
+          name += `\nне заполнен обязательный параметр '${param.name}'`;
+        }
+      });
+
+      if(err) {
+        throw new Error(name);
+      }
+    }
+
+    /**
      * Проверяет ограничения вставки или строки вставки
      * @param row {CatInserts|CatInsertsSpecificationRow}
      * @param elm {BuilderElement}

@@ -14563,6 +14563,43 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     }
 
+    check_prm_restrictions({elm, len_angl, params}) {
+      const {lmin, lmax, hmin, hmax, smin, smax} = this;
+      const {len, height, s} = elm;
+
+      let name = this.name + ':', err = false;
+
+      if(lmin && len < lmin) {
+        err = true;
+        name += `\nдлина ${len} < ${lmin}`;
+      }
+      if(lmax && len > lmax) {
+        err = true;
+        name += `\nдлина ${len} > ${lmax}`;
+      }
+      if(hmin && height < hmin) {
+        err = true;
+        name += `\nвысота ${height} < ${hmin}`;
+      }
+      if(hmax && height > hmax) {
+        err = true;
+        name += `\nвысота ${height} > ${hmax}`;
+      }
+
+      const used_params = this.used_params();
+
+      params.forEach(({param, value}) => {
+        if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {
+          err = true;
+          name += `\nне заполнен обязательный параметр '${param.name}'`;
+        }
+      });
+
+      if(err) {
+        throw new Error(name);
+      }
+    }
+
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
       const {_row} = elm;
@@ -15722,7 +15759,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   dispatching_totals() {
-    var options = {
+    const options = {
       reduce: true,
       limit: 10000,
       group: true,
@@ -16258,6 +16295,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         const len_angl = new FakeLenAngl(row_dp);
         const elm = new FakeElm(row_dp);
         res = res
+          .then(() => row_dp.inset.check_prm_restrictions({elm, len_angl,
+            params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
