@@ -468,7 +468,6 @@
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
       const {_row} = elm;
-      const len = len_angl ? len_angl.len : _row.len;
       const is_linear = elm.is_linear ? elm.is_linear() : true;
 
       // проверяем площадь
@@ -487,10 +486,12 @@
       }
 
       if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
+        const len = len_angl ? len_angl.len : _row.len;
         if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
           return false;
         }
-        if (row.ahmin > _row.angle_hor || row.ahmax < _row.angle_hor) {
+        const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
+        if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
           return false;
         }
       }
@@ -606,6 +607,7 @@
      * @param len_angl {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
+     * @param clr {CatClrs}
      */
     calculate_spec({elm, len_angl, ox, spec, clr}) {
 
@@ -766,7 +768,7 @@
                   len = value;
                   return false;
                 });
-              };
+              }
               if(len) return false;
             });
 
@@ -788,7 +790,7 @@
                   }
                   return false;
                 });
-              };
+              }
               if(len && width) return false;
             });
             row_spec.qty = row_ins_spec.quantity;
