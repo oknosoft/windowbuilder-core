@@ -517,7 +517,13 @@ class ProductsBuilding {
         const next = (i == glength - 1 ? profiles[0] : profiles[i + 1]).profile;
         const row_cnn = cnn_elmnts.find_rows({elm1: _row.elm, elm2: curr.profile.elm});
 
+        let angle_hor = (new paper.Point(curr.e.x - curr.b.x, curr.b.y - curr.e.y)).angle.round(2);
+        if(angle_hor < 0) {
+          angle_hor += 360;
+        }
+
         const len_angl = {
+          angle_hor,
           angle: 0,
           alp1: prev.generatrix.angle_to(curr.profile.generatrix, curr.b, true),
           alp2: curr.profile.generatrix.angle_to(next.generatrix, curr.e, true),
