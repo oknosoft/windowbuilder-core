@@ -100,7 +100,7 @@ class BaseLine extends ProfileItem {
   }
 
   /**
-   * К линиям ипосты не примыкают
+   * К линиям ипосты не крепятся
    */
   joined_imposts(check_only) {
     const tinner = [];

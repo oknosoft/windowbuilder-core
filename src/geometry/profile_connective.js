@@ -100,6 +100,15 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
+   * К соединителям ипосты не крепятся
+   */
+  joined_imposts(check_only) {
+    const tinner = [];
+    const touter = [];
+    return check_only ? false : {inner: tinner, outer: touter};
+  }
+
+  /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
    * @property nearest
    */
@@ -210,13 +219,19 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   /**
-   * Возвращает массив профилей текущего контура
+   * Возвращает массив профилей текущего слоя
    * @property profiles
-   * @for Contour
-   * @returns {Array.<Profile>}
+   * @returns {Array.<ProfileItem>}
    */
   get profiles() {
-    return this.children.filter((elm) => elm instanceof Profile);
+    return this.children.filter((elm) => elm instanceof ProfileItem);
+  }
+
+  /**
+   * Обработчик при изменении системы
+   */
+  on_sys_changed() {
+    this.profiles.forEach((elm) => elm.default_inset(true));
   }
 
   /**

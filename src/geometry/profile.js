@@ -201,11 +201,12 @@ class CnnPoint {
    * @return {{art2: boolean, art1: boolean, angle: number}}
    */
   len_angl() {
-    const {is_t} = this;
+    const {is_t, cnn} = this;
+    const invert = cnn && cnn.cnn_type === $p.enm.cnn_types.av;
     return {
       angle: 90,
-      art1: is_t,
-      art2: !is_t,
+      art1: invert ? !is_t : is_t,
+      art2: invert ? is_t : !is_t,
     };
   }
 
@@ -1424,9 +1425,13 @@ class ProfileItem extends GeneratrixElement {
         const {inner, outer} = this.joined_imposts();
         const elm2 = this.elm;
         for (const {profile} of inner.concat(outer)) {
-          const {b, e} = profile.rays;
-          b.profile == this && b.clear(true);
-          e.profile == this && e.clear(true);
+          for(const node of ['b', 'e']) {
+            const n = profile.rays[node];
+            if(n.profile == this && n.cnn) {
+              cnns.clear({elm1: profile, elm2: this});
+              n.cnn = null;
+            }
+          }
         }
 
         // для соединительных профилей и элементов со створками, пересчитываем соседей
@@ -1502,27 +1507,33 @@ class ProfileItem extends GeneratrixElement {
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
    */
   default_inset(all) {
-    const {orientation, project, _attr, elm_type} = this;
+    let {orientation, project, _attr, elm_type} = this;
     const nearest = this.nearest(true);
+    const {positions, orientations, elm_types, cnn_types} = $p.enm;
 
     if(nearest || all) {
-      let pos = nearest && project._dp.sys.flap_pos_by_impost && elm_type == $p.enm.elm_types.Створка ? nearest.pos : this.pos;
-      if(pos == $p.enm.positions.Центр) {
-        if(orientation == $p.enm.orientations.vert) {
-          pos = [pos, $p.enm.positions.ЦентрВертикаль];
+      // импост может оказаться штульпом
+      if(elm_type === elm_types.Импост){
+        if (this.nom.elm_type === elm_types.Штульп) {
+          elm_type = elm_types.Штульп;
         }
-        if(orientation == $p.enm.orientations.hor) {
-          pos = [pos, $p.enm.positions.ЦентрГоризонталь];
+        // else if (this.joined_nearests().some(({layer}) => layer.furn.shtulp_kind())) {
+        //
+        // }
+      }
+      let pos = nearest && project._dp.sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
+      if(pos == positions.Центр) {
+        if(orientation == orientations.vert) {
+          pos = [pos, positions.ЦентрВертикаль];
+        }
+        if(orientation == orientations.hor) {
+          pos = [pos, positions.ЦентрГоризонталь];
         }
       }
-      this.set_inset(this.project.default_inset({
-        elm_type: elm_type,
-        pos: pos,
-        inset: this.inset
-      }), true);
+      this.set_inset(this.project.default_inset({elm_type, pos, inset: this.inset}), true);
     }
     if(nearest) {
-      _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, $p.enm.cnn_types.acn.ii, _attr._nearest_cnn);
+      _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
     }
   }
 
@@ -2288,18 +2299,19 @@ class Profile extends ProfileItem {
    */
   get elm_type() {
     const {_rays, _nearest} = this._attr;
+    const {elm_types} = $p.enm;
 
     // если начало или конец элемента соединены с соседями по Т, значит это импост
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
-      return $p.enm.elm_types.Импост;
+      return elm_types.Импост;
     }
 
     // Если вложенный контур, значит это створка
     if(this.layer.parent instanceof Contour) {
-      return $p.enm.elm_types.Створка;
+      return elm_types.Створка;
     }
 
-    return $p.enm.elm_types.Рама;
+    return elm_types.Рама;
   }
 
   /**

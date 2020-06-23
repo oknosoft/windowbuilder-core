@@ -204,30 +204,12 @@ class ProductsBuilding {
       });
 
       // если задано ограничение по массе - проверяем
-      if(furn.furn_set.flap_weight_max) {
-        const map = new Map();
-        let weight = 0;
-        spec.forEach((row) => {
-          // отбрасываем лишние строки
-          if(row.elm > 0) {
-            if(!map.get(row.elm)) {
-              const crow = ox.coordinates.find({elm: row.elm});
-              map.set(row.elm, crow ? crow.cnstr : Infinity);
-            }
-            if(map.get(row.elm) !== cnstr) return;
-          }
-          else if(row.elm !== -cnstr) {
-            return;
-          }
-          weight += row.nom.density * row.totqty;
+      if(furn.furn_set.flap_weight_max && ox.elm_weight(-cnstr) > furn.furn_set.flap_weight_max) {
+        // Визуализируем все стороны
+        const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
+        contour.profiles.forEach(elm => {
+          new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
-        if(weight > furn.furn_set.flap_weight_max) {
-          // Визуализируем все стороны
-          const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
-          contour.profiles.forEach(elm => {
-            new_spec_row({elm, row_base, origin: furn, spec, ox});
-          });
-        }
       }
     }
 
@@ -535,7 +517,13 @@ class ProductsBuilding {
         const next = (i == glength - 1 ? profiles[0] : profiles[i + 1]).profile;
         const row_cnn = cnn_elmnts.find_rows({elm1: _row.elm, elm2: curr.profile.elm});
 
+        let angle_hor = (new paper.Point(curr.e.x - curr.b.x, curr.b.y - curr.e.y)).angle.round(2);
+        if(angle_hor < 0) {
+          angle_hor += 360;
+        }
+
         const len_angl = {
+          angle_hor,
           angle: 0,
           alp1: prev.generatrix.angle_to(curr.profile.generatrix, curr.b, true),
           alp2: curr.profile.generatrix.angle_to(next.generatrix, curr.e, true),
@@ -638,7 +626,8 @@ class ProductsBuilding {
       added_cnn_spec = {};
 
       // для всех контуров изделия
-      for (const contour of scheme.getItems({class: Contour})) {
+      const contours = scheme.getItems({class: Contour});
+      for (const contour of contours) {
 
         // для всех профилей контура
         for (const elm of contour.children) {
@@ -656,12 +645,14 @@ class ProductsBuilding {
           }
         }
 
-        // фурнитура контура
-        furn_spec(contour);
-
         // спецификация вставок в контур
         inset_contour_spec(contour);
 
+      }
+
+      // фурнитуру обсчитываем в отдельном цикле, т.к. могут потребоваться свойства соседних слоёв
+      for (const contour of contours) {
+        furn_spec(contour);
       }
 
       // для всех соединительных профилей

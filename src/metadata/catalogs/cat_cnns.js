@@ -92,7 +92,7 @@ exports.CatCnns = class CatCnns extends Object {
    * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
    */
   check_nom2(nom) {
-    let ref = this._manager._owner.$p.utils.is_data_obj(nom) ? nom.ref : nom;
+    const ref = nom.valueOf();
     return this.cnn_elmnts._obj.some((row) => row.nom == ref);
   }
 
@@ -166,7 +166,7 @@ exports.CatCnns = class CatCnns extends Object {
 
       //TODO: реализовать фильтрацию
       if(cnn_type == ii) {
-        const {angle_hor} = elm;
+        const angle_hor = len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : elm.angle_hor;
         if(amin > angle_hor || amax < angle_hor || row.sz_min > len_angl.len || row.sz_max < len_angl.len) {
           return;
         }
@@ -182,7 +182,7 @@ exports.CatCnns = class CatCnns extends Object {
         return;
       }
       // для угловых, разрешаем art2 только явно для art2
-      if(len_angl.art2 && acn.a.includes(cnn_type) && set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
+      if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
         return;
       }
 

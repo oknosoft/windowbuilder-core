@@ -378,12 +378,7 @@
         // если у всех основных номенклатур одинаковая ширина, её и возвращаем без фильтра
         const widths = new Set();
         this.specification._obj.filter(({is_main_elm}) => is_main_elm).forEach(({_row}) => widths.add(_row.nom.width));
-        if(widths.size === 1) {
-          _data.width = widths.values()[0];
-        }
-        else {
-          _data.width = -1;
-        }
+        _data.width = widths.size === 1 ? widths.values()[0] : -1;
       }
       return (_data.width > 0 ? _data.width : this.nom(elm, strict).width) || 80;
     }
@@ -405,11 +400,15 @@
         const irow = main_rows[0],
           sizes = {},
           sz_keys = {},
-          sz_prms = ['length', 'width', 'thickness'].map((name) => {
-            const prm = job_prm.properties[name];
-            sz_keys[prm.ref] = name;
-            return prm;
-          });
+          sz_prms = ['length', 'width', 'thickness']
+            .map((name) => {
+              const prm = job_prm.properties[name];
+              if(prm) {
+                sz_keys[prm.ref] = name;
+                return prm;
+              }
+            })
+            .filter((prm) => prm);
 
         // установим номенклатуру продукции
         res.owner = irow.nom instanceof $p.CatInserts ? irow.nom.nom() : irow.nom;
@@ -459,6 +458,51 @@
     }
 
     /**
+     * Проверяет ограничения вставки параметрика
+     * @param elm {BuilderElement}
+     * @param len_angl {Object}
+     * @param params {Array}
+     */
+    check_prm_restrictions({elm, len_angl, params}) {
+      const {lmin, lmax, hmin, hmax, smin, smax} = this;
+      const {len, height, s} = elm;
+
+      let name = this.name + ':', err = false;
+
+      if(lmin && len < lmin) {
+        err = true;
+        name += `\nдлина ${len} < ${lmin}`;
+      }
+      if(lmax && len > lmax) {
+        err = true;
+        name += `\nдлина ${len} > ${lmax}`;
+      }
+      if(hmin && height < hmin) {
+        err = true;
+        name += `\nвысота ${height} < ${hmin}`;
+      }
+      if(hmax && height > hmax) {
+        err = true;
+        name += `\nвысота ${height} > ${hmax}`;
+      }
+
+      // получаем набор параметров, используемых текущей вставкой
+      const used_params = this.used_params();
+
+      // добавляем параметр в характеристику, если используется в текущей вставке
+      params.forEach(({param, value}) => {
+        if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {
+          err = true;
+          name += `\nне заполнен обязательный параметр '${param.name}'`;
+        }
+      });
+
+      if(err) {
+        throw new Error(name);
+      }
+    }
+
+    /**
      * Проверяет ограничения вставки или строки вставки
      * @param row {CatInserts|CatInsertsSpecificationRow}
      * @param elm {BuilderElement}
@@ -469,7 +513,6 @@
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
       const {_row} = elm;
-      const len = len_angl ? len_angl.len : _row.len;
       const is_linear = elm.is_linear ? elm.is_linear() : true;
 
       // проверяем площадь
@@ -487,11 +530,13 @@
         return false;
       }
 
-      if(!utils.is_data_obj(row) || by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру){
-        if(row.lmin > len || (row.lmax < len && row.lmax > 0)){
+      if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
+        const len = len_angl ? len_angl.len : _row.len;
+        if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
           return false;
         }
-        if(row.ahmin > _row.angle_hor || row.ahmax < _row.angle_hor){
+        const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
+        if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
           return false;
         }
       }
@@ -607,6 +652,7 @@
      * @param len_angl {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
+     * @param clr {CatClrs}
      */
     calculate_spec({elm, len_angl, ox, spec, clr}) {
 
@@ -767,7 +813,7 @@
                   len = value;
                   return false;
                 });
-              };
+              }
               if(len) return false;
             });
 
@@ -789,7 +835,7 @@
                   }
                   return false;
                 });
-              };
+              }
               if(len && width) return false;
             });
             row_spec.qty = row_ins_spec.quantity;
@@ -876,23 +922,13 @@
 
     /**
      * Возвращает массив задействованных во вставке параметров
-     * @param aprm
-     * @param aset
      * @return {Array}
      */
-    used_params(aprm = [], aset) {
-
+    used_params() {
+      const {_data} = this;
       // если параметры этого набора уже обработаны - пропускаем
-      if(!aset){
-        aset = new Set();
-      }
-      if(aset.has(this)) {
-        return;
-      }
-      aset.add(this);
-
-      if(this._data.used_params) {
-        return this._data.used_params;
+      if(_data.used_params) {
+        return _data.used_params;
       }
 
       const sprms = [];
@@ -912,22 +948,18 @@
       const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
       this.specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
-          nom.used_params(aprm, aset);
+          for(const param of nom.used_params()) {
+            !sprms.includes(param) && sprms.push(param);
+          }
         }
         else if(algorithm === cx_prm && !sprms.includes(nom)) {
           sprms.push(nom);
         }
       });
 
-      this._data.used_params = sprms;
-      sprms.forEach((param) => {
-        !aprm.includes(param) && aprm.push(param);
-      });
-
-      return aprm;
+      return _data.used_params = sprms;
     }
 
   }
 
 })($p);
-

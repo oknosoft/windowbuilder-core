@@ -119,7 +119,7 @@ $p.cat.clrs.__define({
                 }
               }
               else if(clr instanceof $p.CatColor_price_groups){
-                clr.clr_conformity.forEach(({clr1}) => add_by_clr(clr1));
+                clr.clrs().forEach(add_by_clr);
               }
             }
 
@@ -142,7 +142,7 @@ $p.cat.clrs.__define({
 							clr_group = sys.clr_group;
 						}
 
-						if(clr_group.empty() || !clr_group.clr_conformity.count()){
+						if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())){
               return {not: ''};
 						}
             add_by_clr(clr_group);
@@ -175,7 +175,6 @@ $p.cat.clrs.__define({
           else {
             // дополнительно проверяем обратный цвет
             const {wsql, job_prm, utils, cat, adapters: {pouch}} = $p;
-            const {remote: {ram}, props} = pouch;
             const clrs = [eclr, {clr_in: eclr.clr_out, clr_out: eclr.clr_in}]
               .map(({clr_in, clr_out}, index) => {
                 // ищем в справочнике цветов
@@ -191,15 +190,17 @@ $p.cat.clrs.__define({
                   if(index > 0) {
                     return Promise.resolve();
                   }
-                  const authHeader = ram.getBasicAuthHeaders({prefix: pouch.auth_prefix(), ...ram.__opts.auth});
-                  return fetch(props.path.replace(job_prm.local_storage_prefix, 'common/cat.clrs/composite'), {
+                  return pouch.fetch(pouch.props.path.replace(job_prm.local_storage_prefix, 'common/cat.clrs/composite'), {
                     method: 'POST',
-                    headers: Object.assign({'Content-Type': 'application/json'}, authHeader),
                     body: JSON.stringify({clr_in: clr_in.ref, clr_out: clr_out.ref}),
                   })
                     .then((res) => res.json())
                     .then((res) => {
                       cat.clrs.load_array([res.clr, res.inverted]);
+                      // чистим кеш цветогрупп
+                      cat.color_price_groups.forEach(({_data}) => {
+                        delete _data.clrs;
+                      });
                       return cat.clrs.get(res.clr);
                     });
                 }

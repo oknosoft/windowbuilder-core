@@ -45,7 +45,7 @@
 		rama_impost: {
 			get(){
 				return cache.rama_impost
-					|| ( cache.rama_impost = [ _mgr.Рама, _mgr.Импост] );
+					|| ( cache.rama_impost = [ _mgr.Рама, _mgr.Импост, _mgr.Штульп] );
 			}
 		},
 

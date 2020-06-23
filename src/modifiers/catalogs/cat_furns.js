@@ -8,10 +8,17 @@
  */
 
 /**
- * Индекс в табчасти selection_params
+ * корректируем метаданные табчастей фурнитуры
  */
-$p.cat.furns.metadata('selection_params').index = 'elm';
-$p.cat.furns.metadata('specification').index = 'elm';
+(({md}) => {
+  const {selection_params, specification} = md.get('cat.furns').tabular_sections;
+  // индексы
+  selection_params.index = 'elm';
+  specification.index = 'elm';
+  // устаревшее поле nom_set для совместимости
+  const {fields} = specification;
+  fields.nom_set = fields.nom;
+})($p);
 
 /**
  * Методы объекта фурнитуры
@@ -24,6 +31,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm({project, furn, cnstr}) {
 
     const fprms = project.ox.params;
+    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction}}} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
@@ -57,13 +65,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // умолчания и скрытость по табчасти системы
       const {param} = prm_row;
-      project._dp.sys[param instanceof CatNom ? 'params' : 'furn_params'].find_rows({param}, (row) => {
-        if(row.forcibly || forcibly){
-          prm_row.value = row.value;
-        }
-        prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
-        return false;
-      });
+      const drow = sys.prm_defaults(param, cnstr);
+      if(drow && (drow.forcibly || forcibly)) {
+        prm_row.value = drow.value;
+      }
+      prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
 
       // умолчания по связям параметров
       param.linked_values(param.params_links({
@@ -86,20 +92,14 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Вытягивает массив используемых фурнитурой и вложенными наборами параметров
+   * @return {Array}
    */
-  used_params(aprm = [], aset) {
+  used_params() {
 
+    const {_data} = this;
     // если параметры этого набора уже обработаны - пропускаем
-    if(!aset){
-      aset = new Set();
-    }
-    if(aset.has(this)) {
-      return;
-    }
-    aset.add(this);
-
-    if(this._data.used_params) {
-      return this._data.used_params;
+    if(_data.used_params) {
+      return _data.used_params;
     }
 
     const sprms = [];
@@ -111,19 +111,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
     this.specification.forEach(({nom, algorithm}) => {
       if(nom instanceof CatFurns) {
-        nom.used_params(aprm, aset);
+        for(const param of nom.used_params()) {
+          !sprms.includes(param) && sprms.push(param);
+        }
       }
       else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {
         sprms.push(nom);
       }
     });
 
-    this._data.used_params = sprms;
-    sprms.forEach((param) => {
-      !aprm.includes(param) && aprm.push(param);
-    });
-
-    return aprm;
+    return _data.used_params = sprms;
 
   }
 
@@ -151,7 +148,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // ищем строки дополнительной спецификации
       if(!exclude_dop){
-        this.specification.find_rows({dop: {not: 0}, elm: row_furn.elm}, (dop_row) => {
+        this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
 
           if(!dop_row.check_restrictions(contour, cache)){
             return;
@@ -175,7 +172,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             // длина с поправкой на фурнпаз
             const faltz = len - 2 * sizefurn;
 
-            let invert_nearest = false, coordin = 0;
+            let coordin = 0;
 
             if(dop_row.offset_option == offset_options.Формула){
               if(!dop_row.formula.empty()){
@@ -290,24 +287,45 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           if(sub_row.is_procedure_row){
             res.add(sub_row);
           }
-          else if(!sub_row.quantity){
-            return;
+          else if(sub_row.quantity){
+            res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
-          res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
         });
       }
       else{
         if(row_furn.quantity){
-          const row_spec = res.add(row_furn);
-          row_spec.origin = this;
-          if(!row_furn.formula.empty() && !row_furn.formula.condition_formula){
-            row_furn.formula.execute({ox, contour, row_furn, row_spec});
-          }
+          this.add_with_algorithm(res, ox, contour, row_furn);
         }
       }
     });
 
     return res;
+  }
+
+  /**
+   * Добавляет строку в спецификацию с учетом алгоритма
+   * @param {TabularSection} res
+   * @param {CatCharacteristics} ox
+   * @param {Contour} contour
+   * @param {CatFurnsSpecificationRow} row_furn
+   */
+  add_with_algorithm(res, ox, contour, row_furn) {
+    const {algorithm, formula} = row_furn;
+    let cx;
+    if(algorithm == 'cx_prm') {
+      cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
+      if(cx.toString().toLowerCase() === 'нет') {
+        return;
+      }
+    }
+    const row_spec = res.add(row_furn);
+    row_spec.origin = this;
+    if(algorithm == 'cx_prm') {
+      row_spec.nom_characteristic = cx;
+    }
+    if(!formula.empty() && !formula.condition_formula){
+      formula.execute({ox, contour, row_furn, row_spec});
+    }
   }
 
   /**
@@ -341,8 +359,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    * @param cache {Object}
    */
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side} = this;
-    const {direction, h_ruch, cnstr} = contour;
+    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
+    const {direction, h_ruch, cnstr, project} = contour;
 
     // проверка по высоте ручки
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
@@ -352,6 +370,25 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     // проверка по формуле
     if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
       return false;
+    }
+
+    // по моменту на петлях (в текущей реализации - просто по массе)
+    if(mmin || (mmax && mmax < 1000)) {
+      if(!cache.hasOwnProperty('weight')) {
+        if(project._dp.sys.flap_weight_max) {
+          const weights = [];
+          for(const cnt of contour.layer.contours) {
+            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+          }
+          cache.weight = Math.max(...weights);
+        }
+        else {
+          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
+        }
+      }
+      if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {
+        return false;
+      }
     }
 
     // получаем связанные табличные части
@@ -429,8 +466,4 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
 };
 
-// корректируем метаданные табчасти фурнитуры
-(({md}) => {
-  const {fields} = md.get("cat.furns").tabular_sections.specification;
-  fields.nom_set = fields.nom;
-})($p);
+

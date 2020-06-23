@@ -76,7 +76,9 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
-    this.on('doubleclick', this.elm_dblclick);
+    if(this.getView()._countItemEvent) {
+      this.on('doubleclick', this.elm_dblclick);
+    }
 
   }
 
@@ -183,7 +185,7 @@ class BuilderElement extends paper.Group {
       cnn2 = Object.assign({}, cnn1),
       cnn3 = Object.assign({}, cnn1);
 
-    const {iface, utils, cat: {inserts, cnns, clrs}, enm, cch} = $p;
+    const {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
 
     function cnn_choice_links(o, cnn_point){
 
@@ -222,12 +224,12 @@ class BuilderElement extends paper.Group {
               const {thickness, insert_type, insert_glass_type} = inserts.get(o);
               return _inserts_types_filling.indexOf(insert_type) != -1 &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == enm.inserts_glass_types.Заполнение);
+                (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
             }
             else{
               let refs = "";
               inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == enm.inserts_glass_types.Заполнение){
+                if(o.insert_glass_type.empty() || o.insert_glass_type == inserts_glass_types.Заполнение){
                   if(refs){
                     refs += ", ";
                   }
@@ -239,10 +241,10 @@ class BuilderElement extends paper.Group {
           }
           else if(this instanceof Profile){
             if(this.nearest()){
-              selection = {elm_type: {in: [enm.elm_types.Створка, enm.elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Створка, elm_types.Добор]}};
             }
             else{
-              selection = {elm_type: {in: [enm.elm_types.Рама, enm.elm_types.Импост, enm.elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
             }
           }
           else{
@@ -290,13 +292,13 @@ class BuilderElement extends paper.Group {
 
         if(cnn_ii){
           if (cnn_ii.elm instanceof Filling) {
-            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, enm.cnn_types.acn.ii);
+            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
-          else if (cnn_ii.elm.elm_type == enm.elm_types.Створка && this.elm_type != enm.elm_types.Створка) {
-            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, enm.cnn_types.acn.ii);
+          else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
+            nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else {
-            nom_cnns = cnns.nom_cnn(this, cnn_ii.elm, enm.cnn_types.acn.ii);
+            nom_cnns = cnns.nom_cnn(this, cnn_ii.elm, cnn_types.acn.ii);
           }
         }
 

@@ -18,7 +18,10 @@
       return nom;
     }
     return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);
-  }
+  };
+  characteristics.extra_fields = function() {
+    return [];
+  };
   characteristics._direct_ram = true;
 })($p);
 
@@ -285,40 +288,39 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Возвращает номенклатуру продукции по системе
    */
   get prod_nom() {
-    if(!this.sys.empty()) {
+    const {sys, params} = this;
+    if(!sys.empty()) {
 
-      var setted,
-        param = this.params;
+      let setted;
 
-      if(this.sys.production.count() == 1) {
-        this.owner = this.sys.production.get(0).nom;
-
+      if(sys.production.count() === 1) {
+        this.owner = sys.production.get(0).nom;
       }
-      else if(this.sys.production.count() > 1) {
-        this.sys.production.forEach((row) => {
+      else {
+        sys.production.forEach((row) => {
 
           if(setted) {
             return false;
           }
 
           if(row.param && !row.param.empty()) {
-            param.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
+            params.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
               setted = true;
-              param._owner.owner = row.nom;
+              this.owner = row.nom;
               return false;
             });
           }
 
         });
         if(!setted) {
-          this.sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
+          sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
             setted = true;
-            param._owner.owner = row.nom;
+            this.owner = row.nom;
             return false;
           });
         }
         if(!setted) {
-          this.owner = this.sys.production.get(0).nom;
+          this.owner = sys.production.get(0).nom;
         }
       }
     }
@@ -492,6 +494,51 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       });
   }
 
+  /**
+   * Значение параметра для текущего слоя или вставки
+   * @param cnstr
+   * @param inset
+   * @param param
+   * @return {*}
+   */
+  extract_value({cnstr, inset, param}) {
+    const {utils: {blank}, CatNom, cat} = $p;
+    const is_nom = param instanceof CatNom;
+    inset = inset ? inset.valueOf() : blank.guid;
+    param = param ? param.valueOf() : blank.guid;
+    const row = this.params._obj.find((row) =>
+      row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
+    return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
+  }
+
+  /**
+   * Рассчитывает массу фрагмента изделия
+   * @param elmno {number} - номер элемента (с полюсом) или слоя (с минусом)
+   * @return {number}
+   */
+  elm_weight(elmno) {
+    const {coordinates, specification} = this;
+    const map = new Map();
+    let weight = 0;
+    specification.forEach(({elm, nom, totqty}) => {
+      // отбрасываем лишние строки
+      if(elm !== elmno) {
+        if(elmno < 0 && elm > 0) {
+          if(!map.get(elm)) {
+            const crow = coordinates.find({elm});
+            map.set(elm, crow ? -crow.cnstr : Infinity);
+          }
+          if(map.get(elm) !== elmno) return;
+        }
+        else {
+          return;
+        }
+      }
+      weight += nom.density * totqty;
+    });
+    return weight;
+  }
+
 };
 
 $p.CatCharacteristics.builder_props_defaults = {
@@ -503,6 +550,7 @@ $p.CatCharacteristics.builder_props_defaults = {
   rounding: 0,
   mosquito: true,
   jalousie: true,
+  grid: 50,
 };
 
 // при изменении реквизита табчасти вставок

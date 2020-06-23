@@ -101,12 +101,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     if (attr.proto) {
       const tmp = [];
       project.ox.glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
-        tmp.push({
-          clr: row.clr,
-          elm: this.elm,
-          gno: row.gno,
-          inset: row.inset
-        });
+        tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
       });
       tmp.forEach((row) => project.ox.glass_specification.add(row));
     }
