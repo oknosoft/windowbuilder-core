@@ -658,6 +658,8 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
     var res = [], rt, at, pmgr, op = this.get(prop);
 
     if(op && op.type.is_ref) {
+      const tso = $p.enm.open_directions;
+
       // параметры получаем из локального кеша
       for (rt in op.type.types)
         if(op.type.types[rt].indexOf('.') > -1) {
@@ -669,8 +671,8 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
               ret_mgr.mgr = pmgr;
             }
 
-            if(pmgr.class_name == 'enm.open_directions') {
-              pmgr.get_option_list().forEach((v) => v.value && v.value != $p.enm.tso.folding && res.push(v));
+            if(pmgr === tso) {
+              pmgr.get_option_list().forEach((v) => v.value && v.value != tso.folding && res.push(v));
             }
             else if(pmgr.class_name.indexOf('enm.') != -1 || !pmgr.metadata().has_owners) {
               res = pmgr.get_option_list();

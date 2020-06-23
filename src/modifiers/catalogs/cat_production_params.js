@@ -16,24 +16,23 @@ $p.cat.production_params.__define({
 	 * @return {Array}
 	 */
 	slist: function(prop, is_furn){
-		var res = [], rt, at, pmgr,
-			op = this.get(prop);
+		let res = [], rt, at, pmgr, op = this.get(prop);
 
 		if(op && op.type.is_ref){
+      const tso = $p.enm.open_directions;
 			// параметры получаем из локального кеша
 			for(rt in op.type.types)
 				if(op.type.types[rt].indexOf(".") > -1){
 					at = op.type.types[rt].split(".");
 					pmgr = $p[at[0]][at[1]];
 					if(pmgr){
-						if(pmgr.class_name=="enm.open_directions")
-							pmgr.forEach(function(v){
-                if(v.name != $p.enm.tso.folding) {
-                  res.push({value: v.ref, text: v.synonym});
-                }
+						if(pmgr === tso) {
+              pmgr.forEach((v) => {
+                v !== tso.folding && res.push({value: v.ref, text: v.synonym});
               });
+            }
 						else
-							pmgr.find_rows({owner: prop}, function(v){
+							pmgr.find_rows({owner: prop}, (v) => {
 								res.push({value: v.ref, text: v.presentation});
 							});
 					}

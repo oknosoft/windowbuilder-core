@@ -1,6 +1,6 @@
 {
   "name": "windowbuilder-core",
-  "version": "2.1.253",
+  "version": "2.1.254",
   "description": "Order dealer core library",
   "repository": {
     "type": "git",
@@ -26,9 +26,9 @@
   },
   "homepage": "https://light.oknosoft.ru/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.23-beta.1",
-    "metadata-core": "2.0.23-beta.1",
-    "metadata-pouchdb": "2.0.23-beta.1",
+    "metadata-abstract-ui": "2.0.23-beta.2",
+    "metadata-core": "2.0.23-beta.2",
+    "metadata-pouchdb": "2.0.23-beta.2",
     "paper-jsdom-canvas": "0.12.8"
   },
   "devDependencies": {

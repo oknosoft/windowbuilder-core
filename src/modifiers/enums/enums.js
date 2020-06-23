@@ -42,27 +42,27 @@
 
   });
 
+  enm.open_directions.__define({
+    folding: {
+      get() {return this.Откидное;}
+    },
+  });
+
 	/**
 	 * Синонимы в ориентации
 	 */
 	enm.orientations.__define({
 
 		hor: {
-			get() {
-				return this.Горизонтальная;
-			}
+			get() {return this.Горизонтальная;}
 		},
 
 		vert: {
-			get() {
-				return this.Вертикальная;
-			}
+			get() {return this.Вертикальная;}
 		},
 
 		incline: {
-			get() {
-				return this.Наклонная;
-			}
+			get() {return this.Наклонная;}
 		}
 	});
 
