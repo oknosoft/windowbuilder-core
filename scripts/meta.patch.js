@@ -12,7 +12,9 @@ const exclude = [
   'cat.servers',
   'cch.mdm_groups',
   'cat.property_values_hierarchy',
-  'doc.registers_correction'
+  'doc.registers_correction',
+  'ireg.delivery_schedules',
+  'ireg.delivery_scheme',
 ];
 const minimal = [];
 const writable = ['*'];

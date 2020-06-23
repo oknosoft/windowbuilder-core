@@ -26,10 +26,10 @@
   },
   "homepage": "https://light.oknosoft.ru/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.22-beta.7",
-    "metadata-core": "2.0.22-beta.7",
-    "metadata-pouchdb": "2.0.22-beta.7",
-    "paper-jsdom-canvas": "^0.12.8"
+    "metadata-abstract-ui": "2.0.23-beta.1",
+    "metadata-core": "2.0.23-beta.1",
+    "metadata-pouchdb": "2.0.23-beta.1",
+    "paper-jsdom-canvas": "0.12.8"
   },
   "devDependencies": {
     "gulp": "^4.0",
