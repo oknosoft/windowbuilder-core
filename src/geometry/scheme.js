@@ -38,66 +38,6 @@ class Scheme extends paper.Project {
     // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
 
-    const isBrowser = typeof requestAnimationFrame === 'function';
-
-    /**
-     * Перерисовывает все контуры изделия. Не занимается биндингом.
-     * Предполагается, что взаимное перемещение профилей уже обработано
-     */
-    this.redraw = () => {
-
-      _attr._opened && !_attr._silent && this._scope && isBrowser && requestAnimationFrame(this.redraw);
-
-      const {length} = this._ch;
-
-      if(!_attr._opened || _attr._saving || !length) {
-        return;
-      }
-
-      const {contours} = this;
-
-      if(contours.length) {
-
-        // перерисовываем соединительные профили
-        this.l_connective.redraw();
-
-        // обновляем связи параметров изделия
-        isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
-
-        // перерисовываем все контуры
-        for (let contour of contours) {
-          contour.redraw();
-          if(this._ch.length > length) {
-            return;
-          }
-        }
-
-        // если перерисованы все контуры, перерисовываем их размерные линии
-        _attr._bounds = null;
-        contours.forEach((contour) => {
-          const {contours, l_dimensions} = contour;
-          contours.forEach((l) => {
-            l.save_coordinates(true);
-            isBrowser && l.refresh_prm_links();
-          });
-          l_dimensions.redraw();
-        });
-
-        // перерисовываем габаритные размерные линии изделия
-        this.draw_sizes();
-
-        // обновляем изображение на экране
-        this.view.update();
-
-      }
-      else {
-        this.draw_sizes();
-      }
-
-      this._ch.length = 0;
-
-    };
-
     // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
       // наблюдатель за изменениями свойств изделия
@@ -127,7 +67,6 @@ class Scheme extends paper.Project {
       return;
     }
 
-    const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
 
     if(fields.hasOwnProperty('clr') || fields.hasOwnProperty('sys')) {
@@ -364,6 +303,12 @@ class Scheme extends paper.Project {
     return _attr._builder_props || ox.builder_props;
   }
 
+  set_carcass(v) {
+    const contours = this.getItems({class: Contour});
+    contours.forEach(({skeleton}) => skeleton.carcass = v);
+    this.redraw();
+  }
+
   /**
    * Загружает пользовательские размерные линии
    * Этот код нельзя выполнить внутри load_contour, т.к. линия может ссылаться на элементы разных контуров
@@ -422,7 +367,6 @@ class Scheme extends paper.Project {
       _scheme.ox = o;
 
       // включаем перерисовку
-      _attr._opened = true;
       _attr._bounds = new paper.Rectangle({
         point: [0, 0],
         size: [o.x, o.y]
@@ -599,6 +543,64 @@ class Scheme extends paper.Project {
     }
     this.view.update();
     return elm;
+  }
+
+  /**
+   * Перерисовывает все контуры изделия. Не занимается биндингом.
+   * Предполагается, что взаимное перемещение профилей уже обработано
+   */
+  redraw(attr = {}) {
+
+    const {with_links} = attr;
+    const {_attr, _ch} = this;
+    const {length} = _ch;
+
+    if(_attr._saving || !length) {
+      return;
+    }
+
+    const {contours} = this;
+
+    if(contours.length) {
+
+      // перерисовываем соединительные профили
+      this.l_connective.redraw();
+
+      // обновляем связи параметров изделия
+      with_links && !_attr._silent && contours[0].refresh_prm_links(true);
+
+      // перерисовываем все контуры
+      for (let contour of contours) {
+        contour.redraw();
+        if(_ch.length > length) {
+          return;
+        }
+      }
+
+      // если перерисованы все контуры, перерисовываем их размерные линии
+      _attr._bounds = null;
+      contours.forEach((contour) => {
+        const {contours, l_dimensions} = contour;
+        contours.forEach((l) => {
+          l.save_coordinates(true);
+          with_links && l.refresh_prm_links();
+        });
+        l_dimensions.redraw();
+      });
+
+      // перерисовываем габаритные размерные линии изделия
+      this.draw_sizes();
+
+      // обновляем изображение на экране
+      this.view.update();
+
+    }
+    else {
+      this.draw_sizes();
+    }
+
+    _ch.length = 0;
+
   }
 
   /**
@@ -1594,22 +1596,21 @@ class Scheme extends paper.Project {
    */
   get default_furn() {
     // ищем ранее выбранную фурнитуру для системы
-    var sys = this._dp.sys,
-      res;
+    let {sys} = this._dp;
+    let res;
+    const {job_prm: {builder}, cat} = $p;
     while (true) {
-      if(res = $p.job_prm.builder.base_furn[sys.ref]) {
-        break;
-      }
-      if(sys.empty()) {
+      res = builder.base_furn[sys.ref];
+      if(res || sys.empty()) {
         break;
       }
       sys = sys.parent;
     }
     if(!res) {
-      res = $p.job_prm.builder.base_furn.null;
+      res = builder.base_furn.null;
     }
     if(!res) {
-      $p.cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
+      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
         res = row;
         return false;
       });

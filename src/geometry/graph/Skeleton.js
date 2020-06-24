@@ -130,7 +130,7 @@ class Skeleton extends Graph {
    */
   addProfile(profile) {
     // заглушка
-    return;
+    //return;
 
     const b = this.createVertexByPoint(profile.b);
     const e = this.createVertexByPoint(profile.e);
@@ -207,5 +207,14 @@ class Skeleton extends Graph {
         this.deleteVertex(vertex);
       }
     }
+  }
+
+  get carcass() {
+    return Boolean(this._carcass);
+  }
+
+  set carcass(v) {
+    this._carcass = Boolean(v);
+    this.getAllEdges().forEach(({profile}) => profile.carcass = v);
   }
 }

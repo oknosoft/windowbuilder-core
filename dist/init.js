@@ -672,7 +672,7 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
             }
 
             if(pmgr === tso) {
-              pmgr.get_option_list().forEach((v) => v.value && v.value != folding && res.push(v));
+              pmgr.get_option_list().forEach((v) => v.value && v.value != tso.folding && res.push(v));
             }
             else if(pmgr.class_name.indexOf('enm.') != -1 || !pmgr.metadata().has_owners) {
               res = pmgr.get_option_list();

@@ -1468,25 +1468,6 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Дополняет cnn_point свойствами соединения
-   *
-   * @method postcalc_cnn
-   * @param node {String} b, e - начало или конец элемента
-   * @return CnnPoint
-   */
-  postcalc_cnn(node) {
-    const cnn_point = this.cnn_point(node);
-
-    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn);
-
-    if(!cnn_point.point) {
-      cnn_point.point = this[node];
-    }
-
-    return cnn_point;
-  }
-
-  /**
    * ### Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
    *
@@ -1948,22 +1929,17 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * ### Формирует путь сегмента профиля
-   * Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
-   * - Сначала, вызывает {{#crossLink "ProfileItem/postcalc_cnn:method"}}postcalc_cnn(){{/crossLink}} для узлов `b` и `e`
-   * - Внутри `postcalc_cnn`, выполняется {{#crossLink "ProfileItem/cnn_point:method"}}cnn_point(){{/crossLink}} для пересчета соединений на концах профиля
-   * - Внутри `cnn_point`:
-   *    + {{#crossLink "ProfileItem/check_distance:method"}}check_distance(){{/crossLink}} - проверяет привязку, если вернулось false, `cnn_point` завершает свою работы
-   *    + цикл по всем профилям и поиск привязки
-   * - {{#crossLink "ProfileItem/postcalc_inset:method"}}postcalc_inset(){{/crossLink}} - проверяет корректность вставки, заменяет при необходимости
-   * - {{#crossLink "ProfileItem/path_points:method"}}path_points(){{/crossLink}} - рассчитывает координаты вершин пути профиля
    *
    * @method redraw
    * @chainable
    */
   redraw() {
+    if(this.carcass) {
+      return this;
+    }
     // получаем узлы
-    const bcnn = this.postcalc_cnn('b');
-    const ecnn = this.postcalc_cnn('e');
+    const bcnn = this.cnn_point('b');
+    const ecnn = this.cnn_point('e');
     const {path, generatrix, rays} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями
@@ -2456,7 +2432,6 @@ class Profile extends ProfileItem {
     if(layer.profiles.some((curr) => {
         if(curr != this) {
           for(const pname of ['b', 'e']) {
-            //const cpoint = curr.cnn_point(pname);
             const cpoint = curr.rays[pname];
             if(cpoint.profile == this && cpoint.cnn) {
               if(!cpoint.profile_point) {
@@ -2532,53 +2507,66 @@ class Profile extends ProfileItem {
       point = this[node];
     }
 
+    let ok;
+
     // Если привязка не нарушена, возвращаем предыдущее значение
     if(profile && profile.children.length) {
       if(!project.has_changes()) {
-        return res;
+        ok = true;
       }
       if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
-        return res;
+        ok = true;
       }
     }
 
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
-    res.clear();
-    if(parent) {
-      const {allow_open_cnn} = project._dp.sys;
-      const ares = [];
+    if(!ok) {
+      // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
+      res.clear();
+      if(parent) {
+        const {allow_open_cnn} = project._dp.sys;
+        const ares = [];
 
-      for(const profile of parent.profiles) {
-        if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
-          ares.push({
-            profile_point: res.profile_point,
-            profile: profile,
-            cnn_types: res.cnn_types,
-            point: res.point
-          });
-          res.clear();
-        }
-      }
-
-      if(ares.length === 1) {
-        res._mixin(ares[0]);
-      }
-      // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
-      else if(ares.length >= 2) {
-        if(this.max_right_angle(ares)) {
-          res._mixin(ares[0]);
-          // если установленное ранее соединение проходит по типу, нового не ищем
-          if(cnn && res.cnn_types && res.cnn_types.indexOf(cnn.cnn_type) != -1) {
-            res.cnn = cnn;
+        for(const profile of parent.profiles) {
+          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
+            ares.push({
+              profile_point: res.profile_point,
+              profile: profile,
+              cnn_types: res.cnn_types,
+              point: res.point
+            });
+            res.clear();
           }
         }
-        // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
-        else {
-          res.clear();
+
+        if(ares.length === 1) {
+          res._mixin(ares[0]);
         }
-        res.is_cut = true;
+        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
+        else if(ares.length >= 2) {
+          if(this.max_right_angle(ares)) {
+            res._mixin(ares[0]);
+            // если установленное ранее соединение проходит по типу, нового не ищем
+            if(cnn && res.cnn_types && res.cnn_types.indexOf(cnn.cnn_type) != -1) {
+              res.cnn = cnn;
+            }
+          }
+          // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
+          else {
+            res.clear();
+          }
+          res.is_cut = true;
+        }
       }
     }
+
+    if(!res.cnn) {
+      res.cnn = $p.cat.cnns.elm_cnn(this, res.profile, res.cnn_types);
+    }
+
+    if(!res.point) {
+      res.point = point;
+    }
+
 
     return res;
   }

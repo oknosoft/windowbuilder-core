@@ -551,6 +551,7 @@ $p.CatCharacteristics.builder_props_defaults = {
   mosquito: true,
   jalousie: true,
   grid: 50,
+  carcass: false,
 };
 
 // при изменении реквизита табчасти вставок
