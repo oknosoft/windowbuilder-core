@@ -2306,6 +2306,15 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Признак наличия цветных профилей
+   * @return {boolean}
+   */
+  is_clr() {
+    const white = $p.cat.clrs.predefined('Белый');
+    return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
+  }
+
+  /**
    * Обработчик события при удалении элемента
    */
   on_remove_elm(elm) {

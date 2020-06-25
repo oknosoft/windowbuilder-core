@@ -211,6 +211,12 @@ class ProductsBuilding {
           new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
       }
+
+      // ограничения размеров по графикам
+      const checks = ox.sys.graph_restrictions(new paper.Point(contour.bounds.width, contour.bounds.height).divide(10), contour.is_clr());
+      if(Object.keys(checks)) {
+        console.table(checks);
+      }
     }
 
     /**
