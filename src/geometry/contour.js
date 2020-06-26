@@ -246,6 +246,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this._attr = {};
 
+    // узлы и рёбра текущего слоя
+    //this._skeleton = new Skeleton(this);
+
     const {ox, l_connective} = this.project;
 
     // строка в таблице конструкций

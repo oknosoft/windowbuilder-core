@@ -189,32 +189,43 @@ class DimensionLine extends paper.Group {
    */
   sizes_wnd(event) {
 
-    if(this.wnd && event.wnd == this.wnd.wnd){
+    if(event.wnd == this || (this.wnd && event.wnd == this.wnd.wnd)){
 
-      switch(event.name) {
-        case 'close':
-          if(this.children.text){
-            this.children.text.selected = false;
-          }
-          this.wnd = null;
-          break;
+      switch (event.name) {
+      case 'close':
+        if(this.children.text) {
+          this.children.text.selected = false;
+        }
+        this.wnd = null;
+        break;
 
-        case 'left':
-        case 'right':
-          if(this.pos == "top" || this.pos == "bottom"){
-            this._move_points(event, "x");
-          }
-          break;
+      case 'left':
+      case 'right':
+        if(this.pos == 'top' || this.pos == 'bottom') {
+          this._move_points(event, 'x');
+        }
+        break;
 
-        case 'top':
-        case 'bottom':
-          if(this.pos == "left" || this.pos == "right"){
-            this._move_points(event, "y");
-          }
-          break;
+      case 'top':
+      case 'bottom':
+        if(this.pos == 'left' || this.pos == 'right') {
+          this._move_points(event, 'y');
+        }
+        break;
+
+      case 'auto':
+        if(this.pos == 'top' || this.pos == 'bottom') {
+          event.name = 'right';
+          this._move_points(event, 'x');
+        }
+        if(this.pos == 'left' || this.pos == 'right') {
+          event.name = 'top';
+          this._move_points(event, 'y');
+        }
+        break;
+
       }
     }
-
   }
 
   redraw() {

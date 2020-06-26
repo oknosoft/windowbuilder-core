@@ -117,6 +117,10 @@ const AbstractFilling = (superclass) => class extends superclass {
     return this.children.filter((elm) => elm instanceof Contour);
   }
 
+  get skeleton() {
+    return this._skeleton;
+  }
+
   /**
    * Cлужебная группа размерных линий
    */

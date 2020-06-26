@@ -363,6 +363,12 @@ class Scheme extends paper.Project {
     return _attr._builder_props || ox.builder_props;
   }
 
+  set_carcass(v) {
+    const contours = this.getItems({class: Contour});
+    contours.forEach(({skeleton}) => skeleton.carcass = v);
+    this.redraw();
+  }
+
   /**
    * Загружает пользовательские размерные линии
    * Этот код нельзя выполнить внутри load_contour, т.к. линия может ссылаться на элементы разных контуров
