@@ -217,4 +217,127 @@ class Skeleton extends Graph {
     this._carcass = Boolean(v);
     this.getAllEdges().forEach(({profile}) => profile.carcass = v);
   }
+
+  allowTraversal({previousVertex, currentVertex, nextVertex}) {
+
+  }
+
+  /**
+   * Detect cycle in directed graph using Depth First Search.
+   *
+   */
+  detectCycles() {
+    const cycles = [];
+    let cycle = null;
+
+    // Will store parents (previous vertices) for all visited nodes.
+    // This will be needed in order to specify what path exactly is a cycle.
+    const dfsParentMap = new Map();
+
+    // White set (UNVISITED) contains all the edges that haven't been visited at all.
+    const whiteSet = new Set();
+
+    // Gray set (VISITING) contains all the edges that are being visited right now
+    // (in current path).
+    const graySet = new Set();
+
+    // Black set (VISITED) contains all the edges that has been fully visited.
+    // Meaning that all children of the vertex has been visited.
+    const blackSet = new Set();
+
+    // If we encounter edge in gray set it means that we've found a cycle.
+    // Because when vertex in gray set it means that its neighbors or its neighbors
+    // neighbors are still being explored.
+
+    // Init white set and add all edges to it.
+    /** @param {GraphVertex} vertex */
+    this.getAllEdges().forEach((edge) => whiteSet.add(edge));
+
+    // Describe BFS callbacks.
+    const callbacks = {
+      enterEdge: ({currentEdge, previousEdge}) => {
+        if(graySet.has(currentEdge)) {
+          // If current vertex already in grey set it means that cycle is detected.
+          // Let's detect cycle path.
+          cycle = [currentEdge];
+
+          let currentCycleEdge;
+          let nextCycleEdge = dfsParentMap.get(currentEdge);
+
+          while (nextCycleEdge && nextCycleEdge !== currentEdge) {
+            cycle.push(nextCycleEdge);
+            currentCycleEdge = nextCycleEdge;
+            nextCycleEdge = dfsParentMap.get(currentCycleEdge);
+          }
+        }
+        else {
+          // Otherwise let's add current vertex to gray set and remove it from white set.
+          graySet.add(currentEdge);
+          whiteSet.delete(currentEdge);
+
+          // Update DFS parents list.
+          previousEdge && dfsParentMap.set(previousEdge, currentEdge);
+        }
+      },
+
+      leaveVertex: ({currentEdge, previousEdge}) => {
+        // If all node's children has been visited let's remove it from gray set
+        // and move it to the black set meaning that all its neighbors are visited.
+        blackSet.add(currentEdge);
+        graySet.delete(currentEdge);
+      },
+
+      allowTraversal: ({currentEdge, nextEdge, edges}) => {
+        // If cycle was detected we must forbid all further traversing since it will
+        // cause infinite traversal loop.
+        if(cycle) {
+          cycles.push(Object.assign({}, cycle));
+          cycle = null;
+          return false;
+        }
+
+        // если на одном и том же профиле, не допускаем перевёртыш
+        if(currentEdge.is_profile_outer(nextEdge)) {
+          return false;
+        }
+
+        if(edges.length > 1) {
+          const tangent = currentEdge.getTangentAt(currentEdge.endVertex);
+          let maxAngle = 0;
+          let currentAngle;
+          for(const edge of edges) {
+            if(currentEdge.is_profile_outer(edge)) {
+              continue;
+            }
+            const ntangent = edge.getTangentAt(edge.startVertex);
+            let angle = tangent.getDirectedAngle(ntangent);
+            if(angle < 0) {
+              angle += 360;
+            }
+            if(angle > maxAngle) {
+              maxAngle = angle;
+            }
+            if(edge === nextEdge) {
+              currentAngle = angle;
+            }
+          }
+          if(currentAngle < maxAngle) {
+            return false;
+          }
+        }
+
+        // Allow traversal only for the vertices that are not in black set
+        // since all black set vertices have been already visited.
+        return !blackSet.has(nextEdge);
+      },
+    };
+
+    // Start exploring vertices.
+    while (whiteSet.size) {
+      // Do Depth First Search.
+      this.depthFirstSearch(Array.from(whiteSet)[0], callbacks);
+    }
+
+    return cycles;
+  }
 }

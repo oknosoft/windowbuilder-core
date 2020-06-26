@@ -1951,6 +1951,24 @@ class Contour extends AbstractFilling(paper.Layer) {
       elm.redraw();
     }
 
+    if(this.skeleton.carcass) {
+      const {PointText} = paper;
+      this.children
+        .filter((elm) => elm instanceof PointText)
+        .forEach((elm) => elm.remove());
+      this.skeleton.getAllVertices().forEach((v) => {
+        new PointText({
+          parent: this,
+          guide: true,
+          fillColor: 'black',
+          fontFamily: consts.font_family,
+          fontSize: consts.elm_font_size * 2,
+          content: v.getKey(),
+          point: v.point.add([10, 20]),
+        })
+      });
+    }
+
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
 
@@ -2306,6 +2324,15 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (elm instanceof BuilderElement)
         elm.opacity = v;
     });
+  }
+
+  /**
+   * Признак наличия цветных профилей
+   * @return {boolean}
+   */
+  is_clr() {
+    const white = $p.cat.clrs.predefined('Белый');
+    return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
   }
 
   /**

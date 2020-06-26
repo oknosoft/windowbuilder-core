@@ -529,6 +529,9 @@
       if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
         return false;
       }
+      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
+        return false;
+      }
 
       if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
         const len = len_angl ? len_angl.len : _row.len;

@@ -257,6 +257,20 @@ $p.CatProduction_params.prototype.__define({
 	    const ts = param instanceof $p.CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
 	    return ts.find({param});
     }
+  },
+
+  graph_restrictions: {
+	  value: function graph_restrictions(spoint, clr) {
+	    const {formula} = this;
+      const checks = {};
+	    if(!formula.empty()) {
+	      const fragment = formula.execute()[clr ? 'clr' : 'white'];
+	      for(const key in fragment) {
+          checks[key] = fragment[key].contains(spoint);
+        }
+      }
+      return checks;
+    }
   }
 
 });

@@ -1,3 +1,5 @@
+// https://github.com/trekhleb/javascript-algorithms
+
 
 class Graph {
   /**
@@ -191,4 +193,30 @@ class Graph {
   toString() {
     return Object.keys(this.vertices).toString();
   }
+
+  /**
+   * @param {GraphEdge} currentEdge
+   * @param {GraphEdge} previousEdge
+   * @param {Callbacks} callbacks
+   */
+  depthFirstSearchRecursive(currentEdge, previousEdge, callbacks) {
+    callbacks.enterEdge({currentEdge, previousEdge});
+    const edges = currentEdge.endVertex.getEdges();
+    edges.forEach((nextEdge) => {
+      if(callbacks.allowTraversal({currentEdge, nextEdge, edges})) {
+        this.depthFirstSearchRecursive(nextEdge, currentEdge, callbacks);
+      }
+    });
+
+    callbacks.leaveVertex({currentEdge, previousEdge});
+  }
+
+  /**
+   * @param {GraphVertex} startVertex
+   * @param {Callbacks} [callbacks] {enterVertex, leaveVertex, allowTraversal}
+   */
+  depthFirstSearch(startEdge, callbacks) {
+    this.depthFirstSearchRecursive(startEdge, null, callbacks);
+  }
+
 }
