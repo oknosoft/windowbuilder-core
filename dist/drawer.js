@@ -52,10 +52,7 @@ class EditorInvisible extends paper.PaperScope {
 
     super();
 
-    this._undo = {
-      clear() {},
-      save_snapshot() {},
-    };
+    this._undo = new EditorInvisible.History(this);
 
     this.eve = new (Object.getPrototypeOf($p.md.constructor))();
 
@@ -84,6 +81,13 @@ class EditorInvisible extends paper.PaperScope {
       this.projects[0].remove();
     }
     return new Scheme(this._canvas, this, true);
+  }
+
+  cmd(type, ...attr) {
+    if(this._deformer[type]) {
+      this._undo.push(type, attr);
+      this._deformer[type](...attr);
+    }
   }
 
   unload() {
@@ -176,22 +180,69 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   canvas_cursor(name) {
-    this.projects.forEach((_scheme) => {
-      for(let i=0; i<_scheme.view.element.classList.length; i++){
-        const class_name = _scheme.view.element.classList[i];
+    this.projects.forEach(({view}) => {
+      const {classList} = view.element;
+      for(let i=0; i<classList.length; i++){
+        const class_name = classList[i];
         if(class_name == name) {
           return;
         }
-        else if((/\bcursor-\S+/g).test(class_name))
-          _scheme.view.element.classList.remove(class_name);
+        else if((/\bcursor-\S+/g).test(class_name)) {
+          classList.remove(class_name);
+        }
       }
-      _scheme.view.element.classList.add(name);
+      classList.add(name);
     });
   }
 
 }
 
 $p.EditorInvisible = EditorInvisible;
+
+
+class History {
+
+  constructor(editor) {
+    this.editor = editor;
+    this.history = [];
+    this.pos = -1;
+  }
+
+  push(type, attr) {
+    this.history.push({time: new Date(), type, attr});
+  }
+
+  buttons_accessibility() {
+    return {back: false, rewind: false};
+  }
+
+  clear() {
+    this.history.length = 0;
+    this.pos = -1;
+  }
+
+  back() {
+    if(this.pos > 0) {
+      this.pos--;
+    }
+    if(this.pos >= 0) {
+
+    }
+    else {
+
+    }
+  }
+
+  rewind() {
+    if (this.pos <= (this.history.length - 1)) {
+      this.pos++;
+    }
+  }
+
+  save_snapshot() {}
+}
+
+EditorInvisible.History = History;
 
 
 EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
