@@ -572,9 +572,6 @@ class Scheme extends paper.Project {
       // перерисовываем все контуры
       for (let contour of contours) {
         contour.redraw();
-        if(_ch.length > length) {
-          return;
-        }
       }
 
       // если перерисованы все контуры, перерисовываем их размерные линии

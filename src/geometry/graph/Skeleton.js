@@ -130,7 +130,9 @@ class Skeleton extends Graph {
    */
   addProfile(profile) {
     // заглушка
-    //return;
+    if(!this.project._attr.use_skeleton) {
+      return;
+    }
 
     const b = this.createVertexByPoint(profile.b);
     const e = this.createVertexByPoint(profile.e);

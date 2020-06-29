@@ -16,10 +16,7 @@ class EditorInvisible extends paper.PaperScope {
      * fake-undo
      * @private
      */
-    this._undo = {
-      clear() {},
-      save_snapshot() {},
-    };
+    this._undo = new EditorInvisible.History(this);
 
     /**
      * Собственный излучатель событий для уменьшения утечек памяти
@@ -62,6 +59,18 @@ class EditorInvisible extends paper.PaperScope {
       this.projects[0].remove();
     }
     return new Scheme(this._canvas, this, true);
+  }
+
+  /**
+   * Выполняет команду редактирования
+   * @param type
+   * @param attr
+   */
+  cmd(type, ...attr) {
+    if(this._deformer[type]) {
+      this._undo.push(type, attr);
+      this._deformer[type](...attr);
+    }
   }
 
   unload() {
@@ -173,16 +182,18 @@ class EditorInvisible extends paper.PaperScope {
    * @param name {String} - имя css класса курсора
    */
   canvas_cursor(name) {
-    this.projects.forEach((_scheme) => {
-      for(let i=0; i<_scheme.view.element.classList.length; i++){
-        const class_name = _scheme.view.element.classList[i];
+    this.projects.forEach(({view}) => {
+      const {classList} = view.element;
+      for(let i=0; i<classList.length; i++){
+        const class_name = classList[i];
         if(class_name == name) {
           return;
         }
-        else if((/\bcursor-\S+/g).test(class_name))
-          _scheme.view.element.classList.remove(class_name);
+        else if((/\bcursor-\S+/g).test(class_name)) {
+          classList.remove(class_name);
+        }
       }
-      _scheme.view.element.classList.add(name);
+      classList.add(name);
     });
   }
 
