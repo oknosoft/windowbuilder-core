@@ -11642,10 +11642,15 @@ class Skeleton extends Graph {
       if(offset < res.offset) {
         res.left.push({vertex, offset});
       }
-      else {
+      else if(offset > res.offset) {
         res.right.push({vertex, offset});
       }
+      else {
+      }
     }
+    const sort = (a, b) => a.offset - b.offset;
+    res.left.sort(sort);
+    res.right.sort(sort);
     return res;
   }
 
@@ -11659,16 +11664,32 @@ class Skeleton extends Graph {
     return vertex;
   }
 
+  findShortest({left, right}) {
+    let edge;
+    for(let l=left.length-1; l>=0; l--) {
+      for(let r=0; r<right.length; r++) {
+        edge = this.findEdge(left[l].vertex, right[r].vertex);
+        if(edge) {
+          break;
+        }
+      }
+      if(edge) {
+        break;
+      }
+    }
+    if(!edge) {
+      edge = {startVertex: left[0].vertex, endVertex: right[right.length-1].vertex};
+    }
+    return edge;
+  }
+
   addImpostEdges(cnn, vertex) {
     if(cnn.profile && !cnn.profile_point) {
       const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
-      if(left.length === 1 && right.length === 1) {
-        if(cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint) === $p.enm.cnn_sides.Изнутри) {
-          this.addFragment({startVertex: left[0].vertex, endVertex: right[0].vertex, vertex, profile: cnn.profile});
-        }
-        else {
-          this.addFragment({endVertex: left[0].vertex, startVertex: right[0].vertex, vertex, profile: cnn.profile});
-        }
+      if(left.length && right.length) {
+        const inner = cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint) === $p.enm.cnn_sides.Изнутри;
+        const edge = inner ? this.findShortest({left, right}) : this.findShortest({left: right.reverse(), right: left.reverse()});
+        this.addFragment({startVertex: edge.startVertex, endVertex: edge.endVertex, vertex, profile: cnn.profile});
       }
       else {
       }
@@ -11685,7 +11706,7 @@ class Skeleton extends Graph {
   }
 
   addProfile(profile) {
-    if(!this.project._attr.use_skeleton) {
+    if(!this.project._use_skeleton) {
       return;
     }
 
@@ -11810,7 +11831,15 @@ class Skeleton extends Graph {
       allowTraversal: ({currentEdge, nextEdge, edges}) => {
         if(cycle) {
           cycles.push(Object.assign({}, cycle));
+          for(const edge of cycle) {
+            blackSet.add(edge);
+            graySet.delete(edge);
+          }
           cycle = null;
+          return false;
+        }
+
+        if(blackSet.has(nextEdge)) {
           return false;
         }
 
@@ -11823,14 +11852,11 @@ class Skeleton extends Graph {
           let maxAngle = 0;
           let currentAngle;
           for(const edge of edges) {
-            if(currentEdge.is_profile_outer(edge)) {
+            if(currentEdge.is_profile_outer(edge) || nextEdge.is_profile_outer(edge)) {
               continue;
             }
             const ntangent = edge.getTangentAt(edge.startVertex);
             let angle = tangent.getDirectedAngle(ntangent);
-            if(angle < 0) {
-              angle += 360;
-            }
             if(angle > maxAngle) {
               maxAngle = angle;
             }
@@ -11843,7 +11869,7 @@ class Skeleton extends Graph {
           }
         }
 
-        return !blackSet.has(nextEdge);
+        return true;
       },
     };
 
