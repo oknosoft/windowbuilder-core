@@ -1114,6 +1114,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const project = editor.create_scheme();
     let tmp = Promise.resolve();
 
+    // если передали ссылку dp, меняем при пересчете свойства в соответствии с полями обработки
+    const {dp} = attr;
+
     // получаем массив продукций в озу
     return this.load_linked_refs()
       .then(() => {
