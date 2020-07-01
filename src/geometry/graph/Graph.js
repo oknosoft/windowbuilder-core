@@ -11,6 +11,20 @@ class Graph {
     this.isDirected = true;
     this.owner = owner;
     this.project = owner.project || owner;
+    this.cache = new Map();
+  }
+
+  /**
+   * Чистит граф
+   */
+  clear() {
+    this.cache.clear();
+    for(const edge of this.getAllEdges().reverse()) {
+      this.deleteEdge(edge);
+    }
+    for(const vertex of this.getAllVertices()) {
+      this.deleteVertex(vertex);
+    }
   }
 
   /**
@@ -112,9 +126,10 @@ class Graph {
    */
   deleteEdge(edge) {
     // Delete edge from the list of edges.
-    if (this.edges[edge.getKey()]) {
+    if(this.edges[edge.getKey()]) {
       delete this.edges[edge.getKey()];
-    } else {
+    }
+    else {
       throw new Error('Edge not found in graph');
     }
 
@@ -124,6 +139,7 @@ class Graph {
 
     startVertex.deleteEdge(edge);
     endVertex.deleteEdge(edge);
+    this.cache.delete(edge);
 
   }
 

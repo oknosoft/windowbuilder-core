@@ -248,10 +248,6 @@ class Skeleton extends Graph {
     this.getAllEdges().forEach(({profile}) => profile.carcass = v);
   }
 
-  allowTraversal({previousVertex, currentVertex, nextVertex}) {
-
-  }
-
   /**
    * Detect cycle in directed graph using Depth First Search.
    *
@@ -259,6 +255,8 @@ class Skeleton extends Graph {
   detectCycles() {
     const cycles = [];
     let cycle = null;
+
+    $p.job_prm.debug ? console.profile() : console.time();
 
     // Will store parents (previous vertices) for all visited nodes.
     // This will be needed in order to specify what path exactly is a cycle.
@@ -375,6 +373,8 @@ class Skeleton extends Graph {
       // Do Depth First Search.
       this.depthFirstSearch(Array.from(whiteSet)[0], callbacks);
     }
+
+    $p.job_prm.debug ? console.profileEnd() : console.timeEnd();
 
     return cycles;
   }

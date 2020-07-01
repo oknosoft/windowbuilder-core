@@ -1969,10 +1969,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
     }
 
+    $p.job_prm.debug && console.time();
+
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
 
-    //$p.job_prm.debug && console.profileEnd();
+    $p.job_prm.debug && console.timeEnd();
 
     // рисуем направление открывания
     this.draw_opening();

@@ -13,6 +13,20 @@ class GraphEdge {
     this.endVertex = endVertex;
     this.profile = profile;
     this.weight = 0;
+    this._cache = profile.skeleton.cache;
+  }
+
+  /**
+   * Кеш, ассоциированный с текущим ребром
+   * @return {Map}
+   */
+  get cache() {
+    let cache = this._cache.get(this);
+    if(!cache) {
+      cache = new Map();
+      this._cache.set(this, cache);
+    }
+    return cache;
   }
 
   /**
@@ -53,19 +67,34 @@ class GraphEdge {
    * @param egde
    */
   is_profile_outer(egde) {
-    return this.profile === egde.profile && this.is_outer() !== egde.is_outer();
+    const {cache} = this;
+    if(cache.has(egde)) {
+      return cache.get(egde).is_outer;
+    }
+    const is_outer = this.profile === egde.profile && this.is_outer() !== egde.is_outer();
+    cache.set(egde, {is_outer});
+    return is_outer;
   }
 
   /**
    * Касательная в точке
-   * @param point
+   * @param vertex
    * @return {Point}
    */
-  getTangentAt({point}) {
+  getTangentAt(vertex) {
+    const {cache} = this;
+    if(cache.has(vertex)) {
+      return cache.get(vertex).tangent;
+    }
+    const {point} = vertex;
     const {generatrix} = this.profile;
     const offset = generatrix.getOffsetOf(generatrix.getNearestPoint(point));
     let tangent = generatrix.getTangentAt(offset);
-    return this.is_outer() ? tangent.negate() : tangent;
+    if(this.is_outer()) {
+      tangent = tangent.negate();
+    }
+    cache.set(vertex, {tangent});
+    return tangent;
   }
 
   /**
