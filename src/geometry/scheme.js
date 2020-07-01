@@ -1599,22 +1599,21 @@ class Scheme extends paper.Project {
    */
   get default_furn() {
     // ищем ранее выбранную фурнитуру для системы
-    var sys = this._dp.sys,
-      res;
+    let {sys} = this._dp;
+    let res;
+    const {job_prm: {builder}, cat} = $p;
     while (true) {
-      if(res = $p.job_prm.builder.base_furn[sys.ref]) {
-        break;
-      }
-      if(sys.empty()) {
+      res = builder.base_furn[sys.ref];
+      if(res || sys.empty()) {
         break;
       }
       sys = sys.parent;
     }
     if(!res) {
-      res = $p.job_prm.builder.base_furn.null;
+      res = builder.base_furn.null;
     }
     if(!res) {
-      $p.cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
+      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
         res = row;
         return false;
       });
