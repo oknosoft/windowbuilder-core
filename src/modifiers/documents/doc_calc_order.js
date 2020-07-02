@@ -1114,6 +1114,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const project = editor.create_scheme();
     let tmp = Promise.resolve();
 
+    // если передали ссылку dp, меняем при пересчете свойства в соответствии с полями обработки
+    const {dp} = attr;
+
     // получаем массив продукций в озу
     return this.load_linked_refs()
       .then(() => {
@@ -1129,7 +1132,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             tmp = tmp.then(() => {
               return project.load(cx, true).then(() => {
                 // выполняем пересчет
-                project.save_coordinates({svg: false});
+                cx.apply_props(project, dp).save_coordinates({svg: false});
                 this.characteristic_saved(project);
               });
             });
@@ -1142,7 +1145,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
-              cx.origin.calculate_spec({
+              cx.apply_props(cx.origin, dp).calculate_spec({
                 elm: new FakeElm(row),
                 len_angl: new FakeLenAngl({len: row.len, inset: cx.origin}),
                 ox: cx
