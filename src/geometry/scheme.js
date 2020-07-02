@@ -129,7 +129,7 @@ class Scheme extends paper.Project {
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
 
-    if(fields.hasOwnProperty('clr') || fields.hasOwnProperty('sys')) {
+    if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
     }
@@ -194,6 +194,7 @@ class Scheme extends paper.Project {
     _dp.sys.refill_prm(ox, 0, true);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
+    this.l_connective.on_sys_changed();
     for (const contour of this.contours) {
       contour.on_sys_changed();
     }
@@ -209,8 +210,11 @@ class Scheme extends paper.Project {
    * @param inset
    */
   set_glasses(inset) {
+    const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
-      glass.set_inset(inset, true);
+      if(glass.nom.elm_type != Заполнение) {
+        glass.set_inset(inset, true);
+      }
     }
   }
 

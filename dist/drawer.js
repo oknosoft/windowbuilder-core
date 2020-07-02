@@ -77,7 +77,7 @@ class EditorInvisible extends paper.PaperScope {
       this._canvas.width = 480;
       this.setup(this._canvas);
     }
-    if(this.projects.lengrh && !(this.projects[0] instanceof Scheme)) {
+    if(this.projects.length && !(this.projects[0] instanceof Scheme)) {
       this.projects[0].remove();
     }
     return new Scheme(this._canvas, this, true);
@@ -9484,7 +9484,7 @@ class Scheme extends paper.Project {
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
 
-    if(fields.hasOwnProperty('clr') || fields.hasOwnProperty('sys')) {
+    if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       this.notify(this, 'scheme_changed');
     }
 
@@ -9541,6 +9541,7 @@ class Scheme extends paper.Project {
 
     _dp.sys.refill_prm(ox, 0, true);
 
+    this.l_connective.on_sys_changed();
     for (const contour of this.contours) {
       contour.on_sys_changed();
     }
@@ -9552,8 +9553,11 @@ class Scheme extends paper.Project {
   }
 
   set_glasses(inset) {
+    const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
-      glass.set_inset(inset, true);
+      if(glass.nom.elm_type != Заполнение) {
+        glass.set_inset(inset, true);
+      }
     }
   }
 
@@ -12921,7 +12925,6 @@ $p.spec_building = new SpecBuilding($p);
 })($p);
 
 
-
 (function({cat: {characteristics, nom}}){
   const {value_mgr} = characteristics.constructor.prototype;
   characteristics.value_mgr = function(_obj, f, mf, array_enabled, v) {
@@ -12985,7 +12988,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   }
 
-
   add_inset_params(inset, cnstr, blank_inset) {
     const ts_params = this.params;
     const params = [];
@@ -13013,7 +13015,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       row.hide = links.some((link) => link.hide);
     });
   }
-
 
   prod_name(short) {
     const {calc_order_row, calc_order, leading_product, sys, clr, origin} = this;
@@ -13099,7 +13100,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     return name;
   }
 
-
   open_origin(row_id) {
     try {
       let {origin} = this.specification.get(row_id);
@@ -13119,7 +13119,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       $p.record_log(err);
     }
   }
-
 
   find_create_cx(elm, origin) {
     const {_manager, calc_order, params, inserts} = this;
@@ -13153,7 +13152,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     return cx;
   }
 
-
   get calc_order_row() {
     let _calc_order_row;
     this.calc_order.production.find_rows({characteristic: this}, (_row) => {
@@ -13162,7 +13160,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     });
     return _calc_order_row;
   }
-
 
   get prod_nom() {
     const {sys, params} = this;
@@ -13204,7 +13201,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
     return this.owner;
   }
-
 
   get builder_props() {
     const defaults = this.constructor.builder_props_defaults;
@@ -13254,6 +13250,43 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     }
   }
 
+  apply_props(engine, dp) {
+    if(dp && dp.production.find({use: true, characteristic: this})) {
+      const {Scheme, Filling, Contour} = $p.EditorInvisible;
+      if(engine instanceof Scheme) {
+        const {length} = engine._ch;
+        if(dp.use_clr && engine._dp.clr !== dp.clr) {
+          engine._dp.clr = dp.clr;
+          engine._dp_listener(engine._dp, {clr: true});
+        }
+        if(dp.use_sys) {
+          engine.set_sys(dp.sys);
+        }
+        if(dp.use_inset) {
+          engine.set_glasses(dp.inset);
+        }
+        for(const contour of engine.getItems({class: Contour})) {
+          const {furn} = contour;
+          if(!furn.empty()) {
+            dp.sys_furn.find_rows({elm1: furn}, ({elm2}) => {
+              if(!elm2.empty() && elm2 !== furn) {
+                contour.furn = elm2;
+              }
+            });
+          }
+        }
+        if(engine._ch.length > length) {
+          engine.redraw();
+        }
+      }
+      dp.product_params.forEach(({param, value, _ch}) => {
+        _ch && this.params.find_rows({param}, (row) => {
+          row.value = value;
+        });
+      });
+    }
+    return engine;
+  }
 
   recalc(attr = {}, editor) {
 
@@ -13281,7 +13314,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       });
 
   }
-
 
   draw(attr = {}, editor) {
 
@@ -13355,7 +13387,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       });
   }
 
-
   extract_value({cnstr, inset, param}) {
     const {utils: {blank}, CatNom, cat} = $p;
     const is_nom = param instanceof CatNom;
@@ -13365,7 +13396,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
-
 
   elm_weight(elmno) {
     const {coordinates, specification} = this;
@@ -16663,7 +16693,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             tmp = tmp.then(() => {
               return project.load(cx, true).then(() => {
-                project.save_coordinates({svg: false});
+                cx.apply_props(project, dp).save_coordinates({svg: false});
                 this.characteristic_saved(project);
               });
             });
@@ -16674,7 +16704,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else {
             if(!cx.origin.empty() && !cx.origin.slave) {
               cx.specification.clear();
-              cx.origin.calculate_spec({
+              cx.apply_props(cx.origin, dp).calculate_spec({
                 elm: new FakeElm(row),
                 len_angl: new FakeLenAngl({len: row.len, inset: cx.origin}),
                 ox: cx
