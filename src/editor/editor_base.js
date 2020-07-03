@@ -67,9 +67,8 @@ class EditorInvisible extends paper.PaperScope {
    * @param attr
    */
   cmd(type, ...attr) {
-    if(this._deformer[type]) {
+    if(this._deformer[type] && this._deformer[type](...attr)) {
       this._undo.push(type, attr);
-      this._deformer[type](...attr);
     }
   }
 
