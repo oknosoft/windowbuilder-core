@@ -55,7 +55,7 @@ class EditorInvisible extends paper.PaperScope {
       this._canvas.width = 480;
       this.setup(this._canvas);
     }
-    if(this.projects.lengrh && !(this.projects[0] instanceof Scheme)) {
+    if(this.projects.length && !(this.projects[0] instanceof Scheme)) {
       this.projects[0].remove();
     }
     return new Scheme(this._canvas, this, true);
@@ -67,9 +67,8 @@ class EditorInvisible extends paper.PaperScope {
    * @param attr
    */
   cmd(type, ...attr) {
-    if(this._deformer[type]) {
+    if(this._deformer[type] && this._deformer[type](...attr)) {
       this._undo.push(type, attr);
-      this._deformer[type](...attr);
     }
   }
 
