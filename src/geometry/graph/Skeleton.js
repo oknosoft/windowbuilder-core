@@ -178,22 +178,50 @@ class Skeleton extends Graph {
     // если импост, добавляем ребро в обратную сторону
     const {ab, ae} = profile.is_corner();
     const {_rays} = profile._attr;
-    if(ab && ae) {
-      return;
+    if(!ab || !ae) {
+      // рвём элемент, к которому примыкает импост
+      let add;
+      if(_rays.b.profile && !_rays.b.profile.e.is_nearest(profile.b) && !_rays.b.profile.b.is_nearest(profile.b)) {
+        this.addImpostEdges(_rays.b, b);
+        add = true;
+      }
+      if(_rays.e.profile && !_rays.e.profile.b.is_nearest(profile.e) && !_rays.e.profile.e.is_nearest(profile.e)) {
+        this.addImpostEdges(_rays.e, e);
+        add = true;
+      }
+      if(add) {
+        this.addEdge(new GraphEdge({startVertex: e, endVertex: b, profile}));
+      }
     }
 
-    // рвём элемент, к которому примыкает импост
-    let add;
-    if(_rays.b.profile && !_rays.b.profile.e.is_nearest(profile.b) && !_rays.b.profile.b.is_nearest(profile.b)) {
-      this.addImpostEdges(_rays.b, b);
-      add = true;
-    }
-    if(_rays.e.profile && !_rays.e.profile.b.is_nearest(profile.e) && !_rays.e.profile.e.is_nearest(profile.e)) {
-      this.addImpostEdges(_rays.e, e);
-      add = true;
-    }
-    if(add) {
-      this.addEdge(new GraphEdge({startVertex: e, endVertex: b, profile}));
+    // проверим соседей. возможно, им нужно обратное ребро
+    const checked = new Set();
+    for(const vertex of [b, e]) {
+      for(const edge of vertex.getEdges()) {
+        if(edge.profile === profile || checked.has(edge.profile)) {
+          continue;
+        }
+        for(const endEdge of vertex.getEndEdges()) {
+          if(edge.profile === endEdge.profile) {
+            checked.add(edge.profile);
+            break;
+          }
+        }
+        if(checked.has(edge.profile)) {
+          continue;
+        }
+        for(const corn of [ab, ae]) {
+          if((corn.elm1 === profile.elm && corn.elm2 === edge.profile.elm) || (corn.elm2 === profile.elm || corn.elm1 === edge.profile.elm)) {
+            if(edge.startVertex.point.is_nearest(edge.profile.b)) {
+              const startVertex = this.createVertexByPoint(edge.profile.e);
+              const outer_adge = new GraphEdge({startVertex, endVertex: edge.startVertex, profile: edge.profile});
+              this.addEdge(outer_adge);
+              console.log(edge.profile);
+              checked.add(edge.profile);
+            }
+          }
+        }
+      }
     }
 
   }
@@ -319,11 +347,7 @@ class Skeleton extends Graph {
         // If cycle was detected we must forbid all further traversing since it will
         // cause infinite traversal loop.
         if(cycle) {
-          cycles.push(Object.assign({}, cycle));
-          for(const edge of cycle) {
-            blackSet.add(edge);
-            graySet.delete(edge);
-          }
+          cycles.push(Skeleton.reorder_cycle(cycle, blackSet, graySet));
           cycle = null;
           return false;
         }
@@ -378,4 +402,38 @@ class Skeleton extends Graph {
 
     return cycles;
   }
-}
+};
+
+/**
+ * Ищет нижнее ребро и упорядочивает цикл
+ * @param cycle
+ * @param blackSet
+ * @param graySet
+ * @return {[]}
+ */
+Skeleton.reorder_cycle = function reorder_cycle(cycle, blackSet, graySet) {
+  let delta = Infinity;
+  let bottom = -1;
+  const sorted = [];
+  for (let i = 0; i < cycle.length; i++) {
+    const edge = cycle[i];
+    blackSet.add(edge);
+    graySet.delete(edge);
+    let {angle} = edge.endVertex.point.subtract(edge.startVertex.point);
+    if(angle < 0) {
+      angle += 360;
+    }
+    const cdelta = Math.abs(angle - 180);
+    if(cdelta < delta) {
+      bottom = i;
+      delta = cdelta;
+    }
+  }
+  for (let i = bottom; i < cycle.length; i++) {
+    sorted.push(cycle[i]);
+  }
+  for (let i = 0; i < bottom; i++) {
+    sorted.push(cycle[i]);
+  }
+  return sorted;
+};

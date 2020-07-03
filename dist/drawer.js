@@ -11336,7 +11336,6 @@ class GraphEdge {
 
 
 class Graph {
-
   constructor(owner) {
     this.vertices = {};
     this.edges = {};
@@ -11345,7 +11344,6 @@ class Graph {
     this.project = owner.project || owner;
     this.cache = new Map();
   }
-
 
   clear() {
     this.cache.clear();
@@ -11357,38 +11355,31 @@ class Graph {
     }
   }
 
-
   addVertex(newVertex) {
     this.vertices[newVertex.getKey()] = newVertex;
     return this;
   }
 
-
   getVertexByKey(vertexKey) {
     return this.vertices[vertexKey];
   }
-
 
   getNeighbors(vertex) {
     return vertex.getNeighbors();
   }
 
-
   getAllVertices() {
     return Object.values(this.vertices);
   }
-
 
   deleteVertex(vertex) {
     delete this.vertices[vertex.getKey()];
     return this;
   }
 
-
   getAllEdges() {
     return Object.values(this.edges);
   }
-
 
   addEdge(edge) {
     let startVertex = this.getVertexByKey(edge.startVertex.getKey());
@@ -11425,14 +11416,8 @@ class Graph {
     return this;
   }
 
-
   deleteEdge(edge) {
-    if(this.edges[edge.getKey()]) {
-      delete this.edges[edge.getKey()];
-    }
-    else {
-      throw new Error('Edge not found in graph');
-    }
+    delete this.edges[edge.getKey()];
 
     const startVertex = this.getVertexByKey(edge.startVertex.getKey());
     const endVertex = this.getVertexByKey(edge.endVertex.getKey());
@@ -11442,7 +11427,6 @@ class Graph {
     this.cache.delete(edge);
 
   }
-
 
   findEdge(startVertex, endVertex) {
     const vertex = this.getVertexByKey(startVertex.getKey());
@@ -11454,13 +11438,11 @@ class Graph {
     return vertex.findEdge(endVertex);
   }
 
-
   getWeight() {
     return this.getAllEdges().reduce((weight, graphEdge) => {
       return weight + graphEdge.weight;
     }, 0);
   }
-
 
   getVerticesIndices() {
     const verticesIndices = {};
@@ -11470,7 +11452,6 @@ class Graph {
 
     return verticesIndices;
   }
-
 
   getAdjacencyMatrix() {
     const vertices = this.getAllVertices();
@@ -11490,11 +11471,9 @@ class Graph {
     return adjacencyMatrix;
   }
 
-
   toString() {
     return Object.keys(this.vertices).toString();
   }
-
 
   depthFirstSearchRecursive(currentEdge, previousEdge, callbacks) {
     callbacks.enterEdge({currentEdge, previousEdge});
@@ -11507,7 +11486,6 @@ class Graph {
 
     callbacks.leaveVertex({currentEdge, previousEdge});
   }
-
 
   depthFirstSearch(startEdge, callbacks) {
     this.depthFirstSearchRecursive(startEdge, null, callbacks);
@@ -11716,15 +11694,12 @@ class LinkedList {
 }
 
 
-
 class Skeleton extends Graph {
-
 
   vertexByPoint(point, vertices) {
     return (vertices || this.getAllVertices())
       .find((vertex) => vertex.point.is_nearest(point, 0));
   }
-
 
   vertexesByProfile(profile) {
     const res = new Set();
@@ -11737,11 +11712,9 @@ class Skeleton extends Graph {
     return Array.from(res);
   }
 
-
   edgesByProfile(profile) {
     return this.getAllEdges().filter((edge) => edge.profile === profile);
   }
-
 
   splitVertexes(profile, point) {
     const {generatrix} = profile;
@@ -11767,7 +11740,6 @@ class Skeleton extends Graph {
     return res;
   }
 
-
   createVertexByPoint(point) {
     const vertices = this.getAllVertices();
     let vertex = this.vertexByPoint(point, vertices);
@@ -11777,7 +11749,6 @@ class Skeleton extends Graph {
     }
     return vertex;
   }
-
 
   findShortest({left, right}) {
     let edge;
@@ -11798,7 +11769,6 @@ class Skeleton extends Graph {
     return edge;
   }
 
-
   addImpostEdges(cnn, vertex) {
     if(cnn.profile && !cnn.profile_point) {
       const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
@@ -11812,7 +11782,6 @@ class Skeleton extends Graph {
     }
   }
 
-
   addFragment({startVertex, endVertex, vertex, profile}) {
     const edge = this.findEdge(startVertex, endVertex);
     if(edge) {
@@ -11821,7 +11790,6 @@ class Skeleton extends Graph {
     this.addEdge(new GraphEdge({startVertex, endVertex: vertex, profile}));
     this.addEdge(new GraphEdge({startVertex: vertex, endVertex, profile}));
   }
-
 
   addProfile(profile) {
     if(!this.project._use_skeleton) {
@@ -11841,25 +11809,51 @@ class Skeleton extends Graph {
 
     const {ab, ae} = profile.is_corner();
     const {_rays} = profile._attr;
-    if(ab && ae) {
-      return;
+    if(!ab || !ae) {
+      let add;
+      if(_rays.b.profile && !_rays.b.profile.e.is_nearest(profile.b) && !_rays.b.profile.b.is_nearest(profile.b)) {
+        this.addImpostEdges(_rays.b, b);
+        add = true;
+      }
+      if(_rays.e.profile && !_rays.e.profile.b.is_nearest(profile.e) && !_rays.e.profile.e.is_nearest(profile.e)) {
+        this.addImpostEdges(_rays.e, e);
+        add = true;
+      }
+      if(add) {
+        this.addEdge(new GraphEdge({startVertex: e, endVertex: b, profile}));
+      }
     }
 
-    let add;
-    if(_rays.b.profile && !_rays.b.profile.e.is_nearest(profile.b) && !_rays.b.profile.b.is_nearest(profile.b)) {
-      this.addImpostEdges(_rays.b, b);
-      add = true;
-    }
-    if(_rays.e.profile && !_rays.e.profile.b.is_nearest(profile.e) && !_rays.e.profile.e.is_nearest(profile.e)) {
-      this.addImpostEdges(_rays.e, e);
-      add = true;
-    }
-    if(add) {
-      this.addEdge(new GraphEdge({startVertex: e, endVertex: b, profile}));
+    const checked = new Set();
+    for(const vertex of [b, e]) {
+      for(const edge of vertex.getEdges()) {
+        if(edge.profile === profile || checked.has(edge.profile)) {
+          continue;
+        }
+        for(const endEdge of vertex.getEndEdges()) {
+          if(edge.profile === endEdge.profile) {
+            checked.add(edge.profile);
+            break;
+          }
+        }
+        if(checked.has(edge.profile)) {
+          continue;
+        }
+        for(const corn of [ab, ae]) {
+          if((corn.elm1 === profile.elm && corn.elm2 === edge.profile.elm) || (corn.elm2 === profile.elm || corn.elm1 === edge.profile.elm)) {
+            if(edge.startVertex.point.is_nearest(edge.profile.b)) {
+              const startVertex = this.createVertexByPoint(edge.profile.e);
+              const outer_adge = new GraphEdge({startVertex, endVertex: edge.startVertex, profile: edge.profile});
+              this.addEdge(outer_adge);
+              console.log(edge.profile);
+              checked.add(edge.profile);
+            }
+          }
+        }
+      }
     }
 
   }
-
 
   unSplitEdges(vertex) {
     const from = vertex.getEdges();
@@ -11874,7 +11868,6 @@ class Skeleton extends Graph {
       }
     }
   }
-
 
   removeProfile(profile) {
     const vertexes = this.vertexesByProfile(profile);
@@ -11902,7 +11895,6 @@ class Skeleton extends Graph {
     this.getAllEdges().forEach(({profile}) => profile.carcass = v);
   }
 
-
   detectCycles() {
     const cycles = [];
     let cycle = null;
@@ -11916,7 +11908,6 @@ class Skeleton extends Graph {
     const graySet = new Set();
 
     const blackSet = new Set();
-
 
 
     this.getAllEdges().forEach((edge) => whiteSet.add(edge));
@@ -11950,11 +11941,7 @@ class Skeleton extends Graph {
 
       allowTraversal: ({currentEdge, nextEdge, edges}) => {
         if(cycle) {
-          cycles.push(Object.assign({}, cycle));
-          for(const edge of cycle) {
-            blackSet.add(edge);
-            graySet.delete(edge);
-          }
+          cycles.push(Skeleton.reorder_cycle(cycle, blackSet, graySet));
           cycle = null;
           return false;
         }
@@ -12001,7 +11988,34 @@ class Skeleton extends Graph {
 
     return cycles;
   }
-}
+};
+
+Skeleton.reorder_cycle = function reorder_cycle(cycle, blackSet, graySet) {
+  let delta = Infinity;
+  let bottom = -1;
+  const sorted = [];
+  for (let i = 0; i < cycle.length; i++) {
+    const edge = cycle[i];
+    blackSet.add(edge);
+    graySet.delete(edge);
+    let {angle} = edge.endVertex.point.subtract(edge.startVertex.point);
+    if(angle < 0) {
+      angle += 360;
+    }
+    const cdelta = Math.abs(angle - 180);
+    if(cdelta < delta) {
+      bottom = i;
+      delta = cdelta;
+    }
+  }
+  for (let i = bottom; i < cycle.length; i++) {
+    sorted.push(cycle[i]);
+  }
+  for (let i = 0; i < bottom; i++) {
+    sorted.push(cycle[i]);
+  }
+  return sorted;
+};
 
 
 

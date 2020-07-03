@@ -126,12 +126,7 @@ class Graph {
    */
   deleteEdge(edge) {
     // Delete edge from the list of edges.
-    if(this.edges[edge.getKey()]) {
-      delete this.edges[edge.getKey()];
-    }
-    else {
-      throw new Error('Edge not found in graph');
-    }
+    delete this.edges[edge.getKey()];
 
     // Try to find and end start vertices and delete edge from them.
     const startVertex = this.getVertexByKey(edge.startVertex.getKey());
