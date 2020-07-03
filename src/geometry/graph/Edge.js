@@ -52,6 +52,11 @@ class GraphEdge {
    * @return {boolean}
    */
   is_outer() {
+    const {cache} = this;
+    if(cache.has(null)) {
+      return cache.get(null).is_outer;
+    }
+
     const {profile, startVertex: {point: b}, endVertex: {point: e}} = this;
     if(profile.b.is_nearest(b) || profile.e.is_nearest(e)) {
       return false;
@@ -59,7 +64,9 @@ class GraphEdge {
     const {generatrix} = profile;
     const nb = generatrix.getNearestPoint(b);
     const ne = generatrix.getNearestPoint(e);
-    return generatrix.getOffsetOf(nb) > generatrix.getOffsetOf(ne);
+    const is_outer = generatrix.getOffsetOf(nb) > generatrix.getOffsetOf(ne);
+    cache.set(null, {is_outer});
+    return is_outer;
   }
 
   /**

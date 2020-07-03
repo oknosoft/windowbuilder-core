@@ -408,43 +408,10 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type Array
    */
   get glass_contours() {
-    const segments = this.glass_segments;
-    const nodes = this.count_nodes();
-    const res = [];
-    let curr, acurr;
 
-    // рекурсивно получает следующий сегмент, пока не уткнётся в текущий
-    function go_go(segm) {
-      const anext = GlassSegment.next(segm, nodes, segments);
-      for (const next of anext) {
-        if (next === curr) {
-          return anext;
-        }
-        else if (acurr.every((el) => el !== next)) {
-          acurr.push(next);
-          return go_go(next);
-        }
-      }
-    }
-
-    while (segments.length) {
-
-      curr = segments[0];
-      acurr = [curr];
-      if (go_go(curr) && acurr.length > 1) {
-        res.push(acurr);
-      }
-
-      // удаляем из segments уже задействованные или не пригодившиеся сегменты
-      acurr.forEach((el) => {
-        const ind = segments.indexOf(el);
-        if (ind != -1) {
-          segments.splice(ind, 1);
-        }
-      });
-    }
-
-    return res;
+    return this.skeleton.detectCycles()
+      .map((cycle) => cycle
+        .map((edge) => new GlassSegment(edge.profile, edge.startVertex.point, edge.endVertex.point, edge.is_outer())));
   }
 
   /**
@@ -662,95 +629,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         cglass.redraw();
       }
     }
-  }
-
-  /**
-   * Возвращает массив отрезков, которые потенциально могут образовывать заполнения
-   * (соединения с пустотой отбрасываются)
-   * @property glass_segments
-   * @type Array
-   */
-  get glass_segments() {
-    const nodes = [];
-
-    function push_new(profile, b, e, outer = false) {
-      if(b.is_nearest(e, 0)){
-        return;
-      }
-      for(const segm of nodes) {
-        if(segm.profile === profile && segm.b.is_nearest(b, 0) && segm.e.is_nearest(e, 0) && segm.outer == outer){
-          return;
-        }
-      }
-      nodes.push(new GlassSegment(profile, b, e, outer));
-    }
-
-    // для всех профилей контура
-    for(const p of this.profiles) {
-      const sort = GlassSegment.fn_sort.bind(p.generatrix);
-
-      // ищем примыкания T к текущему профилю
-      const ip = p.joined_imposts();
-      const {b: pb, e: pe} = p.rays;
-
-      // для створочных импостов используем не координаты их b и e, а ближайшие точки примыкающих образующих
-      const pbg = pb.is_t && pb.profile.d0 ? pb.profile.generatrix.getNearestPoint(p.b) : p.b;
-      const peg = pe.is_t && pe.profile.d0 ? pe.profile.generatrix.getNearestPoint(p.e) : p.e;
-
-      // если есть примыкания T, добавляем сегменты, исключая соединения с пустотой
-      if (ip.inner.length) {
-
-        ip.inner.sort(sort);
-
-        if (!pb.is_i && !pbg.is_nearest(ip.inner[0].point)) {
-          push_new(p, pbg, ip.inner[0].point);
-        }
-
-        for (let i = 1; i < ip.inner.length; i++) {
-          push_new(p, ip.inner[i - 1].point, ip.inner[i].point);
-        }
-
-        if (!pe.is_i && !ip.inner[ip.inner.length - 1].point.is_nearest(peg)) {
-          push_new(p, ip.inner[ip.inner.length - 1].point, peg);
-        }
-
-      }
-      if (ip.outer.length) {
-
-        ip.outer.sort(sort);
-
-        if (!pb.is_i && !ip.outer[0].point.is_nearest(pbg)) {
-          push_new(p, ip.outer[0].point, pbg, true);
-        }
-
-        for (let i = 1; i < ip.outer.length; i++) {
-          push_new(p, ip.outer[i].point, ip.outer[i - 1].point, true);
-        }
-
-        if (!pe.is_i && !peg.is_nearest(ip.outer[ip.outer.length - 1].point)) {
-          push_new(p, peg, ip.outer[ip.outer.length - 1].point, true);
-        }
-      }
-
-      // добавляем, если нет соединений с пустотой
-      if (!ip.inner.length) {
-        if (!pb.is_i && !pe.is_i) {
-          push_new(p, pbg, peg);
-        }
-      }
-
-      // для импостов добавляем сегмент в обратном направлении
-      if (!ip.outer.length && (pb.is_cut || pe.is_cut || pb.is_t || pe.is_t)) {
-        if (!pb.is_i && !pe.is_i) {
-          push_new(p, peg, pbg, true);
-        }
-      }
-      else if(pb.is_x || pe.is_x) {
-        push_new(p, peg, pbg, true);
-      }
-    }
-
-    return nodes;
   }
 
   /**
@@ -2388,37 +2266,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 }
 
-GlassSegment.fn_sort = function sort_segments(a, b) {
-  const da = this.getOffsetOf(a.point);
-  const db = this.getOffsetOf(b.point);
-  if (da < db) {
-    return -1;
-  }
-  else if (da > db) {
-    return 1;
-  }
-  return 0;
-};
-
-// возвращает массив сегментов, которые могут следовать за текущим
-GlassSegment.next = function next_segments(curr, nodes, segments) {
-  if (!curr.anext) {
-    curr.anext = [];
-    for(const segm of segments) {
-      if (segm === curr || segm.profile === curr.profile){
-        continue;
-      }
-      // если конец нашего совпадает с началом следующего...
-      // и если существует соединение нашего со следующим
-      if (curr.has_cnn(segm, nodes, segments)) {
-        const angle = curr.e.subtract(curr.b).getDirectedAngle(segm.e.subtract(segm.b));
-        if (segments.length < 3 || angle >= 0 || Math.abs(angle + 180) < 1)
-          curr.anext.push(segm);
-      }
-    }
-  }
-  return curr.anext;
-}
 
 EditorInvisible.Contour = Contour;
 EditorInvisible.GlassSegment = GlassSegment;
