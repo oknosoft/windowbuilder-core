@@ -12993,7 +12993,7 @@ $p.spec_building = new SpecBuilding($p);
   characteristics._direct_ram = true;
 })($p);
 
-$p.md.once('predefined_elmnts_inited', () => {
+!$p.job_prm.is_node && $p.md.once('predefined_elmnts_inited', () => {
   const _mgr = $p.cat.characteristics;
 
   ($p.job_prm.use_ram === false ? Promise.resolve() : _mgr.adapter.load_view(_mgr, 'linked', {
@@ -15843,10 +15843,25 @@ class FakeElm {
 $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
 
-  after_create() {
+  after_create(user) {
 
-    const {enm, cat, current_user, DocCalc_order} = $p;
+    const {enm, cat, job_prm, DocCalc_order} = $p;
+    let current_user;
+    if(job_prm.is_node) {
+      if(user) {
+        current_user = user;
+      }
+      else {
+        return Promise.resolve(this);
+      }
+    }
+    else {
+      current_user = this.manager;
+    }
 
+    if(!current_user) {
+      current_user = $p.current_user;
+    }
     if(!current_user) {
       return Promise.resolve(this);
     }

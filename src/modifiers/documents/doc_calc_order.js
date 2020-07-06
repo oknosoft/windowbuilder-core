@@ -102,10 +102,25 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // подписки на события
 
   // после создания надо заполнить реквизиты по умолчанию: контрагент, организация, договор
-  after_create() {
+  after_create(user) {
 
-    const {enm, cat, current_user, DocCalc_order} = $p;
+    const {enm, cat, job_prm, DocCalc_order} = $p;
+    let current_user;
+    if(job_prm.is_node) {
+      if(user) {
+        current_user = user;
+      }
+      else {
+        return Promise.resolve(this);
+      }
+    }
+    else {
+      current_user = this.manager;
+    }
 
+    if(!current_user) {
+      current_user = $p.current_user;
+    }
     if(!current_user) {
       return Promise.resolve(this);
     }
