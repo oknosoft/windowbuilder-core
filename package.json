@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/oknosoft/windowbuilder/issues"
   },
-  "homepage": "https://light.oknosoft.ru/",
+  "homepage": "http://www.oknosoft.ru/zd/",
   "dependencies": {
     "metadata-abstract-ui": "2.0.23-beta.2",
     "metadata-core": "2.0.23-beta.2",
