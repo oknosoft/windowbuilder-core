@@ -15880,6 +15880,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       return false;
     });
 
+    acl_objs.find_rows({by_default: true, type: cat.stores.class_name}, (row) => {
+      this.warehouse = row.acl_obj;
+      return false;
+    });
+
     this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
 
     this.manager = current_user;
