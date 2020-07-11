@@ -12,7 +12,7 @@ exports.CatBranchesManager = class CatBranchesManager extends Object {
     const {adapters: {pouch}, job_prm, enm, cat, dp} = $p;
 
     // после загрузки данных, надо настроить отборы в метаданных полей рисовалки
-    pouch.once('pouch_complete_loaded', () => {
+    !job_prm.is_node && pouch.once('pouch_complete_loaded', () => {
       const {current_user} = $p;
 
       // если отделы не загружены и полноправный пользователь...

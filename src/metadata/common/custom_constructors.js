@@ -90,6 +90,18 @@ class CatCharacteristicsParamsRow extends HideParamsRow{
   set cnstr(v){this._setter('cnstr',v)}
   get inset(){return this._getter('inset')}
   set inset(v){this._setter('inset',v)}
+  get _list() {
+    const {param, inset} = this;
+    if(!param.empty() && !inset.empty()) {
+      const def = inset.product_params.find({param});
+      if(def && def.list) {
+        let _list;
+        try {_list = JSON.parse(def.list)}
+        catch (e) {}
+        return _list;
+      }
+    }
+  }
 }
 
 class DocCredit_card_orderPayment_detailsRow extends Payment_detailsRow{}

@@ -26,7 +26,7 @@
 })($p);
 
 // при старте приложения, загружаем в ОЗУ обычные характеристики (без ссылок на заказы)
-$p.md.once('predefined_elmnts_inited', () => {
+!$p.job_prm.is_node && $p.md.once('predefined_elmnts_inited', () => {
   const _mgr = $p.cat.characteristics;
 
   // грузим характеристики
@@ -91,27 +91,26 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    */
   add_inset_params(inset, cnstr, blank_inset) {
     const ts_params = this.params;
-    const params = [];
+    const params = new Set();
+    const filter = {cnstr, inset: blank_inset || inset};
 
-    ts_params.find_rows({cnstr, inset: blank_inset || inset}, ({param}) => {
-      !params.includes(param) && params.push(param);
-    });
+    ts_params.find_rows(filter, ({param}) => params.add(param));
 
     const {product_params} = inset;
     inset.used_params().forEach((param) => {
-      if((!param.is_calculated || param.show_calculated) && !params.includes(param)) {
-        const value = product_params.find({param});
+      if((!param.is_calculated || param.show_calculated) && !params.has(param)) {
+        const def = product_params.find({param});
         ts_params.add({
           cnstr: cnstr,
           inset: blank_inset || inset,
           param: param,
-          value: (value && value.value) || "",
+          value: (def && def.value) || "",
         });
-        params.push(param);
+        params.add(param);
       }
     });
 
-    ts_params.find_rows({cnstr: cnstr, inset: blank_inset || inset}, (row) => {
+    ts_params.find_rows(filter, (row) => {
       const links = row.param.params_links({grid: {selection: {cnstr}}, obj: row});
       row.hide = links.some((link) => link.hide);
     });
