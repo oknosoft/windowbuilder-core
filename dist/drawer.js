@@ -3190,12 +3190,20 @@ class DimensionLine extends paper.Group {
         break;
 
       case 'auto':
-        if(this.pos == 'top' || this.pos == 'bottom') {
+        const {impost, pos, elm1, elm2} = this._attr;
+        const {positions} = $p.enm;
+        if(pos == 'top' || pos == 'bottom') {
           event.name = 'right';
+          if(impost && pos == 'bottom' && elm2.pos === positions.right) {
+            event.name = 'left';
+          }
           this._move_points(event, 'x');
         }
-        if(this.pos == 'left' || this.pos == 'right') {
+        if(pos == 'left' || pos == 'right') {
           event.name = 'top';
+          if(impost && pos == 'right' && elm2.pos === positions.top) {
+            event.name = 'bottom';
+          }
           this._move_points(event, 'y');
         }
         break;
