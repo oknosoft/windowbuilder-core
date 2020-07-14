@@ -202,6 +202,10 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  get skeleton() {
+    return this.project._skeleton;
+  }
+
   redraw() {
     this.children.forEach((elm) => elm.redraw());
   }

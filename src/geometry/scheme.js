@@ -129,7 +129,7 @@ class Scheme extends paper.Project {
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
 
-    if(fields.hasOwnProperty('clr') || fields.hasOwnProperty('sys')) {
+    if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
     }
@@ -194,6 +194,7 @@ class Scheme extends paper.Project {
     _dp.sys.refill_prm(ox, 0, true);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
+    this.l_connective.on_sys_changed();
     for (const contour of this.contours) {
       contour.on_sys_changed();
     }
@@ -209,8 +210,11 @@ class Scheme extends paper.Project {
    * @param inset
    */
   set_glasses(inset) {
+    const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
-      glass.set_inset(inset, true);
+      if(glass.nom.elm_type != Заполнение) {
+        glass.set_inset(inset, true);
+      }
     }
   }
 
@@ -361,6 +365,12 @@ class Scheme extends paper.Project {
   get builder_props() {
     const {ox, _attr} = this;
     return _attr._builder_props || ox.builder_props;
+  }
+
+  set_carcass(v) {
+    const contours = this.getItems({class: Contour});
+    contours.forEach(({skeleton}) => skeleton.carcass = v);
+    this.redraw();
   }
 
   /**
@@ -1593,22 +1603,21 @@ class Scheme extends paper.Project {
    */
   get default_furn() {
     // ищем ранее выбранную фурнитуру для системы
-    var sys = this._dp.sys,
-      res;
+    let {sys} = this._dp;
+    let res;
+    const {job_prm: {builder}, cat} = $p;
     while (true) {
-      if(res = $p.job_prm.builder.base_furn[sys.ref]) {
-        break;
-      }
-      if(sys.empty()) {
+      res = builder.base_furn[sys.ref];
+      if(res || sys.empty()) {
         break;
       }
       sys = sys.parent;
     }
     if(!res) {
-      res = $p.job_prm.builder.base_furn.null;
+      res = builder.base_furn.null;
     }
     if(!res) {
-      $p.cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
+      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
         res = row;
         return false;
       });

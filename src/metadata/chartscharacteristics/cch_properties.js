@@ -48,6 +48,8 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
     var res = [], rt, at, pmgr, op = this.get(prop);
 
     if(op && op.type.is_ref) {
+      const tso = $p.enm.open_directions;
+
       // параметры получаем из локального кеша
       for (rt in op.type.types)
         if(op.type.types[rt].indexOf('.') > -1) {
@@ -59,8 +61,8 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
               ret_mgr.mgr = pmgr;
             }
 
-            if(pmgr.class_name == 'enm.open_directions') {
-              pmgr.get_option_list().forEach((v) => v.value && v.value != $p.enm.tso.folding && res.push(v));
+            if(pmgr === tso) {
+              pmgr.get_option_list().forEach((v) => v.value && v.value != tso.folding && res.push(v));
             }
             else if(pmgr.class_name.indexOf('enm.') != -1 || !pmgr.metadata().has_owners) {
               res = pmgr.get_option_list();
@@ -280,13 +282,17 @@ exports.CchProperties = class CchProperties extends Object {
 
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
+   * @param links {Array}
+   * @param prow {Object}
+   * @param values {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
+   * @return {boolean}
    */
   linked_values(links, prow, values = []) {
     let changed;
     // собираем все доступные значения в одном массиве
-    links.forEach((link) => link.values.forEach((row) => values.push(row)));
+    links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
-    if(values.some((row) => row._obj.value == prow.value)) {
+    if(values.some(({_obj}) => _obj.value == prow.value)) {
       return;
     }
     // если есть явный default - устанавливаем
@@ -329,9 +335,9 @@ exports.CchProperties = class CchProperties extends Object {
         filter.ref = {in: []};
       }
       if(filter.ref.in) {
-        link.values._obj.forEach((row) => {
-          if(filter.ref.in.indexOf(row.value) == -1) {
-            filter.ref.in.push(row.value);
+        link.append_values([]).forEach(({_obj}) => {
+          if(!filter.ref.in.includes(_obj.value)) {
+            filter.ref.in.push(_obj.value);
           }
         });
       }

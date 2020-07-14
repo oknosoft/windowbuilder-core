@@ -17,6 +17,10 @@ exports.CatChoice_paramsManager = class CatChoice_paramsManager extends Object {
       if(obj.runtime) {
         continue;
       }
+      // пропускаем отключенные
+      if(obj.disabled) {
+        continue;
+      }
       // выполняем формулу условия
       if(!obj.condition_formula.empty() && !obj.condition_formula.execute(obj)) {
         continue;

@@ -246,6 +246,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this._attr = {};
 
+    // узлы и рёбра текущего слоя
+    //this._skeleton = new Skeleton(this);
+
     const {ox, l_connective} = this.project;
 
     // строка в таблице конструкций
@@ -1977,27 +1980,23 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
+    const {_dp} = this.project;
+    const {sys} = _dp;
     let notify;
 
     // пробегаем по всем строкам
-    this.params.find_rows({
-      cnstr,
-      inset: $p.utils.blank.guid,
-      //hide: {not: true},
-    }, (prow) => {
+    this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
       const {param} = prow;
       const links = param.params_links({grid: {selection: {cnstr}}, obj: prow});
-      // вычисляемые скрываем всегда
-      let hide = !param.show_calculated && param.is_calculated;
-      // если для параметра есть связи - сокрытие по связям
-      if(!hide){
-        if(links.length) {
-          hide = links.some((link) => link.hide);
+
+      // сокрытие по умолчаниям или связям
+      let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);
+      if(!hide) {
+        const drow = sys.prm_defaults(param, cnstr);
+        if(drow && drow.hide) {
+          hide = true;
         }
-        else {
-          hide = prow.hide;
-        }
-      };
+      }
 
       // проверим вхождение значения в доступные и при необходимости изменим
       if (links.length && param.linked_values(links, prow)) {
@@ -2013,7 +2012,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(notify) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
-        const {_dp} = this.project;
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
       }
     };
@@ -2308,6 +2306,15 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (elm instanceof BuilderElement)
         elm.opacity = v;
     });
+  }
+
+  /**
+   * Признак наличия цветных профилей
+   * @return {boolean}
+   */
+  is_clr() {
+    const white = $p.cat.clrs.predefined('Белый');
+    return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
   }
 
   /**

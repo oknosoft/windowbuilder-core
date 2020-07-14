@@ -34,6 +34,9 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   initialize(attr) {
 
+    // узлы и рёбра раскладок заполнения
+    //this._skeleton = new Skeleton(this);
+
     const _row = attr.row;
     const {_attr, project} = this;
     const h = project.bounds.height + project.bounds.y;
@@ -343,15 +346,17 @@ class Filling extends AbstractFilling(BuilderElement) {
       _attr._text.fitBounds(textBounds);
       // Поиск самой длинной кривой пути
       const maxCurve = path.curves.reduce((curv, item) => item.length > curv.length ? item : curv, path.curves[0]);
-      const {angle, angleInRadians} = maxCurve.line.vector;
-      const {PI} = Math;
-      _attr._text.rotation = angle;
-      const biasPoint = new paper.Point(Math.cos(angleInRadians + PI / 4), Math.sin(angleInRadians + PI / 4)).multiply(3 * elm_font_size);
-      _attr._text.point = maxCurve.point1.add(biasPoint);
-      // Перевернуть с головы на ноги
-      if(Math.abs(angle) >= 85 && Math.abs(angle) <= 185){
-        _attr._text.point = _attr._text.bounds.rightCenter;
-        _attr._text.rotation += 180;
+      if(maxCurve) {
+        const {angle, angleInRadians} = maxCurve.line.vector;
+        const {PI} = Math;
+        _attr._text.rotation = angle;
+        const biasPoint = new paper.Point(Math.cos(angleInRadians + PI / 4), Math.sin(angleInRadians + PI / 4)).multiply(3 * elm_font_size);
+        _attr._text.point = maxCurve.point1.add(biasPoint);
+        // Перевернуть с головы на ноги
+        if(Math.abs(angle) >= 85 && Math.abs(angle) <= 185){
+          _attr._text.point = _attr._text.bounds.rightCenter;
+          _attr._text.rotation += 180;
+        }
       }
     }
   }

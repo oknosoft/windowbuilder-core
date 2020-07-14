@@ -166,7 +166,7 @@ exports.CatCnns = class CatCnns extends Object {
 
       //TODO: реализовать фильтрацию
       if(cnn_type == ii) {
-        const {angle_hor} = elm;
+        const angle_hor = len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : elm.angle_hor;
         if(amin > angle_hor || amax < angle_hor || row.sz_min > len_angl.len || row.sz_max < len_angl.len) {
           return;
         }

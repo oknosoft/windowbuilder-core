@@ -16,23 +16,23 @@ $p.cat.production_params.__define({
 	 * @return {Array}
 	 */
 	slist: function(prop, is_furn){
-		var res = [], rt, at, pmgr,
-			op = this.get(prop);
+		let res = [], rt, at, pmgr, op = this.get(prop);
 
 		if(op && op.type.is_ref){
+      const tso = $p.enm.open_directions;
 			// параметры получаем из локального кеша
 			for(rt in op.type.types)
 				if(op.type.types[rt].indexOf(".") > -1){
 					at = op.type.types[rt].split(".");
 					pmgr = $p[at[0]][at[1]];
 					if(pmgr){
-						if(pmgr.class_name=="enm.open_directions")
-							pmgr.forEach(function(v){
-								if(v.name!=$p.enm.tso.folding)
-									res.push({value: v.ref, text: v.synonym});
-							});
+						if(pmgr === tso) {
+              pmgr.forEach((v) => {
+                v !== tso.folding && res.push({value: v.ref, text: v.synonym});
+              });
+            }
 						else
-							pmgr.find_rows({owner: prop}, function(v){
+							pmgr.find_rows({owner: prop}, (v) => {
 								res.push({value: v.ref, text: v.presentation});
 							});
 					}
@@ -65,11 +65,10 @@ $p.CatProduction_params.prototype.__define({
    */
   furns: {
     value(ox, cnstr = 0){
-      const {furn} = $p.job_prm.properties;
-      const {furns} = $p.cat;
+      const {job_prm: {properties}, cat: {furns}} = $p;
       const list = [];
-      if(furn){
-        const links = furn.params_links({
+      if(properties.furn){
+        const links = properties.furn.params_links({
           grid: {selection: {cnstr}},
           obj: {_owner: {_owner: ox}}
         });
@@ -94,18 +93,19 @@ $p.CatProduction_params.prototype.__define({
 	 * @return Array.<_cat.inserts>
 	 */
 	inserts: {
-		value(elm_types, by_default){
-			var __noms = [];
-			if(!elm_types)
-				elm_types = $p.enm.elm_types.rama_impost;
+		value: function inserts(elm_types, by_default){
+			const __noms = [];
+      if(!elm_types) {
+        elm_types = $p.enm.elm_types.rama_impost;
+      }
+      else if(typeof elm_types == 'string') {
+        elm_types = $p.enm.elm_types[elm_types];
+      }
+      else if(!Array.isArray(elm_types)) {
+        elm_types = [elm_types];
+      }
 
-			else if(typeof elm_types == "string")
-				elm_types = $p.enm.elm_types[elm_types];
-
-			else if(!Array.isArray(elm_types))
-				elm_types = [elm_types];
-
-			this.elmnts.forEach((row) => {
+      this.elmnts.forEach((row) => {
 				if(!row.nom.empty() && elm_types.indexOf(row.elm_type) != -1 &&
 					(by_default == "rows" || !__noms.some((e) => row.nom == e.nom)))
 					__noms.push(row);
@@ -145,7 +145,7 @@ $p.CatProduction_params.prototype.__define({
 	 * @param cnstr {Nomber} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
 	 */
 	refill_prm: {
-		value(ox, cnstr = 0, force, project) {
+		value: function refill_prm(ox, cnstr = 0, force, project) {
 
 			const prm_ts = !cnstr ? this.product_params : this.furn_params;
 			const adel = [];
@@ -250,7 +250,28 @@ $p.CatProduction_params.prototype.__define({
         });
 			}
 		}
-	}
+	},
+
+	prm_defaults: {
+	  value: function prm_defaults(param, cnstr) {
+	    const ts = param instanceof $p.CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
+	    return ts.find({param});
+    }
+  },
+
+  graph_restrictions: {
+	  value: function graph_restrictions(spoint, clr) {
+	    const {formula} = this;
+      const checks = {};
+	    if(!formula.empty()) {
+	      const fragment = formula.execute()[clr ? 'clr' : 'white'];
+	      for(const key in fragment) {
+          checks[key] = fragment[key].contains(spoint);
+        }
+      }
+      return checks;
+    }
+  }
 
 });
 

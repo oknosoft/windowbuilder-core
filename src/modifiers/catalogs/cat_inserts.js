@@ -458,6 +458,51 @@
     }
 
     /**
+     * Проверяет ограничения вставки параметрика
+     * @param elm {BuilderElement}
+     * @param len_angl {Object}
+     * @param params {Array}
+     */
+    check_prm_restrictions({elm, len_angl, params}) {
+      const {lmin, lmax, hmin, hmax, smin, smax} = this;
+      const {len, height, s} = elm;
+
+      let name = this.name + ':', err = false;
+
+      if(lmin && len < lmin) {
+        err = true;
+        name += `\nдлина ${len} < ${lmin}`;
+      }
+      if(lmax && len > lmax) {
+        err = true;
+        name += `\nдлина ${len} > ${lmax}`;
+      }
+      if(hmin && height < hmin) {
+        err = true;
+        name += `\nвысота ${height} < ${hmin}`;
+      }
+      if(hmax && height > hmax) {
+        err = true;
+        name += `\nвысота ${height} > ${hmax}`;
+      }
+
+      // получаем набор параметров, используемых текущей вставкой
+      const used_params = this.used_params();
+
+      // добавляем параметр в характеристику, если используется в текущей вставке
+      params.forEach(({param, value}) => {
+        if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {
+          err = true;
+          name += `\nне заполнен обязательный параметр '${param.name}'`;
+        }
+      });
+
+      if(err) {
+        throw new Error(name);
+      }
+    }
+
+    /**
      * Проверяет ограничения вставки или строки вставки
      * @param row {CatInserts|CatInsertsSpecificationRow}
      * @param elm {BuilderElement}
@@ -468,7 +513,6 @@
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
       const {_row} = elm;
-      const len = len_angl ? len_angl.len : _row.len;
       const is_linear = elm.is_linear ? elm.is_linear() : true;
 
       // проверяем площадь
@@ -485,17 +529,20 @@
       if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
         return false;
       }
+      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
+        return false;
+      }
 
-      if (!utils.is_data_obj(row)) {
-    if (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру) {
-      if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
-        return false;
+      if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
+        const len = len_angl ? len_angl.len : _row.len;
+        if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
+          return false;
+        }
+        const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
+        if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
+          return false;
+        }
       }
-      if (row.ahmin > _row.angle_hor || row.ahmax < _row.angle_hor) {
-        return false;
-      }
-    }
-  }
 
       //// Включить проверку размеров и углов, поля "Устанавливать с..." и т.д.
 
@@ -608,6 +655,7 @@
      * @param len_angl {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
+     * @param clr {CatClrs}
      */
     calculate_spec({elm, len_angl, ox, spec, clr}) {
 
@@ -768,7 +816,7 @@
                   len = value;
                   return false;
                 });
-              };
+              }
               if(len) return false;
             });
 
@@ -790,7 +838,7 @@
                   }
                   return false;
                 });
-              };
+              }
               if(len && width) return false;
             });
             row_spec.qty = row_ins_spec.quantity;

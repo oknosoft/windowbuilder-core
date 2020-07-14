@@ -8,10 +8,17 @@
  */
 
 /**
- * Индекс в табчасти selection_params
+ * корректируем метаданные табчастей фурнитуры
  */
-$p.cat.furns.metadata('selection_params').index = 'elm';
-$p.cat.furns.metadata('specification').index = 'elm';
+(({md}) => {
+  const {selection_params, specification} = md.get('cat.furns').tabular_sections;
+  // индексы
+  selection_params.index = 'elm';
+  specification.index = 'elm';
+  // устаревшее поле nom_set для совместимости
+  const {fields} = specification;
+  fields.nom_set = fields.nom;
+})($p);
 
 /**
  * Методы объекта фурнитуры
@@ -24,6 +31,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm({project, furn, cnstr}) {
 
     const fprms = project.ox.params;
+    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction}}} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
@@ -57,13 +65,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
       // умолчания и скрытость по табчасти системы
       const {param} = prm_row;
-      project._dp.sys[param instanceof CatNom ? 'params' : 'furn_params'].find_rows({param}, (row) => {
-        if(row.forcibly || forcibly){
-          prm_row.value = row.value;
-        }
-        prm_row.hide = row.hide || (param.is_calculated && !param.show_calculated);
-        return false;
-      });
+      const drow = sys.prm_defaults(param, cnstr);
+      if(drow && (drow.forcibly || forcibly)) {
+        prm_row.value = drow.value;
+      }
+      prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
 
       // умолчания по связям параметров
       param.linked_values(param.params_links({
@@ -280,12 +286,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {
           if(sub_row.is_procedure_row){
             res.add(sub_row);
-            return;
           }
-          else if(!sub_row.quantity){
-            return;
+          else if(sub_row.quantity){
+            res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
-          res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
         });
       }
       else{
@@ -355,8 +359,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    * @param cache {Object}
    */
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side} = this;
-    const {direction, h_ruch, cnstr} = contour;
+    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
+    const {direction, h_ruch, cnstr, project} = contour;
 
     // проверка по высоте ручки
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
@@ -366,6 +370,25 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     // проверка по формуле
     if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
       return false;
+    }
+
+    // по моменту на петлях (в текущей реализации - просто по массе)
+    if(mmin || (mmax && mmax < 1000)) {
+      if(!cache.hasOwnProperty('weight')) {
+        if(project._dp.sys.flap_weight_max) {
+          const weights = [];
+          for(const cnt of contour.layer.contours) {
+            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+          }
+          cache.weight = Math.max(...weights);
+        }
+        else {
+          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
+        }
+      }
+      if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {
+        return false;
+      }
     }
 
     // получаем связанные табличные части
@@ -443,8 +466,4 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
 };
 
-// корректируем метаданные табчасти фурнитуры
-(({md}) => {
-  const {fields} = md.get("cat.furns").tabular_sections.specification;
-  fields.nom_set = fields.nom;
-})($p);
+

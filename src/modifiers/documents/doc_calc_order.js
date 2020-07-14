@@ -102,10 +102,25 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // подписки на события
 
   // после создания надо заполнить реквизиты по умолчанию: контрагент, организация, договор
-  after_create() {
+  after_create(user) {
 
-    const {enm, cat, current_user, DocCalc_order} = $p;
+    const {enm, cat, job_prm, DocCalc_order} = $p;
+    let current_user;
+    if(job_prm.is_node) {
+      if(user) {
+        current_user = user;
+      }
+      else {
+        return Promise.resolve(this);
+      }
+    }
+    else {
+      current_user = this.manager;
+    }
 
+    if(!current_user) {
+      current_user = $p.current_user;
+    }
     if(!current_user) {
       return Promise.resolve(this);
     }
@@ -124,6 +139,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     //Контрагент
     acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
       this.partner = row.acl_obj;
+      return false;
+    });
+
+    //Склад
+    acl_objs.find_rows({by_default: true, type: cat.stores.class_name}, (row) => {
+      this.warehouse = row.acl_obj;
       return false;
     });
 
@@ -462,10 +483,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * рассчитывает итоги диспетчеризации
-   * @return {Promise.<TResult>|*}
+   * @return {Promise}
    */
   dispatching_totals() {
-    var options = {
+    const options = {
       reduce: true,
       limit: 10000,
       group: true,
@@ -639,7 +660,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
-    return this.load_production().then(() => {
+    return this.load_linked_refs().then(() => {
 
       // получаем эскизы продукций, параллельно накапливаем количество и площадь изделий
       let editor, imgs = Promise.resolve();
@@ -874,7 +895,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Загружает в RAM данные характеристик продукций заказа
-   * @return {Promise.<TResult>|*}
+   * @return {Promise}
    */
   load_production(forse) {
     const prod = [];
@@ -938,7 +959,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @param params
    * @param create
    * @param grid
-   * @return {Promise.<TResult>}
+   * @return {Promise}
    */
   create_product_row({row_spec, elm, len_angl, params, create, grid}) {
 
@@ -1070,6 +1091,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         const elm = new FakeElm(row_dp);
         // создаём или получаем строку заказа с уникальной харктеристикой
         res = res
+          .then(() => row_dp.inset.check_prm_restrictions({elm, len_angl,
+            params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
             // рассчитываем спецификацию
@@ -1112,9 +1135,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const project = editor.create_scheme();
     let tmp = Promise.resolve();
 
+    // если передали ссылку dp, меняем при пересчете свойства в соответствии с полями обработки
+    const {dp} = attr;
+
     // получаем массив продукций в озу
-    return this.load_production()
-      .then((prod) => {
+    return this.load_linked_refs()
+      .then(() => {
         // бежим по табчасти, если продукция, пересчитываем в рисовалке, если материал или paramrtric - пересчитываем строку
         this.production.forEach((row) => {
           const {characteristic: cx} = row;
@@ -1127,7 +1153,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             tmp = tmp.then(() => {
               return project.load(cx, true).then(() => {
                 // выполняем пересчет
-                project.save_coordinates({svg: false});
+                cx.apply_props(project, dp).save_coordinates({svg: false});
                 this.characteristic_saved(project);
               });
             });
@@ -1140,7 +1166,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
-              cx.origin.calculate_spec({
+              cx.apply_props(cx.origin, dp).calculate_spec({
                 elm: new FakeElm(row),
                 len_angl: new FakeLenAngl({len: row.len, inset: cx.origin}),
                 ox: cx

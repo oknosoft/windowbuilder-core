@@ -26,7 +26,7 @@
 })($p);
 
 // при старте приложения, загружаем в ОЗУ обычные характеристики (без ссылок на заказы)
-$p.md.once('predefined_elmnts_inited', () => {
+!$p.job_prm.is_node && $p.md.once('predefined_elmnts_inited', () => {
   const _mgr = $p.cat.characteristics;
 
   // грузим характеристики
@@ -87,30 +87,30 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Добавляет параметры вставки, пересчитывает признак hide
    * @param inset
    * @param cnstr
+   * @param blank_inset
    */
   add_inset_params(inset, cnstr, blank_inset) {
     const ts_params = this.params;
-    const params = [];
+    const params = new Set();
+    const filter = {cnstr, inset: blank_inset || inset};
 
-    ts_params.find_rows({cnstr, inset: blank_inset || inset}, ({param}) => {
-      !params.includes(param) && params.push(param);
-    });
+    ts_params.find_rows(filter, ({param}) => params.add(param));
 
     const {product_params} = inset;
     inset.used_params().forEach((param) => {
-      if((!param.is_calculated || param.show_calculated) && !params.includes(param)) {
-        const value = product_params.find({param});
+      if((!param.is_calculated || param.show_calculated) && !params.has(param)) {
+        const def = product_params.find({param});
         ts_params.add({
           cnstr: cnstr,
           inset: blank_inset || inset,
           param: param,
-          value: (value && value.value) || "",
+          value: (def && def.value) || "",
         });
-        params.push(param);
+        params.add(param);
       }
     });
 
-    ts_params.find_rows({cnstr: cnstr, inset: blank_inset || inset}, (row) => {
+    ts_params.find_rows(filter, (row) => {
       const links = row.param.params_links({grid: {selection: {cnstr}}, obj: row});
       row.hide = links.some((link) => link.hide);
     });
@@ -288,40 +288,39 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Возвращает номенклатуру продукции по системе
    */
   get prod_nom() {
-    if(!this.sys.empty()) {
+    const {sys, params} = this;
+    if(!sys.empty()) {
 
-      var setted,
-        param = this.params;
+      let setted;
 
-      if(this.sys.production.count() == 1) {
-        this.owner = this.sys.production.get(0).nom;
-
+      if(sys.production.count() === 1) {
+        this.owner = sys.production.get(0).nom;
       }
-      else if(this.sys.production.count() > 1) {
-        this.sys.production.forEach((row) => {
+      else {
+        sys.production.forEach((row) => {
 
           if(setted) {
             return false;
           }
 
           if(row.param && !row.param.empty()) {
-            param.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
+            params.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
               setted = true;
-              param._owner.owner = row.nom;
+              this.owner = row.nom;
               return false;
             });
           }
 
         });
         if(!setted) {
-          this.sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
+          sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
             setted = true;
-            param._owner.owner = row.nom;
+            this.owner = row.nom;
             return false;
           });
         }
         if(!setted) {
-          this.owner = this.sys.production.get(0).nom;
+          this.owner = sys.production.get(0).nom;
         }
       }
     }
@@ -378,6 +377,57 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       _obj[name] = JSON.stringify(props);
       this.__notify(name);
     }
+  }
+
+  /**
+   * Выполняет замену системы, цвета и фурниутры
+   * если текущее изделие помечено в обработке
+   * @param engine {Scheme|CatInserts} - экземпляр рисовалки или вставки (соответственно, для изделий построителя и параметрика)
+   * @param dp {DpBuyers_order} - экземпляр обработки в реквизитах и табчастях которой, правила перезаполнения
+   * @return {Scheme|CatInserts}
+   */
+  apply_props(engine, dp) {
+    // если в dp взведён флаг, выполняем подмену
+    if(dp && dp.production.find({use: true, characteristic: this})) {
+      const {Scheme, Filling, Contour} = $p.EditorInvisible;
+      if(engine instanceof Scheme) {
+        const {length} = engine._ch;
+        // цвет
+        if(dp.use_clr && engine._dp.clr !== dp.clr) {
+          engine._dp.clr = dp.clr;
+          engine._dp_listener(engine._dp, {clr: true});
+        }
+        // система
+        if(dp.use_sys) {
+          engine.set_sys(dp.sys);
+        }
+        // вставки заполнений
+        if(dp.use_inset) {
+          engine.set_glasses(dp.inset);
+        }
+        // подмена фурнитуры
+        for(const contour of engine.getItems({class: Contour})) {
+          const {furn} = contour;
+          if(!furn.empty()) {
+            dp.sys_furn.find_rows({elm1: furn}, ({elm2}) => {
+              if(!elm2.empty() && elm2 !== furn) {
+                contour.furn = elm2;
+              }
+            });
+          }
+        }
+        if(engine._ch.length > length) {
+          engine.redraw();
+        }
+      }
+      // подмена параметров - одинаково для рисовалки и параметрика
+      dp.product_params.forEach(({param, value, _ch}) => {
+        _ch && this.params.find_rows({param}, (row) => {
+          row.value = value;
+        });
+      });
+    }
+    return engine;
   }
 
   /**
@@ -512,6 +562,34 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
+  /**
+   * Рассчитывает массу фрагмента изделия
+   * @param elmno {number} - номер элемента (с полюсом) или слоя (с минусом)
+   * @return {number}
+   */
+  elm_weight(elmno) {
+    const {coordinates, specification} = this;
+    const map = new Map();
+    let weight = 0;
+    specification.forEach(({elm, nom, totqty}) => {
+      // отбрасываем лишние строки
+      if(elm !== elmno) {
+        if(elmno < 0 && elm > 0) {
+          if(!map.get(elm)) {
+            const crow = coordinates.find({elm});
+            map.set(elm, crow ? -crow.cnstr : Infinity);
+          }
+          if(map.get(elm) !== elmno) return;
+        }
+        else {
+          return;
+        }
+      }
+      weight += nom.density * totqty;
+    });
+    return weight;
+  }
+
 };
 
 $p.CatCharacteristics.builder_props_defaults = {
@@ -523,6 +601,8 @@ $p.CatCharacteristics.builder_props_defaults = {
   rounding: 0,
   mosquito: true,
   jalousie: true,
+  grid: 50,
+  carcass: false,
 };
 
 // при изменении реквизита табчасти вставок
