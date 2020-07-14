@@ -115,10 +115,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     else {
+      //При таком присвоеннии получаем обект с пустым пользователем
       current_user = this.manager;
     }
-
-    if(!current_user) {
+/*
+и в данном Случае лучше проверить ЧТо пользователь пустой (empty)
+*/
+    if(!current_user ||current_user.empty()) {
       current_user = $p.current_user;
     }
     if(!current_user) {
