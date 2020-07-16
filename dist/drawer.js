@@ -15867,10 +15867,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       current_user = this.manager;
     }
 
-    if(!current_user) {
+    if(!current_user || current_user.empty()) {
       current_user = $p.current_user;
     }
-    if(!current_user) {
+    if(!current_user || current_user.empty()) {
       return Promise.resolve(this);
     }
 
