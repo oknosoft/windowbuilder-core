@@ -73,14 +73,7 @@ class Scheme extends paper.Project {
 
         // если перерисованы все контуры, перерисовываем их размерные линии
         _attr._bounds = null;
-        contours.forEach((contour) => {
-          const {contours, l_dimensions} = contour;
-          contours.forEach((l) => {
-            l.save_coordinates(true);
-            isBrowser && l.refresh_prm_links();
-          });
-          l_dimensions.redraw();
-        });
+        contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
 
         // перерисовываем габаритные размерные линии изделия
         this.draw_sizes();
@@ -110,6 +103,19 @@ class Scheme extends paper.Project {
       _attr._vis_timer = setTimeout(this.draw_visualization.bind(this), 300);
     });
 
+  }
+
+  /**
+   * Обновляет связи параметров в иерархии слоёв
+   * @param contour
+   * @param isBrowser
+   */
+  refresh_recursive(contour, isBrowser) {
+    const {contours, l_dimensions, layer} = contour;
+    contour.save_coordinates(true);
+    isBrowser && layer && contour.refresh_prm_links();
+    !layer && l_dimensions.redraw();
+    contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
   }
 
   /**
