@@ -1903,8 +1903,8 @@ class ProfileItem extends GeneratrixElement {
    * @return Boolean
    */
   is_nearest(p) {
-    return (this.b.is_nearest(p.b, true) || this.generatrix.is_nearest(p.b)) &&
-      (this.e.is_nearest(p.e, true) || this.generatrix.is_nearest(p.e));
+    const {b, e, generatrix} = this;
+    return (b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e));
   }
 
   /**
@@ -2478,12 +2478,31 @@ class Profile extends ProfileItem {
 
     this.layer.contours.forEach((contour) => {
       contour.profiles.forEach((profile) => {
-        if(profile.nearest(true) == this) {
+        if(profile.nearest(true) === this) {
           res.push(profile);
         }
       });
     });
 
+    return res;
+  }
+
+  /**
+   * Возвращает массив примыкающих заполнений и вложенных контуров
+   * @param [glasses]
+   * @return {[]}
+   */
+  joined_glasses(glasses) {
+    if(!glasses) {
+      glasses = this.layer.glasses();
+    }
+    const res = [];
+    for(const glass of glasses) {
+      const is_layer = glass instanceof Contour;
+      if(glass.profiles.some((profile) => is_layer ? profile === this || this.is_nearest(profile) : profile.profile === this)) {
+        res.push(glass);
+      }
+    }
     return res;
   }
 

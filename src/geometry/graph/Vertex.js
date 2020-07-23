@@ -82,6 +82,30 @@ class GraphVertex {
   }
 
   /**
+   * @return {Profile[]}
+   */
+  get profiles() {
+    const profiles = new Set();
+    this.getEdges().concat(this.getEndEdges()).forEach(({profile}) => profiles.add(profile));
+    return Array.from(profiles);
+  }
+
+  get selected() {
+    const {point} = this;
+    if(point.selected) {
+      return true;
+    }
+    const {parent} = point._owner.path;
+    const check_edge = ({profile}) => {
+      if(profile !== parent) {
+        const {b, e} = profile;
+        return b.selected && b.is_nearest(point) || e.selected && e.is_nearest(point);
+      }
+    };
+    return this.getEdges().some(check_edge) || this.getEndEdges().some(check_edge);
+  }
+
+  /**
    * @return {number}
    */
   getDegree() {

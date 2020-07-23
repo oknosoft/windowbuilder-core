@@ -80,9 +80,6 @@ class Pricing {
     const {nom, currencies} = $p.cat;
     const note = 'Индекс цен номенклатуры';
     for(const {key, value} of rows){
-      if(!Array.isArray(value)){
-        return setTimeout(() => $p.iface.do_reload('', note), 1000);
-      }
       const onom = nom.get(key[0], false, true);
       if (!onom || !onom._data){
         $p.record_log({

@@ -214,7 +214,7 @@ class DimensionLine extends paper.Group {
         break;
 
       case 'auto':
-        const {impost, pos, elm1, elm2, p1, p2} = this._attr;
+        const {impost, pos, elm1, elm2} = this._attr;
         const {positions} = $p.enm;
         if(pos == 'top' || pos == 'bottom') {
           event.name = 'right';

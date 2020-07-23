@@ -54,6 +54,19 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Обновляет связи параметров в иерархии слоёв
+   * @param contour {Contour}
+   * @param isBrowser {Boolean}
+   */
+  refresh_recursive(contour, isBrowser) {
+    const {contours, l_dimensions, layer} = contour;
+    contour.save_coordinates(true);
+    isBrowser && layer && contour.refresh_prm_links();
+    !layer && l_dimensions.redraw();
+    contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
+  }
+
+  /**
    * наблюдатель за изменениями свойств изделия
    * @param obj
    * @param fields
@@ -67,9 +80,10 @@ class Scheme extends paper.Project {
       return;
     }
 
+    const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
 
-    if(fields.hasOwnProperty('clr') || fields.hasOwnProperty('sys')) {
+    if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
     }
@@ -576,14 +590,7 @@ class Scheme extends paper.Project {
 
       // если перерисованы все контуры, перерисовываем их размерные линии
       _attr._bounds = null;
-      contours.forEach((contour) => {
-        const {contours, l_dimensions} = contour;
-        contours.forEach((l) => {
-          l.save_coordinates(true);
-          with_links && l.refresh_prm_links();
-        });
-        l_dimensions.redraw();
-      });
+      contours.forEach((contour) => this.refresh_recursive(contour, typeof requestAnimationFrame === 'function'));
 
       // перерисовываем габаритные размерные линии изделия
       this.draw_sizes();
@@ -858,6 +865,150 @@ class Scheme extends paper.Project {
     _dp._manager.emit_async('update', {}, {x1: true, x2: true, y1: true, y2: true, a1: true, a2: true, cnn1: true, cnn2: true, info: true});
 
     // TODO: возможно, здесь надо подвигать примыкающие контуры
+    this.hide_move_ribs(true);
+  }
+
+  /**
+   * Возврвщает вектор, на который можно сдвинуть узлы
+   * @param start
+   * @param event
+   * @return {Point}
+   */
+  snap_to_edges({start, event: {point, modifiers}, mode}) {
+    let delta = point.subtract(start);
+    if (!modifiers.shift){
+      delta = delta.snap_to_angle(Math.PI*2/4);
+      point = start.add(delta);
+    }
+
+    if(mode === consts.move_points) {
+      const vertexes = new Map();
+      // в режиме move_points, обрабатываем только один узел
+      for(const profile of this.selected_profiles()) {
+        const {skeleton, generatrix: {firstSegment, lastSegment}} = profile;
+        for(const vertex of skeleton.vertexesByProfile(profile)) {
+          if(vertex.selected) {
+            vertexes.set(vertex, [skeleton, profile]);
+            break;
+          }
+        }
+        if(vertexes.size) {
+          break;
+        }
+      }
+      // в ribs живут отрезки, а в points - концы подходящих для сдвига сегментов
+      const ribs = [];
+      const points = new Set();
+      // анализируем вариант T
+      let processed;
+      for(const [vertex, [skeleton, profile]] of vertexes) {
+        const candidates = new Set();
+        for(const edge of vertex.getEdges()) {
+          points.add(edge.endVertex.point);
+          ribs.push({
+            profile: edge.profile,
+            path: edge.profile.generatrix.get_subpath(edge.endVertex.point, edge.startVertex.point),
+          });
+          if(edge.profile !== profile) {
+            candidates.add(edge);
+          }
+        }
+        for(const edge of vertex.getEndEdges()) {
+          points.add(edge.startVertex.point);
+          ribs.push({
+            profile: edge.profile,
+            path: edge.profile.generatrix.get_subpath(edge.startVertex.point, edge.endVertex.point),
+          });
+          if(edge.profile !== profile) {
+            for(const candidate of candidates) {
+              if(candidate.profile === edge.profile && !candidate.is_profile_outer(edge)) {
+                const path = edge.profile.generatrix
+                  .get_subpath(edge.startVertex.point, candidate.endVertex.point)
+                  .elongation(-edge.profile.width / 2);
+                point = path.getNearestPoint(point);
+                delta = point.subtract(start);
+                processed = true;
+                break;
+              }
+            }
+          }
+        }
+        if(processed) {
+          break;
+        }
+        // при любом раскладе, длина исходных сегментов не должна становиться < 0
+        for(const {path, profile: {width}} of ribs) {
+          const pt = path.getNearestPoint(point);
+          const offset = path.getOffsetOf(pt);
+          if(offset < width / 2) {
+            point = path.getPointAt(width / 2);
+            delta = point.subtract(start);
+            processed = true;
+            break;
+          }
+        }
+        // крест или разрыв
+        if(ribs.length > 2) {
+
+        }
+        // угловое соединение
+        else {
+
+        }
+      }
+      this.draw_move_ribs({vertexes, points, point});
+    }
+
+
+    return delta;
+  }
+
+  hide_move_ribs(withOpacity) {
+    for(const contour of this.contours) {
+      const {l_visualization} = contour;
+      if(l_visualization._move_ribs) {
+        l_visualization._move_ribs.removeChildren();
+        if(withOpacity) {
+          contour.profiles.forEach((profile) => profile.opacity = 1);
+          contour.glasses().forEach((glass) => glass.opacity = 1);
+        }
+      }
+    }
+  }
+
+  draw_move_ribs({vertexes, points, point}) {
+    this.hide_move_ribs();
+    for(const [vertex, [skeleton]] of vertexes) {
+      const {l_visualization} = skeleton.owner;
+      if(!l_visualization._move_ribs) {
+        l_visualization._move_ribs = new paper.Group({parent: l_visualization});
+      }
+      for(const pt of points) {
+        new paper.Path({
+          parent: l_visualization._move_ribs,
+          strokeColor: 'blue',
+          strokeWidth: 2,
+          strokeScaling: false,
+          dashArray: [4, 4],
+          guide: true,
+          segments: [point, pt],
+        });
+      }
+      new paper.Path.Rectangle({
+        parent: l_visualization._move_ribs,
+        fillColor: 'blue',
+        center: point,
+        strokeScaling: false,
+        size: [80, 80],
+      });
+
+      // прозрачность для деформируемых элементов
+      const glasses = skeleton.owner.glasses();
+      for(const profile of vertex.profiles) {
+        profile.opacity = 0.4;
+        profile.joined_glasses(glasses).forEach((glass) => glass.opacity = 0.4);
+      }
+    }
   }
 
   /**
@@ -1625,27 +1776,21 @@ class Scheme extends paper.Project {
    */
   selected_profiles(all) {
     const res = [];
-    const count = this.selectedItems.length;
-
-    this.selectedItems.forEach((item) => {
-
-      const p = item.parent;
-
-      if(p instanceof ProfileItem) {
-        if(all || !item.layer.parent || !p.nearest || !p.nearest(true)) {
-
-          if(res.indexOf(p) != -1) {
+    const {selectedItems} = this;
+    const {length} = selectedItems;
+    for(const item of selectedItems) {
+      const {parent} = item;
+      if(parent instanceof ProfileItem) {
+        if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
+          if(res.indexOf(parent) != -1) {
             return;
           }
-
-          if(count < 2 || !(p._attr.generatrix.firstSegment.selected ^ p._attr.generatrix.lastSegment.selected)) {
-            res.push(p);
+          if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
+            res.push(parent);
           }
-
         }
       }
-    });
-
+    }
     return res;
   }
 
