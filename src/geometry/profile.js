@@ -1928,8 +1928,8 @@ class ProfileItem extends GeneratrixElement {
    * @return Boolean
    */
   is_nearest(p) {
-    return (this.b.is_nearest(p.b, true) || this.generatrix.is_nearest(p.b)) &&
-      (this.e.is_nearest(p.e, true) || this.generatrix.is_nearest(p.e));
+    const {b, e, generatrix} = this;
+    return (b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e));
   }
 
   /**
@@ -2152,6 +2152,21 @@ class ProfileItem extends GeneratrixElement {
     }
 
     return false;
+  }
+
+  /**
+   * Выясняет по таблице соединений, являются ли соединения на концах угловыми
+   */
+  is_corner() {
+    const {project, elm} = this;
+    const {_obj} = project.cnns;
+    const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
+      (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
+    );
+    return {
+      ab: rows.find(({node1}) => node1 === 'b'),
+      ae: rows.find(({node1}) => node1 === 'e')
+    }
   }
 
   /**

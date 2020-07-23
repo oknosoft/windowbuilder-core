@@ -107,8 +107,8 @@ class Scheme extends paper.Project {
 
   /**
    * Обновляет связи параметров в иерархии слоёв
-   * @param contour
-   * @param isBrowser
+   * @param contour {Contour}
+   * @param isBrowser {Boolean}
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
@@ -733,6 +733,8 @@ class Scheme extends paper.Project {
   /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
+   * @param type {String}
+   * @param fields {Array}
    */
   notify(obj, type = 'update', fields) {
     if(obj.type) {
@@ -1098,7 +1100,8 @@ class Scheme extends paper.Project {
   /**
    * ### Уравнивает геометрически или по заполнениям
    * сюда попадаем из move_points, когда меняем габариты
-   * @param auto_align
+   * @param auto_align {Boolean}
+   * @param profiles {Set}
    */
   do_align(auto_align, profiles) {
 
@@ -1641,27 +1644,21 @@ class Scheme extends paper.Project {
    */
   selected_profiles(all) {
     const res = [];
-    const count = this.selectedItems.length;
-
-    this.selectedItems.forEach((item) => {
-
-      const p = item.parent;
-
-      if(p instanceof ProfileItem) {
-        if(all || !item.layer.parent || !p.nearest || !p.nearest(true)) {
-
-          if(res.indexOf(p) != -1) {
+    const {selectedItems} = this;
+    const {length} = selectedItems;
+    for(const item of selectedItems) {
+      const {parent} = item;
+      if(parent instanceof ProfileItem) {
+        if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
+          if(res.indexOf(parent) != -1) {
             return;
           }
-
-          if(count < 2 || !(p._attr.generatrix.firstSegment.selected ^ p._attr.generatrix.lastSegment.selected)) {
-            res.push(p);
+          if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
+            res.push(parent);
           }
-
         }
       }
-    });
-
+    }
     return res;
   }
 

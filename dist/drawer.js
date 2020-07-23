@@ -6303,20 +6303,16 @@ Object.defineProperties(paper.Point.prototype, {
 
 
 
-
-
 class CnnPoint {
 
   constructor(parent, node) {
 
     this._parent = parent;
 
-
     this.node = node;
 
     this.initialize();
   }
-
 
   get is_t() {
     const {cnn, parent, profile, profile_point} = this;
@@ -6344,11 +6340,9 @@ class CnnPoint {
     return false;
   }
 
-
   get is_tt() {
     return !(this.is_i || this.profile_point == 'b' || this.profile_point == 'e' || this.profile == this.parent);
   }
-
 
   get is_l() {
     const {cnn} = this;
@@ -6356,17 +6350,14 @@ class CnnPoint {
     return this.is_t || !!(cnn && (cnn.cnn_type === cnn_types.av || cnn.cnn_type === cnn_types.ah));
   }
 
-
   get is_i() {
     return !this.profile && !this.is_cut;
   }
-
 
   get is_x() {
     const {cnn} = this;
     return cnn && cnn.cnn_type === $p.enm.cnn_types.xx;
   }
-
 
   get parent() {
     return this._parent;
@@ -6392,7 +6383,6 @@ class CnnPoint {
     };
   }
 
-
   get err() {
     return this._err;
   }
@@ -6405,7 +6395,6 @@ class CnnPoint {
       this._err.push(v);
     }
   }
-
 
   check_err(style) {
     const {node, _parent} = this;
@@ -6431,7 +6420,6 @@ class CnnPoint {
     }
   }
 
-
   get profile() {
     if(this._profile === undefined && this._row && this._row.elm2) {
       this._profile = this.parent.layer.getItem({elm: this._row.elm2});
@@ -6456,7 +6444,6 @@ class CnnPoint {
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
 
-
   len_angl() {
     const {is_t, cnn} = this;
     const invert = cnn && cnn.cnn_type === $p.enm.cnn_types.av;
@@ -6479,9 +6466,7 @@ class CnnPoint {
 
     if(this._row) {
 
-
       this.cnn = this._row.cnn;
-
 
       if($p.enm.cnn_types.acn.a.indexOf(this.cnn.cnn_type) != -1) {
         this.cnn_types = $p.enm.cnn_types.acn.a;
@@ -6498,7 +6483,6 @@ class CnnPoint {
       this.cnn_types = $p.enm.cnn_types.acn.i;
     }
 
-
     this.distance = Infinity;
 
     this.point = null;
@@ -6507,7 +6491,6 @@ class CnnPoint {
 
   }
 }
-
 
 class ProfileRays {
 
@@ -6593,14 +6576,11 @@ class ProfileRays {
 }
 
 
-
 class ProfileItem extends GeneratrixElement {
-
 
   get d1() {
     return -(this.d0 - this.sizeb);
   }
-
 
   get d2() {
     return this.d1 - this.width;
@@ -6635,7 +6615,6 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   hhpoint(side) {
     const {layer, rays} = this;
     const {h_ruch, furn} = layer;
@@ -6648,16 +6627,13 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   get hhi() {
     return this.hhpoint('inner');
   }
 
-
   get hho() {
     return this.hhpoint('outer');
   }
-
 
   get cnn1() {
     return this.getcnnn('b');
@@ -6666,7 +6642,6 @@ class ProfileItem extends GeneratrixElement {
   set cnn1(v) {
     this.setcnnn(v, 'b');
   }
-
 
   get cnn2() {
     return this.getcnnn('e');
@@ -6689,11 +6664,9 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   get gb() {
     return this.gn('b');
   }
-
 
   get ge() {
     return this.gn('e');
@@ -6736,21 +6709,17 @@ class ProfileItem extends GeneratrixElement {
     return a > 180 ? a - 180 : (a < 0 ? -a : a);
   }
 
-
   get a1() {
     return this.angle_at('b');
   }
-
 
   get a2() {
     return this.angle_at('e');
   }
 
-
   get info() {
     return '№' + this.elm + ' α:' + this.angle_hor.toFixed(0) + '° l:' + this.length.toFixed(0);
   }
-
 
   get r() {
     return this._row.r;
@@ -6766,21 +6735,17 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   get rmin() {
     return this.generatrix.rmin();
   }
-
 
   get rmax() {
     return this.generatrix.rmax();
   }
 
-
   get ravg() {
     return this.generatrix.ravg();
   }
-
 
   get arc_ccw() {
     return this._row.arc_ccw;
@@ -6795,7 +6760,6 @@ class ProfileItem extends GeneratrixElement {
       this.project.notify(this, 'update', {r: true, arc_h: true, arc_ccw: true});
     }
   }
-
 
   get arc_h() {
     const {_row, b, e, generatrix} = this;
@@ -6824,13 +6788,11 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   get angle_hor() {
     const {b, e} = this;
     const res = (new paper.Point(e.x - b.x, b.y - e.y)).angle.round(2);
     return res < 0 ? res + 360 : res;
   }
-
 
   get length() {
     const {b, e, outer} = this.rays;
@@ -6851,7 +6813,6 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
 
-
   get orientation() {
     let {angle_hor} = this;
     if(angle_hor > 180) {
@@ -6868,7 +6829,6 @@ class ProfileItem extends GeneratrixElement {
     return $p.enm.orientations.incline;
   }
 
-
   get rays() {
     const {_rays} = this._attr;
     if(!_rays.inner.segments.length || !_rays.outer.segments.length) {
@@ -6877,11 +6837,9 @@ class ProfileItem extends GeneratrixElement {
     return _rays;
   }
 
-
   get addls() {
     return this.children.filter((elm) => elm instanceof ProfileAddl);
   }
-
 
   elm_props() {
     const {_attr, _row, project} = this;
@@ -6949,7 +6907,6 @@ class ProfileItem extends GeneratrixElement {
     return props;
   }
 
-
   get oxml() {
     const oxml = {
       ' ': [
@@ -6971,11 +6928,9 @@ class ProfileItem extends GeneratrixElement {
     return oxml;
   }
 
-
   get default_clr_str() {
     return 'FEFEFE';
   }
-
 
   get opacity() {
     return this.path ? this.path.opacity : 1;
@@ -6984,7 +6939,6 @@ class ProfileItem extends GeneratrixElement {
   set opacity(v) {
     this.path && (this.path.opacity = v);
   }
-
 
   get dx0() {
     const {cnn} = this.rays.b;
@@ -7107,7 +7061,6 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   save_coordinates() {
 
     const {_attr, _row, rays, generatrix, project: {cnns}} = this;
@@ -7205,7 +7158,6 @@ class ProfileItem extends GeneratrixElement {
     this.addls.forEach((addl) => addl.save_coordinates());
   }
 
-
   initialize(attr) {
 
     const {project, _attr, _row} = this;
@@ -7256,7 +7208,6 @@ class ProfileItem extends GeneratrixElement {
 
   }
 
-
   observer(an) {
     const {profiles} = an;
     if(profiles) {
@@ -7276,7 +7227,6 @@ class ProfileItem extends GeneratrixElement {
       this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
     }
   }
-
 
   do_bind(profile, bcnn, ecnn, moved) {
 
@@ -7372,7 +7322,6 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   cnn_side(profile, interior, rays) {
     if(!interior) {
       interior = profile.interiorPoint();
@@ -7387,7 +7336,6 @@ class ProfileItem extends GeneratrixElement {
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
       rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
-
 
   set_generatrix_radius(height) {
     const {generatrix, _row, layer, selected} = this;
@@ -7436,7 +7384,6 @@ class ProfileItem extends GeneratrixElement {
       setTimeout(() => this.selected = selected, 100);
     }
   }
-
 
   set_inset(v, ignore_select) {
 
@@ -7505,7 +7452,6 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   set_clr(v, ignore_select) {
     if(!ignore_select && this.project.selectedItems.length > 1) {
       this.project.selected_profiles(true).forEach((elm) => {
@@ -7516,7 +7462,6 @@ class ProfileItem extends GeneratrixElement {
     }
     BuilderElement.prototype.set_clr.call(this, v);
   }
-
 
   postcalc_cnn(node) {
     const cnn_point = this.cnn_point(node);
@@ -7530,12 +7475,10 @@ class ProfileItem extends GeneratrixElement {
     return cnn_point;
   }
 
-
   postcalc_inset() {
     this.set_inset(this.project.check_inset({elm: this}), true);
     return this;
   }
-
 
   default_inset(all) {
     let {orientation, project, _attr, elm_type} = this;
@@ -7563,7 +7506,6 @@ class ProfileItem extends GeneratrixElement {
       _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
     }
   }
-
 
   path_points(cnn_point, profile_point) {
 
@@ -7853,7 +7795,6 @@ class ProfileItem extends GeneratrixElement {
     return cnn_point;
   }
 
-
   interiorPoint() {
     const {generatrix, d1, d2} = this;
     const igen = generatrix.curves.length == 1 ? generatrix.firstCurve.getPointAt(0.5, true) : (
@@ -7862,7 +7803,6 @@ class ProfileItem extends GeneratrixElement {
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
   }
-
 
 
   select_corn(point) {
@@ -7891,17 +7831,14 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
 
-
   is_linear() {
     return this.generatrix.is_linear();
   }
 
-
   is_nearest(p) {
-    return (this.b.is_nearest(p.b, true) || this.generatrix.is_nearest(p.b)) &&
-      (this.e.is_nearest(p.e, true) || this.generatrix.is_nearest(p.e));
+    const {b, e, generatrix} = this;
+    return (b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e));
   }
-
 
   is_collinear(p) {
     let angl = p.e.subtract(p.b).getDirectedAngle(this.e.subtract(this.b));
@@ -7911,11 +7848,9 @@ class ProfileItem extends GeneratrixElement {
     return Math.abs(angl) < consts.orientation_delta;
   }
 
-
   joined_nearests() {
     return [];
   }
-
 
   redraw() {
     const bcnn = this.postcalc_cnn('b');
@@ -7977,7 +7912,6 @@ class ProfileItem extends GeneratrixElement {
     return this;
   }
 
-
   mark_direction() {
     const {generatrix, rays: {inner, outer}} = this;
     const gb = generatrix.getPointAt(130);
@@ -8003,7 +7937,6 @@ class ProfileItem extends GeneratrixElement {
       strokeScaling: false,
     })
   }
-
 
   corns(corn) {
     const {_corns} = this._attr;
@@ -8065,7 +7998,6 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
-
   has_cnn(profile, point) {
 
     let t = this;
@@ -8088,11 +8020,21 @@ class ProfileItem extends GeneratrixElement {
     return false;
   }
 
+  is_corner() {
+    const {project, elm} = this;
+    const {_obj} = project.cnns;
+    const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
+      (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
+    );
+    return {
+      ab: rows.find(({node1}) => node1 === 'b'),
+      ae: rows.find(({node1}) => node1 === 'e')
+    }
+  }
 
   check_distance(element, res, point, check_only) {
     return this.project.check_distance(element, this, res, point, check_only);
   }
-
 
   max_right_angle(ares) {
     const {generatrix} = this;
@@ -8110,7 +8052,6 @@ class ProfileItem extends GeneratrixElement {
     });
     return has_a;
   }
-
 
   show_number(show = true) {
     let {elm_number} = this.children;
@@ -8140,7 +8081,6 @@ class ProfileItem extends GeneratrixElement {
 }
 
 
-
 class Profile extends ProfileItem {
 
   constructor(attr) {
@@ -8165,7 +8105,6 @@ class Profile extends ProfileItem {
 
   }
 
-
   get d0() {
     const {_attr} = this;
     if(!_attr.hasOwnProperty('d0')) {
@@ -8177,7 +8116,6 @@ class Profile extends ProfileItem {
     }
     return _attr.d0;
   }
-
 
   get elm_type() {
     const {_rays, _nearest} = this._attr;
@@ -8193,7 +8131,6 @@ class Profile extends ProfileItem {
 
     return elm_types.Рама;
   }
-
 
   get pos() {
     const by_side = this.layer.profiles_by_side();
@@ -8211,7 +8148,6 @@ class Profile extends ProfileItem {
     }
     return $p.enm.positions.Центр;
   }
-
 
   nearest(ign_cnn) {
 
@@ -8302,7 +8238,6 @@ class Profile extends ProfileItem {
     return _attr._nearest;
   }
 
-
   joined_imposts(check_only) {
 
     const {rays, generatrix, layer} = this;
@@ -8358,7 +8293,6 @@ class Profile extends ProfileItem {
 
   }
 
-
   joined_nearests() {
     const res = [];
 
@@ -8372,7 +8306,6 @@ class Profile extends ProfileItem {
 
     return res;
   }
-
 
   cnn_point(node, point) {
     const {project, parent, rays} = this;
@@ -8428,7 +8361,6 @@ class Profile extends ProfileItem {
 
     return res;
   }
-
 
   t_parent(be) {
     if(this.elm_type != $p.enm.elm_types.Импост) {
@@ -10628,27 +10560,21 @@ class Scheme extends paper.Project {
 
   selected_profiles(all) {
     const res = [];
-    const count = this.selectedItems.length;
-
-    this.selectedItems.forEach((item) => {
-
-      const p = item.parent;
-
-      if(p instanceof ProfileItem) {
-        if(all || !item.layer.parent || !p.nearest || !p.nearest(true)) {
-
-          if(res.indexOf(p) != -1) {
+    const {selectedItems} = this;
+    const {length} = selectedItems;
+    for(const item of selectedItems) {
+      const {parent} = item;
+      if(parent instanceof ProfileItem) {
+        if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
+          if(res.indexOf(parent) != -1) {
             return;
           }
-
-          if(count < 2 || !(p._attr.generatrix.firstSegment.selected ^ p._attr.generatrix.lastSegment.selected)) {
-            res.push(p);
+          if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
+            res.push(parent);
           }
-
         }
       }
-    });
-
+    }
     return res;
   }
 
@@ -11192,9 +11118,6 @@ class Pricing {
     const {nom, currencies} = $p.cat;
     const note = 'Индекс цен номенклатуры';
     for(const {key, value} of rows){
-      if(!Array.isArray(value)){
-        return setTimeout(() => $p.iface.do_reload('', note), 1000);
-      }
       const onom = nom.get(key[0], false, true);
       if (!onom || !onom._data){
         $p.record_log({
