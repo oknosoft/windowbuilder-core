@@ -1225,6 +1225,30 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * Загружает продукции шаблона из mdm-cache
+   * @return {Promise}
+   */
+  load_templates() {
+    if(this._data._templates_loaded) {
+      return Promise.resolve();
+    }
+    else if(this.obj_delivery_state == 'Шаблон') {
+      const {adapters: {pouch}, cat} = $p;
+      return pouch.fetch(`/couchdb/mdm/${pouch.props.zone}/templates/${this.ref}`)
+        .then((res) => res.json())
+        .then(({rows}) => {
+          cat.characteristics.load_array(rows);
+          this._data._templates_loaded = true;
+        })
+        .catch((err) => {
+          console.log(err);
+          return this.load_production();
+        });
+    }
+    return this.load_production();
+  }
+
+  /**
    * Устанавливает подразделение по умолчанию
    */
   static set_department() {
