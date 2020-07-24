@@ -1381,12 +1381,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.vat_amount = 0;
       }
 
-      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
-      amount.doc_amount = amount.amount.round(rounding);
-      amount.amount_internal = amount.amount_internal.round(rounding);
-      delete amount.amount;
-      Object.assign(doc, amount);
-      doc._manager.emit_async('update', doc, amount);
 
       // пересчитываем спецификации и цены в следящих вставках
       if(!_slave_recalc){
@@ -1409,6 +1403,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
         });
       }
+      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
+      amount.doc_amount = amount.amount.round(rounding);
+      amount.amount_internal = amount.amount_internal.round(rounding);
+      delete amount.amount;
+      Object.assign(doc, amount);
+      doc._manager.emit_async('update', doc, amount);
 
       return false;
     }
