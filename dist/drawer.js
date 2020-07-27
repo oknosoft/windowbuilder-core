@@ -15766,6 +15766,7 @@ $p.CatProduction_params.prototype.__define({
 
 
 
+
 class FakeLenAngl {
 
   constructor({len, inset}) {
@@ -16141,6 +16142,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
 
+
   get doc_currency() {
     const currency = this.contract.settlements_currency;
     return currency.empty() ? $p.job_prm.pricing.main_currency : currency;
@@ -16162,6 +16164,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return pricing.rounding;
   }
 
+
   get contract() {
     return this._getter('contract');
   }
@@ -16170,6 +16173,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.vat_consider = this.contract.vat_consider;
     this.vat_included = this.contract.vat_included;
   }
+
 
   product_rows(save) {
     let res = Promise.resolve();
@@ -16199,6 +16203,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return res;
   }
 
+
   dispatching_totals() {
     const options = {
       reduce: true,
@@ -16226,6 +16231,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return res;
       });
   }
+
 
   print_data(attr = {}) {
     const {organization, bank_account, partner, contract, manager} = this;
@@ -16435,6 +16441,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+
   row_description(row) {
 
     if(!(row instanceof $p.DocCalc_orderProductionRow) && row.characteristic) {
@@ -16508,6 +16515,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return res;
   }
 
+
   fill_plan() {
 
     this.planning.clear();
@@ -16556,6 +16564,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
   }
 
+
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
     const {Черновик, Шаблон, Отозван, Отправлен} = $p.enm.obj_delivery_states;
@@ -16574,6 +16583,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return ro;
   }
+
 
   load_production(forse) {
     const prod = [];
@@ -16598,6 +16608,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
   }
 
+
   characteristic_saved(scheme, sattr) {
     const {ox, _dp} = scheme;
     const row = ox.calc_order_row;
@@ -16621,6 +16632,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     row._data._loading = false;
   }
+
 
   create_product_row({row_spec, elm, len_angl, params, create, grid}) {
 
@@ -16711,6 +16723,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+
   process_add_product_list(dp) {
 
     let res = Promise.resolve();
@@ -16759,6 +16772,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     return res.then(() => ax);
   }
+
 
   recalc(attr = {}, editor) {
 
@@ -16819,6 +16833,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+
   draw(attr = {}, editor) {
 
     const remove = !editor;
@@ -16843,6 +16858,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+
   load_templates() {
     if(this._data._templates_loaded) {
       return Promise.resolve();
@@ -16863,6 +16879,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this.load_production();
   }
+
 
   static set_department() {
     const department = $p.wsql.get_user_param('current_department');
@@ -17009,12 +17026,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.vat_amount = 0;
       }
 
-      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
-      amount.doc_amount = amount.amount.round(rounding);
-      amount.amount_internal = amount.amount_internal.round(rounding);
-      delete amount.amount;
-      Object.assign(doc, amount);
-      doc._manager.emit_async('update', doc, amount);
 
       if(!_slave_recalc){
         _owner._owner._slave_recalc = true;
@@ -17034,6 +17045,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
         });
       }
+      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
+      amount.doc_amount = amount.amount.round(rounding);
+      amount.amount_internal = amount.amount_internal.round(rounding);
+      delete amount.amount;
+      Object.assign(doc, amount);
+      doc._manager.emit_async('update', doc, amount);
 
       return false;
     }
