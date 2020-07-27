@@ -1242,6 +1242,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         })
         .catch((err) => {
           console.log(err);
+          this._data._templates_loaded = true;
           return this.load_production();
         });
     }
