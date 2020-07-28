@@ -6280,9 +6280,6 @@ class CnnPoint {
   check_err(style) {
     const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
-    if(_corns.length < 4) {
-      return;
-    }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
     const angle = _parent.angle_at(node);
     const {cnn} = this;
@@ -9334,6 +9331,7 @@ class Scheme extends paper.Project {
 
     _dp.sys.refill_prm(ox, 0, true);
 
+    this.l_connective.on_sys_changed();
     for (const contour of this.contours) {
       contour.on_sys_changed();
     }
@@ -9345,8 +9343,11 @@ class Scheme extends paper.Project {
   }
 
   set_glasses(inset) {
+    const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
-      glass.set_inset(inset, true);
+      if(glass.nom.elm_type != Заполнение) {
+        glass.set_inset(inset, true);
+      }
     }
   }
 
@@ -11926,7 +11927,10 @@ Skeleton.reorder_cycle = function reorder_cycle(cycle, blackSet, graySet) {
 };
 
 
+
+
 class GraphVertex {
+
   constructor(value, point) {
     this.value = value;
     this.point = point;
@@ -11934,6 +11938,7 @@ class GraphVertex {
     this.endEdges = new LinkedList(GraphVertex.edgeComparator);
     this.neighborsConverter = this.neighborsConverter.bind(this);
   }
+
 
   addEdge(edge) {
     this.edges.append(edge);
@@ -11945,30 +11950,37 @@ class GraphVertex {
     return this;
   }
 
+
   deleteEdge(edge) {
     this.edges.delete(edge);
     this.endEdges.delete(edge);
   }
 
+
   neighborsConverter(node) {
     return node.value.startVertex === this ? node.value.endVertex : node.value.startVertex;
   }
+
 
   getNeighbors() {
     return this.edges.toArray().map(this.neighborsConverter);
   }
 
+
   getAncestors() {
     return this.endEdges.toArray().map(this.neighborsConverter);
   }
+
 
   getEdges() {
     return this.edges.toArray().map(({value}) => value);
   }
 
+
   getEndEdges() {
     return this.endEdges.toArray().map(({value}) => value);
   }
+
 
   get profiles() {
     const profiles = new Set();
@@ -11991,9 +12003,11 @@ class GraphVertex {
     return this.getEdges().some(check_edge) || this.getEndEdges().some(check_edge);
   }
 
+
   getDegree() {
     return this.edges.toArray().length;
   }
+
 
   hasEdge(requiredEdge) {
     const edgeNode = this.edges.find({
@@ -12003,6 +12017,7 @@ class GraphVertex {
     return !!edgeNode;
   }
 
+
   hasNeighbor(vertex) {
     const vertexNode = this.edges.find({
       callback: edge => edge.startVertex === vertex || edge.endVertex === vertex,
@@ -12010,6 +12025,7 @@ class GraphVertex {
 
     return !!vertexNode;
   }
+
 
   findEdge(vertex) {
     const edgeFinder = (edge) => {
@@ -12021,9 +12037,11 @@ class GraphVertex {
     return edge ? edge.value : null;
   }
 
+
   getKey() {
     return this.value;
   }
+
 
   deleteAllEdges() {
     this.getEdges().forEach(edge => this.deleteEdge(edge));
@@ -12031,10 +12049,12 @@ class GraphVertex {
     return this;
   }
 
+
   toString(callback) {
     return callback ? callback(this.value) : `${this.value}`;
   }
 }
+
 
 GraphVertex.edgeComparator = (edgeA, edgeB) => {
   if (edgeA.getKey() === edgeB.getKey()) {
@@ -17694,6 +17714,27 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  load_templates() {
+    if(this._data._templates_loaded) {
+      return Promise.resolve();
+    }
+    else if(this.obj_delivery_state == 'Шаблон') {
+      const {adapters: {pouch}, cat} = $p;
+      return pouch.fetch(`/couchdb/mdm/${pouch.props.zone}/templates/${this.ref}`)
+        .then((res) => res.json())
+        .then(({rows}) => {
+          cat.characteristics.load_array(rows);
+          this._data._templates_loaded = true;
+        })
+        .catch((err) => {
+          console.log(err);
+          this._data._templates_loaded = true;
+          return this.load_production();
+        });
+    }
+    return this.load_production();
+  }
+
   static set_department() {
     const department = $p.wsql.get_user_param('current_department');
     if(department) {
@@ -17839,12 +17880,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.vat_amount = 0;
       }
 
-      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
-      amount.doc_amount = amount.amount.round(rounding);
-      amount.amount_internal = amount.amount_internal.round(rounding);
-      delete amount.amount;
-      Object.assign(doc, amount);
-      doc._manager.emit_async('update', doc, amount);
 
       if(!_slave_recalc){
         _owner._owner._slave_recalc = true;
@@ -17864,6 +17899,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
         });
       }
+      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
+      amount.doc_amount = amount.amount.round(rounding);
+      amount.amount_internal = amount.amount_internal.round(rounding);
+      delete amount.amount;
+      Object.assign(doc, amount);
+      doc._manager.emit_async('update', doc, amount);
 
       return false;
     }

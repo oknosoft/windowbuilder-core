@@ -1225,6 +1225,31 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * Загружает продукции шаблона из mdm-cache
+   * @return {Promise}
+   */
+  load_templates() {
+    if(this._data._templates_loaded) {
+      return Promise.resolve();
+    }
+    else if(this.obj_delivery_state == 'Шаблон') {
+      const {adapters: {pouch}, cat} = $p;
+      return pouch.fetch(`/couchdb/mdm/${pouch.props.zone}/templates/${this.ref}`)
+        .then((res) => res.json())
+        .then(({rows}) => {
+          cat.characteristics.load_array(rows);
+          this._data._templates_loaded = true;
+        })
+        .catch((err) => {
+          console.log(err);
+          this._data._templates_loaded = true;
+          return this.load_production();
+        });
+    }
+    return this.load_production();
+  }
+
+  /**
    * Устанавливает подразделение по умолчанию
    */
   static set_department() {
@@ -1381,12 +1406,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.vat_amount = 0;
       }
 
-      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
-      amount.doc_amount = amount.amount.round(rounding);
-      amount.amount_internal = amount.amount_internal.round(rounding);
-      delete amount.amount;
-      Object.assign(doc, amount);
-      doc._manager.emit_async('update', doc, amount);
 
       // пересчитываем спецификации и цены в следящих вставках
       if(!_slave_recalc){
@@ -1409,6 +1428,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
         });
       }
+      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
+      amount.doc_amount = amount.amount.round(rounding);
+      amount.amount_internal = amount.amount_internal.round(rounding);
+      delete amount.amount;
+      Object.assign(doc, amount);
+      doc._manager.emit_async('update', doc, amount);
 
       return false;
     }

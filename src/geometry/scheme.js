@@ -148,6 +148,7 @@ class Scheme extends paper.Project {
     _dp.sys.refill_prm(ox, 0, true);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
+    this.l_connective.on_sys_changed();
     for (const contour of this.contours) {
       contour.on_sys_changed();
     }
@@ -163,8 +164,11 @@ class Scheme extends paper.Project {
    * @param inset
    */
   set_glasses(inset) {
+    const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
-      glass.set_inset(inset, true);
+      if(glass.nom.elm_type != Заполнение) {
+        glass.set_inset(inset, true);
+      }
     }
   }
 
@@ -724,6 +728,8 @@ class Scheme extends paper.Project {
   /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
+   * @param type {String}
+   * @param fields {Array}
    */
   notify(obj, type = 'update', fields) {
     if(obj.type) {
@@ -1233,7 +1239,8 @@ class Scheme extends paper.Project {
   /**
    * ### Уравнивает геометрически или по заполнениям
    * сюда попадаем из move_points, когда меняем габариты
-   * @param auto_align
+   * @param auto_align {Boolean}
+   * @param profiles {Set}
    */
   do_align(auto_align, profiles) {
 

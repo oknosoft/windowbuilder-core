@@ -146,9 +146,6 @@ class CnnPoint {
   check_err(style) {
     const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
-    if(_corns.length < 4) {
-      return;
-    }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
     const angle = _parent.angle_at(node);
     const {cnn} = this;
