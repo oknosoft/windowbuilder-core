@@ -1180,6 +1180,14 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * Возвращает скелетон родителя
+   * @return {Skeleton}
+   */
+  get skeleton() {
+    return this.parent.skeleton;
+  }
+
+  /**
    * ### Обсервер
    * Наблюдает за изменениями контура и пересчитывает путь элемента при изменении соседних элементов
    *
@@ -2514,6 +2522,25 @@ class Profile extends ProfileItem {
       });
     });
 
+    return res;
+  }
+
+  /**
+   * Возвращает массив примыкающих заполнений и вложенных контуров
+   * @param [glasses]
+   * @return {[]}
+   */
+  joined_glasses(glasses) {
+    if(!glasses) {
+      glasses = this.layer.glasses();
+    }
+    const res = [];
+    for(const glass of glasses) {
+      const is_layer = glass instanceof Contour;
+      if(glass.profiles.some((profile) => is_layer ? profile === this || this.is_nearest(profile) : profile.profile === this)) {
+        res.push(glass);
+      }
+    }
     return res;
   }
 
