@@ -72,6 +72,7 @@ class GraphEdge {
   /**
    * Перевёрнутость относительно другого ребра на том же профиле
    * @param egde
+   * @return {boolean}
    */
   is_profile_outer(egde) {
     const {cache} = this;
@@ -83,9 +84,41 @@ class GraphEdge {
     return is_outer;
   }
 
+
+  /**
+   * Принадлежность ребра той же стороне, что и запрашиваемого
+   * @param {GraphEdge} egde
+   * @param {GraphVertex} vertex
+   * @return {boolean}
+   */
+  is_some_side(profile, vertex) {
+    const {cache} = this;
+    if(cache.has(profile)) {
+      return cache.get(profile).some_side;
+    }
+
+    let some_side = profile.has_cnn(this.profile, vertex.point);
+    if(some_side) {
+      const {b, e, generatrix} = profile;
+      let pt;
+      if(b.getDistance(vertex.point, true) < e.getDistance(vertex.point, true)) {
+        pt = generatrix.getPointAt(100);
+      }
+      else {
+        pt = generatrix.getPointAt(generatrix.length - 100);
+      }
+
+      const profile_outer = this.profile.generatrix.point_pos(pt, vertex.point) < 0;
+      some_side = Boolean(this.is_outer() ^ profile_outer);
+    }
+    cache.set(profile, {some_side});
+
+    return some_side;
+  }
+
   /**
    * Касательная в точке
-   * @param vertex
+   * @param {GraphVertex} vertex
    * @return {Point}
    */
   getTangentAt(vertex) {

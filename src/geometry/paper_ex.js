@@ -212,23 +212,24 @@ Object.defineProperties(paper.Path.prototype, {
   equidistant: {
       value: function equidistant(delta, elong) {
 
+        const {firstSegment, lastSegment} = this;
         let normal = this.getNormalAt(0);
         const res = new paper.Path({
-            segments: [this.firstSegment.point.add(normal.multiply(delta))],
+            segments: [firstSegment.point.add(normal.multiply(delta))],
             insert: false
           });
 
         if(this.is_linear()) {
           // добавляем последнюю точку
-          res.add(this.lastSegment.point.add(normal.multiply(delta)));
+          res.add(lastSegment.point.add(normal.multiply(delta)));
         }
         else{
 
-          if(this.firstSegment.handleIn.length){
-            res.firstSegment.handleIn = this.firstSegment.handleIn.clone();
+          if(firstSegment.handleIn.length){
+            res.firstSegment.handleIn = firstSegment.handleIn.clone();
           }
-          if(this.firstSegment.handleOut.length){
-            res.firstSegment.handleOut = this.firstSegment.handleOut.clone();
+          if(firstSegment.handleOut.length){
+            res.firstSegment.handleOut = firstSegment.handleOut.clone();
           }
 
           // для кривого бежим по точкам
@@ -244,13 +245,13 @@ Object.defineProperties(paper.Path.prototype, {
 
           // добавляем последнюю точку
           normal = this.getNormalAt(len);
-          res.add(this.lastSegment.point.add(normal.multiply(delta)));
+          res.add(lastSegment.point.add(normal.multiply(delta)));
 
-          if(this.lastSegment.handleIn.length){
-            res.lastSegment.handleIn = this.lastSegment.handleIn.clone();
+          if(lastSegment.handleIn.length){
+            res.lastSegment.handleIn = lastSegment.handleIn.clone();
           }
-          if(this.lastSegment.handleOut.length){
-            res.lastSegment.handleOut = this.lastSegment.handleOut.clone();
+          if(lastSegment.handleOut.length){
+            res.lastSegment.handleOut = lastSegment.handleOut.clone();
           }
 
           res.simplify(0.8);
@@ -292,7 +293,7 @@ Object.defineProperties(paper.Path.prototype, {
      * @param elongate {Boolean|Number} - если истина, пути будут продолжены до пересечения
      * @return other_point {paper.Point} - если указано, контролируем вектор пересечения
      */
-  intersect_point: {
+  intersect_point:{
       value: function intersect_point(path, point, elongate, other_point) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
