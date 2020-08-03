@@ -373,6 +373,14 @@ class Scheme extends paper.Project {
     return _attr._builder_props || ox.builder_props;
   }
 
+  /**
+   * Методы сдвига узлов и элементов
+   * @return {*}
+   */
+  get mover() {
+    return this._scope._mover;
+  }
+
   set_carcass(v) {
     const contours = this.getItems({class: Contour});
     contours.forEach(({skeleton}) => skeleton.carcass = v);
