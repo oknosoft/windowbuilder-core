@@ -92,6 +92,9 @@ class GraphEdge {
    * @return {boolean}
    */
   is_some_side(profile, vertex) {
+    if(this.profile === profile) {
+      return true;
+    }
     const {cache} = this;
     if(cache.has(profile)) {
       return cache.get(profile).some_side;

@@ -153,9 +153,8 @@ class GeneratrixElement extends BuilderElement {
    * @method move_points
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
    */
-  move_points(delta, all_points, start_point) {
+  move_points(delta, all_points) {
 
     if(!delta.length){
       return;
@@ -281,9 +280,6 @@ class GeneratrixElement extends BuilderElement {
 
         // накапливаем точки в нотификаторе
         noti_points.new = segm.point;
-        if(start_point){
-          noti_points.start = start_point;
-        }
         noti.points.push(noti_points);
 
         changed = true;

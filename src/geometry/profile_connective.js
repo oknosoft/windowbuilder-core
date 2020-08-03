@@ -54,14 +54,13 @@ class ProfileConnective extends ProfileItem {
    * @for ProfileItem
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
    */
-  move_points(delta, all_points, start_point) {
+  move_points(delta, all_points) {
 
     const nearests = this.joined_nearests();
     const moved = {profiles: []};
 
-    super.move_points(delta, all_points, start_point);
+    super.move_points(delta, all_points);
 
     // двигаем примыкающие
     if(all_points !== false && !paper.Key.isDown('control')){

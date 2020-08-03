@@ -293,7 +293,7 @@ Object.defineProperties(paper.Path.prototype, {
      * @param elongate {Boolean|Number} - если истина, пути будут продолжены до пересечения
      * @return other_point {paper.Point} - если указано, контролируем вектор пересечения
      */
-  intersect_point:{
+  intersect_point: {
       value: function intersect_point(path, point, elongate, other_point) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
