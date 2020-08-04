@@ -5283,7 +5283,7 @@ class GeneratrixElement extends BuilderElement {
     view.update();
   }
 
-  move_points(delta, all_points, start_point) {
+  move_points(delta, all_points) {
 
     if(!delta.length){
       return;
@@ -5400,9 +5400,6 @@ class GeneratrixElement extends BuilderElement {
         }
 
         noti_points.new = segm.point;
-        if(start_point){
-          noti_points.start = start_point;
-        }
         noti.points.push(noti_points);
 
         changed = true;
@@ -8607,12 +8604,12 @@ class ProfileConnective extends ProfileItem {
     return this.rays[node];
   }
 
-  move_points(delta, all_points, start_point) {
+  move_points(delta, all_points) {
 
     const nearests = this.joined_nearests();
     const moved = {profiles: []};
 
-    super.move_points(delta, all_points, start_point);
+    super.move_points(delta, all_points);
 
     if(all_points !== false && !paper.Key.isDown('control')){
       nearests.forEach((np) => {
