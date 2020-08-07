@@ -297,7 +297,7 @@ class Pricing {
         price_prm = {
           price_type: price_type,
           characteristic: characteristic,
-          date: _owner.date,
+          date: new Date(), // _owner.date,
           currency: _owner.doc_currency
         };
 
