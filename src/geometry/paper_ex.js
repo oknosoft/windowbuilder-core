@@ -99,6 +99,19 @@ Object.defineProperties(paper.Path.prototype, {
     },
 
   /**
+   * Угол между путями в точке _point_
+   */
+  angle_between: {
+    value : function angle_between(other, point, interior, round){
+      let res = 180 - this.angle_to(other, point, interior, round);
+      if(res < 0){
+        res += 360;
+      }
+      return res;
+    }
+  },
+
+  /**
      * Выясняет, является ли путь прямым
      * @return {Boolean}
      */

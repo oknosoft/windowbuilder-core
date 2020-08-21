@@ -5885,6 +5885,16 @@ Object.defineProperties(paper.Path.prototype, {
       }
     },
 
+  angle_between: {
+    value : function angle_between(other, point, interior, round){
+      let res = 180 - this.angle_to(other, point, interior, round);
+      if(res < 0){
+        res += 360;
+      }
+      return res;
+    }
+  },
+
   is_linear: {
     value: function is_linear() {
       const {curves, firstCurve} = this;
@@ -11303,15 +11313,9 @@ class Pricing {
 
   build_cache(rows) {
     const {nom, currencies} = $p.cat;
-    const note = 'Индекс цен номенклатуры';
     for(const {key, value} of rows){
       const onom = nom.get(key[0], false, true);
       if (!onom || !onom._data){
-        $p.record_log({
-          class: 'error',
-          note,
-          obj: {nom: key[0], value}
-        });
         continue;
       }
       if (!onom._data._price){
@@ -12075,8 +12079,8 @@ class ProductsBuilding {
         const len = elm._row.len - prev.nom.sizefurn - next.nom.sizefurn;
 
         const angle = direction == $p.enm.open_directions.Правое ?
-          elm.generatrix.angle_to(prev.generatrix, elm.e) :
-          prev.generatrix.angle_to(elm.generatrix, elm.b);
+          elm.generatrix.angle_between(prev.generatrix, elm.e) :
+          prev.generatrix.angle_between(elm.generatrix, elm.b);
 
         const {lmin, lmax, amin, amax} = row;
         if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
@@ -12184,15 +12188,15 @@ class ProductsBuilding {
           _row,
           angle_calc_method_prev,
           angle_calc_method_next,
-          angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_to(elm.generatrix, b.point) : 0,
-          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_to(next.generatrix, e.point) : 0
+          angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
+          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0
         );
       }
 
       const len_angl = {
         angle: 0,
-        alp1: prev ? prev.generatrix.angle_to(elm.generatrix, elm.b, true) : 90,
-        alp2: next ? elm.generatrix.angle_to(next.generatrix, elm.e, true) : 90,
+        alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b, true) : 90,
+        alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e, true) : 90,
         len: row_spec ? row_spec.len * 1000 : _row.len,
         art1: false,
         art2: true,
@@ -12317,8 +12321,8 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.generatrix.angle_to(curr.profile.generatrix, curr.b, true),
-          alp2: curr.profile.generatrix.angle_to(next.generatrix, curr.e, true),
+          alp1: prev.generatrix.angle_between(curr.profile.generatrix, curr.b, true),
+          alp2: curr.profile.generatrix.angle_between(next.generatrix, curr.e, true),
           len: row_cnn.length ? row_cnn[0].aperture_len : 0,
           origin: cnn_row(_row.elm, curr.profile.elm)
         };

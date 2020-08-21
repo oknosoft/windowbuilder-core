@@ -78,15 +78,15 @@ class Pricing {
 
   build_cache(rows) {
     const {nom, currencies} = $p.cat;
-    const note = 'Индекс цен номенклатуры';
+    //const note = 'Индекс цен номенклатуры';
     for(const {key, value} of rows){
       const onom = nom.get(key[0], false, true);
       if (!onom || !onom._data){
-        $p.record_log({
-          class: 'error',
-          note,
-          obj: {nom: key[0], value}
-        });
+ //       $p.record_log({
+ //         class: 'error',
+ //         note,
+ //         obj: {nom: key[0], value}
+ //       });
         continue;
       }
       if (!onom._data._price){
