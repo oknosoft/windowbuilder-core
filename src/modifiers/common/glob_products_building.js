@@ -381,8 +381,8 @@ class ProductsBuilding {
       // добавляем спецификации соединений
       const len_angl = {
         angle: 0,
-        alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b, true) : 90,
-        alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e, true) : 90,
+        alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+        alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90,
         len: row_spec ? row_spec.len * 1000 : _row.len,
         art1: false,
         art2: true,
@@ -531,8 +531,8 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.generatrix.angle_between(curr.profile.generatrix, curr.b, true),
-          alp2: curr.profile.generatrix.angle_between(next.generatrix, curr.e, true),
+          alp1: prev.generatrix.angle_between(curr.profile.generatrix, curr.b),
+          alp2: curr.profile.generatrix.angle_between(next.generatrix, curr.e),
           len: row_cnn.length ? row_cnn[0].aperture_len : 0,
           origin: cnn_row(_row.elm, curr.profile.elm)
         };
