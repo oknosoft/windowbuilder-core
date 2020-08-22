@@ -230,11 +230,12 @@ class ProductsBuilding {
       let ok = true;
       const {new_spec_row} = ProductsBuilding;
       const {side_count, furn, direction} = contour;
+      const {cat: {clrs}, enm: {open_types, open_directions}, job_prm} = $p;
 
       // проверяем количество сторон фурнитуры
-      if(furn.open_type !== $p.enm.open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
+      if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
         // Визуализируем все стороны
-        const row_base = {clr: $p.cat.clrs.get(), nom: $p.job_prm.nom.furn_error};
+        const row_base = {clr: clrs.get(), nom: job_prm.nom.furn_error};
         contour.profiles.forEach(elm => {
           new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
@@ -248,13 +249,13 @@ class ProductsBuilding {
         const next = contour.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
         const len = elm._row.len - prev.nom.sizefurn - next.nom.sizefurn;
 
-        const angle = direction == $p.enm.open_directions.Правое ?
+        const angle = direction == open_directions.Правое ?
           elm.generatrix.angle_between(prev.generatrix, elm.e) :
           prev.generatrix.angle_between(elm.generatrix, elm.b);
 
         const {lmin, lmax, amin, amax} = row;
         if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
-          new_spec_row({elm, row_base: {clr: $p.cat.clrs.get(), nom: $p.job_prm.nom.furn_error}, origin: furn, spec, ox});
+          new_spec_row({elm, row_base: {clr: clrs.get(), nom: job_prm.nom.furn_error}, origin: furn, spec, ox});
           ok = false;
         }
       });
@@ -269,7 +270,7 @@ class ProductsBuilding {
      */
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
-      if(nearest && nearest._row.clr != $p.cat.clrs.predefined('НеВключатьВСпецификацию') && elm._attr._nearest_cnn) {
+      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && elm._attr._nearest_cnn) {
         cnn_add_spec(elm._attr._nearest_cnn, elm, {
           angle: 0,
           alp1: 0,
@@ -288,7 +289,7 @@ class ProductsBuilding {
 
       const {_row, rays} = elm;
 
-      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
       }
 
@@ -456,7 +457,7 @@ class ProductsBuilding {
 
       const {_row, _attr, inset, layer} = elm;
 
-      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
       }
 
@@ -505,7 +506,7 @@ class ProductsBuilding {
 
       const {profiles, imposts, _row} = elm;
 
-      if(_row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+      if(_row.clr == $p.cat.clrs.ignored()) {
         return;
       }
 
@@ -515,7 +516,7 @@ class ProductsBuilding {
       for (let i = 0; i < glength; i++) {
         const curr = profiles[i];
 
-        if(curr.profile && curr.profile._row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+        if(curr.profile && curr.profile._row.clr == $p.cat.clrs.ignored()) {
           return;
         }
 
@@ -845,17 +846,17 @@ class ProductsBuilding {
       row_spec = spec.add();
     }
     row_spec.nom = nom || row_base.nom;
+
+    const {utils: {blank}, cat: {clrs, characteristics}, enm: {predefined_formulas: {cx_clr}}, cch: {properties}} = $p;
+
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;
     }
     else if(row_spec.nom.is_procedure) {
       row_spec.dop = -2;
     }
-    row_spec.characteristic = row_base.nom_characteristic;
-    if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
-      row_spec.characteristic = $p.utils.blank.guid;
-    }
-    row_spec.clr = $p.cat.clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec);
+
+    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec);
     row_spec.elm = elm.elm;
     if(origin) {
       row_spec.origin = origin;
@@ -863,6 +864,28 @@ class ProductsBuilding {
     if(specify) {
       row_spec.specify = specify;
     }
+
+    // если алгоритм = характеристика по цвету
+    if(row_base.algorithm === cx_clr) {
+      const {ref} = properties.predefined('clr_elm');
+      const clr = row_spec.clr.ref;
+      // перебираем все характеристики текущей номенклатуры
+      characteristics.find_rows({owner: row_spec.nom}, ({params}) => {
+        // если в параметрах характеристики цвет соответствует цвету элемента, помещаем характеристику в спецификацию
+        const prow = params._obj.find(({param, value}) => param === ref && value === clr);
+        if(prow) {
+          row_spec.characteristic = params._owner;
+          return false;
+        }
+      });
+    }
+    else {
+      row_spec.characteristic = row_base.nom_characteristic;
+      if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
+        row_spec.characteristic = blank.guid;
+      }
+    }
+
     return row_spec;
   }
 
