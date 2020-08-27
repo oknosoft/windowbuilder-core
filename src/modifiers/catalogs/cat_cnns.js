@@ -31,17 +31,17 @@ $p.cat.cnns.__define({
     value: function nom_cnn(nom1, nom2, cnn_types, ign_side, is_outer){
 
       const {ProfileItem, BuilderElement, Filling} = $p.Editor;
-      const {orientations: {Вертикальная}, cnn_types: {acn}} = $p.enm;
+      const {orientations: {Вертикальная}, cnn_types: {acn, ad, ii}, cnn_sides} = $p.enm;
 
       // если второй элемент вертикальный - меняем местами эл 1-2 при поиске
       if(nom1 instanceof ProfileItem && nom2 instanceof ProfileItem &&
-        cnn_types && cnn_types.indexOf($p.enm.cnn_types.ad) != -1 &&
+        cnn_types && cnn_types.indexOf(ad) != -1 &&
         nom1.orientation != Вертикальная && nom2.orientation == Вертикальная ){
         return this.nom_cnn(nom2, nom1, cnn_types);
       }
 
       // если оба элемента - профили, определяем сторону
-      const side = is_outer ? $p.enm.cnn_sides.Снаружи :
+      const side = is_outer ? cnn_sides.Снаружи :
         (!ign_side && nom1 instanceof ProfileItem && nom2 instanceof ProfileItem && nom2.cnn_side(nom1));
 
       let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
@@ -85,7 +85,7 @@ $p.cat.cnns.__define({
         // для всех элементов справочника соединения
         this.forEach((cnn) => {
           // если в строках соединяемых элементов есть наша - добавляем
-          let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == $p.enm.cnn_types.ii) : false,
+          let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
             is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
 
           cnn.cnn_elmnts.forEach((row) => {
@@ -105,15 +105,15 @@ $p.cat.cnns.__define({
         const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.indexOf(cnn_types) != -1 ? acn.a : [cnn_types]);
         return a1[ref2]
           .filter((cnn) => {
-            if(types.indexOf(cnn.cnn_type) != -1){
+            if(types.includes(cnn.cnn_type)){
               if(!side){
                 return true
               }
-              if(cnn.sd1 == $p.enm.cnn_sides.Изнутри){
-                return side == $p.enm.cnn_sides.Изнутри;
+              if(cnn.sd1 == cnn_sides.Изнутри){
+                return side == cnn_sides.Изнутри;
               }
-              else if(cnn.sd1 == $p.enm.cnn_sides.Снаружи){
-                return side == $p.enm.cnn_sides.Снаружи;
+              else if(cnn.sd1 == cnn_sides.Снаружи){
+                return side == cnn_sides.Снаружи;
               }
               else{
                 return true;

@@ -150,7 +150,7 @@ exports.CatCnns = class CatCnns extends Object {
     const {cnn_type, specification, selection_params} = this;
 
     specification.forEach((row) => {
-      const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, set_specification} = row;
+      const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, alp2, set_specification} = row;
       // при формировании спецификации, отбрасываем корректировочные строки и наоборот, при корректировке - обычные
       if(!quantity && !correct || quantity && correct) {
         return;
@@ -172,7 +172,11 @@ exports.CatCnns = class CatCnns extends Object {
         }
       }
       else {
-        if(amin > len_angl.angle || amax < len_angl.angle) {
+        let {angle} = len_angl;
+        if(!alp2 && angle > 180) {
+          angle = 360 - angle;
+        }
+        if(amin > angle || amax < angle) {
           return;
         }
       }
