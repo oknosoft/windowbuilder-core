@@ -17,6 +17,9 @@
     if(f === 'owner') {
       return nom;
     }
+    if(f === 'value' && _obj.param && nom.by_ref[_obj.param]){
+      return characteristics;
+    }
     return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);
   };
   characteristics.extra_fields = function() {
