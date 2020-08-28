@@ -344,7 +344,17 @@ $p.cat.clrs.__define({
 
 			return $p.classes.DataManager.prototype.sync_grid.call(this, attr, grid);
 		}
-	}
+	},
+
+  /**
+   * Возвращает предопределенный цвет НеВключатьВСпецификацию
+   */
+  ignored: {
+    value() {
+      return this.predefined('НеВключатьВСпецификацию');
+    }
+  },
+
 });
 
 $p.CatClrs = class CatClrs extends $p.CatClrs {

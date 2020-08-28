@@ -5186,6 +5186,7 @@ class FreeText extends paper.PointText {
 EditorInvisible.FreeText = FreeText;
 
 
+
 class GeneratrixElement extends BuilderElement {
 
   constructor(attr = {}) {
@@ -5200,6 +5201,7 @@ class GeneratrixElement extends BuilderElement {
     this.initialize(attr);
   }
 
+
   get b() {
     const {generatrix} = this._attr;
     return generatrix && generatrix.firstSegment.point;
@@ -5210,6 +5212,7 @@ class GeneratrixElement extends BuilderElement {
     if(generatrix) generatrix.firstSegment.point = v;
   }
 
+
   get e() {
     const {generatrix} = this._attr;
     return generatrix && generatrix.lastSegment.point;
@@ -5219,6 +5222,7 @@ class GeneratrixElement extends BuilderElement {
     _rays.clear();
     if(generatrix) generatrix.lastSegment.point = v;
   }
+
 
   get x1() {
     const {bounds} = this.project;
@@ -5232,6 +5236,7 @@ class GeneratrixElement extends BuilderElement {
     }
   }
 
+
   get y1() {
     const {bounds} = this.project;
     return bounds ? (bounds.height + bounds.y - this.b.y).round(1) : 0;
@@ -5243,6 +5248,7 @@ class GeneratrixElement extends BuilderElement {
       this.move_points(new paper.Point(0, v));
     }
   }
+
 
   get x2() {
     const {bounds} = this.project;
@@ -5256,6 +5262,7 @@ class GeneratrixElement extends BuilderElement {
     }
   }
 
+
   get y2() {
     const {bounds} = this.project;
     return bounds ? (bounds.height + bounds.y - this.e.y).round(1) : 0;
@@ -5267,6 +5274,7 @@ class GeneratrixElement extends BuilderElement {
       this.move_points(new paper.Point(0, v));
     }
   }
+
 
   select_node(node) {
     const {generatrix, project, _attr, view} = this;
@@ -5282,6 +5290,7 @@ class GeneratrixElement extends BuilderElement {
     }
     view.update();
   }
+
 
   move_points(delta, all_points) {
 
@@ -5426,6 +5435,7 @@ class GeneratrixElement extends BuilderElement {
 
     return other;
   }
+
 
   do_sub_bind(profile, node) {
     const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
@@ -5752,6 +5762,16 @@ Object.defineProperties(paper.Path.prototype, {
         return round ? res.round(round) : res.round(1);
       }
     },
+
+  angle_between: {
+    value : function angle_between(other, point, interior, round){
+      let res = 180 - this.angle_to(other, point, interior, round);
+      if(res < 0){
+        res += 360;
+      }
+      return res;
+    }
+  },
 
   is_linear: {
     value: function is_linear() {
@@ -8590,19 +8610,24 @@ class ProfileAddl extends ProfileItem {
 
 EditorInvisible.ProfileAddl = ProfileAddl;
 
+
 class ProfileConnective extends ProfileItem {
+
 
   get d0() {
     return 0;
   }
 
+
   get elm_type() {
     return $p.enm.elm_types.Соединитель;
   }
 
+
   cnn_point(node) {
     return this.rays[node];
   }
+
 
   move_points(delta, all_points) {
 
@@ -8626,6 +8651,7 @@ class ProfileConnective extends ProfileItem {
     this.project.register_change();
   }
 
+
   joined_nearests() {
 
     const res = [];
@@ -8642,15 +8668,18 @@ class ProfileConnective extends ProfileItem {
 
   }
 
+
   joined_imposts(check_only) {
     const tinner = [];
     const touter = [];
     return check_only ? false : {inner: tinner, outer: touter};
   }
 
+
   nearest() {
     return null;
   }
+
 
   save_coordinates() {
 
@@ -8686,6 +8715,7 @@ class ProfileConnective extends ProfileItem {
 
   }
 
+
   remove() {
     this.joined_nearests().forEach((rama) => {
 
@@ -8715,6 +8745,7 @@ class ProfileConnective extends ProfileItem {
 }
 
 
+
 class ConnectiveLayer extends paper.Layer {
 
   get skeleton() {
@@ -8733,13 +8764,16 @@ class ConnectiveLayer extends paper.Layer {
     return [];
   }
 
+
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
   }
 
+
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
   }
+
 
   notify(obj, type = 'update') {
   }
@@ -11131,7 +11165,9 @@ class Comparator {
   }
 }
 
+
 class GraphEdge {
+
   constructor({startVertex, endVertex, profile}) {
     this.startVertex = startVertex;
     this.endVertex = endVertex;
@@ -11139,6 +11175,7 @@ class GraphEdge {
     this.weight = 0;
     this._cache = profile.skeleton.cache;
   }
+
 
   get cache() {
     let cache = this._cache.get(this);
@@ -11149,10 +11186,12 @@ class GraphEdge {
     return cache;
   }
 
+
   getKey() {
     const {startVertex, endVertex} = this;
     return `${startVertex.getKey()}_${endVertex.getKey()}`;
   }
+
 
   reverse() {
     const tmp = this.startVertex;
@@ -11160,6 +11199,7 @@ class GraphEdge {
     this.endVertex = tmp;
     return this;
   }
+
 
   is_outer() {
     const {cache} = this;
@@ -11179,6 +11219,7 @@ class GraphEdge {
     return is_outer;
   }
 
+
   is_profile_outer(egde) {
     const {cache} = this;
     if(cache.has(egde)) {
@@ -11188,6 +11229,7 @@ class GraphEdge {
     cache.set(egde, {is_outer});
     return is_outer;
   }
+
 
 
   is_some_side(profile, vertex) {
@@ -11218,6 +11260,7 @@ class GraphEdge {
     return some_side;
   }
 
+
   getTangentAt(vertex) {
     const {cache} = this;
     if(cache.has(vertex)) {
@@ -11233,6 +11276,7 @@ class GraphEdge {
     cache.set(vertex, {tangent});
     return tangent;
   }
+
 
   toString() {
     return this.getKey();
@@ -12153,15 +12197,9 @@ class Pricing {
 
   build_cache(rows) {
     const {nom, currencies} = $p.cat;
-    const note = 'Индекс цен номенклатуры';
     for(const {key, value} of rows){
       const onom = nom.get(key[0], false, true);
       if (!onom || !onom._data){
-        $p.record_log({
-          class: 'error',
-          note,
-          obj: {nom: key[0], value}
-        });
         continue;
       }
       if (!onom._data._price){
@@ -12332,7 +12370,7 @@ class Pricing {
         price_prm = {
           price_type: price_type,
           characteristic: characteristic,
-          date: _owner.date,
+          date: new Date(), 
           currency: _owner.doc_currency
         };
 
@@ -12909,9 +12947,10 @@ class ProductsBuilding {
       let ok = true;
       const {new_spec_row} = ProductsBuilding;
       const {side_count, furn, direction} = contour;
+      const {cat: {clrs}, enm: {open_types, open_directions}, job_prm} = $p;
 
-      if(furn.open_type !== $p.enm.open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
-        const row_base = {clr: $p.cat.clrs.get(), nom: $p.job_prm.nom.furn_error};
+      if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
+        const row_base = {clr: clrs.get(), nom: job_prm.nom.furn_error};
         contour.profiles.forEach(elm => {
           new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
@@ -12924,13 +12963,13 @@ class ProductsBuilding {
         const next = contour.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
         const len = elm._row.len - prev.nom.sizefurn - next.nom.sizefurn;
 
-        const angle = direction == $p.enm.open_directions.Правое ?
-          elm.generatrix.angle_to(prev.generatrix, elm.e) :
-          prev.generatrix.angle_to(elm.generatrix, elm.b);
+        const angle = direction == open_directions.Правое ?
+          elm.generatrix.angle_between(prev.generatrix, elm.e) :
+          prev.generatrix.angle_between(elm.generatrix, elm.b);
 
         const {lmin, lmax, amin, amax} = row;
         if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
-          new_spec_row({elm, row_base: {clr: $p.cat.clrs.get(), nom: $p.job_prm.nom.furn_error}, origin: furn, spec, ox});
+          new_spec_row({elm, row_base: {clr: clrs.get(), nom: job_prm.nom.furn_error}, origin: furn, spec, ox});
           ok = false;
         }
       });
@@ -12941,7 +12980,7 @@ class ProductsBuilding {
 
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
-      if(nearest && nearest._row.clr != $p.cat.clrs.predefined('НеВключатьВСпецификацию') && elm._attr._nearest_cnn) {
+      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && elm._attr._nearest_cnn) {
         cnn_add_spec(elm._attr._nearest_cnn, elm, {
           angle: 0,
           alp1: 0,
@@ -12956,7 +12995,7 @@ class ProductsBuilding {
 
       const {_row, rays} = elm;
 
-      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
       }
 
@@ -13034,15 +13073,15 @@ class ProductsBuilding {
           _row,
           angle_calc_method_prev,
           angle_calc_method_next,
-          angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_to(elm.generatrix, b.point) : 0,
-          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_to(next.generatrix, e.point) : 0
+          angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
+          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0
         );
       }
 
       const len_angl = {
         angle: 0,
-        alp1: prev ? prev.generatrix.angle_to(elm.generatrix, elm.b, true) : 90,
-        alp2: next ? elm.generatrix.angle_to(next.generatrix, elm.e, true) : 90,
+        alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+        alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90,
         len: row_spec ? row_spec.len * 1000 : _row.len,
         art1: false,
         art2: true,
@@ -13103,7 +13142,7 @@ class ProductsBuilding {
 
       const {_row, _attr, inset, layer} = elm;
 
-      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
       }
 
@@ -13142,7 +13181,7 @@ class ProductsBuilding {
 
       const {profiles, imposts, _row} = elm;
 
-      if(_row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+      if(_row.clr == $p.cat.clrs.ignored()) {
         return;
       }
 
@@ -13151,7 +13190,7 @@ class ProductsBuilding {
       for (let i = 0; i < glength; i++) {
         const curr = profiles[i];
 
-        if(curr.profile && curr.profile._row.clr == $p.cat.clrs.predefined('НеВключатьВСпецификацию')) {
+        if(curr.profile && curr.profile._row.clr == $p.cat.clrs.ignored()) {
           return;
         }
 
@@ -13167,8 +13206,8 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.generatrix.angle_to(curr.profile.generatrix, curr.b, true),
-          alp2: curr.profile.generatrix.angle_to(next.generatrix, curr.e, true),
+          alp1: prev.generatrix.angle_between(curr.profile.generatrix, curr.b),
+          alp2: curr.profile.generatrix.angle_between(next.generatrix, curr.e),
           len: row_cnn.length ? row_cnn[0].aperture_len : 0,
           origin: cnn_row(_row.elm, curr.profile.elm)
         };
@@ -13409,17 +13448,17 @@ class ProductsBuilding {
       row_spec = spec.add();
     }
     row_spec.nom = nom || row_base.nom;
+
+    const {utils: {blank}, cat: {clrs, characteristics}, enm: {predefined_formulas: {cx_clr}}, cch: {properties}} = $p;
+
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;
     }
     else if(row_spec.nom.is_procedure) {
       row_spec.dop = -2;
     }
-    row_spec.characteristic = row_base.nom_characteristic;
-    if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
-      row_spec.characteristic = $p.utils.blank.guid;
-    }
-    row_spec.clr = $p.cat.clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec);
+
+    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec);
     row_spec.elm = elm.elm;
     if(origin) {
       row_spec.origin = origin;
@@ -13427,6 +13466,25 @@ class ProductsBuilding {
     if(specify) {
       row_spec.specify = specify;
     }
+
+    if(row_base.algorithm === cx_clr) {
+      const {ref} = properties.predefined('clr_elm');
+      const clr = row_spec.clr.ref;
+      characteristics.find_rows({owner: row_spec.nom}, ({params}) => {
+        const prow = params._obj.find(({param, value}) => param === ref && value === clr);
+        if(prow) {
+          row_spec.characteristic = params._owner;
+          return false;
+        }
+      });
+    }
+    else {
+      row_spec.characteristic = row_base.nom_characteristic;
+      if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
+        row_spec.characteristic = blank.guid;
+      }
+    }
+
     return row_spec;
   }
 
@@ -13587,7 +13645,19 @@ class SpecBuilding {
         cnstr: 0,
         origin: inset,
       };
-      inset.calculate_spec({elm, len_angl, ox, spec});
+
+      if($p.enm.elm_types.stvs.includes(elm_type)) {
+        for(const {contours} of scheme.contours) {
+          for(const contour of contours) {
+            elm.layer = contour;
+            len_angl.cnstr = contour.cnstr;
+            inset.calculate_spec({elm, len_angl, ox, spec});
+          }
+        }
+      }
+      else {
+        inset.calculate_spec({elm, len_angl, ox, spec});
+      }
 
     });
 
@@ -13898,6 +13968,9 @@ $p.spec_building = new SpecBuilding($p);
   characteristics.value_mgr = function(_obj, f, mf, array_enabled, v) {
     if(f === 'owner') {
       return nom;
+    }
+    if(f === 'value' && _obj.param && nom.by_ref[_obj.param]){
+      return characteristics;
     }
     return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);
   };
@@ -14734,7 +14807,14 @@ $p.cat.clrs.__define({
 
 			return $p.classes.DataManager.prototype.sync_grid.call(this, attr, grid);
 		}
-	}
+	},
+
+  ignored: {
+    value() {
+      return this.predefined('НеВключатьВСпецификацию');
+    }
+  },
+
 });
 
 $p.CatClrs = class CatClrs extends $p.CatClrs {
@@ -14784,15 +14864,15 @@ $p.cat.cnns.__define({
     value: function nom_cnn(nom1, nom2, cnn_types, ign_side, is_outer){
 
       const {ProfileItem, BuilderElement, Filling} = $p.Editor;
-      const {orientations: {Вертикальная}, cnn_types: {acn}} = $p.enm;
+      const {orientations: {Вертикальная}, cnn_types: {acn, ad, ii}, cnn_sides} = $p.enm;
 
       if(nom1 instanceof ProfileItem && nom2 instanceof ProfileItem &&
-        cnn_types && cnn_types.indexOf($p.enm.cnn_types.ad) != -1 &&
+        cnn_types && cnn_types.indexOf(ad) != -1 &&
         nom1.orientation != Вертикальная && nom2.orientation == Вертикальная ){
         return this.nom_cnn(nom2, nom1, cnn_types);
       }
 
-      const side = is_outer ? $p.enm.cnn_sides.Снаружи :
+      const side = is_outer ? cnn_sides.Снаружи :
         (!ign_side && nom1 instanceof ProfileItem && nom2 instanceof ProfileItem && nom2.cnn_side(nom1));
 
       let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
@@ -14834,7 +14914,7 @@ $p.cat.cnns.__define({
       if(!a1[ref2]){
         a2 = (a1[ref2] = []);
         this.forEach((cnn) => {
-          let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == $p.enm.cnn_types.ii) : false,
+          let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
             is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
 
           cnn.cnn_elmnts.forEach((row) => {
@@ -14854,15 +14934,15 @@ $p.cat.cnns.__define({
         const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.indexOf(cnn_types) != -1 ? acn.a : [cnn_types]);
         return a1[ref2]
           .filter((cnn) => {
-            if(types.indexOf(cnn.cnn_type) != -1){
+            if(types.includes(cnn.cnn_type)){
               if(!side){
                 return true
               }
-              if(cnn.sd1 == $p.enm.cnn_sides.Изнутри){
-                return side == $p.enm.cnn_sides.Изнутри;
+              if(cnn.sd1 == cnn_sides.Изнутри){
+                return side == cnn_sides.Изнутри;
               }
-              else if(cnn.sd1 == $p.enm.cnn_sides.Снаружи){
-                return side == $p.enm.cnn_sides.Снаружи;
+              else if(cnn.sd1 == cnn_sides.Снаружи){
+                return side == cnn_sides.Снаружи;
               }
               else{
                 return true;
@@ -16027,7 +16107,17 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     calculate_spec({elm, len_angl, ox, spec, clr}) {
 
       const {_row} = elm;
-      const {ПоПериметру, ПоШагам, ПоФормуле, ДляЭлемента, ПоПлощади, ДлинаПоПарам, ГабаритыПоПарам, ПоСоединениям} = enm.count_calculating_ways;
+      const {
+        ПоПериметру,
+        ПоШагам,
+        ПоФормуле,
+        ДляЭлемента,
+        ПоПлощади,
+        ДлинаПоПарам,
+        ГабаритыПоПарам,
+        ПоСоединениям,
+        ПоЗаполнениям
+      } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
@@ -16045,7 +16135,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
         let row_spec;
 
-        if((count_calc_method != ПоПериметру && count_calc_method != ПоШагам) || profile_items.includes(_row.elm_type)){
+        if(![ПоПериметру, ПоШагам, ПоЗаполнениям].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
         }
 
@@ -16206,6 +16296,30 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             row_spec.len = (len - sz) * coefficient;
             row_spec.width = (width - sz) * coefficient;
             row_spec.s = (row_spec.len * row_spec.width).round(3);
+          }
+          else if(count_calc_method == ПоЗаполнениям){
+            (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
+              const {bounds} = glass;
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+              row_spec.elm = 11000 + glass.elm;
+              row_spec.qty = row_ins_spec.quantity;
+              row_spec.len = (bounds.height - sz) * coefficient;
+              row_spec.width = (bounds.width - sz) * coefficient;
+              row_spec.s = (row_spec.len * row_spec.width).round(3);
+              calc_count_area_mass(row_spec, spec, _row);
+
+              const qty = !formula.empty() && formula.execute({
+                ox: ox,
+                elm: glass,
+                cnstr: len_angl && len_angl.cnstr || 0,
+                inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
+                row_ins: row_ins_spec,
+                row_spec: row_spec,
+                clr,
+              });
+
+              row_spec = null;
+            });
           }
           else{
             throw new Error("count_calc_method: " + row_ins_spec.count_calc_method);

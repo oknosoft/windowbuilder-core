@@ -660,7 +660,17 @@
     calculate_spec({elm, len_angl, ox, spec, clr}) {
 
       const {_row} = elm;
-      const {ПоПериметру, ПоШагам, ПоФормуле, ДляЭлемента, ПоПлощади, ДлинаПоПарам, ГабаритыПоПарам, ПоСоединениям} = enm.count_calculating_ways;
+      const {
+        ПоПериметру,
+        ПоШагам,
+        ПоФормуле,
+        ДляЭлемента,
+        ПоПлощади,
+        ДлинаПоПарам,
+        ГабаритыПоПарам,
+        ПоСоединениям,
+        ПоЗаполнениям
+      } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
@@ -679,7 +689,7 @@
         let row_spec;
 
         // добавляем строку спецификации, если профиль или не про шагам
-        if((count_calc_method != ПоПериметру && count_calc_method != ПоШагам) || profile_items.includes(_row.elm_type)){
+        if(![ПоПериметру, ПоШагам, ПоЗаполнениям].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
         }
 
@@ -845,6 +855,31 @@
             row_spec.len = (len - sz) * coefficient;
             row_spec.width = (width - sz) * coefficient;
             row_spec.s = (row_spec.len * row_spec.width).round(3);
+          }
+          else if(count_calc_method == ПоЗаполнениям){
+            (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
+              const {bounds} = glass;
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+              // виртуальный номер элемента для данного способа расчета количества
+              row_spec.elm = 11000 + glass.elm;
+              row_spec.qty = row_ins_spec.quantity;
+              row_spec.len = (bounds.height - sz) * coefficient;
+              row_spec.width = (bounds.width - sz) * coefficient;
+              row_spec.s = (row_spec.len * row_spec.width).round(3);
+              calc_count_area_mass(row_spec, spec, _row);
+
+              const qty = !formula.empty() && formula.execute({
+                ox: ox,
+                elm: glass,
+                cnstr: len_angl && len_angl.cnstr || 0,
+                inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
+                row_ins: row_ins_spec,
+                row_spec: row_spec,
+                clr,
+              });
+
+              row_spec = null;
+            });
           }
           else{
             throw new Error("count_calc_method: " + row_ins_spec.count_calc_method);
