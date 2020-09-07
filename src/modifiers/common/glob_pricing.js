@@ -20,11 +20,8 @@ class Pricing {
     // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
     md.once('predefined_elmnts_inited', () => {
       const {pouch} = adapters;
-      if(pouch.local.templates || pouch.props.user_node) {
+      if(pouch.props.user_node) {
         this.load_prices();
-      }
-      else {
-        pouch.once('on_log_in', () => this.load_prices());
       }
     });
 
@@ -39,10 +36,7 @@ class Pricing {
     }
 
     // сначала, пытаемся из local
-    return this.by_local()
-      .then((loc) => {
-        return !loc && this.by_range();
-      })
+    return this.by_range()
       .then(() => {
         const {doc: {calc_order}, wsql} = $p;
         // излучаем событие "можно открывать формы"
@@ -138,91 +132,11 @@ class Pricing {
     }
   }
 
-  /**
-   * если оффлайн и есть доступ к серверу, выполняет синхронизацию
-   * @param pouch
-   * @param step
-   * @return {Promise<T>}
-   */
-  sync_local(pouch, step = 0) {
-    const {utils} = $p;
-    return pouch.remote.templates.get(`_local/price_${step}`)
-      .then((remote) => {
-
-        if(pouch.remote.templates === pouch.local.templates) {
-          this.build_cache_local(remote);
-          return this.sync_local(pouch, ++step);
-        }
-
-        return pouch.local.templates.get(`_local/price_${step}`)
-          .catch(() => ({}))
-          .then((local) => {
-
-            // если версия local отличается от remote - обновляем
-            if(local.remote_rev !== remote._rev) {
-              remote.remote_rev = remote._rev;
-              if(!local._rev) {
-                delete remote._rev;
-              }
-              else {
-                remote._rev = local._rev;
-              }
-              pouch.local.templates.put(utils._clone(remote));
-            }
-
-            // грузим цены из remote
-            this.build_cache_local(remote);
-            return this.sync_local(pouch, ++step);
-          })
-      })
-      .catch((err) => {
-        if(step !== 0) {
-          if(pouch.remote.templates !== pouch.local.templates) {
-            pouch.local.templates.get(`_local/price_${step}`)
-              .then((local) => pouch.local.templates.remove(local))
-              .catch(() => null);
-          }
-          return true;
-        }
-      });
-  }
-
-  /**
-   * Получает цены из локальной базы или direct
-   */
-  by_local(step = 0) {
-    const {adapters: {pouch}, job_prm} = $p;
-
-    if(!pouch.local.templates) {
-      return Promise.resolve(false);
-    }
-
-    // если мы в idb, но подключены к серверу, тянем цены оттуда
-    const pre = step === 0 && (pouch.local.templates.adapter !== 'http' || (job_prm.user_node && job_prm.user_node.templates)) && pouch.authorized ?
-      pouch.remote.templates.info()
-        .then(() => this.sync_local(pouch))
-        .catch((err) => null)
-      :
-      Promise.resolve();
-
-    return pre.then((loaded) => {
-      if(loaded) {
-        return loaded;
-      }
-      else {
-        return pouch.local.templates.get(`_local/price_${step}`)
-      }
-    })
-      .then((prices) => {
-        if(prices === true) {
-          return prices;
-        }
-        this.build_cache_local(prices);
-        pouch.emit('nom_prices', ++step);
-        return this.by_local(step);
-      })
-      .catch((err) => {
-        return step !== 0;
+  iname() {
+    return $p.adapters.pouch.local.doc.get('_design/server_nom_prices')
+      .catch(() => ({_id: '_design/doc'}))
+      .then(({_id}) => {
+        return _id === '_design/doc' ? 'doc/doc_nom_prices_setup_slice_last' : 'server_nom_prices/slice_last';
       });
   }
 
@@ -234,17 +148,17 @@ class Pricing {
   by_range(startkey, step = 0) {
 
     const {pouch} = $p.adapters;
-    const {templates, doc} = pouch.local;
 
-    return (templates || doc).query('doc/doc_nom_prices_setup_slice_last',
-      {
-        limit: 600,
-        include_docs: false,
-        startkey: startkey || [''],
-        endkey: ['\ufff0'],
-        reduce: true,
-        group: true,
-      })
+    return this.iname()
+      .then((iname) => pouch.local.doc.query(iname,
+        {
+          limit: 600,
+          include_docs: false,
+          startkey: startkey || [''],
+          endkey: ['\ufff0'],
+          reduce: true,
+          group: true,
+        }))
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
@@ -264,14 +178,15 @@ class Pricing {
    */
   by_doc({goods}) {
     const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
-    const {templates, doc} = $p.adapters.pouch.local;
-    return (templates || doc).query("doc/doc_nom_prices_setup_slice_last",
-      {
-        include_docs: false,
-        keys: keys,
-        reduce: true,
-        group: true,
-      })
+    const {doc} = $p.adapters.pouch.local;
+    return this.iname()
+      .then((iname) => doc.query(iname,
+        {
+          include_docs: false,
+          keys: keys,
+          reduce: true,
+          group: true,
+        }))
       .then((res) => {
         this.build_cache(res.rows);
       });
