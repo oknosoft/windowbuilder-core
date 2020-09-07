@@ -1,4 +1,5 @@
 module.exports = function({$p, paper}) {
+
 const consts = {
 
 	tune_paper(settings) {
@@ -16,7 +17,7 @@ const consts = {
 		this.font_size = builder.font_size || 90;
     this.font_family = builder.font_family || 'GOST type B';
     this.elm_font_size = builder.elm_font_size || 60;
-    this.cutoff = builder.cutoff || 1300; 
+    this.cutoff = builder.cutoff || 1300;
 
     if(!builder.font_family) {
       builder.font_family = this.font_family;
@@ -411,8 +412,6 @@ EditorInvisible.AbstractFilling = AbstractFilling;
 
 
 
-
-
 class GlassSegment {
 
   constructor(profile, b, e, outer) {
@@ -422,7 +421,6 @@ class GlassSegment {
     this.outer = outer;
     this.segment();
   }
-
 
   segment() {
 
@@ -452,7 +450,6 @@ class GlassSegment {
     }
 
   }
-
 
   break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {
 
@@ -496,7 +493,6 @@ class GlassSegment {
       }
     }
   }
-
 
   has_cnn(segm, nodes, segments) {
 
@@ -597,7 +593,6 @@ class PointMap extends Map {
   }
 }
 
-
 class Contour extends AbstractFilling(paper.Layer) {
 
   constructor(attr) {
@@ -651,7 +646,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
-
   activate(custom) {
     this.project._activeLayer = this;
     if (this._row) {
@@ -660,11 +654,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-
   get area() {
     return (this.bounds.area/1e6).round(3);
   }
-
 
   get form_area() {
     let upath;
@@ -678,7 +670,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return (upath.area/1e6).round(3);
   }
-
 
   get furn() {
     return this._row.furn;
@@ -708,7 +699,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.notify(this, 'furn_changed');
   }
 
-
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
       if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {
@@ -719,7 +709,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
   }
-
 
   get fillings() {
     const fillings = [];
@@ -734,14 +723,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     return fillings;
   }
 
-
   get glass_contours() {
 
     return this.skeleton.detectCycles()
       .map((cycle) => cycle
         .map((edge) => new GlassSegment(edge.profile, edge.startVertex.point, edge.endVertex.point, edge.is_outer())));
   }
-
 
   glass_nodes(path, nodes, bind) {
     const curve_nodes = [];
@@ -813,7 +800,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     return path_nodes;
   }
 
-
   calck_rating(glcontour, glass) {
 
     const {outer_profiles} = glass;
@@ -849,7 +835,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     return crating;
   }
-
 
   glass_recalc() {
     const {glass_contours} = this;      
@@ -929,7 +914,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-
   get is_rectangular() {
     const {Импост} = $p.enm.elm_types;
     const outer = this.profiles.filter((v) => v.elm_type != Импост);
@@ -944,7 +928,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     profiles.forEach(crays);
     project.register_change();
   }
-
 
   get nodes() {
     const nodes = [];
@@ -968,7 +951,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return nodes;
   }
-
 
   count_nodes() {
     const nodes = new PointMap();
@@ -996,7 +978,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     return nodes;
   }
 
-
   notify(obj, type = 'update') {
     if (obj.type) {
       type = obj.type;
@@ -1005,11 +986,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     type === consts.move_points && this.project.register_change();
   }
 
-
   get outer_nodes() {
     return this.outer_profiles.map((v) => v.elm);
   }
-
 
   get outer_profiles() {
     const {profiles} = this;
@@ -1051,7 +1030,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     return res;
   }
 
-
   profile_by_furn_side(side, cache) {
 
     if (!cache || !cache.profiles) {
@@ -1087,7 +1065,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
 
-
   profile_by_nodes(n1, n2, point) {
     const {profiles} = this;
     for (let i = 0; i < profiles.length; i++) {
@@ -1098,7 +1075,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
 
   remove() {
     const {children, _row, cnstr} = this;
@@ -1120,11 +1096,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     super.remove();
   }
 
-
   get _manager() {
     return this.project._dp._manager;
   }
-
 
   _metadata(fld) {
 
@@ -1143,7 +1117,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     };
 
   }
-
 
   get bounds() {
     const {_attr, parent} = this;
@@ -1172,7 +1145,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     return _attr._bounds;
   }
 
-
   get cnstr() {
     return this._row ? this._row.cnstr : 0;
   }
@@ -1180,7 +1152,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   set cnstr(v) {
     this._row && (this._row.cnstr = v);
   }
-
 
   get dimension_bounds() {
     let bounds = super.dimension_bounds;
@@ -1194,7 +1165,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     return bounds;
   }
 
-
   get direction() {
     return this._row.direction;
   }
@@ -1204,11 +1174,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.project.register_change(true);
   }
 
-
   zoom_fit() {
     this.project.zoom_fit.call(this, null, true);
   }
-
 
   draw_cnn_errors() {
 
@@ -1276,7 +1244,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
     });
   }
-
 
   draw_mosquito() {
     const {l_visualization, project} = this;
@@ -1382,7 +1349,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
   }
-
 
   draw_jalousie(glass) {
     const {l_visualization, project} = this;
@@ -1510,7 +1476,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
-
   draw_sill() {
     const {l_visualization, project, cnstr} = this;
     const {ox} = project;
@@ -1567,7 +1532,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
   }
-
 
   draw_opening() {
 
@@ -1639,7 +1603,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
-
   draw_visualization(rows) {
 
     const {profiles, l_visualization, contours} = this;
@@ -1707,7 +1670,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
-
   get imposts() {
     return this.getItems({class: Profile}).filter((elm) => {
       const {b, e} = elm.rays;
@@ -1715,11 +1677,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
-
   get params() {
     return this.project.ox.params;
   }
-
 
   get path() {
     return this.bounds;
@@ -1864,7 +1824,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
   }
 
-
   get perimeter() {
     const res = [];
     this.outer_profiles.forEach((curr) => {
@@ -1884,7 +1843,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return res;
   }
-
 
   perimeter_inner(size) {
     const {center} = this.bounds;
@@ -1922,7 +1880,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
-
   bounds_inner(size) {
     const path = new paper.Path({insert: false});
     for (let curr of this.perimeter_inner(size)) {
@@ -1935,21 +1892,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     return path.bounds;
   }
 
-
   get pos() {
 
   }
-
 
   get profiles() {
     return this.children.filter((elm) => elm instanceof Profile);
   }
 
-
   get sectionals() {
     return this.children.filter((elm) => elm instanceof Sectional);
   }
-
 
   get onlays() {
     const res = [];
@@ -1958,7 +1911,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     })
     return res;
   }
-
 
 
   redraw() {
@@ -2055,7 +2007,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
-
   save_coordinates(short) {
 
     if (!short) {
@@ -2088,7 +2039,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-
   sort_nodes(nodes) {
     if (!nodes.length) {
       return nodes;
@@ -2120,7 +2070,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
 
-
   get furn_cache() {
     return {
       profiles: this.outer_nodes,
@@ -2130,7 +2079,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       h: this.h,
     };
   }
-
 
   handle_line(elm) {
 
@@ -2147,7 +2095,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
 
   }
-
 
   update_handle_height(cache, from_setter) {
 
@@ -2215,7 +2162,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     return handle_height;
   }
 
-
   get h_ruch() {
     const {layer, _row} = this;
     return layer ? _row.h_ruch : 0;
@@ -2248,7 +2194,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     project._dp._manager.emit('update', this, {h_ruch: true});
   }
 
-
   get side_count() {
     const {Импост} = $p.enm.elm_types;
     let res = 0;
@@ -2256,13 +2201,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     return res;
   }
 
-
   get w() {
     const {is_rectangular, bounds} = this;
     const {left, right} = this.profiles_by_side();
     return bounds && left && right ? bounds.width - left.nom.sizefurn - right.nom.sizefurn : 0;
   }
-
 
   get h() {
     const {is_rectangular, bounds} = this;
@@ -2270,12 +2213,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     return bounds && top && bottom ? bounds.height - top.nom.sizefurn - bottom.nom.sizefurn : 0;
   }
 
-
   get l_text() {
     const {_attr} = this;
     return _attr._txt || (_attr._txt = new paper.Group({parent: this}));
   }
-
 
   get l_visualization() {
     const {_attr} = this;
@@ -2286,7 +2227,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return _attr._visl;
   }
-
 
   get opacity() {
     return this.children.length ? this.children[0].opacity : 1;
@@ -2299,12 +2239,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
-
   is_clr() {
     const white = $p.cat.clrs.predefined('Белый');
     return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
   }
-
 
   on_remove_elm(elm) {
     if (this.parent) {
@@ -2315,7 +2253,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-
   on_insert_elm(elm) {
     if (this.parent) {
       this.parent.on_remove_elm(elm);
@@ -2324,7 +2261,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.l_dimensions.clear();
     }
   }
-
 
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
@@ -2890,6 +2826,8 @@ EditorInvisible.DimensionLayer = DimensionLayer;
 
 
 
+
+
 class DimensionLine extends paper.Group {
 
   constructor(attr) {
@@ -3043,6 +2981,7 @@ class DimensionLine extends paper.Group {
     }
 
   }
+
 
   sizes_wnd(event) {
 
@@ -3300,6 +3239,7 @@ class DimensionLine extends paper.Group {
     this.redraw();
   }
 
+
   remove() {
     if(this._row){
       this._row._owner.del(this._row);
@@ -3309,6 +3249,7 @@ class DimensionLine extends paper.Group {
     super.remove();
   }
 }
+
 
 
 class DimensionLineCustom extends DimensionLine {
@@ -3331,9 +3272,11 @@ class DimensionLineCustom extends DimensionLine {
 
   }
 
+
   get elm_type() {
     return $p.enm.elm_types.Размер;
   }
+
 
   save_coordinates() {
     const {_row, _attr, elm_type, pos, offset, size, align} = this;
@@ -12140,11 +12083,8 @@ class Pricing {
 
     md.once('predefined_elmnts_inited', () => {
       const {pouch} = adapters;
-      if(pouch.local.templates || pouch.props.user_node) {
+      if(pouch.props.user_node) {
         this.load_prices();
-      }
-      else {
-        pouch.once('on_log_in', () => this.load_prices());
       }
     });
 
@@ -12157,10 +12097,7 @@ class Pricing {
       return Promise.resolve();
     }
 
-    return this.by_local()
-      .then((loc) => {
-        return !loc && this.by_range();
-      })
+    return this.by_range()
       .then(() => {
         const {doc: {calc_order}, wsql} = $p;
         pouch.emit('pouch_complete_loaded');
@@ -12242,96 +12179,28 @@ class Pricing {
     }
   }
 
-  sync_local(pouch, step = 0) {
-    const {utils} = $p;
-    return pouch.remote.templates.get(`_local/price_${step}`)
-      .then((remote) => {
-
-        if(pouch.remote.templates === pouch.local.templates) {
-          this.build_cache_local(remote);
-          return this.sync_local(pouch, ++step);
-        }
-
-        return pouch.local.templates.get(`_local/price_${step}`)
-          .catch(() => ({}))
-          .then((local) => {
-
-            if(local.remote_rev !== remote._rev) {
-              remote.remote_rev = remote._rev;
-              if(!local._rev) {
-                delete remote._rev;
-              }
-              else {
-                remote._rev = local._rev;
-              }
-              pouch.local.templates.put(utils._clone(remote));
-            }
-
-            this.build_cache_local(remote);
-            return this.sync_local(pouch, ++step);
-          })
-      })
-      .catch((err) => {
-        if(step !== 0) {
-          if(pouch.remote.templates !== pouch.local.templates) {
-            pouch.local.templates.get(`_local/price_${step}`)
-              .then((local) => pouch.local.templates.remove(local))
-              .catch(() => null);
-          }
-          return true;
-        }
-      });
-  }
-
-  by_local(step = 0) {
-    const {adapters: {pouch}, job_prm} = $p;
-
-    if(!pouch.local.templates) {
-      return Promise.resolve(false);
-    }
-
-    const pre = step === 0 && (pouch.local.templates.adapter !== 'http' || (job_prm.user_node && job_prm.user_node.templates)) && pouch.authorized ?
-      pouch.remote.templates.info()
-        .then(() => this.sync_local(pouch))
-        .catch((err) => null)
-      :
-      Promise.resolve();
-
-    return pre.then((loaded) => {
-      if(loaded) {
-        return loaded;
-      }
-      else {
-        return pouch.local.templates.get(`_local/price_${step}`)
-      }
-    })
-      .then((prices) => {
-        if(prices === true) {
-          return prices;
-        }
-        this.build_cache_local(prices);
-        pouch.emit('nom_prices', ++step);
-        return this.by_local(step);
-      })
-      .catch((err) => {
-        return step !== 0;
+  iname() {
+    return $p.adapters.pouch.local.doc.get('_design/server_nom_prices')
+      .catch(() => ({_id: '_design/doc'}))
+      .then(({_id}) => {
+        return _id === '_design/doc' ? 'doc/doc_nom_prices_setup_slice_last' : 'server_nom_prices/slice_last';
       });
   }
 
   by_range(startkey, step = 0) {
 
     const {pouch} = $p.adapters;
-    const {templates, doc} = pouch.local;
 
-    return (templates || doc).query('doc/doc_nom_prices_setup_slice_last',
-      {
-        limit: 600,
-        include_docs: false,
-        startkey: startkey || [''],
-        endkey: ['\ufff0'],
-        reduce: true,
-        group: true,
-      })
+    return this.iname()
+      .then((iname) => pouch.local.doc.query(iname,
+        {
+          limit: 600,
+          include_docs: false,
+          startkey: startkey || [''],
+          endkey: ['\ufff0'],
+          reduce: true,
+          group: true,
+        }))
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
@@ -12346,14 +12215,15 @@ class Pricing {
 
   by_doc({goods}) {
     const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
-    const {templates, doc} = $p.adapters.pouch.local;
-    return (templates || doc).query("doc/doc_nom_prices_setup_slice_last",
-      {
-        include_docs: false,
-        keys: keys,
-        reduce: true,
-        group: true,
-      })
+    const {doc} = $p.adapters.pouch.local;
+    return this.iname()
+      .then((iname) => doc.query(iname,
+        {
+          include_docs: false,
+          keys: keys,
+          reduce: true,
+          group: true,
+        }))
       .then((res) => {
         this.build_cache(res.rows);
       });
@@ -17593,8 +17463,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         prod.push(characteristic.ref);
       }
     });
-    return characteristics.adapter.load_array(characteristics, prod, false,
-        this.obj_delivery_state == obj_delivery_states.Шаблон && characteristics.adapter.local.templates)
+    return characteristics.adapter.load_array(characteristics, prod, false)
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
@@ -18141,136 +18010,6 @@ $p.md.once('predefined_elmnts_inited', () => {
   }
 });
 
-
-
-(({adapters: {pouch}, classes, cat, doc, job_prm, md, pricing, utils}) => {
-
-  const _mgr = doc.calc_order;
-  const proto_get = _mgr.constructor.prototype.get;
-
-  function template_get(ref, do_not_create){
-    return proto_get.apply(this, arguments)
-  }
-
-  function from_files(start) {
-    return start ? pouch.from_files(pouch.local.templates, pouch.remote.templates) : Promise.resolve();
-  }
-
-  function refresh_doc(start) {
-    if(pouch.local.templates && pouch.remote.templates) {
-      return from_files(start)
-        .then((rres) => {
-          return pouch.local.templates.replicate.from(pouch.remote.templates,
-            {
-              batch_size: 300,
-              batches_limit: 3,
-            })
-            .on('change', (info) => {
-              info.db = 'templates';
-              pouch.emit_async('repl_state', info);
-              if(!start && info.ok) {
-                for(const {doc} of info.docs) {
-                  if(doc.class_name === 'doc.nom_prices_setup') {
-                    setTimeout(pricing.by_doc.bind(pricing, doc), 1000);
-                  }
-                }
-              }
-            })
-            .then((info) => {
-              info.db = 'templates';
-              pouch.emit_async('repl_state', info);
-              return rres;
-            })
-            .catch((err) => {
-              err.result.db = 'templates';
-              pouch.emit_async('repl_state', err.result);
-              $p.record_log(err);
-            });
-        });
-    }
-    else {
-      return Promise.resolve();
-    }
-  }
-
-  function patch_cachable() {
-    const names = [
-      'cat.parameters_keys',
-      'cat.stores',
-      'cat.delivery_directions',
-      'cat.cash_flow_articles',
-      'cat.nonstandard_attributes',
-      'cat.projects',
-      'cat.choice_params',
-      'cat.nom_prices_types',
-      'cat.scheme_settings',
-      'doc.nom_prices_setup',
-    ];
-    for(const name of names) {
-      const meta = md.get(name);
-      meta.cachable = meta.cachable.replace(/^doc/, 'templates');
-    }
-  }
-
-  function direct_templates() {
-    if(!pouch.props._suffix || !job_prm.templates) {
-      !pouch.local.templates && pouch.local.__define('templates', {
-        get() {
-          return pouch.remote.doc;
-        },
-        configurable: true,
-        enumerable: false
-      });
-    }
-    return Promise.resolve();
-  }
-
-  function on_log_in() {
-
-    if(!pouch.props._suffix || !job_prm.templates) {
-      return direct_templates();
-    }
-    else {
-      patch_cachable();
-    }
-
-    const {__opts} = pouch.remote.ram;
-    pouch.remote.templates = new classes.PouchDB(__opts.name.replace(/ram$/, 'templates'),
-      {skip_setup: true, adapter: 'http', auth: __opts.auth});
-
-
-
-    if(pouch.props.direct) {
-      !pouch.local.templates && pouch.local.__define('templates', {
-        get() {
-          return pouch.remote.templates;
-        },
-        configurable: true,
-        enumerable: false
-      });
-    }
-    else {
-      pouch.local.templates = new classes.PouchDB('templates', {adapter: 'idb', auto_compaction: true, revs_limit: 3});
-      setInterval(refresh_doc, 600000);
-      return refresh_doc(true)
-        .then((rres) => {
-          return typeof rres === 'number' && pouch.rebuild_indexes('templates');
-        });
-    }
-
-  }
-
-  function user_log_out() {
-    if(pouch.local.templates && !pouch.local.hasOwnProperty('templates')) {
-      delete pouch.local.templates;
-    }
-  }
-
-  pouch.on({on_log_in, user_log_out});
-
-  pouch.once('pouch_doc_ram_loaded', direct_templates);
-
-})($p);
  
 return EditorInvisible;
 }
