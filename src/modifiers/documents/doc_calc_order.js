@@ -1,3 +1,4 @@
+
 /**
  * ### Модуль объекта документа Расчет-заказ
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
