@@ -139,6 +139,18 @@ class Pricing {
   }
 
   /**
+   * Имя индекса среза цен на переходный период
+   * @return {Promise<string>}
+   */
+  iname() {
+    return $p.adapters.pouch.local.doc.get('_design/server_nom_prices')
+      .catch(() => ({_id: '_design/doc'}))
+      .then(({_id}) => {
+        return _id === '_design/doc' ? 'doc/doc_nom_prices_setup_slice_last' : 'server_nom_prices/slice_last';
+      });
+  }
+
+  /**
    * если оффлайн и есть доступ к серверу, выполняет синхронизацию
    * @param pouch
    * @param step
@@ -236,15 +248,16 @@ class Pricing {
     const {pouch} = $p.adapters;
     const {templates, doc} = pouch.local;
 
-    return (templates || doc).query('doc/doc_nom_prices_setup_slice_last',
-      {
-        limit: 600,
-        include_docs: false,
-        startkey: startkey || [''],
-        endkey: ['\ufff0'],
-        reduce: true,
-        group: true,
-      })
+    return this.iname()
+      .then((iname) => (templates || doc).query(iname,
+        {
+          limit: 600,
+          include_docs: false,
+          startkey: startkey || [''],
+          endkey: ['\ufff0'],
+          reduce: true,
+          group: true,
+        }))
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
@@ -265,13 +278,15 @@ class Pricing {
   by_doc({goods}) {
     const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
     const {templates, doc} = $p.adapters.pouch.local;
-    return (templates || doc).query("doc/doc_nom_prices_setup_slice_last",
-      {
-        include_docs: false,
-        keys: keys,
-        reduce: true,
-        group: true,
-      })
+
+    return this.iname()
+      .then((iname) => (templates || doc).query(iname,
+        {
+          include_docs: false,
+          keys: keys,
+          reduce: true,
+          group: true,
+        }))
       .then((res) => {
         this.build_cache(res.rows);
       });
