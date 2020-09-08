@@ -15,12 +15,12 @@
  */
 class Pricing {
 
-  constructor({md, adapters}) {
+  constructor({md, adapters, job_prm}) {
 
     // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
     md.once('predefined_elmnts_inited', () => {
       const {pouch} = adapters;
-      if(pouch.props.user_node) {
+      if(pouch.props.user_node || job_prm.use_ram) {
         this.load_prices();
       }
     });

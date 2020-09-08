@@ -12079,11 +12079,11 @@ GraphVertex.edgeComparator = (edgeA, edgeB) => {
 
 class Pricing {
 
-  constructor({md, adapters}) {
+  constructor({md, adapters, job_prm}) {
 
     md.once('predefined_elmnts_inited', () => {
       const {pouch} = adapters;
-      if(pouch.props.user_node) {
+      if(pouch.props.user_node || job_prm.use_ram) {
         this.load_prices();
       }
     });
