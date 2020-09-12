@@ -224,6 +224,7 @@ class CnnPoint {
     // примыкающий профиль
     this._profile;
 
+    const {acn} = $p.enm.cnn_types;
     if(this._row) {
 
       /**
@@ -237,19 +238,19 @@ class CnnPoint {
        * По умолчанию - соединение с пустотой
        * @type Array
        */
-      if($p.enm.cnn_types.acn.a.indexOf(this.cnn.cnn_type) != -1) {
-        this.cnn_types = $p.enm.cnn_types.acn.a;
+      if(acn.a.includes(this.cnn.cnn_type)) {
+        this.cnn_types = acn.a;
       }
-      else if($p.enm.cnn_types.acn.t.indexOf(this.cnn.cnn_type) != -1) {
-        this.cnn_types = $p.enm.cnn_types.acn.t;
+      else if(acn.t.includes(this.cnn.cnn_type)) {
+        this.cnn_types = acn.t;
       }
       else {
-        this.cnn_types = $p.enm.cnn_types.acn.i;
+        this.cnn_types = acn.i;
       }
     }
     else {
       this.cnn = null;
-      this.cnn_types = $p.enm.cnn_types.acn.i;
+      this.cnn_types = acn.i;
     }
 
     /**
@@ -2604,7 +2605,7 @@ class Profile extends ProfileItem {
         if(this.max_right_angle(ares)) {
           res._mixin(ares[0]);
           // если установленное ранее соединение проходит по типу, нового не ищем
-          if(cnn && res.cnn_types && res.cnn_types.indexOf(cnn.cnn_type) != -1) {
+          if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
             res.cnn = cnn;
           }
         }

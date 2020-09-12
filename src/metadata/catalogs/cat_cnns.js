@@ -5,48 +5,238 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     super(owner, class_name);
     this._nomcache = {};
     this.metadata('selection_params').index = 'elm';
-    this.sort_cnns = this.sort_cnns.bind(this);
   }
 
-  sort_cnns(a, b) {
-    const {cnn_types: {t, xx}, cnn_sides} = this._owner.$p.enm;
-    const sides = [cnn_sides.Изнутри, cnn_sides.Снаружи];
+  sort_cnns(elm1, elm2) {
 
-    // отдаём предпочтение соединениям, для которых задана сторона
-    if(sides.includes(a.sd1) && !sides.includes(b.sd1)){
-      return 1;
+    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
+    const sides = [cnn_sides.Изнутри, cnn_sides.Снаружи];
+    const orientation = elm1 instanceof ProfileItem && elm1.orientation;
+    const sys = elm1 instanceof BuilderElement ? elm1.project._dp.sys : (elm2 instanceof BuilderElement && elm2.project._dp.sys);
+    const priority = (cnn) => {
+      let finded;
+      if(sys && orientation) {
+        const {priorities} = cnn;
+        priorities.forEach((row) => {
+          if((row.orientation.empty() || row.orientation == orientation) && (row.sys.empty() || row.sys == sys)) {
+            if(!row.orientation.empty() && !row.sys.empty()) {
+              finded = row;
+              return false;
+            }
+            if(!finded || finded.sys.empty()) {
+              finded = row;
+            }
+            else if(finded.orientation.empty() && !row.orientation.empty()) {
+              finded = row;
+            }
+          }
+        });
+      }
+      return finded ? finded.priority : cnn.priority;
+    };
+
+    return function sort_cnns(a, b) {
+
+      // отдаём предпочтение соединениям, для которых задана сторона
+      if(sides.includes(a.sd1) && !sides.includes(b.sd1)){
+        return -1;
+      }
+      if(sides.includes(b.sd1) && !sides.includes(a.sd1)){
+        return 1;
+      }
+
+      // далее, учитываем приоритет
+      if (priority(a) > priority(b)) {
+        return -1;
+      }
+      if (priority(a) < priority(b)) {
+        return 1;
+      }
+
+      // соединения с одинаковым приоритетом сортируем по типу - опускаем вниз крест и Т
+      if(a.cnn_type === xx && b.cnn_type !== xx){
+        return 1;
+      }
+      if(b.cnn_type === xx && a.cnn_type !== xx){
+        return -1;
+      }
+      if(a.cnn_type === t && b.cnn_type !== t){
+        return 1;
+      }
+      if(b.cnn_type === t && a.cnn_type !== t){
+        return -1;
+      }
+
+      // в последнюю очередь, сортируем по имени
+      if (a.name > b.name) {
+        return -1;
+      }
+      if (a.name < b.name) {
+        return 1;
+      }
+      return 0;
     }
-    if(sides.includes(b.sd1) && !sides.includes(a.sd1)){
-      return -1;
+  }
+
+  /**
+   * Возвращает массив соединений, доступный для сочетания номенклатур.
+   * Для соединений с заполнениями учитывается толщина. Контроль остальных геометрических особенностей выполняется на стороне рисовалки
+   * @param elm1 {BuilderElement|CatNom}
+   * @param [elm2] {BuilderElement|CatNom}
+   * @param [cnn_types] {EnumObj|Array.<EnumObj>}
+   * @param [ign_side] {Boolean}
+   * @param [is_outer] {Boolean}
+   * @return {Array}
+   */
+  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer) {
+
+    const {
+      Editor: {ProfileItem, BuilderElement, Filling},
+      enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii}, cnn_sides},
+      cat: {nom}, utils} = this._owner.$p;
+
+    // если оба элемента - профили, определяем сторону
+    const side = is_outer ? cnn_sides.Снаружи :
+      (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
+
+    let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
+
+    if(!elm2 || (utils.is_data_obj(elm2) && elm2.empty())){
+      is_i = true;
+      onom2 = elm2 = nom.get();
     }
-    // далее, учитываем приоритет
-    if (a.priority > b.priority) {
-      return -1;
+    else{
+      if(elm2 instanceof BuilderElement){
+        onom2 = elm2.nom;
+      }
+      else if(utils.is_data_obj(elm2)){
+        onom2 = elm2;
+      }
+      else{
+        onom2 = nom.get(elm2);
+      }
     }
-    if (a.priority < b.priority) {
-      return 1;
+
+    const {ref: ref1} = elm1; // ref у BuilderElement равен ref номенклатуры или ref вставки
+    const {ref: ref2} = onom2;
+
+    if(!is_i){
+      if(elm1 instanceof Filling){
+        art1glass = true;
+        thickness1 = elm1.thickness;
+      }
+      else if(elm2 instanceof Filling){
+        art2glass = true;
+        thickness2 = elm2.thickness;
+      }
     }
-    // соединения с одинаковым приоритетом сортируем по типу - опускаем вниз крест и Т
-    if(a.cnn_type === xx && b.cnn_type !== xx){
-      return 1;
+
+    if(!this._nomcache[ref1]){
+      this._nomcache[ref1] = {};
     }
-    if(b.cnn_type === xx && a.cnn_type !== xx){
-      return -1;
+    a1 = this._nomcache[ref1];
+    if(!a1[ref2]){
+      a2 = (a1[ref2] = []);
+      // для всех элементов справочника соединения
+      this.forEach((cnn) => {
+        // если в строках соединяемых элементов есть наша - добавляем
+        let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
+          is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
+
+        cnn.cnn_elmnts.forEach((row) => {
+          if(is_nom1 && is_nom2){
+            return false;
+          }
+          is_nom1 = is_nom1 || (row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2));
+          is_nom2 = is_nom2 || (row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1));
+        });
+        if(is_nom1 && is_nom2){
+          a2.push(cnn);
+        }
+      });
     }
-    if(a.cnn_type === t && b.cnn_type !== t){
-      return 1;
+
+    if(cnn_types){
+      const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.indexOf(cnn_types) != -1 ? acn.a : [cnn_types]);
+      const res = a1[ref2]
+        .filter((cnn) => {
+          if(types.includes(cnn.cnn_type)){
+            if(!side){
+              return true
+            }
+            if(cnn.sd1 == cnn_sides.Изнутри){
+              return side == cnn_sides.Изнутри;
+            }
+            else if(cnn.sd1 == cnn_sides.Снаружи){
+              return side == cnn_sides.Снаружи;
+            }
+            else{
+              return true;
+            }
+          }
+        });
+
+      // если не нашлось подходящих и это угловое соединение и второй элемент вертикальный - меняем местами эл 1-2 при поиске
+      if(!res.length && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem &&
+        cnn_types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
+        return this.nom_cnn(elm2, elm1, cnn_types);
+      }
+
+      return res.sort(this.sort_cnns(elm1, elm2));
     }
-    if(b.cnn_type === t && a.cnn_type !== t){
-      return -1;
+
+    return a1[ref2];
+  }
+
+  /**
+   * Возвращает соединение между элементами
+   * @param elm1 {BuilderElement}
+   * @param elm2 {BuilderElement}
+   * @param [cnn_types] {Array}
+   * @param [curr_cnn] {CatCnns}
+   * @param [ign_side] {Boolean}
+   * @param [is_outer] {Boolean}
+   */
+  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer){
+
+    const {cnn_types: {acn}, cnn_sides} = this._owner.$p.enm;
+
+    // если установленное ранее соединение проходит по типу и стороне, нового не ищем
+    if(curr_cnn && cnn_types && (cnn_types.indexOf(curr_cnn.cnn_type) != -1) && (cnn_types != acn.ii)){
+
+      // TODO: проверить геометрию
+
+      if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
+        if(typeof is_outer == 'boolean'){
+          if(!is_outer){
+            return curr_cnn;
+          }
+        }
+        else{
+          if(elm2.cnn_side(elm1) == cnn_sides.Изнутри){
+            return curr_cnn;
+          }
+        }
+      }
+      else if(!ign_side && curr_cnn.sd1 == cnn_sides.Снаружи){
+        if(is_outer || elm2.cnn_side(elm1) == cnn_sides.Снаружи)
+          return curr_cnn;
+      }
+      else{
+        return curr_cnn;
+      }
     }
-    // в последнюю очередь, сортируем по имени
-    if (a.name > b.name) {
-      return -1;
+
+    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer);
+
+    // сортируем по непустой стороне и приоритету
+    if(cnns.length){
+      return cnns[0];
     }
-    if (a.name < b.name) {
-      return 1;
+    // TODO: возможно, надо вернуть соединение с пустотой
+    else{
+
     }
-    return 0;
   }
 
 };
@@ -136,7 +326,8 @@ exports.CatCnns = class CatCnns extends Object {
    * ПолучитьСпецификациюСоединенияСФильтром
    * @param {BuilderElement} elm
    * @param {Object} len_angl
-   * @param {Boolean} correct
+   * @param {Object} ox
+   * @param {Boolean} [correct]
    */
   filtered_spec({elm, len_angl, ox, correct = false}) {
     const res = [];
@@ -144,7 +335,8 @@ exports.CatCnns = class CatCnns extends Object {
     const {
       job_prm: {nom: {art1, art2}},
       enm: {specification_installation_methods, cnn_types},
-      ProductsBuilding: {check_params}} = $p;
+      ProductsBuilding: {check_params}} = this._manager._owner.$p;
+
     const {САртикулом1, САртикулом2} = specification_installation_methods;
     const {ii, xx, acn, t} = cnn_types;
     const {cnn_type, specification, selection_params} = this;
@@ -199,4 +391,5 @@ exports.CatCnns = class CatCnns extends Object {
 
     return res;
   }
+
 }

@@ -26,9 +26,19 @@
         return this.УгловоеКВертикальной;
       }
     },
+    long: {
+      get() {
+        return this.Длинное;
+      }
+    },
     ah: {
       get() {
         return this.УгловоеКГоризонтальной;
+      }
+    },
+    short: {
+      get() {
+        return this.Короткое;
       }
     },
     t: {
