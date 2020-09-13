@@ -132,6 +132,10 @@ class Pricing {
     }
   }
 
+  /**
+   * Имя индекса среза цен на переходный период
+   * @return {Promise<string>}
+   */
   iname() {
     return $p.adapters.pouch.local.doc.get('_design/server_nom_prices')
       .catch(() => ({_id: '_design/doc'}))

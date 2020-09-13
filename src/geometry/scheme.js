@@ -264,8 +264,10 @@ class Scheme extends paper.Project {
     }
     else {
       // TODO: установить режим только просмотр, если не найдена строка заказа
+      if(ox.empty()) {
+        return;
+      }
     }
-
 
     // устанавливаем в _dp систему профилей
     if(_dp.sys.empty()) {
@@ -1456,7 +1458,7 @@ class Scheme extends paper.Project {
    */
   check_distance(element, profile, res, point, check_only) {
     //const {allow_open_cnn} = this._dp.sys;
-    const {elm_types, cnn_types: {acn}} = $p.enm;
+    const {elm_types, cnn_types: {acn, av, ah, long}, orientations} = $p.enm;
 
 
     let distance, cnns, addls,
@@ -1588,7 +1590,16 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
-        res.cnn_types = acn.t;
+        if(res.cnn && (
+          res.cnn.cnn_type === long ||
+          res.cnn.cnn_type === av && res.parent.orientation === orientations.vert ||
+          res.cnn.cnn_type === ah && res.parent.orientation === orientations.hor
+        )) {
+          ;
+        }
+        else {
+          res.cnn_types = acn.t;
+        }
       }
       if(bind_generatrix) {
         return false;
