@@ -1972,6 +1972,25 @@ set demand(v){this._setter_ts('demand',v)}
   }
 
   /**
+   * Выясняет, назначена ли данной номенклатуре хотя бы одна цена
+   * @return {boolean}
+   */
+  has_price() {
+    const {_price} = this._data;
+    if(!_price) {
+      return false;
+    }
+    for(const cx in _price) {
+      for(const pt in _price[cx]) {
+        const prices = _price[cx][pt];
+        if(Array.isArray(prices) && prices.find(({price}) => price >= 0.01)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  /**
    * Возвращает массив связей текущей номенклатуры
    */
   params_links(attr) {

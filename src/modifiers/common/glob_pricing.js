@@ -518,7 +518,7 @@ class Pricing {
    * @param prm {Object}
    * @param prm.calc_order_row {TabularSectionRow.doc.calc_order.production}
    */
-  calc_amount (prm) {
+  calc_amount(prm) {
 
     const {calc_order_row, price_type, first_cost} = prm;
     const {marginality_in_spec, not_update} = $p.job_prm.pricing;
@@ -530,49 +530,78 @@ class Pricing {
     }
     else {
       const price_cost = marginality_in_spec && prm.spec.count() ?
-        prm.spec.aggregate([], ["amount_marged"]) :
+        prm.spec.aggregate([], ['amount_marged']) :
         this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {});
 
       // цена продажи
-      if(price_cost){
+      if(price_cost) {
         calc_order_row.price = price_cost.round(rounding);
       }
       else if(marginality_in_spec && !first_cost) {
         calc_order_row.price = this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {});
       }
-      else{
+      else {
         calc_order_row.price = (calc_order_row.first_cost * price_type.marginality).round(rounding);
       }
     }
 
     // КМарж в строке расчета
     calc_order_row.marginality = calc_order_row.first_cost ?
-      calc_order_row.price * ((100 - calc_order_row.discount_percent)/100) / calc_order_row.first_cost : 0;
+      calc_order_row.price * ((100 - calc_order_row.discount_percent) / 100) / calc_order_row.first_cost : 0;
 
 
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
-    let extra_charge = $p.wsql.get_user_param("surcharge_internal", "number");
+    let extra_charge = $p.wsql.get_user_param('surcharge_internal', 'number');
     // если пересчет выполняется менеджером, используем наценку по умолчанию
-    if(!$p.current_user.partners_uids.length || !extra_charge){
+    if(!$p.current_user.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;
     }
 
     // TODO: учесть формулу
-    calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent)/100 * (100 + extra_charge)/100).round(rounding);
+    calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
 
     // Эмулируем событие окончания редактирования, чтобы единообразно пересчитать строку табчасти
-    !prm.hand_start && calc_order_row.value_change("price", {}, calc_order_row.price, true);
+    !prm.hand_start && calc_order_row.value_change('price', {}, calc_order_row.price, true);
 
     // Цены и суммы вытянутых строк спецификации в заказ
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
         calc_order_row: value
-      }
+      };
       this.price_type(fake_prm);
       this.calc_amount(fake_prm);
     });
 
+  }
+
+  /**
+   * В случае нулевых цен, дополняет в спецификацию строку ошибки
+   * @param prm
+   */
+  check_prices(prm) {
+    const {price_type_first_cost, price_type_sale} = prm.price_type;
+    const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
+
+    prm.spec.forEach(({_obj, nom, characteristic}) => {
+
+      if(_obj.totqty1) {
+        let tmp_price = Infinity;
+        if(marginality_in_spec && !_obj.amount_marged){
+          // проверяем цену продужи
+          tmp_price = this.nom_price(nom, characteristic, price_type_sale, prm, {nom});
+        }
+        else if(!marginality_in_spec && !_obj.price) {
+          // проверяем цену себестоимости
+          tmp_price = this.nom_price(nom, characteristic, price_type_first_cost, prm, {nom});
+        }
+        if(!tmp_price && nom.has_price()) {
+          prm.spec.add({nom: empty_price});
+          return false;
+        }
+      }
+
+    });
   }
 
   /**

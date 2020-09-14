@@ -316,6 +316,9 @@ class Scheme extends paper.Project {
     }
     else {
       // TODO: установить режим только просмотр, если не найдена строка заказа
+      if(ox.empty()) {
+        return;
+      }
     }
 
 

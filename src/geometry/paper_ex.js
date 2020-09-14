@@ -1,4 +1,5 @@
-﻿/**
+﻿
+/**
  * Расширения объектов paper.js
  *
  * &copy; http://www.oknosoft.ru 2014-2018
