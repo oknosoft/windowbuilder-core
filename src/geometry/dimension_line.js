@@ -193,13 +193,12 @@ class DimensionLine extends paper.Group {
         const vertexes = project.mover.snap_to_edges({
           start,
           mode: consts.move_shapes,
-          event: {point: start.add(delta), modifiers: {}},
+          event: {point: start.add(delta), modifiers: {shift: true}},
         });
         project.mover.move_shapes(vertexes);
         project.deselectAll();
         need_redraw = true;
 
-        //_scope.restore_selection_state(originalContent);
       }
 
       for(const {profile, node} of move_points) {
@@ -212,10 +211,11 @@ class DimensionLine extends paper.Group {
         const mdelta = project.mover.snap_to_edges({
           start: profile[node],
           mode: consts.move_points,
-          event: {point: profile[node].add(delta), modifiers: {}},
+          event: {point: profile[node].add(delta), modifiers: {shift: true}},
         });
         project.move_points(mdelta);
-        project.deselect_all_points();
+        //project.deselect_all_points();
+        project.deselectAll();
         need_redraw = true;
       }
 
@@ -237,6 +237,8 @@ class DimensionLine extends paper.Group {
   sizes_wnd(event) {
 
     if(event.wnd == this || (this.wnd && event.wnd == this.wnd.wnd)){
+
+      this.project.deselectAll();
 
       switch (event.name) {
       case 'close':

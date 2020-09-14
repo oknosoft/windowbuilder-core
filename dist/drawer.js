@@ -3064,7 +3064,7 @@ class DimensionLine extends paper.Group {
         const vertexes = project.mover.snap_to_edges({
           start,
           mode: consts.move_shapes,
-          event: {point: start.add(delta), modifiers: {}},
+          event: {point: start.add(delta), modifiers: {shift: true}},
         });
         project.mover.move_shapes(vertexes);
         project.deselectAll();
@@ -3082,10 +3082,10 @@ class DimensionLine extends paper.Group {
         const mdelta = project.mover.snap_to_edges({
           start: profile[node],
           mode: consts.move_points,
-          event: {point: profile[node].add(delta), modifiers: {}},
+          event: {point: profile[node].add(delta), modifiers: {shift: true}},
         });
         project.move_points(mdelta);
-        project.deselect_all_points();
+        project.deselectAll();
         need_redraw = true;
       }
 
@@ -3100,6 +3100,8 @@ class DimensionLine extends paper.Group {
   sizes_wnd(event) {
 
     if(event.wnd == this || (this.wnd && event.wnd == this.wnd.wnd)){
+
+      this.project.deselectAll();
 
       switch (event.name) {
       case 'close':
@@ -6215,7 +6217,7 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 	snap_to_angle: {
-		value: function snap_to_angle(snapAngle) {
+		value: function snap_to_angle(snapAngle, shift) {
 
 			if(!snapAngle){
         snapAngle = Math.PI*2/8;
@@ -6228,7 +6230,9 @@ Object.defineProperties(paper.Point.prototype, {
 				diry = Math.sin(angle),
 				d = dirx*this.x + diry*this.y;
 
-			return new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
+			return shift || paper.Key.isDown('shift') ?
+        new paper.Point(dirx*d, diry*d) :
+        new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
 

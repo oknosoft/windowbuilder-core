@@ -608,10 +608,10 @@ Object.defineProperties(paper.Point.prototype, {
 	 * Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
 	 *
 	 * @param [snapAngle] {Number} - шаг угла, по умолчанию 45°
-	 * @return {paper.Point}
+	 * @return {Point}
 	 */
 	snap_to_angle: {
-		value: function snap_to_angle(snapAngle) {
+		value: function snap_to_angle(snapAngle, shift) {
 
 			if(!snapAngle){
         snapAngle = Math.PI*2/8;
@@ -624,7 +624,9 @@ Object.defineProperties(paper.Point.prototype, {
 				diry = Math.sin(angle),
 				d = dirx*this.x + diry*this.y;
 
-			return new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
+			return shift || paper.Key.isDown('shift') ?
+        new paper.Point(dirx*d, diry*d) :
+        new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
 
