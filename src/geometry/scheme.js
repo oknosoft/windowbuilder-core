@@ -1499,7 +1499,7 @@ class Scheme extends paper.Project {
         if(profile && (!res.cnn || res.cnn.empty())) {
 
           // а есть ли подходящее?
-          cnns = $p.cat.cnns.nom_cnn(element, profile, acn.a);
+          cnns = $p.cat.cnns.nom_cnn(profile, element, acn.a);
           if(!cnns || !cnns.length) {
             return 1;
           }
