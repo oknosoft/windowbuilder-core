@@ -480,6 +480,9 @@ class Scheme extends paper.Project {
       // перерисовываем каркас
       _scheme.redraw(from_service);
 
+      // ограничиваем список систем в интерфейсе
+      _scheme.ox.permitted_sys_meta();
+
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve, reject) => {
 

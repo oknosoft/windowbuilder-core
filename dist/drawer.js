@@ -9824,6 +9824,8 @@ class Scheme extends paper.Project {
 
       _scheme.redraw(from_service);
 
+      _scheme.ox.permitted_sys_meta();
+
       return new Promise((resolve, reject) => {
 
         _attr._bounds = null;
@@ -13284,6 +13286,32 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     }
   }
 
+  permitted_sys_meta(mf) {
+    const {dp, enm, cch, cat} = $p;
+    if(!mf) {
+      mf = dp.buyers_order.metadata("sys");
+    }
+    if(mf.choice_params) {
+      mf.choice_params.length = 0;
+    }
+    else {
+      mf.choice_params = [];
+    }
+    const {base_block} = this;
+    if(this.obj_delivery_state !== enm.obj_delivery_states.Шаблон && base_block.obj_delivery_state === enm.obj_delivery_states.Шаблон) {
+      const permitted_sys = cch.properties.predefined('permitted_sys');
+      if(permitted_sys) {
+        const prow = base_block.calc_order.extra_fields.find({property: permitted_sys});
+        if(prow && prow.txt_row) {
+          mf.choice_params.push({
+            name: "ref",
+            path: {inh: prow.txt_row.split(',').map((ref) => cat.production_params.get(ref))}
+          });
+        }
+      }
+    }
+  }
+
   find_create_cx(elm, origin) {
     const {_manager, calc_order, params, inserts} = this;
     let cx;
@@ -16021,6 +16049,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     if(obj_delivery_state == 'Шаблон') {
       _obj.state = 'template';
+      const permitted_sys = $p.cch.properties.predefined('permitted_sys');
+      if(permitted_sys) {
+        if(!this.extra_fields.find({property: permitted_sys})) {
+          this.extra_fields.add({property: permitted_sys});
+        }
+      }
     }
     else if(category == 'service') {
       _obj.state = 'service';

@@ -279,6 +279,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // фильтр по статусу
     if(obj_delivery_state == 'Шаблон') {
       _obj.state = 'template';
+      // Шаблоны имеют дополнительное свойство, в котором можно задать доступные системы
+      const permitted_sys = $p.cch.properties.predefined('permitted_sys');
+      if(permitted_sys) {
+        if(!this.extra_fields.find({property: permitted_sys})) {
+          this.extra_fields.add({property: permitted_sys});
+        }
+      }
     }
     else if(category == 'service') {
       _obj.state = 'service';
