@@ -11686,9 +11686,10 @@ class Pricing {
   check_prices(prm) {
     const {price_type_first_cost, price_type_sale} = prm.price_type;
     const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
+    let err;
 
-    prm.spec.forEach(({_obj, nom, characteristic}) => {
-
+    prm.calc_order_row.characteristic.specification.forEach((row) => {
+      const {_obj, nom, characteristic} = row;
       if(_obj.totqty1) {
         let tmp_price = Infinity;
         if(marginality_in_spec && !_obj.amount_marged){
@@ -11698,12 +11699,12 @@ class Pricing {
           tmp_price = this.nom_price(nom, characteristic, price_type_first_cost, prm, {nom});
         }
         if(!tmp_price && nom.has_price()) {
-          prm.spec.add({nom: empty_price});
+          err = row;
           return false;
         }
       }
-
     });
+    return err;
   }
 
   from_currency_to_currency (amount, date, from, to) {
@@ -12816,7 +12817,6 @@ class SpecBuilding {
 
       pricing.calc_amount(attr);
 
-      pricing.check_prices(attr);
     }
 
     if(save && !attr.scheme && (ox.is_new() || ox._modified)){
@@ -15965,6 +15965,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
+    const err_prices = this.check_prices();
+    if(err_prices) {
+      msg.show_msg && msg.show_msg({
+        type: 'alert-warning',
+        title: 'Ошибки в заказе',
+        text: `Пустая цена ${err_prices.nom}`,
+      });
+      if (!must_be_saved) {
+        if(obj_delivery_state == Отправлен) {
+          this.obj_delivery_state = 'Черновик';
+        }
+        return false;
+      }
+    }
+
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
     this.production.forEach(({amount, amount_internal, characteristic}) => {
@@ -16079,6 +16094,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .then(() => this);
 
+  }
+
+  check_prices() {
+    let err;
+    this.production.forEach((calc_order_row) => {
+      const attr = {calc_order_row};
+      $p.pricing.price_type(attr);
+      err = $p.pricing.check_prices(attr);
+      if(err) {
+        return false;
+      }
+    });
+    return err;
   }
 
   value_change(field, type, value) {

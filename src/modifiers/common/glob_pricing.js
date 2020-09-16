@@ -582,9 +582,10 @@ class Pricing {
   check_prices(prm) {
     const {price_type_first_cost, price_type_sale} = prm.price_type;
     const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
+    let err;
 
-    prm.spec.forEach(({_obj, nom, characteristic}) => {
-
+    prm.calc_order_row.characteristic.specification.forEach((row) => {
+      const {_obj, nom, characteristic} = row;
       if(_obj.totqty1) {
         let tmp_price = Infinity;
         if(marginality_in_spec && !_obj.amount_marged){
@@ -596,12 +597,12 @@ class Pricing {
           tmp_price = this.nom_price(nom, characteristic, price_type_first_cost, prm, {nom});
         }
         if(!tmp_price && nom.has_price()) {
-          prm.spec.add({nom: empty_price});
+          err = row;
           return false;
         }
       }
-
     });
+    return err;
   }
 
   /**
