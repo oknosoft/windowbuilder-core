@@ -455,11 +455,12 @@ class Scheme extends paper.Project {
       });
 
       // первым делом создаём соединители и опорные линии
+      const {enm: {elm_types}, cat: {templates}} = $p;
       o.coordinates.forEach((row) => {
-        if(row.elm_type === $p.enm.elm_types.Соединитель) {
+        if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
         }
-        else if(row.elm_type === $p.enm.elm_types.Линия) {
+        else if(row.elm_type === elm_types.Линия) {
           new BaseLine({row});
         }
       });
@@ -481,7 +482,7 @@ class Scheme extends paper.Project {
       _scheme.redraw(from_service);
 
       // ограничиваем список систем в интерфейсе
-      _scheme.ox.permitted_sys_meta();
+      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve, reject) => {

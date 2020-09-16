@@ -9802,11 +9802,12 @@ class Scheme extends paper.Project {
         size: [o.x, o.y]
       });
 
+      const {enm: {elm_types}, cat: {templates}} = $p;
       o.coordinates.forEach((row) => {
-        if(row.elm_type === $p.enm.elm_types.Соединитель) {
+        if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
         }
-        else if(row.elm_type === $p.enm.elm_types.Линия) {
+        else if(row.elm_type === elm_types.Линия) {
           new BaseLine({row});
         }
       });
@@ -9824,7 +9825,7 @@ class Scheme extends paper.Project {
 
       _scheme.redraw(from_service);
 
-      _scheme.ox.permitted_sys_meta();
+      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
 
       return new Promise((resolve, reject) => {
 
@@ -13283,32 +13284,6 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     }
     catch (err) {
       $p.record_log(err);
-    }
-  }
-
-  permitted_sys_meta(mf) {
-    const {dp, enm, cch, cat} = $p;
-    if(!mf) {
-      mf = dp.buyers_order.metadata("sys");
-    }
-    if(mf.choice_params) {
-      mf.choice_params.length = 0;
-    }
-    else {
-      mf.choice_params = [];
-    }
-    const {base_block} = this;
-    if(this.obj_delivery_state !== enm.obj_delivery_states.Шаблон && base_block.obj_delivery_state === enm.obj_delivery_states.Шаблон) {
-      const permitted_sys = cch.properties.predefined('permitted_sys');
-      if(permitted_sys) {
-        const prow = base_block.calc_order.extra_fields.find({property: permitted_sys});
-        if(prow && prow.txt_row) {
-          mf.choice_params.push({
-            name: "ref",
-            path: {inh: prow.txt_row.split(',').map((ref) => cat.production_params.get(ref))}
-          });
-        }
-      }
     }
   }
 

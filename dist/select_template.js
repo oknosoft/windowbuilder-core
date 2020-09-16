@@ -19,6 +19,13 @@ export default function ({classes, cat: {characteristics, templates, params_link
       this._meta.fields.refill = utils._clone(params_links.metadata('hide'));
       this._meta.tabular_sections = {};
 
+      const permitted_sys = this.permitted_sys.bind(this);
+      Object.defineProperty(this._meta.fields.sys, 'choice_params', {
+        get() {
+          return permitted_sys();
+        }
+      });
+
     }
 
     // начальное значение заказа-шаблона
@@ -89,6 +96,44 @@ export default function ({classes, cat: {characteristics, templates, params_link
         }
         wsql.set_user_param('template_block_calc_order', calc_order.ref);
         return calc_order.load_templates();
+      }
+    }
+
+    permitted_sys(calc_order, res = []) {
+      const {cch, cat} = $p;
+      const permitted_sys = cch.properties.predefined('permitted_sys');
+      if(!calc_order) {
+        calc_order = this.calc_order;
+      }
+      if(permitted_sys) {
+        const prow = calc_order.extra_fields.find({property: permitted_sys});
+        if(prow && prow.txt_row) {
+          res.push({
+            name: "ref",
+            path: {inh: prow.txt_row.split(',').map((ref) => cat.production_params.get(ref))}
+          });
+        }
+      }
+      return res;
+    }
+
+    /**
+     * Корректирует и возвращает метаданные обработки
+     */
+    permitted_sys_meta(ox, mf) {
+      const {dp, enm, cch, cat} = $p;
+      if(!mf) {
+        mf = dp.buyers_order.metadata("sys");
+      }
+      if(mf.choice_params) {
+        mf.choice_params.length = 0;
+      }
+      else {
+        mf.choice_params = [];
+      }
+      const {base_block, obj_delivery_state} = ox;
+      if(obj_delivery_state !== enm.obj_delivery_states.Шаблон && base_block.obj_delivery_state === enm.obj_delivery_states.Шаблон) {
+        this.permitted_sys(base_block.calc_order, mf.choice_params);
       }
     }
 
