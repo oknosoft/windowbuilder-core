@@ -121,9 +121,9 @@ export default function ({classes, cat: {characteristics, templates, params_link
      * Корректирует и возвращает метаданные обработки
      */
     permitted_sys_meta(ox, mf) {
-      const {dp, enm, cch, cat} = $p;
+      const {dp, enm: {obj_delivery_states: {Шаблон}}, cch, cat} = $p;
       if(!mf) {
-        mf = dp.buyers_order.metadata("sys");
+        mf = dp.buyers_order.metadata('sys');
       }
       if(mf.choice_params) {
         mf.choice_params.length = 0;
@@ -132,7 +132,8 @@ export default function ({classes, cat: {characteristics, templates, params_link
         mf.choice_params = [];
       }
       const {base_block, obj_delivery_state} = ox;
-      if(obj_delivery_state !== enm.obj_delivery_states.Шаблон && base_block.obj_delivery_state === enm.obj_delivery_states.Шаблон) {
+      if(obj_delivery_state !== Шаблон &&
+        (base_block.obj_delivery_state === Шаблон || base_block.calc_order.obj_delivery_state === Шаблон)) {
         this.permitted_sys(base_block.calc_order, mf.choice_params);
       }
     }
