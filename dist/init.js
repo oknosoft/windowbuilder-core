@@ -3236,16 +3236,17 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
 
       // уточним по формуле условия
       if(!formula.empty()) {
+        const attr = {clrs: _data.clrs};
         if(!mode) {
           const res = Array.from(_data.clrs);
-          _data.clrs = new Set(res.filter((clr) => formula.execute(clr)));
+          _data.clrs = new Set(res.filter((clr) => formula.execute(clr, attr)));
         }
         else {
           cat.clrs.forEach((clr) => {
             if(clr.parent.predefined_name || _data.clrs.has(clr)) {
               return;
             }
-            if(formula.execute(clr)) {
+            if(formula.execute(clr, attr)) {
               _data.clrs.add(clr);
             }
           })
