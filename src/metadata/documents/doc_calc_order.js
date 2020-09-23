@@ -6,14 +6,17 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     }
 
     const {adapters: {pouch}, utils: {moment}, ui} = this._owner.$p;
+    const selector = force && force.selector ?
+      force.selector :
+      {
+        startkey: [this.class_name, ...moment().add(1, 'month').format('YYYY-MM-DD').split('-').map(Number)],
+        endkey: [this.class_name, ...moment().subtract(5, 'month').format('YYYY-MM-DD').split('-').map(Number)],
+        descending: true,
+        include_docs: true,
+        limit: 8000,
+      };
 
-    return pouch.db(this).query('doc/by_date', {
-      startkey: [this.class_name, ...moment().add(1, 'month').format('YYYY-MM-DD').split('-').map(Number)],
-      endkey: [this.class_name, ...moment().subtract(5, 'month').format('YYYY-MM-DD').split('-').map(Number)],
-      descending: true,
-      include_docs: true,
-      limit: 8000,
-    })
+    return pouch.db(this).query('doc/by_date', selector)
       .then(({rows}) => rows.map(({doc}) => {
         doc.ref = doc._id.split('|')[1];
         delete doc._id;
