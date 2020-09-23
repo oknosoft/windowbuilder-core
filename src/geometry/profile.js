@@ -1602,6 +1602,7 @@ class ProfileItem extends GeneratrixElement {
           return delta;
         }
       }
+      return delta;
     }
 
     // если пересечение в узлах, используем лучи профиля
@@ -1610,7 +1611,7 @@ class ProfileItem extends GeneratrixElement {
       (cnn_point.profile instanceof Filling ? {inner: cnn_point.profile.path, outer: cnn_point.profile.path} : undefined);
 
     const {cnn_type} = cnn_point.cnn || {};
-    const {cnn_types} = $p.enm;
+    const {cnn_types, cnn_sides} = $p.enm;
     // импосты рисуем с учетом стороны примыкания
     if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
@@ -1669,12 +1670,12 @@ class ProfileItem extends GeneratrixElement {
         }
       });
 
-      const side = cnn_point.profile.cnn_side(this, null, prays) === $p.enm.cnn_sides.Снаружи ? 'outer' : 'inner';
+      const side = cnn_point.profile.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
 
       if(profile2) {
         const interior = generatrix.getPointAt(generatrix.length/2)
-        const prays2 = profile2 && profile2.rays;
-        const side2 = profile2.cnn_side(this, null, prays2) === $p.enm.cnn_sides.Снаружи ? 'outer' : 'inner';
+        const {rays: prays2} = profile2;
+        const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.Снаружи ? 'outer' : 'inner';
         const pt1 = intersect_point(prays[side], rays.outer, 0, interior);
         const pt2 = intersect_point(prays[side], rays.inner, 0, interior);
         const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
