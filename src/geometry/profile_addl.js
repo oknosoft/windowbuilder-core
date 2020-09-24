@@ -202,6 +202,7 @@ class ProfileAddl extends ProfileItem {
         else
           return delta;
       }
+      return delta;
     }
 
     // если пересечение в узлах, используем лучи профиля

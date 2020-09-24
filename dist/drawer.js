@@ -8579,6 +8579,7 @@ class ProfileAddl extends ProfileItem {
         else
           return delta;
       }
+      return delta;
     }
 
     const {profile} = cnn_point;
@@ -9247,7 +9248,6 @@ EditorInvisible.Onlay = Onlay;
 
 
 
-
 class ProfileVirtual extends Profile {
 
   constructor(attr) {
@@ -9322,6 +9322,7 @@ class ProfileVirtual extends Profile {
           return delta;
         }
       }
+      return delta;
     }
 
     const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
@@ -10646,8 +10647,8 @@ class Scheme extends paper.Project {
       const {parent} = item;
       if(parent instanceof ProfileItem) {
         if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
-          if(res.indexOf(parent) != -1) {
-            return;
+          if(res.includes(parent)) {
+            continue;
           }
           if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
             res.push(parent);

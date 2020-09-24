@@ -1674,8 +1674,8 @@ class Scheme extends paper.Project {
       const {parent} = item;
       if(parent instanceof ProfileItem) {
         if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
-          if(res.indexOf(parent) != -1) {
-            return;
+          if(res.includes(parent)) {
+            continue;
           }
           if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
             res.push(parent);

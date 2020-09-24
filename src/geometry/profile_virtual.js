@@ -86,6 +86,7 @@ class ProfileVirtual extends Profile {
           return delta;
         }
       }
+      return delta;
     }
 
     const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
