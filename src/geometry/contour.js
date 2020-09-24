@@ -973,6 +973,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {ox} = this.project;
       ox.coordinates.clear({cnstr});
       ox.params.clear({cnstr});
+      //Удаляем вставки
+      ox.inserts.clear({cnstr});
 
       // удаляем себя
       if (ox === _row._owner._owner) {
