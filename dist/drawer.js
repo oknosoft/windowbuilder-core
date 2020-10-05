@@ -1225,6 +1225,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {ox} = this.project;
       ox.coordinates.clear({cnstr});
       ox.params.clear({cnstr});
+      ox.inserts.clear({cnstr});
 
       if (ox === _row._owner._owner) {
         _row._owner.del(_row);
@@ -12028,9 +12029,10 @@ class ProductsBuilding {
 
     function base_spec_profile(elm) {
 
+      const {enm: {angle_calculating_ways, cnn_types, specification_order_row_types}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
 
-      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
+      if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
       }
 
@@ -12056,7 +12058,7 @@ class ProductsBuilding {
         row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
         row_spec.qty = row_cnn.quantity;
 
-        const seam = $p.enm.angle_calculating_ways.СварнойШов;
+        const seam = angle_calculating_ways.СварнойШов;
         const d45 = Math.sin(Math.PI / 4);
         const dprev = row_cnn_prev ? (
           row_cnn_prev.angle_calc_method == seam && _row.alp1 > 0 ? row_cnn_prev.sz * d45 / Math.sin(_row.alp1 / 180 * Math.PI) : row_cnn_prev.sz
@@ -12083,7 +12085,7 @@ class ProductsBuilding {
             ox: ox,
             elm: elm,
             cnstr: 0,
-            inset: $p.utils.blank.guid,
+            inset: blank.guid,
             row_cnn: row_cnn_prev,
             row_spec: row_spec
           });
@@ -12093,7 +12095,7 @@ class ProductsBuilding {
             ox: ox,
             elm: elm,
             cnstr: 0,
-            inset: $p.utils.blank.guid,
+            inset: blank.guid,
             row_cnn: row_cnn_next,
             row_spec: row_spec
           });
@@ -12101,7 +12103,7 @@ class ProductsBuilding {
 
         const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
         const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
-        const {СоединениеПополам: s2, Соединение: s1} = $p.enm.angle_calculating_ways;
+        const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
         calc_count_area_mass(
           row_spec,
           spec,
@@ -12127,12 +12129,16 @@ class ProductsBuilding {
 
         len_angl.angle = len_angl.alp2;
 
-        if(b.cnn.cnn_type == $p.enm.cnn_types.t || b.cnn.cnn_type == $p.enm.cnn_types.i || b.cnn.cnn_type == $p.enm.cnn_types.xx) {
-          if(cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
+        if(b.cnn.cnn_type == cnn_types.t || b.cnn.cnn_type == cnn_types.i || b.cnn.cnn_type == cnn_types.xx) {
+          if(![cnn_types.t, cnn_types.xx].includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn);
           }
         }
         else {
+          if(!e.profile_point || (next.rays[e.profile_point] && next.rays[e.profile_point].profile !== elm)) {
+            len_angl.art2 = false;
+            len_angl.art1 = true;
+          }
           cnn_add_spec(e.cnn, elm, len_angl, b.cnn);
         }
 
@@ -12153,7 +12159,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(inset.is_order_row == specification_order_row_types.Продукция) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();

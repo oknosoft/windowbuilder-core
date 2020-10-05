@@ -736,7 +736,7 @@ set values(v){this._setter_ts('values',v)}
           });
         }
       }
-      else if(row.value.is_folder) {
+      else if(row.value && row.value.is_folder) {
         row.value._manager.find_rows({parent: row.value}, (value) => {
           !value.is_folder && values.push({
             value,
