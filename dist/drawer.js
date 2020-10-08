@@ -9431,6 +9431,15 @@ class Scheme extends paper.Project {
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       this.notify(this, 'scheme_changed');
+      const {_select_template: st} = ox._manager._owner.templates;
+      if(st) {
+        if(st.sys != obj.sys) {
+          st.sys = obj.sys;
+        }
+        if(st.clr != obj.clr) {
+          st.clr = obj.clr;
+        }
+      }
     }
 
     if(fields.hasOwnProperty('clr')) {
@@ -9473,18 +9482,18 @@ class Scheme extends paper.Project {
 
   }
 
-  set_sys(sys) {
+  set_sys(sys, defaults) {
 
     const {_dp, ox} = this;
 
-    if(_dp.sys === sys) {
+    if(_dp.sys === sys && !defaults) {
       return;
     }
 
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true);
+    _dp.sys.refill_prm(ox, 0, true, null, defaults);
 
     this.l_connective.on_sys_changed();
     for (const contour of this.contours) {
@@ -9523,6 +9532,15 @@ class Scheme extends paper.Project {
     }
     if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
       this.register_change();
+      const {job_prm: {builder}, cat: {templates}} = $p;
+      const {_select_template: st} = templates;
+      if(st && builder.base_props && builder.base_props.includes(obj.param)) {
+        let prow = st.params.find({param: obj.param});
+        if(!prow) {
+          prow = st.params.add({param: obj.param, value: obj.value});
+        }
+        prow.value = obj.value;
+      }
     }
   }
 
@@ -10144,7 +10162,7 @@ class Scheme extends paper.Project {
     return svg.outerHTML;
   }
 
-  load_stamp(obx, is_snapshot) {
+  load_stamp(obx, is_snapshot, no_refill) {
 
     const do_load = (obx) => {
 
@@ -10159,7 +10177,7 @@ class Scheme extends paper.Project {
 
       if(!is_snapshot) {
         ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === $p.enm.obj_delivery_states.Шаблон) ? obx : obx.base_block;
-        if(obx.calc_order.refill_props) {
+        if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
       }
@@ -15516,7 +15534,7 @@ $p.CatProduction_params.prototype.__define({
 	},
 
 	refill_prm: {
-		value: function refill_prm(ox, cnstr = 0, force, project) {
+		value: function refill_prm(ox, cnstr = 0, force, project, defaults) {
 
 			const prm_ts = !cnstr ? this.product_params : this.furn_params;
 			const adel = [];
@@ -15530,11 +15548,17 @@ $p.CatProduction_params.prototype.__define({
           return false;
         });
 
+        let {value} = proto;
+        const drow = defaults && defaults.find({param: proto.param});
+        if(drow) {
+          value = drow.value;
+        }
+
         if(!row){
           if(cnstr){
             return;
           }
-          row = params.add({cnstr: cnstr, param: proto.param, value: proto.value});
+          row = params.add({cnstr: cnstr, param: proto.param, value});
         }
 
         const links = proto.param.params_links({grid: {selection: {cnstr}}, obj: row});
@@ -15543,8 +15567,8 @@ $p.CatProduction_params.prototype.__define({
           row.hide = hide;
         }
 
-        if(proto.forcibly && row.value != proto.value){
-          row.value = proto.value;
+        if((proto.forcibly || drow) && row.value != value){
+          row.value = value;
         }
       }
 

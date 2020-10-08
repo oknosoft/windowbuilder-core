@@ -138,6 +138,15 @@ class Scheme extends paper.Project {
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
+      const {_select_template: st} = ox._manager._owner.templates;
+      if(st) {
+        if(st.sys != obj.sys) {
+          st.sys = obj.sys;
+        }
+        if(st.clr != obj.clr) {
+          st.clr = obj.clr;
+        }
+      }
     }
 
     if(fields.hasOwnProperty('clr')) {
@@ -185,19 +194,20 @@ class Scheme extends paper.Project {
   /**
    * устанавливает систему
    * @param sys
+   * @param [defaults]
    */
-  set_sys(sys) {
+  set_sys(sys, defaults) {
 
     const {_dp, ox} = this;
 
-    if(_dp.sys === sys) {
+    if(_dp.sys === sys && !defaults) {
       return;
     }
 
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true);
+    _dp.sys.refill_prm(ox, 0, true, null, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
     this.l_connective.on_sys_changed();
@@ -251,6 +261,15 @@ class Scheme extends paper.Project {
     }
     if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
       this.register_change();
+      const {job_prm: {builder}, cat: {templates}} = $p;
+      const {_select_template: st} = templates;
+      if(st && builder.base_props && builder.base_props.includes(obj.param)) {
+        let prow = st.params.find({param: obj.param});
+        if(!prow) {
+          prow = st.params.add({param: obj.param, value: obj.value});
+        }
+        prow.value = obj.value;
+      }
     }
   }
 
@@ -1051,8 +1070,9 @@ class Scheme extends paper.Project {
    * @method load_stamp
    * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
    * @param is_snapshot {Boolean}
+   * @param no_refill {Boolean}
    */
-  load_stamp(obx, is_snapshot) {
+  load_stamp(obx, is_snapshot, no_refill) {
 
     const do_load = (obx) => {
 
@@ -1070,7 +1090,7 @@ class Scheme extends paper.Project {
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
         ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === $p.enm.obj_delivery_states.Шаблон) ? obx : obx.base_block;
-        if(obx.calc_order.refill_props) {
+        if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
       }

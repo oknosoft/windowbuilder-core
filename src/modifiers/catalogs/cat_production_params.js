@@ -140,12 +140,14 @@ $p.CatProduction_params.prototype.__define({
 
 	/**
 	 * @method refill_prm
-	 * @for cat.Production_params
 	 * @param ox {Characteristics} - объект характеристики, табчасть которого надо перезаполнить
 	 * @param cnstr {Nomber} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
+   * @param [force] {Boolean} - перезаполнять принудительно
+   * @param [project] {Scheme} - текущий проект
+   * @param [defaults] {TabularSection} - внешние умоляания
 	 */
 	refill_prm: {
-		value: function refill_prm(ox, cnstr = 0, force, project) {
+		value: function refill_prm(ox, cnstr = 0, force, project, defaults) {
 
 			const prm_ts = !cnstr ? this.product_params : this.furn_params;
 			const adel = [];
@@ -159,12 +161,18 @@ $p.CatProduction_params.prototype.__define({
           return false;
         });
 
+        let {value} = proto;
+        const drow = defaults && defaults.find({param: proto.param});
+        if(drow) {
+          value = drow.value;
+        }
+
         // если не найден параметр изделия - добавляем. если нет параметра фурнитуры - пропускаем
         if(!row){
           if(cnstr){
             return;
           }
-          row = params.add({cnstr: cnstr, param: proto.param, value: proto.value});
+          row = params.add({cnstr: cnstr, param: proto.param, value});
         }
 
         const links = proto.param.params_links({grid: {selection: {cnstr}}, obj: row});
@@ -173,8 +181,8 @@ $p.CatProduction_params.prototype.__define({
           row.hide = hide;
         }
 
-        if(proto.forcibly && row.value != proto.value){
-          row.value = proto.value;
+        if((proto.forcibly || drow) && row.value != value){
+          row.value = value;
         }
       }
 
