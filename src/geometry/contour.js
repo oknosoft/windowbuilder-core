@@ -1265,17 +1265,13 @@ class Contour extends AbstractFilling(paper.Layer) {
             const height = bounds.height - offsets;
             if (height >= step) {
               if (do_center) {
-                add_impost(bounds.centerY);
                 /*stp - количество повторений рёбер от центра */
-                var stp = Math.trunc((-bounds.top - (-bounds.centerY)) / step);
-
-                const {
-                  top,
-                  buttom,
-                  centerY
-                } = bounds;
+                const {top, centerY} = bounds;
+                const stp = Math.trunc((-top - (-centerY)) / step);
                 /*Размер одного смещения от центра */
                 const mv = (top - centerY) / (stp + 1);
+
+                add_impost(centerY);
                 if (stp >= 1) {
                   for (let y = 1; y <= stp; y += 1) {
                     add_impost(centerY + (mv * y));
