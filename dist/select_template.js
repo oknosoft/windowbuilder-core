@@ -17,7 +17,8 @@ export default function ({classes, cat: {characteristics, templates, params_link
       this._meta = utils._clone(characteristics.metadata());
       this._meta.fields.template_props = templates.metadata('template_props');
       this._meta.fields.refill = utils._clone(params_links.metadata('hide'));
-      this._meta.tabular_sections = {};
+      const {params} = this._meta.tabular_sections;
+      this._meta.tabular_sections = {params};
 
       const permitted_sys = this.permitted_sys.bind(this);
       Object.defineProperty(this._meta.fields.sys, 'choice_params', {
@@ -80,11 +81,22 @@ export default function ({classes, cat: {characteristics, templates, params_link
       this._setter('sys', v);
     }
 
+    get clr() {
+      return this._getter('clr');
+    }
+    set clr(v) {
+      this._setter('clr', v);
+    }
+
     get template_props() {
       return this._getter('template_props');
     }
     set template_props(v) {
       this._setter('template_props', v);
+    }
+
+    get params() {
+      return this._getter_ts('params');
     }
 
     value_change(field, type, value) {
