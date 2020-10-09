@@ -172,7 +172,7 @@ $p.CatProduction_params.prototype.__define({
           if(cnstr){
             return;
           }
-          row = params.add({cnstr: cnstr, param: proto.param, value});
+          row = params.add({param: proto.param, cnstr, value});
         }
 
         const links = proto.param.params_links({grid: {selection: {cnstr}}, obj: row});
@@ -181,7 +181,7 @@ $p.CatProduction_params.prototype.__define({
           row.hide = hide;
         }
 
-        if((proto.forcibly || drow) && row.value != value){
+        if((proto.forcibly || drow) && value !== undefined && row.value != value){
           row.value = value;
         }
       }
