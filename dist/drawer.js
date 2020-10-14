@@ -5866,9 +5866,9 @@ Object.defineProperties(paper.Path.prototype, {
         return false;
       }
       else {
-        const da = firstCurve.point1.getDirectedAngle(firstCurve.point2);
+        const da = firstCurve.point2.subtract(firstCurve.point1).angle;
         for (let i = 1; i < curves.length; i++) {
-          const dc = curves[i].point1.getDirectedAngle(curves[i].point2);
+          const dc = curves[i].point2.subtract(curves[i].point1).angle;
           if(Math.abs(dc - da) > consts.epsilon) {
             return false;
           }
@@ -7322,7 +7322,7 @@ class ProfileItem extends GeneratrixElement {
       return Изнутри;
     }
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
-      rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
+    rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
 
   set_generatrix_radius(height) {
@@ -8069,6 +8069,27 @@ class ProfileItem extends GeneratrixElement {
 
 }
 
+EditorInvisible.ProfileItem = ProfileItem;
+EditorInvisible.ProfileRays = ProfileRays;
+EditorInvisible.CnnPoint = CnnPoint;
+
+
+
+class ProfileBundle extends ProfileItem {
+
+}
+
+class BundleRange extends paper.Group {
+
+}
+
+EditorInvisible.ProfileBundle = ProfileBundle;
+EditorInvisible.BundleRange = ProfileBundle;
+
+
+
+
+
 
 class Profile extends ProfileItem {
 
@@ -8381,9 +8402,6 @@ class Profile extends ProfileItem {
 }
 
 EditorInvisible.Profile = Profile;
-EditorInvisible.ProfileItem = ProfileItem;
-EditorInvisible.ProfileRays = ProfileRays;
-EditorInvisible.CnnPoint = CnnPoint;
 
 
 

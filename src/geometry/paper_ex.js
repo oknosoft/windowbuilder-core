@@ -129,9 +129,9 @@ Object.defineProperties(paper.Path.prototype, {
       }
       else {
         // если у всех кривых пути одинаковые направленные углы - путь прямой
-        const da = firstCurve.point1.getDirectedAngle(firstCurve.point2);
+        const da = firstCurve.point2.subtract(firstCurve.point1).angle;
         for (let i = 1; i < curves.length; i++) {
-          const dc = curves[i].point1.getDirectedAngle(curves[i].point2);
+          const dc = curves[i].point2.subtract(curves[i].point1).angle;
           if(Math.abs(dc - da) > consts.epsilon) {
             return false;
           }
