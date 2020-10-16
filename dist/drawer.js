@@ -4316,7 +4316,6 @@ class BuilderElement extends paper.Group {
 EditorInvisible.BuilderElement = BuilderElement;
 
 
-
 class Filling extends AbstractFilling(BuilderElement) {
 
   constructor(attr) {
@@ -4406,7 +4405,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   }
 
-
   save_coordinates() {
 
     const {_row, project, profiles, bounds, imposts, nom} = this;
@@ -4484,9 +4482,8 @@ class Filling extends AbstractFilling(BuilderElement) {
       delete profiles[i].aperture_path;
     }
 
-    imposts.forEach((curr) => curr.save_coordinates());
+    imposts.forEach((onlay) => onlay.save_coordinates());
   }
-
 
   create_leaf(furn, direction) {
 
@@ -4505,6 +4502,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     else {
       this.parent = contour;
       _row.cnstr = contour.cnstr;
+      this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
     }
 
     if(direction) {
@@ -4520,11 +4518,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     return contour;
   }
 
-
   cnn_side() {
     return $p.enm.cnn_sides.Изнутри;
   }
-
 
   nearest() {
     return null;
@@ -4561,7 +4557,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
   }
-
 
   redraw() {
 
@@ -4628,7 +4623,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
 
-
   draw_fragment() {
     const {l_dimensions, layer, path} = this;
     this.visible = true;
@@ -4647,7 +4641,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     lv.visible = true;
     layer.zoom_fit();
   }
-
 
   set_inset(v, ignore_select) {
 
@@ -4673,7 +4666,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.set_inset(inset);
   }
 
-
   set_clr(v, ignore_select) {
     if(!ignore_select && this.project.selectedItems.length > 1){
       this.project.selected_glasses().forEach((elm) => {
@@ -4684,7 +4676,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     super.set_clr(v);
   }
-
 
   purge_paths() {
     const paths = this.children.filter((child) => child instanceof paper.Path);
@@ -4700,7 +4691,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       destination: path.bounds.topRight
     });
   }
-
 
   formula(by_art) {
     let res;
@@ -4723,7 +4713,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res || (by_art ? this.inset.article || this.inset.name : this.inset.name);
   }
 
-
   deselect_onlay_points() {
     for(const {generatrix} of this.imposts) {
       generatrix.segments.forEach((segm) => {
@@ -4737,7 +4726,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
 
-
   get imposts() {
     return this.getItems({class: Onlay});
   }
@@ -4746,13 +4734,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr._profiles || [];
   }
 
-
   remove_onlays() {
     for(let onlay of this.imposts){
       onlay.remove();
     }
   }
-
 
   remove() {
     this.remove_onlays();
@@ -4761,21 +4747,17 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
 
-
   get area() {
     return (this.bounds.area / 1e6).round(5);
   }
-
 
   get form_area() {
     return (this.path.area/1e6).round(5);
   }
 
-
   interiorPoint() {
     return this.path.interiorPoint;
   }
-
 
   get is_rectangular() {
     const {profiles, path} = this;
@@ -4785,7 +4767,6 @@ class Filling extends AbstractFilling(BuilderElement) {
   get generatrix() {
     return this.path;
   }
-
 
   get path() {
     return this._attr.path;
@@ -4907,11 +4888,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res;
   }
 
-
   get outer_profiles() {
     return this.profiles;
   }
-
 
   get perimeter() {
     const res = [];
@@ -4933,7 +4912,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {path} = this;
     return path ? path.bounds : new paper.Rectangle();
   }
-
 
   perimeter_inner(size = 0) {
     const {center} = this.bounds;
@@ -4972,7 +4950,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
   }
 
-
   bounds_light(size = 0) {
     const path = new paper.Path({insert: false});
     for (const {sub_path} of this.perimeter_inner(size)) {
@@ -4985,32 +4962,26 @@ class Filling extends AbstractFilling(BuilderElement) {
     return path.bounds;
   }
 
-
   get x1() {
     return (this.bounds.left - this.project.bounds.x).round(1);
   }
-
 
   get x2() {
     return (this.bounds.right - this.project.bounds.x).round(1);
   }
 
-
   get y1() {
     return (this.project.bounds.height + this.project.bounds.y - this.bounds.bottom).round(1);
   }
-
 
   get y2() {
     return (this.project.bounds.height + this.project.bounds.y - this.bounds.top).round(1);
   }
 
-
   get info() {
     const {elm, bounds, thickness} = this;
     return "№" + elm + " w:" + bounds.width.toFixed(0) + " h:" + bounds.height.toFixed(0) + " z:" + thickness.toFixed(0);
   }
-
 
   get oxml() {
     const oxml = {

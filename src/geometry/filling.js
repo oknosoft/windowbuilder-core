@@ -197,7 +197,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
 
     // дочерние раскладки
-    imposts.forEach((curr) => curr.save_coordinates());
+    imposts.forEach((onlay) => onlay.save_coordinates());
   }
 
   /**
@@ -224,6 +224,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     else {
       this.parent = contour;
       _row.cnstr = contour.cnstr;
+      // дочерние раскладки
+      this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
     }
 
     // фурнитура и параметры по умолчанию
