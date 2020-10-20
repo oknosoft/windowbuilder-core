@@ -619,9 +619,9 @@ class Scheme extends paper.Project {
    * @param [attr.format] {String} - [svg, png, pdf] - (по умолчению - png)
    * @param [attr.children] {Boolean} - выводить вложенные контуры (по умолчению - Нет)
    */
-  draw_fragment(attr) {
+  draw_fragment(attr = {}) {
 
-    const {l_dimensions, l_connective} = this;
+    const {l_dimensions, l_connective, _attr} = this;
 
     // скрываем все слои
     const contours = this.getItems({class: Contour});
@@ -630,6 +630,7 @@ class Scheme extends paper.Project {
     l_connective.visible = false;
 
     let elm;
+    _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
       elm && elm.draw_fragment && elm.draw_fragment();
@@ -646,8 +647,32 @@ class Scheme extends paper.Project {
         }
       });
     }
+    else {
+      const glasses = project.selected_glasses();
+      if(glasses.length) {
+        attr.elm = glasses[0].elm;
+        return this.draw_fragment(attr);
+      }
+    }
     this.view.update();
     return elm;
+  }
+
+  reset_fragment() {
+    const {l_dimensions, l_connective, _attr, view} = this;
+
+    if(_attr.elm_fragment > 0) {
+      const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+      elm && elm.reset_fragment && elm.reset_fragment();
+    }
+
+    // показываем серытые слои
+    const contours = this.getItems({class: Contour});
+    contours.forEach((l) => l.hidden = false);
+    l_dimensions.visible = true;
+    l_connective.visible = true;
+    view.update();
+    this.zoom_fit();
   }
 
   /**

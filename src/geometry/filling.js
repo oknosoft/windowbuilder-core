@@ -385,6 +385,21 @@ class Filling extends AbstractFilling(BuilderElement) {
     layer.zoom_fit();
   }
 
+  reset_fragment() {
+    const {_attr, layer, path} = this;
+    if(_attr._dimlns) {
+      _attr._dimlns.remove();
+      delete _attr._dimlns;
+    }
+    path.set({
+      strokeColor: null,
+      strokeWidth: 0,
+      strokeScaling: true,
+      opacity: 1,
+    });
+    this.visible = !layer.hidden;
+  }
+
   /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
