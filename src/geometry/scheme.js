@@ -57,17 +57,23 @@ class Scheme extends paper.Project {
 
       if(contours.length) {
 
-        // перерисовываем соединительные профили
-        this.l_connective.redraw();
+        if(_attr.elm_fragment > 0) {
+          const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+          elm && elm.draw_fragment && elm.draw_fragment(true);
+        }
+        else {
+          // перерисовываем соединительные профили
+          this.l_connective.redraw();
 
-        // обновляем связи параметров изделия
-        isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
+          // TODO: обновляем связи параметров изделия
+          isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
 
-        // перерисовываем все контуры
-        for (let contour of contours) {
-          contour.redraw();
-          if(this._ch.length > length) {
-            return;
+          // перерисовываем все контуры
+          for (let contour of contours) {
+            contour.redraw();
+            if(this._ch.length > length) {
+              return;
+            }
           }
         }
 
@@ -625,15 +631,21 @@ class Scheme extends paper.Project {
 
     // скрываем все слои
     const contours = this.getItems({class: Contour});
-    contours.forEach((l) => l.hidden = true);
-    l_dimensions.visible = false;
-    l_connective.visible = false;
+
+    if(attr.elm) {
+      contours.forEach((l) => l.hidden = true);
+      l_dimensions.visible = false;
+      l_connective.visible = false;
+    }
 
     let elm;
     _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
-      elm && elm.draw_fragment && elm.draw_fragment();
+      if(elm && elm.draw_fragment) {
+        elm.selected = false;
+        elm.draw_fragment();
+      }
     }
     else if(attr.elm < 0) {
       const cnstr = -attr.elm;
@@ -648,10 +660,18 @@ class Scheme extends paper.Project {
       });
     }
     else {
-      const glasses = project.selected_glasses();
+      const glasses = this.selected_glasses();
       if(glasses.length) {
         attr.elm = glasses[0].elm;
+        this.deselectAll();
         return this.draw_fragment(attr);
+      }
+      else {
+        const {activeLayer} = this;
+        if(activeLayer.cnstr) {
+          attr.elm = -activeLayer.cnstr;
+          return this.draw_fragment(attr);
+        }
       }
     }
     this.view.update();
@@ -665,6 +685,7 @@ class Scheme extends paper.Project {
       const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
       elm && elm.reset_fragment && elm.reset_fragment();
     }
+    _attr.elm_fragment = 0;
 
     // показываем серытые слои
     const contours = this.getItems({class: Contour});

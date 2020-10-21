@@ -1946,7 +1946,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   redraw() {
 
-    if (!this.visible) {
+    if (!this.visible || this.hidden) {
       return;
     }
 

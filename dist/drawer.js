@@ -2037,7 +2037,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   redraw() {
 
-    if (!this.visible) {
+    if (!this.visible || this.hidden) {
       return;
     }
 
@@ -2956,8 +2956,6 @@ EditorInvisible.DimensionLayer = DimensionLayer;
 
 
 
-
-
 class DimensionLine extends paper.Group {
 
   constructor(attr) {
@@ -3036,6 +3034,9 @@ class DimensionLine extends paper.Group {
 
   _click(event) {
     event.stop();
+    if(this.project._attr.elm_fragment > 0) {
+      return ;
+    }
     if(typeof EditorInvisible.RulerWnd === 'function') {
       this.wnd = new EditorInvisible.RulerWnd(null, this);
       this.wnd.size = this.size;
@@ -3115,7 +3116,6 @@ class DimensionLine extends paper.Group {
     }
 
   }
-
 
   sizes_wnd(event) {
 
@@ -3373,7 +3373,6 @@ class DimensionLine extends paper.Group {
     this.redraw();
   }
 
-
   remove() {
     if(this._row){
       this._row._owner.del(this._row);
@@ -3383,7 +3382,6 @@ class DimensionLine extends paper.Group {
     super.remove();
   }
 }
-
 
 
 class DimensionLineCustom extends DimensionLine {
@@ -3406,11 +3404,9 @@ class DimensionLineCustom extends DimensionLine {
 
   }
 
-
   get elm_type() {
     return $p.enm.elm_types.Размер;
   }
-
 
   save_coordinates() {
     const {_row, _attr, elm_type, pos, offset, size, align} = this;
@@ -4623,8 +4619,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
 
-  draw_fragment() {
-    const {l_dimensions, layer, path} = this;
+  draw_fragment(no_zoom) {
+    const {l_dimensions, layer, path, imposts} = this;
     this.visible = true;
     path.set({
       strokeColor: 'black',
@@ -4632,6 +4628,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       strokeScaling: false,
       opacity: 0.6,
     });
+    imposts.forEach((elm) => elm.redraw());
     l_dimensions.redraw(true);
     layer.draw_visualization();
     const {l_visualization: lv} = layer;
@@ -4639,7 +4636,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     lv._cnn && lv._cnn.removeChildren();
     lv._opening && lv._opening.removeChildren();
     lv.visible = true;
-    layer.zoom_fit();
+    !no_zoom && layer.zoom_fit();
   }
 
   reset_fragment() {
@@ -9375,14 +9372,20 @@ class Scheme extends paper.Project {
 
       if(contours.length) {
 
-        this.l_connective.redraw();
+        if(_attr.elm_fragment > 0) {
+          const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+          elm && elm.draw_fragment && elm.draw_fragment(true);
+        }
+        else {
+          this.l_connective.redraw();
 
-        isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
+          isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
 
-        for (let contour of contours) {
-          contour.redraw();
-          if(this._ch.length > length) {
-            return;
+          for (let contour of contours) {
+            contour.redraw();
+            if(this._ch.length > length) {
+              return;
+            }
           }
         }
 
@@ -9806,15 +9809,21 @@ class Scheme extends paper.Project {
     const {l_dimensions, l_connective, _attr} = this;
 
     const contours = this.getItems({class: Contour});
-    contours.forEach((l) => l.hidden = true);
-    l_dimensions.visible = false;
-    l_connective.visible = false;
+
+    if(attr.elm) {
+      contours.forEach((l) => l.hidden = true);
+      l_dimensions.visible = false;
+      l_connective.visible = false;
+    }
 
     let elm;
     _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
-      elm && elm.draw_fragment && elm.draw_fragment();
+      if(elm && elm.draw_fragment) {
+        elm.selected = false;
+        elm.draw_fragment();
+      }
     }
     else if(attr.elm < 0) {
       const cnstr = -attr.elm;
@@ -9829,10 +9838,18 @@ class Scheme extends paper.Project {
       });
     }
     else {
-      const glasses = project.selected_glasses();
+      const glasses = this.selected_glasses();
       if(glasses.length) {
         attr.elm = glasses[0].elm;
+        this.deselectAll();
         return this.draw_fragment(attr);
+      }
+      else {
+        const {activeLayer} = this;
+        if(activeLayer.cnstr) {
+          attr.elm = -activeLayer.cnstr;
+          return this.draw_fragment(attr);
+        }
       }
     }
     this.view.update();
@@ -9846,6 +9863,7 @@ class Scheme extends paper.Project {
       const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
       elm && elm.reset_fragment && elm.reset_fragment();
     }
+    _attr.elm_fragment = 0;
 
     const contours = this.getItems({class: Contour});
     contours.forEach((l) => l.hidden = false);
