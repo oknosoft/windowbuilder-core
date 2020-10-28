@@ -74,6 +74,10 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
     return this._scope.project;
   }
 
+  get mover() {
+    return this._scope._mover;
+  }
+
 };
 
 
