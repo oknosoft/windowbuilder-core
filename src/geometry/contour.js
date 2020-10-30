@@ -851,6 +851,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {ox} = this.project;
       ox.coordinates.clear({cnstr});
       ox.params.clear({cnstr});
+      //Удаляем вставки
+      ox.inserts.clear({cnstr});
 
       // удаляем себя
       if (ox === _row._owner._owner) {
@@ -1141,9 +1143,20 @@ class Contour extends AbstractFilling(paper.Layer) {
             const height = bounds.height - offsets;
             if (height >= step) {
               if (do_center) {
-                add_impost(bounds.centerY);
-              }
-              else {
+                /*stp - количество повторений рёбер от центра */
+                const {top, centerY} = bounds;
+                const stp = Math.trunc((-top - (-centerY)) / step);
+                /*Размер одного смещения от центра */
+                const mv = (top - centerY) / (stp + 1);
+
+                add_impost(centerY);
+                if (stp >= 1) {
+                  for (let y = 1; y <= stp; y += 1) {
+                    add_impost(centerY + (mv * y));
+                    add_impost(centerY - (mv * y));
+                  }
+                }
+              } else {
                 for (let y = step; y < height; y += step) {
                   add_impost(y);
                 }
@@ -2141,6 +2154,38 @@ class Contour extends AbstractFilling(paper.Layer) {
       _row.h_ruch = 0;
     }
     project._dp._manager.emit('update', this, {h_ruch: true});
+  }
+
+  /**
+   * Элемент, вокруг образующей которого повёрнут слой
+   * @return {BuilderElement}
+   */
+  get rotation_elm() {
+    const {_row, project} = this;
+    return _row.rotation_elm ? project.getItem({class: BuilderElement, elm: _row.rotation_elm}) : null;
+  }
+  set rotation_elm(v) {
+    const {_row, project} = this;
+    if(v instanceof BuilderElement) {
+      _row.rotation_elm = v.elm;
+    }
+    else if(typeof v === 'number') {
+      const elm = project.getItem({class: BuilderElement, elm: v});
+      if(v) {
+        _row.rotation_elm = v;
+      }
+    }
+  }
+
+  /**
+   * Угол поворота в пространстве
+   * @return {Number}
+   */
+  get angle3d() {
+    return this._row.angle3d;
+  }
+  set angle3d(v) {
+    return this._row.angle3d = v;
   }
 
   /**

@@ -37,8 +37,7 @@ const consts = {
 		this.font_size = builder.font_size || 90;
     this.font_family = builder.font_family || 'GOST type B';
     this.elm_font_size = builder.elm_font_size || 60;
-    // если габариты изделия больше этого значения, увеличиваем шрифт
-    this.cutoff = builder.cutoff || 1300;
+    this.cutoff = builder.cutoff || 1300; // если габариты изделия больше этого значения, увеличиваем шрифт
 
     if(!builder.font_family) {
       builder.font_family = this.font_family;

@@ -133,19 +133,20 @@ class Scheme extends paper.Project {
   /**
    * устанавливает систему
    * @param sys
+   * @param [defaults]
    */
-  set_sys(sys) {
+  set_sys(sys, defaults) {
 
     const {_dp, ox} = this;
 
-    if(_dp.sys === sys) {
+    if(_dp.sys === sys && !defaults) {
       return;
     }
 
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true);
+    _dp.sys.refill_prm(ox, 0, true, null, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
     this.l_connective.on_sys_changed();
@@ -199,6 +200,15 @@ class Scheme extends paper.Project {
     }
     if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
       this.register_change();
+      const {job_prm: {builder}, cat: {templates}} = $p;
+      const {_select_template: st} = templates;
+      if(st && builder.base_props && builder.base_props.includes(obj.param)) {
+        let prow = st.params.find({param: obj.param});
+        if(!prow) {
+          prow = st.params.add({param: obj.param, value: obj.value});
+        }
+        prow.value = obj.value;
+      }
     }
   }
 
@@ -395,17 +405,19 @@ class Scheme extends paper.Project {
       _scheme.ox = o;
 
       // включаем перерисовку
+      _attr._opened = true;
       _attr._bounds = new paper.Rectangle({
         point: [0, 0],
         size: [o.x, o.y]
       });
 
       // первым делом создаём соединители и опорные линии
+      const {enm: {elm_types}, cat: {templates}} = $p;
       o.coordinates.forEach((row) => {
-        if(row.elm_type === $p.enm.elm_types.Соединитель) {
+        if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
         }
-        else if(row.elm_type === $p.enm.elm_types.Линия) {
+        else if(row.elm_type === elm_types.Линия) {
           new BaseLine({row});
         }
       });
@@ -425,6 +437,9 @@ class Scheme extends paper.Project {
 
       // перерисовываем каркас
       _scheme.redraw(from_service);
+
+      // ограничиваем список систем в интерфейсе
+      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve, reject) => {
@@ -542,20 +557,27 @@ class Scheme extends paper.Project {
    * @param [attr.format] {String} - [svg, png, pdf] - (по умолчению - png)
    * @param [attr.children] {Boolean} - выводить вложенные контуры (по умолчению - Нет)
    */
-  draw_fragment(attr) {
+  draw_fragment(attr = {}) {
 
-    const {l_dimensions, l_connective} = this;
+    const {l_dimensions, l_connective, _attr} = this;
 
     // скрываем все слои
     const contours = this.getItems({class: Contour});
-    contours.forEach((l) => l.hidden = true);
-    l_dimensions.visible = false;
-    l_connective.visible = false;
+
+    if(attr.elm) {
+      contours.forEach((l) => l.hidden = true);
+      l_dimensions.visible = false;
+      l_connective.visible = false;
+    }
 
     let elm;
+    _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
-      elm && elm.draw_fragment && elm.draw_fragment();
+      if(elm && elm.draw_fragment) {
+        elm.selected = false;
+        elm.draw_fragment();
+      }
     }
     else if(attr.elm < 0) {
       const cnstr = -attr.elm;
@@ -569,8 +591,41 @@ class Scheme extends paper.Project {
         }
       });
     }
+    else {
+      const glasses = this.selected_glasses();
+      if(glasses.length) {
+        attr.elm = glasses[0].elm;
+        this.deselectAll();
+        return this.draw_fragment(attr);
+      }
+      else {
+        const {activeLayer} = this;
+        if(activeLayer.cnstr) {
+          attr.elm = -activeLayer.cnstr;
+          return this.draw_fragment(attr);
+        }
+      }
+    }
     this.view.update();
     return elm;
+  }
+
+  reset_fragment() {
+    const {l_dimensions, l_connective, _attr, view} = this;
+
+    if(_attr.elm_fragment > 0) {
+      const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+      elm && elm.reset_fragment && elm.reset_fragment();
+    }
+    _attr.elm_fragment = 0;
+
+    // показываем серытые слои
+    const contours = this.getItems({class: Contour});
+    contours.forEach((l) => l.hidden = false);
+    l_dimensions.visible = true;
+    l_connective.visible = true;
+    view.update();
+    this.zoom_fit();
   }
 
   /**
@@ -1042,8 +1097,9 @@ class Scheme extends paper.Project {
    * @method load_stamp
    * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
    * @param is_snapshot {Boolean}
+   * @param no_refill {Boolean}
    */
-  load_stamp(obx, is_snapshot) {
+  load_stamp(obx, is_snapshot, no_refill) {
 
     const do_load = (obx) => {
 
@@ -1055,12 +1111,13 @@ class Scheme extends paper.Project {
       // переприсваиваем номенклатуру, цвет и размеры
       const src = Object.assign({_not_set_loaded: true}, is_snapshot ? obx : obx._obj);
       ox._mixin(src, null,
-        'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,_rev'.split(','), true);
+        'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,obj_delivery_state,_rev'.split(','),
+        true);
 
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
         ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === $p.enm.obj_delivery_states.Шаблон) ? obx : obx.base_block;
-        if(obx.calc_order.refill_props) {
+        if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
       }
@@ -1490,7 +1547,7 @@ class Scheme extends paper.Project {
         if(profile && (!res.cnn || res.cnn.empty())) {
 
           // а есть ли подходящее?
-          cnns = $p.cat.cnns.nom_cnn(element, profile, acn.a);
+          cnns = $p.cat.cnns.nom_cnn(profile, element, acn.a);
           if(!cnns || !cnns.length) {
             return 1;
           }
@@ -1665,8 +1722,8 @@ class Scheme extends paper.Project {
       const {parent} = item;
       if(parent instanceof ProfileItem) {
         if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
-          if(res.indexOf(parent) != -1) {
-            return;
+          if(res.includes(parent)) {
+            continue;
           }
           if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
             res.push(parent);

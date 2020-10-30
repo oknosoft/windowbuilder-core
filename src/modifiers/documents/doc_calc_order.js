@@ -217,6 +217,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
+    const err_prices = this.check_prices();
+    if(err_prices) {
+      msg.show_msg && msg.show_msg({
+        type: 'alert-warning',
+        title: 'Ошибки в заказе',
+        text: `Пустая цена ${err_prices.nom}`,
+      });
+      if (!must_be_saved) {
+        if(obj_delivery_state == Отправлен) {
+          this.obj_delivery_state = 'Черновик';
+        }
+        return false;
+      }
+    }
+
     // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
@@ -279,6 +294,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // фильтр по статусу
     if(obj_delivery_state == 'Шаблон') {
       _obj.state = 'template';
+      // Шаблоны имеют дополнительное свойство, в котором можно задать доступные системы
+      const permitted_sys = $p.cch.properties.predefined('permitted_sys');
+      if(permitted_sys) {
+        if(!this.extra_fields.find({property: permitted_sys})) {
+          this.extra_fields.add({property: permitted_sys});
+        }
+      }
     }
     else if(category == 'service') {
       _obj.state = 'service';
@@ -331,6 +353,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .then(() => this);
 
+  }
+
+  // проверяет заполненность цен
+  check_prices() {
+    let err;
+    const {pricing} = $p;
+    this.production.forEach((calc_order_row) => {
+      const attr = {calc_order_row};
+      pricing.price_type(attr);
+      err = pricing.check_prices(attr);
+      if(err) {
+        return false;
+      }
+    });
+    return err;
   }
 
   // при изменении реквизита

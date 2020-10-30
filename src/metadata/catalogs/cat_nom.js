@@ -4,6 +4,7 @@ exports.CatNomManager = class CatNomManager extends Object {
   load_array(aattr, forse) {
     // если внутри номенклатуры завёрнуты единицы - вытаскиваем
     const units = [];
+    const prices = {};
     for(const row of aattr) {
       if(row.units) {
         row.units.split('\n').forEach((urow) => {
@@ -22,6 +23,10 @@ exports.CatNomManager = class CatNomManager extends Object {
         });
         delete row.units;
       }
+      if(row._price) {
+        prices[row.ref] = row._price;
+        delete row._price;
+      }
     }
     const res = super.load_array(aattr, forse);
     const {currencies, nom_units} = this._owner;
@@ -29,12 +34,12 @@ exports.CatNomManager = class CatNomManager extends Object {
 
     // если внутри номенклатуры завёрнуты цены - вытаскиваем
     for(const {_data, _obj} of res) {
-      if(_obj._price) {
-        _data._price = _obj._price;
-        delete _obj._price;
-        for(const ox in _data._price) {
-          for(const type in _data._price[ox]) {
-            const v = _data._price[ox][type];
+      const _price = prices[_obj.ref];
+      if(_price) {
+        _data._price = _price;
+        for(const ox in _price) {
+          for(const type in _price[ox]) {
+            const v = _price[ox][type];
             Array.isArray(v) && v.forEach((row) => {
               row.date = new Date(row.date);
               row.currency = currencies.get(row.currency);
@@ -251,6 +256,25 @@ exports.CatNom = class CatNom extends Object {
 
     // Пересчитать из валюты в валюту
     return pricing.from_currency_to_currency(price, attr.date, currency, attr.currency);
+  }
+
+  /**
+   * Выясняет, назначена ли данной номенклатуре хотя бы одна цена
+   * @return {boolean}
+   */
+  has_price() {
+    const {_price} = this._data;
+    if(!_price) {
+      return false;
+    }
+    for(const cx in _price) {
+      for(const pt in _price[cx]) {
+        const prices = _price[cx][pt];
+        if(Array.isArray(prices) && prices.find(({price}) => price >= 0.01)) {
+          return true;
+        }
+      }
+    }
   }
 
   /**

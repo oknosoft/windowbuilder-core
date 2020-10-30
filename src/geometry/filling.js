@@ -197,7 +197,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
 
     // дочерние раскладки
-    imposts.forEach((curr) => curr.save_coordinates());
+    imposts.forEach((onlay) => onlay.save_coordinates());
   }
 
   /**
@@ -224,6 +224,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     else {
       this.parent = contour;
       _row.cnstr = contour.cnstr;
+      // дочерние раскладки
+      this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
     }
 
     // фурнитура и параметры по умолчанию
@@ -364,8 +366,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * ### Рисует заполнение отдельным элементом
    */
-  draw_fragment() {
-    const {l_dimensions, layer, path} = this;
+  draw_fragment(no_zoom) {
+    const {l_dimensions, layer, path, imposts} = this;
     this.visible = true;
     path.set({
       strokeColor: 'black',
@@ -373,6 +375,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       strokeScaling: false,
       opacity: 0.6,
     });
+    imposts.forEach((elm) => elm.redraw());
     l_dimensions.redraw(true);
     layer.draw_visualization();
     const {l_visualization: lv} = layer;
@@ -380,7 +383,22 @@ class Filling extends AbstractFilling(BuilderElement) {
     lv._cnn && lv._cnn.removeChildren();
     lv._opening && lv._opening.removeChildren();
     lv.visible = true;
-    layer.zoom_fit();
+    !no_zoom && layer.zoom_fit();
+  }
+
+  reset_fragment() {
+    const {_attr, layer, path} = this;
+    if(_attr._dimlns) {
+      _attr._dimlns.remove();
+      delete _attr._dimlns;
+    }
+    path.set({
+      strokeColor: null,
+      strokeWidth: 0,
+      strokeScaling: true,
+      opacity: 1,
+    });
+    this.visible = !layer.hidden;
   }
 
   /**

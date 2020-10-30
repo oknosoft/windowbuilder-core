@@ -11,7 +11,6 @@ const exclude = [
   'cat.abonents',
   'cat.servers',
   'cch.mdm_groups',
-  'cat.property_values_hierarchy',
   'doc.registers_correction',
   'ireg.delivery_schedules',
   'ireg.delivery_scheme',

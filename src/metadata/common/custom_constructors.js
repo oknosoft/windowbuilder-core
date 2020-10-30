@@ -127,6 +127,7 @@ class CatNomExtra_fieldsRow extends Extra_fieldsRow{}
 class CatOrganizationsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
+class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
 
 Object.assign($p, {
   CatFormulasParamsRow,
@@ -161,5 +162,6 @@ Object.assign($p, {
   CatOrganizationsExtra_fieldsRow,
   CatDivisionsExtra_fieldsRow,
   CatUsersExtra_fieldsRow,
+  CatProduction_paramsExtra_fieldsRow,
 });
 

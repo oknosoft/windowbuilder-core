@@ -37,15 +37,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
 
     return function sort_cnns(a, b) {
 
-      // отдаём предпочтение соединениям, для которых задана сторона
-      if(sides.includes(a.sd1) && !sides.includes(b.sd1)){
-        return -1;
-      }
-      if(sides.includes(b.sd1) && !sides.includes(a.sd1)){
-        return 1;
-      }
-
-      // далее, учитываем приоритет
+      // первым делом, учитываем приоритет (большой всплывает вверх)
       if (priority(a) > priority(b)) {
         return -1;
       }
@@ -53,7 +45,15 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
         return 1;
       }
 
-      // соединения с одинаковым приоритетом сортируем по типу - опускаем вниз крест и Т
+      // далее, отдаём предпочтение соединениям, для которых задана сторона
+      if(sides.includes(a.sd1) && !sides.includes(b.sd1)){
+        return -1;
+      }
+      if(sides.includes(b.sd1) && !sides.includes(a.sd1)){
+        return 1;
+      }
+
+      // соединения с одинаковым приоритетом и стороной сортируем по типу - опускаем вниз крест и Т
       if(a.cnn_type === xx && b.cnn_type !== xx){
         return 1;
       }

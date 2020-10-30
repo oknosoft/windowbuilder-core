@@ -25,7 +25,7 @@ exports.CatParams_links = class CatParams_links extends Object {
           });
         }
       }
-      else if(row.value.is_folder) {
+      else if(row.value && row.value.is_folder) {
         row.value._manager.find_rows({parent: row.value}, (value) => {
           !value.is_folder && values.push({
             value,
