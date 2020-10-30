@@ -2226,7 +2226,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {layer, _row} = this;
     return layer ? _row.h_ruch : 0;
   }
-
   set h_ruch(v) {
     const {layer, _row, project} = this;
 
@@ -2256,6 +2255,38 @@ class Contour extends AbstractFilling(paper.Layer) {
       _row.h_ruch = 0;
     }
     project._dp._manager.emit('update', this, {h_ruch: true});
+  }
+
+  /**
+   * Элемент, вокруг образующей которого повёрнут слой
+   * @return {BuilderElement}
+   */
+  get rotation_elm() {
+    const {_row, project} = this;
+    return _row.rotation_elm ? project.getItem({class: BuilderElement, elm: _row.rotation_elm}) : null;
+  }
+  set rotation_elm(v) {
+    const {_row, project} = this;
+    if(v instanceof BuilderElement) {
+      _row.rotation_elm = v.elm;
+    }
+    else if(typeof v === 'number') {
+      const elm = project.getItem({class: BuilderElement, elm: v});
+      if(v) {
+        _row.rotation_elm = v;
+      }
+    }
+  }
+
+  /**
+   * Угол поворота в пространстве
+   * @return {Number}
+   */
+  get angle3d() {
+    return this._row.angle3d;
+  }
+  set angle3d(v) {
+    return this._row.angle3d = v;
   }
 
   /**

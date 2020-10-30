@@ -20,7 +20,7 @@ const consts = {
 		this.font_size = builder.font_size || 90;
     this.font_family = builder.font_family || 'GOST type B';
     this.elm_font_size = builder.elm_font_size || 60;
-    this.cutoff = builder.cutoff || 1300;
+    this.cutoff = builder.cutoff || 1300; 
 
     if(!builder.font_family) {
       builder.font_family = this.font_family;
@@ -876,8 +876,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   glass_recalc() {
-    const {glass_contours} = this;
-    const glasses = this.glasses(true);
+    const {glass_contours} = this;      
+    const glasses = this.glasses(true); 
     const binded = new Set();
 
     for(const glass of glasses) {
@@ -1838,9 +1838,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     if (need_bind) {
       for (let i = 0; i < attr.length; i++) {
-        curr = attr[i];
+        curr = attr[i];             
         for (let j = 0; j < outer_nodes.length; j++) {
-          elm = outer_nodes[j];
+          elm = outer_nodes[j];   
           if (elm._attr.binded) {
             continue;
           }
@@ -2271,7 +2271,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {layer, _row} = this;
     return layer ? _row.h_ruch : 0;
   }
-
   set h_ruch(v) {
     const {layer, _row, project} = this;
 
@@ -2297,6 +2296,30 @@ class Contour extends AbstractFilling(paper.Layer) {
       _row.h_ruch = 0;
     }
     project._dp._manager.emit('update', this, {h_ruch: true});
+  }
+
+  get rotation_elm() {
+    const {_row, project} = this;
+    return _row.rotation_elm ? project.getItem({class: BuilderElement, elm: _row.rotation_elm}) : null;
+  }
+  set rotation_elm(v) {
+    const {_row, project} = this;
+    if(v instanceof BuilderElement) {
+      _row.rotation_elm = v.elm;
+    }
+    else if(typeof v === 'number') {
+      const elm = project.getItem({class: BuilderElement, elm: v});
+      if(v) {
+        _row.rotation_elm = v;
+      }
+    }
+  }
+
+  get angle3d() {
+    return this._row.angle3d;
+  }
+  set angle3d(v) {
+    return this._row.angle3d = v;
   }
 
   get side_count() {
@@ -3908,7 +3931,7 @@ class BuilderElement extends paper.Group {
   get _metadata() {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
-      _xfields = tabular_sections.coordinates.fields,
+      _xfields = tabular_sections.coordinates.fields, 
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: "Высота дуги"}),
       info = Object.assign({}, fields.note, {synonym: "Элемент"}),
@@ -5089,7 +5112,7 @@ class FreeText extends paper.PointText {
     const {_row} = this;
 
     if(!_row.cnstr){
-      _row.cnstr = attr.parent.layer.cnstr;
+      _row.cnstr = attr.parent ? attr.parent.layer.cnstr : this.project.activeLayer.cnstr;
     }
 
     if(!_row.elm){
@@ -6204,7 +6227,7 @@ Object.defineProperties(paper.Point.prototype, {
         if(dr >= 0) {
           const centr = this.arc_cntr(x1, y1, x2, y2, r, arc_ccw);
           dx = point.x - centr.x;
-          dy = point.y - centr.y;
+          dy = point.y - centr.y;	
           l = Math.sqrt(dx * dx + dy * dy);
 
           if(more_180) {
@@ -11083,7 +11106,7 @@ class Sectional extends GeneratrixElement {
     }));
 
     children.push(new AngleText({
-      point: center.add(end.multiply(-2.2)),
+      point: center.add(end.multiply(-2.2)), 
       content: angle.toFixed(0) + '°',
       fontSize: radius * 1.4,
       parent: layer,
@@ -11391,7 +11414,7 @@ class Pricing {
         price_prm = {
           price_type: price_type,
           characteristic: characteristic,
-          date: new Date(),
+          date: new Date(), 
           currency: _owner.doc_currency
         };
 
@@ -17250,6 +17273,6 @@ $p.md.once('predefined_elmnts_inited', () => {
   pouch.once('pouch_doc_ram_loaded', direct_templates);
 
 })($p);
-
+ 
 return EditorInvisible;
 }
