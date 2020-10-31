@@ -358,10 +358,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // проверяет заполненность цен
   check_prices() {
     let err;
+    const {pricing} = $p;
     this.production.forEach((calc_order_row) => {
       const attr = {calc_order_row};
-      $p.pricing.price_type(attr);
-      err = $p.pricing.check_prices(attr);
+      pricing.price_type(attr);
+      err = pricing.check_prices(attr);
       if(err) {
         return false;
       }

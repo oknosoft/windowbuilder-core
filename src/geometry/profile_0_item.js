@@ -724,7 +724,7 @@ class ProfileItem extends GeneratrixElement {
    * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
    *
    * @property orientation
-   * @type _enm.orientations
+   * @type EnmOrientations
    * @final
    */
   get orientation() {
@@ -732,15 +732,16 @@ class ProfileItem extends GeneratrixElement {
     if(angle_hor > 180) {
       angle_hor -= 180;
     }
+    const {orientations} = $p.enm;
     if((angle_hor > -consts.orientation_delta && angle_hor < consts.orientation_delta) ||
       (angle_hor > 180 - consts.orientation_delta && angle_hor < 180 + consts.orientation_delta)) {
-      return $p.enm.orientations.hor;
+      return orientations.hor;
     }
     if((angle_hor > 90 - consts.orientation_delta && angle_hor < 90 + consts.orientation_delta) ||
       (angle_hor > 270 - consts.orientation_delta && angle_hor < 270 + consts.orientation_delta)) {
-      return $p.enm.orientations.vert;
+      return orientations.vert;
     }
-    return $p.enm.orientations.incline;
+    return orientations.incline;
   }
 
   /**
@@ -1333,7 +1334,7 @@ class ProfileItem extends GeneratrixElement {
       return Изнутри;
     }
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
-    rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
+      rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
 
   /**

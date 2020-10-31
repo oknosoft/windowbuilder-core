@@ -127,7 +127,6 @@ class SpecBuilding {
 
       // рассчитываем стоимость продажи
       pricing.calc_amount(attr);
-
     }
 
     if(save && !attr.scheme && (ox.is_new() || ox._modified)){

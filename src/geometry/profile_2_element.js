@@ -8,9 +8,6 @@
  * @submodule profile
  */
 
-
-
-
 /**
  * ### Профиль
  * Класс описывает поведение сегмента профиля (створка, рама, импост)<br />
@@ -243,24 +240,23 @@ class Profile extends ProfileItem {
     };
 
     if(layer.profiles.some((curr) => {
-        if(curr != this) {
-          for(const pname of ['b', 'e']) {
-            //const cpoint = curr.cnn_point(pname);
-            const cpoint = curr.rays[pname];
-            if(cpoint.profile == this && cpoint.cnn) {
-              if(!cpoint.profile_point) {
-                if(check_only) {
-                  return true;
-                }
-                add_impost(curr.corns(1), curr, cpoint.point);
+      if(curr != this) {
+        for(const pname of ['b', 'e']) {
+          const cpoint = curr.rays[pname];
+          if(cpoint.profile == this && cpoint.cnn) {
+            if(!cpoint.profile_point) {
+              if(check_only) {
+                return true;
               }
-              else {
-                candidates[pname].push(curr.corns(1));
-              }
+              add_impost(curr.corns(1), curr, cpoint.point);
+            }
+            else {
+              candidates[pname].push(curr.corns(1));
             }
           }
         }
-      })) {
+      }
+    })) {
       return true;
     }
 
@@ -289,7 +285,7 @@ class Profile extends ProfileItem {
 
     this.layer.contours.forEach((contour) => {
       contour.profiles.forEach((profile) => {
-        if(profile.nearest(true) == this) {
+        if(profile.nearest(true) === this) {
           res.push(profile);
         }
       });
