@@ -1139,24 +1139,23 @@ class Contour extends AbstractFilling(paper.Layer) {
             });
           }
 
-          if (step) {
+          if(step) {
             const height = bounds.height - offsets;
-            if (height >= step) {
-              if (do_center) {
-                /*stp - количество повторений рёбер от центра */
+            if(height >= step) {
+              if(do_center) {
                 const {top, centerY} = bounds;
-                const stp = Math.trunc((-top - (-centerY)) / step);
-                /*Размер одного смещения от центра */
-                const mv = (top - centerY) / (stp + 1);
+                const stp = Math.trunc((-top - (-centerY)) / step); //stp - количество повторений рёбер от центра
+                const mv = (top - centerY) / (stp + 1); // размер одного смещения от центра
 
                 add_impost(centerY);
-                if (stp >= 1) {
+                if(stp >= 1) {
                   for (let y = 1; y <= stp; y += 1) {
                     add_impost(centerY + (mv * y));
                     add_impost(centerY - (mv * y));
                   }
                 }
-              } else {
+              }
+              else {
                 for (let y = step; y < height; y += step) {
                   add_impost(y);
                 }
