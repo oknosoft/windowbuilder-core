@@ -1,3 +1,4 @@
+
 /**
  * ### Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
