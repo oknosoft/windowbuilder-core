@@ -9724,11 +9724,12 @@ class Scheme extends paper.Project {
     }
   }
 
-  set_furn(furn) {
+  set_furn(furn, fprops) {
     for (const rama of this.contours) {
       for (const contour of rama.contours) {
-        if(!contour.furn.empty()) {
-          contour.furn = furn;
+        const props = fprops && fprops.get(contour.cnstr);
+        if(props || !contour.furn.empty()) {
+          contour.furn = props && props.furn ? props.furn : furn;
         }
       }
     }
