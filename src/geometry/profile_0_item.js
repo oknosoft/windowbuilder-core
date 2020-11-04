@@ -882,7 +882,6 @@ class ProfileItem extends GeneratrixElement {
   get opacity() {
     return this.path ? this.path.opacity : 1;
   }
-
   set opacity(v) {
     this.path && (this.path.opacity = v);
   }
@@ -894,6 +893,56 @@ class ProfileItem extends GeneratrixElement {
     const {cnn} = this.rays.b;
     const main_row = cnn && cnn.main_row(this);
     return main_row && main_row.angle_calc_method == $p.enm.angle_calculating_ways.СварнойШов ? -main_row.sz : 0;
+  }
+
+  /**
+   * Структура примыкающих заполнений
+   * @return {Object}
+   */
+  get nearest_glasses() {
+    const res = {
+      all: [],    // все
+      inner: [],  // изнутри по отношению к образующей
+      outer: [],  // снаружи по отношению к образующей
+      left: [],   // слева от элемента
+      right: [],  // справа от элемента
+      top: [],    // сверху
+      bottom: [], // снизу
+    };
+    const {layer, generatrix, orientation} = this;
+    for(const glass of layer.glasses(false, true)) {
+      for(const curr of glass.profiles) {
+        if(curr.profile === this) {
+          res.all.push(glass);
+          if(curr.outer) {
+            res.outer.push(glass);
+          }
+          else {
+            res.inner.push(glass);
+          }
+          const glpoint = glass.interiorPoint();
+          const vector = generatrix.getNearestPoint(glpoint).subtract(glpoint);
+          if(orientation === orientation._manager.hor) {
+            if(vector.y > 0) {
+              res.top.push(glass);
+            }
+            else {
+              res.bottom.push(glass);
+            }
+          }
+          else if (orientation === orientation._manager.vert) {
+            if(vector.x < 0) {
+              res.right.push(glass);
+            }
+            else {
+              res.left.push(glass);
+            }
+          }
+          break;
+        }
+      }
+    }
+    return res;
   }
 
   setSelection(selection) {
