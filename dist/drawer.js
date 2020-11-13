@@ -7048,7 +7048,7 @@ class ProfileItem extends GeneratrixElement {
             }
           }
           else if (orientation === orientation._manager.vert) {
-            if(vector.x > 0) {
+            if(vector.x < 0) {
               res.right.push(glass);
             }
             else {
