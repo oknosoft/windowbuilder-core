@@ -11315,8 +11315,6 @@ EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
 
 
-
-
 class Pricing {
 
   constructor({md, adapters}) {
@@ -11349,7 +11347,7 @@ class Pricing {
         pouch.emit('pouch_complete_loaded');
 
         if(pouch.local.doc === pouch.remote.doc) {
-          pouch.local.doc.changes({
+          this._changes = pouch.local.doc.changes({
             since: 'now',
             live: true,
             include_docs: true,
@@ -11425,7 +11423,6 @@ class Pricing {
     }
   }
 
-
   iname() {
     return $p.adapters.pouch.local.doc.get('_design/server_nom_prices')
       .catch(() => ({_id: '_design/doc'}))
@@ -11433,7 +11430,6 @@ class Pricing {
         return _id === '_design/doc' ? 'doc/doc_nom_prices_setup_slice_last' : 'server_nom_prices/slice_last';
       });
   }
-
 
   sync_local(pouch, step = 0) {
     const {utils} = $p;
@@ -11476,7 +11472,6 @@ class Pricing {
       });
   }
 
-
   by_local(step = 0) {
     const {adapters: {pouch}, job_prm} = $p;
 
@@ -11512,7 +11507,6 @@ class Pricing {
       });
   }
 
-
   by_range(startkey, step = 0) {
 
     const {pouch} = $p.adapters;
@@ -11540,7 +11534,6 @@ class Pricing {
       });
   }
 
-
   by_doc({goods}) {
     const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
     const {templates, doc} = $p.adapters.pouch.local;
@@ -11557,7 +11550,6 @@ class Pricing {
         this.build_cache(res.rows);
       });
   }
-
 
   nom_price(nom, characteristic, price_type, prm, row) {
 
@@ -11584,7 +11576,6 @@ class Pricing {
       return row.price;
     }
   }
-
 
   price_type(prm) {
 
@@ -11696,7 +11687,6 @@ class Pricing {
     return prm.price_type;
   }
 
-
   calc_first_cost(prm) {
 
     const {marginality_in_spec} = $p.job_prm.pricing;
@@ -11739,7 +11729,6 @@ class Pricing {
       this.calc_first_cost(fake_prm);
     });
   }
-
 
   calc_amount(prm) {
 
@@ -11790,7 +11779,6 @@ class Pricing {
 
   }
 
-
   check_prices(prm) {
     const {price_type_first_cost, price_type_sale} = prm.price_type;
     const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
@@ -11814,7 +11802,6 @@ class Pricing {
     });
     return err;
   }
-
 
   from_currency_to_currency (amount, date, from, to) {
 
@@ -11851,7 +11838,6 @@ class Pricing {
 
     return (amount * cfrom.course / cfrom.multiplicity) * cto.multiplicity / cto.course;
   }
-
 
   cut_upload () {
 
@@ -11990,7 +11976,6 @@ class Pricing {
   }
 
 }
-
 
 
 $p.pricing = new Pricing($p);

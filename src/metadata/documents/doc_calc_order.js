@@ -40,4 +40,4 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       });
   }
 
-}
+};
