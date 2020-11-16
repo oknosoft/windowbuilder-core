@@ -1,5 +1,16 @@
 exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
 
+  constructor(owner, class_name) {
+    super(owner, class_name);
+    const {input_by_string} = this.metadata();
+    if(!input_by_string.includes('client_of_dealer')) {
+      input_by_string.push('client_of_dealer');
+    }
+    if(!input_by_string.includes('shipping_address')) {
+      input_by_string.push('shipping_address');
+    }
+  }
+
   direct_load(force) {
     if(this._direct_loaded && !force) {
       return Promise.resolve();
@@ -29,4 +40,4 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       });
   }
 
-}
+};

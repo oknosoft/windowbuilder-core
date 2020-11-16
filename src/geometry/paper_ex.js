@@ -129,9 +129,9 @@ Object.defineProperties(paper.Path.prototype, {
       }
       else {
         // если у всех кривых пути одинаковые направленные углы - путь прямой
-        const da = firstCurve.point1.getDirectedAngle(firstCurve.point2);
+        const da = firstCurve.point2.subtract(firstCurve.point1).angle;
         for (let i = 1; i < curves.length; i++) {
-          const dc = curves[i].point1.getDirectedAngle(curves[i].point2);
+          const dc = curves[i].point2.subtract(curves[i].point1).angle;
           if(Math.abs(dc - da) > consts.epsilon) {
             return false;
           }
@@ -609,10 +609,10 @@ Object.defineProperties(paper.Point.prototype, {
 	 * Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
 	 *
 	 * @param [snapAngle] {Number} - шаг угла, по умолчанию 45°
-	 * @return {paper.Point}
+	 * @return {Point}
 	 */
 	snap_to_angle: {
-		value: function snap_to_angle(snapAngle) {
+		value: function snap_to_angle(snapAngle, shift) {
 
 			if(!snapAngle){
         snapAngle = Math.PI*2/8;
@@ -625,7 +625,9 @@ Object.defineProperties(paper.Point.prototype, {
 				diry = Math.sin(angle),
 				d = dirx*this.x + diry*this.y;
 
-			return new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
+			return shift || paper.Key.isDown('shift') ?
+        new paper.Point(dirx*d, diry*d) :
+        new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
 

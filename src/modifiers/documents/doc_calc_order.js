@@ -358,10 +358,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // проверяет заполненность цен
   check_prices() {
     let err;
+    const {pricing} = $p;
     this.production.forEach((calc_order_row) => {
       const attr = {calc_order_row};
-      $p.pricing.price_type(attr);
-      err = $p.pricing.check_prices(attr);
+      pricing.price_type(attr);
+      err = pricing.check_prices(attr);
       if(err) {
         return false;
       }
@@ -1274,13 +1275,20 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       return pouch.fetch(`/couchdb/mdm/${pouch.props.zone}/templates/${this.ref}`)
         .then((res) => res.json())
         .then(({rows}) => {
-          cat.characteristics.load_array(rows);
-          this._data._templates_loaded = true;
+          if(rows) {
+            cat.characteristics.load_array(rows);
+            this._data._templates_loaded = true;
+            return this;
+          }
+          throw null;
         })
         .catch((err) => {
-          console.log(err);
-          this._data._templates_loaded = true;
-          return this.load_production();
+          err && console.log(err);
+          return this.load_production()
+            .then(() => {
+              this._data._templates_loaded = true;
+              return this;
+            })
         });
     }
     return this.load_production();

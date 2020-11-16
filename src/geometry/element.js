@@ -417,6 +417,12 @@ class BuilderElement extends paper.Group {
     return this.nom.sizefurn || 20;
   }
 
+  // масса элемента
+  get weight() {
+    const {project, elm} = this;
+    return project.ox.elm_weight(elm);
+  }
+
   /**
    * Примыкающее соединение для диалога свойств
    */

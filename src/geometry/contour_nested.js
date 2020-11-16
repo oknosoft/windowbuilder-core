@@ -1,3 +1,4 @@
+
 /**
  * ### Вложенное изделие
  * https://github.com/oknosoft/windowbuilder/issues/564

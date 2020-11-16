@@ -6,7 +6,7 @@
  * Created by Evgeniy Malyarov on 24.12.2019.
  */
 
-export default function ({classes, cat: {characteristics, templates, params_links}, doc, utils, wsql}) {
+export default function ({classes, cat: {characteristics, templates, params_links, clrs}, job_prm, doc, utils, wsql}) {
 
   class FakeSelectTemplate extends classes.BaseDataObj {
 
@@ -17,7 +17,8 @@ export default function ({classes, cat: {characteristics, templates, params_link
       this._meta = utils._clone(characteristics.metadata());
       this._meta.fields.template_props = templates.metadata('template_props');
       this._meta.fields.refill = utils._clone(params_links.metadata('hide'));
-      this._meta.tabular_sections = {};
+      const {params} = this._meta.tabular_sections;
+      this._meta.tabular_sections = {params};
 
       const permitted_sys = this.permitted_sys.bind(this);
       Object.defineProperty(this._meta.fields.sys, 'choice_params', {
@@ -48,7 +49,8 @@ export default function ({classes, cat: {characteristics, templates, params_link
 
 
     _metadata(fld) {
-      return fld ? this._meta.fields[fld] : this._meta;
+      const {_meta} = this;
+      return fld ? (_meta.fields[fld] || _meta.tabular_sections[fld]) : _meta;
     }
 
     get calc_order() {
@@ -63,7 +65,15 @@ export default function ({classes, cat: {characteristics, templates, params_link
     }
     set base_block(v) {
       this._setter('base_block', v);
-      this.sys = this.base_block.sys;
+      const conds = [];
+      const selection = {};
+      this.permitted_sys(this.calc_order, conds);
+      conds.forEach(({name, path}) => {
+        selection[name] = path;
+      });
+      if(this.sys.empty() || !utils._selection(this.sys, selection)) {
+        this.sys = this.base_block.sys;
+      }
     }
 
     get refill() {
@@ -78,6 +88,35 @@ export default function ({classes, cat: {characteristics, templates, params_link
     }
     set sys(v) {
       this._setter('sys', v);
+      const {sys, params} = this;
+      const selection = {};
+      clrs.selection_exclude_service(this._meta.fields.clr, sys);
+      this._meta.fields.clr.choice_params.forEach(({name, path}) => {
+        selection[name] = path;
+      });
+      if(this.clr.empty() || !utils._selection(this.clr, selection)) {
+        this.clr = sys.default_clr.empty() ? clrs.predefined('Белый') : sys.default_clr;
+      }
+      if(job_prm.builder && job_prm.builder.base_props) {
+        sys.product_params.forEach(({param, value, hide}) => {
+          // если параметр не используется в системе - удаляем
+          if(hide || !job_prm.builder.base_props.includes(param)) {
+            params.del({param});
+          }
+          // если еще не добавлен - добавляем со значением по умолчанию
+          else if(!params.find({param})) {
+            params.add({param, value});
+          }
+          // если присутствует - оставляем без изменений
+        });
+      }
+    }
+
+    get clr() {
+      return this._getter('clr');
+    }
+    set clr(v) {
+      this._setter('clr', v);
     }
 
     get template_props() {
@@ -85,6 +124,10 @@ export default function ({classes, cat: {characteristics, templates, params_link
     }
     set template_props(v) {
       this._setter('template_props', v);
+    }
+
+    get params() {
+      return this._getter_ts('params');
     }
 
     value_change(field, type, value) {

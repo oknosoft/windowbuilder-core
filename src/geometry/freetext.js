@@ -1,3 +1,4 @@
+
 /**
  *
  * Created 21.08.2015<br />
@@ -46,7 +47,7 @@ class FreeText extends paper.PointText {
     const {_row} = this;
 
     if(!_row.cnstr){
-      _row.cnstr = attr.parent.layer.cnstr;
+      _row.cnstr = attr.parent ? attr.parent.layer.cnstr : this.project.activeLayer.cnstr;
     }
 
     if(!_row.elm){
@@ -85,8 +86,10 @@ class FreeText extends paper.PointText {
    * @method remove
    */
   remove() {
-    this._row._owner.del(this._row);
-    this._row = null;
+    if(this._row) {
+      this._row._owner.del(this._row);
+      this._row = null;
+    }
     paper.PointText.prototype.remove.call(this);
   }
 
@@ -205,15 +208,11 @@ class FreeText extends paper.PointText {
     return this.content;
   }
   set text(v) {
-    const {project} = this;
-    if(v){
-      this.content = v;
-      project.register_update();
+    if(!v){
+      v = ' ';
     }
-    else{
-      project.notify(this, 'unload');
-      setTimeout(this.remove.bind(this), 50);
-    }
+    this.content = v;
+    this.project.register_update();
   }
 
   // угол к горизонту

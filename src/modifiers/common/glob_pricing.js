@@ -50,7 +50,7 @@ class Pricing {
 
         // следим за изменениями документа установки цен, чтобы при необходимости обновить кеш
         if(pouch.local.doc === pouch.remote.doc) {
-          pouch.local.doc.changes({
+          this._changes = pouch.local.doc.changes({
             since: 'now',
             live: true,
             include_docs: true,

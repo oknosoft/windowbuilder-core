@@ -1,3 +1,4 @@
+
 /**
  * ### Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
@@ -57,17 +58,23 @@ class Scheme extends paper.Project {
 
       if(contours.length) {
 
-        // перерисовываем соединительные профили
-        this.l_connective.redraw();
+        if(_attr.elm_fragment > 0) {
+          const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+          elm && elm.draw_fragment && elm.draw_fragment(true);
+        }
+        else {
+          // перерисовываем соединительные профили
+          this.l_connective.redraw();
 
-        // обновляем связи параметров изделия
-        isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
+          // TODO: обновляем связи параметров изделия
+          isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
 
-        // перерисовываем все контуры
-        for (let contour of contours) {
-          contour.redraw();
-          if(this._ch.length > length) {
-            return;
+          // перерисовываем все контуры
+          for (let contour of contours) {
+            contour.redraw();
+            if(this._ch.length > length) {
+              return;
+            }
           }
         }
 
@@ -138,6 +145,15 @@ class Scheme extends paper.Project {
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
+      const {_select_template: st} = ox._manager._owner.templates;
+      if(st) {
+        if(st.sys != obj.sys) {
+          st.sys = obj.sys;
+        }
+        if(st.clr != obj.clr) {
+          st.clr = obj.clr;
+        }
+      }
     }
 
     if(fields.hasOwnProperty('clr')) {
@@ -185,19 +201,20 @@ class Scheme extends paper.Project {
   /**
    * устанавливает систему
    * @param sys
+   * @param [defaults]
    */
-  set_sys(sys) {
+  set_sys(sys, defaults) {
 
     const {_dp, ox} = this;
 
-    if(_dp.sys === sys) {
+    if(_dp.sys === sys && !defaults) {
       return;
     }
 
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true);
+    _dp.sys.refill_prm(ox, 0, true, null, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
     this.l_connective.on_sys_changed();
@@ -228,11 +245,12 @@ class Scheme extends paper.Project {
    * Устанавливает фурнитуру в створках изделия
    * @param furn
    */
-  set_furn(furn) {
+  set_furn(furn, fprops) {
     for (const rama of this.contours) {
       for (const contour of rama.contours) {
-        if(!contour.furn.empty()) {
-          contour.furn = furn;
+        const props = fprops && fprops.get(contour.cnstr);
+        if(props || !contour.furn.empty()) {
+          contour.furn = props && props.furn ? props.furn : furn;
         }
       }
     }
@@ -251,6 +269,15 @@ class Scheme extends paper.Project {
     }
     if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
       this.register_change();
+      const {job_prm: {builder}, cat: {templates}} = $p;
+      const {_select_template: st} = templates;
+      if(st && builder.base_props && builder.base_props.includes(obj.param)) {
+        let prow = st.params.find({param: obj.param});
+        if(!prow) {
+          prow = st.params.add({param: obj.param, value: obj.value});
+        }
+        prow.value = obj.value;
+      }
     }
   }
 
@@ -600,20 +627,27 @@ class Scheme extends paper.Project {
    * @param [attr.format] {String} - [svg, png, pdf] - (по умолчению - png)
    * @param [attr.children] {Boolean} - выводить вложенные контуры (по умолчению - Нет)
    */
-  draw_fragment(attr) {
+  draw_fragment(attr = {}) {
 
-    const {l_dimensions, l_connective} = this;
+    const {l_dimensions, l_connective, _attr} = this;
 
     // скрываем все слои
     const contours = this.getItems({class: Contour});
-    contours.forEach((l) => l.hidden = true);
-    l_dimensions.visible = false;
-    l_connective.visible = false;
+
+    if(attr.elm) {
+      contours.forEach((l) => l.hidden = true);
+      l_dimensions.visible = false;
+      l_connective.visible = false;
+    }
 
     let elm;
+    _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
-      elm && elm.draw_fragment && elm.draw_fragment();
+      if(elm && elm.draw_fragment) {
+        elm.selected = false;
+        elm.draw_fragment();
+      }
     }
     else if(attr.elm < 0) {
       const cnstr = -attr.elm;
@@ -627,8 +661,41 @@ class Scheme extends paper.Project {
         }
       });
     }
+    else {
+      const glasses = this.selected_glasses();
+      if(glasses.length) {
+        attr.elm = glasses[0].elm;
+        this.deselectAll();
+        return this.draw_fragment(attr);
+      }
+      else {
+        const {activeLayer} = this;
+        if(activeLayer.cnstr) {
+          attr.elm = -activeLayer.cnstr;
+          return this.draw_fragment(attr);
+        }
+      }
+    }
     this.view.update();
     return elm;
+  }
+
+  reset_fragment() {
+    const {l_dimensions, l_connective, _attr, view} = this;
+
+    if(_attr.elm_fragment > 0) {
+      const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+      elm && elm.reset_fragment && elm.reset_fragment();
+    }
+    _attr.elm_fragment = 0;
+
+    // показываем серытые слои
+    const contours = this.getItems({class: Contour});
+    contours.forEach((l) => l.hidden = false);
+    l_dimensions.visible = true;
+    l_connective.visible = true;
+    view.update();
+    this.zoom_fit();
   }
 
   /**
@@ -1051,8 +1118,9 @@ class Scheme extends paper.Project {
    * @method load_stamp
    * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
    * @param is_snapshot {Boolean}
+   * @param no_refill {Boolean}
    */
-  load_stamp(obx, is_snapshot) {
+  load_stamp(obx, is_snapshot, no_refill) {
 
     const do_load = (obx) => {
 
@@ -1064,12 +1132,13 @@ class Scheme extends paper.Project {
       // переприсваиваем номенклатуру, цвет и размеры
       const src = Object.assign({_not_set_loaded: true}, is_snapshot ? obx : obx._obj);
       ox._mixin(src, null,
-        'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,_rev'.split(','), true);
+        'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,obj_delivery_state,_rev'.split(','),
+        true);
 
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
         ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === $p.enm.obj_delivery_states.Шаблон) ? obx : obx.base_block;
-        if(obx.calc_order.refill_props) {
+        if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
       }
