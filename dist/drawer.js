@@ -12103,8 +12103,14 @@ class ProductsBuilding {
           row_spec.elm = row.handle_height_min;
           row_spec.len = row.coefficient / 1000;
           row_spec.qty = 0;
-          row_spec.totqty = 1;
-          row_spec.totqty1 = 1;
+          if(row.quantity && row.nom.demand.count()) {
+            row_spec.totqty = row.quantity;
+            row_spec.totqty1 = row.quantity;
+          }
+          else {
+            row_spec.totqty = 1;
+            row_spec.totqty1 = 1;
+          }
         }
         else {
           row_spec.qty = row.quantity * (!row.coefficient ? 1 : row.coefficient);
