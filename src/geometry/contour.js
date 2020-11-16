@@ -1094,8 +1094,65 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Рисует ошибки соединений
+   * Рисует ошибки статики
    */
+
+draw_static_errors() {
+  if (!this.project.ox.sys.check_static) {
+    return;
+  }
+
+  const {
+    l_visualization
+  } = this;
+
+  if (l_visualization._static) {
+    l_visualization._static.removeChildren();
+  } else {
+    l_visualization._static = new paper.Group({
+      parent: l_visualization
+    });
+
+
+  }
+
+
+  const {
+    Рама,
+    Импост
+  } = $p.enm.elm_types;
+  for (var i = 0; i < this.profiles.length; i++) {
+    //static_load;
+
+    if ([Рама, Импост].includes(this.profiles[i].elm_type) &&
+      this.profiles[i].static_load().can_use === false) {
+      this.profiles[i].err_spec_row($p.job_prm.nom.static_error);
+      new paper.Path.Circle({
+        center: this.profiles[i].bounds.center,
+        radius: 20,
+        strokeColor: 'blue',
+        strokeWidth: 4,
+        strokeCap: 'round',
+        strokeScaling: false,
+        // dashOffset: 4,
+        // dashArray: [4, 4],
+        guide: true,
+        parent: l_visualization._static,
+        fillColor: 'red'
+
+      });
+
+    }
+
+  }
+
+  l_visualization.bringToFront();
+}
+
+/**
+ * Рисует ошибки соединений
+ */
+
   draw_cnn_errors() {
 
     const {l_visualization} = this;
@@ -1167,6 +1224,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
     });
+    l_visualization.bringToFront();
   }
 
   /**
@@ -1979,6 +2037,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // рисуем ошибки соединений
     this.draw_cnn_errors();
+
+    //рисуем Ошибки соединений
+    this.draw_static_errors();
 
     // перерисовываем все водоотливы контура
     for(const elm of this.sectionals) {
