@@ -251,27 +251,42 @@
       }
     },
 
+    /**
+     * Возвращает массив заполнений в заданном диапазоне толщин
+     * @param min {Number|Array}
+     * @param max {Number|undefined}
+     * @return {Array.<CatInserts>}
+     */
     by_thickness: {
       value(min, max) {
+        const res = [];
 
         if(!this._by_thickness){
-          this._by_thickness = {};
+          this._by_thickness = new Map();
           this.find_rows({insert_type: {in: this._inserts_types_filling}}, (ins) => {
             if(ins.thickness > 0){
-              if(!this._by_thickness[ins.thickness])
-                this._by_thickness[ins.thickness] = [];
-              this._by_thickness[ins.thickness].push(ins);
+              if(!this._by_thickness.has(ins.thickness)) {
+                this._by_thickness.set(ins.thickness, []);
+              }
+              this._by_thickness.get(ins.thickness).push(ins);
             }
           });
         }
 
-        const res = [];
-        for(let thickness in this._by_thickness){
-          if(parseFloat(thickness) >= min && parseFloat(thickness) <= max)
-            Array.prototype.push.apply(res, this._by_thickness[thickness]);
+        for (const [thin, arr] of this._by_thickness) {
+          if(!max && Array.isArray(min)) {
+            if(min.includes(thin)) {
+              Array.prototype.push.apply(res, arr);
+            }
+          }
+          else {
+            if(thin >= min && thin <= max) {
+              Array.prototype.push.apply(res, arr);
+            }
+          }
         }
-        return res;
 
+        return res;
       }
     },
 
