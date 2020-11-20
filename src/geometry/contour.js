@@ -1096,58 +1096,41 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Рисует ошибки статики
    */
+  draw_static_errors() {
+    const {project, l_visualization} = this;
 
-draw_static_errors() {
-  if (!this.project.ox.sys.check_static) {
-    return;
-  }
-
-  const {
-    l_visualization
-  } = this;
-
-  if (l_visualization._static) {
-    l_visualization._static.removeChildren();
-  } else {
-    l_visualization._static = new paper.Group({
-      parent: l_visualization
-    });
-
-
-  }
-
-
-  const {
-    Рама,
-    Импост
-  } = $p.enm.elm_types;
-  for (var i = 0; i < this.profiles.length; i++) {
-    //static_load;
-
-    if ([Рама, Импост].includes(this.profiles[i].elm_type) &&
-      this.profiles[i].static_load().can_use === false) {
-      this.profiles[i].err_spec_row($p.job_prm.nom.static_error);
-      new paper.Path.Circle({
-        center: this.profiles[i].bounds.center,
-        radius: 20,
-        strokeColor: 'blue',
-        strokeWidth: 4,
-        strokeCap: 'round',
-        strokeScaling: false,
-        // dashOffset: 4,
-        // dashArray: [4, 4],
-        guide: true,
-        parent: l_visualization._static,
-        fillColor: 'red'
-
-      });
-
+    if(!project.ox.sys.check_static) {
+      return;
     }
 
-  }
+    const {Рама, Импост} = $p.enm.elm_types;
 
-  l_visualization.bringToFront();
-}
+    if(l_visualization._static) {
+      l_visualization._static.removeChildren();
+    }
+    else {
+      l_visualization._static = new paper.Group({parent: l_visualization});
+    }
+
+    for (var i = 0; i < this.profiles.length; i++) {
+
+      if([Рама, Импост].includes(this.profiles[i].elm_type) &&
+        this.profiles[i].static_load().can_use === false) {
+        //this.profiles[i].err_spec_row($p.job_prm.nom.static_error);
+        new paper.Path.Circle({
+          center: this.profiles[i].bounds.center,
+          radius: 20,
+          strokeColor: 'blue',
+          strokeWidth: 4,
+          strokeCap: 'round',
+          strokeScaling: false,
+          guide: true,
+          parent: l_visualization._static,
+          fillColor: 'red'
+        });
+      }
+    }
+  }
 
 /**
  * Рисует ошибки соединений
@@ -1224,6 +1207,7 @@ draw_static_errors() {
         }
       });
     });
+
     l_visualization.bringToFront();
   }
 
@@ -2038,7 +2022,7 @@ draw_static_errors() {
     // рисуем ошибки соединений
     this.draw_cnn_errors();
 
-    //рисуем Ошибки соединений
+    //рисуем ошибки статических прогибов
     this.draw_static_errors();
 
     // перерисовываем все водоотливы контура
