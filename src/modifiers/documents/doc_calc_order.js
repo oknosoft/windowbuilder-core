@@ -173,11 +173,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
     //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
-    const must_be_saved = [Подтвержден, Отправлен].indexOf(this.obj_delivery_state) == -1;
+    const must_be_saved = ![Подтвержден, Отправлен].includes(this.obj_delivery_state);
 
     // если установлен признак проведения, проверим состояние транспорта
     if(this.posted) {
-      if(this.obj_delivery_state == Отклонен || this.obj_delivery_state == Отозван || this.obj_delivery_state == Шаблон) {
+      if([Отклонен, Отозван, Шаблон].includes(this.obj_delivery_state)) {
         msg.show_msg && msg.show_msg({
           type: 'alert-warning',
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
@@ -215,20 +215,20 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         return false || must_be_saved;
       }
-    }
 
-    const err_prices = this.check_prices();
-    if(err_prices) {
-      msg.show_msg && msg.show_msg({
-        type: 'alert-warning',
-        title: 'Ошибки в заказе',
-        text: `Пустая цена ${err_prices.nom}`,
-      });
-      if (!must_be_saved) {
-        if(obj_delivery_state == Отправлен) {
-          this.obj_delivery_state = 'Черновик';
+      const err_prices = this.check_prices();
+      if(err_prices) {
+        msg.show_msg && msg.show_msg({
+          type: 'alert-warning',
+          title: 'Ошибки в заказе',
+          text: `Пустая цена ${err_prices.nom.toString()}<br/>Рекомендуется перезапустить браузер и повторить расчет`,
+        });
+        if (!must_be_saved) {
+          if(obj_delivery_state == Отправлен) {
+            this.obj_delivery_state = 'Черновик';
+          }
+          return false;
         }
-        return false;
       }
     }
 
@@ -358,11 +358,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // проверяет заполненность цен
   check_prices() {
     let err;
-    const {pricing} = $p;
     this.production.forEach((calc_order_row) => {
-      const attr = {calc_order_row};
-      pricing.price_type(attr);
-      err = pricing.check_prices(attr);
+      err = pricing.check_prices({calc_order_row});
       if(err) {
         return false;
       }

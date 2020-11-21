@@ -11750,22 +11750,14 @@ class Pricing {
 
   }
 
-  check_prices(prm) {
-    const {price_type_first_cost, price_type_sale} = prm.price_type;
+  check_prices({calc_order_row}) {
     const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
     let err;
 
-    prm.calc_order_row.characteristic.specification.forEach((row) => {
+    calc_order_row.characteristic.specification.forEach((row) => {
       const {_obj, nom, characteristic} = row;
-      if(_obj.totqty1) {
-        let tmp_price = Infinity;
-        if(marginality_in_spec && !_obj.amount_marged){
-          tmp_price = this.nom_price(nom, characteristic, price_type_sale, prm, {nom});
-        }
-        else if(!marginality_in_spec && !_obj.price) {
-          tmp_price = this.nom_price(nom, characteristic, price_type_first_cost, prm, {nom});
-        }
-        if(!tmp_price && nom.has_price()) {
+      if(_obj.totqty1 && !nom.is_procedure && !nom.is_service) {
+        if((marginality_in_spec && !_obj.amount_marged) || (!marginality_in_spec && !_obj.price)){
           err = row;
           return false;
         }
@@ -15630,7 +15622,6 @@ $p.CatPartners.prototype.__define({
 
 
 
-
 class FakeLenAngl {
 
   constructor({len, inset}) {
@@ -15781,10 +15772,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
 
-    const must_be_saved = [Подтвержден, Отправлен].indexOf(this.obj_delivery_state) == -1;
+    const must_be_saved = ![Подтвержден, Отправлен].includes(this.obj_delivery_state);
 
     if(this.posted) {
-      if(this.obj_delivery_state == Отклонен || this.obj_delivery_state == Отозван || this.obj_delivery_state == Шаблон) {
+      if([Отклонен, Отозван, Шаблон].includes(this.obj_delivery_state)) {
         msg.show_msg && msg.show_msg({
           type: 'alert-warning',
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
@@ -15821,20 +15812,20 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         return false || must_be_saved;
       }
-    }
 
-    const err_prices = this.check_prices();
-    if(err_prices) {
-      msg.show_msg && msg.show_msg({
-        type: 'alert-warning',
-        title: 'Ошибки в заказе',
-        text: `Пустая цена ${err_prices.nom}`,
-      });
-      if (!must_be_saved) {
-        if(obj_delivery_state == Отправлен) {
-          this.obj_delivery_state = 'Черновик';
+      const err_prices = this.check_prices();
+      if(err_prices) {
+        msg.show_msg && msg.show_msg({
+          type: 'alert-warning',
+          title: 'Ошибки в заказе',
+          text: `Пустая цена ${err_prices.nom.toString()}<br/>Рекомендуется перезапустить браузер и повторить расчет`,
+        });
+        if (!must_be_saved) {
+          if(obj_delivery_state == Отправлен) {
+            this.obj_delivery_state = 'Черновик';
+          }
+          return false;
         }
-        return false;
       }
     }
 
@@ -15956,11 +15947,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   check_prices() {
     let err;
-    const {pricing} = $p;
     this.production.forEach((calc_order_row) => {
-      const attr = {calc_order_row};
-      pricing.price_type(attr);
-      err = pricing.check_prices(attr);
+      err = pricing.check_prices({calc_order_row});
       if(err) {
         return false;
       }
@@ -16041,7 +16029,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
 
-
   get doc_currency() {
     const currency = this.contract.settlements_currency;
     return currency.empty() ? $p.job_prm.pricing.main_currency : currency;
@@ -16063,7 +16050,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return pricing.rounding;
   }
 
-
   get contract() {
     return this._getter('contract');
   }
@@ -16072,7 +16058,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.vat_consider = this.contract.vat_consider;
     this.vat_included = this.contract.vat_included;
   }
-
 
   product_rows(save) {
     let res = Promise.resolve();
@@ -16102,7 +16087,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return res;
   }
 
-
   dispatching_totals() {
     const options = {
       reduce: true,
@@ -16130,7 +16114,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return res;
       });
   }
-
 
   print_data(attr = {}) {
     const {organization, bank_account, partner, contract, manager} = this;
@@ -16340,7 +16323,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
-
   row_description(row) {
 
     if(!(row instanceof $p.DocCalc_orderProductionRow) && row.characteristic) {
@@ -16414,7 +16396,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return res;
   }
 
-
   fill_plan() {
 
     this.planning.clear();
@@ -16463,7 +16444,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
   }
 
-
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
     const {Черновик, Шаблон, Отозван, Отправлен} = $p.enm.obj_delivery_states;
@@ -16482,7 +16462,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return ro;
   }
-
 
   load_production(forse) {
     const prod = [];
@@ -16507,7 +16486,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
   }
 
-
   characteristic_saved(scheme, sattr) {
     const {ox, _dp} = scheme;
     const row = ox.calc_order_row;
@@ -16531,7 +16509,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     row._data._loading = false;
   }
-
 
   create_product_row({row_spec, elm, len_angl, params, create, grid}) {
 
@@ -16622,7 +16599,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
-
   process_add_product_list(dp) {
 
     let res = Promise.resolve();
@@ -16671,7 +16647,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     return res.then(() => ax);
   }
-
 
   recalc(attr = {}, editor) {
 
@@ -16732,7 +16707,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
-
   draw(attr = {}, editor) {
 
     const remove = !editor;
@@ -16756,7 +16730,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
 
   }
-
 
   load_templates() {
     if(this._data._templates_loaded) {
@@ -16785,7 +16758,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this.load_production();
   }
-
 
   static set_department() {
     const department = $p.wsql.get_user_param('current_department');
