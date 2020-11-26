@@ -18,12 +18,7 @@
 
 		profiles: {
 			get(){
-				return cache.profiles
-					|| ( cache.profiles = [
-						_mgr.Рама,
-						_mgr.Створка,
-						_mgr.Импост,
-						_mgr.Штульп] );
+				return cache.profiles || (cache.profiles = [_mgr.Рама, _mgr.Створка, _mgr.Импост, _mgr.Штульп, _mgr.Связка]);
 			}
 		},
 
@@ -37,35 +32,33 @@
 						_mgr.Штульп,
 						_mgr.Добор,
 						_mgr.Соединитель,
-						_mgr.Раскладка
+						_mgr.Раскладка,
+            _mgr.Связка,
 					] );
 			}
 		},
 
 		rama_impost: {
 			get(){
-				return cache.rama_impost
-					|| ( cache.rama_impost = [ _mgr.Рама, _mgr.Импост, _mgr.Штульп] );
+				return cache.rama_impost || (cache.rama_impost = [_mgr.Рама, _mgr.Импост, _mgr.Штульп, _mgr.Связка]);
 			}
 		},
 
 		impost_lay: {
 			get(){
-				return cache.impost_lay
-					|| ( cache.impost_lay = [ _mgr.Импост, _mgr.Раскладка] );
+        return cache.impost_lay || (cache.impost_lay = [_mgr.Импост, _mgr.Раскладка]);
 			}
 		},
 
 		stvs: {
 			get(){
-				return cache.stvs || ( cache.stvs = [_mgr.Створка] );
+        return cache.stvs || (cache.stvs = [_mgr.Створка]);
 			}
 		},
 
 		glasses: {
 			get(){
-				return cache.glasses
-					|| ( cache.glasses = [ _mgr.Стекло, _mgr.Заполнение] );
+        return cache.glasses || (cache.glasses = [_mgr.Стекло, _mgr.Заполнение]);
 			}
 		}
 

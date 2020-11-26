@@ -626,8 +626,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {coordinates} = ox;
       const {elm_types} = $p.enm;
 
-      coordinates.find_rows({cnstr}, (row) => {
-        if(elm_types.profiles.includes(row.elm_type)) {
+      coordinates.find_rows({cnstr, region: 0}, (row) => {
+        if(row.elm_type === elm_types.Связка) {
+          new ProfileBundle({row, parent: this});
+        }
+        else if(elm_types.profiles.includes(row.elm_type)) {
           if(row.parent) {
             new ProfileVirtual({row, parent: this});
           }
@@ -8180,6 +8183,31 @@ EditorInvisible.CnnPoint = CnnPoint;
 
 class ProfileBundle extends ProfileItem {
 
+  constructor(attr) {
+
+    const fromCoordinates = !!attr.row;
+
+    super(attr);
+
+    if(this.parent) {
+      const {project: {_scope, ox}} = this;
+
+      this.layer.on_insert_elm(this);
+
+      if(fromCoordinates){
+        const {cnstr, elm} = attr.row;
+        const {Добор} = $p.enm.elm_types;
+        ox.coordinates.find_rows({cnstr, region: {not: 0}, parent: elm}, (row) => {
+        });
+      }
+    }
+
+  }
+
+  get elm_type() {
+    return $p.enm.elm_types.Связка;
+  }
+
 }
 
 class BundleRange extends paper.Group {
@@ -13000,12 +13028,7 @@ $p.spec_building = new SpecBuilding($p);
 
 		profiles: {
 			get(){
-				return cache.profiles
-					|| ( cache.profiles = [
-						_mgr.Рама,
-						_mgr.Створка,
-						_mgr.Импост,
-						_mgr.Штульп] );
+				return cache.profiles || (cache.profiles = [_mgr.Рама, _mgr.Створка, _mgr.Импост, _mgr.Штульп, _mgr.Связка]);
 			}
 		},
 
@@ -13019,35 +13042,33 @@ $p.spec_building = new SpecBuilding($p);
 						_mgr.Штульп,
 						_mgr.Добор,
 						_mgr.Соединитель,
-						_mgr.Раскладка
+						_mgr.Раскладка,
+            _mgr.Связка,
 					] );
 			}
 		},
 
 		rama_impost: {
 			get(){
-				return cache.rama_impost
-					|| ( cache.rama_impost = [ _mgr.Рама, _mgr.Импост, _mgr.Штульп] );
+				return cache.rama_impost || (cache.rama_impost = [_mgr.Рама, _mgr.Импост, _mgr.Штульп, _mgr.Связка]);
 			}
 		},
 
 		impost_lay: {
 			get(){
-				return cache.impost_lay
-					|| ( cache.impost_lay = [ _mgr.Импост, _mgr.Раскладка] );
+        return cache.impost_lay || (cache.impost_lay = [_mgr.Импост, _mgr.Раскладка]);
 			}
 		},
 
 		stvs: {
 			get(){
-				return cache.stvs || ( cache.stvs = [_mgr.Створка] );
+        return cache.stvs || (cache.stvs = [_mgr.Створка]);
 			}
 		},
 
 		glasses: {
 			get(){
-				return cache.glasses
-					|| ( cache.glasses = [ _mgr.Стекло, _mgr.Заполнение] );
+        return cache.glasses || (cache.glasses = [_mgr.Стекло, _mgr.Заполнение]);
 			}
 		}
 
@@ -13214,6 +13235,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         text: `Запрещено изменять заказ в статусе ${calc_order.obj_delivery_state}`
       };
       return false;
+    }
+
+    if(calc_order.obj_delivery_state == 'Шаблон' && !this.base_block.empty()) {
+      this.base_block = '';
     }
 
     const name = this.prod_name();

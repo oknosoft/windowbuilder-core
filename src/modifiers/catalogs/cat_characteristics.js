@@ -75,6 +75,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       return false;
     }
 
+    // для шаблонов, ссылка на типовой блок не нужна
+    if(calc_order.obj_delivery_state == 'Шаблон' && !this.base_block.empty()) {
+      this.base_block = '';
+    }
+
     // пересчитываем наименование
     const name = this.prod_name();
     if(name) {
