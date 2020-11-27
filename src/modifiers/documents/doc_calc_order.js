@@ -173,11 +173,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
     //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
-    const must_be_saved = ![Подтвержден, Отправлен].includes(this.obj_delivery_state);
+    const {obj_delivery_state, _obj, category, rounding} = this;
+    const must_be_saved = ![Подтвержден, Отправлен].includes(obj_delivery_state);
 
     // если установлен признак проведения, проверим состояние транспорта
     if(this.posted) {
-      if([Отклонен, Отозван, Шаблон].includes(this.obj_delivery_state)) {
+      if([Отклонен, Отозван, Шаблон].includes(obj_delivery_state)) {
         msg.show_msg && msg.show_msg({
           type: 'alert-warning',
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
@@ -185,16 +186,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         return false;
       }
-      else if(this.obj_delivery_state != Подтвержден) {
+      else if(obj_delivery_state != Подтвержден) {
         this.obj_delivery_state = Подтвержден;
       }
     }
-    else if(this.obj_delivery_state == Подтвержден) {
+    else if(obj_delivery_state == Подтвержден) {
       this.obj_delivery_state = Отправлен;
     }
 
     // проверим заполненность подразделения
-    if(this.obj_delivery_state == Шаблон) {
+    if(obj_delivery_state == Шаблон) {
       this.department = blank.guid;
       this.partner = blank.guid;
     }
@@ -255,8 +256,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       });
     });
-    const {rounding} = this;
-    const {_obj, obj_delivery_state, category} = this;
+
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
     this.amount_operation = pricing.from_currency_to_currency(doc_amount, this.date, this.doc_currency).round(rounding);
@@ -359,7 +359,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   check_prices() {
     let err;
     this.production.forEach((calc_order_row) => {
-      err = pricing.check_prices({calc_order_row});
+      err = $p.pricing.check_prices({calc_order_row});
       if(err) {
         return false;
       }
@@ -1325,7 +1325,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
     const {rounding, _slave_recalc} = _owner._owner;
-    const rfield = $p.DocCalc_orderProductionRow.rfields[field];
+    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm, current_user} = $p;
+    const rfield = DocCalc_orderProductionRow.rfields[field];
 
     if(rfield) {
 
@@ -1340,7 +1341,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           characteristic.owner = nom;
         }
         else if(characteristic.owner != nom) {
-          _obj.characteristic = $p.utils.blank.guid;
+          _obj.characteristic = utils.blank.guid;
           characteristic = this.characteristic;
         }
       }
@@ -1369,21 +1370,21 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         spec: characteristic.specification
       };
       const {price} = _obj;
-      $p.pricing.price_type(fake_prm);
-      if(origin instanceof $p.DocPurchase_order) {
+      pricing.price_type(fake_prm);
+      if(origin instanceof DocPurchase_order) {
         fake_prm.first_cost = _obj.first_cost;
       }
       else {
-        $p.pricing.calc_first_cost(fake_prm);
+        pricing.calc_first_cost(fake_prm);
       }
-      $p.pricing.calc_amount(fake_prm);
+      pricing.calc_amount(fake_prm);
       if(price && !_obj.price) {
         _obj.price = price;
         recalc = true;
       }
     }
 
-    if($p.DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
+    if(DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
 
       if(!recalc) {
         _obj[field] = parseFloat(value);
@@ -1399,11 +1400,11 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // если есть внешняя цена дилера, получим текущую дилерскую наценку
       if(!no_extra_charge) {
         const prm = {calc_order_row: this};
-        let extra_charge = $p.wsql.get_user_param('surcharge_internal', 'number');
+        let extra_charge = wsql.get_user_param('surcharge_internal', 'number');
 
         // если пересчет выполняется менеджером, используем наценку по умолчанию
-        if(!$p.current_user.partners_uids.length || !extra_charge) {
-          $p.pricing.price_type(prm);
+        if(!current_user || !current_user.partners_uids.length || !extra_charge) {
+          pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
 
@@ -1417,7 +1418,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // ставка и сумма НДС
       const doc = _owner._owner;
       if(doc.vat_consider) {
-        const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = $p.enm.vat_rates;
+        const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = enm.vat_rates;
         _obj.vat_rate = (nom.vat_rate.empty() ? НДС18 : nom.vat_rate).ref;
         switch (this.vat_rate) {
         case НДС18:
