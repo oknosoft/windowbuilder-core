@@ -262,6 +262,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       this._row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
 
+    if(attr.direction) {
+      this.direction = attr.direction;
+    }
+    if(attr.furn && typeof attr.furn !== 'string') {
+      this.furn = attr.furn || this.project.default_furn;
+    }
+
     // добавляем элементы контура
     const {cnstr} = this;
     if (cnstr) {
@@ -294,7 +301,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         else if(row.elm_type === elm_types.Текст) {
           new FreeText({row, parent: this.l_text})
         }
-
       });
     }
 

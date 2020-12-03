@@ -213,7 +213,15 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     // создаём пустой новый слой
     const Constructor = furn === 'virtual' ? ContourVirtual : (furn === 'nested' ? ContourNested : Contour);
-    const contour = new Constructor({parent: this.parent});
+    const cattr = {parent: this.parent};
+    // фурнитура и параметры по умолчанию
+    if(direction) {
+      cattr.direction = direction;
+    }
+    if(typeof furn !== 'string') {
+      cattr.furn = furn || project.default_furn;
+    }
+    const contour = new Constructor(cattr);
 
     // задаём его путь - внутри будут созданы профили
     contour.path = this.profiles;
@@ -227,14 +235,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       _row.cnstr = contour.cnstr;
       // дочерние раскладки
       this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
-    }
-
-    // фурнитура и параметры по умолчанию
-    if(direction) {
-      contour.direction = direction;
-    }
-    if(typeof furn !== 'string') {
-      contour.furn = furn || project.default_furn;
     }
 
     // оповещаем мир о новых слоях

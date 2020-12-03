@@ -1573,7 +1573,7 @@ class ProfileItem extends GeneratrixElement {
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
    */
   default_inset(all) {
-    let {orientation, project, _attr, elm_type} = this;
+    let {orientation, project, layer, _attr, elm_type} = this;
     const nearest = this.nearest(true);
     const {positions, orientations, elm_types, cnn_types} = $p.enm;
 
@@ -1591,6 +1591,9 @@ class ProfileItem extends GeneratrixElement {
       if(pos == positions.Центр) {
         if(orientation == orientations.vert) {
           pos = [pos, positions.ЦентрВертикаль];
+          if(layer.furn.shtulp_kind() === 2) {
+            elm_type = [elm_type, elm_types.СтворкаБИ];
+          }
         }
         if(orientation == orientations.hor) {
           pos = [pos, positions.ЦентрГоризонталь];

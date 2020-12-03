@@ -242,7 +242,7 @@ class BuilderElement extends paper.Group {
           }
           else if(this instanceof Profile){
             if(this.nearest()){
-              selection = {elm_type: {in: [elm_types.Створка, elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
             }
             else{
               selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};

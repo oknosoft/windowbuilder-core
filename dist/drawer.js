@@ -620,6 +620,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       this._row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
 
+    if(attr.direction) {
+      this.direction = attr.direction;
+    }
+    if(attr.furn && typeof attr.furn !== 'string') {
+      this.furn = attr.furn || this.project.default_furn;
+    }
+
     const {cnstr} = this;
     if (cnstr) {
 
@@ -647,7 +654,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         else if(row.elm_type === elm_types.Текст) {
           new FreeText({row, parent: this.l_text})
         }
-
       });
     }
 
@@ -4043,7 +4049,7 @@ class BuilderElement extends paper.Group {
           }
           else if(this instanceof Profile){
             if(this.nearest()){
-              selection = {elm_type: {in: [elm_types.Створка, elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
             }
             else{
               selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
@@ -4563,7 +4569,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     project.cnns.clear({elm1: this.elm});
 
     const Constructor = furn === 'virtual' ? ContourVirtual : (furn === 'nested' ? ContourNested : Contour);
-    const contour = new Constructor({parent: this.parent});
+    const cattr = {parent: this.parent};
+    if(direction) {
+      cattr.direction = direction;
+    }
+    if(typeof furn !== 'string') {
+      cattr.furn = furn || project.default_furn;
+    }
+    const contour = new Constructor(cattr);
 
     contour.path = this.profiles;
 
@@ -4574,13 +4587,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.parent = contour;
       _row.cnstr = contour.cnstr;
       this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
-    }
-
-    if(direction) {
-      contour.direction = direction;
-    }
-    if(typeof furn !== 'string') {
-      contour.furn = furn || project.default_furn;
     }
 
     project.notify(contour, 'rows', {constructions: true});
@@ -7575,7 +7581,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   default_inset(all) {
-    let {orientation, project, _attr, elm_type} = this;
+    let {orientation, project, layer, _attr, elm_type} = this;
     const nearest = this.nearest(true);
     const {positions, orientations, elm_types, cnn_types} = $p.enm;
 
@@ -7589,6 +7595,9 @@ class ProfileItem extends GeneratrixElement {
       if(pos == positions.Центр) {
         if(orientation == orientations.vert) {
           pos = [pos, positions.ЦентрВертикаль];
+          if(layer.furn.shtulp_kind() === 2) {
+            elm_type = [elm_type, elm_types.СтворкаБИ];
+          }
         }
         if(orientation == orientations.hor) {
           pos = [pos, positions.ЦентрГоризонталь];
