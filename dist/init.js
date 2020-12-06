@@ -2592,6 +2592,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
           let changed = force;
           // если для системы через связи параметров ограничен список фурнитуры...
           const furns = this.furns(ox, row.cnstr);
+          const shtulp_kind = row.furn.shtulp_kind();
           if(furns.length) {
             if(furns.some((frow) => {
               if(frow.forcibly) {
@@ -2602,6 +2603,22 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
               ;
             }
             else if(furns.some((frow) => row.furn === frow.furn)) {
+              ;
+            }
+            else if(shtulp_kind && furns.some((frow) => {
+              if(frow.by_default && frow.furn.shtulp_kind() === shtulp_kind) {
+                row.furn = frow.furn;
+                return changed = true;
+              }
+            })) {
+              ;
+            }
+            else if(shtulp_kind && furns.some((frow) => {
+              if(frow.furn.shtulp_kind() === shtulp_kind) {
+                row.furn = frow.furn;
+                return changed = true;
+              }
+            })) {
               ;
             }
             else if(furns.some((frow) => {
