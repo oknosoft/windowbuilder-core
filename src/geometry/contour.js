@@ -253,14 +253,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {ox, l_connective} = this.project;
 
     // строка в таблице конструкций
-    if (attr.row) {
-      this._row = attr.row;
-    }
-    else {
-      const {constructions} = ox;
-      this._row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
-      this._row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
-    }
+    this._row = attr.row;
 
     if(attr.direction) {
       this.direction = attr.direction;
@@ -281,13 +274,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         if(row.elm_type === elm_types.Связка) {
           new ProfileBundle({row, parent: this});
         }
+        else if(row.elm_type === elm_types.Вложение) {
+          this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
+        }
         else if(elm_types.profiles.includes(row.elm_type)) {
-          if(row.parent) {
-            new ProfileVirtual({row, parent: this});
-          }
-          else {
-            new Profile({row, parent: this});
-          }
+          new Profile({row, parent: this});
         }
         // заполнения
         else if(elm_types.glasses.includes(row.elm_type)) {
@@ -306,6 +297,41 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     l_connective.bringToFront();
 
+  }
+
+  /**
+   *
+   * @param attr
+   * @return {Contour}
+   */
+  static create(attr = {}) {
+    let {kind, row, project} = attr;
+    if(typeof kind === 'undefined') {
+      kind = row ? row.kind : 0;
+    }
+    let Constructor = Contour;
+    if(kind === 1) {
+      Constructor = ContourVirtual;
+    }
+    else if(kind === 2) {
+      Constructor = ContourNested;
+    }
+    else if(kind === 3) {
+      Constructor = ContourParent;
+    }
+    // строка в таблице конструкций
+    if (!attr.row) {
+      const {constructions} = project.ox;
+      attr.row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
+      attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
+    }
+    if(kind) {
+      attr.row.kind = kind;
+    }
+    // оповещаем мир о новых слоях
+    const contour = new Constructor(attr);
+    project._scope.eve.emit_async('rows', project.ox, {constructions: true});
+    return contour;
   }
 
   /**
@@ -1822,7 +1848,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // четвертый проход - добавляем
     if (need_bind) {
-      const ProfileConstructor = this instanceof ContourVirtual ? ProfileVirtual : Profile;
+      const ProfileConstructor = this instanceof ContourVirtual ? ProfileNested : Profile;
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
         if (curr.binded) {

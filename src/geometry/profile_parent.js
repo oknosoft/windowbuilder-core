@@ -1,31 +1,17 @@
 
 /**
- * Виртуальный профиль для вложенных слоёв
+ * Виртуальный родительский профиль для вложенных слоёв
  *
- * @module profile_virtual
+ * @module profile_parent
  *
  * Created by Evgeniy Malyarov on 21.04.2020.
  */
 
-class ProfileVirtual extends Profile {
+class ProfileParent extends Profile {
 
   constructor(attr) {
+    const {parent: {leading_product}, row} = attr;
     super(attr);
-    Object.defineProperty(this._attr, '_nearest_cnn', {
-      get() {
-        return ProfileVirtual.nearest_cnn;
-      },
-      set(v) {
-
-      }
-    });
-    this.path.strokeColor = 'darkgreen';
-    this.path.dashArray = [8, 4, 2, 4];
-  }
-
-  // ведущий элемент получаем в лоб
-  nearest() {
-    return this._attr._nearest;
   }
 
   // пересчет вставок и соединений не делаем
@@ -33,20 +19,21 @@ class ProfileVirtual extends Profile {
 
   }
 
-  // вставка - внешний профиль
-  get inset() {
-    return this.nearest().inset;
+  /**
+   * Возвращает тип элемента (Вложение)
+   */
+  get elm_type() {
+    return $p.enm.elm_types.Вложение;
   }
-  set inset(v) {}
+
+  // вставка - внешний профиль
+  set_inset(v) {
+
+  }
 
   // цвет внешнего элемента
-  get clr() {
-    return this.nearest(true).clr;
-  }
-  set clr(v) {}
+  set_clr(v) {
 
-  get sizeb() {
-    return 0;
   }
 
   path_points(cnn_point, profile_point) {
@@ -55,8 +42,8 @@ class ProfileVirtual extends Profile {
     if(!generatrix.curves.length) {
       return cnn_point;
     }
-    const {rays} = this.nearest();
-    const prays = cnn_point.profile.nearest().rays;
+    const {rays} = this;
+    const prays = cnn_point.profile.rays;
 
     // ищет точку пересечения открытых путей
     // если указан индекс, заполняет точку в массиве _corns. иначе - возвращает расстояние от узла до пересечения
@@ -91,10 +78,10 @@ class ProfileVirtual extends Profile {
     }
 
     const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.outer : prays.inner;
+      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.inner : prays.outer;
 
     const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.outer : rays.inner;
+    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.inner : rays.outer;
 
     const offset = -2;
     if(profile_point == 'b') {
@@ -113,7 +100,6 @@ class ProfileVirtual extends Profile {
     // получаем узлы
     const bcnn = this.cnn_point('b');
     const ecnn = this.cnn_point('e');
-    const {rays} = this.nearest();
     const {path, generatrix} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями
@@ -161,29 +147,8 @@ class ProfileVirtual extends Profile {
     path.closePath();
     path.reduce();
 
-    this.children.forEach((elm) => {
-      if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
-        elm.redraw();
-      }
-    });
-
     return this;
   }
 }
 
-ProfileVirtual.nearest_cnn = {
-  size(profile) {
-    return profile.nearest().width;
-  },
-  empty() {
-    return false;
-  },
-  get cnn_type() {
-    return $p.enm.cnn_types.ii;
-  },
-  specification: [],
-  selection_params: [],
-}
-
-EditorInvisible.ProfileVirtual = ProfileVirtual;
+EditorInvisible.ProfileParent = ProfileParent;

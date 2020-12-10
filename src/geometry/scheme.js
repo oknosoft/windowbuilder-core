@@ -441,7 +441,7 @@ class Scheme extends paper.Project {
     // создаём семейство конструкций
     this.ox.constructions.find_rows({parent: parent ? parent.cnstr : 0}, (row) => {
       // и вложенные створки
-      this.load_contour(new Contour({parent: parent, row: row}));
+      this.load_contour(Contour.create({project: this, parent, row}));
     });
   }
 
