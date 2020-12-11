@@ -1447,7 +1447,12 @@ class Scheme extends paper.Project {
     }
 
     // если подходит текущая, возвращаем текущую
-    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+      if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
+        return attr.inset;
+      }
+    }
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
       return attr.inset;
     }
 
