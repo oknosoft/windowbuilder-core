@@ -44,7 +44,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}, observer} = this;
+      const {project: {_scope}, observer} = this;
 
       // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
       this.observer = observer.bind(this);
@@ -55,8 +55,8 @@ class Profile extends ProfileItem {
 
       // ищем и добавляем доборные профили
       if(fromCoordinates){
-        const {cnstr, elm} = attr.row;
-        ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+        const {cnstr, elm, _owner} = attr.row;
+        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
       }
     }
 

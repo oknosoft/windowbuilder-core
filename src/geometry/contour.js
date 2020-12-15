@@ -250,7 +250,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     // узлы и рёбра текущего слоя
     //this._skeleton = new Skeleton(this);
 
-    const {ox, l_connective} = this.project;
+    const {project} = this;
+    const ox = attr.ox || project.ox;
 
     // строка в таблице конструкций
     this._row = attr.row;
@@ -259,44 +260,53 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.direction = attr.direction;
     }
     if(attr.furn && typeof attr.furn !== 'string') {
-      this.furn = attr.furn || this.project.default_furn;
+      this.furn = attr.furn || project.default_furn;
     }
 
     // добавляем элементы контура
-    const {cnstr} = this;
-    if (cnstr) {
+    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
 
-      const {coordinates} = ox;
-      const {elm_types} = $p.enm;
+    project.l_connective.bringToFront();
 
-      coordinates.find_rows({cnstr, region: 0}, (row) => {
-        // профили и доборы
-        if(row.elm_type === elm_types.Связка) {
-          new ProfileBundle({row, parent: this});
-        }
-        else if(row.elm_type === elm_types.Вложение) {
-          this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
-        }
-        else if(elm_types.profiles.includes(row.elm_type)) {
-          new Profile({row, parent: this});
-        }
-        // заполнения
-        else if(elm_types.glasses.includes(row.elm_type)) {
-          new Filling({row, parent: this})
-        }
-        // разрезы
-        else if(row.elm_type === elm_types.Водоотлив) {
-          new Sectional({row, parent: this})
-        }
-        // остальные элементы (текст)
-        else if(row.elm_type === elm_types.Текст) {
-          new FreeText({row, parent: this.l_text})
-        }
-      });
+  }
+
+  /**
+   * Создаёт дочерние элементы
+   * @param coordinates {TabularSection}
+   * @param cnstr {Number}
+   */
+  create_children({coordinates, cnstr}) {
+
+    if (!cnstr) {
+      return;
     }
 
-    l_connective.bringToFront();
+    const {elm_types} = $p.enm;
 
+    coordinates.find_rows({cnstr, region: 0}, (row) => {
+      // профили и доборы
+      if(row.elm_type === elm_types.Связка) {
+        new ProfileBundle({row, parent: this});
+      }
+      else if(row.elm_type === elm_types.Вложение) {
+        this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
+      }
+      else if(elm_types.profiles.includes(row.elm_type)) {
+        new Profile({row, parent: this});
+      }
+      // заполнения
+      else if(elm_types.glasses.includes(row.elm_type)) {
+        new Filling({row, parent: this})
+      }
+      // разрезы
+      else if(row.elm_type === elm_types.Водоотлив) {
+        new Sectional({row, parent: this})
+      }
+      // остальные элементы (текст)
+      else if(row.elm_type === elm_types.Текст) {
+        new FreeText({row, parent: this.l_text})
+      }
+    });
   }
 
   /**
@@ -1710,7 +1720,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
     }
-
   }
 
   hide_generatrix() {

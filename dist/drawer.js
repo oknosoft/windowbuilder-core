@@ -609,7 +609,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr = {};
 
 
-    const {ox, l_connective} = this.project;
+    const {project} = this;
+    const ox = attr.ox || project.ox;
 
     this._row = attr.row;
 
@@ -617,39 +618,43 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.direction = attr.direction;
     }
     if(attr.furn && typeof attr.furn !== 'string') {
-      this.furn = attr.furn || this.project.default_furn;
+      this.furn = attr.furn || project.default_furn;
     }
 
-    const {cnstr} = this;
-    if (cnstr) {
+    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
 
-      const {coordinates} = ox;
-      const {elm_types} = $p.enm;
+    project.l_connective.bringToFront();
 
-      coordinates.find_rows({cnstr, region: 0}, (row) => {
-        if(row.elm_type === elm_types.Связка) {
-          new ProfileBundle({row, parent: this});
-        }
-        else if(row.elm_type === elm_types.Вложение) {
-          this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
-        }
-        else if(elm_types.profiles.includes(row.elm_type)) {
-          new Profile({row, parent: this});
-        }
-        else if(elm_types.glasses.includes(row.elm_type)) {
-          new Filling({row, parent: this})
-        }
-        else if(row.elm_type === elm_types.Водоотлив) {
-          new Sectional({row, parent: this})
-        }
-        else if(row.elm_type === elm_types.Текст) {
-          new FreeText({row, parent: this.l_text})
-        }
-      });
+  }
+
+  create_children({coordinates, cnstr}) {
+
+    if (!cnstr) {
+      return;
     }
 
-    l_connective.bringToFront();
+    const {elm_types} = $p.enm;
 
+    coordinates.find_rows({cnstr, region: 0}, (row) => {
+      if(row.elm_type === elm_types.Связка) {
+        new ProfileBundle({row, parent: this});
+      }
+      else if(row.elm_type === elm_types.Вложение) {
+        this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
+      }
+      else if(elm_types.profiles.includes(row.elm_type)) {
+        new Profile({row, parent: this});
+      }
+      else if(elm_types.glasses.includes(row.elm_type)) {
+        new Filling({row, parent: this})
+      }
+      else if(row.elm_type === elm_types.Водоотлив) {
+        new Sectional({row, parent: this})
+      }
+      else if(row.elm_type === elm_types.Текст) {
+        new FreeText({row, parent: this.l_text})
+      }
+    });
   }
 
   static create(attr = {}) {
@@ -1852,7 +1857,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
     }
-
   }
 
   hide_generatrix() {
@@ -2516,13 +2520,27 @@ class ContourNested extends Contour {
   constructor(attr) {
     super(attr);
 
-    const {project: {ox}, cnstr} = this;
+    const {project, cnstr} = this;
+    const {ox} = project;
     for(const {characteristic} of ox.calc_order.production) {
       if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {
         this._ox = characteristic;
+        break;
       }
     }
 
+    if(this._ox) {
+      this._ox.constructions.find_rows({parent: 1}, (row) => {
+        Contour.create({project, row, parent: this, ox: this._ox});
+      });
+    }
+  }
+
+  get hidden() {
+    return !this.visible;
+  }
+  set hidden(v) {
+    this.visible = !v;
   }
 
   redraw() {
@@ -2534,6 +2552,10 @@ class ContourNested extends Contour {
     this._attr._bounds = null;
 
     for(const elm of this.profiles) {
+      elm.redraw();
+    }
+
+    for(const elm of this.contours) {
       elm.redraw();
     }
   }
@@ -4088,7 +4110,7 @@ class BuilderElement extends paper.Group {
           if(this instanceof Filling){
             if(!iface || utils.is_data_obj(o)){
               const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _inserts_types_filling.indexOf(insert_type) != -1 &&
+              return _inserts_types_filling.includes(insert_type) &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
                 (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
             }
@@ -4524,18 +4546,19 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     this.addChild(_attr.path);
 
-    project.ox.coordinates.find_rows({
+    _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
       elm_type: $p.enm.elm_types.Раскладка
     }, (row) => new Onlay({row, parent: this}));
 
     if (attr.proto) {
+      const {glass_specification} = _row._owner._owner;
       const tmp = [];
-      project.ox.glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
+      glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
         tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
       });
-      tmp.forEach((row) => project.ox.glass_specification.add(row));
+      tmp.forEach((row) => glass_specification.add(row));
     }
 
   }
@@ -4547,7 +4570,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {cnns} = project;
     const {length} = profiles;
 
-    project.ox.glasses.add({
+    _row._owner._owner.glasses.add({
       elm: _row.elm,
       nom: nom,
       formula: this.formula(),
@@ -4806,8 +4829,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     const inset = $p.cat.inserts.get(v);
 
     if(!ignore_select){
-      const {project, elm} = this;
-      const {glass_specification} = project.ox;
+      const {project, elm, _row} = this;
+      const {glass_specification} = _row._owner._owner;
 
       inset.clr_group.default_clr(this);
 
@@ -4852,8 +4875,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   formula(by_art) {
+    const {elm, inset, _row} = this;
     let res;
-    this.project.ox.glass_specification.find_rows({elm: this.elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
+    _row._owner._owner.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
       let {name, article} = inset;
       const aname = name.split(' ');
       if(by_art && article){
@@ -4869,7 +4893,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         res += (by_art ? '*' : 'x') + name;
       }
     });
-    return res || (by_art ? this.inset.article || this.inset.name : this.inset.name);
+    return res || (by_art ? inset.article || inset.name : inset.name);
   }
 
   deselect_onlay_points() {
@@ -5183,7 +5207,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
             case 'thickness':
               let res = 0;
-              this.project.ox.glass_specification.find_rows({elm: this.elm}, (row) => {
+              _row._owner._owner.glass_specification.find_rows({elm: this.elm}, (row) => {
                 res += row.inset.thickness;
               });
               return res || _row.inset.thickness;
@@ -6976,7 +7000,7 @@ class ProfileItem extends GeneratrixElement {
         Object.defineProperty(this, prop.ref, {
           get() {
             let prow;
-            project.ox.params.find_rows({
+            _row._owner._owner.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -6989,7 +7013,7 @@ class ProfileItem extends GeneratrixElement {
           },
           set(v) {
             let prow, prow0;
-            project.ox.params.find_rows({
+            _row._owner._owner.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -7008,7 +7032,7 @@ class ProfileItem extends GeneratrixElement {
               prow.value = v;
             }
             else {
-              project.ox.params.add({
+              _row._owner._owner.params.add({
                 param: prop,
                 cnstr: -_row.row,
                 inset: blank.guid,
@@ -8265,14 +8289,14 @@ class ProfileBundle extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}} = this;
+      const {project: {_scope}, _row} = this;
 
       this.layer.on_insert_elm(this);
 
       if(fromCoordinates){
         const {cnstr, elm} = attr.row;
         const {Добор} = $p.enm.elm_types;
-        ox.coordinates.find_rows({cnstr, region: {not: 0}, parent: elm}, (row) => {
+        _row._owner.find_rows({cnstr, region: {not: 0}, parent: elm}, (row) => {
         });
       }
     }
@@ -8294,8 +8318,6 @@ EditorInvisible.BundleRange = ProfileBundle;
 
 
 
-
-
 class Profile extends ProfileItem {
 
   constructor(attr) {
@@ -8305,7 +8327,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}, observer} = this;
+      const {project: {_scope}, observer} = this;
 
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
@@ -8313,13 +8335,12 @@ class Profile extends ProfileItem {
       this.layer.on_insert_elm(this);
 
       if(fromCoordinates){
-        const {cnstr, elm} = attr.row;
-        ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+        const {cnstr, elm, _owner} = attr.row;
+        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
       }
     }
 
   }
-
 
   get d0() {
     const {_attr} = this;
@@ -8332,7 +8353,6 @@ class Profile extends ProfileItem {
     }
     return _attr.d0;
   }
-
 
   get elm_type() {
     const {_rays, _nearest} = this._attr;
@@ -8348,7 +8368,6 @@ class Profile extends ProfileItem {
 
     return elm_types.Рама;
   }
-
 
   get pos() {
     const by_side = this.layer.profiles_by_side();
@@ -8366,7 +8385,6 @@ class Profile extends ProfileItem {
     }
     return $p.enm.positions.Центр;
   }
-
 
   nearest(ign_cnn) {
 
@@ -8457,7 +8475,6 @@ class Profile extends ProfileItem {
     return _attr._nearest;
   }
 
-
   joined_imposts(check_only) {
 
     const {rays, generatrix, layer} = this;
@@ -8513,7 +8530,6 @@ class Profile extends ProfileItem {
 
   }
 
-
   joined_nearests() {
     const res = [];
 
@@ -8528,7 +8544,6 @@ class Profile extends ProfileItem {
     return res;
   }
 
-
   joined_glasses(glasses) {
     if(!glasses) {
       glasses = this.layer.glasses();
@@ -8542,7 +8557,6 @@ class Profile extends ProfileItem {
     }
     return res;
   }
-
 
   cnn_point(node, point) {
     const {project, parent, rays} = this;
@@ -8598,7 +8612,6 @@ class Profile extends ProfileItem {
 
     return res;
   }
-
 
   t_parent(be) {
     if(this.elm_type != $p.enm.elm_types.Импост) {
@@ -9290,6 +9303,9 @@ ProfileNested.nearest_cnn = {
   },
   specification: [],
   selection_params: [],
+  filtered_spec() {
+    return [];
+  },
 }
 
 EditorInvisible.ProfileNested = ProfileNested;
@@ -10800,8 +10816,6 @@ class Scheme extends paper.Project {
       }
       return attr.pos == pos;
     }
-
-
 
     if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
       if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {

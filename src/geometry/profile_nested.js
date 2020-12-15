@@ -195,6 +195,9 @@ ProfileNested.nearest_cnn = {
   },
   specification: [],
   selection_params: [],
+  filtered_spec() {
+    return [];
+  },
 }
 
 EditorInvisible.ProfileNested = ProfileNested;

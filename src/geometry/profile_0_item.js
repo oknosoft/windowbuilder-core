@@ -795,7 +795,7 @@ class ProfileItem extends GeneratrixElement {
         Object.defineProperty(this, prop.ref, {
           get() {
             let prow;
-            project.ox.params.find_rows({
+            _row._owner._owner.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -808,7 +808,7 @@ class ProfileItem extends GeneratrixElement {
           },
           set(v) {
             let prow, prow0;
-            project.ox.params.find_rows({
+            _row._owner._owner.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -828,7 +828,7 @@ class ProfileItem extends GeneratrixElement {
               prow.value = v;
             }
             else {
-              project.ox.params.add({
+              _row._owner._owner.params.add({
                 param: prop,
                 cnstr: -_row.row,
                 inset: blank.guid,

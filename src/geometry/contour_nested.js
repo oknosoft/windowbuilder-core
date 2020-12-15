@@ -15,13 +15,28 @@ class ContourNested extends Contour {
     super(attr);
 
     // находим или создаём строку заказа с вложенным изделием
-    const {project: {ox}, cnstr} = this;
+    const {project, cnstr} = this;
+    const {ox} = project;
     for(const {characteristic} of ox.calc_order.production) {
       if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {
         this._ox = characteristic;
+        break;
       }
     }
 
+    // добавляем в проект элементы вложенного изделия
+    if(this._ox) {
+      this._ox.constructions.find_rows({parent: 1}, (row) => {
+        Contour.create({project, row, parent: this, ox: this._ox});
+      });
+    }
+  }
+
+  get hidden() {
+    return !this.visible;
+  }
+  set hidden(v) {
+    this.visible = !v;
   }
 
   /**
@@ -40,6 +55,11 @@ class ContourNested extends Contour {
 
     // сначала перерисовываем все профили контура
     for(const elm of this.profiles) {
+      elm.redraw();
+    }
+
+    // затем - вложенное изделие
+    for(const elm of this.contours) {
       elm.redraw();
     }
   }

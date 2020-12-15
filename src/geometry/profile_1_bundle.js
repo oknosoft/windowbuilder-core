@@ -14,7 +14,7 @@ class ProfileBundle extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}} = this;
+      const {project: {_scope}, _row} = this;
 
       // Информируем контур о том, что у него появился новый ребёнок
       this.layer.on_insert_elm(this);
@@ -23,7 +23,7 @@ class ProfileBundle extends ProfileItem {
       if(fromCoordinates){
         const {cnstr, elm} = attr.row;
         const {Добор} = $p.enm.elm_types;
-        ox.coordinates.find_rows({cnstr, region: {not: 0}, parent: elm}, (row) => {
+        _row._owner.find_rows({cnstr, region: {not: 0}, parent: elm}, (row) => {
           // new Profile({row, parent: this});
         });
       }
