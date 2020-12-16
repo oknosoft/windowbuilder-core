@@ -250,53 +250,98 @@ class Contour extends AbstractFilling(paper.Layer) {
     // узлы и рёбра текущего слоя
     //this._skeleton = new Skeleton(this);
 
-    const {ox, l_connective} = this.project;
+    const {project} = this;
+    const ox = attr.ox || project.ox;
 
     // строка в таблице конструкций
-    if (attr.row) {
-      this._row = attr.row;
+    this._row = attr.row;
+
+    if(attr.direction) {
+      this.direction = attr.direction;
     }
-    else {
-      const {constructions} = ox;
-      this._row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
-      this._row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
+    if(attr.furn && typeof attr.furn !== 'string') {
+      this.furn = attr.furn || project.default_furn;
     }
 
     // добавляем элементы контура
-    const {cnstr} = this;
-    if (cnstr) {
+    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
 
-      const {coordinates} = ox;
-      const {elm_types} = $p.enm;
+    project.l_connective.bringToFront();
 
-      coordinates.find_rows({cnstr}, (row) => {
-        // профили и доборы
-        if(elm_types.profiles.includes(row.elm_type)) {
-          if(row.parent) {
-            new ProfileVirtual({row, parent: this});
-          }
-          else {
-            new Profile({row, parent: this});
-          }
-        }
-        // заполнения
-        else if(elm_types.glasses.includes(row.elm_type)) {
-          new Filling({row, parent: this})
-        }
-        // разрезы
-        else if(row.elm_type === elm_types.Водоотлив) {
-          new Sectional({row, parent: this})
-        }
-        // остальные элементы (текст)
-        else if(row.elm_type === elm_types.Текст) {
-          new FreeText({row, parent: this.l_text})
-        }
+  }
 
-      });
+  /**
+   * Создаёт дочерние элементы
+   * @param coordinates {TabularSection}
+   * @param cnstr {Number}
+   */
+  create_children({coordinates, cnstr}) {
+
+    if (!cnstr) {
+      return;
     }
 
-    l_connective.bringToFront();
+    const {elm_types} = $p.enm;
 
+    coordinates.find_rows({cnstr, region: 0}, (row) => {
+      // профили и доборы
+      if(row.elm_type === elm_types.Связка) {
+        new ProfileBundle({row, parent: this});
+      }
+      else if(row.elm_type === elm_types.Вложение) {
+        this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
+      }
+      else if(elm_types.profiles.includes(row.elm_type)) {
+        new Profile({row, parent: this});
+      }
+      // заполнения
+      else if(elm_types.glasses.includes(row.elm_type)) {
+        new Filling({row, parent: this})
+      }
+      // разрезы
+      else if(row.elm_type === elm_types.Водоотлив) {
+        new Sectional({row, parent: this})
+      }
+      // остальные элементы (текст)
+      else if(row.elm_type === elm_types.Текст) {
+        new FreeText({row, parent: this.l_text})
+      }
+    });
+  }
+
+  /**
+   *
+   * @param attr
+   * @return {Contour}
+   */
+  static create(attr = {}) {
+    let {kind, row, project} = attr;
+    if(typeof kind === 'undefined') {
+      kind = row ? row.kind : 0;
+    }
+    let Constructor = Contour;
+    if(kind === 1) {
+      Constructor = ContourVirtual;
+    }
+    else if(kind === 2) {
+      Constructor = ContourNested;
+    }
+    else if(kind === 3) {
+      Constructor = ContourParent;
+    }
+    // строка в таблице конструкций
+    if (!attr.row) {
+      const {constructions} = project.ox;
+      attr.row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
+      attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
+    }
+    if(kind) {
+      attr.row.kind = kind;
+    }
+    // оповещаем мир о новых слоях
+    const contour = new Constructor(attr);
+    project._scope.eve.emit_async('rows', project.ox, {constructions: true});
+    return contour;
   }
 
   /**
@@ -1675,7 +1720,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
     }
-
   }
 
   hide_generatrix() {
@@ -1813,7 +1857,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // четвертый проход - добавляем
     if (need_bind) {
-      const ProfileConstructor = this instanceof ContourVirtual ? ProfileVirtual : Profile;
+      const ProfileConstructor = this instanceof ContourVirtual ? ProfileNested : Profile;
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
         if (curr.binded) {

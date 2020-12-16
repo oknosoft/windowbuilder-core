@@ -226,7 +226,7 @@ class CnnPoint {
 
       /**
        * Текущее соединение - объект справочника соединения
-       * @type _cat.cnns
+       * @type CcatCnns
        */
       this.cnn = this._row.cnn;
 
@@ -460,7 +460,7 @@ class ProfileItem extends GeneratrixElement {
    * ### Соединение в точке 'b' для диалога свойств
    *
    * @property cnn1
-   * @type _cat.cnns
+   * @type CatCnns
    * @private
    */
   get cnn1() {
@@ -475,7 +475,7 @@ class ProfileItem extends GeneratrixElement {
    * Соединение в точке 'e' для диалога свойств
    *
    * @property cnn2
-   * @type _cat.cnns
+   * @type CatCnns
    * @private
    */
   get cnn2() {
@@ -795,7 +795,7 @@ class ProfileItem extends GeneratrixElement {
         Object.defineProperty(this, prop.ref, {
           get() {
             let prow;
-            project.ox.params.find_rows({
+            _row._owner._owner.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -808,7 +808,7 @@ class ProfileItem extends GeneratrixElement {
           },
           set(v) {
             let prow, prow0;
-            project.ox.params.find_rows({
+            _row._owner._owner.params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -828,7 +828,7 @@ class ProfileItem extends GeneratrixElement {
               prow.value = v;
             }
             else {
-              project.ox.params.add({
+              _row._owner._owner.params.add({
                 param: prop,
                 cnstr: -_row.row,
                 inset: blank.guid,
@@ -1573,30 +1573,34 @@ class ProfileItem extends GeneratrixElement {
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
    */
   default_inset(all) {
-    let {orientation, project, _attr, elm_type} = this;
+    let {orientation, project, layer, _attr, elm_type, inset} = this;
+    const {sys} = project._dp;
     const nearest = this.nearest(true);
     const {positions, orientations, elm_types, cnn_types} = $p.enm;
 
     if(nearest || all) {
       // импост может оказаться штульпом
       if(elm_type === elm_types.Импост){
-        if (this.nom.elm_type === elm_types.Штульп) {
+        if (this.nom.elm_type === elm_types.Штульп || sys.elmnts.find({nom: inset, elm_type: elm_types.Штульп})) {
           elm_type = elm_types.Штульп;
         }
         // else if (this.joined_nearests().some(({layer}) => layer.furn.shtulp_kind())) {
         //
         // }
       }
-      let pos = nearest && project._dp.sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
+      let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
       if(pos == positions.Центр) {
         if(orientation == orientations.vert) {
           pos = [pos, positions.ЦентрВертикаль];
+          if(layer.furn.shtulp_kind() === 2) {
+            elm_type = [elm_type, elm_types.СтворкаБИ];
+          }
         }
         if(orientation == orientations.hor) {
           pos = [pos, positions.ЦентрГоризонталь];
         }
       }
-      this.set_inset(this.project.default_inset({elm_type, pos, inset: this.inset}), true);
+      this.set_inset(this.project.default_inset({elm_type, pos, inset}), true);
     }
     if(nearest) {
       _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
@@ -1609,6 +1613,7 @@ class ProfileItem extends GeneratrixElement {
    *
    * @method path_points
    * @param cnn_point {CnnPoint}
+   * @param [profile_point] {String}
    */
   path_points(cnn_point, profile_point) {
 
@@ -2282,7 +2287,6 @@ class ProfileItem extends GeneratrixElement {
         position: this.interiorPoint().add(this.generatrix.getTangentAt(this.generatrix.length / 1).multiply(consts.font_size * 2)),
       });
     }
-
   }
 
 }

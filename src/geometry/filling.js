@@ -92,7 +92,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.addChild(_attr.path);
 
     // раскладки текущего заполнения
-    project.ox.coordinates.find_rows({
+    _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
       elm_type: $p.enm.elm_types.Раскладка
@@ -100,11 +100,12 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     // спецификация стеклопакета прототипа
     if (attr.proto) {
+      const {glass_specification} = _row._owner._owner;
       const tmp = [];
-      project.ox.glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
+      glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
         tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
       });
-      tmp.forEach((row) => project.ox.glass_specification.add(row));
+      tmp.forEach((row) => glass_specification.add(row));
     }
 
   }
@@ -122,7 +123,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {length} = profiles;
 
     // строка в таблице заполнений продукции
-    project.ox.glasses.add({
+    _row._owner._owner.glasses.add({
       elm: _row.elm,
       nom: nom,
       formula: this.formula(),
@@ -212,14 +213,30 @@ class Filling extends AbstractFilling(BuilderElement) {
     project.cnns.clear({elm1: this.elm});
 
     // создаём пустой новый слой
-    const Constructor = furn === 'virtual' ? ContourVirtual : (furn === 'nested' ? ContourNested : Contour);
-    const contour = new Constructor({parent: this.parent});
+    let kind = 0;
+    if(typeof furn === 'string') {
+      if(furn.includes('nested')) {
+        kind = 2;
+      }
+      else if(furn.includes('virtual')) {
+        kind = 1;
+      }
+    }
+    const cattr = {project, kind, parent: this.parent};
+    // фурнитура и параметры по умолчанию
+    if(direction) {
+      cattr.direction = direction;
+    }
+    if(typeof furn !== 'string') {
+      cattr.furn = furn || project.default_furn;
+    }
+    const contour = Contour.create(cattr);
 
     // задаём его путь - внутри будут созданы профили
     contour.path = this.profiles;
 
     // помещаем себя вовнутрь нового слоя
-    if(furn === 'nested') {
+    if(kind === 2) {
       this.remove();
     }
     else {
@@ -227,14 +244,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       _row.cnstr = contour.cnstr;
       // дочерние раскладки
       this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
-    }
-
-    // фурнитура и параметры по умолчанию
-    if(direction) {
-      contour.direction = direction;
-    }
-    if(typeof furn !== 'string') {
-      contour.furn = furn || project.default_furn;
     }
 
     // оповещаем мир о новых слоях
@@ -412,8 +421,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     const inset = $p.cat.inserts.get(v);
 
     if(!ignore_select){
-      const {project, elm} = this;
-      const {glass_specification} = project.ox;
+      const {project, elm, _row} = this;
+      const {glass_specification} = _row._owner._owner;
 
       // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
@@ -476,8 +485,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @type String
    */
   formula(by_art) {
+    const {elm, inset, _row} = this;
     let res;
-    this.project.ox.glass_specification.find_rows({elm: this.elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
+    _row._owner._owner.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
       let {name, article} = inset;
       const aname = name.split(' ');
       if(by_art && article){
@@ -493,7 +503,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         res += (by_art ? '*' : 'x') + name;
       }
     });
-    return res || (by_art ? this.inset.article || this.inset.name : this.inset.name);
+    return res || (by_art ? inset.article || inset.name : inset.name);
   }
 
   /**
@@ -891,7 +901,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
             case 'thickness':
               let res = 0;
-              this.project.ox.glass_specification.find_rows({elm: this.elm}, (row) => {
+              _row._owner._owner.glass_specification.find_rows({elm: this.elm}, (row) => {
                 res += row.inset.thickness;
               });
               return res || _row.inset.thickness;
