@@ -13965,6 +13965,13 @@ $p.cat.clrs.__define({
           return this.inverted(clr_sch);
         case 'БезЦвета':
           return this.get();
+        case 'КакВоВставке':
+          if(!elm){
+            return clr_elm;
+          }
+          const {inset} = elm;
+          const main_rows = inset.main_rows(elm);
+          return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
         case 'КакВедущий':
         case 'КакВедущийИзнутри':
         case 'КакВедущийСнаружи':
@@ -15112,6 +15119,32 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
   $p.CatInserts = class CatInserts extends $p.CatInserts {
 
+    main_rows(elm) {
+      const {_data} = this;
+      if(!_data.main_rows) {
+        _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+        if(!_data.main_rows.length && this.specification.count()){
+          _data.main_rows.push(this.specification.get(0));
+        }
+      }
+      const {main_rows} = _data;
+      if(!elm || main_rows.length < 2) {
+        return main_rows;
+      }
+      const {check_params} = ProductsBuilding;
+      const {ox} = elm.project;
+      return main_rows.filter((row) => {
+        return check_base_restrictions(row, elm) && check_params({
+          params: this.selection_params,
+          ox,
+          elm,
+          row_spec: row,
+          cnstr: 0,
+          origin: elm.fake_origin || 0,
+        });
+      });
+    }
+
     nom(elm, strict) {
 
       const {_data} = this;
@@ -15121,24 +15154,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       let _nom;
-      let main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
-      if(main_rows.length > 1 && elm) {
-        const {check_params} = ProductsBuilding;
-        main_rows = main_rows.filter((row) => {
-          return check_params({
-            params: this.selection_params,
-            ox: elm.project.ox,
-            elm: elm,
-            row_spec: row,
-            cnstr: 0,
-            origin: elm.fake_origin || 0,
-          });
-        });
-      }
-
-      if(!main_rows.length && !strict && this.specification.count()){
-        main_rows.push(this.specification.get(0))
-      }
+      const main_rows = this.main_rows(elm);
 
       if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
         if(main_rows[0].nom == this) {
@@ -15149,22 +15165,22 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
       else if(main_rows.length){
-        if(elm && !main_rows[0].formula.empty()){
-          try{
+        if(elm && !main_rows[0].formula.empty()) {
+          try {
             _nom = main_rows[0].formula.execute({elm});
-            if(!_nom){
-              _nom = main_rows[0].nom
+            if(!_nom) {
+              _nom = main_rows[0].nom;
             }
-          }catch(e){
-            _nom = main_rows[0].nom
+          } catch (e) {
+            _nom = main_rows[0].nom;
           }
         }
-        else{
-          _nom = main_rows[0].nom
+        else {
+          _nom = main_rows[0].nom;
         }
       }
-      else{
-        _nom = cat.nom.get()
+      else {
+        _nom = cat.nom.get();
       }
 
       if(main_rows.length < 2){
@@ -15294,21 +15310,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
-      const {_row} = elm;
-      const is_linear = elm.is_linear ? elm.is_linear() : true;
-
-      if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+      if(!this.check_base_restrictions(row, elm)) {
         return false;
       }
+
+      const {_row} = elm;
 
       if(row.is_main_elm && !row.quantity){
-        return false;
-      }
-
-      if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
-        return false;
-      }
-      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
         return false;
       }
 
@@ -15323,6 +15331,24 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
 
+
+      return true;
+    }
+
+    check_base_restrictions(row, elm) {
+      const {_row} = elm;
+      const is_linear = elm.is_linear ? elm.is_linear() : true;
+
+      if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+        return false;
+      }
+
+      if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
+        return false;
+      }
+      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
+        return false;
+      }
 
       return true;
     }
