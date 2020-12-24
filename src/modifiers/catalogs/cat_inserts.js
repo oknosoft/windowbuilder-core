@@ -327,7 +327,7 @@
       const {check_params} = ProductsBuilding;
       const {ox} = elm.project;
       return main_rows.filter((row) => {
-        return check_base_restrictions(row, elm) && check_params({
+        return this.check_base_restrictions(row, elm) && check_params({
           params: this.selection_params,
           ox,
           elm,
@@ -620,7 +620,7 @@
         }
       }
 
-      const {insert_type, check_restrictions} = this;
+      const {insert_type} = this;
       const {Профиль, Заполнение} = enm.inserts_types;
       const {check_params} = ProductsBuilding;
 
@@ -646,7 +646,7 @@
       this.specification.forEach((row) => {
 
         // Проверяем ограничения строки вставки
-        if(!check_restrictions(row, elm, insert_type == Профиль, len_angl)){
+        if(!this.check_restrictions(row, elm, insert_type == Профиль, len_angl)){
           return;
         }
 
