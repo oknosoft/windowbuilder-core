@@ -4602,6 +4602,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
     _row.path_data = this.path.pathData;
+    _row.s = this.area;
 
     for(let i=0; i<length; i++ ){
 
@@ -8041,7 +8042,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   is_linear() {
-    return this.generatrix.is_linear();
+    const {generatrix} = this;
+    return generatrix ? generatrix.is_linear() : true;
   }
 
   is_nearest(p) {
@@ -9337,11 +9339,19 @@ class ProfileNestedContent extends Profile {
     const h = bounds.height + bounds.y;
     const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
     let pelm;
+    let delta;
     for(const elm of profiles) {
       const {b, e, _row} = elm;
       const pdir = e.subtract(b);
       if(Math.abs(pdir.angle - dir.angle) < 0.1) {
         row.path_data = _row.path_data;
+        const pt = new paper.Point((_row.x1 - row.x1 + _row.x2 - row.x2) / 2, (_row.y1 - row.y1 + _row.y2 - row.y2) / 2);
+        if(delta) {
+          delta = delta.add(pt).divide(2);
+        }
+        else {
+          delta = pt;
+        }
         row.x1 = _row.x1;
         row.x2 = _row.x2;
         row.y1 = _row.y1;
@@ -9350,6 +9360,7 @@ class ProfileNestedContent extends Profile {
         break;
       }
     }
+
 
     super(attr);
     this._attr._nearest = pelm;
@@ -12461,7 +12472,7 @@ class ProductsBuilding {
 
     function base_spec_profile(elm) {
 
-      const {enm: {angle_calculating_ways, cnn_types, specification_order_row_types}, cat, utils: {blank}} = $p;
+      const {enm: {angle_calculating_ways, cnn_types}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
@@ -12591,7 +12602,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
-        if(inset.is_order_row == specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12625,7 +12636,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12704,7 +12715,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: -elm.elm
         };
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12724,7 +12735,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: contour.cnstr}, ({inset, clr}) => {
 
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, contour})) {
           const cx = Object.assign(ox.find_create_cx(-contour.cnstr, inset.ref), inset.contour_attrs(contour));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12899,6 +12910,15 @@ class ProductsBuilding {
       }
 
     };
+
+    function is_order_row_prod({inset, ox, elm, contour}) {
+      const {enm: {specification_order_row_types}, CatFormulas} = $p;
+      let {is_order_row} = inset;
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === specification_order_row_types.Продукция;
+    }
 
   }
 

@@ -1980,7 +1980,8 @@ class ProfileItem extends GeneratrixElement {
    * @return Boolean
    */
   is_linear() {
-    return this.generatrix.is_linear();
+    const {generatrix} = this;
+    return generatrix ? generatrix.is_linear() : true;
   }
 
   /**
