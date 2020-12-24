@@ -143,6 +143,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
     _row.path_data = this.path.pathData;
+    _row.s = this.area;
 
     // получаем пути граней профиля
     for(let i=0; i<length; i++ ){

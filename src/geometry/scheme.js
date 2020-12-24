@@ -466,6 +466,7 @@ class Scheme extends paper.Project {
   load(id, from_service) {
     const {_attr} = this;
     const _scheme = this;
+    const {enm: {elm_types}, cat: {templates, characteristics}, doc, utils} = $p;
 
     function load_object(o) {
 
@@ -476,13 +477,9 @@ class Scheme extends paper.Project {
 
       // включаем перерисовку
       _attr._opened = true;
-      _attr._bounds = new paper.Rectangle({
-        point: [0, 0],
-        size: [o.x, o.y]
-      });
+      _attr._bounds = new paper.Rectangle({point: [0, 0], size: [o.x, o.y]});
 
       // первым делом создаём соединители и опорные линии
-      const {enm: {elm_types}, cat: {templates}} = $p;
       o.coordinates.forEach((row) => {
         if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
@@ -597,13 +594,14 @@ class Scheme extends paper.Project {
     this.ox = null;
     this.clear();
 
-    if($p.utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
+    if(utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
       return load_object(id);
     }
-    else if($p.utils.is_guid(id) || $p.utils.is_data_obj(id)) {
-      return $p.cat.characteristics.get(id, true, true)
+    else if(utils.is_guid(id) || utils.is_data_obj(id)) {
+      return characteristics.get(id, true, true)
         .then((ox) =>
-          $p.doc.calc_order.get(ox.calc_order, true, true)
+          doc.calc_order.get(ox.calc_order, true, true)
+            .then((calc_order) => calc_order.load_linked_refs())
             .then(() => load_object(ox))
         );
     }

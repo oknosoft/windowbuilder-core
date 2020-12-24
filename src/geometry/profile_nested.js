@@ -64,7 +64,7 @@ class ProfileNested extends Profile {
   set clr(v) {}
 
   get sizeb() {
-    return this.nearest().sizeb;
+    return 0;
   }
 
   path_points(cnn_point, profile_point) {

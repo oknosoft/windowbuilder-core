@@ -575,7 +575,8 @@ class ProfileItem extends GeneratrixElement {
    * @private
    */
   get info() {
-    return '№' + this.elm + ' α:' + this.angle_hor.toFixed(0) + '° l:' + this.length.toFixed(0);
+    const {elm, angle_hor, length, layer} = this;
+    return `№${layer instanceof ContourNestedContent ? `${layer.layer.cnstr}-${elm}` : elm}  α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
   }
 
   /**
@@ -1979,7 +1980,8 @@ class ProfileItem extends GeneratrixElement {
    * @return Boolean
    */
   is_linear() {
-    return this.generatrix.is_linear();
+    const {generatrix} = this;
+    return generatrix ? generatrix.is_linear() : true;
   }
 
   /**

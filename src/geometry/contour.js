@@ -284,23 +284,24 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {elm_types} = $p.enm;
 
     coordinates.find_rows({cnstr, region: 0}, (row) => {
+      const attr = {row, parent: this};
       // профили и доборы
       if(row.elm_type === elm_types.Связка) {
-        new ProfileBundle({row, parent: this});
+        new ProfileBundle(attr);
       }
       else if(row.elm_type === elm_types.Вложение) {
-        this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
+        this instanceof ContourParent ? new ProfileParent(attr) : new ProfileNested(attr);
       }
       else if(elm_types.profiles.includes(row.elm_type)) {
-        new Profile({row, parent: this});
+        this instanceof ContourNestedContent ? new ProfileNestedContent(attr) : new Profile(attr);
       }
       // заполнения
       else if(elm_types.glasses.includes(row.elm_type)) {
-        new Filling({row, parent: this})
+        new Filling(attr)
       }
       // разрезы
       else if(row.elm_type === elm_types.Водоотлив) {
-        new Sectional({row, parent: this})
+        new Sectional(attr)
       }
       // остальные элементы (текст)
       else if(row.elm_type === elm_types.Текст) {
@@ -329,6 +330,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 3) {
       Constructor = ContourParent;
     }
+    else if(attr.parent instanceof ContourNestedContent || attr.parent instanceof ContourNested) {
+      Constructor = ContourNestedContent;
+    }
+
     // строка в таблице конструкций
     if (!attr.row) {
       const {constructions} = project.ox;

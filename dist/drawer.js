@@ -636,20 +636,21 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {elm_types} = $p.enm;
 
     coordinates.find_rows({cnstr, region: 0}, (row) => {
+      const attr = {row, parent: this};
       if(row.elm_type === elm_types.Связка) {
-        new ProfileBundle({row, parent: this});
+        new ProfileBundle(attr);
       }
       else if(row.elm_type === elm_types.Вложение) {
-        this instanceof ContourParent ? new ProfileParent({row, parent: this}) : new ProfileNested({row, parent: this});
+        this instanceof ContourParent ? new ProfileParent(attr) : new ProfileNested(attr);
       }
       else if(elm_types.profiles.includes(row.elm_type)) {
-        new Profile({row, parent: this});
+        this instanceof ContourNestedContent ? new ProfileNestedContent(attr) : new Profile(attr);
       }
       else if(elm_types.glasses.includes(row.elm_type)) {
-        new Filling({row, parent: this})
+        new Filling(attr)
       }
       else if(row.elm_type === elm_types.Водоотлив) {
-        new Sectional({row, parent: this})
+        new Sectional(attr)
       }
       else if(row.elm_type === elm_types.Текст) {
         new FreeText({row, parent: this.l_text})
@@ -672,6 +673,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 3) {
       Constructor = ContourParent;
     }
+    else if(attr.parent instanceof ContourNestedContent || attr.parent instanceof ContourNested) {
+      Constructor = ContourNestedContent;
+    }
+
     if (!attr.row) {
       const {constructions} = project.ox;
       attr.row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
@@ -2568,6 +2573,14 @@ class ContourNested extends Contour {
 }
 
 EditorInvisible.ContourNested = ContourNested;
+
+
+
+class ContourNestedContent extends Contour {
+
+}
+
+EditorInvisible.ContourNestedContent = ContourNestedContent;
 
 
 
@@ -4589,6 +4602,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
     _row.path_data = this.path.pathData;
+    _row.s = this.area;
 
     for(let i=0; i<length; i++ ){
 
@@ -6858,7 +6872,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   get info() {
-    return '№' + this.elm + ' α:' + this.angle_hor.toFixed(0) + '° l:' + this.length.toFixed(0);
+    const {elm, angle_hor, length, layer} = this;
+    return `№${layer instanceof ContourNestedContent ? `${layer.layer.cnstr}-${elm}` : elm}  α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
   }
 
   get r() {
@@ -8027,7 +8042,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   is_linear() {
-    return this.generatrix.is_linear();
+    const {generatrix} = this;
+    return generatrix ? generatrix.is_linear() : true;
   }
 
   is_nearest(p) {
@@ -9206,7 +9222,7 @@ class ProfileNested extends Profile {
   set clr(v) {}
 
   get sizeb() {
-    return this.nearest().sizeb;
+    return 0;
   }
 
   path_points(cnn_point, profile_point) {
@@ -9306,6 +9322,50 @@ ProfileNested.nearest_cnn = {
   filtered_spec() {
     return [];
   },
+}
+
+EditorInvisible.ProfileNested = ProfileNested;
+
+
+
+class ProfileNestedContent extends Profile {
+
+  constructor(attr) {
+
+    const {row, parent} = attr;
+    const {layer, project: {bounds}} = parent;
+    const {profiles} = layer;
+
+    const h = bounds.height + bounds.y;
+    const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
+    let pelm;
+    let delta;
+    for(const elm of profiles) {
+      const {b, e, _row} = elm;
+      const pdir = e.subtract(b);
+      if(Math.abs(pdir.angle - dir.angle) < 0.1) {
+        row.path_data = _row.path_data;
+        const pt = new paper.Point((_row.x1 - row.x1 + _row.x2 - row.x2) / 2, (_row.y1 - row.y1 + _row.y2 - row.y2) / 2);
+        if(delta) {
+          delta = delta.add(pt).divide(2);
+        }
+        else {
+          delta = pt;
+        }
+        row.x1 = _row.x1;
+        row.x2 = _row.x2;
+        row.y1 = _row.y1;
+        row.y2 = _row.y2;
+        pelm = elm;
+        break;
+      }
+    }
+
+
+    super(attr);
+    this._attr._nearest = pelm;
+
+  }
 }
 
 EditorInvisible.ProfileNested = ProfileNested;
@@ -10049,6 +10109,7 @@ class Scheme extends paper.Project {
   load(id, from_service) {
     const {_attr} = this;
     const _scheme = this;
+    const {enm: {elm_types}, cat: {templates, characteristics}, doc, utils} = $p;
 
     function load_object(o) {
 
@@ -10058,12 +10119,8 @@ class Scheme extends paper.Project {
       _scheme.ox = o;
 
       _attr._opened = true;
-      _attr._bounds = new paper.Rectangle({
-        point: [0, 0],
-        size: [o.x, o.y]
-      });
+      _attr._bounds = new paper.Rectangle({point: [0, 0], size: [o.x, o.y]});
 
-      const {enm: {elm_types}, cat: {templates}} = $p;
       o.coordinates.forEach((row) => {
         if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
@@ -10166,13 +10223,14 @@ class Scheme extends paper.Project {
     this.ox = null;
     this.clear();
 
-    if($p.utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
+    if(utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
       return load_object(id);
     }
-    else if($p.utils.is_guid(id) || $p.utils.is_data_obj(id)) {
-      return $p.cat.characteristics.get(id, true, true)
+    else if(utils.is_guid(id) || utils.is_data_obj(id)) {
+      return characteristics.get(id, true, true)
         .then((ox) =>
-          $p.doc.calc_order.get(ox.calc_order, true, true)
+          doc.calc_order.get(ox.calc_order, true, true)
+            .then((calc_order) => calc_order.load_linked_refs())
             .then(() => load_object(ox))
         );
     }
@@ -12414,7 +12472,7 @@ class ProductsBuilding {
 
     function base_spec_profile(elm) {
 
-      const {enm: {angle_calculating_ways, cnn_types, specification_order_row_types}, cat, utils: {blank}} = $p;
+      const {enm: {angle_calculating_ways, cnn_types}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
@@ -12544,7 +12602,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
-        if(inset.is_order_row == specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12578,7 +12636,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12657,7 +12715,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: -elm.elm
         };
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12677,7 +12735,7 @@ class ProductsBuilding {
 
       ox.inserts.find_rows({cnstr: contour.cnstr}, ({inset, clr}) => {
 
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, contour})) {
           const cx = Object.assign(ox.find_create_cx(-contour.cnstr, inset.ref), inset.contour_attrs(contour));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -12852,6 +12910,15 @@ class ProductsBuilding {
       }
 
     };
+
+    function is_order_row_prod({inset, ox, elm, contour}) {
+      const {enm: {specification_order_row_types}, CatFormulas} = $p;
+      let {is_order_row} = inset;
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === specification_order_row_types.Продукция;
+    }
 
   }
 
@@ -13965,6 +14032,13 @@ $p.cat.clrs.__define({
           return this.inverted(clr_sch);
         case 'БезЦвета':
           return this.get();
+        case 'КакВоВставке':
+          if(!elm){
+            return clr_elm;
+          }
+          const {inset} = elm;
+          const main_rows = inset.main_rows(elm);
+          return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
         case 'КакВедущий':
         case 'КакВедущийИзнутри':
         case 'КакВедущийСнаружи':
@@ -15112,6 +15186,32 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
   $p.CatInserts = class CatInserts extends $p.CatInserts {
 
+    main_rows(elm) {
+      const {_data} = this;
+      if(!_data.main_rows) {
+        _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+        if(!_data.main_rows.length && this.specification.count()){
+          _data.main_rows.push(this.specification.get(0));
+        }
+      }
+      const {main_rows} = _data;
+      if(!elm || main_rows.length < 2) {
+        return main_rows;
+      }
+      const {check_params} = ProductsBuilding;
+      const {ox} = elm.project;
+      return main_rows.filter((row) => {
+        return this.check_base_restrictions(row, elm) && check_params({
+          params: this.selection_params,
+          ox,
+          elm,
+          row_spec: row,
+          cnstr: 0,
+          origin: elm.fake_origin || 0,
+        });
+      });
+    }
+
     nom(elm, strict) {
 
       const {_data} = this;
@@ -15121,24 +15221,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       let _nom;
-      let main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
-      if(main_rows.length > 1 && elm) {
-        const {check_params} = ProductsBuilding;
-        main_rows = main_rows.filter((row) => {
-          return check_params({
-            params: this.selection_params,
-            ox: elm.project.ox,
-            elm: elm,
-            row_spec: row,
-            cnstr: 0,
-            origin: elm.fake_origin || 0,
-          });
-        });
-      }
-
-      if(!main_rows.length && !strict && this.specification.count()){
-        main_rows.push(this.specification.get(0))
-      }
+      const main_rows = this.main_rows(elm);
 
       if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
         if(main_rows[0].nom == this) {
@@ -15149,22 +15232,22 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
       else if(main_rows.length){
-        if(elm && !main_rows[0].formula.empty()){
-          try{
+        if(elm && !main_rows[0].formula.empty()) {
+          try {
             _nom = main_rows[0].formula.execute({elm});
-            if(!_nom){
-              _nom = main_rows[0].nom
+            if(!_nom) {
+              _nom = main_rows[0].nom;
             }
-          }catch(e){
-            _nom = main_rows[0].nom
+          } catch (e) {
+            _nom = main_rows[0].nom;
           }
         }
-        else{
-          _nom = main_rows[0].nom
+        else {
+          _nom = main_rows[0].nom;
         }
       }
-      else{
-        _nom = cat.nom.get()
+      else {
+        _nom = cat.nom.get();
       }
 
       if(main_rows.length < 2){
@@ -15294,21 +15377,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
-      const {_row} = elm;
-      const is_linear = elm.is_linear ? elm.is_linear() : true;
-
-      if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+      if(!this.check_base_restrictions(row, elm)) {
         return false;
       }
+
+      const {_row} = elm;
 
       if(row.is_main_elm && !row.quantity){
-        return false;
-      }
-
-      if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
-        return false;
-      }
-      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
         return false;
       }
 
@@ -15323,6 +15398,24 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
 
+
+      return true;
+    }
+
+    check_base_restrictions(row, elm) {
+      const {_row} = elm;
+      const is_linear = elm.is_linear ? elm.is_linear() : true;
+
+      if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+        return false;
+      }
+
+      if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
+        return false;
+      }
+      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
+        return false;
+      }
 
       return true;
     }
@@ -15348,7 +15441,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
 
-      const {insert_type, check_restrictions} = this;
+      const {insert_type} = this;
       const {Профиль, Заполнение} = enm.inserts_types;
       const {check_params} = ProductsBuilding;
 
@@ -15371,7 +15464,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
       this.specification.forEach((row) => {
 
-        if(!check_restrictions(row, elm, insert_type == Профиль, len_angl)){
+        if(!this.check_restrictions(row, elm, insert_type == Профиль, len_angl)){
           return;
         }
 
