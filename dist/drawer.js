@@ -15186,15 +15186,27 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
   $p.CatInserts = class CatInserts extends $p.CatInserts {
 
-    main_rows(elm) {
+    main_rows(elm, strict) {
+
       const {_data} = this;
-      if(!_data.main_rows) {
-        _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
-        if(!_data.main_rows.length && this.specification.count()){
-          _data.main_rows.push(this.specification.get(0));
+      let main_rows;
+
+      if(strict) {
+        if(!_data.main_rows_strict) {
+          _data.main_rows_strict = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
         }
+        main_rows = _data.main_rows_strict;
       }
-      const {main_rows} = _data;
+      else {
+        if(!_data.main_rows) {
+          _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+          if(!_data.main_rows.length && this.specification.count()){
+            _data.main_rows.push(this.specification.get(0));
+          }
+        }
+        main_rows = _data.main_rows;
+      }
+
       if(!elm || main_rows.length < 2) {
         return main_rows;
       }
@@ -15221,7 +15233,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       let _nom;
-      const main_rows = this.main_rows(elm);
+      const main_rows = this.main_rows(elm, !elm && strict);
 
       if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
         if(main_rows[0].nom == this) {
