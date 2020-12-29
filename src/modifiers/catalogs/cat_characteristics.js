@@ -344,7 +344,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const props = {};
     let tmp;
     try {
-      tmp = JSON.parse(this._obj.builder_props || '{}');
+      tmp = typeof this._obj.builder_props === 'object' ? this._obj.builder_props : JSON.parse(this._obj.builder_props || '{}');
     }
     catch(e) {
       tmp = props;

@@ -2539,6 +2539,7 @@ class ContourNested extends Contour {
         Contour.create({project, row, parent: this, ox: this._ox});
       });
     }
+
   }
 
   get hidden() {
@@ -2546,6 +2547,41 @@ class ContourNested extends Contour {
   }
   set hidden(v) {
     this.visible = !v;
+  }
+
+  get content() {
+    for(const contour of this.contours) {
+      return contour;
+    }
+  }
+
+  save_coordinates(short) {
+
+    if (!short) {
+      for (const elm of this.profiles) {
+        elm.save_coordinates();
+      }
+    }
+
+    const {bounds, w, h, is_rectangular, content} = this;
+    this._row.x = bounds ? bounds.width.round(4) : 0;
+    this._row.y = bounds ? bounds.height.round(4) : 0;
+    this._row.is_rectangular = is_rectangular;
+    this._row.w = w.round(4);
+    this._row.h = h.round(4);
+
+    if(content) {
+      content._row._owner._owner.glasses.clear();
+      content.save_coordinates();
+    }
+  }
+
+  set path(attr) {
+    super.path = attr;
+    const {content, profiles} = this
+    if(content) {
+      content.path = profiles.map((p) => new GlassSegment(p, p.b, p.e, false));
+    }
   }
 
   redraw() {
@@ -4365,9 +4401,8 @@ class BuilderElement extends paper.Group {
   }
 
   selected_cnn_ii() {
-    const {project, elm} = this;
+    const {project, elm, _row} = this;
     const sel = project.getSelectedItems();
-    const {cnns} = project;
     const items = [];
     let res;
 
@@ -4382,7 +4417,7 @@ class BuilderElement extends paper.Group {
       items.some((item) => item == this) &&
       items.some((item) => {
         if(item != this){
-          cnns.forEach((row) => {
+          _row._owner._owner.cnn_elmnts.forEach((row) => {
             if(!row.node1 && !row.node2 &&
               ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
               res = {elm: item, row: row};
@@ -4580,7 +4615,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     const {_row, project, profiles, bounds, imposts, nom} = this;
     const h = project.bounds.height + project.bounds.y;
-    const {cnns} = project;
+    const {cnn_elmnts: cnns, glasses} = _row._owner._owner;
     const {length} = profiles;
 
     _row._owner._owner.glasses.add({
@@ -4659,9 +4694,9 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   create_leaf(furn, direction) {
 
-    const {project, _row} = this;
+    const {project, _row, elm: elm1} = this;
 
-    project.cnns.clear({elm1: this.elm});
+    _row._owner._owner.cnn_elmnts.clear({elm1});
 
     let kind = 0;
     if(typeof furn === 'string') {
@@ -6613,7 +6648,7 @@ class CnnPoint {
 
     this._err = [];
 
-    this._row = _parent.project.cnns.find({elm1: _parent.elm, node1: node});
+    this._row = _parent.row._owner._owner.cnn_elmnts.find({elm1: _parent.elm, node1: node});
 
     this._profile;
 
@@ -7264,7 +7299,9 @@ class ProfileItem extends GeneratrixElement {
 
   save_coordinates() {
 
-    const {_attr, _row, rays, generatrix, project: {cnns}} = this;
+    const {_attr, _row, rays, generatrix} = this;
+
+    const cnns = _row._owner._owner.cnn_elmnts;
 
     if(!generatrix) {
       return;
@@ -7613,7 +7650,7 @@ class ProfileItem extends GeneratrixElement {
 
         const b = this.cnn_point('b');
         const e = this.cnn_point('e');
-        const {cnns} = project;
+        const cnns = _row._owner._owner.cnn_elmnts;
 
         if(b.profile && b.profile_point == 'e') {
           const {_rays} = b.profile._attr;
@@ -8232,8 +8269,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   is_corner() {
-    const {project, elm} = this;
-    const {_obj} = project.cnns;
+    const {_row, elm} = this;
+    const {_obj} = _row._owner._owner.cnn_elmnts;
     const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
       (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
     );
@@ -9283,6 +9320,13 @@ class ProfileNested extends Profile {
     return cnn_point;
   }
 
+  save_coordinates() {
+    super.save_coordinates();
+    const {layer: {content}, _row} = this;
+    const coordinates = this._row._owner;
+    const {cnn_elmnts} = coordinates._owner;
+  }
+
   redraw() {
     const bcnn = this.cnn_point('b');
     const ecnn = this.cnn_point('e');
@@ -9366,6 +9410,19 @@ class ProfileNestedContent extends Profile {
     this._attr._nearest = pelm;
 
   }
+
+  postcalc_cnn(node) {
+    const cnn_point = this.cnn_point(node);
+
+    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn);
+
+    if(!cnn_point.point) {
+      cnn_point.point = this[node];
+    }
+
+    return cnn_point;
+  }
+
 }
 
 EditorInvisible.ProfileNested = ProfileNested;
@@ -9485,8 +9542,8 @@ class Onlay extends ProfileItem {
       return;
     }
 
-    const {_row, project, rays, generatrix} = this;
-    const {cnns} = project;
+    const {_row, rays, generatrix} = this;
+    const cnns = _row._owner._owner.cnn_elmnts;
     const {b, e} = rays;
     const row_b = cnns.add({
       elm1: _row.elm,
@@ -9986,10 +10043,12 @@ class Scheme extends paper.Project {
   }
 
   elm_cnn(elm1, elm2) {
-    elm1 = elm1.elm;
-    elm2 = elm2.elm;
-    const res = this.cnns._obj.find((row) => row.elm1 === elm1 && row.elm2 === elm2);
-    return res && res._row.cnn;
+    const {elm: e1, _row: {_owner: o1}} = elm1;
+    const {elm: e2, _row: {_owner: o2}} = elm2;
+    if(o1 === o2) {
+      const res = o1._owner.cnn_elmnts._obj.find((row) => row.elm1 === e1 && row.elm2 === e2);
+      return res && res._row.cnn;
+    }
   }
 
   get cnns() {
@@ -12370,7 +12429,8 @@ class ProductsBuilding {
 
     function furn_spec(contour) {
 
-      if(!contour.parent) {
+      const {ContourNested} = EditorInvisible;
+      if(!contour.parent || contour instanceof ContourNested || contour.parent instanceof ContourNested) {
         return false;
       }
 
@@ -13747,7 +13807,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const props = {};
     let tmp;
     try {
-      tmp = JSON.parse(this._obj.builder_props || '{}');
+      tmp = typeof this._obj.builder_props === 'object' ? this._obj.builder_props : JSON.parse(this._obj.builder_props || '{}');
     }
     catch(e) {
       tmp = props;

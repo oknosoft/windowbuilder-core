@@ -504,9 +504,8 @@ class BuilderElement extends paper.Group {
    * Возвращает примыкающий элемент и строку табчасти соединений
    */
   selected_cnn_ii() {
-    const {project, elm} = this;
+    const {project, elm, _row} = this;
     const sel = project.getSelectedItems();
-    const {cnns} = project;
     const items = [];
     let res;
 
@@ -521,7 +520,7 @@ class BuilderElement extends paper.Group {
       items.some((item) => item == this) &&
       items.some((item) => {
         if(item != this){
-          cnns.forEach((row) => {
+          _row._owner._owner.cnn_elmnts.forEach((row) => {
             if(!row.node1 && !row.node2 &&
               ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
               res = {elm: item, row: row};

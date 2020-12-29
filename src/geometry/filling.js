@@ -119,7 +119,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     const {_row, project, profiles, bounds, imposts, nom} = this;
     const h = project.bounds.height + project.bounds.y;
-    const {cnns} = project;
+    const {cnn_elmnts: cnns, glasses} = _row._owner._owner;
     const {length} = profiles;
 
     // строка в таблице заполнений продукции
@@ -208,10 +208,10 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   create_leaf(furn, direction) {
 
-    const {project, _row} = this;
+    const {project, _row, elm: elm1} = this;
 
     // прибиваем соединения текущего заполнения
-    project.cnns.clear({elm1: this.elm});
+    _row._owner._owner.cnn_elmnts.clear({elm1});
 
     // создаём пустой новый слой
     let kind = 0;
