@@ -100,7 +100,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     // спецификация стеклопакета прототипа
     if (attr.proto) {
-      const {glass_specification} = _row._owner._owner;
+      const {glass_specification} = this.ox;
       const tmp = [];
       glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
         tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
@@ -117,13 +117,12 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, profiles, bounds, imposts, nom} = this;
+    const {_row, project, profiles, bounds, imposts, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
-    const {cnn_elmnts: cnns, glasses} = _row._owner._owner;
     const {length} = profiles;
 
     // строка в таблице заполнений продукции
-    _row._owner._owner.glasses.add({
+    glasses.add({
       elm: _row.elm,
       nom: nom,
       formula: this.formula(),
@@ -208,10 +207,10 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   create_leaf(furn, direction) {
 
-    const {project, _row, elm: elm1} = this;
+    const {project, _row, ox, elm: elm1} = this;
 
     // прибиваем соединения текущего заполнения
-    _row._owner._owner.cnn_elmnts.clear({elm1});
+    ox.cnn_elmnts.clear({elm1});
 
     // создаём пустой новый слой
     let kind = 0;
@@ -422,8 +421,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const inset = $p.cat.inserts.get(v);
 
     if(!ignore_select){
-      const {project, elm, _row} = this;
-      const {glass_specification} = _row._owner._owner;
+      const {project, elm, ox: {glass_specification}} = this;
 
       // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
@@ -486,9 +484,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @type String
    */
   formula(by_art) {
-    const {elm, inset, _row} = this;
+    const {elm, inset, ox} = this;
     let res;
-    _row._owner._owner.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
+    ox.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
       let {name, article} = inset;
       const aname = name.split(' ');
       if(by_art && article){
@@ -892,7 +890,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   // переопределяем геттер вставки
   get inset() {
-    const {_attr, _row} = this;
+    const {_attr, _row, ox} = this;
     if(!_attr._ins_proxy || _attr._ins_proxy.ref != _row.inset){
       _attr._ins_proxy = new Proxy(_row.inset, {
         get: (target, prop) => {
@@ -902,7 +900,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
             case 'thickness':
               let res = 0;
-              _row._owner._owner.glass_specification.find_rows({elm: this.elm}, (row) => {
+              ox.glass_specification.find_rows({elm: this.elm}, (row) => {
                 res += row.inset.thickness;
               });
               return res || _row.inset.thickness;

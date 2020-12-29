@@ -216,7 +216,7 @@ class CnnPoint {
     this._err = [];
 
     // строка в таблице соединений
-    this._row = _parent.row._owner._owner.cnn_elmnts.find({elm1: _parent.elm, node1: node});
+    this._row = _parent.ox.cnn_elmnts.find({elm1: _parent.elm, node1: node});
 
     // примыкающий профиль
     this._profile;
@@ -776,7 +776,7 @@ class ProfileItem extends GeneratrixElement {
    * @return {Array}
    */
   elm_props() {
-    const {_attr, _row, project} = this;
+    const {_attr, _row, project, ox: {params}} = this;
     const {blank} = $p.utils;
     // получаем список свойств
     const props = [];
@@ -796,7 +796,7 @@ class ProfileItem extends GeneratrixElement {
         Object.defineProperty(this, prop.ref, {
           get() {
             let prow;
-            _row._owner._owner.params.find_rows({
+            params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -809,7 +809,7 @@ class ProfileItem extends GeneratrixElement {
           },
           set(v) {
             let prow, prow0;
-            _row._owner._owner.params.find_rows({
+            params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -829,7 +829,7 @@ class ProfileItem extends GeneratrixElement {
               prow.value = v;
             }
             else {
-              _row._owner._owner.params.add({
+              params.add({
                 param: prop,
                 cnstr: -_row.row,
                 inset: blank.guid,
@@ -1069,9 +1069,7 @@ class ProfileItem extends GeneratrixElement {
    */
   save_coordinates() {
 
-    const {_attr, _row, rays, generatrix} = this;
-
-    const cnns = _row._owner._owner.cnn_elmnts;
+    const {_attr, _row, ox: {cnn_elmnts}, rays, generatrix} = this;
 
     if(!generatrix) {
       return;
@@ -1079,13 +1077,13 @@ class ProfileItem extends GeneratrixElement {
 
     const b = rays.b;
     const e = rays.e;
-    const row_b = cnns.add({
+    const row_b = cnn_elmnts.add({
       elm1: _row.elm,
       node1: 'b',
       cnn: b.cnn,
       aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
     });
-    const row_e = cnns.add({
+    const row_e = cnn_elmnts.add({
       elm1: _row.elm,
       node1: 'e',
       cnn: e.cnn,
@@ -1142,7 +1140,7 @@ class ProfileItem extends GeneratrixElement {
     // для створочных и доборных профилей добавляем соединения с внешними элементами
     const nrst = this.nearest();
     if(nrst) {
-      cnns.add({
+      cnn_elmnts.add({
         elm1: _row.elm,
         elm2: nrst.elm,
         cnn: _attr._nearest_cnn,
@@ -1473,7 +1471,7 @@ class ProfileItem extends GeneratrixElement {
         // прибиваем соединения в точках b и e
         const b = this.cnn_point('b');
         const e = this.cnn_point('e');
-        const cnns = _row._owner._owner.cnn_elmnts;
+        const {cnn_elmnts} = this.ox;
 
         if(b.profile && b.profile_point == 'e') {
           const {_rays} = b.profile._attr;
@@ -1497,7 +1495,7 @@ class ProfileItem extends GeneratrixElement {
           for(const node of ['b', 'e']) {
             const n = profile.rays[node];
             if(n.profile == this && n.cnn) {
-              cnns.clear({elm1: profile, elm2: this});
+              cnn_elmnts.clear({elm1: profile, elm2: this});
               n.cnn = null;
             }
           }
@@ -1507,12 +1505,12 @@ class ProfileItem extends GeneratrixElement {
         for (const {_attr, elm} of this.joined_nearests()) {
           _attr._rays && _attr._rays.clear(true);
           _attr._nearest_cnn = null;
-          cnns.clear({elm1: elm, elm2});
+          cnn_elmnts.clear({elm1: elm, elm2});
         }
 
         // так же, пересчитываем соединения с примыкающими заполнениями
         this.layer.glasses(false, true).forEach((glass) => {
-          cnns.clear({elm1: glass.elm, elm2});
+          cnn_elmnts.clear({elm1: glass.elm, elm2});
         });
       }
 
@@ -2225,8 +2223,8 @@ class ProfileItem extends GeneratrixElement {
    * Выясняет по таблице соединений, являются ли соединения на концах угловыми
    */
   is_corner() {
-    const {_row, elm} = this;
-    const {_obj} = _row._owner._owner.cnn_elmnts;
+    const {ox, elm} = this;
+    const {_obj} = ox.cnn_elmnts;
     const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
       (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
     );

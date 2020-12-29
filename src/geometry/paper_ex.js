@@ -391,6 +391,9 @@ Object.defineProperties(paper.Path.prototype, {
    */
   point_pos: {
     value: function point_pos(point, interior) {
+      if(!point) {
+        return 0;
+      }
       const np = this.getNearestPoint(interior);
       const offset = this.getOffsetOf(np);
       const line = new paper.Line(np, np.add(this.getTangentAt(offset)));

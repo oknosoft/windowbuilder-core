@@ -264,7 +264,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   check_layer() {
     const {project, eve} = this._scope;
     if (!project.contours.length) {
-      new EditorInvisible.Contour({parent: undefined});
+      EditorInvisible.Contour.create({project});
       eve.emit_async('rows', project.ox, {constructions: true});
     }
   }
@@ -610,7 +610,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 
     const {project} = this;
-    const ox = attr.ox || project.ox;
 
     this._row = attr.row;
 
@@ -621,6 +620,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.furn = attr.furn || project.default_furn;
     }
 
+    const ox = attr.ox || project.ox;
     this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
 
     project.l_connective.bringToFront();
@@ -1229,20 +1229,16 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   remove() {
-    const {children, _row, cnstr} = this;
+    const {children, _row, cnstr, project: {ox}} = this;
     while (children.length) {
       children[0].remove();
     }
 
-    if (_row) {
-      const {ox} = this.project;
+    if (_row && ox === _row._owner._owner) {
       ox.coordinates.clear({cnstr});
       ox.params.clear({cnstr});
       ox.inserts.clear({cnstr});
-
-      if (ox === _row._owner._owner) {
-        _row._owner.del(_row);
-      }
+      _row._owner.del(_row);
       this._row = null;
     }
 
@@ -3993,7 +3989,7 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this.project.ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+      this._row.elm = this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
 
     if(attr._nearest){
@@ -4305,6 +4301,11 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
+  get ox() {
+    const {_row} = this;
+    return _row ? _row._owner._owner : {cnn_elmnts: []};
+  }
+
   get nom() {
     return this.inset.nom(this);
   }
@@ -4401,7 +4402,7 @@ class BuilderElement extends paper.Group {
   }
 
   selected_cnn_ii() {
-    const {project, elm, _row} = this;
+    const {project, elm, ox} = this;
     const sel = project.getSelectedItems();
     const items = [];
     let res;
@@ -4417,7 +4418,7 @@ class BuilderElement extends paper.Group {
       items.some((item) => item == this) &&
       items.some((item) => {
         if(item != this){
-          _row._owner._owner.cnn_elmnts.forEach((row) => {
+          ox.cnn_elmnts.forEach((row) => {
             if(!row.node1 && !row.node2 &&
               ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
               res = {elm: item, row: row};
@@ -4436,7 +4437,7 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row} = this;
+    const {parent, project, observer, _row, ox} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
 
@@ -4445,7 +4446,7 @@ class BuilderElement extends paper.Group {
       delete this.observer;
     }
 
-    if(_row && _row._owner && project.ox === _row._owner._owner){
+    if(_row && project.ox === ox){
       _row._owner.del(_row);
     }
 
@@ -4601,7 +4602,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     }, (row) => new Onlay({row, parent: this}));
 
     if (attr.proto) {
-      const {glass_specification} = _row._owner._owner;
+      const {glass_specification} = this.ox;
       const tmp = [];
       glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
         tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
@@ -4613,12 +4614,11 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   save_coordinates() {
 
-    const {_row, project, profiles, bounds, imposts, nom} = this;
+    const {_row, project, profiles, bounds, imposts, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
-    const {cnn_elmnts: cnns, glasses} = _row._owner._owner;
     const {length} = profiles;
 
-    _row._owner._owner.glasses.add({
+    glasses.add({
       elm: _row.elm,
       nom: nom,
       formula: this.formula(),
@@ -4694,9 +4694,9 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   create_leaf(furn, direction) {
 
-    const {project, _row, elm: elm1} = this;
+    const {project, _row, ox, elm: elm1} = this;
 
-    _row._owner._owner.cnn_elmnts.clear({elm1});
+    ox.cnn_elmnts.clear({elm1});
 
     let kind = 0;
     if(typeof furn === 'string') {
@@ -4878,8 +4878,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const inset = $p.cat.inserts.get(v);
 
     if(!ignore_select){
-      const {project, elm, _row} = this;
-      const {glass_specification} = _row._owner._owner;
+      const {project, elm, ox: {glass_specification}} = this;
 
       inset.clr_group.default_clr(this);
 
@@ -4924,9 +4923,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   formula(by_art) {
-    const {elm, inset, _row} = this;
+    const {elm, inset, ox} = this;
     let res;
-    _row._owner._owner.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
+    ox.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
       let {name, article} = inset;
       const aname = name.split(' ');
       if(by_art && article){
@@ -5246,7 +5245,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   get inset() {
-    const {_attr, _row} = this;
+    const {_attr, _row, ox} = this;
     if(!_attr._ins_proxy || _attr._ins_proxy.ref != _row.inset){
       _attr._ins_proxy = new Proxy(_row.inset, {
         get: (target, prop) => {
@@ -5256,7 +5255,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
             case 'thickness':
               let res = 0;
-              _row._owner._owner.glass_specification.find_rows({elm: this.elm}, (row) => {
+              ox.glass_specification.find_rows({elm: this.elm}, (row) => {
                 res += row.inset.thickness;
               });
               return res || _row.inset.thickness;
@@ -6290,6 +6289,9 @@ Object.defineProperties(paper.Path.prototype, {
 
   point_pos: {
     value: function point_pos(point, interior) {
+      if(!point) {
+        return 0;
+      }
       const np = this.getNearestPoint(interior);
       const offset = this.getOffsetOf(np);
       const line = new paper.Line(np, np.add(this.getTangentAt(offset)));
@@ -6648,7 +6650,7 @@ class CnnPoint {
 
     this._err = [];
 
-    this._row = _parent.row._owner._owner.cnn_elmnts.find({elm1: _parent.elm, node1: node});
+    this._row = _parent.ox.cnn_elmnts.find({elm1: _parent.elm, node1: node});
 
     this._profile;
 
@@ -7033,7 +7035,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   elm_props() {
-    const {_attr, _row, project} = this;
+    const {_attr, _row, project, ox: {params}} = this;
     const {blank} = $p.utils;
     const props = [];
     project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
@@ -7050,7 +7052,7 @@ class ProfileItem extends GeneratrixElement {
         Object.defineProperty(this, prop.ref, {
           get() {
             let prow;
-            _row._owner._owner.params.find_rows({
+            params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -7063,7 +7065,7 @@ class ProfileItem extends GeneratrixElement {
           },
           set(v) {
             let prow, prow0;
-            _row._owner._owner.params.find_rows({
+            params.find_rows({
               param: prop,
               cnstr: {in: [0, -_row.row]},
               inset: blank.guid
@@ -7082,7 +7084,7 @@ class ProfileItem extends GeneratrixElement {
               prow.value = v;
             }
             else {
-              _row._owner._owner.params.add({
+              params.add({
                 param: prop,
                 cnstr: -_row.row,
                 inset: blank.guid,
@@ -7299,9 +7301,7 @@ class ProfileItem extends GeneratrixElement {
 
   save_coordinates() {
 
-    const {_attr, _row, rays, generatrix} = this;
-
-    const cnns = _row._owner._owner.cnn_elmnts;
+    const {_attr, _row, ox: {cnn_elmnts}, rays, generatrix} = this;
 
     if(!generatrix) {
       return;
@@ -7309,13 +7309,13 @@ class ProfileItem extends GeneratrixElement {
 
     const b = rays.b;
     const e = rays.e;
-    const row_b = cnns.add({
+    const row_b = cnn_elmnts.add({
       elm1: _row.elm,
       node1: 'b',
       cnn: b.cnn,
       aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
     });
-    const row_e = cnns.add({
+    const row_e = cnn_elmnts.add({
       elm1: _row.elm,
       node1: 'e',
       cnn: e.cnn,
@@ -7368,7 +7368,7 @@ class ProfileItem extends GeneratrixElement {
 
     const nrst = this.nearest();
     if(nrst) {
-      cnns.add({
+      cnn_elmnts.add({
         elm1: _row.elm,
         elm2: nrst.elm,
         cnn: _attr._nearest_cnn,
@@ -7650,7 +7650,7 @@ class ProfileItem extends GeneratrixElement {
 
         const b = this.cnn_point('b');
         const e = this.cnn_point('e');
-        const cnns = _row._owner._owner.cnn_elmnts;
+        const {cnn_elmnts} = this.ox;
 
         if(b.profile && b.profile_point == 'e') {
           const {_rays} = b.profile._attr;
@@ -7673,7 +7673,7 @@ class ProfileItem extends GeneratrixElement {
           for(const node of ['b', 'e']) {
             const n = profile.rays[node];
             if(n.profile == this && n.cnn) {
-              cnns.clear({elm1: profile, elm2: this});
+              cnn_elmnts.clear({elm1: profile, elm2: this});
               n.cnn = null;
             }
           }
@@ -7682,11 +7682,11 @@ class ProfileItem extends GeneratrixElement {
         for (const {_attr, elm} of this.joined_nearests()) {
           _attr._rays && _attr._rays.clear(true);
           _attr._nearest_cnn = null;
-          cnns.clear({elm1: elm, elm2});
+          cnn_elmnts.clear({elm1: elm, elm2});
         }
 
         this.layer.glasses(false, true).forEach((glass) => {
-          cnns.clear({elm1: glass.elm, elm2});
+          cnn_elmnts.clear({elm1: glass.elm, elm2});
         });
       }
 
@@ -8269,8 +8269,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   is_corner() {
-    const {_row, elm} = this;
-    const {_obj} = _row._owner._owner.cnn_elmnts;
+    const {ox, elm} = this;
+    const {_obj} = ox.cnn_elmnts;
     const rows = _obj.filter(({elm1, elm2, node1, node2}) =>
       (elm1 === elm && node1 === 'b' && (node2 === 'b' || node2 === 'e')) || (elm1 === elm && node1 === 'e' && (node2 === 'b' || node2 === 'e'))
     );
@@ -9542,8 +9542,8 @@ class Onlay extends ProfileItem {
       return;
     }
 
-    const {_row, rays, generatrix} = this;
-    const cnns = _row._owner._owner.cnn_elmnts;
+    const {_row, rays, generatrix, ox} = this;
+    const cnns = ox.cnn_elmnts;
     const {b, e} = rays;
     const row_b = cnns.add({
       elm1: _row.elm,
@@ -13794,7 +13794,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           });
         }
         if(!setted) {
-          this.owner = sys.production.get(0).nom;
+          const prow = sys.production.get(0);
+          if(prow) {
+            this.owner = prow.nom;
+          }
         }
       }
     }

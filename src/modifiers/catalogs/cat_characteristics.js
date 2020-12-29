@@ -328,7 +328,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           });
         }
         if(!setted) {
-          this.owner = sys.production.get(0).nom;
+          const prow = sys.production.get(0);
+          if(prow) {
+            this.owner = prow.nom;
+          }
         }
       }
     }
