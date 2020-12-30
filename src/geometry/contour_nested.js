@@ -33,6 +33,11 @@ class ContourNested extends Contour {
 
   }
 
+  presentation(bounds) {
+    const text = super.presentation(bounds);
+    return text.replace('Створка', 'Вложение');
+  }
+
   get hidden() {
     return !this.visible;
   }

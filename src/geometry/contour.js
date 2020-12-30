@@ -349,6 +349,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     return contour;
   }
 
+  presentation(bounds) {
+    if(!bounds){
+      bounds = this.bounds;
+    }
+    return (this.parent ? 'Створка №' : 'Рама №') + this.cnstr +
+      (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '');
+  }
+
   /**
    * Врезаем оповещение при активации слоя
    */
