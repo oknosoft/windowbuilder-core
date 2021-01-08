@@ -368,8 +368,15 @@ exports.CatCnns = class CatCnns extends Object {
         if(!alp2 && angle > 180) {
           angle = 360 - angle;
         }
-        if(amin > angle || amax < angle) {
-          return;
+        if(amin < 0 && amax < 0) {
+          if(-amin <= angle && -amax >= angle) {
+            return;
+          }
+        }
+        else {
+          if(amin > angle || amax < angle) {
+            return;
+          }
         }
       }
 
