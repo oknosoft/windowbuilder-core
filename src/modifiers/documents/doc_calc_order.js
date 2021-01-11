@@ -656,7 +656,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       СуммаДокументаБезСкидки: this.production._obj.reduce((val, row) => val + row.quantity * row.price, 0).toFixed(2),
       СуммаСкидки: this.production._obj.reduce((val, row) => val + row.discount, 0).toFixed(2),
       СуммаНДС: this.production._obj.reduce((val, row) => val + row.vat_amount, 0).toFixed(2),
-      ТекстНДС: this.vat_consider ? (this.vat_included ? 'В том числе НДС 18%' : 'НДС 18% (сверху)') : 'Без НДС',
+      ТекстНДС: this.vat_consider ? (this.vat_included ? 'В том числе НДС 20%' : 'НДС 20% (сверху)') : 'Без НДС',
       ТелефонПоАдресуДоставки: this.phone,
       СуммаВключаетНДС: contract.vat_included,
       УчитыватьНДС: contract.vat_consider,
@@ -742,23 +742,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         editor && editor.unload();
         return (get_imgs.length ? Promise.all(get_imgs) : Promise.resolve([]))
           .then(() => {
-            // https://www.npmjs.com/package/qrcodejs
-            // /dist/qrcodejs/qrcode.min.js
-            if(typeof QRCode === 'function') {
-              const svg = document.createElement('SVG');
-              svg.innerHTML = '<g />';
-              const qrcode = new QRCode(svg, {
-                text: 'http://www.oknosoft.ru/zd/',
-                width: 100,
-                height: 100,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H,
-                useSVG: true
+            // https://github.com/soldair/node-qrcode
+            if(typeof QRCode === 'object') {
+              const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
+              return QRCode.toString(text, {type: 'svg'}).then((qr) => {
+                res.qrcode = qr;
+                return res;
               });
-              res.qrcode = svg.innerHTML;
             }
-
             return res;
           });
       });

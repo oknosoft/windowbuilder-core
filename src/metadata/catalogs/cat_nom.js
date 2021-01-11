@@ -74,7 +74,7 @@ exports.CatNom = class CatNom extends Object {
    * @return {string}
    */
   get presentation() {
-    return this.name + (this.article ? ' ' + this.article : '');
+    return (this.article ? this.article + ' ' : '') + this.name;
   }
   set presentation(v) {
 

@@ -251,7 +251,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     //this._skeleton = new Skeleton(this);
 
     const {project} = this;
-    const ox = attr.ox || project.ox;
 
     // строка в таблице конструкций
     this._row = attr.row;
@@ -264,6 +263,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // добавляем элементы контура
+    const ox = attr.ox || project.ox;
     this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
 
     project.l_connective.bringToFront();
@@ -347,6 +347,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     const contour = new Constructor(attr);
     project._scope.eve.emit_async('rows', project.ox, {constructions: true});
     return contour;
+  }
+
+  presentation(bounds) {
+    if(!bounds){
+      bounds = this.bounds;
+    }
+    return (this.parent ? 'Створка №' : 'Рама №') + this.cnstr +
+      (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '');
   }
 
   /**
@@ -1014,22 +1022,16 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   remove() {
     //удаляем детей
-    const {children, _row, cnstr} = this;
+    const {children, _row, cnstr, project: {ox}} = this;
     while (children.length) {
       children[0].remove();
     }
 
-    if (_row) {
-      const {ox} = this.project;
+    if (_row && ox === _row._owner._owner) {
       ox.coordinates.clear({cnstr});
       ox.params.clear({cnstr});
-      //Удаляем вставки
       ox.inserts.clear({cnstr});
-
-      // удаляем себя
-      if (ox === _row._owner._owner) {
-        _row._owner.del(_row);
-      }
+      _row._owner.del(_row);
       this._row = null;
     }
 

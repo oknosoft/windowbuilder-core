@@ -312,15 +312,27 @@
   // переопределяем прототип
   $p.CatInserts = class CatInserts extends $p.CatInserts {
 
-    main_rows(elm) {
+    main_rows(elm, strict) {
+
       const {_data} = this;
-      if(!_data.main_rows) {
-        _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
-        if(!_data.main_rows.length && this.specification.count()){
-          _data.main_rows.push(this.specification.get(0));
+      let main_rows;
+
+      if(strict) {
+        if(!_data.main_rows_strict) {
+          _data.main_rows_strict = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
         }
+        main_rows = _data.main_rows_strict;
       }
-      const {main_rows} = _data;
+      else {
+        if(!_data.main_rows) {
+          _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+          if(!_data.main_rows.length && this.specification.count()){
+            _data.main_rows.push(this.specification.get(0));
+          }
+        }
+        main_rows = _data.main_rows;
+      }
+
       if(!elm || main_rows.length < 2) {
         return main_rows;
       }
@@ -350,7 +362,7 @@
       }
 
       let _nom;
-      const main_rows = this.main_rows(elm);
+      const main_rows = this.main_rows(elm, !elm && strict);
 
       if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
         if(main_rows[0].nom == this) {
@@ -789,20 +801,20 @@
               if(this.check_restrictions(row_ins_spec, row_prm, true)){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
-                const qty = !formula.empty() && formula.execute({
-                  ox: ox,
+                const fqty = !formula.empty() && formula.execute({
+                  ox,
+                  clr,
+                  row_spec,
                   elm: rib.profile || rib,
                   cnstr: len_angl && len_angl.cnstr || 0,
                   inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
                   row_ins: row_ins_spec,
-                  row_spec: row_spec,
-                  clr,
                   len: rib.len
                 });
                 // если формула не вернула значение, устанавливаем qty_len стандартным способом
-                if(qty) {
+                if(fqty) {
                   if(!row_spec.qty) {
-                    row_spec.qty = qty;
+                    row_spec.qty = fqty;
                   }
                 }
                 else {
@@ -851,6 +863,17 @@
 
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+
+                const fqty = !formula.empty() && formula.execute({
+                  ox,
+                  clr,
+                  row_spec,
+                  elm,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  row_ins: row_ins_spec,
+                  len: len_angl ? len_angl.len : _row.len
+                });
+                // TODO: непонятно, надо ли здесь учитывать fqty
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);

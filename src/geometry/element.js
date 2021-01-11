@@ -33,7 +33,7 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this.project.ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+      this._row.elm = this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
 
     if(attr._nearest){
@@ -372,6 +372,12 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
+  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  get ox() {
+    const {_row} = this;
+    return _row ? _row._owner._owner : {cnn_elmnts: []};
+  }
+
   /**
    * ### Номенклатура
    * свойство только для чтения, т.к. вычисляется во вставке
@@ -504,9 +510,8 @@ class BuilderElement extends paper.Group {
    * Возвращает примыкающий элемент и строку табчасти соединений
    */
   selected_cnn_ii() {
-    const {project, elm} = this;
+    const {project, elm, ox} = this;
     const sel = project.getSelectedItems();
-    const {cnns} = project;
     const items = [];
     let res;
 
@@ -521,7 +526,7 @@ class BuilderElement extends paper.Group {
       items.some((item) => item == this) &&
       items.some((item) => {
         if(item != this){
-          cnns.forEach((row) => {
+          ox.cnn_elmnts.forEach((row) => {
             if(!row.node1 && !row.node2 &&
               ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
               res = {elm: item, row: row};
@@ -545,7 +550,7 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row} = this;
+    const {parent, project, observer, _row, ox} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
 
@@ -554,7 +559,7 @@ class BuilderElement extends paper.Group {
       delete this.observer;
     }
 
-    if(_row && _row._owner && project.ox === _row._owner._owner){
+    if(_row && project.ox === ox){
       _row._owner.del(_row);
     }
 

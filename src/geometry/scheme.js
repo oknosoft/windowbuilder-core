@@ -288,10 +288,12 @@ class Scheme extends paper.Project {
    * @return {*}
    */
   elm_cnn(elm1, elm2) {
-    elm1 = elm1.elm;
-    elm2 = elm2.elm;
-    const res = this.cnns._obj.find((row) => row.elm1 === elm1 && row.elm2 === elm2);
-    return res && res._row.cnn;
+    const {elm: e1, _row: {_owner: o1}} = elm1;
+    const {elm: e2, _row: {_owner: o2}} = elm2;
+    if(o1 === o2) {
+      const res = o1._owner.cnn_elmnts._obj.find((row) => row.elm1 === e1 && row.elm2 === e2);
+      return res && res._row.cnn;
+    }
   }
 
   /**

@@ -127,6 +127,20 @@ class ProfileNested extends Profile {
     return cnn_point;
   }
 
+  save_coordinates() {
+    super.save_coordinates();
+    const {layer: {content}, _row} = this;
+    const {coordinates} = content._row._owner._owner;
+    const {cnn_elmnts} = coordinates._owner;
+    const prow = coordinates.find({elm: _row.parent});
+    if(prow) {
+      ['x1', 'y1', 'x2', 'y2', 'path_data', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => {
+        prow[name] = _row[name];
+      });
+      prow.alp1 = prow.alp2 = 0;
+    }
+  }
+
   redraw() {
     // получаем узлы
     const bcnn = this.cnn_point('b');

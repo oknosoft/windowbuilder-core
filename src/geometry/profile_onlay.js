@@ -155,8 +155,8 @@ class Onlay extends ProfileItem {
       return;
     }
 
-    const {_row, project, rays, generatrix} = this;
-    const {cnns} = project;
+    const {_row, rays, generatrix, ox} = this;
+    const cnns = ox.cnn_elmnts;
     const {b, e} = rays;
     const row_b = cnns.add({
       elm1: _row.elm,

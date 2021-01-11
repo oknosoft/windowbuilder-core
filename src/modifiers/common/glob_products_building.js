@@ -166,8 +166,9 @@ class ProductsBuilding {
      */
     function furn_spec(contour) {
 
-      // у рамных контуров фурнитуры не бывает
-      if(!contour.parent) {
+      const {ContourNested} = EditorInvisible;
+      // у рамных контуров и вложенных изделий, фурнитуры не бывает
+      if(!contour.parent || contour instanceof ContourNested || contour.parent instanceof ContourNested) {
         return false;
       }
 

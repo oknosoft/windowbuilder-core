@@ -30,6 +30,12 @@ class ContourNested extends Contour {
         Contour.create({project, row, parent: this, ox: this._ox});
       });
     }
+
+  }
+
+  presentation(bounds) {
+    const text = super.presentation(bounds);
+    return text.replace('Створка', 'Вложение');
   }
 
   get hidden() {
@@ -37,6 +43,50 @@ class ContourNested extends Contour {
   }
   set hidden(v) {
     this.visible = !v;
+  }
+
+  get content() {
+    for(const contour of this.contours) {
+      return contour;
+    }
+  }
+
+  /**
+   * Вычисляемые поля в таблицах конструкций и координат
+   * @method save_coordinates
+   * @param short {Boolean} - короткий вариант - только координаты контура
+   */
+  save_coordinates(short) {
+
+    if (!short) {
+      // запись в таблице координат для виртуальных профилей
+      for (const elm of this.profiles) {
+        elm.save_coordinates();
+      }
+    }
+
+    // ответственность за строку в таблице конструкций лежит на контуре
+    const {bounds, w, h, is_rectangular, content} = this;
+    this._row.x = bounds ? bounds.width.round(4) : 0;
+    this._row.y = bounds ? bounds.height.round(4) : 0;
+    this._row.is_rectangular = is_rectangular;
+    this._row.w = w.round(4);
+    this._row.h = h.round(4);
+
+    // пересчитаем вложенное изделие
+    if(content) {
+      content._row._owner._owner.glasses.clear();
+      content.save_coordinates();
+    }
+  }
+
+  set path(attr) {
+    super.path = attr;
+    // перерисовываем вложенные контуры
+    const {content, profiles} = this
+    if(content) {
+      content.path = profiles.map((p) => new GlassSegment(p, p.b, p.e, false));
+    }
   }
 
   /**
