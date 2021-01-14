@@ -4724,8 +4724,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(direction) {
       cattr.direction = direction;
     }
-    if(typeof furn !== 'string') {
-      cattr.furn = furn || project.default_furn;
+    const {utils} = $p;
+    if(kind === 0) {
+      if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn) && furn !== utils.blank.guid)) {
+        cattr.furn = furn;
+      }
+      else {
+        cattr.furn = project.default_furn;
+      }
     }
     const contour = Contour.create(cattr);
 
