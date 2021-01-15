@@ -16387,9 +16387,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   check_prices() {
+    const {job_prm, pricing} = $p;
+    if(job_prm.pricing.skip_empty_in_spec) {
+      return ;
+    }
     let err;
     this.production.forEach((calc_order_row) => {
-      err = $p.pricing.check_prices({calc_order_row});
+      err = pricing.check_prices({calc_order_row});
       if(err) {
         return false;
       }
@@ -17462,15 +17466,9 @@ $p.md.once('predefined_elmnts_inited', () => {
 
 
 
-
 (({adapters: {pouch}, classes, cat, doc, job_prm, md, pricing, utils}) => {
 
   const _mgr = doc.calc_order;
-  const proto_get = _mgr.constructor.prototype.get;
-
-  function template_get(ref, do_not_create){
-    return proto_get.apply(this, arguments)
-  }
 
   function from_files(start) {
     return start ? pouch.from_files(pouch.local.templates, pouch.remote.templates) : Promise.resolve();
@@ -17558,8 +17556,6 @@ $p.md.once('predefined_elmnts_inited', () => {
     pouch.remote.templates = new classes.PouchDB(__opts.name.replace(/ram$/, 'templates'),
       {skip_setup: true, adapter: 'http', auth: __opts.auth});
 
-
-
     if(pouch.props.direct) {
       !pouch.local.templates && pouch.local.__define('templates', {
         get() {
@@ -17589,6 +17585,66 @@ $p.md.once('predefined_elmnts_inited', () => {
   pouch.on({on_log_in, user_log_out});
 
   pouch.once('pouch_doc_ram_loaded', direct_templates);
+
+  _mgr.clone = async function(src) {
+
+    if(utils.is_guid(src)) {
+      src = await this.get(src, 'promise');
+    }
+    if(src.load_linked_refs) {
+      await src.load_linked_refs();
+    }
+    const {clone, refill_props} = src;
+    const {organization, partner, contract, _rev, ...others} = (src._obj || src);
+    const tmp = {date: new Date(), organization, partner, contract};
+    if(clone) {
+      utils._mixin(tmp, (src._obj || src));
+      delete tmp.clone;
+      delete tmp.refill_props;
+    }
+    const dst = await this.create(tmp, !clone);
+    if(!clone) {
+      utils._mixin(dst._obj, others, null,
+        'ref,date,number_doc,posted,_deleted,number_internal,production,planning,manager,obj_delivery_state'.split(','));
+    }
+
+    const map = new Map();
+
+    const src_ref = src.ref;
+    src.production.forEach((row) => {
+      const prow = Object.assign({}, row._obj || row);
+      if(row.characteristic.calc_order == src_ref) {
+        const tmp = {calc_order: dst.ref};
+        if(clone) {
+          utils._mixin(tmp, (row.characteristic._obj || row.characteristic), null, ['calc_order']);
+        }
+        const cx = prow.characteristic = cat.characteristics.create(tmp, false, true);
+        if(!clone) {
+          utils._mixin(cx._obj, (row.characteristic._obj || row.characteristic), null, 'ref,name,calc_order,timestamp,_rev'.split(','));
+        }
+        if(cx.coordinates.count() && refill_props) {
+          cx._data.refill_props = true;
+        }
+        map.set(row.characteristic.valueOf(), cx);
+      }
+      dst.production.add(prow);
+    });
+
+    dst.production.forEach((row) => {
+      if(row.ordn) {
+        const cx = map.get(row.ordn.valueOf());
+        if(cx) {
+          row.ordn = row.characteristic.leading_product = cx;
+        }
+      }
+    });
+
+    if(!clone && refill_props) {
+      await dst.recalc();
+    }
+
+    return dst.save();
+  }
 
 })($p);
  

@@ -357,9 +357,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   // проверяет заполненность цен
   check_prices() {
+    const {job_prm, pricing} = $p;
+    if(job_prm.pricing.skip_empty_in_spec) {
+      return ;
+    }
     let err;
     this.production.forEach((calc_order_row) => {
-      err = $p.pricing.check_prices({calc_order_row});
+      err = pricing.check_prices({calc_order_row});
       if(err) {
         return false;
       }
