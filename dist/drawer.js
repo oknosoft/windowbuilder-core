@@ -12375,7 +12375,7 @@ class ProductsBuilding {
     }
 
 
-    function cnn_add_spec(cnn, elm, len_angl, cnn_other) {
+    function cnn_add_spec(cnn, elm, len_angl, cnn_other, elm2) {
       if(!cnn) {
         return;
       }
@@ -12383,7 +12383,7 @@ class ProductsBuilding {
       const sign = cnn.cnn_type == enm.cnn_types.ii ? -1 : 1;
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
-      cnn.filtered_spec({elm, len_angl, ox}).forEach((row_cnn_spec) => {
+      cnn.filtered_spec({elm, elm2, len_angl, ox}).forEach((row_cnn_spec) => {
 
         const {nom} = row_cnn_spec;
 
@@ -12552,7 +12552,7 @@ class ProductsBuilding {
           alp2: 0,
           len: elm._attr._len,
           origin: cnn_row(elm.elm, nearest.elm)
-        });
+        }, elm._attr._nearest_cnn, nearest);
       }
     }
 
@@ -12660,7 +12660,7 @@ class ProductsBuilding {
 
         if(b.cnn.cnn_type == cnn_types.t || b.cnn.cnn_type == cnn_types.i || b.cnn.cnn_type == cnn_types.xx) {
           if(![cnn_types.t, cnn_types.xx].includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
-            cnn_add_spec(e.cnn, elm, len_angl, b.cnn);
+            cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
         }
         else {
@@ -12668,14 +12668,14 @@ class ProductsBuilding {
             len_angl.art2 = false;
             len_angl.art1 = true;
           }
-          cnn_add_spec(e.cnn, elm, len_angl, b.cnn);
+          cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
         }
 
         len_angl.angle = len_angl.alp1;
         len_angl.art2 = false;
         len_angl.art1 = true;
         len_angl.node = 'b';
-        cnn_add_spec(b.cnn, elm, len_angl, e.cnn);
+        cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
       }
 
       elm.inset.calculate_spec({elm, ox});
@@ -12782,7 +12782,7 @@ class ProductsBuilding {
           origin: cnn_row(_row.elm, curr.profile.elm)
         };
 
-        (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl);
+        (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, curr.cnn, elm);
 
       }
 
@@ -13008,12 +13008,12 @@ class ProductsBuilding {
 
   }
 
-  static check_params({params, row_spec, elm, cnstr, origin, ox}) {
+  static check_params({params, row_spec, elm, elm2, cnstr, origin, ox}) {
 
     let ok = true;
 
     params.find_rows({elm: row_spec.elm}, (prm_row) => {
-      ok = prm_row.param.check_condition({row_spec, prm_row, elm, cnstr, origin, ox});
+      ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
       if(!ok) {
         return false;
       }

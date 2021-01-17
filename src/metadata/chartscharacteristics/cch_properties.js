@@ -119,7 +119,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * ### Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, cnstr, origin, ox, calc_order}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order}) {
 
     const {is_calculated} = this;
     const {utils, enm: {comparison_types}} = $p;
@@ -129,6 +129,7 @@ exports.CchProperties = class CchProperties extends Object {
       row: row_spec,
       cnstr: cnstr || 0,
       elm,
+      elm2,
       ox,
       calc_order
     }) : this.extract_value(prm_row);
