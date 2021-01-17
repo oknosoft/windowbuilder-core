@@ -17646,6 +17646,28 @@ $p.md.once('predefined_elmnts_inited', () => {
     return dst.save();
   }
 
+  _mgr.export = function(ref) {
+    this.emit_async('export_start', ref);
+    return this.get(ref, 'promise')
+      .then((doc) => doc.load_linked_refs())
+      .then((doc) => {
+        const res = doc.toJSON();
+        for(const row of doc.production) {
+          if(row.characteristic.calc_order == doc) {
+            res.production[row.row - 1].characteristic = row.characteristic.toJSON();
+          }
+        }
+        this.emit_async('export_ok', res);
+        return res;
+      })
+      .catch((err) => this.emit_async('export_err', err));
+  }
+
+  _mgr.import = function() {
+    this.emit_async('import_start');
+  }
+
+
 })($p);
  
 return EditorInvisible;
