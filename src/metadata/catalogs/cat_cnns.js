@@ -86,9 +86,10 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    * @param [cnn_types] {EnumObj|Array.<EnumObj>}
    * @param [ign_side] {Boolean}
    * @param [is_outer] {Boolean}
+   * @param [cnn_point] {CnnPoint}
    * @return {Array}
    */
-  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer) {
+  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point) {
 
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
@@ -161,6 +162,22 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       const res = a1[ref2]
         .filter((cnn) => {
           if(types.includes(cnn.cnn_type)){
+            if(cnn.amin && cnn.amax && cnn_point) {
+              let angle = elm1.angle_at(cnn_point.node);
+              if(angle > 180) {
+                angle = 360 - angle;
+              }
+              if(cnn.amin < 0 && cnn.amax < 0) {
+                if(-cnn.amin <= angle && -cnn.amax >= angle) {
+                  return false;
+                }
+              }
+              else {
+                if(cnn.amin > angle || cnn.amax < angle) {
+                  return false;
+                }
+              }
+            }
             if(!side){
               return true
             }
@@ -196,8 +213,9 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    * @param [curr_cnn] {CatCnns}
    * @param [ign_side] {Boolean}
    * @param [is_outer] {Boolean}
+   * @param [cnn_point] {CnnPoint}
    */
-  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer){
+  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
     const {cnn_types: {acn}, cnn_sides} = this._owner.$p.enm;
 
@@ -227,7 +245,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       }
     }
 
-    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer);
+    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point);
 
     // сортируем по непустой стороне и приоритету
     if(cnns.length){
