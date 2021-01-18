@@ -303,10 +303,10 @@ exports.CatCnns = class CatCnns extends Object {
   /**
    * Укорочение для конкретной номенклатуры из спецификации
    */
-  nom_size({nom, elm, len_angl, ox}) {
+  nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
     const {CatInserts} = this._manager._owner.$p;
-    this.filtered_spec({elm, len_angl, ox, correct: true}).some((row) => {
+    this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom) {
         sz = row.sz;
@@ -329,7 +329,7 @@ exports.CatCnns = class CatCnns extends Object {
    * @param {Object} ox
    * @param {Boolean} [correct]
    */
-  filtered_spec({elm, len_angl, ox, correct = false}) {
+  filtered_spec({elm, elm2, len_angl, ox, correct = false}) {
     const res = [];
 
     const {
@@ -390,7 +390,7 @@ exports.CatCnns = class CatCnns extends Object {
       }
 
       // проверяем параметры изделия и добавляем, если проходит по ограничениям
-      if(correct || check_params({params: selection_params, row_spec: row, elm, ox})) {
+      if(correct || check_params({params: selection_params, row_spec: row, elm, elm2, ox})) {
         res.push(row);
       }
 
