@@ -209,6 +209,9 @@
 
   // сворачивает в строку вместе с характеристиками и излучает событие
   _mgr.export = function(ref) {
+    if(!ref) {
+      return this.emit_async('export_err', new Error('Пустой объект. Вероятно, не выбрана строка заказа'));
+    }
     this.emit_async('export_start', ref);
     return this.get(ref, 'promise')
       .then((doc) => doc.load_linked_refs())
@@ -219,6 +222,7 @@
             res.production[row.row - 1].characteristic = row.characteristic.toJSON();
           }
         }
+        res.class_name = this.class_name;
         this.emit_async('export_ok', res);
         return res;
       })
