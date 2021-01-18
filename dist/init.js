@@ -3147,12 +3147,12 @@ class CatCnnsManager extends CatManager {
    * Для соединений с заполнениями учитывается толщина. Контроль остальных геометрических особенностей выполняется на стороне рисовалки
    * @param elm1 {BuilderElement|CatNom}
    * @param [elm2] {BuilderElement|CatNom}
-   * @param [cnn_types] {EnumObj|Array.<EnumObj>}
+   * @param [cnn_types] {EnumObj|Array.<EnumObj>|CnnPoint}
    * @param [ign_side] {Boolean}
    * @param [is_outer] {Boolean}
    * @return {Array}
    */
-  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer) {
+  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point) {
 
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
@@ -3225,6 +3225,22 @@ class CatCnnsManager extends CatManager {
       const res = a1[ref2]
         .filter((cnn) => {
           if(types.includes(cnn.cnn_type)){
+            if(cnn.amin && cnn.amax && cnn_point) {
+              let angle = elm1.angle_at(cnn_point.node);
+              if(angle > 180) {
+                angle = 360 - angle;
+              }
+              if(cnn.amin < 0 && cnn.amax < 0) {
+                if(-cnn.amin <= angle && -cnn.amax >= angle) {
+                  return false;
+                }
+              }
+              else {
+                if(cnn.amin > angle || cnn.amax < angle) {
+                  return false;
+                }
+              }
+            }
             if(!side){
               return true
             }
@@ -3261,7 +3277,7 @@ class CatCnnsManager extends CatManager {
    * @param [ign_side] {Boolean}
    * @param [is_outer] {Boolean}
    */
-  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer){
+  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
     const {cnn_types: {acn}, cnn_sides} = this._owner.$p.enm;
 
@@ -3291,7 +3307,7 @@ class CatCnnsManager extends CatManager {
       }
     }
 
-    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer);
+    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point);
 
     // сортируем по непустой стороне и приоритету
     if(cnns.length){

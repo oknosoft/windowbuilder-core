@@ -190,7 +190,7 @@ class BuilderElement extends paper.Group {
 
     function cnn_choice_links(o, cnn_point){
 
-      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types);
+      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
 
       if(!iface || utils.is_data_obj(o)){
         return nom_cnns.some((cnn) => o.ref == cnn);

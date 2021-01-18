@@ -4137,7 +4137,7 @@ class BuilderElement extends paper.Group {
 
     function cnn_choice_links(o, cnn_point){
 
-      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types);
+      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
 
       if(!iface || utils.is_data_obj(o)){
         return nom_cnns.some((cnn) => o.ref == cnn);
@@ -6611,12 +6611,25 @@ class CnnPoint {
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
     const angle = _parent.angle_at(node);
     const {cnn} = this;
-    if(!cnn ||
-      (cnn.lmin && cnn.lmin > len) ||
-      (cnn.lmax && cnn.lmax < len) ||
-      (cnn.amin && cnn.amin > angle) ||
-      (cnn.amax && cnn.amax < angle)
-    ) {
+
+    let aerr;
+    if(cnn && cnn.amin && cnn.amax) {
+      if(angle > 180) {
+        angle = 360 - angle;
+      }
+      if(cnn.amin < 0 && cnn.amax < 0) {
+        if(-cnn.amin <= angle && -cnn.amax >= angle) {
+          aerr = true;
+        }
+      }
+      else {
+        if(cnn.amin > angle || cnn.amax < angle) {
+          aerr = true;
+        }
+      }
+    }
+
+    if(aerr || !cnn || (cnn.lmin && cnn.lmin > len) || (cnn.lmax && cnn.lmax < len)) {
       if(style) {
         Object.assign(new paper.Path.Circle({
           center: node == 'b' ? _corns[4].add(_corns[1]).divide(2) : _corns[2].add(_corns[3]).divide(2),
@@ -7727,7 +7740,7 @@ class ProfileItem extends GeneratrixElement {
   postcalc_cnn(node) {
     const cnn_point = this.cnn_point(node);
 
-    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn);
+    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
 
     if(!cnn_point.point) {
       cnn_point.point = this[node];
