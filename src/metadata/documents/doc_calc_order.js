@@ -21,10 +21,10 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       force.selector :
       {
         startkey: [this.class_name, ...moment().add(1, 'month').format('YYYY-MM-DD').split('-').map(Number)],
-        endkey: [this.class_name, ...moment().subtract(5, 'month').format('YYYY-MM-DD').split('-').map(Number)],
+        endkey: [this.class_name, ...moment().subtract(4, 'month').format('YYYY-MM-DD').split('-').map(Number)],
         descending: true,
         include_docs: true,
-        limit: 8000,
+        limit: 3000,
       };
 
     return pouch.db(this).query('doc/by_date', selector)
