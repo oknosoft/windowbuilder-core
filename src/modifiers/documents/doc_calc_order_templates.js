@@ -174,17 +174,20 @@
       const prow = Object.assign({}, row._obj || row);
       if(row.characteristic.calc_order == src_ref) {
         const tmp = {calc_order: dst.ref};
+        const _obj = row.characteristic._obj || row.characteristic;
         if(clone) {
-          utils._mixin(tmp, (row.characteristic._obj || row.characteristic), null, ['calc_order']);
+          utils._mixin(tmp, _obj, null, ['calc_order', 'class_name']);
         }
-        const cx = prow.characteristic = cat.characteristics.create(tmp, false, true);
-        if(!clone) {
-          utils._mixin(cx._obj, (row.characteristic._obj || row.characteristic), null, 'ref,name,calc_order,timestamp,_rev'.split(','));
+        else {
+          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev,specification,class_name'.split(','), true);
         }
+        const cx = cat.characteristics.create(tmp, false, true);
+        prow.characteristic = cx.ref;
+
         if(cx.coordinates.count() && refill_props) {
           cx._data.refill_props = true;
         }
-        map.set(row.characteristic.valueOf(), cx);
+        map.set(row.characteristic.ref, cx);
       }
       dst.production.add(prow);
     });
@@ -192,7 +195,7 @@
     // обновляем leading_product
     dst.production.forEach((row) => {
       if(row.ordn) {
-        const cx = map.get(row.ordn.valueOf());
+        const cx = map.get(row.ordn.ref);
         if(cx) {
           row.ordn = row.characteristic.leading_product = cx;
         }

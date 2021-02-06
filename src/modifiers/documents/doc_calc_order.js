@@ -1192,13 +1192,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             return;
           }
           else {
-            if(!cx.origin.empty() && !cx.origin.slave) {
+            const {origin} = cx;
+            if(origin && !origin.empty() && !origin.slave) {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
-              cx.apply_props(cx.origin, dp).calculate_spec({
+              cx.apply_props(origin, dp).calculate_spec({
                 elm: new FakeElm(row),
-                len_angl: new FakeLenAngl({len: row.len, inset: cx.origin}),
+                len_angl: new FakeLenAngl({len: row.len, inset: origin}),
                 ox: cx
               });
               row.value_change('quantity', '', row.quantity);
