@@ -17128,11 +17128,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             return;
           }
           else {
-            if(!cx.origin.empty() && !cx.origin.slave) {
+            const {origin} = cx;
+            if(origin && !origin.empty() && !origin.slave) {
               cx.specification.clear();
-              cx.apply_props(cx.origin, dp).calculate_spec({
+              cx.apply_props(origin, dp).calculate_spec({
                 elm: new FakeElm(row),
-                len_angl: new FakeLenAngl({len: row.len, inset: cx.origin}),
+                len_angl: new FakeLenAngl({len: row.len, inset: origin}),
                 ox: cx
               });
               row.value_change('quantity', '', row.quantity);
@@ -17628,24 +17629,27 @@ $p.md.once('predefined_elmnts_inited', () => {
       const prow = Object.assign({}, row._obj || row);
       if(row.characteristic.calc_order == src_ref) {
         const tmp = {calc_order: dst.ref};
+        const _obj = row.characteristic._obj || row.characteristic;
         if(clone) {
-          utils._mixin(tmp, (row.characteristic._obj || row.characteristic), null, ['calc_order']);
+          utils._mixin(tmp, _obj, null, ['calc_order']);
         }
-        const cx = prow.characteristic = cat.characteristics.create(tmp, false, true);
-        if(!clone) {
-          utils._mixin(cx._obj, (row.characteristic._obj || row.characteristic), null, 'ref,name,calc_order,timestamp,_rev'.split(','));
+        else {
+          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev'.split(','), true);
         }
+        const cx = cat.characteristics.create(tmp, false, true);
+        prow.characteristic = cx.ref;
+
         if(cx.coordinates.count() && refill_props) {
           cx._data.refill_props = true;
         }
-        map.set(row.characteristic.valueOf(), cx);
+        map.set(row.characteristic.ref, cx);
       }
       dst.production.add(prow);
     });
 
     dst.production.forEach((row) => {
       if(row.ordn) {
-        const cx = map.get(row.ordn.valueOf());
+        const cx = map.get(row.ordn.ref);
         if(cx) {
           row.ordn = row.characteristic.leading_product = cx;
         }
