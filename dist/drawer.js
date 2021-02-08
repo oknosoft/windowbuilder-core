@@ -8148,7 +8148,7 @@ class ProfileItem extends GeneratrixElement {
     if(!generatrix.curves.length) {
       return cnn_point;
     }
-    const _profile = this;
+    const other = cnn_point.profile;
     const {_corns} = _attr;
 
 
@@ -8182,23 +8182,21 @@ class ProfileItem extends GeneratrixElement {
       return delta;
     }
 
-    const prays = cnn_point.profile instanceof ProfileItem ?
-      cnn_point.profile.rays :
-      (cnn_point.profile instanceof Filling ? {inner: cnn_point.profile.path, outer: cnn_point.profile.path} : undefined);
+    const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {inner: other.path, outer: other.path} : undefined);
 
     const {cnn_type} = cnn_point.cnn || {};
-    const {cnn_types, cnn_sides} = $p.enm;
+    const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
-      if(!cnn_point.profile.path.segments.length) {
-        const {_attr, row} = cnn_point.profile;
+      if(!other.path.segments.length) {
+        const {_attr, row} = other;
         if(_attr.force_redraw) {
-          if(cnn_point.profile.generatrix && cnn_point.profile.generatrix.segments.length) {
-            cnn_point.profile.path.addSegments(cnn_point.profile.generatrix.segments);
+          if(other.generatrix && other.generatrix.segments.length) {
+            other.path.addSegments(other.generatrix.segments);
             _attr.force_redraw = false;
           }
-          else if(cnn_point.profile.row && cnn_point.profile.row.path_data) {
-            cnn_point.profile.path.pathData = cnn_point.profile.row.path_data;
+          else if(other.row && other.row.path_data) {
+            other.path.pathData = other.row.path_data;
             _attr.force_redraw = false;
           }
           else {
@@ -8207,7 +8205,7 @@ class ProfileItem extends GeneratrixElement {
         }
         else {
           _attr.force_redraw = true;
-          cnn_point.profile.redraw();
+          other.redraw();
           _attr.force_redraw = false;
         }
       }
@@ -8219,7 +8217,7 @@ class ProfileItem extends GeneratrixElement {
           if(cnn_point.point.is_nearest(profile.b, true)) {
             const cp = profile.rays.b.profile;
             if(cp !== this) {
-              if(cp !== cnn_point.profile || cnn_point.profile.cnn_side(this) === cnn_point.profile.cnn_side(profile)) {
+              if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
                 nodes.add(profile);
               }
             }
@@ -8227,7 +8225,7 @@ class ProfileItem extends GeneratrixElement {
           else if(cnn_point.point.is_nearest(profile.e, true)) {
             const cp = profile.rays.e.profile;
             if(cp !== this) {
-              if(cp !== cnn_point.profile || cnn_point.profile.cnn_side(this) === cnn_point.profile.cnn_side(profile)) {
+              if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
                 nodes.add(profile);
               }
             }
@@ -8238,12 +8236,12 @@ class ProfileItem extends GeneratrixElement {
         }
       });
       nodes.forEach((p2) => {
-        if(p2 !== cnn_point.profile) {
+        if(p2 !== other) {
           profile2 = p2;
         }
       });
 
-      const side = cnn_point.profile.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
+      const side = other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
 
       if(profile2) {
         const interior = generatrix.getPointAt(generatrix.length/2)
@@ -8287,7 +8285,7 @@ class ProfileItem extends GeneratrixElement {
     }
     else if(cnn_type == cnn_types.xx) {
 
-      if(cnn_point.profile instanceof Onlay) {
+      if(other instanceof Onlay) {
         const width = this.width * 0.7;
         const l = profile_point == 'b' ? width : generatrix.length - width;
         const p = generatrix.getPointAt(l);
@@ -8306,7 +8304,7 @@ class ProfileItem extends GeneratrixElement {
         }
       }
       else {
-        const cnn_point2 = cnn_point.profile.cnn_point(cnn_point.profile_point);
+        const cnn_point2 = other.cnn_point(cnn_point.profile_point);
         const profile2 = cnn_point2 && cnn_point2.profile;
         if(profile2) {
           const prays2 = profile2 && profile2.rays;
@@ -8350,13 +8348,52 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     else if(cnn_type == cnn_types.ad) {
-      if(profile_point == 'b') {
-        intersect_point(prays.outer, rays.outer, 1);
-        intersect_point(prays.inner, rays.inner, 4);
+      const tw = this.width, ow = other.width;
+      let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
+      if(check_a2 && check_a2.angle_calc_method == a2) {
+        const wprofile = tw > ow ? this : other;
+        const {inner} = wprofile.rays;
+        if(profile_point == 'b') {
+          intersect_point(prays.inner, rays.inner, 4);
+          const pt = _corns[4];
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? 1 : -1));
+          const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
+
+          if(wprofile === this) {
+            intersect_point(prays.outer, median, 5);
+            intersect_point(prays.outer, rays.outer, 1);
+          }
+          else {
+            intersect_point(rays.outer, median, 1);
+          }
+
+        }
+        else if(profile_point == 'e') {
+          intersect_point(prays.inner, rays.inner, 3);
+
+          const pt = _corns[3];
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? -1 : 1));
+          const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
+
+
+          if(wprofile === this) {
+            intersect_point(prays.outer, median, 6);
+            intersect_point(prays.outer, rays.outer, 2);
+          }
+          else {
+            intersect_point(rays.outer, median, 2);
+          }
+        }
       }
-      else if(profile_point == 'e') {
-        intersect_point(prays.outer, rays.outer, 2);
-        intersect_point(prays.inner, rays.inner, 3);
+      else {
+        if(profile_point == 'b') {
+          intersect_point(prays.outer, rays.outer, 1);
+          intersect_point(prays.inner, rays.inner, 4);
+        }
+        else if(profile_point == 'e') {
+          intersect_point(prays.outer, rays.outer, 2);
+          intersect_point(prays.inner, rays.inner, 3);
+        }
       }
 
     }
@@ -8413,18 +8450,18 @@ class ProfileItem extends GeneratrixElement {
 
     if(profile_point == 'b') {
       if(!_corns[1]) {
-        _corns[1] = this.b.add(this.generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
+        _corns[1] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
       }
       if(!_corns[4]) {
-        _corns[4] = this.b.add(this.generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
+        _corns[4] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
       }
     }
     else if(profile_point == 'e') {
       if(!_corns[2]) {
-        _corns[2] = this.e.add(this.generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
+        _corns[2] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
       }
       if(!_corns[3]) {
-        _corns[3] = this.e.add(this.generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
+        _corns[3] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
       }
     }
 

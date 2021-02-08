@@ -272,27 +272,27 @@ exports.CatCnns = class CatCnns extends Object {
     // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
     if(enm.cnn_types.acn.a.indexOf(this.cnn_type) != -1){
 
-      let art12 = elm.orientation == enm.orientations.Вертикальная ? job_prm.nom.art1 : job_prm.nom.art2;
+      let art12 = elm.orientation == enm.orientations.vert ? job_prm.nom.art1 : job_prm.nom.art2;
 
       ares = this.specification.find_rows({nom: art12});
-      if(ares.length)
+      if(ares.length) {
         return ares[0]._row;
+      }
     }
 
     // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
     if(this.cnn_elmnts.find_rows({nom1: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art1});
-      if(ares.length)
-        return ares[0]._row;
     }
-    if(this.cnn_elmnts.find_rows({nom2: nom}).length){
+    if(!ares.length && this.cnn_elmnts.find_rows({nom2: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art2});
-      if(ares.length)
-        return ares[0]._row;
     }
-    ares = this.specification.find_rows({nom: nom});
-    if(ares.length)
+    if(!ares.length) {
+      ares = this.specification.find_rows({nom: nom});
+    }
+    if(ares.length) {
       return ares[0]._row;
+    }
 
   }
 
