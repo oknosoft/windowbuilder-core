@@ -794,12 +794,15 @@ class ProfileItem extends GeneratrixElement {
    * @return {Array}
    */
   elm_props() {
-    const {_attr, _row, project, ox: {params}} = this;
+    const {_attr, _row, project, ox: {params},inset} = this;
     const {blank} = $p.utils;
+    const inset_params = inset.used_params();
     // получаем список свойств
     const props = [];
     project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
-      props.push(param);
+if (inset_params.includes(param)) {
+  props.push(param);
+}
     });
     // удаляем возможные паразитные свойства
     _attr.props && _attr.props.forEach((prop) => {
