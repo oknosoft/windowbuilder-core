@@ -86,9 +86,10 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    * @param [cnn_types] {EnumObj|Array.<EnumObj>}
    * @param [ign_side] {Boolean}
    * @param [is_outer] {Boolean}
+   * @param [cnn_point] {CnnPoint}
    * @return {Array}
    */
-  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer) {
+  nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point) {
 
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
@@ -161,6 +162,22 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       const res = a1[ref2]
         .filter((cnn) => {
           if(types.includes(cnn.cnn_type)){
+            if(cnn.amin && cnn.amax && cnn_point) {
+              let angle = elm1.angle_at(cnn_point.node);
+              if(angle > 180) {
+                angle = 360 - angle;
+              }
+              if(cnn.amin < 0 && cnn.amax < 0) {
+                if(-cnn.amin <= angle && -cnn.amax >= angle) {
+                  return false;
+                }
+              }
+              else {
+                if(cnn.amin > angle || cnn.amax < angle) {
+                  return false;
+                }
+              }
+            }
             if(!side){
               return true
             }
@@ -196,8 +213,9 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    * @param [curr_cnn] {CatCnns}
    * @param [ign_side] {Boolean}
    * @param [is_outer] {Boolean}
+   * @param [cnn_point] {CnnPoint}
    */
-  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer){
+  elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
     const {cnn_types: {acn}, cnn_sides} = this._owner.$p.enm;
 
@@ -227,7 +245,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       }
     }
 
-    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer);
+    const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point);
 
     // сортируем по непустой стороне и приоритету
     if(cnns.length){
@@ -254,27 +272,27 @@ exports.CatCnns = class CatCnns extends Object {
     // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
     if(enm.cnn_types.acn.a.indexOf(this.cnn_type) != -1){
 
-      let art12 = elm.orientation == enm.orientations.Вертикальная ? job_prm.nom.art1 : job_prm.nom.art2;
+      let art12 = elm.orientation == enm.orientations.vert ? job_prm.nom.art1 : job_prm.nom.art2;
 
       ares = this.specification.find_rows({nom: art12});
-      if(ares.length)
+      if(ares.length) {
         return ares[0]._row;
+      }
     }
 
     // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
     if(this.cnn_elmnts.find_rows({nom1: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art1});
-      if(ares.length)
-        return ares[0]._row;
     }
-    if(this.cnn_elmnts.find_rows({nom2: nom}).length){
+    if(!ares.length && this.cnn_elmnts.find_rows({nom2: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art2});
-      if(ares.length)
-        return ares[0]._row;
     }
-    ares = this.specification.find_rows({nom: nom});
-    if(ares.length)
+    if(!ares.length) {
+      ares = this.specification.find_rows({nom: nom});
+    }
+    if(ares.length) {
       return ares[0]._row;
+    }
 
   }
 
@@ -303,10 +321,10 @@ exports.CatCnns = class CatCnns extends Object {
   /**
    * Укорочение для конкретной номенклатуры из спецификации
    */
-  nom_size({nom, elm, len_angl, ox}) {
+  nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
     const {CatInserts} = this._manager._owner.$p;
-    this.filtered_spec({elm, len_angl, ox, correct: true}).some((row) => {
+    this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom) {
         sz = row.sz;
@@ -329,7 +347,7 @@ exports.CatCnns = class CatCnns extends Object {
    * @param {Object} ox
    * @param {Boolean} [correct]
    */
-  filtered_spec({elm, len_angl, ox, correct = false}) {
+  filtered_spec({elm, elm2, len_angl, ox, correct = false}) {
     const res = [];
 
     const {
@@ -368,8 +386,15 @@ exports.CatCnns = class CatCnns extends Object {
         if(!alp2 && angle > 180) {
           angle = 360 - angle;
         }
-        if(amin > angle || amax < angle) {
-          return;
+        if(amin < 0 && amax < 0) {
+          if(-amin <= angle && -amax >= angle) {
+            return;
+          }
+        }
+        else {
+          if(amin > angle || amax < angle) {
+            return;
+          }
         }
       }
 
@@ -383,7 +408,7 @@ exports.CatCnns = class CatCnns extends Object {
       }
 
       // проверяем параметры изделия и добавляем, если проходит по ограничениям
-      if(correct || check_params({params: selection_params, row_spec: row, elm, ox})) {
+      if(correct || check_params({params: selection_params, row_spec: row, elm, elm2, ox})) {
         res.push(row);
       }
 

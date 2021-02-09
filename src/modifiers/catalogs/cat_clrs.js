@@ -41,6 +41,13 @@ $p.cat.clrs.__define({
           return this.inverted(clr_sch);
         case 'БезЦвета':
           return this.get();
+        case 'КакВоВставке':
+          if(!elm){
+            return clr_elm;
+          }
+          const {inset} = elm;
+          const main_rows = inset.main_rows(elm);
+          return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
         case 'КакВедущий':
         case 'КакВедущийИзнутри':
         case 'КакВедущийСнаружи':

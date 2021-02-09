@@ -15,7 +15,7 @@
  */
 class Pricing {
 
-  constructor({md, adapters, job_prm}) {
+  constructor({md, adapters}) {
 
     // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
     md.once('predefined_elmnts_inited', () => {
@@ -483,24 +483,15 @@ class Pricing {
    * В случае нулевых цен, дополняет в спецификацию строку ошибки
    * @param prm
    */
-  check_prices(prm) {
-    const {price_type_first_cost, price_type_sale} = prm.price_type;
+  check_prices({calc_order_row}) {
     const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
     let err;
 
-    prm.calc_order_row.characteristic.specification.forEach((row) => {
+    calc_order_row.characteristic.specification.forEach((row) => {
       const {_obj, nom, characteristic} = row;
-      if(_obj.totqty1) {
-        let tmp_price = Infinity;
-        if(marginality_in_spec && !_obj.amount_marged){
-          // проверяем цену продужи
-          tmp_price = this.nom_price(nom, characteristic, price_type_sale, prm, {nom});
-        }
-        else if(!marginality_in_spec && !_obj.price) {
-          // проверяем цену себестоимости
-          tmp_price = this.nom_price(nom, characteristic, price_type_first_cost, prm, {nom});
-        }
-        if(!tmp_price && nom.has_price()) {
+      if(_obj.totqty1 && !nom.is_procedure && !nom.is_service) {
+        // проверяем цену продужи или себестоимости
+        if((marginality_in_spec && !_obj.amount_marged) || (!marginality_in_spec && !_obj.price)){
           err = row;
           return false;
         }

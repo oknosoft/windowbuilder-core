@@ -75,6 +75,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       return false;
     }
 
+    // для шаблонов, ссылка на типовой блок не нужна
+    if(calc_order.obj_delivery_state == 'Шаблон' && !this.base_block.empty()) {
+      this.base_block = '';
+    }
+
     // пересчитываем наименование
     const name = this.prod_name();
     if(name) {
@@ -323,7 +328,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           });
         }
         if(!setted) {
-          this.owner = sys.production.get(0).nom;
+          const prow = sys.production.get(0);
+          if(prow) {
+            this.owner = prow.nom;
+          }
         }
       }
     }
@@ -339,7 +347,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const props = {};
     let tmp;
     try {
-      tmp = JSON.parse(this._obj.builder_props || '{}');
+      tmp = typeof this._obj.builder_props === 'object' ? this._obj.builder_props : JSON.parse(this._obj.builder_props || '{}');
     }
     catch(e) {
       tmp = props;

@@ -11,6 +11,7 @@ const exclude = [
   'cat.abonents',
   'cat.servers',
   'cch.mdm_groups',
+  //'cat.property_values_hierarchy',
   'doc.registers_correction',
   'ireg.delivery_schedules',
   'ireg.delivery_scheme',
@@ -42,6 +43,7 @@ module.exports = function(meta) {
 
       if(name === 'branches' && cls === 'cat') {
         'back_server,repl_server,owner,mode,server'.split(',').forEach((fld) => delete mgrs[name].fields[fld]);
+        delete mgrs[name].tabular_sections.servers;
         delete mgrs[name].has_owners;
       }
 

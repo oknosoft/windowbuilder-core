@@ -77,7 +77,7 @@ class ProductsBuilding {
      * @param elm {BuilderElement}
      * @param len_angl {Object}
      */
-    function cnn_add_spec(cnn, elm, len_angl, cnn_other) {
+    function cnn_add_spec(cnn, elm, len_angl, cnn_other, elm2) {
       if(!cnn) {
         return;
       }
@@ -85,7 +85,7 @@ class ProductsBuilding {
       const sign = cnn.cnn_type == enm.cnn_types.ii ? -1 : 1;
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
-      cnn.filtered_spec({elm, len_angl, ox}).forEach((row_cnn_spec) => {
+      cnn.filtered_spec({elm, elm2, len_angl, ox}).forEach((row_cnn_spec) => {
 
         const {nom} = row_cnn_spec;
 
@@ -166,8 +166,9 @@ class ProductsBuilding {
      */
     function furn_spec(contour) {
 
-      // у рамных контуров фурнитуры не бывает
-      if(!contour.parent) {
+      const {ContourNested} = EditorInvisible;
+      // у рамных контуров и вложенных изделий, фурнитуры не бывает
+      if(!contour.parent || contour instanceof ContourNested || contour.parent instanceof ContourNested) {
         return false;
       }
 
@@ -194,8 +195,14 @@ class ProductsBuilding {
           row_spec.elm = row.handle_height_min;
           row_spec.len = row.coefficient / 1000;
           row_spec.qty = 0;
-          row_spec.totqty = 1;
-          row_spec.totqty1 = 1;
+          if(row.quantity && row.nom.demand.count()) {
+            row_spec.totqty = row.quantity;
+            row_spec.totqty1 = row.quantity;
+          }
+          else {
+            row_spec.totqty = 1;
+            row_spec.totqty1 = 1;
+          }
         }
         else {
           row_spec.qty = row.quantity * (!row.coefficient ? 1 : row.coefficient);
@@ -277,7 +284,7 @@ class ProductsBuilding {
           alp2: 0,
           len: elm._attr._len,
           origin: cnn_row(elm.elm, nearest.elm)
-        });
+        }, elm._attr._nearest_cnn, nearest);
       }
     }
 
@@ -287,7 +294,7 @@ class ProductsBuilding {
      */
     function base_spec_profile(elm) {
 
-      const {enm: {angle_calculating_ways, cnn_types, specification_order_row_types}, cat, utils: {blank}} = $p;
+      const {enm: {angle_calculating_ways, cnn_types}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
@@ -398,7 +405,7 @@ class ProductsBuilding {
         // для ТОбразного и Незамкнутого контура надо рассчитать еще и с другой стороны
         if(b.cnn.cnn_type == cnn_types.t || b.cnn.cnn_type == cnn_types.i || b.cnn.cnn_type == cnn_types.xx) {
           if(![cnn_types.t, cnn_types.xx].includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
-            cnn_add_spec(e.cnn, elm, len_angl, b.cnn);
+            cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
         }
         else {
@@ -407,7 +414,7 @@ class ProductsBuilding {
             len_angl.art2 = false;
             len_angl.art1 = true;
           }
-          cnn_add_spec(e.cnn, elm, len_angl, b.cnn);
+          cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
         }
 
         // спецификацию с предыдущей стороны рассчитваем всегда
@@ -415,7 +422,7 @@ class ProductsBuilding {
         len_angl.art2 = false;
         len_angl.art1 = true;
         len_angl.node = 'b';
-        cnn_add_spec(b.cnn, elm, len_angl, e.cnn);
+        cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
       }
 
       // спецификация вставки
@@ -434,7 +441,7 @@ class ProductsBuilding {
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
-        if(inset.is_order_row == specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -476,7 +483,7 @@ class ProductsBuilding {
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -544,7 +551,7 @@ class ProductsBuilding {
         };
 
         // добавляем спецификацию соединения рёбер заполнения с профилем
-        (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl);
+        (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, curr.cnn, elm);
 
       }
 
@@ -568,7 +575,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: -elm.elm
         };
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -594,7 +601,7 @@ class ProductsBuilding {
       ox.inserts.find_rows({cnstr: contour.cnstr}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
-        if(inset.is_order_row == $p.enm.specification_order_row_types.Продукция) {
+        if(is_order_row_prod({inset, ox, contour})) {
           const cx = Object.assign(ox.find_create_cx(-contour.cnstr, inset.ref), inset.contour_attrs(contour));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -809,6 +816,33 @@ class ProductsBuilding {
 
     };
 
+    /**
+     * Выясняет, надо ли вытягивать данную вставку в продукцию
+     *
+     * @example
+     * // Пример формулы:
+     * let {elm, contour} = obj;
+     * if(!contour && elm) {
+     *  contour = elm.layer;
+     * }
+     * const {specification_order_row_types: types} = $p.enm;
+     * return contour ? types.Продукция : types.Нет;
+     *
+     * @param inset
+     * @param ox
+     * @param elm
+     * @param contour
+     * @return {boolean}
+     */
+    function is_order_row_prod({inset, ox, elm, contour}) {
+      const {enm: {specification_order_row_types}, CatFormulas} = $p;
+      let {is_order_row} = inset;
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === specification_order_row_types.Продукция;
+    }
+
   }
 
   /**
@@ -819,14 +853,14 @@ class ProductsBuilding {
    * @param [cnstr] {Number} - номер конструкции или элемента
    * @return {boolean}
    */
-  static check_params({params, row_spec, elm, cnstr, origin, ox}) {
+  static check_params({params, row_spec, elm, elm2, cnstr, origin, ox}) {
 
     let ok = true;
 
     // режем параметры по элементу
     params.find_rows({elm: row_spec.elm}, (prm_row) => {
       // выполнение условия рассчитывает объект CchProperties
-      ok = prm_row.param.check_condition({row_spec, prm_row, elm, cnstr, origin, ox});
+      ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
       if(!ok) {
         return false;
       }

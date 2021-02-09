@@ -1,7 +1,5 @@
 /**
- *
- *
- * @module cat_params_links
+ * Справочник СвязиПараметров
  *
  * Created by Evgeniy Malyarov on 22.05.2020.
  */
