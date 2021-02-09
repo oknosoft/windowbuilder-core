@@ -882,8 +882,91 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(this.selected_cnn_ii()){
       oxml["Примыкание"] = ["cnn3"];
     }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
+    }
     return oxml;
   }
+
+
+  /**
+   * ### Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в Системе
+   * @return {Array}
+   */
+  elm_props() {
+    const {_attr, _row, project, ox: {params},inset} = this;
+    const {blank} = $p.utils;
+    const inset_params = inset.used_params();
+    // получаем список свойств
+    const props = [];
+    project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
+if (inset_params.includes(param)) {
+  props.push(param);
+}
+    });
+    // удаляем возможные паразитные свойства
+    _attr.props && _attr.props.forEach((prop) => {
+      if(!props.includes(prop)) {
+        delete this[prop.ref];
+      }
+    });
+    _attr.props = props;
+    // создаём свойства
+    props.forEach((prop) => {
+      if(!this.hasOwnProperty(prop.ref)) {
+        Object.defineProperty(this, prop.ref, {
+          get() {
+            let prow;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(!prow || row.cnstr) {
+                prow = row;
+              }
+            });
+            return prow && prow.value;
+          },
+          set(v) {
+            let prow, prow0;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(row.cnstr) {
+                prow = row;
+              }
+              else {
+                prow0 = row;
+              }
+            });
+            // если устанавливаемое значение совпадает со значением изделия - удаляем
+            if(prow0 && prow0.value == v) {
+              prow && prow._owner.del(prow);
+            }
+            else if(prow) {
+              prow.value = v;
+            }
+            else {
+              params.add({
+                param: prop,
+                cnstr: -_row.row,
+                inset: blank.guid,
+                value: v,
+              });
+            }
+          },
+          configurable: true,
+        });
+      }
+    });
+
+    return props;
+  }
+
 
   get default_clr_str() {
     return "#def,#d0ddff,#eff";
