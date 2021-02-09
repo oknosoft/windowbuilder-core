@@ -40,4 +40,100 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       });
   }
 
+  // копирует заказ, возвращает промис с новым заказом
+  async clone(src) {
+    const {utils} = this._owner.$p;
+    if(utils.is_guid(src)) {
+      src = await this.get(src, 'promise');
+    }
+    if(src.load_linked_refs) {
+      await src.load_linked_refs();
+    }
+    // создаём заказ
+    const {clone, refill_props} = src;
+    const {organization, partner, contract, _rev, ...others} = (src._obj || src);
+    const tmp = {date: new Date(), organization, partner, contract};
+    if(clone) {
+      utils._mixin(tmp, (src._obj || src));
+      delete tmp.clone;
+      delete tmp.refill_props;
+    }
+    const dst = await this.create(tmp, !clone);
+    if(!clone) {
+      utils._mixin(dst._obj, others, null,
+        'ref,date,number_doc,posted,_deleted,number_internal,production,planning,manager,obj_delivery_state'.split(','));
+    }
+
+    // заполняем продукцию и сохраненные эскизы
+    const map = new Map();
+
+    // создаём характеристики и заполняем данными исходного заказа
+    const src_ref = src.ref;
+    src.production.forEach((row) => {
+      const prow = Object.assign({}, row._obj || row);
+      if(row.characteristic.calc_order == src_ref) {
+        const tmp = {calc_order: dst.ref};
+        const _obj = row.characteristic._obj || row.characteristic;
+        if(clone) {
+          utils._mixin(tmp, _obj, null, ['calc_order', 'class_name']);
+        }
+        else {
+          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev,specification,class_name'.split(','), true);
+        }
+        const cx = cat.characteristics.create(tmp, false, true);
+        prow.characteristic = cx.ref;
+
+        if(cx.coordinates.count() && refill_props) {
+          cx._data.refill_props = true;
+        }
+        map.set(row.characteristic.ref, cx);
+      }
+      dst.production.add(prow);
+    });
+
+    // обновляем leading_product
+    dst.production.forEach((row) => {
+      if(row.ordn) {
+        const cx = map.get(row.ordn.ref);
+        if(cx) {
+          row.ordn = row.characteristic.leading_product = cx;
+        }
+      }
+    });
+
+    // если сказано перезаполнять параметры - перезаполняем и пересчитываем
+    if(!clone && refill_props) {
+      await dst.recalc();
+    }
+
+    return dst.save();
+  }
+
+  // сворачивает в строку вместе с характеристиками и излучает событие
+  export(ref) {
+    if(!ref) {
+      return this.emit_async('export_err', new Error('Пустой объект. Вероятно, не выбрана строка заказа'));
+    }
+    this.emit_async('export_start', ref);
+    return this.get(ref, 'promise')
+      .then((doc) => doc.load_linked_refs())
+      .then((doc) => {
+        const res = doc.toJSON();
+        for(const row of doc.production) {
+          if(row.characteristic.calc_order == doc) {
+            res.production[row.row - 1].characteristic = row.characteristic.toJSON();
+          }
+        }
+        res.class_name = this.class_name;
+        this.emit_async('export_ok', res);
+        return res;
+      })
+      .catch((err) => this.emit_async('export_err', err));
+  }
+
+  // излучает событие - нужен для совместимости с dhtmlx
+  import() {
+    this.emit_async('import_start');
+  }
+
 };

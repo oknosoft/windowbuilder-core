@@ -935,8 +935,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         prod.push(characteristic.ref);
       }
     });
-    return characteristics.adapter.load_array(characteristics, prod, false,
-        this.obj_delivery_state == obj_delivery_states.Шаблон && characteristics.adapter.local.templates)
+    return characteristics.adapter.load_array(characteristics, prod, false)
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {

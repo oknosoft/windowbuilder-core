@@ -16,20 +16,12 @@ const consts = {
 
 	  const builder = $p.job_prm.builder || {};
 
-		/**
-		 * Размер визуализации узла пути
-		 * @property handleSize
-		 * @type number
-		 */
+    /* Размер визуализации узла пути */
 		if(builder.handle_size) {
       settings.handleSize = builder.handle_size;
     }
 
-		/**
-		 * Прилипание. На этом расстоянии узел пытается прилепиться к другому узлу или элементу
-		 * @property sticking
-		 * @type number
-		 */
+    /* Прилипание. На этом расстоянии узел пытается прилепиться к другому узлу или элементу */
 		this.sticking = builder.sticking || 90;
 		this.sticking_l = builder.sticking_l || 9;
 		this.sticking0 = this.sticking / 2;
@@ -37,7 +29,8 @@ const consts = {
 		this.font_size = builder.font_size || 90;
     this.font_family = builder.font_family || 'GOST type B';
     this.elm_font_size = builder.elm_font_size || 60;
-    this.cutoff = builder.cutoff || 1300; // если габариты изделия больше этого значения, увеличиваем шрифт
+    /* если габариты изделия больше этого значения, увеличиваем шрифт */
+    this.cutoff = builder.cutoff || 1300;
 
     if(!builder.font_family) {
       builder.font_family = this.font_family;
@@ -54,9 +47,8 @@ const consts = {
       this.elm_font_size *= 1.2;
     }
 
-		// в пределах этого угла, считаем элемент вертикальным или горизонтальным
+    /* в пределах этого угла, считаем элемент вертикальным или горизонтальным */
 		this.orientation_delta = builder.orientation_delta || 30;
-
 
 	},
 
