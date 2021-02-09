@@ -1170,15 +1170,8 @@ class Scheme extends paper.Project {
     if(base_block.empty() || calc_order.obj_delivery_state == Шаблон || base_block.calc_order.obj_delivery_state != Шаблон) {
       return false;
     }
-    const {auto_align} = $p.job_prm.properties;
-    let align;
-    if(auto_align) {
-      base_block.params.find_rows({param: auto_align}, (row) => {
-        align = row.value;
-        return false;
-      });
-      return align && align != '_' && align;
-    }
+    const align = base_block._extra('auto_align');
+    return align && align != '_' && align;
   }
 
   /**
@@ -1214,12 +1207,13 @@ class Scheme extends paper.Project {
           glasses.indexOf(filling) == -1 && glasses.push(filling);
         }
       }
-      this._scope.glass_align('width', glasses);
 
       // TODO: понять, что хотел автор
       // if(auto_align == $p.enm.align_types.ПоЗаполнениям) {
       //
       // }
+      this._scope.glass_align('width', glasses);
+
     }, 100);
 
   }

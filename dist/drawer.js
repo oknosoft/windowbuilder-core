@@ -195,6 +195,363 @@ class EditorInvisible extends paper.PaperScope {
     });
   }
 
+  do_glass_align(name = 'auto', glasses) {
+
+    const {project, Point, Key} = this;
+
+    if(!glasses){
+      glasses = project.selected_glasses();
+    }
+    if(glasses.length < 2){
+      return;
+    }
+
+    const {enm, ui} = $p;
+
+    let parent_layer;
+    if(glasses.some(({layer}) => {
+      const gl = layer.layer || layer;
+      if(!parent_layer){
+        parent_layer = gl;
+      }
+      else if(parent_layer != gl){
+        return true;
+      }
+    })){
+      parent_layer = null;
+      if(glasses.some(({layer}) => {
+        const gl = project.rootLayer(layer);
+        if(!parent_layer){
+          parent_layer = gl;
+        }
+        else if(parent_layer != gl){
+          ui && ui.dialogs.alert({title: 'Выравнивание', text: 'Заполнения принадлежат разным рамным контурам'});
+          return true;
+        }
+      })){
+        return;
+      }
+    }
+
+    if(name == 'auto'){
+      name = 'width';
+    }
+
+    const orientation = name == 'width' ? enm.orientations.vert : enm.orientations.hor;
+    const shift = parent_layer
+      .getItems({class: Profile})
+      .filter((impost) => {
+        const {b, e} = impost.rays;
+        return impost.orientation == orientation && (b.is_tt || e.is_tt || b.is_i || e.is_i);
+      });
+
+    const galign = Key.modifiers.control || Key.modifiers.shift || project.auto_align == enm.align_types.Геометрически;
+    let medium = 0;
+
+    const glmap = new Map();
+    glasses = glasses.map((glass) => {
+      const {bounds, profiles} = glass;
+      const res = {
+        glass,
+        width: bounds.width,
+        height: bounds.height,
+      };
+
+      if(galign){
+        const by_side = glass.profiles_by_side(null, profiles);
+        res.width = (by_side.right.b.x + by_side.right.e.x - by_side.left.b.x - by_side.left.e.x) / 2;
+        res.height = (by_side.bottom.b.y + by_side.bottom.e.y - by_side.top.b.y - by_side.top.e.y) / 2;
+        medium += name == 'width' ? res.width : res.height;
+      }
+      else{
+        medium += bounds[name];
+      }
+
+      profiles.forEach((curr) => {
+        const profile = curr.profile.nearest() || curr.profile;
+
+        if(shift.indexOf(profile) != -1){
+
+          if(!glmap.has(profile)){
+            glmap.set(profile, {dx: new Set, dy: new Set});
+          }
+
+          const gl = glmap.get(profile);
+          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.Снаружи)){
+            gl.is_outer = true;
+          }
+          else{
+            gl.is_inner = true;
+          }
+
+          const point = curr.b.add(curr.e).divide(2);
+          if(name == 'width'){
+            gl.dx.add(res);
+            if(point.x < bounds.center.x){
+              res.left = profile;
+            }
+            else{
+              res.right = profile;
+            }
+          }
+          else{
+            gl.dy.add(res);
+            if(point.y < bounds.center.y){
+              res.top = profile;
+            }
+            else{
+              res.bottom = profile;
+            }
+          }
+        }
+      });
+      return res;
+    });
+    medium /= glasses.length;
+
+    shift.forEach((impost) => {
+      const gl = glmap.get(impost);
+      if(!gl){
+        return;
+      }
+      gl.ok = (gl.is_inner && gl.is_outer);
+      gl.dx.forEach((glass) => {
+        if(glass.left == impost && !glass.right){
+          gl.delta = (glass.width - medium);
+          gl.ok = true;
+        }
+        if(glass.right == impost && !glass.left){
+          gl.delta = (medium - glass.width);
+          gl.ok = true;
+        }
+      });
+    });
+
+    const res = [];
+
+    shift.forEach((impost) => {
+
+      const gl = glmap.get(impost);
+      if(!gl || !gl.ok){
+        return;
+      }
+
+      let delta = gl.delta || 0;
+
+      if (name == 'width') {
+        if(!gl.hasOwnProperty('delta')){
+          gl.dx.forEach((glass) => {
+            const double = 1.1 * gl.dx.size;
+            if(glass.right == impost){
+              delta += (medium - glass.width) / double;
+            }
+            else if(glass.left == impost){
+              delta += (glass.width - medium) / double;
+            }
+          });
+        }
+        delta = new Point([delta,0]);
+      }
+      else {
+        delta = new Point([0, delta]);
+      }
+
+      if(delta.length > consts.epsilon){
+        impost.move_points(delta, true);
+        res.push(delta);
+      }
+    });
+
+    return res;
+  }
+
+  glass_align(name = 'auto', glasses) {
+
+    const shift = this.do_glass_align(name, glasses);
+    if(!shift){
+      return;
+    }
+
+    const {_attr, contours} = this.project;
+    if(!_attr._align_counter){
+      _attr._align_counter = 1;
+    }
+    if(_attr._align_counter > 20){
+      _attr._align_counter = 0;
+      return;
+    }
+
+    if(shift.some((delta) => delta.length > 0.3)){
+      _attr._align_counter++;
+      contours.forEach((l) => l.redraw());
+      return this.glass_align(name, glasses);
+    }
+    else{
+      _attr._align_counter = 0;
+      contours.forEach((l) => l.redraw());
+      return true;
+    }
+  }
+
+  do_lay_impost_align(name = 'auto', glass) {
+
+    const {project, Point} = this;
+    const {orientations, elm_types} = $p.enm;
+
+    if(!glass) {
+      const glasses = project.selected_glasses();
+      if(glasses.length != 1) {
+        return;
+      }
+      glass = glasses[0];
+    }
+
+    if (!(glass instanceof Filling)
+      || !glass.imposts.length
+      || glass.imposts.some(impost => impost.elm_type != elm_types.Раскладка)) {
+      return;
+    }
+
+    let restored;
+    for(const impost of glass.imposts) {
+      for(const node of ['b','e']) {
+        const {cnn} = impost.rays[node];
+        if(cnn && cnn.cnn_type !== cnn.cnn_type._manager.i) {
+          continue;
+        }
+        const point = impost.generatrix.clone({insert: false})
+          .elongation(1500)
+          .intersect_point(glass.path, impost[node], false, node === 'b' ? impost.e : impost.b);
+        if(point && !impost[node].is_nearest(point, 0)) {
+          impost[node] = point;
+          restored = true;
+        }
+      }
+    }
+    if(restored) {
+      return true;
+    }
+
+    if(name === 'auto') {
+      name = 'width';
+    }
+
+    const orientation = name === 'width' ? orientations.vert : orientations.hor;
+    const neighbors = [];
+    const shift = glass.imposts.filter(impost => {
+      const vert = (impost.angle_hor > 45 && impost.angle_hor <= 135) || (impost.angle_hor > 225 && impost.angle_hor <= 315);
+      const passed = impost.orientation == orientation
+        || (orientation === orientations.vert && vert)
+        || (orientation === orientations.hor && !vert);
+      if (!passed) {
+        neighbors.push(impost);
+      }
+      return passed;
+    });
+
+    if (!shift.length) {
+      return;
+    }
+
+    function get_nearest_link(link, src, pt) {
+      const index = src.findIndex(elm => elm.b.is_nearest(pt) || elm.e.is_nearest(pt));
+      if (index !== -1) {
+        const impost = src[index];
+        src.splice(index, 1);
+        link.push(impost);
+        get_nearest_link(link, src, impost.b);
+        get_nearest_link(link, src, impost.e);
+      }
+    }
+
+    const tmp = Array.from(shift);
+    const links = [];
+    while (tmp.length) {
+      const link = [];
+      get_nearest_link(link, tmp, tmp[0].b);
+      if (link.length) {
+        links.push(link);
+      }
+    }
+    links.sort((a, b) => {
+      return orientation === orientations.vert ? (a[0].b._x - b[0].b._x) : (a[0].b._y - b[0].b._y);
+    });
+
+    const widthNom = shift[0].nom.width;
+    const bounds = glass.bounds_light(0);
+
+    function get_delta(dist, pt) {
+      return orientation === orientations.vert
+        ? (bounds.x + dist - pt._x)
+        : (bounds.y + dist - pt._y);
+    }
+
+    const width = (orientation === orientations.vert ? bounds.width : bounds.height) / links.length;
+    const step = ((orientation === orientations.vert ? bounds.width : bounds.height) - widthNom * links.length) / (links.length + 1);
+    let pos = 0;
+    for (const link of links) {
+      pos += step + widthNom / (pos === 0 ? 2 : 1);
+
+      for (const impost of link) {
+        let nbs = [];
+        for (const nb of neighbors) {
+          if (nb.b.is_nearest(impost.b) || nb.b.is_nearest(impost.e)) {
+            nbs.push({
+              impost: nb,
+              point: 'b'
+            });
+          }
+          if (nb.e.is_nearest(impost.b) || nb.e.is_nearest(impost.e)) {
+            nbs.push({
+              impost: nb,
+              point: 'e'
+            });
+          }
+        }
+
+        let delta = get_delta(pos, impost.b);
+        impost.select_node("b");
+        impost.move_points(new Point(orientation === orientations.vert ? [delta, 0] : [0, delta]));
+        glass.deselect_onlay_points();
+
+        delta = get_delta(pos, impost.e);
+        impost.select_node("e");
+        impost.move_points(new Point(orientation === orientations.vert ? [delta, 0] : [0, delta]));
+        glass.deselect_onlay_points();
+
+        impost.generatrix.segments.forEach(segm => {
+          if (segm.point === impost.b || segm.point === impost.e) {
+            return;
+          }
+          delta = get_delta(pos, segm.point);
+          segm.point = segm.point.add(delta);
+        });
+
+        nbs.forEach(node => {
+          delta = get_delta(pos, node.impost[node.point]);
+          node.impost.select_node(node.point);
+          node.impost.move_points(new Point(orientation == orientations.vert ? [delta, 0] : [0, delta]));
+          glass.deselect_onlay_points();
+        });
+      }
+    }
+
+    return true;
+  }
+
+  lay_impost_align(name = 'auto', glass) {
+    const width = (name === 'auto' || name === 'width') && this.do_lay_impost_align('width', glass);
+    const height = (name === 'auto' ||  name === 'height') && this.do_lay_impost_align('height', glass);
+    if (!width && !height) {
+      return;
+    }
+
+    this.project.contours.forEach(l => l.redraw());
+
+    return true;
+  }
+
+
 }
 
 $p.EditorInvisible = EditorInvisible;
@@ -7791,7 +8148,7 @@ class ProfileItem extends GeneratrixElement {
     if(!generatrix.curves.length) {
       return cnn_point;
     }
-    const _profile = this;
+    const other = cnn_point.profile;
     const {_corns} = _attr;
 
 
@@ -7825,23 +8182,21 @@ class ProfileItem extends GeneratrixElement {
       return delta;
     }
 
-    const prays = cnn_point.profile instanceof ProfileItem ?
-      cnn_point.profile.rays :
-      (cnn_point.profile instanceof Filling ? {inner: cnn_point.profile.path, outer: cnn_point.profile.path} : undefined);
+    const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {inner: other.path, outer: other.path} : undefined);
 
     const {cnn_type} = cnn_point.cnn || {};
-    const {cnn_types, cnn_sides} = $p.enm;
+    const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
-      if(!cnn_point.profile.path.segments.length) {
-        const {_attr, row} = cnn_point.profile;
+      if(!other.path.segments.length) {
+        const {_attr, row} = other;
         if(_attr.force_redraw) {
-          if(cnn_point.profile.generatrix && cnn_point.profile.generatrix.segments.length) {
-            cnn_point.profile.path.addSegments(cnn_point.profile.generatrix.segments);
+          if(other.generatrix && other.generatrix.segments.length) {
+            other.path.addSegments(other.generatrix.segments);
             _attr.force_redraw = false;
           }
-          else if(cnn_point.profile.row && cnn_point.profile.row.path_data) {
-            cnn_point.profile.path.pathData = cnn_point.profile.row.path_data;
+          else if(other.row && other.row.path_data) {
+            other.path.pathData = other.row.path_data;
             _attr.force_redraw = false;
           }
           else {
@@ -7850,7 +8205,7 @@ class ProfileItem extends GeneratrixElement {
         }
         else {
           _attr.force_redraw = true;
-          cnn_point.profile.redraw();
+          other.redraw();
           _attr.force_redraw = false;
         }
       }
@@ -7862,7 +8217,7 @@ class ProfileItem extends GeneratrixElement {
           if(cnn_point.point.is_nearest(profile.b, true)) {
             const cp = profile.rays.b.profile;
             if(cp !== this) {
-              if(cp !== cnn_point.profile || cnn_point.profile.cnn_side(this) === cnn_point.profile.cnn_side(profile)) {
+              if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
                 nodes.add(profile);
               }
             }
@@ -7870,7 +8225,7 @@ class ProfileItem extends GeneratrixElement {
           else if(cnn_point.point.is_nearest(profile.e, true)) {
             const cp = profile.rays.e.profile;
             if(cp !== this) {
-              if(cp !== cnn_point.profile || cnn_point.profile.cnn_side(this) === cnn_point.profile.cnn_side(profile)) {
+              if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
                 nodes.add(profile);
               }
             }
@@ -7881,12 +8236,12 @@ class ProfileItem extends GeneratrixElement {
         }
       });
       nodes.forEach((p2) => {
-        if(p2 !== cnn_point.profile) {
+        if(p2 !== other) {
           profile2 = p2;
         }
       });
 
-      const side = cnn_point.profile.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
+      const side = other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
 
       if(profile2) {
         const interior = generatrix.getPointAt(generatrix.length/2)
@@ -7930,7 +8285,7 @@ class ProfileItem extends GeneratrixElement {
     }
     else if(cnn_type == cnn_types.xx) {
 
-      if(cnn_point.profile instanceof Onlay) {
+      if(other instanceof Onlay) {
         const width = this.width * 0.7;
         const l = profile_point == 'b' ? width : generatrix.length - width;
         const p = generatrix.getPointAt(l);
@@ -7949,7 +8304,7 @@ class ProfileItem extends GeneratrixElement {
         }
       }
       else {
-        const cnn_point2 = cnn_point.profile.cnn_point(cnn_point.profile_point);
+        const cnn_point2 = other.cnn_point(cnn_point.profile_point);
         const profile2 = cnn_point2 && cnn_point2.profile;
         if(profile2) {
           const prays2 = profile2 && profile2.rays;
@@ -7993,13 +8348,52 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     else if(cnn_type == cnn_types.ad) {
-      if(profile_point == 'b') {
-        intersect_point(prays.outer, rays.outer, 1);
-        intersect_point(prays.inner, rays.inner, 4);
+      const tw = this.width, ow = other.width;
+      let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
+      if(check_a2 && check_a2.angle_calc_method == a2) {
+        const wprofile = tw > ow ? this : other;
+        const {inner} = wprofile.rays;
+        if(profile_point == 'b') {
+          intersect_point(prays.inner, rays.inner, 4);
+          const pt = _corns[4];
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? 1 : -1));
+          const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
+
+          if(wprofile === this) {
+            intersect_point(prays.outer, median, 5);
+            intersect_point(prays.outer, rays.outer, 1);
+          }
+          else {
+            intersect_point(rays.outer, median, 1);
+          }
+
+        }
+        else if(profile_point == 'e') {
+          intersect_point(prays.inner, rays.inner, 3);
+
+          const pt = _corns[3];
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? -1 : 1));
+          const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
+
+
+          if(wprofile === this) {
+            intersect_point(prays.outer, median, 6);
+            intersect_point(prays.outer, rays.outer, 2);
+          }
+          else {
+            intersect_point(rays.outer, median, 2);
+          }
+        }
       }
-      else if(profile_point == 'e') {
-        intersect_point(prays.outer, rays.outer, 2);
-        intersect_point(prays.inner, rays.inner, 3);
+      else {
+        if(profile_point == 'b') {
+          intersect_point(prays.outer, rays.outer, 1);
+          intersect_point(prays.inner, rays.inner, 4);
+        }
+        else if(profile_point == 'e') {
+          intersect_point(prays.outer, rays.outer, 2);
+          intersect_point(prays.inner, rays.inner, 3);
+        }
       }
 
     }
@@ -8056,18 +8450,18 @@ class ProfileItem extends GeneratrixElement {
 
     if(profile_point == 'b') {
       if(!_corns[1]) {
-        _corns[1] = this.b.add(this.generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
+        _corns[1] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
       }
       if(!_corns[4]) {
-        _corns[4] = this.b.add(this.generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
+        _corns[4] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
       }
     }
     else if(profile_point == 'e') {
       if(!_corns[2]) {
-        _corns[2] = this.e.add(this.generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
+        _corns[2] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
       }
       if(!_corns[3]) {
-        _corns[3] = this.e.add(this.generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
+        _corns[3] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
       }
     }
 
@@ -10781,15 +11175,8 @@ class Scheme extends paper.Project {
     if(base_block.empty() || calc_order.obj_delivery_state == Шаблон || base_block.calc_order.obj_delivery_state != Шаблон) {
       return false;
     }
-    const {auto_align} = $p.job_prm.properties;
-    let align;
-    if(auto_align) {
-      base_block.params.find_rows({param: auto_align}, (row) => {
-        align = row.value;
-        return false;
-      });
-      return align && align != '_' && align;
-    }
+    const align = base_block._extra('auto_align');
+    return align && align != '_' && align;
   }
 
   do_align(auto_align, profiles) {
@@ -10817,6 +11204,7 @@ class Scheme extends paper.Project {
           glasses.indexOf(filling) == -1 && glasses.push(filling);
         }
       }
+
       this._scope.glass_align('width', glasses);
 
     }, 100);
@@ -17631,10 +18019,10 @@ $p.md.once('predefined_elmnts_inited', () => {
         const tmp = {calc_order: dst.ref};
         const _obj = row.characteristic._obj || row.characteristic;
         if(clone) {
-          utils._mixin(tmp, _obj, null, ['calc_order']);
+          utils._mixin(tmp, _obj, null, ['calc_order', 'class_name']);
         }
         else {
-          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev'.split(','), true);
+          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev,specification,class_name'.split(','), true);
         }
         const cx = cat.characteristics.create(tmp, false, true);
         prow.characteristic = cx.ref;
