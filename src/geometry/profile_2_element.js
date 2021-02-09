@@ -105,20 +105,21 @@ class Profile extends ProfileItem {
    */
   get pos() {
     const by_side = this.layer.profiles_by_side();
+    const {positions} = $p.enm;
     if(by_side.top == this) {
-      return $p.enm.positions.Верх;
+      return positions.Верх;
     }
     if(by_side.bottom == this) {
-      return $p.enm.positions.Низ;
+      return positions.Низ;
     }
     if(by_side.left == this) {
-      return $p.enm.positions.Лев;
+      return positions.Лев;
     }
     if(by_side.right == this) {
-      return $p.enm.positions.Прав;
+      return positions.Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return $p.enm.positions.Центр;
+    return positions.Центр;
   }
 
   /**

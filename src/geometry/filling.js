@@ -64,8 +64,10 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.strokeWidth = 0;
 
     // для нового устанавливаем вставку по умолчанию
+    const {elm_types} = $p.enm;
+    const gl_types = [elm_types.Стекло, elm_types.Заполнение];
     if(_row.inset.empty()){
-      _row.inset = project.default_inset({elm_type: [$p.enm.elm_types.Стекло, $p.enm.elm_types.Заполнение]});
+      _row.inset = project.default_inset({elm_type: gl_types});
     }
 
     // для нового устанавливаем цвет по умолчанию
@@ -76,7 +78,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       });
     }
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({elm_type: {in: [$p.enm.elm_types.Стекло, $p.enm.elm_types.Заполнение]}}, (row) => {
+      project._dp.sys.elmnts.find_rows({elm_type: {in: gl_types}}, (row) => {
         _row.clr = row.clr;
         return false;
       });
@@ -84,7 +86,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.clr = _row.clr;
 
     if(_row.elm_type.empty()){
-      _row.elm_type = $p.enm.elm_types.Стекло;
+      _row.elm_type = elm_types.Стекло;
     }
 
     _attr.path.visible = false;
@@ -95,7 +97,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
-      elm_type: $p.enm.elm_types.Раскладка
+      elm_type: elm_types.Раскладка
     }, (row) => new Onlay({row, parent: this}));
 
     // спецификация стеклопакета прототипа
@@ -108,6 +110,12 @@ class Filling extends AbstractFilling(BuilderElement) {
       tmp.forEach((row) => glass_specification.add(row));
     }
 
+  }
+
+  get elm_type() {
+    const {elm_types} = $p.enm;
+    const {nom} = this;
+    return nom.elm_type == elm_types.Заполнение ? nom.elm_type : elm_types.Стекло;
   }
 
   /**
@@ -865,22 +873,26 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   get oxml() {
     const oxml = {
-      " ": [
-        {id: "info", path: "o.info", type: "ro"},
-        "inset",
-        "clr"
+      ' ': [
+        {id: 'info', path: 'o.info', type: 'ro'},
+        'inset',
+        'clr'
       ],
-      "Начало": [
-        {id: "x1", path: "o.x1", synonym: "X1", type: "ro"},
-        {id: "y1", path: "o.y1", synonym: "Y1", type: "ro"}
+      Начало: [
+        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
+        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
       ],
-      "Конец": [
-        {id: "x2", path: "o.x2", synonym: "X2", type: "ro"},
-        {id: "y2", path: "o.y2", synonym: "Y2", type: "ro"}
+      Конец: [
+        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
+        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
       ]
     };
-    if(this.selected_cnn_ii()){
-      oxml["Примыкание"] = ["cnn3"];
+    if(this.selected_cnn_ii()) {
+      oxml.Примыкание = ['cnn3'];
+    }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
     }
     return oxml;
   }

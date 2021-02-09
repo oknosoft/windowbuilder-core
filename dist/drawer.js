@@ -5688,6 +5688,107 @@ class BuilderElement extends paper.Group {
   }
 
   /**
+   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * @return {Array}
+   */
+  elm_props() {
+    const {_attr, _row, project, ox: {params}, inset} = this;
+    const {blank} = $p.utils;
+
+    // свойства, нужные вставке текущего элемента
+    const inset_params = inset.used_params();
+
+    // получаем список свойств
+    const props = [];
+    for(const {param, elm} of project._dp.sys.product_params) {
+      if (!inset_params.includes(param)) {
+        continue;
+      }
+      // если переопределение явно указано в системе
+      if(elm) {
+        props.push(param);
+      }
+      // если переопределение указано в самом параметре
+      else if([1, 2].includes(param.inheritance)) {
+        // дополнительно учтём тип и положение элемента
+        const {elm_type, pos} = this;
+        if(!param.applying.count()) {
+          props.push(param);
+        }
+        else {
+          for(const arow of param.applying) {
+            if((arow.elm_type.empty() || arow.elm_type == elm_type) && (arow.pos.empty() || arow.pos == pos)) {
+              props.push(param);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // удаляем возможные паразитные свойства
+    _attr.props && _attr.props.forEach((prop) => {
+      if(!props.includes(prop)) {
+        delete this[prop.ref];
+      }
+    });
+    _attr.props = props;
+    // создаём свойства
+    props.forEach((prop) => {
+      if(!this.hasOwnProperty(prop.ref)) {
+        Object.defineProperty(this, prop.ref, {
+          get() {
+            let prow;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(!prow || row.cnstr) {
+                prow = row;
+              }
+            });
+            return prow && prow.value;
+          },
+          set(v) {
+            let prow, prow0;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(row.cnstr) {
+                prow = row;
+              }
+              else {
+                prow0 = row;
+              }
+            });
+            // если устанавливаемое значение совпадает со значением изделия - удаляем
+            if(prow0 && prow0.value == v) {
+              prow && prow._owner.del(prow);
+            }
+            else if(prow) {
+              prow.value = v;
+            }
+            else {
+              params.add({
+                param: prop,
+                cnstr: -_row.row,
+                inset: blank.guid,
+                value: v,
+              });
+            }
+          },
+          configurable: true,
+        });
+      }
+    });
+
+    return props;
+  }
+
+  /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
    * @param [ignore_select] {Boolean}
@@ -5925,8 +6026,10 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.strokeWidth = 0;
 
     // для нового устанавливаем вставку по умолчанию
+    const {elm_types} = $p.enm;
+    const gl_types = [elm_types.Стекло, elm_types.Заполнение];
     if(_row.inset.empty()){
-      _row.inset = project.default_inset({elm_type: [$p.enm.elm_types.Стекло, $p.enm.elm_types.Заполнение]});
+      _row.inset = project.default_inset({elm_type: gl_types});
     }
 
     // для нового устанавливаем цвет по умолчанию
@@ -5937,7 +6040,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       });
     }
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({elm_type: {in: [$p.enm.elm_types.Стекло, $p.enm.elm_types.Заполнение]}}, (row) => {
+      project._dp.sys.elmnts.find_rows({elm_type: {in: gl_types}}, (row) => {
         _row.clr = row.clr;
         return false;
       });
@@ -5945,7 +6048,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.clr = _row.clr;
 
     if(_row.elm_type.empty()){
-      _row.elm_type = $p.enm.elm_types.Стекло;
+      _row.elm_type = elm_types.Стекло;
     }
 
     _attr.path.visible = false;
@@ -5956,7 +6059,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
-      elm_type: $p.enm.elm_types.Раскладка
+      elm_type: elm_types.Раскладка
     }, (row) => new Onlay({row, parent: this}));
 
     // спецификация стеклопакета прототипа
@@ -5969,6 +6072,12 @@ class Filling extends AbstractFilling(BuilderElement) {
       tmp.forEach((row) => glass_specification.add(row));
     }
 
+  }
+
+  get elm_type() {
+    const {elm_types} = $p.enm;
+    const {nom} = this;
+    return nom.elm_type == elm_types.Заполнение ? nom.elm_type : elm_types.Стекло;
   }
 
   /**
@@ -6726,22 +6835,26 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   get oxml() {
     const oxml = {
-      " ": [
-        {id: "info", path: "o.info", type: "ro"},
-        "inset",
-        "clr"
+      ' ': [
+        {id: 'info', path: 'o.info', type: 'ro'},
+        'inset',
+        'clr'
       ],
-      "Начало": [
-        {id: "x1", path: "o.x1", synonym: "X1", type: "ro"},
-        {id: "y1", path: "o.y1", synonym: "Y1", type: "ro"}
+      Начало: [
+        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
+        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
       ],
-      "Конец": [
-        {id: "x2", path: "o.x2", synonym: "X2", type: "ro"},
-        {id: "y2", path: "o.y2", synonym: "Y2", type: "ro"}
+      Конец: [
+        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
+        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
       ]
     };
-    if(this.selected_cnn_ii()){
-      oxml["Примыкание"] = ["cnn3"];
+    if(this.selected_cnn_ii()) {
+      oxml.Примыкание = ['cnn3'];
+    }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
     }
     return oxml;
   }
@@ -9063,80 +9176,6 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в Системе
-   * @return {Array}
-   */
-  elm_props() {
-    const {_attr, _row, project, ox: {params}} = this;
-    const {blank} = $p.utils;
-    // получаем список свойств
-    const props = [];
-    project._dp.sys.product_params.find_rows({elm: true}, ({param}) => {
-      props.push(param);
-    });
-    // удаляем возможные паразитные свойства
-    _attr.props && _attr.props.forEach((prop) => {
-      if(!props.includes(prop)) {
-        delete this[prop.ref];
-      }
-    });
-    _attr.props = props;
-    // создаём свойства
-    props.forEach((prop) => {
-      if(!this.hasOwnProperty(prop.ref)) {
-        Object.defineProperty(this, prop.ref, {
-          get() {
-            let prow;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(!prow || row.cnstr) {
-                prow = row;
-              }
-            });
-            return prow && prow.value;
-          },
-          set(v) {
-            let prow, prow0;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(row.cnstr) {
-                prow = row;
-              }
-              else {
-                prow0 = row;
-              }
-            });
-            // если устанавливаемое значение совпадает со значением изделия - удаляем
-            if(prow0 && prow0.value == v) {
-              prow && prow._owner.del(prow);
-            }
-            else if(prow) {
-              prow.value = v;
-            }
-            else {
-              params.add({
-                param: prop,
-                cnstr: -_row.row,
-                inset: blank.guid,
-                value: v,
-              });
-            }
-          },
-          configurable: true,
-        });
-      }
-    });
-
-    return props;
-  }
-
-  /**
    * Описание полей диалога свойств элемента
    */
   get oxml() {
@@ -10782,20 +10821,21 @@ class Profile extends ProfileItem {
    */
   get pos() {
     const by_side = this.layer.profiles_by_side();
+    const {positions} = $p.enm;
     if(by_side.top == this) {
-      return $p.enm.positions.Верх;
+      return positions.Верх;
     }
     if(by_side.bottom == this) {
-      return $p.enm.positions.Низ;
+      return positions.Низ;
     }
     if(by_side.left == this) {
-      return $p.enm.positions.Лев;
+      return positions.Лев;
     }
     if(by_side.right == this) {
-      return $p.enm.positions.Прав;
+      return positions.Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return $p.enm.positions.Центр;
+    return positions.Центр;
   }
 
   /**

@@ -467,6 +467,107 @@ class BuilderElement extends paper.Group {
   }
 
   /**
+   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * @return {Array}
+   */
+  elm_props() {
+    const {_attr, _row, project, ox: {params}, inset} = this;
+    const {blank} = $p.utils;
+
+    // свойства, нужные вставке текущего элемента
+    const inset_params = inset.used_params();
+
+    // получаем список свойств
+    const props = [];
+    for(const {param, elm} of project._dp.sys.product_params) {
+      if (!inset_params.includes(param)) {
+        continue;
+      }
+      // если переопределение явно указано в системе
+      if(elm) {
+        props.push(param);
+      }
+      // если переопределение указано в самом параметре
+      else if([1, 2].includes(param.inheritance)) {
+        // дополнительно учтём тип и положение элемента
+        const {elm_type, pos} = this;
+        if(!param.applying.count()) {
+          props.push(param);
+        }
+        else {
+          for(const arow of param.applying) {
+            if((arow.elm_type.empty() || arow.elm_type == elm_type) && (arow.pos.empty() || arow.pos == pos)) {
+              props.push(param);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // удаляем возможные паразитные свойства
+    _attr.props && _attr.props.forEach((prop) => {
+      if(!props.includes(prop)) {
+        delete this[prop.ref];
+      }
+    });
+    _attr.props = props;
+    // создаём свойства
+    props.forEach((prop) => {
+      if(!this.hasOwnProperty(prop.ref)) {
+        Object.defineProperty(this, prop.ref, {
+          get() {
+            let prow;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(!prow || row.cnstr) {
+                prow = row;
+              }
+            });
+            return prow && prow.value;
+          },
+          set(v) {
+            let prow, prow0;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(row.cnstr) {
+                prow = row;
+              }
+              else {
+                prow0 = row;
+              }
+            });
+            // если устанавливаемое значение совпадает со значением изделия - удаляем
+            if(prow0 && prow0.value == v) {
+              prow && prow._owner.del(prow);
+            }
+            else if(prow) {
+              prow.value = v;
+            }
+            else {
+              params.add({
+                param: prop,
+                cnstr: -_row.row,
+                inset: blank.guid,
+                value: v,
+              });
+            }
+          },
+          configurable: true,
+        });
+      }
+    });
+
+    return props;
+  }
+
+  /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
    * @param [ignore_select] {Boolean}
