@@ -4406,12 +4406,15 @@ class DimensionLine extends paper.Group {
   }
 
   _mouseenter() {
-    this.project._scope.canvas_cursor('cursor-arrow-ruler');
+    const {project, layer} = this;
+    const cursor = `cursor-arrow-ruler${layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent ? '-dis' : ''}`;
+    project._scope.canvas_cursor(cursor);
   }
 
   _click(event) {
     event.stop();
-    if(this.project._attr.elm_fragment > 0) {
+    const {project, layer} = this;
+    if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
       return ;
     }
     if(typeof EditorInvisible.RulerWnd === 'function') {
