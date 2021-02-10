@@ -5693,7 +5693,7 @@ class BuilderElement extends paper.Group {
    */
   elm_props() {
     const {_attr, _row, project, ox: {params}, inset} = this;
-    const {blank} = $p.utils;
+    const {utils: {blank}, enm: {positions}} = $p;
 
     // свойства, нужные вставке текущего элемента
     const inset_params = inset.used_params();
@@ -5711,13 +5711,14 @@ class BuilderElement extends paper.Group {
       // если переопределение указано в самом параметре
       else if([1, 2].includes(param.inheritance)) {
         // дополнительно учтём тип и положение элемента
-        const {elm_type, pos} = this;
+        const {elm_type, pos, orientation} = this;
         if(!param.applying.count()) {
           props.push(param);
         }
         else {
           for(const arow of param.applying) {
-            if((arow.elm_type.empty() || arow.elm_type == elm_type) && (arow.pos.empty() || arow.pos == pos)) {
+            if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+              (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
               props.push(param);
               break;
             }
@@ -17197,7 +17198,13 @@ $p.spec_building = new SpecBuilding($p);
 			get() {
 				return this.ЦентрВертикаль;
 			}
-		}
+		},
+
+    any: {
+      get() {
+        return this.Любое;
+      }
+    }
 	});
 
 
