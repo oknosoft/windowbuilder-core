@@ -1,3 +1,4 @@
+
 /**
  * ### Модуль Ценообразование
  * Аналог УПзП-шного __ЦенообразованиеСервер__
@@ -15,7 +16,7 @@
  */
 class Pricing {
 
-  constructor({md, adapters}) {
+  constructor({md, adapters, job_prm}) {
 
     // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
     md.once('predefined_elmnts_inited', () => {
@@ -44,23 +45,27 @@ class Pricing {
 
         // следим за изменениями документа установки цен, чтобы при необходимости обновить кеш
         if(pouch.local.doc === pouch.remote.doc) {
-          pouch.local.doc.changes({
+          const class_names = [calc_order.class_name];
+          if(pouch.props.user_node) {
+            class_names.push('doc.nom_prices_setup');
+          }
+          this._changes = pouch.local.doc.changes({
             since: 'now',
             live: true,
             include_docs: true,
-            selector: {class_name: {$in: ['doc.nom_prices_setup', calc_order.class_name]}}
+            selector: {class_name: {$in: class_names}}
           }).on('change', (change) => {
             // формируем новый
-            if(change.doc.class_name == 'doc.nom_prices_setup'){
+            if(change.doc.class_name == 'doc.nom_prices_setup') {
               setTimeout(() => this.by_doc(change.doc), 500);
             }
-            else if(change.doc.class_name == calc_order.class_name){
+            else if(change.doc.class_name == calc_order.class_name) {
               if(pouch.props.user_node) {
-               return calc_order.emit('change', change.doc);
+                return calc_order.emit('change', change.doc);
               }
               const doc = calc_order.by_ref[change.id.substr(15)];
               const user = pouch.authorized || wsql.get_user_param('user_name');
-              if(!doc || user === change.doc.timestamp.user){
+              if(!doc || user === change.doc.timestamp.user) {
                 return;
               }
               pouch.load_changes({docs: [change.doc], update_only: true});
@@ -133,18 +138,6 @@ class Pricing {
   }
 
   /**
-   * Имя индекса среза цен на переходный период
-   * @return {Promise<string>}
-   */
-  iname() {
-    return $p.adapters.pouch.local.doc.get('_design/server_nom_prices')
-      .catch(() => ({_id: '_design/doc'}))
-      .then(({_id}) => {
-        return _id === '_design/doc' ? 'doc/doc_nom_prices_setup_slice_last' : 'server_nom_prices/slice_last';
-      });
-  }
-
-  /**
    * Перестраивает кеш цен номенклатуры по длинному ключу
    * @param startkey
    * @return {Promise.<TResult>|*}
@@ -153,8 +146,7 @@ class Pricing {
 
     const {pouch} = $p.adapters;
 
-    return this.iname()
-      .then((iname) => pouch.local.doc.query(iname,
+    return pouch.local.doc.query('server_nom_prices/slice_last',
         {
           limit: 600,
           include_docs: false,
@@ -162,7 +154,7 @@ class Pricing {
           endkey: ['\ufff0'],
           reduce: true,
           group: true,
-        }))
+        })
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
@@ -182,15 +174,13 @@ class Pricing {
    */
   by_doc({goods}) {
     const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
-    const {doc} = $p.adapters.pouch.local;
-    return this.iname()
-      .then((iname) => doc.query(iname,
+    return $p.adapters.pouch.local.doc.query('server_nom_prices/slice_last',
         {
           include_docs: false,
           keys: keys,
           reduce: true,
           group: true,
-        }))
+        })
       .then((res) => {
         this.build_cache(res.rows);
       });

@@ -6,7 +6,6 @@
 
 const gulp = require('gulp'),
 	concat = require('gulp-concat'),
-  strip = require('gulp-strip-comments'),
 	umd = require('gulp-umd');
 
 module.exports = gulp;
@@ -23,7 +22,6 @@ gulp.task('build-drawer', function () {
     './src/modifiers/documents/*.js',
   ])
     .pipe(concat('drawer.js'))
-    .pipe(strip())
     .pipe(umd({
       // exports: function (file) {
       //   return 'EditorInvisible';

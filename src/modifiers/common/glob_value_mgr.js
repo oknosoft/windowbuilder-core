@@ -1,3 +1,4 @@
+
 /**
  * Составной тип в поле trans документов оплаты и отгрузки
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
