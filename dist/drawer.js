@@ -15154,8 +15154,9 @@ class Pricing {
    * @return {Promise.<TResult>|*}
    */
   by_doc({goods}) {
-    const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
-    return $p.adapters.pouch.local.doc.query('server_nom_prices/slice_last',
+    const {adapters: {pouch}, utils: {blank}} = $p
+    const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic || blank.guid, price_type]);
+    return pouch.local.doc.query('server_nom_prices/slice_last',
         {
           include_docs: false,
           keys: keys,
