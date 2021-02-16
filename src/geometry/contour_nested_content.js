@@ -9,6 +9,10 @@
 
 class ContourNestedContent extends Contour {
 
+  get l_dimensions() {
+    return ContourNested._dimlns;
+  }
+
 }
 
 EditorInvisible.ContourNestedContent = ContourNestedContent;

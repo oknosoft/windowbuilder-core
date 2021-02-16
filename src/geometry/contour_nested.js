@@ -51,6 +51,10 @@ class ContourNested extends Contour {
     }
   }
 
+  get l_dimensions() {
+    return ContourNested._dimlns;
+  }
+
   /**
    * Вычисляемые поля в таблицах конструкций и координат
    * @method save_coordinates
@@ -128,4 +132,12 @@ class ContourNested extends Contour {
 
 }
 
+ContourNested._dimlns = {
+  redraw() {
+
+  },
+  clear() {
+
+  }
+};
 EditorInvisible.ContourNested = ContourNested;

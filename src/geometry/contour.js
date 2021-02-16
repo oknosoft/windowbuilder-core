@@ -1669,7 +1669,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     // если кеш строк визуализации пустой - наполняем
     if(!rows){
       rows = [];
-      this.project.ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
+      const ox = this._ox || this.project.ox;
+      ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
     }
 
     function draw (elm) {
@@ -1743,6 +1744,9 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get imposts() {
     return this.getItems({class: Profile}).filter((elm) => {
+      if(elm instanceof ProfileNestedContent) {
+        return false;
+      }
       const {b, e} = elm.rays;
       return b.is_tt || e.is_tt || b.is_i || e.is_i;
     });
