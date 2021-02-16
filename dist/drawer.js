@@ -2683,7 +2683,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // перерисовываем вложенные контуры
     for(const contour of contours){
-      contour.draw_visualization(rows);
+      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
     }
 
   }
@@ -3677,6 +3677,10 @@ EditorInvisible.ContourNested = ContourNested;
  */
 
 class ContourNestedContent extends Contour {
+
+  get _ox() {
+    return this.layer._ox;
+  }
 
   get l_dimensions() {
     return ContourNested._dimlns;

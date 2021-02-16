@@ -9,6 +9,10 @@
 
 class ContourNestedContent extends Contour {
 
+  get _ox() {
+    return this.layer._ox;
+  }
+
   get l_dimensions() {
     return ContourNested._dimlns;
   }

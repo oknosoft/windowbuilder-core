@@ -1707,7 +1707,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // перерисовываем вложенные контуры
     for(const contour of contours){
-      contour.draw_visualization(rows);
+      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
     }
 
   }
