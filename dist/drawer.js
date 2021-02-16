@@ -12153,6 +12153,10 @@ class ProfileNestedContent extends Profile {
     return cnn_point;
   }
 
+  move_points() {
+
+  }
+
 }
 
 EditorInvisible.ProfileNested = ProfileNested;
