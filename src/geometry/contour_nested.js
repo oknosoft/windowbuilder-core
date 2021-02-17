@@ -55,6 +55,14 @@ class ContourNested extends Contour {
     return ContourNested._dimlns;
   }
 
+  get lbounds() {
+    const parent = new paper.Group({insert: false});
+    for (const {generatrix} of this.profiles) {
+      parent.addChild(generatrix.clone({insert: false}));
+    }
+    return parent.bounds;
+  }
+
   /**
    * Вычисляемые поля в таблицах конструкций и координат
    * @method save_coordinates

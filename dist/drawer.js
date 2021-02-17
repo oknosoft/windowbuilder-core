@@ -3580,6 +3580,14 @@ class ContourNested extends Contour {
     return ContourNested._dimlns;
   }
 
+  get lbounds() {
+    const parent = new paper.Group({insert: false});
+    for (const {generatrix} of this.profiles) {
+      parent.addChild(generatrix.clone({insert: false}));
+    }
+    return parent.bounds;
+  }
+
   /**
    * Вычисляемые поля в таблицах конструкций и координат
    * @method save_coordinates
@@ -12004,15 +12012,21 @@ class ProfileNested extends Profile {
 
   save_coordinates() {
     super.save_coordinates();
-    const {layer: {content}, _row} = this;
+    const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
     const {coordinates} = content._row._owner._owner;
-    const {cnn_elmnts} = coordinates._owner;
+    // const {cnn_elmnts} = coordinates._owner;
     const prow = coordinates.find({elm: _row.parent});
     if(prow) {
-      ['x1', 'y1', 'x2', 'y2', 'path_data', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => {
-        prow[name] = _row[name];
-      });
       prow.alp1 = prow.alp2 = 0;
+      ['nom', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => prow[name] = _row[name]);
+      const path = generatrix.clone({insert: false});
+      path.translate([-lbounds.x, -lbounds.y]);
+      const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
+      prow.x1 = (b.x).round(1);
+      prow.y1 = (lbounds.height - b.y).round(1);
+      prow.x2 = (e.x).round(1);
+      prow.y2 = (lbounds.height - e.y).round(1);
+      prow.path_data = path.pathData;
     }
   }
 
@@ -12105,10 +12119,10 @@ class ProfileNestedContent extends Profile {
   constructor(attr) {
 
     const {row, parent} = attr;
-    const {layer, project: {bounds}} = parent;
-    const {profiles} = layer;
+    const {layer, project: {bounds: pbounds}} = parent;
+    const {profiles, bounds: lbounds} = layer;
 
-    const h = bounds.height + bounds.y;
+    const h = pbounds.height + pbounds.y;
     const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
     let pelm;
     if(row.elm_type != 'Импост') {
@@ -12116,12 +12130,16 @@ class ProfileNestedContent extends Profile {
         const {b, e, _row} = elm;
         const pdir = e.subtract(b);
         if(Math.abs(pdir.angle - dir.angle) < 0.1) {
-          row.path_data = _row.path_data;
-          const pt = new paper.Point((_row.x1 - row.x1 + _row.x2 - row.x2) / 2, (_row.y1 - row.y1 + _row.y2 - row.y2) / 2);
-          row.x1 = _row.x1;
-          row.x2 = _row.x2;
-          row.y1 = _row.y1;
-          row.y2 = _row.y2;
+          if(_row.path_data) {
+            row.path_data = _row.path_data;
+          }
+          else {
+            row.x1 = _row.x1;
+            row.x2 = _row.x2;
+            row.y1 = _row.y1;
+            row.y2 = _row.y2;
+            row.r  = _row.r;
+          }
           pelm = elm;
           break;
         }
@@ -12129,11 +12147,21 @@ class ProfileNestedContent extends Profile {
     }
 
     if(!pelm) {
-      row.x1 += layer.bounds.x;
-      row.x2 += layer.bounds.x;
-      row.y1 -= layer.bounds.y;
-      row.y2 -= layer.bounds.y;
-      row.path_data = '';
+      const x = lbounds.x + pbounds.x;
+      const y = lbounds.y + pbounds.y;
+      if(row.path_data) {
+        const path = new paper.Path({pathData: row.path_data, insert: false});
+        if(!lbounds.contains(path.firstSegment.point) || !lbounds.contains(path.lastSegment.point)){
+          path.translate([x, y]);
+          row.path_data = path.pathData;
+        }
+      }
+      else {
+        row.x1 += x;
+        row.x2 += x;
+        row.y1 -= y;
+        row.y2 -= y;
+      }
     }
 
     super(attr);
@@ -12155,6 +12183,20 @@ class ProfileNestedContent extends Profile {
 
   move_points() {
 
+  }
+
+  save_coordinates() {
+    super.save_coordinates();
+    const {layer: {layer: {lbounds}}, _row, generatrix} = this;
+
+    const path = generatrix.clone({insert: false});
+    path.translate([-lbounds.x, -lbounds.y]);
+    const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
+    _row.x1 = (b.x).round(1);
+    _row.y1 = (lbounds.height - b.y).round(1);
+    _row.x2 = (e.x).round(1);
+    _row.y2 = (lbounds.height - e.y).round(1);
+    _row.path_data = path.pathData;
   }
 
 }

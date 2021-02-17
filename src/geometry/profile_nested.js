@@ -129,15 +129,21 @@ class ProfileNested extends Profile {
 
   save_coordinates() {
     super.save_coordinates();
-    const {layer: {content}, _row} = this;
+    const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
     const {coordinates} = content._row._owner._owner;
-    const {cnn_elmnts} = coordinates._owner;
+    // const {cnn_elmnts} = coordinates._owner;
     const prow = coordinates.find({elm: _row.parent});
     if(prow) {
-      ['x1', 'y1', 'x2', 'y2', 'path_data', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => {
-        prow[name] = _row[name];
-      });
       prow.alp1 = prow.alp2 = 0;
+      ['nom', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => prow[name] = _row[name]);
+      const path = generatrix.clone({insert: false});
+      path.translate([-lbounds.x, -lbounds.y]);
+      const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
+      prow.x1 = (b.x).round(1);
+      prow.y1 = (lbounds.height - b.y).round(1);
+      prow.x2 = (e.x).round(1);
+      prow.y2 = (lbounds.height - e.y).round(1);
+      prow.path_data = path.pathData;
     }
   }
 
