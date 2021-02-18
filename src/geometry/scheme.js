@@ -263,12 +263,12 @@ class Scheme extends paper.Project {
    * @private
    */
   _papam_listener(obj, fields) {
-    const {_attr, ox} = this;
+    const {_attr, _ch, ox} = this;
     if(_attr._loading || _attr._snapshot) {
       return;
     }
     if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
-      this.register_change();
+      !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
       if(st && builder.base_props && builder.base_props.includes(obj.param)) {

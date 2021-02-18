@@ -183,6 +183,7 @@ class DimensionLine extends paper.Group {
             generatrix.lastSegment.selected = true;
           }
       });
+      delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
       project.register_update();

@@ -4524,6 +4524,7 @@ class DimensionLine extends paper.Group {
             generatrix.lastSegment.selected = true;
           }
       });
+      delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
       project.register_update();
@@ -12122,45 +12123,32 @@ class ProfileNestedContent extends Profile {
     const {layer, project: {bounds: pbounds}} = parent;
     const {profiles, bounds: lbounds} = layer;
 
-    const h = pbounds.height + pbounds.y;
-    const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
+    const x = lbounds.x + pbounds.x;
+    const y = lbounds.y + pbounds.y;
+
+    if(row.path_data) {
+      const path = new paper.Path({pathData: row.path_data, insert: false});
+      path.translate([x, y]);
+      row.path_data = path.pathData;
+    }
+    else {
+      row.x1 += x;
+      row.x2 += x;
+      row.y1 -= y;
+      row.y2 -= y;
+    }
+
     let pelm;
     if(row.elm_type != 'Импост') {
+      const h = pbounds.height + pbounds.y;
+      const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
       for(const elm of profiles) {
         const {b, e, _row} = elm;
         const pdir = e.subtract(b);
         if(Math.abs(pdir.angle - dir.angle) < 0.1) {
-          if(_row.path_data) {
-            row.path_data = _row.path_data;
-          }
-          else {
-            row.x1 = _row.x1;
-            row.x2 = _row.x2;
-            row.y1 = _row.y1;
-            row.y2 = _row.y2;
-            row.r  = _row.r;
-          }
           pelm = elm;
           break;
         }
-      }
-    }
-
-    if(!pelm) {
-      const x = lbounds.x + pbounds.x;
-      const y = lbounds.y + pbounds.y;
-      if(row.path_data) {
-        const path = new paper.Path({pathData: row.path_data, insert: false});
-        if(!lbounds.contains(path.firstSegment.point) || !lbounds.contains(path.lastSegment.point)){
-          path.translate([x, y]);
-          row.path_data = path.pathData;
-        }
-      }
-      else {
-        row.x1 += x;
-        row.x2 += x;
-        row.y1 -= y;
-        row.y2 -= y;
       }
     }
 
@@ -12181,8 +12169,10 @@ class ProfileNestedContent extends Profile {
     return cnn_point;
   }
 
-  move_points() {
-
+  move_points(delta, all_points, start_point) {
+    if(delta && delta._dimln) {
+      return super.move_points(delta, all_points, start_point);
+    }
   }
 
   save_coordinates() {
@@ -12982,12 +12972,12 @@ class Scheme extends paper.Project {
    * @private
    */
   _papam_listener(obj, fields) {
-    const {_attr, ox} = this;
+    const {_attr, _ch, ox} = this;
     if(_attr._loading || _attr._snapshot) {
       return;
     }
     if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
-      this.register_change();
+      !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
       if(st && builder.base_props && builder.base_props.includes(obj.param)) {
