@@ -214,7 +214,7 @@ class Scheme extends paper.Project {
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true, null, defaults);
+    _dp.sys.refill_prm(ox, 0, 1, this, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
     this.l_connective.on_sys_changed();

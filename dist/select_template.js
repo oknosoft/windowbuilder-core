@@ -12,7 +12,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
 
     constructor() {
       //calc_order, base_block, sys, template_props, refill
-      super({}, characteristics, false, true);
+      super({refill: true}, characteristics, false, true);
       this._data._is_new = false;
       this._meta = utils._clone(characteristics.metadata());
       this._meta.fields.template_props = templates.metadata('template_props');

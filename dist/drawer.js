@@ -12933,7 +12933,7 @@ class Scheme extends paper.Project {
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true, null, defaults);
+    _dp.sys.refill_prm(ox, 0, 1, this, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
     this.l_connective.on_sys_changed();
@@ -18582,7 +18582,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   /**
    * Перезаполняет табчасть параметров указанного контура
    */
-  refill_prm({project, furn, cnstr}) {
+  refill_prm({project, furn, cnstr}, force=false) {
 
     const fprms = project.ox.params;
     const {sys} = project._dp;
@@ -18611,7 +18611,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       let prm_row, forcibly = true;
       fprms.find_rows({param: v, cnstr: cnstr}, (row) => {
         prm_row = row;
-        return forcibly = false;
+        return forcibly = force;
       });
       if(!prm_row){
         prm_row = fprms.add({param: v, cnstr: cnstr}, true);

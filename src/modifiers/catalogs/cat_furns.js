@@ -29,7 +29,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   /**
    * Перезаполняет табчасть параметров указанного контура
    */
-  refill_prm({project, furn, cnstr}) {
+  refill_prm({project, furn, cnstr}, force=false) {
 
     const fprms = project.ox.params;
     const {sys} = project._dp;
@@ -58,7 +58,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       let prm_row, forcibly = true;
       fprms.find_rows({param: v, cnstr: cnstr}, (row) => {
         prm_row = row;
-        return forcibly = false;
+        return forcibly = force;
       });
       if(!prm_row){
         prm_row = fprms.add({param: v, cnstr: cnstr}, true);

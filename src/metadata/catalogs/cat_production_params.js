@@ -156,7 +156,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
         row.hide = hide;
       }
 
-      if((proto.forcibly || drow) && value !== undefined && row.value != value){
+      if((proto.forcibly || drow || force === 1) && value !== undefined){
         row.value = value;
       }
     }
@@ -239,11 +239,11 @@ exports.CatProduction_params = class CatProduction_params extends Object {
             }
             const contour = project && project.getItem({cnstr: row.cnstr});
             if(contour) {
-              row.furn.refill_prm(contour);
+              row.furn.refill_prm(contour, force === 1);
               contour.notify(contour, 'furn_changed');
             }
             else {
-              ox.sys.refill_prm(ox, row.cnstr);
+              ox.sys.refill_prm(ox, row.cnstr, force);
             }
           }
         }
