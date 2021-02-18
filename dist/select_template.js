@@ -97,17 +97,32 @@ export default function ({classes, cat: {characteristics, templates, params_link
       if(this.clr.empty() || !utils._selection(this.clr, selection)) {
         this.clr = sys.default_clr.empty() ? clrs.predefined('Белый') : sys.default_clr;
       }
-      if(job_prm.builder && job_prm.builder.base_props) {
-        sys.product_params.forEach(({param, value, hide}) => {
-          // если параметр не используется в системе - удаляем
-          if(hide || !job_prm.builder.base_props.includes(param)) {
-            params.del({param});
+
+      const {base_props} = job_prm.builder || {};
+      if(base_props) {
+
+        // удаляем все скрытые и лишние параметры
+        const {product_params} = sys;
+        const adel = [];
+        params.forEach((row) => {
+          if(row.hide || !product_params.find({param: row.param})) {
+            adel.push(row);
           }
+          else if(!row.hide && !base_props.includes(row.param)) {
+            row.hide = true;
+          }
+        });
+        adel.forEach((row) => params.del(row));
+
+        product_params.forEach(({param, value, hide, by_default, forcibly}) => {
+          let prow = params.find({param});
           // если еще не добавлен - добавляем со значением по умолчанию
-          else if(!params.find({param})) {
-            params.add({param, value});
+          if(!prow) {
+            prow = params.add({param, value, hide: hide || !base_props.includes(param)});
           }
-          // если присутствует - оставляем без изменений
+          if(forcibly) {
+            prow.value = value;
+          }
         });
       }
     }
