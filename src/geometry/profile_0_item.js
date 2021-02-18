@@ -1459,6 +1459,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
       project.register_change();
+      project._scope.eve.emit('set_inset', this);
     }
   }
 
