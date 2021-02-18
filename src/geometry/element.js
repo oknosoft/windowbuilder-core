@@ -456,7 +456,6 @@ class BuilderElement extends paper.Group {
   }
   set inset(v) {
     this.set_inset(v);
-    this.project._scope.eve.emit('set_inset', this);
   }
 
   // цвет элемента
@@ -582,6 +581,7 @@ class BuilderElement extends paper.Group {
         _attr._rays.clear(true);
       }
       project.register_change();
+      project._scope.eve.emit('set_inset', this);
     }
   }
 
