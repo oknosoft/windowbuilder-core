@@ -3613,7 +3613,7 @@ class ContourNested extends Contour {
     // пересчитаем вложенное изделие
     if(content) {
       content._row._owner._owner.glasses.clear();
-      content.save_coordinates();
+      content.save_coordinates(short);
     }
   }
 
@@ -3686,8 +3686,25 @@ EditorInvisible.ContourNested = ContourNested;
 
 class ContourNestedContent extends Contour {
 
+  constructor(attr) {
+    super(attr);
+
+    // добавляем вложенные слои
+    const {_ox: ox, project} = this;
+    if(ox) {
+      ox.constructions.find_rows({parent: this.cnstr}, (row) => {
+        Contour.create({project, row, parent: this, ox});
+      });
+    }
+
+  }
+
   get _ox() {
     return this.layer._ox;
+  }
+
+  get lbounds() {
+    return this.layer.lbounds;
   }
 
   get l_dimensions() {
@@ -5713,7 +5730,6 @@ class BuilderElement extends paper.Group {
   }
   set inset(v) {
     this.set_inset(v);
-    this.project._scope.eve.emit('set_inset', this);
   }
 
   // цвет элемента
@@ -5839,6 +5855,7 @@ class BuilderElement extends paper.Group {
         _attr._rays.clear(true);
       }
       project.register_change();
+      project._scope.eve.emit('set_inset', this);
     }
   }
 
@@ -9883,6 +9900,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
       project.register_change();
+      project._scope.eve.emit('set_inset', this);
     }
   }
 

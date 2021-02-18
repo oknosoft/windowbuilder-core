@@ -88,7 +88,7 @@ class ContourNested extends Contour {
     // пересчитаем вложенное изделие
     if(content) {
       content._row._owner._owner.glasses.clear();
-      content.save_coordinates();
+      content.save_coordinates(short);
     }
   }
 
