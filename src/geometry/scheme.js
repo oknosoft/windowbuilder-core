@@ -201,9 +201,10 @@ class Scheme extends paper.Project {
   /**
    * устанавливает систему
    * @param sys
-   * @param [defaults]
+   * @param [defaults] {TabularSection}
+   * @param [refill] {Boolean}
    */
-  set_sys(sys, defaults) {
+  set_sys(sys, defaults, refill) {
 
     const {_dp, ox} = this;
 
@@ -217,9 +218,9 @@ class Scheme extends paper.Project {
     _dp.sys.refill_prm(ox, 0, 1, this, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
-    this.l_connective.on_sys_changed();
+    this.l_connective.on_sys_changed(refill);
     for (const contour of this.contours) {
-      contour.on_sys_changed();
+      contour.on_sys_changed(refill);
     }
 
     if(ox.clr.empty()) {

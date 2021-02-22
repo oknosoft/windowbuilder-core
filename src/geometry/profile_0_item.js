@@ -1517,12 +1517,13 @@ class ProfileItem extends GeneratrixElement {
    *
    * @method default_inset
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
+   * @param [refill] {Boolean} - принудительно устанавливать вставку из системы
    */
-  default_inset(all) {
+  default_inset(all, refill) {
     let {orientation, project, layer, _attr, elm_type, inset} = this;
     const {sys} = project._dp;
     const nearest = this.nearest(true);
-    const {positions, orientations, elm_types, cnn_types} = $p.enm;
+    const {cat: {cnns}, enm: {positions, orientations, elm_types, cnn_types}} = $p;
 
     if(nearest || all) {
       // импост может оказаться штульпом
@@ -1530,9 +1531,6 @@ class ProfileItem extends GeneratrixElement {
         if (this.nom.elm_type === elm_types.Штульп || sys.elmnts.find({nom: inset, elm_type: elm_types.Штульп})) {
           elm_type = elm_types.Штульп;
         }
-        // else if (this.joined_nearests().some(({layer}) => layer.furn.shtulp_kind())) {
-        //
-        // }
       }
       let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
       if(pos == positions.Центр) {
@@ -1546,10 +1544,10 @@ class ProfileItem extends GeneratrixElement {
           pos = [pos, positions.ЦентрГоризонталь];
         }
       }
-      this.set_inset(this.project.default_inset({elm_type, pos, inset}), true);
+      this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset}), true);
     }
     if(nearest) {
-      _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
+      _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
     }
   }
 

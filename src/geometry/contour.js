@@ -2535,22 +2535,29 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Обработчик при изменении системы
+   @param [refill] {Boolean}
    */
-  on_sys_changed() {
-    this.profiles.forEach((elm) => elm.default_inset(true));
+  on_sys_changed(refill) {
+    const {enm: {elm_types, cnn_types}, cat: {cnns}} = $p;
+    this.profiles.forEach((elm) => elm.default_inset(true, refill));
 
     this.glasses().forEach((elm) => {
       if (elm instanceof Contour) {
-        elm.on_sys_changed();
+        elm.on_sys_changed(refill);
       }
       else {
         // заполнения проверяем по толщине
-        if (elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax)
-          elm._row.inset = elm.project.default_inset({elm_type: [$p.enm.elm_types.Стекло, $p.enm.elm_types.Заполнение]});
+        if(refill || elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax) {
+          let {elm_type} = elm.nom;
+          if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
+            elm_type = elm_types.Стекло;
+          }
+          elm._row.inset = elm.project.default_inset({elm_type: [elm_type]});
+        }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
           if (!curr.cnn || !curr.cnn.check_nom2(curr.profile))
-            curr.cnn = $p.cat.cnns.elm_cnn(elm, curr.profile, $p.enm.cnn_types.acn.ii);
+            curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);
         });
       }
     });

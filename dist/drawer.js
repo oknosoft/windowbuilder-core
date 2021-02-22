@@ -3511,22 +3511,29 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Обработчик при изменении системы
+   @param [refill] {Boolean}
    */
-  on_sys_changed() {
-    this.profiles.forEach((elm) => elm.default_inset(true));
+  on_sys_changed(refill) {
+    const {enm: {elm_types, cnn_types}, cat: {cnns}} = $p;
+    this.profiles.forEach((elm) => elm.default_inset(true, refill));
 
     this.glasses().forEach((elm) => {
       if (elm instanceof Contour) {
-        elm.on_sys_changed();
+        elm.on_sys_changed(refill);
       }
       else {
         // заполнения проверяем по толщине
-        if (elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax)
-          elm._row.inset = elm.project.default_inset({elm_type: [$p.enm.elm_types.Стекло, $p.enm.elm_types.Заполнение]});
+        if(refill || elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax) {
+          let {elm_type} = elm.nom;
+          if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
+            elm_type = elm_types.Стекло;
+          }
+          elm._row.inset = elm.project.default_inset({elm_type: [elm_type]});
+        }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
           if (!curr.cnn || !curr.cnn.check_nom2(curr.profile))
-            curr.cnn = $p.cat.cnns.elm_cnn(elm, curr.profile, $p.enm.cnn_types.acn.ii);
+            curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);
         });
       }
     });
@@ -10004,12 +10011,13 @@ class ProfileItem extends GeneratrixElement {
    *
    * @method default_inset
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
+   * @param [refill] {Boolean} - принудительно устанавливать вставку из системы
    */
-  default_inset(all) {
+  default_inset(all, refill) {
     let {orientation, project, layer, _attr, elm_type, inset} = this;
     const {sys} = project._dp;
     const nearest = this.nearest(true);
-    const {positions, orientations, elm_types, cnn_types} = $p.enm;
+    const {cat: {cnns}, enm: {positions, orientations, elm_types, cnn_types}} = $p;
 
     if(nearest || all) {
       // импост может оказаться штульпом
@@ -10017,9 +10025,6 @@ class ProfileItem extends GeneratrixElement {
         if (this.nom.elm_type === elm_types.Штульп || sys.elmnts.find({nom: inset, elm_type: elm_types.Штульп})) {
           elm_type = elm_types.Штульп;
         }
-        // else if (this.joined_nearests().some(({layer}) => layer.furn.shtulp_kind())) {
-        //
-        // }
       }
       let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
       if(pos == positions.Центр) {
@@ -10033,10 +10038,10 @@ class ProfileItem extends GeneratrixElement {
           pos = [pos, positions.ЦентрГоризонталь];
         }
       }
-      this.set_inset(this.project.default_inset({elm_type, pos, inset}), true);
+      this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset}), true);
     }
     if(nearest) {
-      _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
+      _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
     }
   }
 
@@ -12974,9 +12979,10 @@ class Scheme extends paper.Project {
   /**
    * устанавливает систему
    * @param sys
-   * @param [defaults]
+   * @param [defaults] {TabularSection}
+   * @param [refill] {Boolean}
    */
-  set_sys(sys, defaults) {
+  set_sys(sys, defaults, refill) {
 
     const {_dp, ox} = this;
 
@@ -12990,9 +12996,9 @@ class Scheme extends paper.Project {
     _dp.sys.refill_prm(ox, 0, 1, this, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
-    this.l_connective.on_sys_changed();
+    this.l_connective.on_sys_changed(refill);
     for (const contour of this.contours) {
-      contour.on_sys_changed();
+      contour.on_sys_changed(refill);
     }
 
     if(ox.clr.empty()) {
