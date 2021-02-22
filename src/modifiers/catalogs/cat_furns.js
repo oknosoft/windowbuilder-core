@@ -33,7 +33,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     const fprms = project.ox.params;
     const {sys} = project._dp;
-    const {CatNom, job_prm: {properties: {direction}}} = $p;
+    const {CatNom, job_prm: {properties: {direction, opening}}} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
     const aprm = furn.furn_set.used_params();
@@ -51,7 +51,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     aprm.forEach((v) => {
 
       // направления в табчасть не добавляем
-      if(v == direction){
+      if(v == direction || v == opening){
         return;
       }
 
