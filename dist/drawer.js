@@ -3592,20 +3592,11 @@ class ContourNested extends Contour {
   constructor(attr) {
     super(attr);
 
-    // находим или создаём строку заказа с вложенным изделием
-    const {project, cnstr} = this;
-    const {ox} = project;
-    for(const {characteristic} of ox.calc_order.production) {
-      if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {
-        this._ox = characteristic;
-        break;
-      }
-    }
-
     // добавляем в проект элементы вложенного изделия
-    if(this._ox) {
-      this._ox.constructions.find_rows({parent: 1}, (row) => {
-        Contour.create({project, row, parent: this, ox: this._ox});
+    const {project, _ox} = this;
+    if(_ox) {
+      _ox.constructions.find_rows({parent: 1}, (row) => {
+        Contour.create({project, row, parent: this, ox: _ox});
       });
     }
 
@@ -3614,6 +3605,25 @@ class ContourNested extends Contour {
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Вложение');
+  }
+
+  /**
+   * Продукция текущего слоя
+   * Для вложенных, отличается от изделия проекта
+   * @return {CatCharacteristics}
+   */
+  get _ox() {
+    const {_attr} = this;
+    if(!_attr._ox) {
+      const {project: {ox}, cnstr} = this;
+      for(const {characteristic} of ox.calc_order.production) {
+        if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {
+          _attr._ox = characteristic;
+          break;
+        }
+      }
+    }
+    return _attr._ox;
   }
 
   get hidden() {
@@ -4507,16 +4517,28 @@ class DimensionLine extends paper.Group {
     return $p.dp.builder_size;
   }
 
+  /**
+   *
+   * @return {boolean}
+   */
+  is_disabled() {
+    const {project, layer, _attr: {elm1, elm2}} = this;
+    if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
+      return true;
+    }
+    if(elm1 instanceof ProfileParent && elm2 instanceof ProfileParent) {
+      return true;
+    }
+    return false;
+  }
+
   _mouseenter() {
-    const {project, layer} = this;
-    const cursor = `cursor-arrow-ruler${layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent ? '-dis' : ''}`;
-    project._scope.canvas_cursor(cursor);
+    this.project._scope.canvas_cursor(`cursor-arrow-ruler${this.is_disabled() ? '-dis' : ''}`);
   }
 
   _click(event) {
     event.stop();
-    const {project, layer} = this;
-    if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
+    if(this.is_disabled()) {
       return ;
     }
     if(typeof EditorInvisible.RulerWnd === 'function') {
@@ -4525,11 +4547,39 @@ class DimensionLine extends paper.Group {
     }
   }
 
+  correct_move_name({event, p1, p2}) {
+    const {pos, _attr: {elm1, elm2}} = this;
+    const e1 = elm1 instanceof ProfileParent;
+    const e2 = elm2 instanceof ProfileParent;
+    if(!e1 && !e2) {
+      return;
+    }
+
+    if(pos == 'top' || pos == 'bottom') {
+      const dir = p1.x < p2.x;
+      if(event.name == 'left' && dir && e1) {
+        event.name = 'right';
+      }
+      if(event.name == 'right' && dir && e2) {
+        event.name = 'left';
+      }
+    }
+    else {
+      const dir = p1.y > p2.y;
+      if(event.name == 'bottom' && dir && e1) {
+        event.name = 'top';
+      }
+      if(event.name == 'top' && dir && e2) {
+        event.name = 'bottom';
+      }
+    }
+  }
+
   _move_points(event, xy) {
 
     let _bounds, delta;
 
-    const {_attr} = this;
+    const {_attr, pos} = this;
 
     // получаем дельту - на сколько смещать
     if(_attr.elm1){
@@ -4539,25 +4589,26 @@ class DimensionLine extends paper.Group {
 
       const p1 = (_attr.elm1._sub || _attr.elm1)[_attr.p1];
       const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2];
+      this.correct_move_name({event, p1, p2, _attr});
 
-      if(this.pos == "top" || this.pos == "bottom"){
+      if(pos == 'top' || pos == 'bottom') {
         const size = Math.abs(p1.x - p2.x);
-        if(event.name == "right"){
+        if(event.name == 'right') {
           delta = new paper.Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
         }
-        else{
+        else {
           delta = new paper.Point(size - event.size, 0);
           _bounds[event.name] = Math.min(p1.x, p2.x);
         }
       }
       else{
         const size = Math.abs(p1.y - p2.y);
-        if(event.name == "bottom"){
+        if(event.name == 'bottom') {
           delta = new paper.Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
         }
-        else{
+        else {
           delta = new paper.Point(0, size - event.size);
           _bounds[event.name] = Math.min(p1.y, p2.y);
         }
@@ -4565,16 +4616,21 @@ class DimensionLine extends paper.Group {
     }
     else {
       _bounds = this.layer.bounds;
-      if(this.pos == "top" || this.pos == "bottom")
-        if(event.name == "right")
+      if(pos == 'top' || pos == 'bottom') {
+        if(event.name == 'right') {
           delta = new paper.Point(event.size - _bounds.width, 0);
-        else
+        }
+        else {
           delta = new paper.Point(_bounds.width - event.size, 0);
+        }
+      }
       else{
-        if(event.name == "bottom")
+        if(event.name == 'bottom') {
           delta = new paper.Point(0, event.size - _bounds.height);
-        else
+        }
+        else {
           delta = new paper.Point(0, _bounds.height - event.size);
+        }
       }
     }
 
@@ -4968,8 +5024,9 @@ class DimensionLineCustom extends DimensionLine {
   }
 
   get is_ruler() {
-    const {ToolRuler} = EditorInvisible;
-    return typeof ToolRuler === 'function' && this.project._scope.tool instanceof ToolRuler;
+    const {_scope} = this._project;
+    const {constructor: {ToolRuler}, tool} = _scope;
+    return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
   }
 
   // выделяем подключаем окно к свойствам
