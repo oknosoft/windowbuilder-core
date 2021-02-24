@@ -136,22 +136,24 @@ class EditorInvisible extends paper.PaperScope {
 
   unload() {
     this.eve.removeAllListeners();
-    const arr = this.projects.concat(this.tools);
-    while (arr.length) {
-      const elm = arr[0];
+    const revert = [];
+    for(const elm of this.projects.concat(this.tools)){
       if(elm.unload) {
-        elm.unload();
+        revert.push(elm.unload());
       }
       else if(elm.remove) {
         elm.remove();
       }
-      arr.splice(0, 1);
     }
-    for(let i in EditorInvisible._scopes) {
-      if(EditorInvisible._scopes[i] === this) {
-        delete EditorInvisible._scopes[i];
+
+    const {_scopes} = EditorInvisible;
+    for(let i in _scopes) {
+      if(_scopes[i] === this) {
+        delete _scopes[i];
       }
     }
+
+    return Promise.all(revert);
   }
 
   /**
@@ -13703,6 +13705,7 @@ class Scheme extends paper.Project {
       ox._manager.off('rows', this._papam_listener);
       this._papam_listener = null;
     }
+    let revert = Promise.resolve();
     if(ox && ox._modified) {
       if(ox.is_new()) {
         if(_calc_order_row) {
@@ -13711,11 +13714,17 @@ class Scheme extends paper.Project {
         ox.unload();
       }
       else {
-        setTimeout(ox.load.bind(ox), 100);
+        revert = revert.then(() => ox.load());
       }
     }
+    this.getItems({class: ContourNested}).forEach(({_ox}) => {
+      if(ox._modified) {
+        revert = revert.then(() => _ox.load());
+      }
+    });
 
     this.remove();
+    return revert;
   }
 
   /**

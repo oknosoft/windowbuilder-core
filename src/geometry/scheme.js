@@ -868,6 +868,7 @@ class Scheme extends paper.Project {
       ox._manager.off('rows', this._papam_listener);
       this._papam_listener = null;
     }
+    let revert = Promise.resolve();
     if(ox && ox._modified) {
       if(ox.is_new()) {
         if(_calc_order_row) {
@@ -876,11 +877,17 @@ class Scheme extends paper.Project {
         ox.unload();
       }
       else {
-        setTimeout(ox.load.bind(ox), 100);
+        revert = revert.then(() => ox.load());
       }
     }
+    this.getItems({class: ContourNested}).forEach(({_ox}) => {
+      if(ox._modified) {
+        revert = revert.then(() => _ox.load());
+      }
+    });
 
     this.remove();
+    return revert;
   }
 
   /**
