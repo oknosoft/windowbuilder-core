@@ -39,7 +39,7 @@ class Profile extends ProfileItem {
 
   constructor(attr) {
 
-    const fromCoordinates = !!attr.row;
+    const fromCoordinates = attr.row && attr.row.elm;
 
     super(attr);
 

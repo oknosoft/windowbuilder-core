@@ -23,9 +23,15 @@ class BuilderElement extends paper.Group {
   constructor(attr) {
 
     super(attr);
+    if(attr.parent){
+      this.parent = attr.parent;
+    }
+    else if(attr.proto && attr.proto.parent){
+      this.parent = attr.proto.parent;
+    }
 
     if(!attr.row){
-      attr.row = this.project.ox.coordinates.add();
+      attr.row = this.layer._ox.coordinates.add();
     }
 
     this._row = attr.row;
@@ -49,22 +55,12 @@ class BuilderElement extends paper.Group {
         this.inset = attr.proto.inset;
       }
 
-      if(attr.parent){
-        this.parent = attr.parent;
-      }
-      else if(attr.proto.parent){
-        this.parent = attr.proto.parent;
-      }
-
       if(attr.proto instanceof Profile){
         this.insertBelow(attr.proto);
       }
 
       this.clr = attr.proto.clr;
 
-    }
-    else if(attr.parent){
-      this.parent = attr.parent;
     }
 
     if(!this._row.cnstr && this.layer.cnstr){

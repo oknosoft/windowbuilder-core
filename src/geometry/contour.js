@@ -374,7 +374,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {CatCharacteristics}
    */
   get _ox() {
-    return this.project.ox;
+    const {layer, project} = this;
+    return layer ? layer._ox : project.ox;
   }
 
   /**
@@ -1914,7 +1915,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // четвертый проход - добавляем
     if (need_bind) {
-      const ProfileConstructor = this instanceof ContourVirtual ? ProfileNested : Profile;
+      const ProfileConstructor = this instanceof ContourVirtual || this instanceof ContourNested ? ProfileNested : (
+        this instanceof ContourNestedContent ? ProfileNestedContent : Profile
+      );
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
         if (curr.binded) {

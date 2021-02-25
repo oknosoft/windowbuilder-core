@@ -864,8 +864,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * информация для редактора свойста
    */
   get info() {
-    const {elm, bounds, thickness} = this;
-    return "№" + elm + " w:" + bounds.width.toFixed(0) + " h:" + bounds.height.toFixed(0) + " z:" + thickness.toFixed(0);
+    const {elm, bounds: {width, height}, thickness, layer} = this;
+    return `№${layer instanceof ContourNestedContent ?
+      `${layer.layer.cnstr}-${elm}` : elm} w:${width.toFixed(0)} h:${height.toFixed(0)} z:${thickness.toFixed(0)}`;
   }
 
   /**

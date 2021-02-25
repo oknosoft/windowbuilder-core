@@ -982,15 +982,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Создаёт строку заказа с уникальной характеристикой
-   * @param row_spec
-   * @param elm
-   * @param len_angl
-   * @param params
-   * @param create
-   * @param grid
-   * @return {Promise}
+   * @param [row_spec] {DpBuyers_orderProductionRow} - строка - генератор параметрика
+   * @param [elm]
+   * @param [len_angl]
+   * @param [params]
+   * @param [create]
+   * @param [grid]
+   * @param [cx] {Promise.<CatCharacteristics>}
+   * @return {Promise.<DocCalc_orderProductionRow>}
    */
-  create_product_row({row_spec, elm, len_angl, params, create, grid}) {
+  create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
     const row = row_spec instanceof $p.DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
       row_spec.characteristic.calc_order_row :
@@ -1011,7 +1012,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     // ищем объект продукции в RAM или берём из строки заказа
     const mgr = $p.cat.characteristics;
-    let cx;
     function fill_cx(ox) {
       if(ox._deleted){
         return;
@@ -1024,7 +1024,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       cx = Promise.resolve(ox);
       return false;
     }
-    if(!row.characteristic.empty() && !row.characteristic._deleted){
+    if(!cx && !row.characteristic.empty() && !row.characteristic._deleted){
       fill_cx(row.characteristic);
     }
 

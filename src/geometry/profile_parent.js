@@ -36,6 +36,30 @@ class ProfileParent extends Profile {
 
   }
 
+  cnn_point(node, point) {
+    const {project, parent, rays} = this;
+    const res = rays[node];
+    if(!res.profile) {
+      if(!point) {
+        point = this[node];
+      }
+      const pp = node === 'b' ? 'e' : 'b';
+      for(const profile of parent.profiles) {
+        if(profile !== this && profile[pp].is_nearest(point, true)) {
+          res.profile = profile;
+          res.profile_point = pp;
+          res.point = point;
+          res.cnn_types = $p.enm.cnn_types.acn.a;
+          break;
+        }
+      }
+    }
+    if(!res.cnn) {
+      res.cnn = $p.cat.cnns.elm_cnn(this, res.profile, res.cnn_types);
+    }
+    return res;
+  }
+
   path_points(cnn_point, profile_point) {
 
     const {_attr: {_corns}, generatrix, layer: {bounds}} = this;

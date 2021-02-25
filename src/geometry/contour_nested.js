@@ -12,16 +12,18 @@
 class ContourNested extends Contour {
 
   constructor(attr) {
+    const {direction} = attr;
+    delete attr.direction;
+
     super(attr);
 
     // добавляем в проект элементы вложенного изделия
     const {project, _ox} = this;
-    if(_ox) {
-      _ox.constructions.find_rows({parent: 1}, (row) => {
-        Contour.create({project, row, parent: this, ox: _ox});
-      });
+    if(direction instanceof $p.CatProduction_params) {
+      _ox.sys = direction;
     }
-
+    const row = _ox.constructions.find({parent: 1});
+    Contour.create({project, row, parent: this, ox: _ox});
   }
 
   presentation(bounds) {
@@ -44,6 +46,23 @@ class ContourNested extends Contour {
           break;
         }
       }
+      if(!_attr._ox) {
+        _attr._ox = ox._manager.create({
+          ref: $p.utils.generate_guid(),
+          calc_order: ox.calc_order,
+          leading_product: ox,
+          leading_elm: -cnstr,
+          constructions: [
+            {kind: 3, cnstr: 1},
+            {parent: 1, cnstr: 2},
+          ],
+        }, false, true);
+        _attr._ox._data._is_new = false;
+        ox.calc_order.create_product_row({create: true, cx: Promise.resolve(_attr._ox)})
+          .then((row) => {
+            _attr._ox.product = row.row;
+          });
+      }
     }
     return _attr._ox;
   }
@@ -56,9 +75,7 @@ class ContourNested extends Contour {
   }
 
   get content() {
-    for(const contour of this.contours) {
-      return contour;
-    }
+    return this.contours[0];
   }
 
   get l_dimensions() {

@@ -1013,26 +1013,11 @@ class ProfileItem extends GeneratrixElement {
    */
   save_coordinates() {
 
-    const {_attr, _row, ox: {cnn_elmnts}, rays, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e}, generatrix} = this;
 
     if(!generatrix) {
       return;
     }
-
-    const b = rays.b;
-    const e = rays.e;
-    const row_b = cnn_elmnts.add({
-      elm1: _row.elm,
-      node1: 'b',
-      cnn: b.cnn,
-      aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
-    });
-    const row_e = cnn_elmnts.add({
-      elm1: _row.elm,
-      node1: 'e',
-      cnn: e.cnn,
-      aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
-    });
 
     _row.x1 = this.x1;
     _row.y1 = this.y1;
@@ -1055,54 +1040,75 @@ class ProfileItem extends GeneratrixElement {
     // добавляем припуски соединений
     _row.len = this.length.round(1);
 
-    // сохраняем информацию о соединениях
-    if(b.profile) {
-      row_b.elm2 = b.profile.elm;
-      if(b.profile.e.is_nearest(b.point)) {
-        row_b.node2 = 'e';
-      }
-      else if(b.profile.b.is_nearest(b.point)) {
-        row_b.node2 = 'b';
-      }
-      else {
-        row_b.node2 = 't';
-      }
-    }
-    if(e.profile) {
-      row_e.elm2 = e.profile.elm;
-      if(e.profile.b.is_nearest(e.point)) {
-        row_e.node2 = 'b';
-      }
-      else if(e.profile.e.is_nearest(e.point)) {
-        row_e.node2 = 'b';
-      }
-      else {
-        row_e.node2 = 't';
-      }
-    }
-
-    // для створочных и доборных профилей добавляем соединения с внешними элементами
-    const nrst = this.nearest();
-    if(nrst) {
-      cnn_elmnts.add({
-        elm1: _row.elm,
-        elm2: nrst.elm,
-        cnn: _attr._nearest_cnn,
-        aperture_len: _row.len
-      });
-    }
-
     // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
 
-    _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
-    if(_row.alp1 < 0) {
-      _row.alp1 = _row.alp1 + 360;
+    if(this instanceof ProfileNested || this instanceof ProfileParent) {
+      _row.alp1 = _row.alp2 = 0;
+      _row.inset = this.inset;
+      _row.clr = this.clr;
     }
+    else {
 
-    _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
-    if(_row.alp2 < 0) {
-      _row.alp2 = _row.alp2 + 360;
+      const row_b = cnn_elmnts.add({
+        elm1: _row.elm,
+        node1: 'b',
+        cnn: b.cnn,
+        aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
+      });
+      const row_e = cnn_elmnts.add({
+        elm1: _row.elm,
+        node1: 'e',
+        cnn: e.cnn,
+        aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
+      });
+
+      // сохраняем информацию о соединениях
+      if(b.profile) {
+        row_b.elm2 = b.profile.elm;
+        if(b.profile.e.is_nearest(b.point)) {
+          row_b.node2 = 'e';
+        }
+        else if(b.profile.b.is_nearest(b.point)) {
+          row_b.node2 = 'b';
+        }
+        else {
+          row_b.node2 = 't';
+        }
+      }
+      if(e.profile) {
+        row_e.elm2 = e.profile.elm;
+        if(e.profile.b.is_nearest(e.point)) {
+          row_e.node2 = 'b';
+        }
+        else if(e.profile.e.is_nearest(e.point)) {
+          row_e.node2 = 'b';
+        }
+        else {
+          row_e.node2 = 't';
+        }
+      }
+
+      // для створочных и доборных профилей добавляем соединения с внешними элементами
+      const nrst = this.nearest();
+      if(nrst) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          elm2: nrst.elm,
+          cnn: _attr._nearest_cnn,
+          aperture_len: _row.len
+        });
+      }
+
+      _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
+      if(_row.alp1 < 0) {
+        _row.alp1 = _row.alp1 + 360;
+      }
+
+      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
+      if(_row.alp2 < 0) {
+        _row.alp2 = _row.alp2 + 360;
+      }
     }
 
     // устанавливаем тип элемента

@@ -640,7 +640,7 @@ class ProductsBuilding {
      */
     function base_spec(scheme) {
 
-      const {Contour, Filling, Sectional, Profile, ProfileConnective} = $p.Editor;
+      const {Contour, Filling, Sectional, Profile, ProfileParent, ProfileConnective} = $p.Editor;
 
       // сбрасываем структуру обработанных соединений
       added_cnn_spec = {};
@@ -651,7 +651,7 @@ class ProductsBuilding {
 
         // для всех профилей контура
         for (const elm of contour.children) {
-          elm instanceof Profile && base_spec_profile(elm);
+          elm instanceof Profile && !(elm instanceof ProfileParent) && base_spec_profile(elm);
         }
 
         for (const elm of contour.children) {

@@ -1352,7 +1352,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {CatCharacteristics}
    */
   get _ox() {
-    return this.project.ox;
+    const {layer, project} = this;
+    return layer ? layer._ox : project.ox;
   }
 
   /**
@@ -2892,7 +2893,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // четвертый проход - добавляем
     if (need_bind) {
-      const ProfileConstructor = this instanceof ContourVirtual ? ProfileNested : Profile;
+      const ProfileConstructor = this instanceof ContourVirtual || this instanceof ContourNested ? ProfileNested : (
+        this instanceof ContourNestedContent ? ProfileNestedContent : Profile
+      );
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
         if (curr.binded) {
@@ -3592,16 +3595,18 @@ EditorInvisible.GlassSegment = GlassSegment;
 class ContourNested extends Contour {
 
   constructor(attr) {
+    const {direction} = attr;
+    delete attr.direction;
+
     super(attr);
 
     // добавляем в проект элементы вложенного изделия
     const {project, _ox} = this;
-    if(_ox) {
-      _ox.constructions.find_rows({parent: 1}, (row) => {
-        Contour.create({project, row, parent: this, ox: _ox});
-      });
+    if(direction instanceof $p.CatProduction_params) {
+      _ox.sys = direction;
     }
-
+    const row = _ox.constructions.find({parent: 1});
+    Contour.create({project, row, parent: this, ox: _ox});
   }
 
   presentation(bounds) {
@@ -3624,6 +3629,23 @@ class ContourNested extends Contour {
           break;
         }
       }
+      if(!_attr._ox) {
+        _attr._ox = ox._manager.create({
+          ref: $p.utils.generate_guid(),
+          calc_order: ox.calc_order,
+          leading_product: ox,
+          leading_elm: -cnstr,
+          constructions: [
+            {kind: 3, cnstr: 1},
+            {parent: 1, cnstr: 2},
+          ],
+        }, false, true);
+        _attr._ox._data._is_new = false;
+        ox.calc_order.create_product_row({create: true, cx: Promise.resolve(_attr._ox)})
+          .then((row) => {
+            _attr._ox.product = row.row;
+          });
+      }
     }
     return _attr._ox;
   }
@@ -3636,9 +3658,7 @@ class ContourNested extends Contour {
   }
 
   get content() {
-    for(const contour of this.contours) {
-      return contour;
-    }
+    return this.contours[0];
   }
 
   get l_dimensions() {
@@ -5409,9 +5429,15 @@ class BuilderElement extends paper.Group {
   constructor(attr) {
 
     super(attr);
+    if(attr.parent){
+      this.parent = attr.parent;
+    }
+    else if(attr.proto && attr.proto.parent){
+      this.parent = attr.proto.parent;
+    }
 
     if(!attr.row){
-      attr.row = this.project.ox.coordinates.add();
+      attr.row = this.layer._ox.coordinates.add();
     }
 
     this._row = attr.row;
@@ -5435,22 +5461,12 @@ class BuilderElement extends paper.Group {
         this.inset = attr.proto.inset;
       }
 
-      if(attr.parent){
-        this.parent = attr.parent;
-      }
-      else if(attr.proto.parent){
-        this.parent = attr.proto.parent;
-      }
-
       if(attr.proto instanceof Profile){
         this.insertBelow(attr.proto);
       }
 
       this.clr = attr.proto.clr;
 
-    }
-    else if(attr.parent){
-      this.parent = attr.parent;
     }
 
     if(!this._row.cnstr && this.layer.cnstr){
@@ -6993,8 +7009,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * информация для редактора свойста
    */
   get info() {
-    const {elm, bounds, thickness} = this;
-    return "№" + elm + " w:" + bounds.width.toFixed(0) + " h:" + bounds.height.toFixed(0) + " z:" + thickness.toFixed(0);
+    const {elm, bounds: {width, height}, thickness, layer} = this;
+    return `№${layer instanceof ContourNestedContent ?
+      `${layer.layer.cnstr}-${elm}` : elm} w:${width.toFixed(0)} h:${height.toFixed(0)} z:${thickness.toFixed(0)}`;
   }
 
   /**
@@ -9566,26 +9583,11 @@ class ProfileItem extends GeneratrixElement {
    */
   save_coordinates() {
 
-    const {_attr, _row, ox: {cnn_elmnts}, rays, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e}, generatrix} = this;
 
     if(!generatrix) {
       return;
     }
-
-    const b = rays.b;
-    const e = rays.e;
-    const row_b = cnn_elmnts.add({
-      elm1: _row.elm,
-      node1: 'b',
-      cnn: b.cnn,
-      aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
-    });
-    const row_e = cnn_elmnts.add({
-      elm1: _row.elm,
-      node1: 'e',
-      cnn: e.cnn,
-      aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
-    });
 
     _row.x1 = this.x1;
     _row.y1 = this.y1;
@@ -9608,54 +9610,75 @@ class ProfileItem extends GeneratrixElement {
     // добавляем припуски соединений
     _row.len = this.length.round(1);
 
-    // сохраняем информацию о соединениях
-    if(b.profile) {
-      row_b.elm2 = b.profile.elm;
-      if(b.profile.e.is_nearest(b.point)) {
-        row_b.node2 = 'e';
-      }
-      else if(b.profile.b.is_nearest(b.point)) {
-        row_b.node2 = 'b';
-      }
-      else {
-        row_b.node2 = 't';
-      }
-    }
-    if(e.profile) {
-      row_e.elm2 = e.profile.elm;
-      if(e.profile.b.is_nearest(e.point)) {
-        row_e.node2 = 'b';
-      }
-      else if(e.profile.e.is_nearest(e.point)) {
-        row_e.node2 = 'b';
-      }
-      else {
-        row_e.node2 = 't';
-      }
-    }
-
-    // для створочных и доборных профилей добавляем соединения с внешними элементами
-    const nrst = this.nearest();
-    if(nrst) {
-      cnn_elmnts.add({
-        elm1: _row.elm,
-        elm2: nrst.elm,
-        cnn: _attr._nearest_cnn,
-        aperture_len: _row.len
-      });
-    }
-
     // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
 
-    _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
-    if(_row.alp1 < 0) {
-      _row.alp1 = _row.alp1 + 360;
+    if(this instanceof ProfileNested || this instanceof ProfileParent) {
+      _row.alp1 = _row.alp2 = 0;
+      _row.inset = this.inset;
+      _row.clr = this.clr;
     }
+    else {
 
-    _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
-    if(_row.alp2 < 0) {
-      _row.alp2 = _row.alp2 + 360;
+      const row_b = cnn_elmnts.add({
+        elm1: _row.elm,
+        node1: 'b',
+        cnn: b.cnn,
+        aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
+      });
+      const row_e = cnn_elmnts.add({
+        elm1: _row.elm,
+        node1: 'e',
+        cnn: e.cnn,
+        aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
+      });
+
+      // сохраняем информацию о соединениях
+      if(b.profile) {
+        row_b.elm2 = b.profile.elm;
+        if(b.profile.e.is_nearest(b.point)) {
+          row_b.node2 = 'e';
+        }
+        else if(b.profile.b.is_nearest(b.point)) {
+          row_b.node2 = 'b';
+        }
+        else {
+          row_b.node2 = 't';
+        }
+      }
+      if(e.profile) {
+        row_e.elm2 = e.profile.elm;
+        if(e.profile.b.is_nearest(e.point)) {
+          row_e.node2 = 'b';
+        }
+        else if(e.profile.e.is_nearest(e.point)) {
+          row_e.node2 = 'b';
+        }
+        else {
+          row_e.node2 = 't';
+        }
+      }
+
+      // для створочных и доборных профилей добавляем соединения с внешними элементами
+      const nrst = this.nearest();
+      if(nrst) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          elm2: nrst.elm,
+          cnn: _attr._nearest_cnn,
+          aperture_len: _row.len
+        });
+      }
+
+      _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
+      if(_row.alp1 < 0) {
+        _row.alp1 = _row.alp1 + 360;
+      }
+
+      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
+      if(_row.alp2 < 0) {
+        _row.alp2 = _row.alp2 + 360;
+      }
     }
 
     // устанавливаем тип элемента
@@ -10921,7 +10944,7 @@ class Profile extends ProfileItem {
 
   constructor(attr) {
 
-    const fromCoordinates = !!attr.row;
+    const fromCoordinates = attr.row && attr.row.elm;
 
     super(attr);
 
@@ -12022,8 +12045,17 @@ EditorInvisible.BaseLine = BaseLine;
 class ProfileNested extends Profile {
 
   constructor(attr) {
+    const from_editor = !attr.row && attr._nearest;
+    if(from_editor) {
+      attr.row = attr._nearest.ox.coordinates.add({parent: attr._nearest.elm});
+    }
     super(attr);
-    const nearest_elm = attr.parent.layer.getItem({elm: attr.row.parent});
+    if(from_editor) {
+      // при добавлении из рисовалки, ProfileParent подчиненного изделия, создаём сразу
+      const {coordinates} = this.layer._ox;
+      const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
+    }
+    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
     Object.defineProperties(this._attr, {
       _nearest: {
         get() {
@@ -12077,6 +12109,10 @@ class ProfileNested extends Profile {
 
   get sizeb() {
     return 0;
+  }
+
+  cnn_point(node, point) {
+    return ProfileParent.prototype.cnn_point.call(this, node, point);
   }
 
   path_points(cnn_point, profile_point) {
@@ -12143,20 +12179,17 @@ class ProfileNested extends Profile {
     super.save_coordinates();
     const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
     const {coordinates} = content._row._owner._owner;
-    // const {cnn_elmnts} = coordinates._owner;
-    const prow = coordinates.find({elm: _row.parent});
-    if(prow) {
-      prow.alp1 = prow.alp2 = 0;
-      ['nom', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => prow[name] = _row[name]);
-      const path = generatrix.clone({insert: false});
-      path.translate([-lbounds.x, -lbounds.y]);
-      const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
-      prow.x1 = (b.x).round(1);
-      prow.y1 = (lbounds.height - b.y).round(1);
-      prow.x2 = (e.x).round(1);
-      prow.y2 = (lbounds.height - e.y).round(1);
-      prow.path_data = path.pathData;
-    }
+    const prow = coordinates.find({cnstr: 1, elm: _row.parent});
+    ['nom','inset','clr','r','len','angle_hor','orientation','pos','elm_type','alp1','alp1'].forEach((name) => prow[name] = _row[name]);
+
+    const path = generatrix.clone({insert: false});
+    path.translate([-lbounds.x, -lbounds.y]);
+    const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
+    prow.x1 = (b.x).round(1);
+    prow.y1 = (lbounds.height - b.y).round(1);
+    prow.x2 = (e.x).round(1);
+    prow.y2 = (lbounds.height - e.y).round(1);
+    prow.path_data = path.pathData;
   }
 
   redraw() {
@@ -12247,41 +12280,49 @@ class ProfileNestedContent extends Profile {
 
   constructor(attr) {
 
-    const {row, parent} = attr;
-    const {layer, project: {bounds: pbounds}} = parent;
-    const {profiles, bounds: lbounds} = layer;
 
-    const x = lbounds.x + pbounds.x;
-    const y = lbounds.y + pbounds.y;
-
-    if(row.path_data) {
-      const path = new paper.Path({pathData: row.path_data, insert: false});
-      path.translate([x, y]);
-      row.path_data = path.pathData;
+    const {row, parent, generatrix, proto, _nearest} = attr;
+    if(generatrix && proto) {
+      super(attr);
+      this._attr._nearest = _nearest;
     }
     else {
-      row.x1 += x;
-      row.x2 += x;
-      row.y1 -= y;
-      row.y2 -= y;
-    }
+      const {layer, project: {bounds: pbounds}} = parent;
+      const {profiles, bounds: lbounds} = layer;
 
-    let pelm;
-    if(row.elm_type != 'Импост') {
-      const h = pbounds.height + pbounds.y;
-      const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
-      for(const elm of profiles) {
-        const {b, e, _row} = elm;
-        const pdir = e.subtract(b);
-        if(Math.abs(pdir.angle - dir.angle) < 0.1) {
-          pelm = elm;
-          break;
+      const x = lbounds.x + pbounds.x;
+      const y = lbounds.y + pbounds.y;
+
+      if(row.path_data) {
+        const path = new paper.Path({pathData: row.path_data, insert: false});
+        path.translate([x, y]);
+        row.path_data = path.pathData;
+      }
+      else {
+        row.x1 += x;
+        row.x2 += x;
+        row.y1 -= y;
+        row.y2 -= y;
+      }
+
+      let pelm;
+      if(row.elm_type != 'Импост') {
+        const h = pbounds.height + pbounds.y;
+        const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
+        for(const elm of profiles) {
+          const {b, e, _row} = elm;
+          const pdir = e.subtract(b);
+          if(Math.abs(pdir.angle - dir.angle) < 0.1) {
+            pelm = elm;
+            break;
+          }
         }
       }
+
+      super(attr);
+      this._attr._nearest = pelm;
     }
 
-    super(attr);
-    this._attr._nearest = pelm;
 
   }
 
@@ -12716,6 +12757,30 @@ class ProfileParent extends Profile {
   // цвет внешнего элемента
   set_clr(v) {
 
+  }
+
+  cnn_point(node, point) {
+    const {project, parent, rays} = this;
+    const res = rays[node];
+    if(!res.profile) {
+      if(!point) {
+        point = this[node];
+      }
+      const pp = node === 'b' ? 'e' : 'b';
+      for(const profile of parent.profiles) {
+        if(profile !== this && profile[pp].is_nearest(point, true)) {
+          res.profile = profile;
+          res.profile_point = pp;
+          res.point = point;
+          res.cnn_types = $p.enm.cnn_types.acn.a;
+          break;
+        }
+      }
+    }
+    if(!res.cnn) {
+      res.cnn = $p.cat.cnns.elm_cnn(this, res.profile, res.cnn_types);
+    }
+    return res;
   }
 
   path_points(cnn_point, profile_point) {
@@ -16513,7 +16578,7 @@ class ProductsBuilding {
      */
     function base_spec(scheme) {
 
-      const {Contour, Filling, Sectional, Profile, ProfileConnective} = $p.Editor;
+      const {Contour, Filling, Sectional, Profile, ProfileParent, ProfileConnective} = $p.Editor;
 
       // сбрасываем структуру обработанных соединений
       added_cnn_spec = {};
@@ -16524,7 +16589,7 @@ class ProductsBuilding {
 
         // для всех профилей контура
         for (const elm of contour.children) {
-          elm instanceof Profile && base_spec_profile(elm);
+          elm instanceof Profile && !(elm instanceof ProfileParent) && base_spec_profile(elm);
         }
 
         for (const elm of contour.children) {
@@ -21347,15 +21412,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Создаёт строку заказа с уникальной характеристикой
-   * @param row_spec
-   * @param elm
-   * @param len_angl
-   * @param params
-   * @param create
-   * @param grid
-   * @return {Promise}
+   * @param [row_spec] {DpBuyers_orderProductionRow} - строка - генератор параметрика
+   * @param [elm]
+   * @param [len_angl]
+   * @param [params]
+   * @param [create]
+   * @param [grid]
+   * @param [cx] {Promise.<CatCharacteristics>}
+   * @return {Promise.<DocCalc_orderProductionRow>}
    */
-  create_product_row({row_spec, elm, len_angl, params, create, grid}) {
+  create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
     const row = row_spec instanceof $p.DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
       row_spec.characteristic.calc_order_row :
@@ -21376,7 +21442,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     // ищем объект продукции в RAM или берём из строки заказа
     const mgr = $p.cat.characteristics;
-    let cx;
     function fill_cx(ox) {
       if(ox._deleted){
         return;
@@ -21389,7 +21454,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       cx = Promise.resolve(ox);
       return false;
     }
-    if(!row.characteristic.empty() && !row.characteristic._deleted){
+    if(!cx && !row.characteristic.empty() && !row.characteristic._deleted){
       fill_cx(row.characteristic);
     }
 

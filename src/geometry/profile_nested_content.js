@@ -11,41 +11,49 @@ class ProfileNestedContent extends Profile {
 
   constructor(attr) {
 
-    const {row, parent} = attr;
-    const {layer, project: {bounds: pbounds}} = parent;
-    const {profiles, bounds: lbounds} = layer;
 
-    const x = lbounds.x + pbounds.x;
-    const y = lbounds.y + pbounds.y;
-
-    if(row.path_data) {
-      const path = new paper.Path({pathData: row.path_data, insert: false});
-      path.translate([x, y]);
-      row.path_data = path.pathData;
+    const {row, parent, generatrix, proto, _nearest} = attr;
+    if(generatrix && proto) {
+      super(attr);
+      this._attr._nearest = _nearest;
     }
     else {
-      row.x1 += x;
-      row.x2 += x;
-      row.y1 -= y;
-      row.y2 -= y;
-    }
+      const {layer, project: {bounds: pbounds}} = parent;
+      const {profiles, bounds: lbounds} = layer;
 
-    let pelm;
-    if(row.elm_type != 'Импост') {
-      const h = pbounds.height + pbounds.y;
-      const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
-      for(const elm of profiles) {
-        const {b, e, _row} = elm;
-        const pdir = e.subtract(b);
-        if(Math.abs(pdir.angle - dir.angle) < 0.1) {
-          pelm = elm;
-          break;
+      const x = lbounds.x + pbounds.x;
+      const y = lbounds.y + pbounds.y;
+
+      if(row.path_data) {
+        const path = new paper.Path({pathData: row.path_data, insert: false});
+        path.translate([x, y]);
+        row.path_data = path.pathData;
+      }
+      else {
+        row.x1 += x;
+        row.x2 += x;
+        row.y1 -= y;
+        row.y2 -= y;
+      }
+
+      let pelm;
+      if(row.elm_type != 'Импост') {
+        const h = pbounds.height + pbounds.y;
+        const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
+        for(const elm of profiles) {
+          const {b, e, _row} = elm;
+          const pdir = e.subtract(b);
+          if(Math.abs(pdir.angle - dir.angle) < 0.1) {
+            pelm = elm;
+            break;
+          }
         }
       }
+
+      super(attr);
+      this._attr._nearest = pelm;
     }
 
-    super(attr);
-    this._attr._nearest = pelm;
 
   }
 

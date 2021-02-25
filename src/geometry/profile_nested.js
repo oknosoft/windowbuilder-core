@@ -10,8 +10,17 @@
 class ProfileNested extends Profile {
 
   constructor(attr) {
+    const from_editor = !attr.row && attr._nearest;
+    if(from_editor) {
+      attr.row = attr._nearest.ox.coordinates.add({parent: attr._nearest.elm});
+    }
     super(attr);
-    const nearest_elm = attr.parent.layer.getItem({elm: attr.row.parent});
+    if(from_editor) {
+      // при добавлении из рисовалки, ProfileParent подчиненного изделия, создаём сразу
+      const {coordinates} = this.layer._ox;
+      const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
+    }
+    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
     Object.defineProperties(this._attr, {
       _nearest: {
         get() {
@@ -65,6 +74,10 @@ class ProfileNested extends Profile {
 
   get sizeb() {
     return 0;
+  }
+
+  cnn_point(node, point) {
+    return ProfileParent.prototype.cnn_point.call(this, node, point);
   }
 
   path_points(cnn_point, profile_point) {
@@ -131,20 +144,17 @@ class ProfileNested extends Profile {
     super.save_coordinates();
     const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
     const {coordinates} = content._row._owner._owner;
-    // const {cnn_elmnts} = coordinates._owner;
-    const prow = coordinates.find({elm: _row.parent});
-    if(prow) {
-      prow.alp1 = prow.alp2 = 0;
-      ['nom', 'r', 'len', 'angle_hor', 'orientation', 'pos', 'elm_type'].forEach((name) => prow[name] = _row[name]);
-      const path = generatrix.clone({insert: false});
-      path.translate([-lbounds.x, -lbounds.y]);
-      const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
-      prow.x1 = (b.x).round(1);
-      prow.y1 = (lbounds.height - b.y).round(1);
-      prow.x2 = (e.x).round(1);
-      prow.y2 = (lbounds.height - e.y).round(1);
-      prow.path_data = path.pathData;
-    }
+    const prow = coordinates.find({cnstr: 1, elm: _row.parent});
+    ['nom','inset','clr','r','len','angle_hor','orientation','pos','elm_type','alp1','alp1'].forEach((name) => prow[name] = _row[name]);
+
+    const path = generatrix.clone({insert: false});
+    path.translate([-lbounds.x, -lbounds.y]);
+    const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
+    prow.x1 = (b.x).round(1);
+    prow.y1 = (lbounds.height - b.y).round(1);
+    prow.x2 = (e.x).round(1);
+    prow.y2 = (lbounds.height - e.y).round(1);
+    prow.path_data = path.pathData;
   }
 
   redraw() {
