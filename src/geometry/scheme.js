@@ -1174,11 +1174,19 @@ class Scheme extends paper.Project {
    */
   get auto_align() {
     const {calc_order, base_block} = this.ox;
-    const {Шаблон} = $p.enm.obj_delivery_states;
-    if(base_block.empty() || calc_order.obj_delivery_state == Шаблон || base_block.calc_order.obj_delivery_state != Шаблон) {
+    const {enm: {obj_delivery_states: st}, job_prm: {properties}} = $p;
+
+    if(base_block.empty() || calc_order.obj_delivery_state == st.Шаблон || base_block.calc_order.obj_delivery_state != st.Шаблон) {
       return false;
     }
-    const align = base_block._extra('auto_align');
+
+    let align;
+    if(properties.auto_align) {
+      base_block.params.find_rows({param: properties.auto_align, cnstr: 0}, (row) => {
+        align = row.value;
+        return false;
+      });
+    }
     return align && align != '_' && align;
   }
 
