@@ -411,7 +411,14 @@ class BuilderElement extends paper.Group {
 
   // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
   get sizeb() {
-    return this.inset.sizeb || 0;
+    const {sizeb} = this.inset;
+    if(sizeb === -1100) {
+      return this.nom.sizeb || 0;
+    }
+    else if(sizeb === -1200) {
+      return this.width / 2;
+    }
+    return sizeb || 0;
   }
 
   // размер до фурнитурного паза
