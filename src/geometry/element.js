@@ -413,7 +413,8 @@ class BuilderElement extends paper.Group {
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
-      return this.nom.sizeb || 0;
+      const {nom} = this;
+      return nom ? nom.sizeb : 0;
     }
     else if(sizeb === -1200) {
       return this.width / 2;
