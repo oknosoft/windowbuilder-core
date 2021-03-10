@@ -20,7 +20,7 @@ class ContourNested extends Contour {
     // добавляем в проект элементы вложенного изделия
     const {project, _ox} = this;
     if(direction instanceof $p.CatProduction_params) {
-      _ox.sys = direction;
+      direction.refill_prm(_ox, 0, 1, this);
     }
     const row = _ox.constructions.find({parent: 1});
     Contour.create({project, row, parent: this, ox: _ox});
@@ -95,7 +95,7 @@ class ContourNested extends Contour {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short) {
+  save_coordinates(short, save) {
 
     if (!short) {
       // запись в таблице координат для виртуальных профилей
@@ -116,6 +116,8 @@ class ContourNested extends Contour {
     if(content) {
       content._row._owner._owner.glasses.clear();
       content.save_coordinates(short);
+
+      save && this._ox.recalc({svg: true, silent: true});
     }
   }
 

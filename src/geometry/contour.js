@@ -2185,7 +2185,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short) {
+  save_coordinates(short, save) {
 
     if (!short) {
       // если контур не скрыт, удаляем скрытые заполнения
@@ -2197,7 +2197,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {l_text, l_dimensions} = this;
       for (let elm of this.children) {
         if (elm.save_coordinates) {
-          elm.save_coordinates();
+          elm.save_coordinates(short, save);
         }
         else if (elm === l_text || elm === l_dimensions) {
           elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());

@@ -115,7 +115,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
   /**
    * @method refill_prm
-   * @param ox {Characteristics} - объект характеристики, табчасть которого надо перезаполнить
+   * @param ox {CatCharacteristics} - объект характеристики, табчасть которого надо перезаполнить
    * @param cnstr {Nomber} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
    * @param [project] {Scheme} - текущий проект
@@ -125,7 +125,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
     const prm_ts = !cnstr ? this.product_params : this.furn_params;
     const adel = [];
-    const {enm, job_prm} = $p;
+    const {enm, job_prm, EditorInvisible: {Contour}} = $p;
     const auto_align = ox.calc_order.obj_delivery_state == enm.obj_delivery_states.Шаблон && job_prm.properties.auto_align;
     const {params} = ox;
 
@@ -182,6 +182,10 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     if(!cnstr){
       ox.sys = this;
       ox.owner = ox.prod_nom;
+
+      if(project instanceof Contour) {
+        return;
+      }
 
       // если текущая фурнитура недоступна для данной системы - меняем
       // одновременно, перезаполним параметры фурнитуры

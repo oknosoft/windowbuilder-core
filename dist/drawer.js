@@ -3163,7 +3163,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short) {
+  save_coordinates(short, save) {
 
     if (!short) {
       // если контур не скрыт, удаляем скрытые заполнения
@@ -3175,7 +3175,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {l_text, l_dimensions} = this;
       for (let elm of this.children) {
         if (elm.save_coordinates) {
-          elm.save_coordinates();
+          elm.save_coordinates(short, save);
         }
         else if (elm === l_text || elm === l_dimensions) {
           elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
@@ -3603,7 +3603,7 @@ class ContourNested extends Contour {
     // добавляем в проект элементы вложенного изделия
     const {project, _ox} = this;
     if(direction instanceof $p.CatProduction_params) {
-      _ox.sys = direction;
+      direction.refill_prm(_ox, 0, 1, this);
     }
     const row = _ox.constructions.find({parent: 1});
     Contour.create({project, row, parent: this, ox: _ox});
@@ -3678,7 +3678,7 @@ class ContourNested extends Contour {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short) {
+  save_coordinates(short, save) {
 
     if (!short) {
       // запись в таблице координат для виртуальных профилей
@@ -3699,6 +3699,8 @@ class ContourNested extends Contour {
     if(content) {
       content._row._owner._owner.glasses.clear();
       content.save_coordinates(short);
+
+      save && this._ox.recalc({svg: true, silent: true});
     }
   }
 
@@ -5819,7 +5821,7 @@ class BuilderElement extends paper.Group {
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
-      const const {nom} = this;
+      const {nom} = this;
       return nom ? nom.sizeb : 0;
     }
     else if(sizeb === -1200) {
@@ -13904,7 +13906,7 @@ class Scheme extends paper.Project {
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях
-      this.contours.forEach((contour) => contour.save_coordinates());
+      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save));
 
       // вызываем метод save_coordinates в слое соединителей
       this.l_connective.save_coordinates();
@@ -16694,6 +16696,9 @@ class ProductsBuilding {
           spec: spec,
           save: attr.save,
         }, true);
+        if(attr.save) {
+          ox.calc_order_row.s = ox.s;
+        }
       }
 
       // информируем мир о завершении пересчета

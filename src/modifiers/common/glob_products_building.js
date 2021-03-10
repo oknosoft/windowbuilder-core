@@ -740,6 +740,9 @@ class ProductsBuilding {
           spec: spec,
           save: attr.save,
         }, true);
+        if(attr.save) {
+          ox.calc_order_row.s = ox.s;
+        }
       }
 
       // информируем мир о завершении пересчета
