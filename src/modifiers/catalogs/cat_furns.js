@@ -285,16 +285,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       if(row_furn.is_set_row){
         const {nom} = row_furn;
         nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {
-          if(sub_row.is_procedure_row){
+          if(sub_row.is_procedure_row) {
             res.add(sub_row);
           }
-          else if(sub_row.quantity){
+          else if(sub_row.quantity) {
             res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
-        if(row_furn.quantity){
+        if(row_furn.quantity) {
           this.add_with_algorithm(res, ox, contour, row_furn);
         }
       }
@@ -311,9 +311,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    * @param {CatFurnsSpecificationRow} row_furn
    */
   add_with_algorithm(res, ox, contour, row_furn) {
-    const {algorithm, formula} = row_furn;
+    const {algorithm, formula, elm, dop} = row_furn;
+    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;
     let cx;
-    if(algorithm == 'cx_prm') {
+    if(algorithm === cx_prm) {
       cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
       if(cx.toString().toLowerCase() === 'нет') {
         return;
@@ -321,8 +322,17 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     const row_spec = res.add(row_furn);
     row_spec.origin = this;
-    if(algorithm == 'cx_prm') {
+    if(algorithm === cx_prm) {
       row_spec.nom_characteristic = cx;
+    }
+    else if(algorithm === clr_prm) {
+      this.selection_params.find_rows({elm, dop}, (prm_row) => {
+        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+          prm_row.param.type.types.includes('cat.clrs') &&
+          (!prm_row.value || prm_row.value.empty())) {
+          row_spec.clr = ox.extract_value({cnstr: contour.cnstr, param: prm_row.param});
+        }
+      });
     }
     if(!formula.empty() && !formula.condition_formula){
       formula.execute({ox, contour, row_furn, row_spec});

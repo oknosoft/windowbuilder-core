@@ -398,8 +398,15 @@ set applying(v){this._setter_ts('applying',v)}
    */
   check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order}) {
 
-    const {is_calculated} = this;
-    const {utils, enm: {comparison_types}} = $p;
+    const {is_calculated, type} = this;
+    const {utils, enm: {comparison_types, predefined_formulas}} = $p;
+
+    if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
+      (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq) &&
+        type.types.includes('cat.clrs') &&
+        (!prm_row.value || prm_row.value.empty())) {
+      return true;
+    }
 
     // значение параметра
     const val = is_calculated ? this.calculated_value({
@@ -414,7 +421,7 @@ set applying(v){this._setter_ts('applying',v)}
     let ok = false;
 
     // если сравнение на равенство - решаем в лоб, если вычисляемый параметр типа массив - выясняем вхождение значения в параметр
-    if(ox && !Array.isArray(val) && (prm_row.comparison_type.empty() || prm_row.comparison_type == comparison_types.eq)) {
+    if(ox && !Array.isArray(val) && (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq)) {
       if(is_calculated) {
         ok = val == prm_row.value;
       }

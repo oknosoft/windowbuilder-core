@@ -145,10 +145,11 @@ class Pricing {
   by_range(startkey, step = 0) {
 
     const {pouch} = $p.adapters;
+    const limit = 1200;
 
     return pouch.local.doc.query('server_nom_prices/slice_last',
         {
-          limit: 600,
+          limit,
           include_docs: false,
           startkey: startkey || [''],
           endkey: ['\ufff0'],
@@ -158,7 +159,7 @@ class Pricing {
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
-        if (res.rows.length === 600) {
+        if (res.rows.length === limit) {
           return this.by_range(res.rows[res.rows.length - 1].key, step);
         }
       })

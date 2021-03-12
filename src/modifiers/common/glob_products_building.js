@@ -890,7 +890,12 @@ class ProductsBuilding {
     }
     row_spec.nom = nom || row_base.nom;
 
-    const {utils: {blank}, cat: {clrs, characteristics}, enm: {predefined_formulas: {cx_clr}}, cch: {properties}} = $p;
+    const {
+      utils: {blank},
+      cat: {clrs, characteristics},
+      enm: {predefined_formulas: {cx_clr, clr_prm}, comparison_types: ct},
+      cch: {properties},
+    } = $p;
 
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;
@@ -919,6 +924,14 @@ class ProductsBuilding {
         if(prow) {
           row_spec.characteristic = params._owner;
           return false;
+        }
+      });
+    }
+    else if(row_base.algorithm === clr_prm && origin && elm.elm > 0) {
+      const ctypes = [ct.get(), ct.eq];
+      origin.selection_params.find_rows({elm: row_base.elm}, (prm_row) => {
+        if(ctypes.includes(prm_row.comparison_type) && prm_row.param.type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty())) {
+          row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
         }
       });
     }

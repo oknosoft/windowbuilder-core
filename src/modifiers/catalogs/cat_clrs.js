@@ -4,7 +4,7 @@
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
- * @module cat_cnns
+ * @module cat_clrs
  *
  * Created 23.12.2015
  */
@@ -42,6 +42,8 @@ $p.cat.clrs.__define({
           return this.inverted(clr_sch);
         case 'БезЦвета':
           return this.get();
+        case 'Белый':
+          return clr;
         case 'КакВоВставке':
           if(!elm){
             return clr_elm;
@@ -49,6 +51,9 @@ $p.cat.clrs.__define({
           const {inset} = elm;
           const main_rows = inset.main_rows(elm);
           return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
+        case 'КакНом':
+          const nom = elm && elm.nom;
+          return nom ? nom.clr : (clr.empty() ? clr_elm : clr);
         case 'КакВедущий':
         case 'КакВедущийИзнутри':
         case 'КакВедущийСнаружи':

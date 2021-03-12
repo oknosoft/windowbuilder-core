@@ -15405,10 +15405,11 @@ class Pricing {
   by_range(startkey, step = 0) {
 
     const {pouch} = $p.adapters;
+    const limit = 1200;
 
     return pouch.local.doc.query('server_nom_prices/slice_last',
         {
-          limit: 600,
+          limit,
           include_docs: false,
           startkey: startkey || [''],
           endkey: ['\ufff0'],
@@ -15418,7 +15419,7 @@ class Pricing {
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
-        if (res.rows.length === 600) {
+        if (res.rows.length === limit) {
           return this.by_range(res.rows[res.rows.length - 1].key, step);
         }
       })
@@ -16846,7 +16847,12 @@ class ProductsBuilding {
     }
     row_spec.nom = nom || row_base.nom;
 
-    const {utils: {blank}, cat: {clrs, characteristics}, enm: {predefined_formulas: {cx_clr}}, cch: {properties}} = $p;
+    const {
+      utils: {blank},
+      cat: {clrs, characteristics},
+      enm: {predefined_formulas: {cx_clr, clr_prm}, comparison_types: ct},
+      cch: {properties},
+    } = $p;
 
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;
@@ -16875,6 +16881,14 @@ class ProductsBuilding {
         if(prow) {
           row_spec.characteristic = params._owner;
           return false;
+        }
+      });
+    }
+    else if(row_base.algorithm === clr_prm && origin && elm.elm > 0) {
+      const ctypes = [ct.get(), ct.eq];
+      origin.selection_params.find_rows({elm: row_base.elm}, (prm_row) => {
+        if(ctypes.includes(prm_row.comparison_type) && prm_row.param.type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty())) {
+          row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
         }
       });
     }
@@ -18063,8 +18077,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const is_nom = param instanceof CatNom;
     inset = inset ? inset.valueOf() : blank.guid;
     param = param ? param.valueOf() : blank.guid;
+    if(!Array.isArray(cnstr)) {
+      cnstr = [cnstr];
+    }
     const row = this.params._obj.find((row) =>
-      row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
+      cnstr.includes(row.cnstr) && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
@@ -18155,7 +18172,7 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
- * @module cat_cnns
+ * @module cat_clrs
  *
  * Created 23.12.2015
  */
@@ -18193,6 +18210,8 @@ $p.cat.clrs.__define({
           return this.inverted(clr_sch);
         case 'БезЦвета':
           return this.get();
+        case 'Белый':
+          return clr;
         case 'КакВоВставке':
           if(!elm){
             return clr_elm;
@@ -18200,6 +18219,9 @@ $p.cat.clrs.__define({
           const {inset} = elm;
           const main_rows = inset.main_rows(elm);
           return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
+        case 'КакНом':
+          const nom = elm && elm.nom;
+          return nom ? nom.clr : (clr.empty() ? clr_elm : clr);
         case 'КакВедущий':
         case 'КакВедущийИзнутри':
         case 'КакВедущийСнаружи':
@@ -19050,16 +19072,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       if(row_furn.is_set_row){
         const {nom} = row_furn;
         nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {
-          if(sub_row.is_procedure_row){
+          if(sub_row.is_procedure_row) {
             res.add(sub_row);
           }
-          else if(sub_row.quantity){
+          else if(sub_row.quantity) {
             res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
-        if(row_furn.quantity){
+        if(row_furn.quantity) {
           this.add_with_algorithm(res, ox, contour, row_furn);
         }
       }
@@ -19076,9 +19098,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    * @param {CatFurnsSpecificationRow} row_furn
    */
   add_with_algorithm(res, ox, contour, row_furn) {
-    const {algorithm, formula} = row_furn;
+    const {algorithm, formula, elm, dop} = row_furn;
+    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;
     let cx;
-    if(algorithm == 'cx_prm') {
+    if(algorithm === cx_prm) {
       cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
       if(cx.toString().toLowerCase() === 'нет') {
         return;
@@ -19086,8 +19109,17 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     const row_spec = res.add(row_furn);
     row_spec.origin = this;
-    if(algorithm == 'cx_prm') {
+    if(algorithm === cx_prm) {
       row_spec.nom_characteristic = cx;
+    }
+    else if(algorithm === clr_prm) {
+      this.selection_params.find_rows({elm, dop}, (prm_row) => {
+        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+          prm_row.param.type.types.includes('cat.clrs') &&
+          (!prm_row.value || prm_row.value.empty())) {
+          row_spec.clr = ox.extract_value({cnstr: contour.cnstr, param: prm_row.param});
+        }
+      });
     }
     if(!formula.empty() && !formula.condition_formula){
       formula.execute({ox, contour, row_furn, row_spec});

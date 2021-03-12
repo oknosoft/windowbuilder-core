@@ -569,8 +569,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const is_nom = param instanceof CatNom;
     inset = inset ? inset.valueOf() : blank.guid;
     param = param ? param.valueOf() : blank.guid;
+    if(!Array.isArray(cnstr)) {
+      cnstr = [cnstr];
+    }
     const row = this.params._obj.find((row) =>
-      row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
+      cnstr.includes(row.cnstr) && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
