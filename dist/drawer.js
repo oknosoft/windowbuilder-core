@@ -16861,7 +16861,7 @@ class ProductsBuilding {
       row_spec.dop = -2;
     }
 
-    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec);
+    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_base);
     row_spec.elm = elm.elm;
     if(origin) {
       row_spec.origin = origin;
@@ -18187,7 +18187,7 @@ $p.cat.clrs.__define({
 	 * @return {*}
 	 */
   by_predefined: {
-    value(clr, clr_elm, clr_sch, elm, spec) {
+    value(clr, clr_elm, clr_sch, elm, spec, row) {
 
       const {predefined_name} = clr;
       if(predefined_name) {
@@ -18220,7 +18220,7 @@ $p.cat.clrs.__define({
           const main_rows = inset.main_rows(elm);
           return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
         case 'КакНом':
-          const nom = elm && elm.nom;
+          const nom = row ? row.nom : (elm && elm.nom);
           return nom ? nom.clr : (clr.empty() ? clr_elm : clr);
         case 'КакВедущий':
         case 'КакВедущийИзнутри':
@@ -18231,7 +18231,7 @@ $p.cat.clrs.__define({
           if(!elm || elm === t_parent){
             return this.by_predefined(sub_clr,  clr_elm);
           }
-          let finded = false;
+          let finded;
           spec && spec.find_rows({elm: t_parent.elm, nom: t_parent.nom}, (row) => {
             finded = this.by_predefined(sub_clr,  row.clr);
             return false;
@@ -18253,13 +18253,15 @@ $p.cat.clrs.__define({
    */
   inverted: {
     value(clr){
-      if(clr.clr_in == clr.clr_out || clr.clr_in.empty() || clr.clr_out.empty()){
+      const {clr_in, clr_out, ref} = clr;
+      if(clr_in === clr_out || clr_in.empty() || clr_out.empty()){
         return clr;
       }
       // ищем в справочнике цветов
-      const ares = $p.wsql.alasql("select top 1 ref from ? where clr_in = ? and clr_out = ? and (not ref = ?)",
-        [this.alatable, clr.clr_out.ref, clr.clr_in.ref, $p.utils.blank.guid]);
-      return ares.length ? this.get(ares[0]) : clr;
+      const rin = clr_in.ref, rout = clr_out.ref;
+      const {blank} = $p.utils;
+      const ares = this.alatable.find(({clr_in, clr_out, ref}) => clr_in === rout && clr_out === rin && ref !== blank.guid);
+      return ares ? this.get(ares) : clr;
     }
   },
 
