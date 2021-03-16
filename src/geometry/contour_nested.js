@@ -12,16 +12,10 @@
 class ContourNested extends Contour {
 
   constructor(attr) {
-    const {direction} = attr;
-    delete attr.direction;
-
     super(attr);
 
     // добавляем в проект элементы вложенного изделия
     const {project, _ox} = this;
-    if(direction instanceof $p.CatProduction_params) {
-      direction.refill_prm(_ox, 0, 1, this);
-    }
     const row = _ox.constructions.find({parent: 1});
     Contour.create({project, row, parent: this, ox: _ox});
   }
@@ -39,7 +33,9 @@ class ContourNested extends Contour {
   get _ox() {
     const {_attr} = this;
     if(!_attr._ox) {
-      const {project: {ox}, cnstr} = this;
+      const {cat: {templates}, job_prm, utils} = $p;
+      const {project, cnstr} = this;
+      const {ox} = project;
       for(const {characteristic} of ox.calc_order.production) {
         if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {
           _attr._ox = characteristic;
@@ -48,7 +44,7 @@ class ContourNested extends Contour {
       }
       if(!_attr._ox) {
         _attr._ox = ox._manager.create({
-          ref: $p.utils.generate_guid(),
+          ref: utils.generate_guid(),
           calc_order: ox.calc_order,
           leading_product: ox,
           leading_elm: -cnstr,
@@ -62,6 +58,27 @@ class ContourNested extends Contour {
           .then((row) => {
             _attr._ox.product = row.row;
           });
+
+        const _obj = templates._select_template;
+        const {templates_nested} = job_prm.builder;
+        if(templates_nested && templates_nested.includes(_obj.calc_order)) {
+          const {base_block} = _obj;
+          // если в типовом блоке есть вложенные слои - добавляем их в изделие
+          const fin = (contour, fields) => {
+            if(contour === this && fields.constructions) {
+              project._scope.eve.off('rows', fin);
+              if(base_block.constructions.count() > 1) {
+                _attr._ox.constructions.del({parent: 1});
+                base_block.constructions.find_rows({parent: 1}, (brow) => {
+
+                });
+              }
+            }
+          }
+          project._scope.eve.on('rows', fin);
+          _obj.sys.refill_prm(_attr._ox, 0, 1, this, _obj.params);
+        }
+
       }
     }
     return _attr._ox;
