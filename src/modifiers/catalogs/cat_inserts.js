@@ -742,12 +742,12 @@
 
         // добавляем строку спецификации, если профиль или не про шагам
         if(![ПоПериметру, ПоШагам, ПоЗаполнениям].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
 
         if(count_calc_method == ПоФормуле && !formula.empty()){
           // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
         // для вставок в профиль способ расчета количества не учитывается
         else if(profile_items.includes(_row.elm_type) || count_calc_method == ДляЭлемента){
@@ -799,7 +799,7 @@
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
               if(this.check_restrictions(row_ins_spec, row_prm, true)){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
                 const fqty = !formula.empty() && formula.execute({
                   ox,
@@ -862,7 +862,7 @@
               }
 
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
                 const fqty = !formula.empty() && formula.execute({
                   ox,
@@ -922,7 +922,7 @@
           else if(count_calc_method == ПоЗаполнениям){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
               // виртуальный номер элемента для данного способа расчета количества
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;

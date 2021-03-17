@@ -82,19 +82,19 @@ class ProductsBuilding {
       if(!cnn) {
         return;
       }
-      const {enm, CatInserts, utils} = $p;
-      const sign = cnn.cnn_type == enm.cnn_types.ii ? -1 : 1;
+      const {enm: {predefined_formulas: {gb_short, gb_long}, cnn_types}, CatInserts, utils} = $p;
+      const sign = cnn.cnn_type == cnn_types.ii ? -1 : 1;
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
-      cnn.filtered_spec({elm, elm2, len_angl, ox}).forEach((row_cnn_spec) => {
+      cnn.filtered_spec({elm, elm2, len_angl, ox}).forEach((row_base) => {
 
-        const {nom} = row_cnn_spec;
+        const {nom} = row_base;
 
         // TODO: nom может быть вставкой - в этом случае надо разузловать
         if(nom instanceof CatInserts) {
-          if(len_angl && (row_cnn_spec.sz || row_cnn_spec.coefficient)) {
-            const tmp_len_angl = utils._clone(len_angl);
-            tmp_len_angl.len = (len_angl.len - sign * 2 * row_cnn_spec.sz) * (row_cnn_spec.coefficient || 0.001);
+          if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
+            const tmp_len_angl = Object.assign({}, len_angl);
+            tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
             nom.calculate_spec({elm, len_angl: tmp_len_angl, ox});
           }
           else {
@@ -103,24 +103,24 @@ class ProductsBuilding {
         }
         else {
 
-          const row_spec = new_spec_row({row_base: row_cnn_spec, origin: len_angl.origin || cnn, elm, nom, spec, ox});
+          const row_spec = new_spec_row({row_base, origin: len_angl.origin || cnn, elm, nom, spec, ox, len_angl});
 
           // рассчитаем количество
           if(nom.is_pieces) {
-            if(!row_cnn_spec.coefficient) {
-              row_spec.qty = row_cnn_spec.quantity;
+            if(!row_base.coefficient) {
+              row_spec.qty = row_base.quantity;
             }
             else {
-              row_spec.qty = ((len_angl.len - sign * 2 * row_cnn_spec.sz) * row_cnn_spec.coefficient * row_cnn_spec.quantity - 0.5)
+              row_spec.qty = ((len_angl.len - sign * 2 * row_base.sz) * row_base.coefficient * row_base.quantity - 0.5)
                 .round(nom.rounding_quantity);
             }
           }
           else {
-            row_spec.qty = row_cnn_spec.quantity;
+            row_spec.qty = row_base.quantity;
 
             // если указано cnn_other, берём не размер соединения, а размеры предыдущего и последующего
-            if(row_cnn_spec.sz || row_cnn_spec.coefficient) {
-              let sz = row_cnn_spec.sz, finded, qty;
+            if(![gb_short, gb_long].includes(row_base.algorithm) && (row_base.sz || row_base.coefficient)) {
+              let sz = row_base.sz, finded, qty;
               if(cnn_other) {
                 cnn_other.specification.find_rows({nom}, (row) => {
                   sz += row.sz;
@@ -134,27 +134,27 @@ class ProductsBuilding {
               if(!row_spec.qty && finded && len_angl.art1) {
                 row_spec.qty = qty;
               }
-              row_spec.len = (len_angl.len - sign * sz) * (row_cnn_spec.coefficient || 0.001);
+              row_spec.len = (len_angl.len - sign * sz) * (row_base.coefficient || 0.001);
             }
           }
 
           // если указана формула - выполняем
-          if(!row_cnn_spec.formula.empty()) {
-            const qty = row_cnn_spec.formula.execute({
+          if(!row_base.formula.empty()) {
+            const qty = row_base.formula.execute({
               ox,
               elm,
               len_angl,
               cnstr: 0,
               inset: utils.blank.guid,
-              row_cnn: row_cnn_spec,
+              row_cnn: row_base,
               row_spec: row_spec
             });
             // если формула является формулой условия, используем результат, как фильтр
-            if(row_cnn_spec.formula.condition_formula && !qty){
+            if(row_base.formula.condition_formula && !qty){
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, len_angl, row_cnn_spec.angle_calc_method);
+          calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
         }
 
       });
@@ -533,9 +533,9 @@ class ProductsBuilding {
           return;
         }
 
-        const prev = (i == 0 ? profiles[glength - 1] : profiles[i - 1]).profile;
-        const next = (i == glength - 1 ? profiles[0] : profiles[i + 1]).profile;
-        const row_cnn = cnn_elmnts.find_rows({elm1: _row.elm, elm2: curr.profile.elm});
+        const prev = (i == 0 ? profiles[glength - 1] : profiles[i - 1]);
+        const next = (i == glength - 1 ? profiles[0] : profiles[i + 1]);
+        const row_cnn = cnn_elmnts.find({elm1: _row.elm, elm2: curr.profile.elm});
 
         let angle_hor = (new paper.Point(curr.e.x - curr.b.x, curr.b.y - curr.e.y)).angle.round(2);
         if(angle_hor < 0) {
@@ -545,10 +545,13 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.generatrix.angle_between(curr.profile.generatrix, curr.b),
-          alp2: curr.profile.generatrix.angle_between(next.generatrix, curr.e),
-          len: row_cnn.length ? row_cnn[0].aperture_len : 0,
-          origin: cnn_row(_row.elm, curr.profile.elm)
+          alp1: prev.profile.generatrix.angle_between(curr.profile.generatrix, curr.b),
+          alp2: curr.profile.generatrix.angle_between(next.profile.generatrix, curr.e),
+          len: row_cnn ? row_cnn.aperture_len : 0,
+          origin: cnn_row(_row.elm, curr.profile.elm),
+          prev,
+          next,
+          curr,
         };
 
         // добавляем спецификацию соединения рёбер заполнения с профилем
@@ -883,7 +886,7 @@ class ProductsBuilding {
    * @param [origin]
    * @return {TabularSectionRow.cat.characteristics.specification}
    */
-  static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox}) {
+  static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl}) {
     if(!row_spec) {
       // row_spec = this.ox.specification.add();
       row_spec = spec.add();
@@ -893,7 +896,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, clr_prm}, comparison_types: ct},
+      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long}, comparison_types: ct},
       cch: {properties},
     } = $p;
 
@@ -927,18 +930,38 @@ class ProductsBuilding {
         }
       });
     }
-    else if(row_base.algorithm === clr_prm && origin && elm.elm > 0) {
-      const ctypes = [ct.get(), ct.eq];
-      origin.selection_params.find_rows({elm: row_base.elm}, (prm_row) => {
-        if(ctypes.includes(prm_row.comparison_type) && prm_row.param.type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty())) {
-          row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
-        }
-      });
-    }
     else {
       row_spec.characteristic = row_base.nom_characteristic;
       if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
         row_spec.characteristic = blank.guid;
+      }
+
+      // цвет по параметру
+      if(row_base.algorithm === clr_prm && origin && elm.elm > 0) {
+        const ctypes = [ct.get(), ct.eq];
+        origin.selection_params.find_rows({elm: row_base.elm}, (prm_row) => {
+          if(ctypes.includes(prm_row.comparison_type) && prm_row.param.type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty())) {
+            row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
+          }
+        });
+      }
+      // длина штапика
+      else if([gb_short, gb_long].includes(row_base.algorithm) && len_angl) {
+        const {curr, next, prev} = len_angl;
+        if(curr && next && prev) {
+          // строим эквидистанты от рёбер заполнения
+          const curr0 = curr.sub_path.equidistant(row_base.sz, 100);
+          const curr1 = curr.sub_path.equidistant(row_base.sz - row_base.nom.width, 100);
+          const prev0 = prev.sub_path.equidistant(row_base.sz, 100);
+          const next0 = next.sub_path.equidistant(row_base.sz, 100);
+          const pp0 = curr0.intersect_point(prev0, curr.b, true);
+          const pp1 = curr1.intersect_point(prev0, curr.b, true);
+          const pn0 = curr0.intersect_point(next0, curr.e, true);
+          const pn1 = curr1.intersect_point(next0, curr.e, true);
+          const fin0 = curr0.get_subpath(pp0, pn0);
+          const fin1 = curr1.get_subpath(pp1, pn1);
+          row_spec.len = (Math.max(fin0.length, fin1.length) * (row_base.coefficient || 0.001)).round(4);
+        }
       }
     }
 
