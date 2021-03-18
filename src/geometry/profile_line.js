@@ -19,7 +19,9 @@ class BaseLine extends ProfileItem {
 
   constructor(attr) {
     super(attr);
-    this.parent = this.project.l_connective;
+    if(!attr.preserv_parent) {
+      this.parent = this.project.l_connective;
+    }
     Object.assign(this.generatrix, {
       strokeColor: 'brown',
       fillColor: new paper.Color(1, 0.1),
@@ -27,7 +29,7 @@ class BaseLine extends ProfileItem {
       strokeWidth: 2,
       dashOffset: 4,
       dashArray: [4, 4],
-    })
+    });
   }
 
   get d0() {

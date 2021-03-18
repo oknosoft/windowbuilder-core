@@ -292,6 +292,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(row.elm_type === elm_types.Вложение) {
         this instanceof ContourParent ? new ProfileParent(attr) : new ProfileNested(attr);
       }
+      else if(row.elm_type === elm_types.Примыкание) {
+        new ProfileAdjoining(attr);
+      }
       else if(elm_types.profiles.includes(row.elm_type)) {
         this instanceof ContourNestedContent ? new ProfileNestedContent(attr) : new Profile(attr);
       }

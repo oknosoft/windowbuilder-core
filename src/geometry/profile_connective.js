@@ -207,6 +207,15 @@ class ConnectiveLayer extends paper.Layer {
     return this.project._skeleton;
   }
 
+  /**
+   * Продукция слоя соединителей
+   * Совпадает с продукцией проекта
+   * @return {CatCharacteristics}
+   */
+  get _ox() {
+    return this.project.ox;
+  }
+
   redraw() {
     this.children.forEach((elm) => elm.redraw());
   }

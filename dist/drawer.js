@@ -1270,6 +1270,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(row.elm_type === elm_types.Вложение) {
         this instanceof ContourParent ? new ProfileParent(attr) : new ProfileNested(attr);
       }
+      else if(row.elm_type === elm_types.Примыкание) {
+        new ProfileAdjoining(attr);
+      }
       else if(elm_types.profiles.includes(row.elm_type)) {
         this instanceof ContourNestedContent ? new ProfileNestedContent(attr) : new Profile(attr);
       }
@@ -11872,6 +11875,15 @@ class ConnectiveLayer extends paper.Layer {
     return this.project._skeleton;
   }
 
+  /**
+   * Продукция слоя соединителей
+   * Совпадает с продукцией проекта
+   * @return {CatCharacteristics}
+   */
+  get _ox() {
+    return this.project.ox;
+  }
+
   redraw() {
     this.children.forEach((elm) => elm.redraw());
   }
@@ -11933,7 +11945,9 @@ class BaseLine extends ProfileItem {
 
   constructor(attr) {
     super(attr);
-    this.parent = this.project.l_connective;
+    if(!attr.preserv_parent) {
+      this.parent = this.project.l_connective;
+    }
     Object.assign(this.generatrix, {
       strokeColor: 'brown',
       fillColor: new paper.Color(1, 0.1),
@@ -11941,7 +11955,7 @@ class BaseLine extends ProfileItem {
       strokeWidth: 2,
       dashOffset: 4,
       dashArray: [4, 4],
-    })
+    });
   }
 
   get d0() {
@@ -12070,6 +12084,80 @@ BaseLine.oxml = {
 
 EditorInvisible.BaseLine = BaseLine;
 
+
+/**
+ *
+ *
+ * @module profile_connective_adjoining
+ *
+ * Created by Evgeniy Malyarov on 18.03.2021.
+ */
+
+/**
+ * ### Виртуальный профиль примыкания
+ * Класс описывает поведение внешнего примыкания к рамам изделия
+ *
+ * - у примыкания есть координаты конца и начала, такие же, как у Profile
+ * - концы соединяются с пустотой
+ * - имеет как минимум одно ii примыкающее соединение
+ * - есть путь образующей - прямая или кривая линия, такая же, как у Profile
+ * - слвиг и искривление пути передаются примыкающим профилям
+ * - живёт в том же слое, что и рамные профили
+ * - длина может отличаться от длин профилей, к которым он примыкает
+ *
+ * @class ProfileAdjoining
+ * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
+ * @constructor
+ * @extends ProfileConnectiveOuter
+ */
+class ProfileAdjoining extends BaseLine {
+
+  constructor(attr) {
+    attr.preserv_parent = true;
+    super(attr);
+    Object.assign(this.generatrix, {
+      strokeColor: 'blue',
+      strokeWidth: 4,
+      dashOffset: 6,
+      dashArray: [6, 6],
+    });
+  }
+
+  /**
+   * Возвращает тип элемента (соединитель)
+   */
+  get elm_type() {
+    return $p.enm.elm_types.Примыкание;
+  }
+
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    return ProfileAdjoining.oxml;
+  }
+
+  /**
+   * Возвращает массив примыкающих рам
+   */
+  joined_nearests() {
+    return this.layer.profiles.filter((profile) => {
+      return profile.nearest(true) === this;
+    });
+  }
+}
+
+ProfileAdjoining.oxml = {
+  ' ': [
+    {id: 'info', path: 'o.info', type: 'ro'},
+    'inset',
+    'clr'
+  ],
+  'Начало': ['x1', 'y1'],
+  'Конец': ['x2', 'y2']
+};
+
+EditorInvisible.ProfileAdjoining = ProfileAdjoining;
 
 
 /**
