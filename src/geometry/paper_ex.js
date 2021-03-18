@@ -477,7 +477,7 @@ Object.defineProperties(paper.Point.prototype, {
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }
-			return this.getDistance(point, true) < (sticking ? consts.sticking2 : 16);
+			return this.getDistance(point, true) < (typeof sticking === 'number' ? sticking : (sticking ? consts.sticking2 : 16));
 		}
 	},
 

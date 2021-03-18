@@ -8419,7 +8419,7 @@ Object.defineProperties(paper.Point.prototype, {
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }
-			return this.getDistance(point, true) < (sticking ? consts.sticking2 : 16);
+			return this.getDistance(point, true) < (typeof sticking === 'number' ? sticking : (sticking ? consts.sticking2 : 16));
 		}
 	},
 
@@ -8657,7 +8657,7 @@ class CnnPoint {
   }
 
   /**
-   * Строгий вариант свойства is_t: Ꞁ и └ не рассматриваются, как T
+   * Строгий вариант is_t: Ꞁ и └ не рассматриваются, как T
    */
   get is_tt() {
     // если это угол, то точно не T
@@ -8672,6 +8672,17 @@ class CnnPoint {
     const {cnn} = this;
     const {cnn_types} = $p.enm;
     return this.is_t || !!(cnn && (cnn.cnn_type === cnn_types.av || cnn.cnn_type === cnn_types.ah));
+  }
+
+  /**
+   * Вариант is_l - по удаленности от узла
+   */
+  get is_ll() {
+    const {point, profile, parent} = this;
+    if(!parent._attr.sticking) {
+      parent._attr.sticking = Math.pow(parent.width * 2 / 3, 2);
+    }
+    return profile && (profile.b.is_nearest(point, parent._attr.sticking) || profile.e.is_nearest(point, parent._attr.sticking));
   }
 
   /**

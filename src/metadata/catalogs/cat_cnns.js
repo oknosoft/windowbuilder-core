@@ -178,8 +178,11 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
                 }
               }
             }
+            if(cnn_point && cnn.stop_applying(cnn_point)) {
+              return false;
+            }
             if(!side){
-              return true
+              return true;
             }
             if(cnn.sd1 == cnn_sides.Изнутри){
               return side == cnn_sides.Изнутри;
@@ -205,6 +208,8 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     return a1[ref2];
   }
 
+
+
   /**
    * Возвращает соединение между элементами
    * @param elm1 {BuilderElement}
@@ -217,31 +222,32 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
-    const {cnn_types: {acn}, cnn_sides} = this._owner.$p.enm;
+    const {cnn_types: {acn, t, xx}, cnn_sides} = this._owner.$p.enm;
 
     // если установленное ранее соединение проходит по типу и стороне, нового не ищем
-    if(curr_cnn && cnn_types && (cnn_types.indexOf(curr_cnn.cnn_type) != -1) && (cnn_types != acn.ii)){
+    if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
 
       // TODO: проверить геометрию
-
-      if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
-        if(typeof is_outer == 'boolean'){
-          if(!is_outer){
-            return curr_cnn;
+      if(!curr_cnn.stop_applying(cnn_point)) {
+        if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
+          if(typeof is_outer == 'boolean'){
+            if(!is_outer){
+              return curr_cnn;
+            }
           }
+          else{
+            if(elm2.cnn_side(elm1) == cnn_sides.Изнутри){
+              return curr_cnn;
+            }
+          }
+        }
+        else if(!ign_side && curr_cnn.sd1 == cnn_sides.Снаружи){
+          if(is_outer || elm2.cnn_side(elm1) == cnn_sides.Снаружи)
+            return curr_cnn;
         }
         else{
-          if(elm2.cnn_side(elm1) == cnn_sides.Изнутри){
-            return curr_cnn;
-          }
-        }
-      }
-      else if(!ign_side && curr_cnn.sd1 == cnn_sides.Снаружи){
-        if(is_outer || elm2.cnn_side(elm1) == cnn_sides.Снаружи)
           return curr_cnn;
-      }
-      else{
-        return curr_cnn;
+        }
       }
     }
 
@@ -302,6 +308,31 @@ exports.CatCnns = class CatCnns extends Object {
   check_nom2(nom) {
     const ref = nom.valueOf();
     return this.cnn_elmnts._obj.some((row) => row.nom == ref);
+  }
+
+  /**
+   * Проверяет применимость для xx и t
+   */
+  stop_applying(cnn_point) {
+    const {applying, cnn_type, _manager} = this;
+    const {cnn_types} = _manager._owner.$p.enm;
+    let stop = applying && (cnn_type === cnn_types.t || cnn_type === cnn_types.xx);
+    if(stop) {
+      // 0 - Везде
+      // 1 - Только стык
+      // 2 - Только T
+      // 3 - Только угол
+      if(applying === 1 && !cnn_point.is_ll) {
+        ;
+      }
+      else if(applying === 2 && cnn_point.is_ll) {
+        ;
+      }
+      else {
+        stop = false;
+      }
+    }
+    return stop;
   }
 
   /**
