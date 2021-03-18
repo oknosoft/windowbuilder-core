@@ -13613,6 +13613,7 @@ class Scheme extends paper.Project {
             _scheme._scope._acc && _scheme._scope._acc.props.reload();
             delete _scheme.ox._data.refill_props;
           }
+          _scheme.notify(_scheme, 'loaded');
         });
     }
 
