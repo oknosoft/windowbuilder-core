@@ -19419,7 +19419,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
  */
 
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
-(({md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm}) => {
+(($p) => {
+
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, DpBuyers_orderProductionRow} = $p;
 
   if(job_prm.use_ram !== false){
     md.once('predefined_elmnts_inited', () => {
@@ -19460,7 +19462,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           const idata = this;
 
           // индивидуальные классы строк
-          class ItemRow extends $p.DpBuyers_orderProductionRow {
+          class ItemRow extends DpBuyers_orderProductionRow {
 
             // корректирует метаданные полей свойств через связи параметров выбора
             tune(ref, mf, column) {
@@ -19720,7 +19722,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
   cat.inserts.metadata('specification').index = 'is_main_elm';
 
   // переопределяем прототип
-  $p.CatInserts = class CatInserts extends $p.CatInserts {
+  class CatInserts extends $p.CatInserts {
 
     main_rows(elm, strict) {
 
@@ -19774,7 +19776,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       let _nom;
       const main_rows = this.main_rows(elm, !elm && strict);
 
-      if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
+      if(main_rows.length && main_rows[0].nom instanceof CatInserts){
         if(main_rows[0].nom == this) {
           _nom = cat.nom.get();
         }
@@ -19857,7 +19859,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             .filter((prm) => prm);
 
         // установим номенклатуру продукции
-        res.owner = irow.nom instanceof $p.CatInserts ? irow.nom.nom() : irow.nom;
+        res.owner = irow.nom instanceof CatInserts ? irow.nom.nom() : irow.nom;
 
         // если в параметрах вставки задействованы свойства длина и или ширина - габариты получаем из свойств
         contour.project.ox.params.find_rows({
@@ -19910,7 +19912,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param params {Array}
      */
     check_prm_restrictions({elm, len_angl, params}) {
-      const {lmin, lmax, hmin, hmax, smin, smax} = this;
+      const {lmin, lmax, hmin, hmax} = this;
       const {len, height, s} = elm;
 
       let name = this.name + ':', err = false;
@@ -20089,7 +20091,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
 
         // Добавляем или разузловываем дальше
-        if(row.nom instanceof $p.CatInserts){
+        if(row.nom instanceof CatInserts){
           row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
             const fakerow = fake_row(subrow);
             fakerow.quantity = (subrow.quantity || 1) * (row.quantity || 1);
@@ -20456,7 +20458,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       });
 
-      const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
+      const {cx_prm} = enm.predefined_formulas;
       this.specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
           for(const param of nom.used_params()) {
@@ -20471,7 +20473,23 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return _data.used_params = sprms;
     }
 
+    get split_type(){
+      let {split_type} = this._obj;
+      if(!split_type) {
+        split_type = [];
+      }
+      else if(split_type.startsWith('[')) {
+        split_type = JSON.parse(split_type).map((ref) => enm.lay_split_types.get(ref));
+      }
+      else {
+        split_type = enm.lay_split_types.get(split_type);
+      }
+      return split_type;
+    }
+    set split_type(v){this._setter('split_type',v)}
+
   }
+  $p.CatInserts = CatInserts;
 
 })($p);
 
