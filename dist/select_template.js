@@ -6,17 +6,19 @@
  * Created by Evgeniy Malyarov on 24.12.2019.
  */
 
-export default function ({classes, cat: {characteristics, templates, params_links, clrs}, job_prm, doc, utils, wsql}) {
+export default function ({classes, cat: {characteristics, templates, params_links, clrs, production_params}, cch, job_prm, doc, utils, wsql}) {
 
   class FakeSelectTemplate extends classes.BaseDataObj {
 
     constructor() {
-      //calc_order, base_block, sys, template_props, refill
+      //calc_order, base_block, sys, sys_grp, template_props, refill
       super({refill: true}, characteristics, false, true);
       this._data._is_new = false;
       this._meta = utils._clone(characteristics.metadata());
       this._meta.fields.template_props = templates.metadata('template_props');
       this._meta.fields.refill = utils._clone(params_links.metadata('hide'));
+      this._meta.fields.sys_grp = utils._clone(characteristics.metadata('sys'));
+      this._meta.fields.sys_grp.choice_groups_elm = 'grp';
       const {params} = this._meta.tabular_sections;
       this._meta.tabular_sections = {params};
 
@@ -81,6 +83,17 @@ export default function ({classes, cat: {characteristics, templates, params_link
     }
     set refill(v) {
       this._setter('refill', v);
+    }
+
+    get sys_grp() {
+      let v = this._getter('sys_grp');
+      if(v.empty()) {
+        v = production_params.find({is_folder: true});
+      }
+      return v;
+    }
+    set sys_grp(v) {
+      this._setter('sys_grp', v);
     }
 
     get sys() {
@@ -158,7 +171,6 @@ export default function ({classes, cat: {characteristics, templates, params_link
     }
 
     permitted_sys(calc_order, res = []) {
-      const {cch, cat} = $p;
       const permitted_sys = cch.properties.predefined('permitted_sys');
       if(!calc_order) {
         calc_order = this.calc_order;
@@ -168,7 +180,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
         if(prow && prow.txt_row) {
           res.push({
             name: "ref",
-            path: {inh: prow.txt_row.split(',').map((ref) => cat.production_params.get(ref))}
+            path: {inh: prow.txt_row.split(',').map((ref) => production_params.get(ref))}
           });
         }
       }
@@ -179,7 +191,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
      * Корректирует и возвращает метаданные обработки
      */
     permitted_sys_meta(ox, mf) {
-      const {dp, enm: {obj_delivery_states: {Шаблон}}, cch, cat} = $p;
+      const {dp, enm: {obj_delivery_states: {Шаблон}}} = $p;
       if(!mf) {
         mf = dp.buyers_order.metadata('sys');
       }
