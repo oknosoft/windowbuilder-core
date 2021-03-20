@@ -11,7 +11,7 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, DpBuyers_orderProductionRow} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm} = $p;
 
   if(job_prm.use_ram !== false){
     md.once('predefined_elmnts_inited', () => {
@@ -52,7 +52,7 @@
           const idata = this;
 
           // индивидуальные классы строк
-          class ItemRow extends DpBuyers_orderProductionRow {
+          class ItemRow extends $p.DpBuyers_orderProductionRow {
 
             // корректирует метаданные полей свойств через связи параметров выбора
             tune(ref, mf, column) {
