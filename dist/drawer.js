@@ -20482,7 +20482,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         split_type = JSON.parse(split_type).map((ref) => enm.lay_split_types.get(ref));
       }
       else {
-        split_type = enm.lay_split_types.get(split_type);
+        split_type = [enm.lay_split_types.get(split_type)];
       }
       return split_type;
     }
