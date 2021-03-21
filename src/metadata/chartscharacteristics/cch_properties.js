@@ -124,6 +124,7 @@ exports.CchProperties = class CchProperties extends Object {
     const {is_calculated, type} = this;
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
 
+    // для алгоритма clr_prm и цветового параметра, фильтр отключаем
     if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
       (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq) &&
         type.types.includes('cat.clrs') &&
@@ -149,29 +150,8 @@ exports.CchProperties = class CchProperties extends Object {
         ok = val == prm_row.value;
       }
       else {
-        if(ox.params) {
-          let prow;
-          ox.params.find_rows({
-            param: this,
-            cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
-            inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
-          }, (row) => {
-            if(!prow || row.cnstr) {
-              prow = row;
-            }
-          });
-          ok = prow && prow.value == val;
-        }
-        else if(ox.product_params) {
-          ox.product_params.find_rows({
-            elm: elm.elm || 0,
-            param: this,
-            value: val
-          }, () => {
-            ok = true;
-            return false;
-          });
-        }
+        const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        ok = value == val;
       }
     }
     // вычисляемый параметр - его значение уже рассчитано формулой (val) - сравниваем со значением в строке ограничений
@@ -181,36 +161,102 @@ exports.CchProperties = class CchProperties extends Object {
     }
     // параметр явно указан в табчасти параметров изделия
     else {
-      if(ox.params) {
-        let prow;
-        ox.params.find_rows({
+      const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+      ok = (value !== undefined) && utils.check_compare(value, val, prm_row.comparison_type, comparison_types);
+    }
+    return ok;
+  }
+
+  /**
+   * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
+   */
+  extract_pvalue({ox, cnstr, elm, origin, prm_row}) {
+    const {product_params, params} = ox;
+    let prow, cnstr0, elm0;
+    if(params) {
+      const {enm: {plan_detailing}, utils} = $p;
+      const src = prm_row.origin;
+      if(src && !src.empty()) {
+        switch (src) {
+        case plan_detailing.order:
+          const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
+          return prow && prow.value;
+        case plan_detailing.nearest:
+          if(cnstr && ox.constructions) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            elm = {};
+            const crow = ox.constructions.find({cnstr});
+            crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+              if(row !== crow) {
+                cnstr = row.cnstr;
+                return false;
+              }
+            });
+          }
+          break;
+        case plan_detailing.parent:
+          if(cnstr && ox.constructions) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            elm = {};
+            const crow = ox.constructions.find({cnstr});
+            const prow = ox.constructions.find({cnstr: crow.parent});
+            if(crow) {
+              cnstr = (prow && prow.parent === 0) ? 0 crow.parent;
+            }
+          }
+          break;
+        case plan_detailing.product:
+          if(cnstr) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            cnstr = 0;
+            elm = {};
+          }
+          break;
+        case plan_detailing.elm:
+        case plan_detailing.layer:
+          break;
+        default:
+          throw `Источник '${src.name}' не поддержан`;
+        }
+      }
+      params.find_rows({
+        param: this,
+        cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
+        inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
+      }, (row) => {
+        if(!prow || row.cnstr) {
+          prow = row;
+        }
+      });
+      if(!prow && (cnstr0 || elm0)) {
+        params.find_rows({
           param: this,
-          cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
+          cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.row]} : 0),
           inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
         }, (row) => {
           if(!prow || row.cnstr) {
             prow = row;
           }
         });
-        // value - значение из строки параметра текущей продукции, val - знаяение из параметров отбора
-        ok = prow && utils.check_compare(prow.value, val, prm_row.comparison_type, comparison_types);
-      }
-      else if(ox.product_params) {
-        ox.product_params.find_rows({
-          elm: elm.elm || 0,
-          param: this
-        }, ({value}) => {
-          // value - значение из строки параметра текущей продукции, val - знаяение из параметров отбора
-          ok = utils.check_compare(value, val, prm_row.comparison_type, comparison_types);
-          return false;
-        });
       }
     }
-    return ok;
+    else if(product_params) {
+      product_params.find_rows({
+        elm: elm.elm || 0,
+        param: this
+      }, (row) => {
+        prow = row;
+        return false;
+      });
+    }
+    return prow && prow.value;
   }
 
   /**
-   * Извлекает значение параметра с учетом вычисляемости
+   * Извлекает значение из строки условия (то, с чем сравнивать extract_pvalue)
    */
   extract_value({comparison_type, txt_row, value}) {
 

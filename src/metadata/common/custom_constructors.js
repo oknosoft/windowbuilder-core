@@ -33,6 +33,8 @@ class SelectionParamsRow extends ElmParamsRow{
   set comparison_type(v){this._setter('comparison_type',v)}
   get txt_row(){return this._getter('txt_row')}
   set txt_row(v){this._setter('txt_row',v)}
+  get origin(){return this._getter('origin')}
+  set origin(v){this._setter('origin',v)}
 }
 
 class Extra_fieldsRow extends TabularSectionRow{
