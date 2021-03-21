@@ -203,7 +203,7 @@ exports.CchProperties = class CchProperties extends Object {
             const crow = ox.constructions.find({cnstr});
             const prow = ox.constructions.find({cnstr: crow.parent});
             if(crow) {
-              cnstr = (prow && prow.parent === 0) ? 0 crow.parent;
+              cnstr = (prow && prow.parent === 0) ? 0 : crow.parent;
             }
           }
           break;
