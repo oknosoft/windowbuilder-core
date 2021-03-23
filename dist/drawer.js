@@ -3642,26 +3642,10 @@ class ContourNested extends Contour {
             _attr._ox.product = row.row;
           });
 
-        const _obj = templates._select_template;
-        const {templates_nested} = job_prm.builder;
-        if(templates_nested && templates_nested.includes(_obj.calc_order)) {
-          const {base_block} = _obj;
-          // если в типовом блоке есть вложенные слои - добавляем их в изделие
-          const fin = (contour, fields) => {
-            if(contour === this && fields.constructions) {
-              project._scope.eve.off('rows', fin);
-              if(base_block.constructions.count() > 1) {
-                _attr._ox.constructions.del({parent: 1});
-                base_block.constructions.find_rows({parent: 1}, (brow) => {
-
-                });
-              }
-            }
-          }
-          project._scope.eve.on('rows', fin);
-          _obj.sys.refill_prm(_attr._ox, 0, 1, this, _obj.params);
-        }
-
+        // после первичного заполнения, попробуем натянуть на вложенное изделие типовой блок
+        this.subscribe_load_stamp(_attr._ox);
+        const {sys, params} = templates._select_template;
+        sys.refill_prm(_attr._ox, 0, 1, this, params);
       }
     }
     return _attr._ox;
@@ -3688,6 +3672,71 @@ class ContourNested extends Contour {
       parent.addChild(generatrix.clone({insert: false}));
     }
     return parent.bounds;
+  }
+
+  /**
+   * Перезаполняет из типового блока
+   */
+  load_stamp() {
+
+    const {cat: {templates, characteristics}, job_prm, EditorInvisible} = $p;
+    const {base_block} = templates._select_template;
+
+    if(base_block.calc_order === templates._select_template.calc_order) {
+
+      const {_attr, project, _ox, lbounds} = this;
+
+      // создаём новое пустое изделие
+      const tx = characteristics.create({calc_order: _ox.calc_order}, false, true);
+      // заполняем его из шаблона устанавливаем систему и параметры
+      const teditor = new EditorInvisible();
+      const tproject = teditor.create_scheme();
+      tproject.load(tx, true)
+        .then(() => {
+          return tproject.load_stamp(base_block, false, true);
+        })
+        .then((d) => {
+          console.log(d);
+          // подгоняем размеры под проём
+          const {bottom, right} = tproject.l_dimensions;
+          const dx = lbounds.width - bottom.size;
+          const dy = lbounds.height - right.size;
+          // tproject.l_dimensions.bottom._move_points({size: 1400, name: 'right'}, 'x')
+
+          // пересчитываем, не записываем
+          // чистим наше
+          // перезаполняем данными временного изделия
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+
+      if(base_block.constructions.count() > 1) {
+        _attr._ox.constructions.del({parent: 1});
+        base_block.constructions.find_rows({parent: 1}, (brow) => {
+
+        });
+      }
+    }
+
+  }
+
+  /**
+   * Планирует перезаполнение из типового блока после создания слоя
+   */
+  subscribe_load_stamp(_ox) {
+    const {cat: {templates}, job_prm} = $p;
+    const {templates_nested} = job_prm.builder;
+    if(templates_nested && templates_nested.includes(templates._select_template.calc_order)) {
+      const {project} = this;
+      const fin = (tx, fields) => {
+        if(tx === _ox && fields.constructions) {
+          project._scope.eve.off('rows', fin);
+          this.load_stamp();
+        }
+      }
+      project._scope.eve.on('rows', fin);
+    }
   }
 
   /**
