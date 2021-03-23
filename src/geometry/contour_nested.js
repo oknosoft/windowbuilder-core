@@ -64,8 +64,8 @@ class ContourNested extends Contour {
         if(templates_nested && templates_nested.includes(_obj.calc_order)) {
           const {base_block} = _obj;
           // если в типовом блоке есть вложенные слои - добавляем их в изделие
-          const fin = (contour, fields) => {
-            if(contour === this && fields.constructions) {
+          const fin = (tx, fields) => {
+            if(tx === _attr._ox && fields.constructions) {
               project._scope.eve.off('rows', fin);
               if(base_block.constructions.count() > 1) {
                 _attr._ox.constructions.del({parent: 1});
