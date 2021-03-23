@@ -113,8 +113,6 @@ class BaseLine extends ProfileItem {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for Onlay
    */
   save_coordinates() {
 

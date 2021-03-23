@@ -1270,9 +1270,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(row.elm_type === elm_types.Вложение) {
         this instanceof ContourParent ? new ProfileParent(attr) : new ProfileNested(attr);
       }
-      else if(row.elm_type === elm_types.Примыкание) {
-        new ProfileAdjoining(attr);
-      }
       else if(elm_types.profiles.includes(row.elm_type)) {
         this instanceof ContourNestedContent ? new ProfileNestedContent(attr) : new Profile(attr);
       }
@@ -9729,8 +9726,8 @@ class ProfileItem extends GeneratrixElement {
     _row.orientation = this.orientation;
     _row.pos = this.pos;
 
-    // координаты доборов
-    this.addls.forEach((addl) => addl.save_coordinates());
+    // координаты доборов и прочих детей
+    this.children.forEach((addl) => addl.save_coordinates && addl.save_coordinates());
   }
 
   /**
@@ -10686,12 +10683,12 @@ class ProfileItem extends GeneratrixElement {
     path.closePath();
     path.reduce();
 
-    this.children.forEach((elm) => {
-      if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
-        elm.redraw();
+    for(const chld of this.children) {
+      if(chld instanceof ProfileItem) {
+        chld.observer && chld.observer(this);
+        chld.redraw();
       }
-    });
+    }
 
     return this;
   }
@@ -11002,10 +10999,17 @@ class Profile extends ProfileItem {
       // ищем и добавляем доборные профили
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
-        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+        const {elm_types} = $p.enm;
+        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
+          if(row.elm_type === elm_types.Добор) {
+            new ProfileAddl({row, parent: this});
+          }
+          else if(row.elm_type === elm_types.Примыкание) {
+            new ProfileAdjoining({row, parent: this});
+          }
+        });
       }
     }
-
   }
 
   /**
@@ -12039,8 +12043,6 @@ class BaseLine extends ProfileItem {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for Onlay
    */
   save_coordinates() {
 
@@ -12116,10 +12118,12 @@ class ProfileAdjoining extends BaseLine {
     attr.preserv_parent = true;
     super(attr);
     Object.assign(this.generatrix, {
-      strokeColor: 'blue',
-      strokeWidth: 4,
-      dashOffset: 6,
-      dashArray: [6, 6],
+      strokeColor: 'black',
+      strokeOpacity: 0.7,
+      strokeWidth: 10,
+      dashArray: [],
+      dashOffset: 0,
+      strokeScaling: true,
     });
   }
 
@@ -12145,13 +12149,47 @@ class ProfileAdjoining extends BaseLine {
       return profile.nearest(true) === this;
     });
   }
+
+  setSelection(selection) {
+    super.setSelection(selection);
+    const {generatrix, path, children} = this;
+    for(const child of children) {
+      if(child !== generatrix && child !== path) {
+        child.setSelection(0);
+      }
+    }
+  }
+
+  redraw() {
+    const {generatrix, path, children} = this;
+    for(const child of [].concat(children)) {
+      if(child !== generatrix && child !== path) {
+        child.remove();
+      }
+    }
+    const {length} = generatrix;
+    for(let pos = 30; pos < length - 70; pos += 100) {
+      const pt = generatrix.getPointAt(pos);
+      const pn = generatrix.getNormalAt(pos).rotate(40).multiply(120);
+      const ln = new paper.Path({
+        segments: [pt, pt.add(pn)],
+        strokeColor: 'black',
+        strokeOpacity: 0.7,
+        strokeWidth: 2,
+        strokeScaling: true,
+        guide: true,
+        parent: this,
+      });
+    }
+  }
 }
 
 ProfileAdjoining.oxml = {
   ' ': [
     {id: 'info', path: 'o.info', type: 'ro'},
     'inset',
-    'clr'
+    'clr',
+    'offset',
   ],
   'Начало': ['x1', 'y1'],
   'Конец': ['x2', 'y2']

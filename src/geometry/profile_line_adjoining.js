@@ -29,10 +29,12 @@ class ProfileAdjoining extends BaseLine {
     attr.preserv_parent = true;
     super(attr);
     Object.assign(this.generatrix, {
-      strokeColor: 'blue',
-      strokeWidth: 4,
-      dashOffset: 6,
-      dashArray: [6, 6],
+      strokeColor: 'black',
+      strokeOpacity: 0.7,
+      strokeWidth: 10,
+      dashArray: [],
+      dashOffset: 0,
+      strokeScaling: true,
     });
   }
 
@@ -58,13 +60,47 @@ class ProfileAdjoining extends BaseLine {
       return profile.nearest(true) === this;
     });
   }
+
+  setSelection(selection) {
+    super.setSelection(selection);
+    const {generatrix, path, children} = this;
+    for(const child of children) {
+      if(child !== generatrix && child !== path) {
+        child.setSelection(0);
+      }
+    }
+  }
+
+  redraw() {
+    const {generatrix, path, children} = this;
+    for(const child of [].concat(children)) {
+      if(child !== generatrix && child !== path) {
+        child.remove();
+      }
+    }
+    const {length} = generatrix;
+    for(let pos = 30; pos < length - 70; pos += 100) {
+      const pt = generatrix.getPointAt(pos);
+      const pn = generatrix.getNormalAt(pos).rotate(40).multiply(120);
+      const ln = new paper.Path({
+        segments: [pt, pt.add(pn)],
+        strokeColor: 'black',
+        strokeOpacity: 0.7,
+        strokeWidth: 2,
+        strokeScaling: true,
+        guide: true,
+        parent: this,
+      });
+    }
+  }
 }
 
 ProfileAdjoining.oxml = {
   ' ': [
     {id: 'info', path: 'o.info', type: 'ro'},
     'inset',
-    'clr'
+    'clr',
+    'offset',
   ],
   'Начало': ['x1', 'y1'],
   'Конец': ['x2', 'y2']

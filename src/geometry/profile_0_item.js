@@ -1129,8 +1129,8 @@ class ProfileItem extends GeneratrixElement {
     _row.orientation = this.orientation;
     _row.pos = this.pos;
 
-    // координаты доборов
-    this.addls.forEach((addl) => addl.save_coordinates());
+    // координаты доборов и прочих детей
+    this.children.forEach((addl) => addl.save_coordinates && addl.save_coordinates());
   }
 
   /**
@@ -2086,12 +2086,12 @@ class ProfileItem extends GeneratrixElement {
     path.closePath();
     path.reduce();
 
-    this.children.forEach((elm) => {
-      if(elm instanceof ProfileAddl) {
-        elm.observer(elm.parent);
-        elm.redraw();
+    for(const chld of this.children) {
+      if(chld instanceof ProfileItem) {
+        chld.observer && chld.observer(this);
+        chld.redraw();
       }
-    });
+    }
 
     return this;
   }

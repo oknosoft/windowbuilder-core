@@ -56,10 +56,17 @@ class Profile extends ProfileItem {
       // ищем и добавляем доборные профили
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
-        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+        const {elm_types} = $p.enm;
+        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
+          if(row.elm_type === elm_types.Добор) {
+            new ProfileAddl({row, parent: this});
+          }
+          else if(row.elm_type === elm_types.Примыкание) {
+            new ProfileAdjoining({row, parent: this});
+          }
+        });
       }
     }
-
   }
 
   /**
