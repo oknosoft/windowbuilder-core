@@ -1129,7 +1129,7 @@ class Scheme extends paper.Project {
    * @param is_snapshot {Boolean}
    * @param no_refill {Boolean}
    */
-  load_stamp(obx, is_snapshot, no_refill) {
+  load_stamp(obx, is_snapshot, no_refill, from_service) {
 
     const do_load = (obx) => {
 
@@ -1152,7 +1152,7 @@ class Scheme extends paper.Project {
         }
       }
 
-      return this.load(ox)
+      return this.load(ox, from_service)
         .then(() => ox._data._modified = true);
 
     };

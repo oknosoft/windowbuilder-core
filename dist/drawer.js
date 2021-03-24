@@ -3680,7 +3680,7 @@ class ContourNested extends Contour {
   load_stamp() {
 
     const {cat: {templates, characteristics}, job_prm, EditorInvisible} = $p;
-    const {base_block} = templates._select_template;
+    const {base_block, refill} = templates._select_template;
 
     if(base_block.calc_order === templates._select_template.calc_order) {
 
@@ -3693,7 +3693,7 @@ class ContourNested extends Contour {
       const tproject = teditor.create_scheme();
       tproject.load(tx, true)
         .then(() => {
-          return tproject.load_stamp(base_block, false, true);
+          return tproject.load_stamp(base_block, false, !refill, true);
         })
         .then((d) => {
           console.log(d);
@@ -3701,7 +3701,15 @@ class ContourNested extends Contour {
           const {bottom, right} = tproject.l_dimensions;
           const dx = lbounds.width - bottom.size;
           const dy = lbounds.height - right.size;
-          // tproject.l_dimensions.bottom._move_points({size: 1400, name: 'right'}, 'x')
+          dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
+          dy && bottom._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');
+          tproject.redraw();
+          dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
+          dy && bottom._move_points({size: lbounds.height, name: 'top'}, 'y');
+          while (tproject._ch.length) {
+            tproject.redraw();
+          }
+
 
           // пересчитываем, не записываем
           // чистим наше
@@ -14244,7 +14252,7 @@ class Scheme extends paper.Project {
    * @param is_snapshot {Boolean}
    * @param no_refill {Boolean}
    */
-  load_stamp(obx, is_snapshot, no_refill) {
+  load_stamp(obx, is_snapshot, no_refill, from_service) {
 
     const do_load = (obx) => {
 
@@ -14267,7 +14275,7 @@ class Scheme extends paper.Project {
         }
       }
 
-      return this.load(ox)
+      return this.load(ox, from_service)
         .then(() => ox._data._modified = true);
 
     };

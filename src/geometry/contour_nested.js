@@ -97,7 +97,7 @@ class ContourNested extends Contour {
   load_stamp() {
 
     const {cat: {templates, characteristics}, job_prm, EditorInvisible} = $p;
-    const {base_block} = templates._select_template;
+    const {base_block, refill} = templates._select_template;
 
     if(base_block.calc_order === templates._select_template.calc_order) {
 
@@ -110,7 +110,7 @@ class ContourNested extends Contour {
       const tproject = teditor.create_scheme();
       tproject.load(tx, true)
         .then(() => {
-          return tproject.load_stamp(base_block, false, true);
+          return tproject.load_stamp(base_block, false, !refill, true);
         })
         .then((d) => {
           console.log(d);
@@ -118,9 +118,22 @@ class ContourNested extends Contour {
           const {bottom, right} = tproject.l_dimensions;
           const dx = lbounds.width - bottom.size;
           const dy = lbounds.height - right.size;
-          // tproject.l_dimensions.bottom._move_points({size: 1400, name: 'right'}, 'x')
-
+          const contour = tproject.contours[0];
+          if(contour) {
+            dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
+            dy && bottom._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');
+            contour.redraw();
+            dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
+            dy && bottom._move_points({size: lbounds.height, name: 'top'}, 'y');
+          }
           // пересчитываем, не записываем
+          if(contour) {
+            contour.refresh_prm_links(true);
+            while (tproject._ch.length) {
+              tproject.redraw();
+            }
+          }
+
           // чистим наше
           // перезаполняем данными временного изделия
         })
