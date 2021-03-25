@@ -412,6 +412,17 @@ class Profile extends ProfileItem {
     }
     return _rays && (_rays.b.profile || _rays.e.profile);
   }
+
+  /**
+   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param, with_neighbor) {
+    const {inset, _attr: {_rays}} = this;
+    if(_rays && inset.is_depend_of(param)) {
+      _rays.clear(with_neighbor ? 'with_neighbor' : true);
+    }
+  }
 }
 
 EditorInvisible.Profile = Profile;

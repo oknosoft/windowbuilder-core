@@ -317,6 +317,55 @@ class ProfileRays {
       this.b.clear();
       this.e.clear();
     }
+    if(with_cnn === 'with_neighbor') {
+      const {parent} = this;
+      delete parent._attr.d0;
+
+      // прибиваем соединения в точках b и e
+      const b = parent.cnn_point('b');
+      const e = parent.cnn_point('e');
+      const {cnn_elmnts} = parent.ox;
+
+      if(b.profile && b.profile_point == 'e') {
+        const {_rays} = b.profile._attr;
+        if(_rays) {
+          _rays.clear();
+          _rays.e.cnn = null;
+        }
+      }
+      if(e.profile && e.profile_point == 'b') {
+        const {_rays} = e.profile._attr;
+        if(_rays) {
+          _rays.clear();
+          _rays.b.cnn = null;
+        }
+      }
+
+      // прибиваем соединения примыкающих к текущему импостов
+      const {inner, outer} = parent.joined_imposts();
+      const elm2 = parent.elm;
+      for (const {profile} of inner.concat(outer)) {
+        for(const node of ['b', 'e']) {
+          const n = profile.rays[node];
+          if(n.profile == parent && n.cnn) {
+            cnn_elmnts.clear({elm1: profile, elm2: parent});
+            n.cnn = null;
+          }
+        }
+      }
+
+      // для соединительных профилей и элементов со створками, пересчитываем соседей
+      for (const {_attr, elm} of parent.joined_nearests()) {
+        _attr._rays && _attr._rays.clear(true);
+        _attr._nearest_cnn = null;
+        cnn_elmnts.clear({elm1: elm, elm2});
+      }
+
+      // так же, пересчитываем соединения с примыкающими заполнениями
+      parent.layer.glasses(false, true).forEach((glass) => {
+        cnn_elmnts.clear({elm1: glass.elm, elm2});
+      });
+    }
   }
 
   recalc() {
@@ -1425,54 +1474,7 @@ class ProfileItem extends GeneratrixElement {
 
       // для уже нарисованных элементов...
       if(_attr && _attr._rays) {
-
-        _attr._rays.clear(true);
-        delete _attr.d0;
-
-        // прибиваем соединения в точках b и e
-        const b = this.cnn_point('b');
-        const e = this.cnn_point('e');
-        const {cnn_elmnts} = this.ox;
-
-        if(b.profile && b.profile_point == 'e') {
-          const {_rays} = b.profile._attr;
-          if(_rays) {
-            _rays.clear();
-            _rays.e.cnn = null;
-          }
-        }
-        if(e.profile && e.profile_point == 'b') {
-          const {_rays} = e.profile._attr;
-          if(_rays) {
-            _rays.clear();
-            _rays.b.cnn = null;
-          }
-        }
-
-        // прибиваем соединения примыкающих к текущему импостов
-        const {inner, outer} = this.joined_imposts();
-        const elm2 = this.elm;
-        for (const {profile} of inner.concat(outer)) {
-          for(const node of ['b', 'e']) {
-            const n = profile.rays[node];
-            if(n.profile == this && n.cnn) {
-              cnn_elmnts.clear({elm1: profile, elm2: this});
-              n.cnn = null;
-            }
-          }
-        }
-
-        // для соединительных профилей и элементов со створками, пересчитываем соседей
-        for (const {_attr, elm} of this.joined_nearests()) {
-          _attr._rays && _attr._rays.clear(true);
-          _attr._nearest_cnn = null;
-          cnn_elmnts.clear({elm1: elm, elm2});
-        }
-
-        // так же, пересчитываем соединения с примыкающими заполнениями
-        this.layer.glasses(false, true).forEach((glass) => {
-          cnn_elmnts.clear({elm1: glass.elm, elm2});
-        });
+        _attr._rays.clear('with_neighbor');
       }
 
       project.register_change();

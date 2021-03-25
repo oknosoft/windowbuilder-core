@@ -2139,6 +2139,10 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  /**
+   * Пересчитывает связи параметров
+   * @param root
+   */
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
@@ -2178,6 +2182,23 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     };
 
+  }
+
+  /**
+   * Пересчитывает пути элементов, если изменились параметры, влияющие на основной материал вставок
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param) {
+    const {contours, profiles} = this;
+    for(const profile of profiles) {
+      profile.refresh_inset_depends(param);
+    }
+    for(const glass of this.glasses(false, true)) {
+      glass.refresh_inset_depends(param);
+    }
+    for(const contour of contours) {
+      contour.refresh_inset_depends(param);
+    }
   }
 
   /**

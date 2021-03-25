@@ -96,12 +96,12 @@ class ContourNested extends Contour {
    */
   load_stamp() {
 
-    const {cat: {templates, characteristics}, job_prm, EditorInvisible} = $p;
+    const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;
     const {base_block, refill} = templates._select_template;
 
     if(base_block.calc_order === templates._select_template.calc_order) {
 
-      const {_attr, project, _ox, lbounds} = this;
+      const {_ox} = this;
 
       // создаём новое пустое изделие
       const tx = characteristics.create({calc_order: _ox.calc_order}, false, true);
@@ -112,8 +112,8 @@ class ContourNested extends Contour {
         .then(() => {
           return tproject.load_stamp(base_block, false, !refill, true);
         })
-        .then((d) => {
-          console.log(d);
+        .then(() => {
+          const {project, lbounds, content} = this;
           // подгоняем размеры под проём
           const {bottom, right} = tproject.l_dimensions;
           const dx = lbounds.width - bottom.size;
@@ -132,21 +132,38 @@ class ContourNested extends Contour {
             while (tproject._ch.length) {
               tproject.redraw();
             }
+            tproject.zoom_fit();
+            tproject.save_coordinates({no_recalc: true});
           }
 
           // чистим наше
-          // перезаполняем данными временного изделия
+          content.remove();
+
+          // перезаполняем сырыми данными временного изделия
+          const map = new Map();
+          for(const trow of tx.constructions) {
+            if(trow.cnstr > 1) {
+              _ox.constructions.add(Object.assign({}, trow._obj));
+            }
+          }
+          for(const trow of tx.coordinates) {
+            if(trow.cnstr > 1) {
+              _ox.coordinates.add(Object.assign({}, trow._obj));
+            }
+          }
+          for(const trow of tx.cnn_elmnts) {
+            if(trow.cnstr > 1) {
+              _ox.cnn_elmnts.add(Object.assign({}, trow._obj));
+            }
+          }
+          _ox.params.load(tx.params);
+          _ox.inserts.load(tx.inserts);
+
         })
         .catch((err) => {
           console.log(err);
         })
 
-      if(base_block.constructions.count() > 1) {
-        _attr._ox.constructions.del({parent: 1});
-        base_block.constructions.find_rows({parent: 1}, (brow) => {
-
-        });
-      }
     }
 
   }

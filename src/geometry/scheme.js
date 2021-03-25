@@ -268,7 +268,8 @@ class Scheme extends paper.Project {
     if(_attr._loading || _attr._snapshot) {
       return;
     }
-    if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
+    const is_row = obj._owner === ox.params;
+    if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
@@ -278,6 +279,11 @@ class Scheme extends paper.Project {
           prow = st.params.add({param: obj.param, value: obj.value});
         }
         prow.value = obj.value;
+      }
+    }
+    if(is_row && obj.inset.empty()) {
+      for(const contour of this.contours) {
+        contour.refresh_inset_depends(obj.param);
       }
     }
   }
@@ -1001,7 +1007,7 @@ class Scheme extends paper.Project {
       this.l_connective.save_coordinates();
 
       // пересчет спецификации и цен
-      return $p.products_building.recalc(this, attr);
+      return attr && attr.no_recalc ? this : $p.products_building.recalc(this, attr);
     }
     catch (err) {
       const {msg, ui} = $p;

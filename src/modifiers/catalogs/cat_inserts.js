@@ -314,6 +314,12 @@
   // переопределяем прототип
   class CatInserts extends $p.CatInserts {
 
+    /**
+     * Возвращает строки спецификации основной номенклатуры
+     * @param [elm] {BuilderElement}
+     * @param [strict] {Boolean}
+     * @return {Array.<CatInsertsSpecificationRow>}
+     */
     main_rows(elm, strict) {
 
       const {_data} = this;
@@ -350,6 +356,23 @@
           origin: elm.fake_origin || 0,
         });
       });
+    }
+
+    /**
+     * Выясняет, зависит ли номенклатура вставки от текущего параметра
+     * @param param {CchProperties}
+     * @return {Boolean}
+     */
+    is_depend_of(param) {
+      const {_data: {main_rows}, selection_params} = this;
+      if(!main_rows || main_rows.length === 1) {
+        return false;
+      }
+      for(const row of main_rows) {
+        if(selection_params.find({elm: row.elm, param: param.ref})) {
+          return true;
+        }
+      }
     }
 
     /**

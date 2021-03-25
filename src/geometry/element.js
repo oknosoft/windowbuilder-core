@@ -563,6 +563,7 @@ class BuilderElement extends paper.Group {
                 value: v,
               });
             }
+            this.refresh_inset_depends(prop, true);
           },
           configurable: true,
         });
@@ -570,6 +571,14 @@ class BuilderElement extends paper.Group {
     });
 
     return props;
+  }
+
+  /**
+   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param, with_neighbor) {
+
   }
 
   /**
