@@ -1030,15 +1030,15 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   remove() {
     //удаляем детей
-    const {children, _row, cnstr, project: {ox}} = this;
+    const {children, _row, cnstr, _ox} = this;
     while (children.length) {
       children[0].remove();
     }
 
-    if (_row && ox === _row._owner._owner) {
-      ox.coordinates.clear({cnstr});
-      ox.params.clear({cnstr});
-      ox.inserts.clear({cnstr});
+    if (_row && _ox === _row._owner._owner) {
+      _ox.coordinates.clear({cnstr});
+      _ox.params.clear({cnstr});
+      _ox.inserts.clear({cnstr});
       _row._owner.del(_row);
       this._row = null;
     }
@@ -1103,6 +1103,17 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     return _attr._bounds;
+  }
+
+  /**
+   * Габариты по образующим
+   */
+  get lbounds() {
+    const parent = new paper.Group({insert: false});
+    for (const {generatrix} of this.profiles) {
+      parent.addChild(generatrix.clone({insert: false}));
+    }
+    return parent.bounds;
   }
 
   /**

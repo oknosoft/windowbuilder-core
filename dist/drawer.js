@@ -2008,15 +2008,15 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   remove() {
     //удаляем детей
-    const {children, _row, cnstr, project: {ox}} = this;
+    const {children, _row, cnstr, _ox} = this;
     while (children.length) {
       children[0].remove();
     }
 
-    if (_row && ox === _row._owner._owner) {
-      ox.coordinates.clear({cnstr});
-      ox.params.clear({cnstr});
-      ox.inserts.clear({cnstr});
+    if (_row && _ox === _row._owner._owner) {
+      _ox.coordinates.clear({cnstr});
+      _ox.params.clear({cnstr});
+      _ox.inserts.clear({cnstr});
       _row._owner.del(_row);
       this._row = null;
     }
@@ -2081,6 +2081,17 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     return _attr._bounds;
+  }
+
+  /**
+   * Габариты по образующим
+   */
+  get lbounds() {
+    const parent = new paper.Group({insert: false});
+    for (const {generatrix} of this.profiles) {
+      parent.addChild(generatrix.clone({insert: false}));
+    }
+    return parent.bounds;
   }
 
   /**
@@ -3687,14 +3698,6 @@ class ContourNested extends Contour {
     return ContourNested._dimlns;
   }
 
-  get lbounds() {
-    const parent = new paper.Group({insert: false});
-    for (const {generatrix} of this.profiles) {
-      parent.addChild(generatrix.clone({insert: false}));
-    }
-    return parent.bounds;
-  }
-
   /**
    * Перезаполняет из типового блока
    */
@@ -3718,50 +3721,113 @@ class ContourNested extends Contour {
         })
         .then(() => {
           const {project, lbounds, content} = this;
+          const contour = tproject.contours[0];
+          if(!contour) {
+            throw 'Нет слоёв в шаблоне';
+          }
+          //project._attr._silent = true;
+
           // подгоняем размеры под проём
           const {bottom, right} = tproject.l_dimensions;
           const dx = lbounds.width - bottom.size;
           const dy = lbounds.height - right.size;
-          const contour = tproject.contours[0];
-          if(contour) {
-            dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
-            dy && bottom._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');
-            contour.redraw();
-            dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
-            dy && bottom._move_points({size: lbounds.height, name: 'top'}, 'y');
-          }
+
+          dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
+          dy && right._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');
+          contour.redraw();
+          dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
+          dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+
           // пересчитываем, не записываем
-          if(contour) {
-            contour.refresh_prm_links(true);
-            while (tproject._ch.length) {
-              tproject.redraw();
-            }
-            tproject.zoom_fit();
-            tproject.save_coordinates({no_recalc: true});
+          contour.refresh_prm_links(true);
+          tproject.zoom_fit();
+          while (tproject._ch.length) {
+            tproject.redraw();
           }
+          tproject.save_coordinates({svg: false});
 
           // чистим наше
-          content.remove();
+          while (content.children.length) {
+            content.children[0].remove();
+          }
 
           // перезаполняем сырыми данными временного изделия
           const map = new Map();
+          const {_row} = content;
+          const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max');
+          let elm = elm0;
           for(const trow of tx.constructions) {
-            if(trow.cnstr > 1) {
+            if(trow.parent === 1) {
+              for(const fld in trow._obj) {
+                if(fld !== 'row' && !fld.startsWith('_')) {
+                  _row[fld] = trow._obj[fld];
+                }
+              }
+            }
+            else if(trow.parent > 1) {
               _ox.constructions.add(Object.assign({}, trow._obj));
             }
           }
+          // заполняем соответствие номенов элементов
           for(const trow of tx.coordinates) {
             if(trow.cnstr > 1) {
-              _ox.coordinates.add(Object.assign({}, trow._obj));
+              elm += 1;
+              map.set(trow.elm, elm);
             }
+          }
+
+          // грузим cnn_elmnts;
+          const adel = [];
+          for(const trow of _ox.cnn_elmnts) {
+            if(trow.elm1 > elm0 || trow.elm2 > elm0) {
+              adel.push(trow);
+            }
+          }
+          for(const trow of adel) {
+            _ox.cnn_elmnts.del(trow);
           }
           for(const trow of tx.cnn_elmnts) {
-            if(trow.cnstr > 1) {
-              _ox.cnn_elmnts.add(Object.assign({}, trow._obj));
+            const row1 = tx.coordinates.find({elm: trow.elm1});
+            const row2 = tx.coordinates.find({elm: trow.elm2});
+            if(row1.cnstr > 1 && row2.cnstr > 1) {
+              const proto = Object.assign({}, trow._obj);
+              proto.elm1 = map.get(proto.elm1);
+              proto.elm2 = map.get(proto.elm2);
+              _ox.cnn_elmnts.add(proto);
             }
           }
-          _ox.params.load(tx.params);
-          _ox.inserts.load(tx.inserts);
+          // грузим params;
+          _ox.params.clear();
+          for(const trow of tx.params) {
+            const proto = Object.assign({}, trow._obj);
+            if(proto.cnstr < 0) {
+              proto.cnstr = -map.get(-proto.cnstr);
+            }
+            _ox.params.add(proto);
+          }
+          // грузим inserts;
+          _ox.inserts.clear();
+          for(const trow of tx.inserts) {
+            const proto = Object.assign({}, trow._obj);
+            if(proto.cnstr < 0) {
+              proto.cnstr = -map.get(-proto.cnstr);
+            }
+            _ox.inserts.add(proto);
+          }
+
+          const {lbounds: tlbounds} = contour;
+          content.load_stamp({
+            contour: contour.contours[0],
+            delta: [lbounds.x - tlbounds.x, lbounds.y - tlbounds.y],
+            map,
+          });
+
+          // clearTimeout(tproject._attr._vis_timer);
+          // tproject._attr._opened = false;
+          // tproject.ox = '';
+          // teditor.unload();
+          // tx.unload();
+          // project._attr._silent = false;
 
         })
         .catch((err) => {
@@ -3901,6 +3967,46 @@ class ContourNestedContent extends Contour {
       });
     }
 
+  }
+
+  /**
+   * Загружает слои из прототипа
+   * @param contour {Contour} - слой внешнего изделия (из другой рисовалки)
+   * @param delta {Point} - на сколько смещать
+   * @param map {Map} - соответствие номеров элементов
+   */
+  load_stamp({contour, delta, map}) {
+    const {_ox: ox, project} = this;
+
+    for(const proto of contour.profiles) {
+      const generatrix = proto.generatrix.clone({insert: false});
+      generatrix.translate(delta);
+      new ProfileNestedContent({
+        parent: this,
+        generatrix,
+        proto: {inset: proto.inset, clr: proto.clr},
+        elm: map.get(proto.elm),
+      });
+    }
+
+    for(const proto of contour.glasses(false, true)) {
+      const generatrix = proto.generatrix.clone({insert: false});
+      generatrix.translate(delta);
+      new Filling({
+        parent: this,
+        generatrix,
+        proto: {inset: proto.inset, clr: proto.clr},
+        elm: map.get(proto.elm),
+      });
+    }
+
+    for(const proto of contour.contours) {
+      const row = ox.constructions.find({cnstr: proto.cnstr});
+      if(row && row.parent === this.cnstr) {
+        const sub = Contour.create({project, row, parent: this, ox});
+        sub.load_stamp({contour: proto, delta, map})
+      };
+    }
   }
 
   get _ox() {
@@ -5564,7 +5670,7 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this._row._owner.aggregate([], ['elm'], 'max') + 1;
+      this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
 
     if(attr._nearest){
@@ -6191,7 +6297,7 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row, ox} = this;
+    const {parent, project, observer, _row, ox, elm} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
 
@@ -6200,7 +6306,9 @@ class BuilderElement extends paper.Group {
       delete this.observer;
     }
 
-    if(_row && project.ox === ox){
+    if(_row && _row._owner._owner === ox){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
       _row._owner.del(_row);
     }
 

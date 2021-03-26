@@ -39,7 +39,7 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this._row._owner.aggregate([], ['elm'], 'max') + 1;
+      this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
 
     if(attr._nearest){
@@ -666,7 +666,7 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row, ox} = this;
+    const {parent, project, observer, _row, ox, elm} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
 
@@ -675,7 +675,9 @@ class BuilderElement extends paper.Group {
       delete this.observer;
     }
 
-    if(_row && project.ox === ox){
+    if(_row && _row._owner._owner === ox){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
       _row._owner.del(_row);
     }
 

@@ -22,6 +22,46 @@ class ContourNestedContent extends Contour {
 
   }
 
+  /**
+   * Загружает слои из прототипа
+   * @param contour {Contour} - слой внешнего изделия (из другой рисовалки)
+   * @param delta {Point} - на сколько смещать
+   * @param map {Map} - соответствие номеров элементов
+   */
+  load_stamp({contour, delta, map}) {
+    const {_ox: ox, project} = this;
+
+    for(const proto of contour.profiles) {
+      const generatrix = proto.generatrix.clone({insert: false});
+      generatrix.translate(delta);
+      new ProfileNestedContent({
+        parent: this,
+        generatrix,
+        proto: {inset: proto.inset, clr: proto.clr},
+        elm: map.get(proto.elm),
+      });
+    }
+
+    for(const proto of contour.glasses(false, true)) {
+      const generatrix = proto.generatrix.clone({insert: false});
+      generatrix.translate(delta);
+      new Filling({
+        parent: this,
+        generatrix,
+        proto: {inset: proto.inset, clr: proto.clr},
+        elm: map.get(proto.elm),
+      });
+    }
+
+    for(const proto of contour.contours) {
+      const row = ox.constructions.find({cnstr: proto.cnstr});
+      if(row && row.parent === this.cnstr) {
+        const sub = Contour.create({project, row, parent: this, ox});
+        sub.load_stamp({contour: proto, delta, map})
+      };
+    }
+  }
+
   get _ox() {
     return this.layer._ox;
   }
