@@ -25,9 +25,9 @@
  */
 class ProfileAdjoining extends BaseLine {
 
-  constructor(attr) {
-    attr.preserv_parent = true;
-    super(attr);
+  constructor({row, parent, proto, b, e, side}) {
+    const generatrix = b && e && parent.rays[side].get_subpath(e.elm[e.point], b.elm[b.point]);
+    super({row, generatrix, parent, proto, preserv_parent: true});
     Object.assign(this.generatrix, {
       strokeColor: 'black',
       strokeOpacity: 0.7,
@@ -79,9 +79,9 @@ class ProfileAdjoining extends BaseLine {
       }
     }
     const {length} = generatrix;
-    for(let pos = 30; pos < length - 70; pos += 100) {
+    for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
-      const pn = generatrix.getNormalAt(pos).rotate(40).multiply(120);
+      const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
       const ln = new paper.Path({
         segments: [pt, pt.add(pn)],
         strokeColor: 'black',
