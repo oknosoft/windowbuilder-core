@@ -3180,7 +3180,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_inset_depends(param) {
     const {contours, profiles} = this;
     for(const profile of profiles) {
-      profile.refresh_inset_depends(param);
+      profile.refresh_inset_depends(param, true);
     }
     for(const glass of this.glasses(false, true)) {
       glass.refresh_inset_depends(param);
@@ -12398,7 +12398,7 @@ class ProfileAdjoining extends BaseLine {
       }
     }
     const {length} = generatrix;
-    for(let pos = 25; pos < length - 75; pos += 80) {
+    for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
       const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
       const ln = new paper.Path({

@@ -2202,7 +2202,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_inset_depends(param) {
     const {contours, profiles} = this;
     for(const profile of profiles) {
-      profile.refresh_inset_depends(param);
+      profile.refresh_inset_depends(param, true);
     }
     for(const glass of this.glasses(false, true)) {
       glass.refresh_inset_depends(param);
