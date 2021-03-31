@@ -285,7 +285,7 @@ class ProductsBuilding {
           alp2: 0,
           len: elm._attr._len,
           origin: cnn_row(elm.elm, nearest.elm)
-        }, elm._attr._nearest_cnn, nearest);
+        }, null, nearest);
       }
     }
 
@@ -555,7 +555,7 @@ class ProductsBuilding {
         };
 
         // добавляем спецификацию соединения рёбер заполнения с профилем
-        (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, curr.cnn, elm);
+        (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, null, elm);
 
       }
 
