@@ -850,6 +850,17 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Примыкания текущего профиля
+   *
+   * @property adjoinings
+   * @type Array.<ProfileAddl>
+   * @final
+   */
+  get adjoinings() {
+    return this.children.filter((elm) => elm instanceof ProfileAdjoining);
+  }
+
+  /**
    * Описание полей диалога свойств элемента
    */
   get oxml() {

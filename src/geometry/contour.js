@@ -1139,6 +1139,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         new paper.Rectangle(bounds.bottomLeft, bounds.bottomRight.add([0, delta < 250 ? delta * 1.1 : delta * 1.2]))
       );
     }
+    for(const profile of this.profiles) {
+      for(const adj of profile.adjoinings) {
+        bounds = bounds.unite(adj.bounds);
+      }
+    }
     return bounds;
   }
 

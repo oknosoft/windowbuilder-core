@@ -283,7 +283,7 @@ class ProductsBuilding {
           angle: 0,
           alp1: 0,
           alp2: 0,
-          len: elm._attr._len,
+          len: elm._attr._len || elm.length,
           origin: cnn_row(elm.elm, nearest.elm)
         }, null, nearest);
       }
@@ -434,6 +434,12 @@ class ProductsBuilding {
 
       // если у профиля есть доборы, добавляем их спецификации
       elm.addls.forEach(base_spec_profile);
+
+      // если у профиля есть примыкания, добавляем их спецификации
+      elm.adjoinings.forEach((elm) => {
+        elm.inset.calculate_spec({elm, ox});
+        cnn_spec_nearest(elm);
+      });
 
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;

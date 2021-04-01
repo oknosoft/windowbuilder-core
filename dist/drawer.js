@@ -2117,6 +2117,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         new paper.Rectangle(bounds.bottomLeft, bounds.bottomRight.add([0, delta < 250 ? delta * 1.1 : delta * 1.2]))
       );
     }
+    for(const profile of this.profiles) {
+      for(const adj of profile.adjoinings) {
+        bounds = bounds.unite(adj.bounds);
+      }
+    }
     return bounds;
   }
 
@@ -5919,7 +5924,7 @@ class BuilderElement extends paper.Group {
         let nom_cnns = [utils.blank.guid];
 
         if(cnn_ii){
-          if (cnn_ii.elm instanceof Filling) {
+          if (cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
@@ -9664,6 +9669,17 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Примыкания текущего профиля
+   *
+   * @property adjoinings
+   * @type Array.<ProfileAddl>
+   * @final
+   */
+  get adjoinings() {
+    return this.children.filter((elm) => elm instanceof ProfileAdjoining);
+  }
+
+  /**
    * Описание полей диалога свойств элемента
    */
   get oxml() {
@@ -12291,6 +12307,7 @@ class BaseLine extends ProfileItem {
     _row.len = this.length;
     _row.angle_hor = this.angle_hor;
     _row.elm_type = this.elm_type;
+    _row.orientation = this.orientation;
   }
 
   cnn_point(node) {
@@ -12355,6 +12372,14 @@ class ProfileAdjoining extends BaseLine {
       dashOffset: 0,
       strokeScaling: true,
     });
+    Object.assign(this.path, {
+      strokeColor: 'white',
+      strokeOpacity: 1,
+      strokeWidth: 0,
+      fillColor: 'grey',
+      opacity: 0.1,
+    });
+    this.selected_cnn_ii();
   }
 
   /**
@@ -12375,9 +12400,39 @@ class ProfileAdjoining extends BaseLine {
    * Возвращает массив примыкающих рам
    */
   joined_nearests() {
-    return this.layer.profiles.filter((profile) => {
-      return profile.nearest(true) === this;
-    });
+    return [this.parent];
+  }
+
+  /**
+   * У примыкания, внешний равен родителю
+   */
+  nearest() {
+    return this.parent;
+  }
+
+  selected_cnn_ii() {
+    const {parent, elm, ox, _attr} = this;
+    const find = {elm1: parent.elm, elm2: elm, node1: '', node2: ''};
+    const row = ox.cnn_elmnts.find(find) || ox.cnn_elmnts.add(find);
+    if(!_attr._nearest_cnn || _attr._nearest_cnn.empty()) {
+      if(row.cnn.empty()) {
+        const {enm: {cnn_types}, cat: {cnns}} = $p;
+        _attr._nearest_cnn = cnns.elm_cnn(parent, this, cnn_types.acn.ii, null, true);
+      }
+      else {
+        _attr._nearest_cnn = row.cnn;
+      }
+    }
+    if(row.cnn.empty() && _attr._nearest_cnn) {
+      row.cnn = _attr._nearest_cnn;
+    }
+    return {elm: parent, row};
+  }
+
+  save_coordinates() {
+    super.save_coordinates();
+    const {row} = this.selected_cnn_ii();
+    row.aperture_len = this.generatrix.length.round(1);
   }
 
   setSelection(selection) {
@@ -12390,7 +12445,7 @@ class ProfileAdjoining extends BaseLine {
     }
   }
 
-  redraw() {
+  redraw(mode) {
     const {generatrix, path, children} = this;
     for(const child of [].concat(children)) {
       if(child !== generatrix && child !== path) {
@@ -12411,6 +12466,16 @@ class ProfileAdjoining extends BaseLine {
         parent: this,
       });
     }
+    if(mode !== 'compact') {
+      let proto = generatrix.clone({insert: false}).equidistant(10);
+      const outer = path.clone();
+      //outer.parent = this;
+      outer.addSegments(proto.segments)
+      proto = proto.equidistant(80);
+      proto.reverse();
+      outer.addSegments(proto.segments);
+      outer.closePath();
+    }
   }
 }
 
@@ -12418,11 +12483,11 @@ ProfileAdjoining.oxml = {
   ' ': [
     {id: 'info', path: 'o.info', type: 'ro'},
     'inset',
-    'clr',
-    'offset',
+    //'clr',
   ],
-  'Начало': ['x1', 'y1'],
-  'Конец': ['x2', 'y2']
+  Начало: ['x1', 'y1'],
+  Конец: ['x2', 'y2'],
+  Соединение: ['cnn3'],
 };
 
 EditorInvisible.ProfileAdjoining = ProfileAdjoining;
@@ -16631,7 +16696,7 @@ class ProductsBuilding {
           angle: 0,
           alp1: 0,
           alp2: 0,
-          len: elm._attr._len,
+          len: elm._attr._len || elm.length,
           origin: cnn_row(elm.elm, nearest.elm)
         }, null, nearest);
       }
@@ -16782,6 +16847,12 @@ class ProductsBuilding {
 
       // если у профиля есть доборы, добавляем их спецификации
       elm.addls.forEach(base_spec_profile);
+
+      // если у профиля есть примыкания, добавляем их спецификации
+      elm.adjoinings.forEach((elm) => {
+        elm.inset.calculate_spec({elm, ox});
+        cnn_spec_nearest(elm);
+      });
 
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;

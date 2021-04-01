@@ -131,6 +131,7 @@ class BaseLine extends ProfileItem {
     _row.len = this.length;
     _row.angle_hor = this.angle_hor;
     _row.elm_type = this.elm_type;
+    _row.orientation = this.orientation;
   }
 
   cnn_point(node) {

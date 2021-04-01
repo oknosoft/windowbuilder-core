@@ -288,7 +288,7 @@ class BuilderElement extends paper.Group {
         let nom_cnns = [utils.blank.guid];
 
         if(cnn_ii){
-          if (cnn_ii.elm instanceof Filling) {
+          if (cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
