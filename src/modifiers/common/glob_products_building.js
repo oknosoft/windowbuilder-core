@@ -205,6 +205,28 @@ class ProductsBuilding {
             row_spec.totqty1 = 1;
           }
         }
+        else if((!row.contraction_option.empty() || row.contraction || row.coefficient) && !row.nom.is_pieces) {
+          const {ФиксированнаяДлина, ОтВысотыРучки, ОтДлиныСтороныМинусВысотыРучки} = row.contraction_option._manager;
+          const profile = contour.profile_by_furn_side(row.side, furn_cache);
+          const len = profile ? profile._row.len : 0;
+          const coefficient = row.coefficient || 0.001;
+
+          switch (row.contraction_option) {
+          case ФиксированнаяДлина:
+            row_spec.len = row.contraction * coefficient;
+            break;
+          case ОтВысотыРучки:
+            row_spec.len = (contour.h_ruch - row.contraction) * coefficient;
+            break;
+          case ОтДлиныСтороныМинусВысотыРучки:
+            row_spec.len = (len - contour.h_ruch - row.contraction) * coefficient;
+            break;
+          default:
+            row_spec.len = (len - row.contraction) * coefficient;
+          }
+          row_spec.qty = row.quantity;
+          calc_count_area_mass(row_spec, spec);
+        }
         else {
           row_spec.qty = row.quantity * (!row.coefficient ? 1 : row.coefficient);
           calc_count_area_mass(row_spec, spec);
