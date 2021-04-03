@@ -16883,7 +16883,7 @@ class ProductsBuilding {
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
-        if(is_order_row_prod({inset, ox, elm})) {
+        if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -16925,7 +16925,7 @@ class ProductsBuilding {
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
-        if(is_order_row_prod({inset, ox, elm})) {
+        if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -16959,8 +16959,9 @@ class ProductsBuilding {
     function base_spec_glass(elm) {
 
       const {profiles, imposts, _row} = elm;
+      const {utils: {blank}, cat: {clrs}} = $p;
 
-      if(_row.clr == $p.cat.clrs.ignored()) {
+      if(_row.clr == clrs.ignored()) {
         return;
       }
 
@@ -16970,7 +16971,7 @@ class ProductsBuilding {
       for (let i = 0; i < glength; i++) {
         const curr = profiles[i];
 
-        if(curr.profile && curr.profile._row.clr == $p.cat.clrs.ignored()) {
+        if(curr.profile && curr.profile._row.clr == clrs.ignored()) {
           return;
         }
 
@@ -17000,14 +17001,29 @@ class ProductsBuilding {
 
       }
 
+      // во время расчетов возможна подмена объекта спецификации
+      const spec_tmp0 = spec;
+      let spec_tmp = spec;
+      if(elm.inset.is_order_row_prod({ox, elm})) {
+        const {bounds} = elm;
+        const attrs = {
+          calc_order: ox.calc_order,
+          owner: elm.nom,
+          clr: elm.clr,
+          s: elm.area,
+          x: bounds.width,
+          y: bounds.height,
+        };
+        const cx = Object.assign(ox.find_create_cx(elm.elm, blank.guid), attrs);
+        ox._order_rows.push(cx);
+        spec = cx.specification.clear();
+      }
+
       // добавляем спецификацию вставки в заполнение
-      elm.inset.calculate_spec({elm, ox});
+      elm.inset.calculate_spec({elm, ox, spec});
 
       // для всех раскладок заполнения
       imposts.forEach(base_spec_profile);
-
-      // во время расчетов возможна подмена объекта спецификации
-      const spec_tmp = spec;
 
       // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
@@ -17020,7 +17036,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: -elm.elm
         };
-        if(is_order_row_prod({inset, ox, elm})) {
+        if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -17030,7 +17046,9 @@ class ProductsBuilding {
         }
         inset.calculate_spec({elm, len_angl, ox, spec});
       });
-      spec = spec_tmp;
+
+      // возвращаем указатель на спецификацию на место
+      spec = spec_tmp0;
     }
 
 
@@ -17046,7 +17064,7 @@ class ProductsBuilding {
       ox.inserts.find_rows({cnstr: contour.cnstr}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
-        if(is_order_row_prod({inset, ox, contour})) {
+        if(inset.is_order_row_prod({ox, contour})) {
           const cx = Object.assign(ox.find_create_cx(-contour.cnstr, inset.ref), inset.contour_attrs(contour));
           ox._order_rows.push(cx);
           spec = cx.specification.clear();
@@ -17263,33 +17281,6 @@ class ProductsBuilding {
       }
 
     };
-
-    /**
-     * Выясняет, надо ли вытягивать данную вставку в продукцию
-     *
-     * @example
-     * // Пример формулы:
-     * let {elm, contour} = obj;
-     * if(!contour && elm) {
-     *  contour = elm.layer;
-     * }
-     * const {specification_order_row_types: types} = $p.enm;
-     * return contour ? types.Продукция : types.Нет;
-     *
-     * @param inset
-     * @param ox
-     * @param elm
-     * @param contour
-     * @return {boolean}
-     */
-    function is_order_row_prod({inset, ox, elm, contour}) {
-      const {enm: {specification_order_row_types}, CatFormulas} = $p;
-      let {is_order_row} = inset;
-      if(is_order_row instanceof CatFormulas) {
-        is_order_row = is_order_row.execute({ox, elm, contour});
-      }
-      return is_order_row === specification_order_row_types.Продукция;
-    }
 
   }
 
@@ -20150,6 +20141,45 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           return true;
         }
       }
+    }
+
+    /**
+     * Выясняет, надо ли вытягивать данную вставку в продукцию
+     *
+     * @example
+     * // Пример формулы:
+     * let {elm, contour} = obj;
+     * if(!contour && elm) {
+     *  contour = elm.layer;
+     * }
+     * const {specification_order_row_types: types} = $p.enm;
+     * return contour ? types.Продукция : types.Нет;
+     *
+     * @param inset
+     * @param ox
+     * @param elm
+     * @param contour
+     * @return {boolean}
+     */
+    is_order_row_prod({ox, elm, contour}) {
+      const {enm: {specification_order_row_types: {Продукция}, inserts_types}, CatFormulas, cch} = $p;
+      const param = cch.properties.predefined('glass_separately');
+      let {is_order_row, insert_type} = this;
+      if(param && insert_type === inserts_types.Заполнение) {
+        ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
+          if(elm && (cnstr === -elm.elm)) {
+            is_order_row = value ? Продукция : '';
+            return false;
+          }
+          if(!cnstr || (contour && cnstr === contour.cnstr)) {
+            is_order_row = value ? Продукция : '';
+          }
+        });
+      }
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === Продукция;
     }
 
     /**

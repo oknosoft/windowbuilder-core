@@ -376,6 +376,45 @@
     }
 
     /**
+     * Выясняет, надо ли вытягивать данную вставку в продукцию
+     *
+     * @example
+     * // Пример формулы:
+     * let {elm, contour} = obj;
+     * if(!contour && elm) {
+     *  contour = elm.layer;
+     * }
+     * const {specification_order_row_types: types} = $p.enm;
+     * return contour ? types.Продукция : types.Нет;
+     *
+     * @param inset
+     * @param ox
+     * @param elm
+     * @param contour
+     * @return {boolean}
+     */
+    is_order_row_prod({ox, elm, contour}) {
+      const {enm: {specification_order_row_types: {Продукция}, inserts_types}, CatFormulas, cch} = $p;
+      const param = cch.properties.predefined('glass_separately');
+      let {is_order_row, insert_type} = this;
+      if(param && insert_type === inserts_types.Заполнение) {
+        ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
+          if(elm && (cnstr === -elm.elm)) {
+            is_order_row = value ? Продукция : '';
+            return false;
+          }
+          if(!cnstr || (contour && cnstr === contour.cnstr)) {
+            is_order_row = value ? Продукция : '';
+          }
+        });
+      }
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === Продукция;
+    }
+
+    /**
      * Возвращает номенклатуру вставки в завсисмости от свойств элемента
      */
     nom(elm, strict) {
