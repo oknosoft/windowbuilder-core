@@ -18373,24 +18373,40 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     if(this.empty()) {
       return;
     }
+    let _modified;
     const {_obj, _data} = this;
     const name = 'builder_props';
+    const symplify = () => {
+      if(typeof v === 'string') {
+        v = JSON.parse(v);
+      }
+      const props = this.builder_props;
+      for(const prop in v){
+        if(prop < 'a') {
+          continue;
+        }
+        if(props[prop] !== v[prop]) {
+          props[prop] = v[prop];
+          _modified = true;
+        }
+      }
+      return props;
+    };
+
     if(_data && _data._loading) {
+      if(v.length > 200) {
+        v = JSON.stringify(symplify());
+      }
       _obj[name] = v;
       return;
     }
-    let _modified;
+
     if(!_obj[name] || typeof _obj[name] !== 'string'){
       _obj[name] = JSON.stringify(this.constructor.builder_props_defaults);
       _modified = true;
     }
-    const props = this.builder_props;
-    for(const prop in v){
-      if(props[prop] !== v[prop]) {
-        props[prop] = v[prop];
-        _modified = true;
-      }
-    }
+
+    const props = symplify();
     if(_modified) {
       _obj[name] = JSON.stringify(props);
       this.__notify(name);
