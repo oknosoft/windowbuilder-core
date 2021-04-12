@@ -1030,12 +1030,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   remove() {
     //удаляем детей
-    const {children, _row, cnstr, _ox} = this;
+    const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
       children[0].remove();
     }
 
-    if (_row && _ox === _row._owner._owner) {
+    if (_row && _ox === _row._owner._owner && !project.ox.empty()) {
       _ox.coordinates.clear({cnstr});
       _ox.params.clear({cnstr});
       _ox.inserts.clear({cnstr});

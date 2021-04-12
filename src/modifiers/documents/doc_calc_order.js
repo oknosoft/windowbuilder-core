@@ -1192,7 +1192,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             const {origin} = cx;
-            if(origin && !origin.empty() && !origin.slave) {
+            if(origin instanceof $p.CatInserts && !origin.empty() && !origin.slave) {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет

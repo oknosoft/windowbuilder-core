@@ -2008,12 +2008,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   remove() {
     //удаляем детей
-    const {children, _row, cnstr, _ox} = this;
+    const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
       children[0].remove();
     }
 
-    if (_row && _ox === _row._owner._owner) {
+    if (_row && _ox === _row._owner._owner && !project.ox.empty()) {
       _ox.coordinates.clear({cnstr});
       _ox.params.clear({cnstr});
       _ox.inserts.clear({cnstr});
@@ -6311,7 +6311,7 @@ class BuilderElement extends paper.Group {
       delete this.observer;
     }
 
-    if(_row && _row._owner._owner === ox){
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});
       ox.inserts.clear({cnstr: -elm});
       _row._owner.del(_row);
@@ -22255,7 +22255,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             const {origin} = cx;
-            if(origin && !origin.empty() && !origin.slave) {
+            if(origin instanceof $p.CatInserts && !origin.empty() && !origin.slave) {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет

@@ -675,7 +675,7 @@ class BuilderElement extends paper.Group {
       delete this.observer;
     }
 
-    if(_row && _row._owner._owner === ox){
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});
       ox.inserts.clear({cnstr: -elm});
       _row._owner.del(_row);
