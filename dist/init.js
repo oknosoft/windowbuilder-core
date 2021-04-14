@@ -575,8 +575,9 @@ set applying(v){this._setter_ts('applying',v)}
           let mgr;
           for(const type of types) {
             const tmp = md.mgr_by_class_name(types[0]);
-            if(tmp && tmp.by_ref[arr[0]]) {
+            if(tmp && arr.some(ref => tmp.by_ref[ref])) {
               mgr = tmp;
+              break;
             }
           }
           if(!mgr) {
@@ -592,7 +593,7 @@ set applying(v){this._setter_ts('applying',v)}
             }
             return res;
           }
-          return arr.map((ref) => mgr.get(ref, false));
+          return arr.map((ref) => mgr.get(ref, false)).filter(v => v && !v.empty());
         }
         return arr;
       }
