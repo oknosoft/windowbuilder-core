@@ -641,32 +641,34 @@ class Filling extends AbstractFilling(BuilderElement) {
       let {length} = attr;
       let prev, curr, next, sub_path;
       // получам эквидистанты сегментов, смещенные на размер соединения
-      for(let i=0; i<length; i++ ){
+      for (let i = 0; i < length; i++) {
         curr = attr[i];
-        next = i === length-1 ? attr[0] : attr[i+1];
+        next = i === length - 1 ? attr[0] : attr[i + 1];
         sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e);
 
         curr.cnn = $p.cat.cnns.elm_cnn(this, curr.profile, $p.enm.cnn_types.acn.ii,
           curr.cnn || this.project.elm_cnn(this, curr.profile), false, curr.outer);
 
-        curr.sub_path = sub_path.equidistant(
-          (sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20), consts.sticking);
-
+        curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
       }
       // получам пересечения
       for (let i = 0; i < length; i++) {
         prev = i === 0 ? attr[length-1] : attr[i-1];
         curr = attr[i];
         next = i === length-1 ? attr[0] : attr[i+1];
-        if(!curr.pb)
-          curr.pb = prev.pe = curr.sub_path.intersect_point(prev.sub_path, curr.b, true);
-        if(!curr.pe)
-          curr.pe = next.pb = curr.sub_path.intersect_point(next.sub_path, curr.e, true);
+        if(!curr.pb) {
+          curr.pb = prev.pe = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
+        }
+        if(!curr.pe) {
+          curr.pe = next.pb = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
+        }
         if(!curr.pb || !curr.pe){
-          if($p.job_prm.debug)
-            throw "Filling:path";
-          else
+          if($p.job_prm.debug) {
+            throw 'Filling:path';
+          }
+          else {
             continue;
+          }
         }
         curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe);
       }

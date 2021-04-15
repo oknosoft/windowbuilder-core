@@ -248,6 +248,12 @@ Object.defineProperties(paper.Path.prototype, {
 
           // для кривого бежим по точкам
           let len = this.length, step = len * 0.02, point;
+          if(step < 20) {
+            step = len * 0.04;
+          }
+          else if(step > 90) {
+            step = len * 0.014;
+          }
 
           for(let i = step; i < len; i += step) {
             point = this.getPointAt(i);
