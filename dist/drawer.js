@@ -16627,7 +16627,7 @@ class ProductsBuilding {
           }
         }
         else if((!row.contraction_option.empty() || row.contraction || row.coefficient) && !row.nom.is_pieces) {
-          const {ФиксированнаяДлина, ОтВысотыРучки, ОтДлиныСтороныМинусВысотыРучки, Коэффициент} = row.contraction_option._manager;
+          const {ФиксированнаяДлина, ОтВысотыРучки, ОтДлиныСтороныМинусВысотыРучки, Выражение} = row.contraction_option._manager;
           const profile = contour.profile_by_furn_side(row.side, furn_cache);
           const len = profile ? profile._row.len : 0;
           const coefficient = row.coefficient || 0.001;
@@ -16642,9 +16642,14 @@ class ProductsBuilding {
           case ОтДлиныСтороныМинусВысотыРучки:
             row_spec.len = (len - contour.h_ruch - row.contraction) * coefficient;
             break;
-          case Коэффициент:
-            row_spec.len = (len * row.contraction) * coefficient;
-            break;
+          case Выражение:
+            if(typeof row.contraction === 'string') {
+              try {
+                row_spec.len = eval(row.contraction) * coefficient;
+                break;
+              }
+              catch (e) {}
+            }
           default:
             row_spec.len = (len - row.contraction) * coefficient;
           }
