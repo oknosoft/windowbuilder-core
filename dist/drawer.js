@@ -18741,6 +18741,7 @@ $p.cat.clrs.__define({
         case 'БезЦвета':
           return this.get();
         case 'Белый':
+        case 'Прозрачный':
           return clr;
         case 'КакВоВставке':
           if(!elm){
