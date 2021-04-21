@@ -595,7 +595,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param elmno {number} - номер элемента (с полюсом) или слоя (с минусом)
+   * @param [elmno] {number} - номер элемента (с полюсом) или слоя (с минусом)
    * @return {number}
    */
   elm_weight(elmno) {
@@ -604,7 +604,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     let weight = 0;
     specification.forEach(({elm, nom, totqty}) => {
       // отбрасываем лишние строки
-      if(elm !== elmno) {
+      if(elmno !== undefined && elm !== elmno) {
         if(elmno < 0 && elm > 0) {
           if(!map.get(elm)) {
             const crow = coordinates.find({elm});

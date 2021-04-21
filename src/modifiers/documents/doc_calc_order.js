@@ -655,6 +655,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       (individual_person.Имя ? ' ' + individual_person.Имя[0].toUpperCase() + '.' : '' ) +
       (individual_person.Отчество ? ' ' + individual_person.Отчество[0].toUpperCase() + '.' : ''),
       СотрудникФИОРП: individual_person.ФамилияРП + ' ' + individual_person.ИмяРП + ' ' + individual_person.ОтчествоРП,
+      СотрудникТелефон: manager.contact_information._obj.reduce((val, row) => {
+        if(row.type == 'Телефон' && row.presentation) {
+          return row.presentation;
+        }}, ''),
+      СотрудникEmail: manager.contact_information._obj.reduce((val, row) => {
+        if(row.type == 'АдресЭлектроннойПочты' && row.presentation) {
+          return row.presentation;
+        }}, ''),
       СуммаДокумента: this.doc_amount.toFixed(2),
       СуммаДокументаПрописью: this.doc_amount.in_words(),
       СуммаДокументаБезСкидки: this.production._obj.reduce((val, row) => val + row.quantity * row.price, 0).toFixed(2),
@@ -667,6 +675,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ВсегоНаименований: this.production.count(),
       ВсегоИзделий: 0,
       ВсегоПлощадьИзделий: 0,
+      ВсегоМасса: 0,
       Продукция: [],
       Аксессуары: [],
       Услуги: [],
@@ -707,10 +716,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.production.forEach((row) => {
         if(!row.characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
 
-          res.Продукция.push(this.row_description(row));
+          const description = this.row_description(row);
+          res.Продукция.push(description);
 
           res.ВсегоИзделий += row.quantity;
-          res.ВсегоПлощадьИзделий += row.quantity * row.s;
+          res.ВсегоПлощадьИзделий += row.quantity * row.characteristic.s;
+          res.ВсегоМасса += row.quantity * description.Масса;
 
           // если запросили эскиз без размерных линий или с иными параметрами...
           if(builder_props) {
@@ -742,21 +753,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
       res.ВсегоПлощадьИзделий = res.ВсегоПлощадьИзделий.round(3);
 
-      return imgs.then(() => {
-        editor && editor.unload();
-        return (get_imgs.length ? Promise.all(get_imgs) : Promise.resolve([]))
-          .then(() => {
-            // https://github.com/soldair/node-qrcode
-            if(typeof QRCode === 'object') {
-              const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
-              return QRCode.toString(text, {type: 'svg'}).then((qr) => {
-                res.qrcode = qr;
-                return res;
-              });
-            }
-            return res;
-          });
-      });
+      res.qrcode = () => {
+        // https://github.com/soldair/node-qrcode
+        return Promise.resolve().then(() => {
+          if(typeof QRCode === 'object') {
+            const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
+            return QRCode.toString(text, {type: 'svg'});
+          }
+        });
+      };
+
+      return imgs
+        .then(() => {
+          editor && editor.unload();
+          return Promise.all(get_imgs);
+        })
+        .then(() => res);
 
     });
 
@@ -774,6 +786,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     }
     const {characteristic, nom, s, quantity, note} = row;
+    const m = characteristic.elm_weight().round(1);
     const res = {
       ref: characteristic.ref,
       НомерСтроки: row.row,
@@ -786,6 +799,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       Длина: row.len,
       Ширина: row.width,
       ВсегоПлощадь: s * quantity,
+      Масса: m,
+      ВсегоМасса: m * quantity,
       Примечание: note,
       Комментарий: note,
       СистемаПрофилей: characteristic.sys.name,
@@ -824,6 +839,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         res.Фурнитура += name;
       }
     });
+
+
 
     // параметры, помеченные к включению в описание
     const params = new Map();
