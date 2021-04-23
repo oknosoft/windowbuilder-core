@@ -17312,14 +17312,30 @@ class ProductsBuilding {
 
     let ok = true;
 
-    // режем параметры по элементу
-    params.find_rows({elm: row_spec.elm}, (prm_row) => {
-      // выполнение условия рассчитывает объект CchProperties
-      ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
-      if(!ok) {
-        return false;
+    // режем параметры по элементу сначала строим Map ИЛИ
+    const or = new Map();
+    params.find_rows({elm: row_spec.elm}, (row) => {
+      if(!or.has(row.area)) {
+        or.set(row.area, []);
       }
+      or.get(row.area).push(row);
     });
+
+    for(const grp of or.values()) {
+      let grp_ok = true;
+      for (const prm_row of grp) {
+        // выполнение условия рассчитывает объект CchProperties
+        grp_ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+        // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
+        if (!grp_ok) {
+          break;
+        }
+      }
+      ok = grp_ok;
+      if(ok) {
+        break;
+      }
+    }
 
     return ok;
   }
@@ -19726,21 +19742,37 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     const {selection_params, specification_restrictions} = this._owner._owner;
     const prop_direction = $p.job_prm.properties.direction;
 
-    let res = true;
 
-    // по таблице параметров
+    // по таблице параметров сначала строим Map ИЛИ
     let profile;
-    selection_params.find_rows({elm, dop}, (prm_row) => {
+    const or = new Map();
+    selection_params.find_rows({elm, dop}, (row) => {
       if(!profile) {
         profile = contour.profile_by_furn_side(side, cache);
       }
-      // выполнение условия рассчитывает объект CchProperties
-      const ok = (prop_direction == prm_row.param) ?
-        direction == prm_row.value : prm_row.param.check_condition({row_spec: this, prm_row, elm: profile, cnstr, ox: cache.ox});
-      if(!ok){
-        return res = false;
+      if(!or.has(row.area)) {
+        or.set(row.area, []);
       }
+      or.get(row.area).push(row);
     });
+
+    let res = true;
+    for(const grp of or.values()) {
+      let grp_ok = true;
+      for (const prm_row of grp) {
+        // выполнение условия рассчитывает объект CchProperties
+        grp_ok = (prop_direction == prm_row.param) ?
+          direction == prm_row.value : prm_row.param.check_condition({row_spec: this, prm_row, elm: profile, cnstr, ox: cache.ox});
+        // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
+        if (!grp_ok) {
+          break;
+        }
+      }
+      res = grp_ok;
+      if(res) {
+        break;
+      }
+    }
 
     // по таблице ограничений
     if(res) {

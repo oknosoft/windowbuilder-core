@@ -891,14 +891,30 @@ class ProductsBuilding {
 
     let ok = true;
 
-    // режем параметры по элементу
-    params.find_rows({elm: row_spec.elm}, (prm_row) => {
-      // выполнение условия рассчитывает объект CchProperties
-      ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
-      if(!ok) {
-        return false;
+    // режем параметры по элементу сначала строим Map ИЛИ
+    const or = new Map();
+    params.find_rows({elm: row_spec.elm}, (row) => {
+      if(!or.has(row.area)) {
+        or.set(row.area, []);
       }
+      or.get(row.area).push(row);
     });
+
+    for(const grp of or.values()) {
+      let grp_ok = true;
+      for (const prm_row of grp) {
+        // выполнение условия рассчитывает объект CchProperties
+        grp_ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+        // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
+        if (!grp_ok) {
+          break;
+        }
+      }
+      ok = grp_ok;
+      if(ok) {
+        break;
+      }
+    }
 
     return ok;
   }

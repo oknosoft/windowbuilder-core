@@ -327,20 +327,35 @@ exports.CchProperties = class CchProperties extends Object {
 
       arr.forEach((row_key) => {
         let ok_key = true;
-        // для всех записей ключа параметров
-        row_key.key.params.forEach((row) => {
-          // выполнение условия рассчитывает объект CchProperties
-          ok_key = row.property.check_condition({
-            cnstr: attr.grid.selection.cnstr,
-            ox: attr.obj._owner._owner,
-            prm_row: row,
-            elm: attr.obj,
-          });
-          //Если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
-          if (!ok_key) {
-            return false;
+        // для всех записей ключа параметров сначала строим Map ИЛИ
+        const or = new Map();
+        for(const row of row_key.key.params) {
+          if(!or.has(row.area)) {
+            or.set(row.area, []);
           }
-        });
+          or.get(row.area).push(row);
+        }
+        for(const grp of or.values()) {
+          let grp_ok = true;
+          for(const row of grp) {
+            // выполнение условия рассчитывает объект CchProperties
+            grp_ok = row.property.check_condition({
+              cnstr: attr.grid.selection.cnstr,
+              ox: attr.obj._owner._owner,
+              prm_row: row,
+              elm: attr.obj,
+            });
+            // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
+            if (!grp_ok) {
+              break;
+            }
+          }
+          ok_key = grp_ok;
+          if(ok_key) {
+            break;
+          }
+        }
+
         //Для проверки через ИЛИ логика накопительная - надо проверить все ключи до единого
         if (use_master == 2){
           ok = ok || ok_key;
