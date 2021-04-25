@@ -139,7 +139,7 @@ class ProfileConnective extends ProfileItem {
     _row.parent = 0;
 
     // добавляем припуски соединений
-    _row.len = this.length;
+    _row.len = this.length.round(1);
 
     // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;

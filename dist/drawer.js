@@ -9208,7 +9208,7 @@ class ProfileRays {
     }
 
     const {d1, d2, width} = parent;
-    const ds = 3 * width;
+    const ds = 3 * (width > 20 ? width : 20);
     const step = len * 0.02;
 
     // первая точка эквидистанты. аппроксимируется касательной на участке (from < начала пути)
