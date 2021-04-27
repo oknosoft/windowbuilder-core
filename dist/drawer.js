@@ -12065,7 +12065,7 @@ class ProfileConnective extends ProfileItem {
     _row.parent = 0;
 
     // добавляем припуски соединений
-    _row.len = this.length;
+    _row.len = this.length.round(1);
 
     // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
@@ -21804,6 +21804,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ВсегоИзделий: 0,
       ВсегоПлощадьИзделий: 0,
       ВсегоМасса: 0,
+      ВсегоМассаЗаполнений: 0,
       Продукция: [],
       Аксессуары: [],
       Услуги: [],
@@ -21850,6 +21851,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           res.ВсегоИзделий += row.quantity;
           res.ВсегоПлощадьИзделий += row.quantity * row.characteristic.s;
           res.ВсегоМасса += row.quantity * description.Масса;
+          res.ВсегоМассаЗаполнений += row.quantity * description.МассаЗаполнений;
 
           // если запросили эскиз без размерных линий или с иными параметрами...
           if(builder_props) {
@@ -21914,7 +21916,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     }
     const {characteristic, nom, s, quantity, note} = row;
-    const m = characteristic.elm_weight().round(1);
+    let m = 0, gm = 0, skip = new Set();
+    characteristic.specification.forEach(({elm, nom, totqty}) => {
+      m += nom.density * totqty;
+      if(elm > 0 && !skip.has(elm)) {
+        if(characteristic.glasses.find({elm})) {
+          gm += nom.density * totqty;
+        }
+        else {
+          skip.add(elm);
+        }
+      }
+    });
+
     const res = {
       ref: characteristic.ref,
       НомерСтроки: row.row,
@@ -21929,12 +21943,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ВсегоПлощадь: s * quantity,
       Масса: m,
       ВсегоМасса: m * quantity,
+      МассаЗаполнений: gm,
+      ВсегоМассаЗаполнений: gm * quantity,
       Примечание: note,
       Комментарий: note,
       СистемаПрофилей: characteristic.sys.name,
       Номенклатура: nom.name_full || nom.name,
       Характеристика: characteristic.name,
       Заполнения: '',
+      ЗаполненияФормулы: '',
       Фурнитура: '',
       Параметры: [],
       Цена: row.price,
@@ -21947,13 +21964,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     };
 
     // формируем описание заполнений
-    characteristic.glasses.forEach((row) => {
-      const {name} = row.nom;
-      if(res.Заполнения.indexOf(name) == -1) {
+    characteristic.glasses.forEach(({nom, formula}) => {
+      const {name} = nom;
+      if(!res.Заполнения.includes(name)) {
         if(res.Заполнения) {
           res.Заполнения += ', ';
         }
         res.Заполнения += name;
+      }
+      if(!res.ЗаполненияФормулы.includes(formula)) {
+        if(res.ЗаполненияФормулы) {
+          res.ЗаполненияФормулы += ', ';
+        }
+        res.ЗаполненияФормулы += formula;
       }
     });
 
