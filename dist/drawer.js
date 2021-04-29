@@ -9604,8 +9604,9 @@ class ProfileItem extends GeneratrixElement {
    */
   get length() {
     const {b, e, outer} = this.rays;
-    const gen = this.elm_type == $p.enm.elm_types.Импост ? this.generatrix : outer;
+    const {cnn_types, elm_types, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const ppoints = {};
+    let gen = this.elm_type == elm_types.Импост ? this.generatrix : outer;
 
     // находим проекции четырёх вершин на образующую
     for (let i = 1; i <= 4; i++) {
@@ -9613,8 +9614,25 @@ class ProfileItem extends GeneratrixElement {
     }
 
     // находим точки, расположенные ближе к концам
-    ppoints.b = gen.getOffsetOf(ppoints[1]) < gen.getOffsetOf(ppoints[4]) ? ppoints[1] : ppoints[4];
-    ppoints.e = gen.getOffsetOf(ppoints[2]) > gen.getOffsetOf(ppoints[3]) ? ppoints[2] : ppoints[3];
+    let pt = this.corns(7);
+    if(pt) {
+      gen = gen.clone({insert: false}).elongation(this.width * 2);
+      ppoints.b = gen.getNearestPoint(pt);
+    }
+    else {
+      ppoints.b = gen.getOffsetOf(ppoints[1]) < gen.getOffsetOf(ppoints[4]) ? ppoints[1] : ppoints[4];
+    }
+
+    pt = this.corns(8);
+    if(pt) {
+      if(gen.isInserted()) {
+        gen = gen.clone({insert: false}).elongation(this.width * 2);
+      }
+      ppoints.e = gen.getNearestPoint(pt);
+    }
+    else {
+      ppoints.e = gen.getOffsetOf(ppoints[2]) > gen.getOffsetOf(ppoints[3]) ? ppoints[2] : ppoints[3];
+    }
 
     // получаем фрагмент образующей
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
@@ -10651,10 +10669,13 @@ class ProfileItem extends GeneratrixElement {
 
           if(wprofile === this) {
             intersect_point(prays.outer, median, 5);
+            intersect_point(rays.outer, median, 7);
             intersect_point(prays.outer, rays.outer, 1);
           }
           else {
             intersect_point(rays.outer, median, 1);
+            delete _corns[5];
+            delete _corns[7];
           }
 
         }
@@ -10668,10 +10689,13 @@ class ProfileItem extends GeneratrixElement {
 
           if(wprofile === this) {
             intersect_point(prays.outer, median, 6);
+            intersect_point(rays.outer, median, 8);
             intersect_point(prays.outer, rays.outer, 2);
           }
           else {
             intersect_point(rays.outer, median, 2);
+            delete _corns[6];
+            delete _corns[8];
           }
         }
       }
