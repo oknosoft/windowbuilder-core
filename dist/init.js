@@ -3469,7 +3469,7 @@ class CatCnnsManager extends CatManager {
 
     // сортируем по непустой стороне и приоритету
     if(cnns.length){
-      return cnns[0];
+      return curr_cnn && cnns.includes(curr_cnn) ? curr_cnn : cnns[0];
     }
     // TODO: возможно, надо вернуть соединение с пустотой
     else{

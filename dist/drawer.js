@@ -7010,7 +7010,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr.path;
   }
   set path(attr) {
-    let {_attr, path} = this;
+    let {_attr, path, project} = this;
 
     // чистим старый путь
     if(path){
@@ -7036,12 +7036,12 @@ class Filling extends AbstractFilling(BuilderElement) {
       let prev, curr, next, sub_path;
       // получам эквидистанты сегментов, смещенные на размер соединения
       for (let i = 0; i < length; i++) {
+        const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
         curr = attr[i];
         next = i === length - 1 ? attr[0] : attr[i + 1];
         sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e);
 
-        curr.cnn = $p.cat.cnns.elm_cnn(this, curr.profile, $p.enm.cnn_types.acn.ii,
-          curr.cnn || this.project.elm_cnn(this, curr.profile), false, curr.outer);
+        curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
 
         curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
       }
@@ -7057,7 +7057,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           curr.pe = next.pb = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
         }
         if(!curr.pb || !curr.pe){
-          if($p.job_prm.debug) {
+          if(job_prm.debug) {
             throw 'Filling:path';
           }
           else {
