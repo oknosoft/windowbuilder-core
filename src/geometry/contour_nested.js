@@ -312,10 +312,15 @@ class ContourNested extends Contour {
    * @method remove
    */
   remove() {
-    //удаляем детей
-
+    const {_ox} = this;
     // стандартные действия по удалению слоёв
     super.remove();
+    // удаляем вложенное изделие из заказа
+    const {calc_order_row: row} = _ox;
+    if(row) {
+      row._owner.del(row);
+    }
+    _ox.unload();
   }
 
 }

@@ -2013,10 +2013,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       children[0].remove();
     }
 
-    if (_row && _ox === _row._owner._owner && !project.ox.empty()) {
-      _ox.coordinates.clear({cnstr});
-      _ox.params.clear({cnstr});
-      _ox.inserts.clear({cnstr});
+    if (_row) {
+      if(_ox === _row._owner._owner && !project.ox.empty()) {
+        _ox.coordinates.clear({cnstr});
+        _ox.params.clear({cnstr});
+        _ox.inserts.clear({cnstr});
+      }
       _row._owner.del(_row);
       this._row = null;
     }
@@ -3932,10 +3934,15 @@ class ContourNested extends Contour {
    * @method remove
    */
   remove() {
-    //удаляем детей
-
+    const {_ox} = this;
     // стандартные действия по удалению слоёв
     super.remove();
+    // удаляем вложенное изделие из заказа
+    const {calc_order_row: row} = _ox;
+    if(row) {
+      row._owner.del(row);
+    }
+    _ox.unload();
   }
 
 }
@@ -16495,8 +16502,10 @@ class ProductsBuilding {
      * @param elm2
      */
     function cnn_need_add_spec(cnn, elm1, elm2, point) {
+      const {short, long, xx} = $p.enm.cnn_types;
+      const cnn_type = cnn && cnn.cnn_type;
       // соединения крест в стык обрабатываем по координатам, остальные - по паре элементов
-      if(cnn && cnn.cnn_type == $p.enm.cnn_types.xx) {
+      if(cnn_type === xx) {
         if(!added_cnn_spec.points) {
           added_cnn_spec.points = [];
         }
@@ -16506,6 +16515,9 @@ class ProductsBuilding {
           }
         }
         added_cnn_spec.points.push(point);
+        return true;
+      }
+      else if(cnn.cnn_type === long || cnn.cnn_type === short) {
         return true;
       }
       else if(!cnn || !elm1 || !elm2 || added_cnn_spec[elm1] == elm2 || added_cnn_spec[elm2] == elm1) {
@@ -16873,14 +16885,15 @@ class ProductsBuilding {
         art2: true,
         node: 'e',
       };
+      const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, cnn_types.long, cnn_types.short];
       if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
 
 
         len_angl.angle = len_angl.alp2;
 
         // для ТОбразного и Незамкнутого контура надо рассчитать еще и с другой стороны
-        if(b.cnn.cnn_type == cnn_types.t || b.cnn.cnn_type == cnn_types.i || b.cnn.cnn_type == cnn_types.xx) {
-          if(![cnn_types.t, cnn_types.xx].includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
+        if(other_side_types.includes(b.cnn.cnn_type)) {
+          if(!other_side_types.includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
         }
