@@ -20617,7 +20617,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
             const fakerow = fake_row(subrow);
             fakerow.quantity = (subrow.quantity || 1) * (row.quantity || 1);
-            fakerow.coefficient = (subrow.coefficient || 1) * (row.coefficient || 1);
+            fakerow.coefficient = (subrow.coefficient || row.coefficient) ? (subrow.coefficient || 1) * (row.coefficient || 1) : 0;
             fakerow._origin = row.nom;
             if(fakerow.clr.empty()){
               fakerow.clr = row.clr;
