@@ -16552,10 +16552,10 @@ class ProductsBuilding {
           if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
             const tmp_len_angl = Object.assign({}, len_angl);
             tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
-            nom.calculate_spec({elm, len_angl: tmp_len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, ox});
           }
           else {
-            nom.calculate_spec({elm, len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl, ox});
           }
         }
         else {
@@ -20539,13 +20539,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * Возвращает спецификацию вставки с фильтром
      * @method filtered_spec
      * @param elm {BuilderElement|Object} - элемент, к которому привязана вставка
+     * @param elm2 {BuilderElement|Object} - соседний элемент, имеет смысл, когда вставка вызвана из соединения
      * @param ox {CatCharacteristics} - текущая продукция
      * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
      * @param [len_angl] {Object} - контекст размеров элемента
      * @param [own_row] {CatInsertsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
-    filtered_spec({elm, is_high_level_call, len_angl, own_row, ox}) {
+    filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
 
       const res = [];
 
@@ -20603,8 +20604,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
         if(!check_params({
           params: this.selection_params,
-          ox: ox,
-          elm: elm,
+          ox,
+          elm,
+          elm2,
           row_spec: row,
           cnstr: len_angl && len_angl.cnstr,
           origin: len_angl && len_angl.origin,
@@ -20638,12 +20640,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * Дополняет спецификацию изделия спецификацией текущей вставки
      * @method calculate_spec
      * @param elm {BuilderElement}
-     * @param len_angl {Object}
+     * @param [elm2] {BuilderElement}
+     * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
      */
-    calculate_spec({elm, len_angl, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, ox, spec, clr}) {
 
       const {_row} = elm;
       const {
@@ -20664,7 +20667,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         spec = ox.specification;
       }
 
-      this.filtered_spec({elm, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
@@ -20740,6 +20743,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   clr,
                   row_spec,
                   elm: rib.profile || rib,
+                  elm2,
                   cnstr: len_angl && len_angl.cnstr || 0,
                   inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
                   row_ins: row_ins_spec,
@@ -20803,6 +20807,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   clr,
                   row_spec,
                   elm,
+                  elm2,
                   cnstr: len_angl && len_angl.cnstr || 0,
                   row_ins: row_ins_spec,
                   len: len_angl ? len_angl.len : _row.len
@@ -20889,6 +20894,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             const qty = formula.execute({
               ox: ox,
               elm: elm,
+              elm2,
               cnstr: len_angl && len_angl.cnstr || 0,
               inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
               row_ins: row_ins_spec,
