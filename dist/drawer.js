@@ -7040,66 +7040,76 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     else if(Array.isArray(attr)){
       let {length} = attr;
-      let prev, curr, next, sub_path;
-      // получам эквидистанты сегментов, смещенные на размер соединения
-      for (let i = 0; i < length; i++) {
-        const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
-        curr = attr[i];
-        next = i === length - 1 ? attr[0] : attr[i + 1];
-        sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e);
+      if(length > 1) {
+        let prev, curr, next, sub_path;
+        // получам эквидистанты сегментов, смещенные на размер соединения
+        for (let i = 0; i < length; i++) {
+          const {cat: {cnns}, enm: {cnn_types}} = $p;
+          curr = attr[i];
+          next = i === length - 1 ? attr[0] : attr[i + 1];
+          sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
 
-        curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
+          curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
 
-        curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
-      }
-      // получам пересечения
-      for (let i = 0; i < length; i++) {
-        prev = i === 0 ? attr[length-1] : attr[i-1];
-        curr = attr[i];
-        next = i === length-1 ? attr[0] : attr[i+1];
-        if(!curr.pb) {
-          curr.pb = prev.pe = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
+          curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
-        if(!curr.pe) {
-          curr.pe = next.pb = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
-        }
-        if(!curr.pb || !curr.pe){
-          if(job_prm.debug) {
-            throw 'Filling:path';
+        // получам пересечения
+        for (let i = 0; i < length; i++) {
+          prev = i === 0 ? attr[length-1] : attr[i-1];
+          curr = attr[i];
+          next = i === length-1 ? attr[0] : attr[i+1];
+          if(!curr.pb) {
+            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking, null, true);
+            if(prev !== next) {
+              prev.pe = curr.pb;
+            }
           }
-          else {
-            continue;
+          if(!curr.pe) {
+            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking, null, true);
+            if(prev !== next) {
+              next.pb = curr.pe;
+            }
+          }
+          if(!curr.pb || !curr.pe){
+            if($p.job_prm.debug) {
+              throw 'Filling:path';
+            }
+            else {
+              continue;
+            }
+          }
+          curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe, true);
+        }
+
+        // прочищаем для пересечений
+        if(length > 2) {
+          const remove = [];
+          for (let i = 0; i < length; i++) {
+            prev = i === 0 ? attr[length-1] : attr[i-1];
+            next = i === length-1 ? attr[0] : attr[i+1];
+            const crossings =  prev.sub_path.getCrossings(next.sub_path);
+            if(crossings.length){
+              if((prev.e.getDistance(crossings[0].point) < prev.profile.width * 2) ||  (next.b.getDistance(crossings[0].point) < next.profile.width * 2)) {
+                remove.push(attr[i]);
+                prev.sub_path.splitAt(crossings[0]);
+                const nloc = next.sub_path.getLocationOf(crossings[0].point);
+                next.sub_path = next.sub_path.splitAt(nloc);
+              }
+            }
+          }
+          for(const segm of remove) {
+            attr.splice(attr.indexOf(segm), 1);
+            length--;
           }
         }
-        curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe);
-      }
 
-      // прочищаем для пересечений
-      const remove = [];
-      for (let i = 0; i < length; i++) {
-        prev = i === 0 ? attr[length-1] : attr[i-1];
-        next = i === length-1 ? attr[0] : attr[i+1];
-        const crossings =  prev.sub_path.getCrossings(next.sub_path);
-        if(crossings.length){
-          if((prev.e.getDistance(crossings[0].point) < prev.profile.width * 2) ||  (next.b.getDistance(crossings[0].point) < next.profile.width * 2)) {
-            remove.push(attr[i]);
-            prev.sub_path.splitAt(crossings[0]);
-            const nloc = next.sub_path.getLocationOf(crossings[0].point);
-            next.sub_path = next.sub_path.splitAt(nloc);
-          }
+        // формируем путь
+        for (let i = 0; i < length; i++) {
+          curr = attr[i];
+          path.addSegments(curr.sub_path.segments);
+          ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
+          _attr._profiles.push(curr);
         }
-      }
-      for(const segm of remove) {
-        attr.splice(attr.indexOf(segm), 1);
-        length--;
-      }
-
-      // формируем путь
-      for (let i = 0; i < length; i++) {
-        curr = attr[i];
-        path.addSegments(curr.sub_path.segments);
-        ["anext","pb","pe"].forEach((prop) => { delete curr[prop] });
-        _attr._profiles.push(curr);
       }
     }
 
@@ -8330,17 +8340,18 @@ Object.defineProperties(paper.Path.prototype, {
      * возвращает фрагмент пути между точками
      * @param point1 {paper.Point}
      * @param point2 {paper.Point}
+     * @param [strict] {Boolean}
      * @return {paper.Path}
      */
   get_subpath: {
-      value: function get_subpath(point1, point2) {
+      value: function get_subpath(point1, point2, strict) {
         let tmp;
 
-        if(!this.length || !point1 || !point2 || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
-          tmp = this.clone(false);
+        if(!this.length || !point1 || !point2 || (!strict && point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
+          tmp = this.clone({insert: false, deep: false});
         }
-        else if(point2.is_nearest(this.firstSegment.point) && point1.is_nearest(this.lastSegment.point)){
-          tmp = this.clone(false);
+        else if(!strict && point2.is_nearest(this.firstSegment.point) && point1.is_nearest(this.lastSegment.point)){
+          tmp = this.clone({insert: false, deep: false});
           tmp.reverse();
           tmp._reversed = true;
         }
@@ -8483,18 +8494,21 @@ Object.defineProperties(paper.Path.prototype, {
      * @for Path
      * @param path {paper.Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
-     * @param elongate {Boolean|Number} - если истина, пути будут продолжены до пересечения
-     * @return other_point {paper.Point} - если указано, контролируем вектор пересечения
+     * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения
+     * @return [other_point] {paper.Point} - если указано, контролируем вектор пересечения
+     * @return [clone] {Boolean} - если указано, не удлиняем текущие пути
      */
   intersect_point: {
-      value: function intersect_point(path, point, elongate, other_point) {
+      value: function intersect_point(path, point, elongate, other_point, clone) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
 
         if(intersections.length === 1){
-          return intersections[0].point;
+          if(!point || typeof elongate !== 'number' || point.is_nearest(intersections[0].point, elongate * elongate)) {
+            return intersections[0].point;
+          }
         }
-        else if(intersections.length > 1){
+        if(intersections.length > 1){
 
           if(typeof point === 'string' && this.parent) {
             point = this.parent[point];
@@ -8528,38 +8542,45 @@ Object.defineProperties(paper.Path.prototype, {
         }
         else if(elongate){
 
+          if(!this.length || !path.length) {
+            return null;
+          }
+
+          const path1 = clone ? this.clone({insert: false, deep: false}) : this;
+          const path2 = clone ? path.clone({insert: false, deep: false}) : path;
+
           // продлеваем пути до пересечения
-          let p1 = this.getNearestPoint(point),
-            p2 = path.getNearestPoint(point),
-            p1last = this.firstSegment.point.getDistance(p1, true) > this.lastSegment.point.getDistance(p1, true),
-            p2last = path.firstSegment.point.getDistance(p2, true) > path.lastSegment.point.getDistance(p2, true),
+          let p1 = path1.getNearestPoint(point),
+            p2 = path2.getNearestPoint(point),
+            p1last = path1.firstSegment.point.getDistance(p1, true) > path1.lastSegment.point.getDistance(p1, true),
+            p2last = path2.firstSegment.point.getDistance(p2, true) > path2.lastSegment.point.getDistance(p2, true),
             tg;
 
-          if(!this.closed) {
-            tg = (p1last ? this.getTangentAt(this.length) : this.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(this.is_linear){
+          if(!path1.closed) {
+            tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
+            if(path1.is_linear){
               if(p1last) {
-                this.lastSegment.point = this.lastSegment.point.add(tg);
+                path1.lastSegment.point = path1.lastSegment.point.add(tg);
               }
               else {
-                this.firstSegment.point = this.firstSegment.point.add(tg);
+                path1.firstSegment.point = path1.firstSegment.point.add(tg);
               }
             }
           }
 
-          if(!path.closed) {
-            tg = (p2last ? path.getTangentAt(path.length) : path.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(path.is_linear){
+          if(!path2.closed) {
+            tg = (p2last ? path2.getTangentAt(path2.length) : path2.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
+            if(path2.is_linear){
               if(p2last) {
-                path.lastSegment.point = path.lastSegment.point.add(tg);
+                path2.lastSegment.point = path2.lastSegment.point.add(tg);
               }
               else {
-                path.firstSegment.point = path.firstSegment.point.add(tg);
+                path2.firstSegment.point = path2.firstSegment.point.add(tg);
               }
             }
           }
 
-          return this.intersect_point(path, point, false, other_point);
+          return path1.intersect_point(path2, point, false, other_point);
 
         }
       }
