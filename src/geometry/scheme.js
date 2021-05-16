@@ -1001,7 +1001,7 @@ class Scheme extends paper.Project {
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях
-      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save));
+      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save, attr && attr.close));
 
       // вызываем метод save_coordinates в слое соединителей
       this.l_connective.save_coordinates();

@@ -246,7 +246,7 @@ class ContourNested extends Contour {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short, save) {
+  save_coordinates(short, save, close) {
 
     if (!short) {
       // запись в таблице координат для виртуальных профилей
@@ -268,7 +268,9 @@ class ContourNested extends Contour {
       content._row._owner._owner.glasses.clear();
       content.save_coordinates(short);
 
-      save && this._ox.recalc({svg: true, silent: true});
+      save && this._ox
+        .recalc({svg: true, silent: true})
+        .then(() => !close && this.draw_visualization());
     }
   }
 

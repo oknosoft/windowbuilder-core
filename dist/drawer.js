@@ -3893,7 +3893,7 @@ class ContourNested extends Contour {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short, save) {
+  save_coordinates(short, save, close) {
 
     if (!short) {
       // запись в таблице координат для виртуальных профилей
@@ -3915,7 +3915,9 @@ class ContourNested extends Contour {
       content._row._owner._owner.glasses.clear();
       content.save_coordinates(short);
 
-      save && this._ox.recalc({svg: true, silent: true});
+      save && this._ox
+        .recalc({svg: true, silent: true})
+        .then(() => !close && this.draw_visualization());
     }
   }
 
@@ -14447,7 +14449,7 @@ class Scheme extends paper.Project {
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях
-      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save));
+      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save, attr && attr.close));
 
       // вызываем метод save_coordinates в слое соединителей
       this.l_connective.save_coordinates();
