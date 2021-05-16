@@ -357,6 +357,31 @@ class Contour extends AbstractFilling(paper.Layer) {
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '');
   }
 
+  get info() {
+    return this.presentation;
+  }
+
+  /**
+   * Перемещает слой выше-ниже по координате Z
+   * @param {('up'|'down')} direction
+   */
+  bring(direction = 'up') {
+    const {layer, project, _row} = this;
+    const contours = layer ? layer.contours : project.contours;
+    const index = contours.indexOf(this);
+    if(contours.length < 2 || (direction === 'down' && index === 0) || (direction === 'up' && index === contours.length - 1) ) {
+      return;
+    }
+    const other = direction === 'up' ? contours[index + 1] : contours[index - 1];
+    if(direction === 'up') {
+      this.insertAbove(other);
+    }
+    else {
+      this.insertBelow(other);
+    }
+    _row._owner.swap(_row, other._row);
+  }
+
   /**
    * Врезаем оповещение при активации слоя
    */
