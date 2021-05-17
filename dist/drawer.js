@@ -4925,7 +4925,7 @@ class DimensionLine extends paper.Group {
       project.deselect_all_points();
       project.getItems({class: ProfileItem})
         .forEach(({b, e, generatrix, width}) => {
-          width /= 2;
+          width = width / 2 + 1;
           if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
             generatrix.segments.forEach((segm) => segm.selected = true)
           }
