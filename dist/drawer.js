@@ -2049,12 +2049,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     if (_row) {
-      if(_ox === _row._owner._owner && !project.ox.empty()) {
-        _ox.coordinates.clear({cnstr});
-        _ox.params.clear({cnstr});
-        _ox.inserts.clear({cnstr});
+      if(!project.ox.empty()) {
+        if(_ox === _row._owner._owner) {
+          _ox.coordinates.clear({cnstr});
+          _ox.params.clear({cnstr});
+          _ox.inserts.clear({cnstr});
+        }
+        _row._owner.del(_row);
       }
-      _row._owner.del(_row);
       this._row = null;
     }
 
