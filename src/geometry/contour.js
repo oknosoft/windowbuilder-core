@@ -454,6 +454,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     // перезаполняем параметры фурнитуры
     _row.furn.refill_prm(this);
 
+    // двигаем по Z
+    const {out} = $p.enm.opening;
+    switch(_row.furn.shtulp_kind()) {
+    case 2: // пассивная
+      this.bring(this.opening === out ? 'up' : 'down');
+      break;
+    case 1: // активная
+      this.bring(this.opening === out ? 'down' : 'up');
+    }
+
     this.project.register_change(true);
 
     this.notify(this, 'furn_changed');
