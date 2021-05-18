@@ -327,17 +327,19 @@ class ProfileRays {
       const {cnn_elmnts} = parent.ox;
 
       if(b.profile && b.profile_point == 'e') {
-        const {_rays} = b.profile._attr;
+        const {_rays, _corns} = b.profile._attr;
         if(_rays) {
           _rays.clear();
           _rays.e.cnn = null;
+          _corns.length = 0;
         }
       }
       if(e.profile && e.profile_point == 'b') {
-        const {_rays} = e.profile._attr;
+        const {_rays, _corns} = e.profile._attr;
         if(_rays) {
           _rays.clear();
           _rays.b.cnn = null;
+          _corns.length = 0;
         }
       }
 
