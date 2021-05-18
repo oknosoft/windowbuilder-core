@@ -50,7 +50,7 @@ class ProductsBuilding {
      * @param elm2
      */
     function cnn_need_add_spec(cnn, elm1, elm2, point) {
-      const {short, long, xx} = $p.enm.cnn_types;
+      const {short, long, t, xx} = $p.enm.cnn_types;
       const cnn_type = cnn && cnn.cnn_type;
       // соединения крест в стык обрабатываем по координатам, остальные - по паре элементов
       if(cnn_type === xx) {
@@ -65,7 +65,7 @@ class ProductsBuilding {
         added_cnn_spec.points.push(point);
         return true;
       }
-      else if(cnn.cnn_type === long || cnn.cnn_type === short) {
+      else if(cnn.cnn_type === t || cnn.cnn_type === long || cnn.cnn_type === short) {
         return true;
       }
       else if(!cnn || !elm1 || !elm2 || added_cnn_spec[elm1] == elm2 || added_cnn_spec[elm2] == elm1) {
