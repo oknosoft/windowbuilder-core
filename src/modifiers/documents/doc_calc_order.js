@@ -166,7 +166,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save() {
 
-    const {msg, pricing, utils: {blank}, cat, enm: {
+    const {msg, pricing, utils: {blank}, cat, job_prm, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -236,26 +236,28 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
-    this.production.forEach(({amount, amount_internal, characteristic}) => {
-      doc_amount += amount;
-      internal += amount_internal;
-      characteristic.specification.forEach(({nom, elm}) => {
-        if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
-          if(!errors.has(characteristic)){
-            errors.set(characteristic, new Map());
+    if(!job_prm.debug) {
+      this.production.forEach(({amount, amount_internal, characteristic}) => {
+        doc_amount += amount;
+        internal += amount_internal;
+        characteristic.specification.forEach(({nom, elm}) => {
+          if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
+            if(!errors.has(characteristic)){
+              errors.set(characteristic, new Map());
+            }
+            if(!errors.has(nom.elm_type)){
+              errors.set(nom.elm_type, new Set());
+            }
+            // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
+            if(!errors.get(characteristic).has(nom)){
+              errors.get(characteristic).set(nom, new Set());
+            }
+            errors.get(characteristic).get(nom).add(elm);
+            errors.get(nom.elm_type).add(nom);
           }
-          if(!errors.has(nom.elm_type)){
-            errors.set(nom.elm_type, new Set());
-          }
-          // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
-          if(!errors.get(characteristic).has(nom)){
-            errors.get(characteristic).set(nom, new Set());
-          }
-          errors.get(characteristic).get(nom).add(elm);
-          errors.get(nom.elm_type).add(nom);
-        }
+        });
       });
-    });
+    }
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);

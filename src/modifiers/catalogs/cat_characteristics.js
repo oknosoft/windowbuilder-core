@@ -227,7 +227,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       if(typeof origin == 'number') {
         origin = this.cnn_elmnts.get(origin - 1).cnn;
       }
-      if(origin.is_new()) {
+      if(!origin || origin.is_new()) {
         return $p.msg.show_msg({
           type: 'alert-warning',
           text: `Пустая ссылка на настройки в строке №${row_id + 1}`,
