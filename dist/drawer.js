@@ -12,9 +12,14 @@ module.exports = function({$p, paper}) {
  */
 const consts = {
 
-	tune_paper(settings) {
+	tune_paper({settings, eve}) {
 
-	  const builder = $p.job_prm.builder || {};
+    const {job_prm} = $p;
+    if(job_prm.debug) {
+      eve.setMaxListeners(200);
+    }
+
+	  const builder = job_prm.builder || {};
 
     /* Размер визуализации узла пути */
 		if(builder.handle_size) {
@@ -85,7 +90,7 @@ class EditorInvisible extends paper.PaperScope {
      */
     this.eve = new (Object.getPrototypeOf($p.md.constructor))();
 
-    consts.tune_paper(this.settings);
+    consts.tune_paper(this);
   }
 
   get consts() {
@@ -19335,6 +19340,10 @@ $p.CatElm_visualization.prototype.__define({
    */
 	draw: {
 		value(elm, layer, offset) {
+
+      if(!layer.isInserted()) {
+        return;
+      }
 
 		  const {CompoundPath, PointText, Path, constructor} = elm.project._scope;
 

@@ -20,6 +20,10 @@ $p.CatElm_visualization.prototype.__define({
 	draw: {
 		value(elm, layer, offset) {
 
+      if(!layer.isInserted()) {
+        return;
+      }
+
 		  const {CompoundPath, PointText, Path, constructor} = elm.project._scope;
 
 			let subpath;
