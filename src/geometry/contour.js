@@ -695,7 +695,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         if (binded.has(glcontour)) {
           continue;
         }
-        if (this.calck_rating(glcontour, glass) > 2) {
+        if ((glass_contours.length === 1 && !binded.size) || this.calck_rating(glcontour, glass) > 2) {
           glass.path = glcontour;
           glass.visible = true;
           if (glass instanceof Filling) {

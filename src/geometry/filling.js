@@ -39,10 +39,18 @@ class Filling extends AbstractFilling(BuilderElement) {
     //this._skeleton = new Skeleton(this);
 
     const _row = attr.row;
-    const {_attr, project} = this;
-    const h = project.bounds.height + project.bounds.y;
+    const {_attr, project, layer} = this;
+    const {bounds: pbounds} = project;
 
     if(_row.path_data){
+      if(layer instanceof ContourNestedContent) {
+        const {bounds: lbounds} = layer;
+        const x = lbounds.x + pbounds.x;
+        const y = lbounds.y + pbounds.y;
+        const path = new paper.Path({pathData: _row.path_data, insert: false});
+        path.translate([x, y]);
+        _row.path_data = path.pathData;
+      }
       _attr.path = new paper.Path(_row.path_data);
     }
 
@@ -51,6 +59,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.path = attr.path;
     }
     else{
+      const h = pbounds.height + pbounds.y;
       _attr.path = new paper.Path([
         [_row.x1, h - _row.y1],
         [_row.x1, h - _row.y2],
@@ -125,7 +134,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, profiles, bounds, imposts, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, imposts, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -149,8 +158,20 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.y1 = (h - bounds.bottomLeft.y).round(3);
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.path_data = this.path.pathData;
     _row.s = this.area;
+    if(layer instanceof ContourNestedContent) {
+      const {lbounds} = layer.layer;
+      const path = this.path.clone({insert: false});
+      path.translate([-lbounds.x, -lbounds.y]);
+      _row.path_data = path.pathData;
+      _row.x1 -= lbounds.x;
+      _row.y1 -= lbounds.y;
+      _row.x2 -= lbounds.x;
+      _row.y2 -= lbounds.y;
+    }
+    else {
+      _row.path_data = this.path.pathData;
+    }
 
     // получаем пути граней профиля
     for(let i=0; i<length; i++ ){
