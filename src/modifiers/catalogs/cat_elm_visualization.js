@@ -29,11 +29,15 @@ $p.CatElm_visualization.prototype.__define({
 				const attr = JSON.parse(this.svg_path);
 
         if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
+          const {rays} = elm;
+          if(!rays) {
+            return;
+          }
           if(attr.method == 'subpath_outer') {
-            subpath = elm.rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
+            subpath = rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
           }
           else if(attr.method == 'subpath_inner') {
-            subpath = elm.rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
+            subpath = rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
           }
           else if(attr.method == 'subpath_median') {
             if(elm.is_linear()) {
@@ -41,9 +45,9 @@ $p.CatElm_visualization.prototype.__define({
                 .equidistant(attr.offset || 0);
             }
             else {
-              const inner = elm.rays.inner.get_subpath(elm.corns(3), elm.corns(4));
+              const inner = rays.inner.get_subpath(elm.corns(3), elm.corns(4));
               inner.reverse();
-              const outer = elm.rays.outer.get_subpath(elm.corns(1), elm.corns(2));
+              const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
               const li = inner.length / 50;
               const lo = outer.length / 50;
               subpath = new Path();

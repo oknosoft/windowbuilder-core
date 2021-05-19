@@ -137,6 +137,7 @@ class ContourNested extends Contour {
           }
 
           // перезаполняем сырыми данными временного изделия
+          _ox.specification.clear();
           const map = new Map();
           const {_row} = content;
           const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max');
