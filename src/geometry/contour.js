@@ -436,7 +436,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   set furn(v) {
-    const {_row} = this;
+    const {_row, profiles} = this;
     if (_row.furn == v) {
       return;
     }
@@ -462,6 +462,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       break;
     case 1: // активная
       this.bring(this.opening === out ? 'down' : 'up');
+    }
+
+    // пересчитываем вставки и соединения, если они зависят от параметров фурнитуры
+    for(const {_attr} of profiles) {
+      _attr._rays && _attr._rays.clear('with_neighbor');
     }
 
     this.project.register_change(true);
