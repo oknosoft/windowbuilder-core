@@ -18,7 +18,7 @@ $p.CatElm_visualization.prototype.__define({
    * @param offset {Number|[Number,Number]}
    */
 	draw: {
-		value(elm, layer, offset) {
+		value(elm, layer, offset, offset0) {
 
       if(!layer.isInserted()) {
         return;
@@ -65,7 +65,20 @@ $p.CatElm_visualization.prototype.__define({
             }
           }
           else {
-            subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            if(this.mode === 3) {
+              const outer = offset0 < 0;
+              attr.offset -= -elm.d1 + elm.width;
+              if(outer) {
+                offset0 = -offset0;
+                attr.offset = -(attr.offset || 0);
+              }
+              const b = elm.generatrix.getPointAt(offset0 || 0);
+              const e = elm.generatrix.getPointAt((offset0 + offset) || elm.generatrix.length);
+              subpath = elm.generatrix.get_subpath(b, e).equidistant(attr.offset || 0);
+            }
+            else {
+              subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            }
           }
           subpath.parent = layer._by_spec;
           subpath.strokeWidth = attr.strokeWidth || 4;

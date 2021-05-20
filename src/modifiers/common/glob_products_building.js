@@ -159,7 +159,19 @@ class ProductsBuilding {
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
+
+          // визуализация svg-dx
+          if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
+            const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
+            const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
+            row_spec.width = generatrix.getOffsetOf(pt) / 1000;
+            if(outer) {
+              row_spec.alp1 = -1;
+            }
+          }
+          else {
+            calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
+          }
         }
 
       });

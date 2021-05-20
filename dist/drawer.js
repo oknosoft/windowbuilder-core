@@ -1438,13 +1438,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     _row.furn.refill_prm(this);
 
     // двигаем по Z
-    const {out} = $p.enm.opening;
     switch(_row.furn.shtulp_kind()) {
     case 2: // пассивная
-      this.bring(this.opening === out ? 'up' : 'down');
+      this.bring('down');
       break;
     case 1: // активная
-      this.bring(this.opening === out ? 'down' : 'up');
+      this.bring('up');
     }
 
     // пересчитываем вставки и соединения, если они зависят от параметров фурнитуры
@@ -2765,7 +2764,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     function draw (elm) {
       if (this.elm === elm.elm && elm.visible) {
-        this.nom.visualization.draw(elm, l_visualization, this.len * 1000);
+        this.nom.visualization.draw(elm, l_visualization, this.len * 1000, this.width * 1000 * (this.alp1 || 1));
         return true;
       }
     };
@@ -16705,7 +16704,19 @@ class ProductsBuilding {
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
+
+          // визуализация svg-dx
+          if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
+            const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
+            const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
+            row_spec.width = generatrix.getOffsetOf(pt) / 1000;
+            if(outer) {
+              row_spec.alp1 = -1;
+            }
+          }
+          else {
+            calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
+          }
         }
 
       });
@@ -19344,7 +19355,7 @@ $p.CatElm_visualization.prototype.__define({
    * @param offset {Number|[Number,Number]}
    */
 	draw: {
-		value(elm, layer, offset) {
+		value(elm, layer, offset, offset0) {
 
       if(!layer.isInserted()) {
         return;
@@ -19391,7 +19402,20 @@ $p.CatElm_visualization.prototype.__define({
             }
           }
           else {
-            subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            if(this.mode === 3) {
+              const outer = offset0 < 0;
+              attr.offset -= -elm.d1 + elm.width;
+              if(outer) {
+                offset0 = -offset0;
+                attr.offset = -(attr.offset || 0);
+              }
+              const b = elm.generatrix.getPointAt(offset0 || 0);
+              const e = elm.generatrix.getPointAt((offset0 + offset) || elm.generatrix.length);
+              subpath = elm.generatrix.get_subpath(b, e).equidistant(attr.offset || 0);
+            }
+            else {
+              subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            }
           }
           subpath.parent = layer._by_spec;
           subpath.strokeWidth = attr.strokeWidth || 4;

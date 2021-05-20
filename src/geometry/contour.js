@@ -455,13 +455,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     _row.furn.refill_prm(this);
 
     // двигаем по Z
-    const {out} = $p.enm.opening;
     switch(_row.furn.shtulp_kind()) {
     case 2: // пассивная
-      this.bring(this.opening === out ? 'up' : 'down');
+      this.bring('down');
       break;
     case 1: // активная
-      this.bring(this.opening === out ? 'down' : 'up');
+      this.bring('up');
     }
 
     // пересчитываем вставки и соединения, если они зависят от параметров фурнитуры
@@ -1782,7 +1781,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     function draw (elm) {
       if (this.elm === elm.elm && elm.visible) {
-        this.nom.visualization.draw(elm, l_visualization, this.len * 1000);
+        this.nom.visualization.draw(elm, l_visualization, this.len * 1000, this.width * 1000 * (this.alp1 || 1));
         return true;
       }
     };
