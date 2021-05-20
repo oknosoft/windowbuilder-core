@@ -20860,7 +20860,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 else {
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
-                calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
               }
               row_spec = null;
             });
@@ -20917,7 +20917,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 // TODO: непонятно, надо ли здесь учитывать fqty
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
-                calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
               }
               row_spec = null;
             }
@@ -20970,7 +20970,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(3);
-              calc_count_area_mass(row_spec, spec, _row);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row);
 
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
@@ -21011,7 +21011,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);
+          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
         }
       });
 
