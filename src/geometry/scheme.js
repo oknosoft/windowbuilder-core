@@ -907,14 +907,46 @@ class Scheme extends paper.Project {
 
     const other = [];
     const layers = [];
-    const profiles = new Set;
-
+    const profiles = new Set();
+    const selected = new Set();
+    const nearests = new Map();
     const {auto_align, _dp} = this;
 
+    // добавляем в selected вложенные створки, совпадающие по узлам с рамами
     for (const item of this.selectedItems) {
+      const {parent} = item;
+      if(item instanceof paper.Path && parent instanceof GeneratrixElement) {
+        selected.add(item);
+        if(all_points === false) {
+          continue;
+        }
+        if(!nearests.has(parent)) {
+          nearests.set(parent, parent.joined_nearests());
+        }
+        for(const {generatrix} of nearests.get(parent)) {
+          let check_selected;
+          item.segments.forEach((segm) => {
+            if(segm.selected) {
+              check_selected = true;
+              generatrix.segments.forEach((gs) => {
+                if(gs.point.is_nearest(segm.point)) {
+                  gs.selected = true;
+                  selected.add(generatrix);
+                }
+              });
+            }
+          });
+          if(!check_selected) {
+            selected.add(generatrix);
+          }
+        }
+      }
+    }
+
+    for (const item of selected) {
       const {parent, layer} = item;
 
-      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !profiles.has(parent)) {
+      if(!profiles.has(parent)) {
 
         profiles.add(parent);
 
@@ -966,7 +998,6 @@ class Scheme extends paper.Project {
     }
     // иначе перерисовываем контуры
     else if(!this._attr._from_service) {
-      //setTimeout(() => this.contours.forEach(l => l.redraw()), 70);
       this.register_change(true);
     }
 

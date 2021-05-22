@@ -418,7 +418,7 @@ class Pricing {
 
     const {calc_order_row, price_type, first_cost} = prm;
     const {marginality_in_spec, not_update} = $p.job_prm.pricing;
-    const {rounding} = calc_order_row._owner._owner;
+    const {rounding, manager} = calc_order_row._owner._owner;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
     if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
@@ -449,7 +449,7 @@ class Pricing {
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
     let extra_charge = $p.wsql.get_user_param('surcharge_internal', 'number');
     // если пересчет выполняется менеджером, используем наценку по умолчанию
-    if(!$p.current_user.partners_uids.length || !extra_charge) {
+    if(!manager.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;
     }
 

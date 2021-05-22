@@ -128,6 +128,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     const {acl_objs} = current_user;
 
+    //Менеджер
+    this.manager = current_user;
+
     //Организация
     acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
       this.organization = row.acl_obj;
@@ -151,9 +154,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     //Договор
     this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
-
-    //Менеджер
-    this.manager = current_user;
 
     //СостояниеТранспорта
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;
@@ -893,7 +893,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.planning.clear();
 
     // получаем url сервиса
-    const {wsql, aes, current_user: {suffix}, msg, utils} = $p;
+    const {wsql, aes, adapters: {pouch}, msg, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
 
     // сериализуем документ и характеристики
@@ -909,17 +909,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       // выполняем запрос к сервису
       .then(() => {
-        const headers = new Headers();
-        headers.append('Authorization', 'Basic ' + btoa(unescape(encodeURIComponent(
-          wsql.get_user_param('user_name') + ':' + aes.Ctr.decrypt(wsql.get_user_param('user_pwd'))))));
-        if(suffix){
-          headers.append('suffix', suffix);
-        }
-        fetch(url, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(post_data)
-        })
+        pouch.fetch(url, {method: 'POST', body: JSON.stringify(post_data)})
           .then(response => response.json())
           // заполняем табчасть
           .then(json => {
@@ -1332,13 +1322,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * Устанавливает подразделение по умолчанию
    */
   static set_department() {
-    const department = $p.wsql.get_user_param('current_department');
+    const {wsql, cat} = $p
+    const department = wsql.get_user_param('current_department');
     if(department) {
       this.department = department;
     }
-    const {current_user, cat} = $p;
-    if(current_user && this.department.empty() || this.department.is_new()) {
-      current_user.acl_objs && current_user.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
+    if(this.department.empty() || this.department.is_new()) {
+      let {manager} = this;
+      if(manager.empty()) {
+        manager = $p.current_user;
+      }
+      manager && manager.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
         if(this.department != row.acl_obj) {
           this.department = row.acl_obj;
         }
@@ -1361,8 +1355,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm, current_user} = $p;
+    const {rounding, _slave_recalc, manager} = _owner._owner;
+    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
     if(rfield) {
@@ -1440,7 +1434,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         let extra_charge = wsql.get_user_param('surcharge_internal', 'number');
 
         // если пересчет выполняется менеджером, используем наценку по умолчанию
-        if(!current_user || !current_user.partners_uids.length || !extra_charge) {
+        if(!manager.partners_uids.length || !extra_charge) {
           pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
