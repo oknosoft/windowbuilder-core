@@ -43,11 +43,11 @@ class ContourNestedContent extends Contour {
     }
 
     for(const proto of contour.glasses(false, true)) {
-      const generatrix = proto.generatrix.clone({insert: false});
-      generatrix.translate(delta);
+      const path = proto.generatrix.clone({insert: false});
+      path.translate(delta);
       new Filling({
         parent: this,
-        generatrix,
+        path,
         proto: {inset: proto.inset, clr: proto.clr},
         elm: map.get(proto.elm),
       });
