@@ -1344,6 +1344,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.presentation;
   }
 
+  get key() {
+    return this.cnstr.toFixed();
+  }
+
   /**
    * Перемещает слой выше-ниже по координате Z
    * @param {('up'|'down')} direction
@@ -4068,6 +4072,10 @@ class ContourNestedContent extends Contour {
         sub.load_stamp({contour: proto, delta, map})
       };
     }
+  }
+
+  get key() {
+    return `${this.layer.key}-${this.cnstr}`;
   }
 
   get _ox() {

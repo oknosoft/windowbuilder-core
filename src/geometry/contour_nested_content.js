@@ -62,6 +62,10 @@ class ContourNestedContent extends Contour {
     }
   }
 
+  get key() {
+    return `${this.layer.key}-${this.cnstr}`;
+  }
+
   get _ox() {
     return this.layer._ox;
   }

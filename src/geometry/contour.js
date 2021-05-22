@@ -361,6 +361,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.presentation;
   }
 
+  get key() {
+    return this.cnstr.toFixed();
+  }
+
   /**
    * Перемещает слой выше-ниже по координате Z
    * @param {('up'|'down')} direction
