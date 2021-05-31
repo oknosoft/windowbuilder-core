@@ -17924,6 +17924,19 @@ $p.spec_building = new SpecBuilding($p);
 
 (function(_mgr){
 
+  const {
+    УгловоеДиагональное: ad,
+    УгловоеКВертикальной: av,
+    УгловоеКГоризонтальной: ah,
+    Длинное: long,
+    Короткое: short,
+    ТОбразное: t,
+    Наложение: ii,
+    НезамкнутыйКонтур: i,
+    КрестПересечение: xt,
+    КрестВСтык: xx,
+  } = _mgr;
+
 
 	/**
 	 * Короткие псевдонимы перечисления "Типы соединений"
@@ -17932,52 +17945,52 @@ $p.spec_building = new SpecBuilding($p);
 	Object.defineProperties(_mgr, {
 	  ad: {
 	    get() {
-        return this.УгловоеДиагональное;
+        return ad;
       }
     },
     av: {
       get() {
-        return this.УгловоеКВертикальной;
-      }
-    },
-    long: {
-      get() {
-        return this.Длинное;
+        return av;
       }
     },
     ah: {
       get() {
-        return this.УгловоеКГоризонтальной;
+        return ah;
+      }
+    },
+    long: {
+      get() {
+        return long;
       }
     },
     short: {
       get() {
-        return this.Короткое;
+        return short;
       }
     },
     t: {
       get() {
-        return this.ТОбразное;
+        return t;
       }
     },
     ii: {
       get() {
-        return this.Наложение;
+        return ii;
       }
     },
     i: {
       get() {
-        return this.НезамкнутыйКонтур;
+        return i;
       }
     },
     xt: {
       get() {
-        return this.КрестПересечение;
+        return xt;
       }
     },
     xx: {
       get() {
-        return this.КрестВСтык;
+        return xx;
       }
     },
 
@@ -17987,16 +18000,10 @@ $p.spec_building = new SpecBuilding($p);
      */
     acn: {
       value: {
-        ii: [_mgr.Наложение],
-        i: [_mgr.НезамкнутыйКонтур],
-        a: [
-          _mgr.УгловоеДиагональное,
-          _mgr.УгловоеКВертикальной,
-          _mgr.УгловоеКГоризонтальной,
-          _mgr.ТОбразное,
-          _mgr.КрестВСтык,
-        ],
-        t: [_mgr.ТОбразное, _mgr.КрестВСтык],
+        ii: [ii],
+        i: [i],
+        a: [av, ad, ah, t, xx, long, short],
+        t: [t, xx],
       }
     },
 
