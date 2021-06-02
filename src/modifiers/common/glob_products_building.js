@@ -818,6 +818,8 @@ class ProductsBuilding {
         if(attr.save) {
           ox.calc_order_row.s = ox.s;
         }
+        // взводим в заказе признак изменённости продукции, чтобы пересчитать перед записью заказа вставки в заказ
+        ox.calc_order._data._sub_recalc = true;
       }
 
       // информируем мир о завершении пересчета

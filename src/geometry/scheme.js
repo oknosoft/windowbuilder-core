@@ -915,7 +915,7 @@ class Scheme extends paper.Project {
     // добавляем в selected вложенные створки, совпадающие по узлам с рамами
     for (const item of this.selectedItems) {
       const {parent} = item;
-      if(item instanceof paper.Path && parent instanceof GeneratrixElement && ! (item._parent instanceof Sectional)) {
+      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !(parent instanceof Sectional)) {
         selected.add(item);
         if(all_points === false) {
           continue;
@@ -923,7 +923,7 @@ class Scheme extends paper.Project {
         if(!nearests.has(parent)) {
           nearests.set(parent, parent.joined_nearests());
         }
-        for(const {generatrix} of nearests.get(parent)) {
+        for (const {generatrix} of nearests.get(parent)) {
           let check_selected;
           item.segments.forEach((segm) => {
             if(segm.selected) {
@@ -937,13 +937,13 @@ class Scheme extends paper.Project {
             }
           });
           if(!check_selected) {
-          //  item.parent.generatrix
+            //  item.parent.generatrix
             selected.add(generatrix);
           }
         }
-      } else if ( item._parent instanceof Sectional) {
-
-        selected.add(item.parent.generatrix);
+      }
+      else if(parent instanceof Sectional) {
+        selected.add(parent.generatrix);
       }
     }
 

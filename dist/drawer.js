@@ -14416,7 +14416,7 @@ class Scheme extends paper.Project {
     // добавляем в selected вложенные створки, совпадающие по узлам с рамами
     for (const item of this.selectedItems) {
       const {parent} = item;
-      if(item instanceof paper.Path && parent instanceof GeneratrixElement) {
+      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !(parent instanceof Sectional)) {
         selected.add(item);
         if(all_points === false) {
           continue;
@@ -14424,7 +14424,7 @@ class Scheme extends paper.Project {
         if(!nearests.has(parent)) {
           nearests.set(parent, parent.joined_nearests());
         }
-        for(const {generatrix} of nearests.get(parent)) {
+        for (const {generatrix} of nearests.get(parent)) {
           let check_selected;
           item.segments.forEach((segm) => {
             if(segm.selected) {
@@ -14438,9 +14438,13 @@ class Scheme extends paper.Project {
             }
           });
           if(!check_selected) {
+            //  item.parent.generatrix
             selected.add(generatrix);
           }
         }
+      }
+      else if(parent instanceof Sectional) {
+        selected.add(parent.generatrix);
       }
     }
 
@@ -17402,6 +17406,8 @@ class ProductsBuilding {
         if(attr.save) {
           ox.calc_order_row.s = ox.s;
         }
+        // взводим в заказе признак изменённости продукции, чтобы пересчитать перед записью заказа вставки в заказ
+        ox.calc_order._data._sub_recalc = true;
       }
 
       // информируем мир о завершении пересчета
@@ -21204,18 +21210,27 @@ $p.cat.insert_bind.__define({
 
   /**
    * Возвращает массив допвставок с привязками к изделию или слою
+   * @param ox {CatCharacteristics}
+   * @param [order] {Boolean}
+   * @return {Array}
    */
   insets: {
-    value(ox) {
+    value(ox, order = false) {
       const {sys, owner} = ox;
       const res = [];
+      const {Заказ} = $p.enm.inserts_types;
       this.forEach((o) => {
         o.production.forEach((row) => {
           const {nom} = row;
-          if(sys._hierarchy(nom) || owner._hierarchy(nom)){
+          if((sys && sys._hierarchy(nom)) || (owner && owner._hierarchy(nom))){
             o.inserts.forEach(({inset, elm_type}) => {
               if(!res.some((irow) => irow.inset == inset &&  irow.elm_type == elm_type)){
-                res.push({inset, elm_type});
+                if(!order && inset.insert_type !== Заказ) {
+                  res.push({inset, elm_type});
+                }
+                else if(order && inset.insert_type === Заказ) {
+                  res.push({inset, elm_type});
+                }
               }
             });
           }
@@ -22672,7 +22687,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     if(this.department.empty() || this.department.is_new()) {
       let {manager} = this;
-      if(manager.empty()) {
+      if(!manager || manager.empty()) {
         manager = $p.current_user;
       }
       manager && manager.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
