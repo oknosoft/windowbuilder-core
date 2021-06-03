@@ -698,7 +698,7 @@
       }
 
       const {insert_type} = this;
-      const {Профиль, Заполнение} = enm.inserts_types;
+      const {inserts_types: {Профиль, Заполнение}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
 
       // для заполнений, можно переопределить состав верхнего уровня
@@ -753,6 +753,9 @@
             fakerow._origin = row.nom;
             if(fakerow.clr.empty()){
               fakerow.clr = row.clr;
+            }
+            if(fakerow.angle_calc_method === Основной) {
+              fakerow.angle_calc_method = row.angle_calc_method;
             }
             res.push(fakerow);
           });
