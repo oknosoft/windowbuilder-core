@@ -1071,6 +1071,9 @@ class Scheme extends paper.Project {
       const space = isNode ? 160 : 320;
       const min = 900;
       let {width, height, center} = bounds;
+      if(!width || !height) {
+        return;
+      }
       if (width < min) {
         width = min;
       }
