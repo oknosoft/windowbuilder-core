@@ -148,7 +148,7 @@ class CchPredefined_elmnts extends CatObj{
   get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
   set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}
   get elmnts(){return this._getter_ts('elmnts')}
-  set elmnts(v){this._setter_ts('elmnts',v)}}
+  set elmnts(v){this._setter_ts('elmnts',v)}}
 $p.CchPredefined_elmnts = CchPredefined_elmnts;
 class CchPredefined_elmntsElmntsRow extends TabularSectionRow{
 get value(){return this._getter('value')}
@@ -732,7 +732,7 @@ set applying(v){this._setter_ts('applying',v)}
         });
       }
     });
-  }}
+  }}
 $p.CchProperties = CchProperties;
 class CchPropertiesApplyingRow extends TabularSectionRow{
 get elm_type(){return this._getter('elm_type')}
@@ -875,7 +875,7 @@ set values(v){this._setter_ts('values',v)}
       }
     });
     return values;
-  }}
+  }}
 $p.CatParams_links = CatParams_links;
 class CatParams_linksLeadingsRow extends TabularSectionRow{
 get key(){return this._getter('key')}
@@ -1275,7 +1275,7 @@ set params(v){this._setter_ts('params',v)}
     }
     return _data._template;
   }
-}
+}
 $p.CatFormulas = CatFormulas;
 class CatFormulasManager extends CatManager {
 
@@ -2158,7 +2158,7 @@ set demand(v){this._setter_ts('demand',v)}
   get type() {
     return {is_ref: true, types: ["cat.characteristics"]};
   }
-}
+}
 $p.CatNom = CatNom;
 class CatNomDemandRow extends TabularSectionRow{
 get kind(){return this._getter('kind')}
@@ -2803,7 +2803,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     }
     return checks;
   }
-}
+}
 $p.CatProduction_params = CatProduction_params;
 class CatProduction_paramsElmntsRow extends TabularSectionRow{
 get by_default(){return this._getter('by_default')}
@@ -3159,7 +3159,7 @@ set priorities(v){this._setter_ts('priorities',v)}
 
     return res;
   }
-}
+}
 $p.CatCnns = CatCnns;
 class CatCnnsSpecificationRow extends TabularSectionRow{
 get elm(){return this._getter('elm')}
@@ -3758,7 +3758,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       }
     }
     return Array.from(_data.clrs);
-  }}
+  }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{
 get price_group(){return this._getter('price_group')}
@@ -4664,7 +4664,7 @@ set params(v){this._setter_ts('params',v)}
       }
     }
     return _data[key];
-  }}
+  }}
 $p.CatHttp_apis = CatHttp_apis;
 class CatHttp_apisNomRow extends TabularSectionRow{
 get identifier(){return this._getter('identifier')}
