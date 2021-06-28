@@ -757,6 +757,9 @@
             if(fakerow.angle_calc_method === Основной) {
               fakerow.angle_calc_method = row.angle_calc_method;
             }
+            if(!fakerow.sz) {
+              fakerow.sz = row.sz;
+            }
             res.push(fakerow);
           });
         }
