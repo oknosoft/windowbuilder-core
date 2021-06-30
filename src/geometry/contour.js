@@ -10,7 +10,6 @@
  * @submodule contour
  */
 
-/* global paper, $p */
 
 /**
  * ### Сегмент заполнения
@@ -248,7 +247,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr = {};
 
     // узлы и рёбра текущего слоя
-    //this._skeleton = new Skeleton(this);
+    this._skeleton = new Skeleton(this);
 
     const {project} = this;
 
@@ -1289,10 +1288,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-/**
- * Рисует ошибки соединений
- */
-
+  /**
+   * Рисует ошибки соединений
+   */
   draw_cnn_errors() {
 
     const {l_visualization} = this;
