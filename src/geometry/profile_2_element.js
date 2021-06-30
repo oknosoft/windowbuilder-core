@@ -39,7 +39,7 @@ class Profile extends ProfileItem {
 
   constructor(attr) {
 
-    const fromCoordinates = !!attr.row;
+    const fromCoordinates = attr.row && attr.row.elm;
 
     super(attr);
 
@@ -51,11 +51,18 @@ class Profile extends ProfileItem {
 
       // ищем и добавляем доборные профили
       if(fromCoordinates){
-        const {cnstr, elm} = attr.row;
-        ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+        const {cnstr, elm, _owner} = attr.row;
+        const {elm_types} = $p.enm;
+        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
+          if(row.elm_type === elm_types.Добор) {
+            new ProfileAddl({row, parent: this});
+          }
+          else if(row.elm_type === elm_types.Примыкание) {
+            new ProfileAdjoining({row, parent: this});
+          }
+        });
       }
     }
-
   }
 
   /**
@@ -101,20 +108,21 @@ class Profile extends ProfileItem {
    */
   get pos() {
     const by_side = this.layer.profiles_by_side();
+    const {positions} = $p.enm;
     if(by_side.top == this) {
-      return $p.enm.positions.Верх;
+      return positions.Верх;
     }
     if(by_side.bottom == this) {
-      return $p.enm.positions.Низ;
+      return positions.Низ;
     }
     if(by_side.left == this) {
-      return $p.enm.positions.Лев;
+      return positions.Лев;
     }
     if(by_side.right == this) {
-      return $p.enm.positions.Прав;
+      return positions.Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return $p.enm.positions.Центр;
+    return positions.Центр;
   }
 
   /**
@@ -332,66 +340,53 @@ class Profile extends ProfileItem {
       point = this[node];
     }
 
-    let ok;
-
     // Если привязка не нарушена, возвращаем предыдущее значение
     if(profile && profile.children.length) {
       if(!project.has_changes()) {
-        ok = true;
+        return res;
       }
       if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
-        ok = true;
+        return res;
       }
     }
 
-    if(!ok) {
-      // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
-      res.clear();
-      if(parent) {
-        const {allow_open_cnn} = project._dp.sys;
-        const ares = [];
+    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
+    res.clear();
+    if(parent) {
+      const {allow_open_cnn} = project._dp.sys;
+      const ares = [];
 
-        for(const profile of parent.profiles) {
-          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
-            ares.push({
-              profile_point: res.profile_point,
-              profile: profile,
-              cnn_types: res.cnn_types,
-              point: res.point
-            });
-            res.clear();
-          }
+      for(const profile of parent.profiles) {
+        if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
+          ares.push({
+            profile_point: res.profile_point,
+            profile: profile,
+            cnn_types: res.cnn_types,
+            point: res.point
+          });
+          res.clear();
         }
+      }
 
-        if(ares.length === 1) {
+      if(ares.length === 1) {
+        res._mixin(ares[0]);
+      }
+      // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
+      else if(ares.length >= 2) {
+        if(this.max_right_angle(ares)) {
           res._mixin(ares[0]);
-        }
-        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
-        else if(ares.length >= 2) {
-          if(this.max_right_angle(ares)) {
-            res._mixin(ares[0]);
-            // если установленное ранее соединение проходит по типу, нового не ищем
-            if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
-              res.cnn = cnn;
-            }
+          // если установленное ранее соединение проходит по типу, нового не ищем
+          if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
+            res.cnn = cnn;
           }
-          // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
-          else {
-            res.clear();
-          }
-          res.is_cut = true;
         }
+        // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
+        else {
+          res.clear();
+        }
+        res.is_cut = true;
       }
     }
-
-    if(!res.cnn) {
-      res.cnn = $p.cat.cnns.elm_cnn(this, res.profile, res.cnn_types);
-    }
-
-    if(!res.point) {
-      res.point = point;
-    }
-
 
     return res;
   }
@@ -412,6 +407,17 @@ class Profile extends ProfileItem {
       return _rays && _rays.e.profile;
     }
     return _rays && (_rays.b.profile || _rays.e.profile);
+  }
+
+  /**
+   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param, with_neighbor) {
+    const {inset, _attr: {_rays}} = this;
+    if(_rays && inset.is_depend_of(param)) {
+      _rays.clear(with_neighbor ? 'with_neighbor' : true);
+    }
   }
 }
 

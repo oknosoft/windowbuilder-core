@@ -12,9 +12,14 @@
  */
 const consts = {
 
-	tune_paper(settings) {
+	tune_paper({settings, eve}) {
 
-	  const builder = $p.job_prm.builder || {};
+    const {job_prm} = $p;
+    if(job_prm.debug) {
+      eve.setMaxListeners(200);
+    }
+
+	  const builder = job_prm.builder || {};
 
     /* Размер визуализации узла пути */
 		if(builder.handle_size) {

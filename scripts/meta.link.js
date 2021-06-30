@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const md5File = require('md5-file');
 const localNodeModules = path.resolve(__dirname, '../node_modules');
-const remoteNodeModules = 'D:\\WORK\\0KNOSOFT\\UniServer\\www\\builder2\\git-osde\\packages';
+const remoteNodeModules = '..\\metadata\\packages';
 const {dependencies} = require(path.resolve(__dirname, '../package.json'));
 const libs = Object.keys(dependencies).filter(v => /^metadata-/.test(v));
 

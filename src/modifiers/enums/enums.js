@@ -106,7 +106,13 @@
 			get() {
 				return this.ЦентрВертикаль;
 			}
-		}
+		},
+
+    any: {
+      get() {
+        return this.Любое;
+      }
+    }
 	});
 
 

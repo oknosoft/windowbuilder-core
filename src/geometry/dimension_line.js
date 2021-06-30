@@ -96,19 +96,62 @@ class DimensionLine extends paper.Group {
     return $p.dp.builder_size;
   }
 
+  /**
+   *
+   * @return {boolean}
+   */
+  is_disabled() {
+    const {project, layer, _attr: {elm1, elm2}} = this;
+    if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
+      return true;
+    }
+    if(elm1 instanceof ProfileParent && elm2 instanceof ProfileParent) {
+      return true;
+    }
+    return false;
+  }
+
   _mouseenter() {
-    this.project._scope.canvas_cursor('cursor-arrow-ruler');
+    this.project._scope.canvas_cursor(`cursor-arrow-ruler${this.is_disabled() ? '-dis' : ''}`);
   }
 
   _click(event) {
     event.stop();
   }
 
+  correct_move_name({event, p1, p2}) {
+    const {pos, _attr: {elm1, elm2}} = this;
+    const e1 = elm1 instanceof ProfileParent;
+    const e2 = elm2 instanceof ProfileParent;
+    if(!e1 && !e2) {
+      return;
+    }
+
+    if(pos == 'top' || pos == 'bottom') {
+      const dir = p1.x < p2.x;
+      if(event.name == 'left' && dir && e1) {
+        event.name = 'right';
+      }
+      if(event.name == 'right' && dir && e2) {
+        event.name = 'left';
+      }
+    }
+    else {
+      const dir = p1.y > p2.y;
+      if(event.name == 'bottom' && dir && e1) {
+        event.name = 'top';
+      }
+      if(event.name == 'top' && dir && e2) {
+        event.name = 'bottom';
+      }
+    }
+  }
+
   _move_points(event, xy) {
 
     let _bounds, delta;
 
-    const {_attr} = this;
+    const {_attr, pos} = this;
 
     // получаем дельту - на сколько смещать
     if(_attr.elm1){
@@ -118,25 +161,26 @@ class DimensionLine extends paper.Group {
 
       const p1 = (_attr.elm1._sub || _attr.elm1)[_attr.p1];
       const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2];
+      this.correct_move_name({event, p1, p2, _attr});
 
-      if(this.pos == "top" || this.pos == "bottom"){
+      if(pos == 'top' || pos == 'bottom') {
         const size = Math.abs(p1.x - p2.x);
-        if(event.name == "right"){
+        if(event.name == 'right') {
           delta = new paper.Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
         }
-        else{
+        else {
           delta = new paper.Point(size - event.size, 0);
           _bounds[event.name] = Math.min(p1.x, p2.x);
         }
       }
       else{
         const size = Math.abs(p1.y - p2.y);
-        if(event.name == "bottom"){
+        if(event.name == 'bottom') {
           delta = new paper.Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
         }
-        else{
+        else {
           delta = new paper.Point(0, size - event.size);
           _bounds[event.name] = Math.min(p1.y, p2.y);
         }
@@ -144,88 +188,44 @@ class DimensionLine extends paper.Group {
     }
     else {
       _bounds = this.layer.bounds;
-      if(this.pos == "top" || this.pos == "bottom")
-        if(event.name == "right")
+      if(pos == 'top' || pos == 'bottom') {
+        if(event.name == 'right') {
           delta = new paper.Point(event.size - _bounds.width, 0);
-        else
+        }
+        else {
           delta = new paper.Point(_bounds.width - event.size, 0);
+        }
+      }
       else{
-        if(event.name == "bottom")
+        if(event.name == 'bottom') {
           delta = new paper.Point(0, event.size - _bounds.height);
-        else
+        }
+        else {
           delta = new paper.Point(0, _bounds.height - event.size);
+        }
       }
     }
 
     if(delta.length){
       const {project} = this;
-      const {_scope} = project;
-      const originalContent = _scope.capture_selection_state();
-      const move_shapes = [], move_points = [];
-      let start;
-
-      //project.deselect_all_points();
-      project.deselectAll();
+      project.deselect_all_points();
       project.getItems({class: ProfileItem})
-        .forEach((profile) => {
-          let {b, e, generatrix, width} = profile;
-          if(!start) {
-            start = b.add(e).divide(2);
-          }
-          width /= 2;
+        .forEach(({b, e, generatrix, width}) => {
+          width = width / 2 + 1;
           if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
-            move_shapes.push(profile);
-            //generatrix.segments.forEach((segm) => segm.selected = true)
+            generatrix.segments.forEach((segm) => segm.selected = true)
           }
           else if(Math.abs(b[xy] - _bounds[event.name]) < width){
-            move_points.push({profile, node: 'b'});
+            generatrix.firstSegment.selected = true;
           }
           else if(Math.abs(e[xy] - _bounds[event.name]) < width){
-            move_points.push({profile, node: 'e'});
+            generatrix.lastSegment.selected = true;
           }
       });
-
-      let need_redraw;
-      if(move_shapes.length) {
-        for(const profile of move_shapes) {
-          profile.selected = true;
-        }
-        const vertexes = project.mover.snap_to_edges({
-          start,
-          mode: consts.move_shapes,
-          event: {point: start.add(delta), modifiers: {shift: true}},
-        });
-        project.mover.move_shapes(vertexes);
-        project.deselectAll();
-        need_redraw = true;
-
-      }
-
-      for(const {profile, node} of move_points) {
-        const cnn = profile.cnn_point(node);
-        if(move_shapes.includes(cnn.profile)) {
-          continue;
-        }
-        profile[node].selected = true;
-
-        const mdelta = project.mover.snap_to_edges({
-          start: profile[node],
-          mode: consts.move_points,
-          event: {point: profile[node].add(delta), modifiers: {shift: true}},
-        });
-        project.move_points(mdelta);
-        //project.deselect_all_points();
-        project.deselectAll();
-        need_redraw = true;
-      }
-
-      _scope.restore_selection_state(originalContent);
-      need_redraw && project.redraw();
-
-
-      // project.move_points(delta, false);
-      // project.deselect_all_points(true);
-      // project.register_update();
+      delta._dimln = true;
+      project.move_points(delta, false);
+      project.deselect_all_points(true);
+      project.register_update();
     }
 
   }
@@ -237,8 +237,6 @@ class DimensionLine extends paper.Group {
   sizes_wnd(event) {
 
     if(event.wnd == this || (this.wnd && event.wnd == this.wnd.wnd)){
-
-      this.project.deselectAll();
 
       switch (event.name) {
       case 'close':
@@ -598,8 +596,9 @@ class DimensionLineCustom extends DimensionLine {
   }
 
   get is_ruler() {
-    const {ToolRuler} = EditorInvisible;
-    return typeof ToolRuler === 'function' && this.project._scope.tool instanceof ToolRuler;
+    const {_scope} = this._project;
+    const {constructor: {ToolRuler}, tool} = _scope;
+    return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
   }
 
   // выделяем подключаем окно к свойствам

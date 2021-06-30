@@ -227,7 +227,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       if(typeof origin == 'number') {
         origin = this.cnn_elmnts.get(origin - 1).cnn;
       }
-      if(origin.is_new()) {
+      if(!origin || origin.is_new()) {
         return $p.msg.show_msg({
           type: 'alert-warning',
           text: `Пустая ссылка на настройки в строке №${row_id + 1}`,
@@ -367,24 +367,40 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     if(this.empty()) {
       return;
     }
+    let _modified;
     const {_obj, _data} = this;
     const name = 'builder_props';
+    const symplify = () => {
+      if(typeof v === 'string') {
+        v = JSON.parse(v);
+      }
+      const props = this.builder_props;
+      for(const prop in v){
+        if(prop < 'a') {
+          continue;
+        }
+        if(props[prop] !== v[prop]) {
+          props[prop] = v[prop];
+          _modified = true;
+        }
+      }
+      return props;
+    };
+
     if(_data && _data._loading) {
+      if(v.length > 200) {
+        v = JSON.stringify(symplify());
+      }
       _obj[name] = v;
       return;
     }
-    let _modified;
+
     if(!_obj[name] || typeof _obj[name] !== 'string'){
       _obj[name] = JSON.stringify(this.constructor.builder_props_defaults);
       _modified = true;
     }
-    const props = this.builder_props;
-    for(const prop in v){
-      if(props[prop] !== v[prop]) {
-        props[prop] = v[prop];
-        _modified = true;
-      }
-    }
+
+    const props = symplify();
     if(_modified) {
       _obj[name] = JSON.stringify(props);
       this.__notify(name);
@@ -569,14 +585,17 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const is_nom = param instanceof CatNom;
     inset = inset ? inset.valueOf() : blank.guid;
     param = param ? param.valueOf() : blank.guid;
+    if(!Array.isArray(cnstr)) {
+      cnstr = [cnstr];
+    }
     const row = this.params._obj.find((row) =>
-      row.cnstr === cnstr && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
+      cnstr.includes(row.cnstr) && (!row.inset && inset === blank.guid || row.inset === inset) && row.param === param);
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param elmno {number} - номер элемента (с полюсом) или слоя (с минусом)
+   * @param [elmno] {number} - номер элемента (с полюсом) или слоя (с минусом)
    * @return {number}
    */
   elm_weight(elmno) {
@@ -585,7 +604,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     let weight = 0;
     specification.forEach(({elm, nom, totqty}) => {
       // отбрасываем лишние строки
-      if(elm !== elmno) {
+      if(elmno !== undefined && elm !== elmno) {
         if(elmno < 0 && elm > 0) {
           if(!map.get(elm)) {
             const crow = coordinates.find({elm});

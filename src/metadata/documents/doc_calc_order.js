@@ -42,7 +42,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
 
   // копирует заказ, возвращает промис с новым заказом
   async clone(src) {
-    const {utils} = this._owner.$p;
+    const {utils, cat} = this._owner.$p;
     if(utils.is_guid(src)) {
       src = await this.get(src, 'promise');
     }

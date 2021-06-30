@@ -18,7 +18,11 @@ $p.CatElm_visualization.prototype.__define({
    * @param offset {Number|[Number,Number]}
    */
 	draw: {
-		value(elm, layer, offset) {
+		value(elm, layer, offset, offset0) {
+
+      if(!layer.isInserted()) {
+        return;
+      }
 
 		  const {CompoundPath, PointText, Path, constructor} = elm.project._scope;
 
@@ -29,11 +33,15 @@ $p.CatElm_visualization.prototype.__define({
 				const attr = JSON.parse(this.svg_path);
 
         if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
+          const {rays} = elm;
+          if(!rays) {
+            return;
+          }
           if(attr.method == 'subpath_outer') {
-            subpath = elm.rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
+            subpath = rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
           }
           else if(attr.method == 'subpath_inner') {
-            subpath = elm.rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
+            subpath = rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
           }
           else if(attr.method == 'subpath_median') {
             if(elm.is_linear()) {
@@ -41,9 +49,9 @@ $p.CatElm_visualization.prototype.__define({
                 .equidistant(attr.offset || 0);
             }
             else {
-              const inner = elm.rays.inner.get_subpath(elm.corns(3), elm.corns(4));
+              const inner = rays.inner.get_subpath(elm.corns(3), elm.corns(4));
               inner.reverse();
-              const outer = elm.rays.outer.get_subpath(elm.corns(1), elm.corns(2));
+              const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
               const li = inner.length / 50;
               const lo = outer.length / 50;
               subpath = new Path();
@@ -57,7 +65,20 @@ $p.CatElm_visualization.prototype.__define({
             }
           }
           else {
-            subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            if(this.mode === 3) {
+              const outer = offset0 < 0;
+              attr.offset -= -elm.d1 + elm.width;
+              if(outer) {
+                offset0 = -offset0;
+                attr.offset = -(attr.offset || 0);
+              }
+              const b = elm.generatrix.getPointAt(offset0 || 0);
+              const e = elm.generatrix.getPointAt((offset0 + offset) || elm.generatrix.length);
+              subpath = elm.generatrix.get_subpath(b, e).equidistant(attr.offset || 0);
+            }
+            else {
+              subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            }
           }
           subpath.parent = layer._by_spec;
           subpath.strokeWidth = attr.strokeWidth || 4;

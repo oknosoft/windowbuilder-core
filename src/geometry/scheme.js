@@ -1,3 +1,4 @@
+
 /**
  * ### Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
@@ -86,6 +87,15 @@ class Scheme extends paper.Project {
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
+      const {_select_template: st} = ox._manager._owner.templates;
+      if(st) {
+        if(st.sys != obj.sys) {
+          st.sys = obj.sys;
+        }
+        if(st.clr != obj.clr) {
+          st.clr = obj.clr;
+        }
+      }
     }
 
     if(fields.hasOwnProperty('clr')) {
@@ -133,9 +143,10 @@ class Scheme extends paper.Project {
   /**
    * устанавливает систему
    * @param sys
-   * @param [defaults]
+   * @param [defaults] {TabularSection}
+   * @param [refill] {Boolean}
    */
-  set_sys(sys, defaults) {
+  set_sys(sys, defaults, refill) {
 
     const {_dp, ox} = this;
 
@@ -146,12 +157,12 @@ class Scheme extends paper.Project {
     _dp.sys = sys;
     ox.sys = sys;
 
-    _dp.sys.refill_prm(ox, 0, true, null, defaults);
+    _dp.sys.refill_prm(ox, 0, 1, this, defaults);
 
     // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
-    this.l_connective.on_sys_changed();
+    this.l_connective.on_sys_changed(refill);
     for (const contour of this.contours) {
-      contour.on_sys_changed();
+      contour.on_sys_changed(refill);
     }
 
     if(ox.clr.empty()) {
@@ -177,11 +188,12 @@ class Scheme extends paper.Project {
    * Устанавливает фурнитуру в створках изделия
    * @param furn
    */
-  set_furn(furn) {
+  set_furn(furn, fprops) {
     for (const rama of this.contours) {
       for (const contour of rama.contours) {
-        if(!contour.furn.empty()) {
-          contour.furn = furn;
+        const props = fprops && fprops.get(contour.cnstr);
+        if(props || !contour.furn.empty()) {
+          contour.furn = props && props.furn ? props.furn : furn;
         }
       }
     }
@@ -194,12 +206,13 @@ class Scheme extends paper.Project {
    * @private
    */
   _papam_listener(obj, fields) {
-    const {_attr, ox} = this;
+    const {_attr, _ch, ox} = this;
     if(_attr._loading || _attr._snapshot) {
       return;
     }
-    if(obj._owner === ox.params || (obj === ox && fields.hasOwnProperty('params'))) {
-      this.register_change();
+    const is_row = obj._owner === ox.params;
+    if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
+      !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
       if(st && builder.base_props && builder.base_props.includes(obj.param)) {
@@ -208,6 +221,11 @@ class Scheme extends paper.Project {
           prow = st.params.add({param: obj.param, value: obj.value});
         }
         prow.value = obj.value;
+      }
+    }
+    if(is_row && obj.inset.empty()) {
+      for(const contour of this.contours) {
+        contour.refresh_inset_depends(obj.param);
       }
     }
   }
@@ -219,10 +237,12 @@ class Scheme extends paper.Project {
    * @return {*}
    */
   elm_cnn(elm1, elm2) {
-    elm1 = elm1.elm;
-    elm2 = elm2.elm;
-    const res = this.cnns._obj.find((row) => row.elm1 === elm1 && row.elm2 === elm2);
-    return res && res._row.cnn;
+    const {elm: e1, _row: {_owner: o1}} = elm1;
+    const {elm: e2, _row: {_owner: o2}} = elm2;
+    if(o1 === o2) {
+      const res = o1._owner.cnn_elmnts._obj.find((row) => row.elm1 === e1 && row.elm2 === e2);
+      return res && res._row.cnn;
+    }
   }
 
   /**
@@ -278,6 +298,7 @@ class Scheme extends paper.Project {
         return;
       }
     }
+
 
     // устанавливаем в _dp систему профилей
     if(_dp.sys.empty()) {
@@ -371,7 +392,7 @@ class Scheme extends paper.Project {
     // создаём семейство конструкций
     this.ox.constructions.find_rows({parent: parent ? parent.cnstr : 0}, (row) => {
       // и вложенные створки
-      this.load_contour(new Contour({parent: parent, row: row}));
+      this.load_contour(Contour.create({project: this, parent, row}));
     });
   }
 
@@ -396,6 +417,7 @@ class Scheme extends paper.Project {
   load(id, from_service) {
     const {_attr} = this;
     const _scheme = this;
+    const {enm: {elm_types}, cat: {templates, characteristics}, doc, utils} = $p;
 
     function load_object(o) {
 
@@ -406,13 +428,9 @@ class Scheme extends paper.Project {
 
       // включаем перерисовку
       _attr._opened = true;
-      _attr._bounds = new paper.Rectangle({
-        point: [0, 0],
-        size: [o.x, o.y]
-      });
+      _attr._bounds = new paper.Rectangle({point: [0, 0], size: [o.x, o.y]});
 
       // первым делом создаём соединители и опорные линии
-      const {enm: {elm_types}, cat: {templates}} = $p;
       o.coordinates.forEach((row) => {
         if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
@@ -515,6 +533,7 @@ class Scheme extends paper.Project {
             _scheme._scope._acc && _scheme._scope._acc.props.reload();
             delete _scheme.ox._data.refill_props;
           }
+          _scheme.notify(_scheme, 'loaded');
         });
     }
 
@@ -527,13 +546,14 @@ class Scheme extends paper.Project {
     this.ox = null;
     this.clear();
 
-    if($p.utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
+    if(utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
       return load_object(id);
     }
-    else if($p.utils.is_guid(id) || $p.utils.is_data_obj(id)) {
-      return $p.cat.characteristics.get(id, true, true)
+    else if(utils.is_guid(id) || utils.is_data_obj(id)) {
+      return characteristics.get(id, true, true)
         .then((ox) =>
-          $p.doc.calc_order.get(ox.calc_order, true, true)
+          doc.calc_order.get(ox.calc_order, true, true)
+            .then((calc_order) => calc_order.load_linked_refs())
             .then(() => load_object(ox))
         );
     }
@@ -824,12 +844,15 @@ class Scheme extends paper.Project {
    */
   unload() {
     const {_dp, _attr, _calc_order_row} = this;
-    const pnames = '_loading,_saving';
+    const pnames = ['_loading', '_saving'];
     for (let fld in _attr) {
-      if(pnames.match(fld)) {
+      if(pnames.includes(fld)) {
         _attr[fld] = true;
       }
       else {
+        if(fld === '_vitrazh') {
+          _attr[fld].unload();
+        }
         delete _attr[fld];
       }
     }
@@ -845,6 +868,7 @@ class Scheme extends paper.Project {
       ox._manager.off('rows', this._papam_listener);
       this._papam_listener = null;
     }
+    let revert = Promise.resolve();
     if(ox && ox._modified) {
       if(ox.is_new()) {
         if(_calc_order_row) {
@@ -853,11 +877,17 @@ class Scheme extends paper.Project {
         ox.unload();
       }
       else {
-        setTimeout(ox.load.bind(ox), 100);
+        revert = revert.then(() => ox.load());
       }
     }
+    this.getItems({class: ContourNested}).forEach(({_ox}) => {
+      if(ox._modified) {
+        revert = revert.then(() => _ox.load());
+      }
+    });
 
     this.remove();
+    return revert;
   }
 
   /**
@@ -870,14 +900,50 @@ class Scheme extends paper.Project {
 
     const other = [];
     const layers = [];
-    const profiles = new Set;
-
+    const profiles = new Set();
+    const selected = new Set();
+    const nearests = new Map();
     const {auto_align, _dp} = this;
 
+    // добавляем в selected вложенные створки, совпадающие по узлам с рамами
     for (const item of this.selectedItems) {
+      const {parent} = item;
+      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !(parent instanceof Sectional)) {
+        selected.add(item);
+        if(all_points === false) {
+          continue;
+        }
+        if(!nearests.has(parent)) {
+          nearests.set(parent, parent.joined_nearests());
+        }
+        for (const {generatrix} of nearests.get(parent)) {
+          let check_selected;
+          item.segments.forEach((segm) => {
+            if(segm.selected) {
+              check_selected = true;
+              generatrix.segments.forEach((gs) => {
+                if(gs.point.is_nearest(segm.point)) {
+                  gs.selected = true;
+                  selected.add(generatrix);
+                }
+              });
+            }
+          });
+          if(!check_selected) {
+            //  item.parent.generatrix
+            selected.add(generatrix);
+          }
+        }
+      }
+      else if(parent instanceof Sectional) {
+        selected.add(parent.generatrix);
+      }
+    }
+
+    for (const item of selected) {
       const {parent, layer} = item;
 
-      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !profiles.has(parent)) {
+      if(!profiles.has(parent)) {
 
         profiles.add(parent);
 
@@ -929,7 +995,6 @@ class Scheme extends paper.Project {
     }
     // иначе перерисовываем контуры
     else if(!this._attr._from_service) {
-      //setTimeout(() => this.contours.forEach(l => l.redraw()), 70);
       this.register_change(true);
     }
 
@@ -965,13 +1030,13 @@ class Scheme extends paper.Project {
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях
-      this.contours.forEach((contour) => contour.save_coordinates());
+      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save, attr && attr.close));
 
       // вызываем метод save_coordinates в слое соединителей
       this.l_connective.save_coordinates();
 
       // пересчет спецификации и цен
-      return $p.products_building.recalc(this, attr);
+      return attr && attr.no_recalc ? this : $p.products_building.recalc(this, attr);
     }
     catch (err) {
       const {msg, ui} = $p;
@@ -1099,7 +1164,7 @@ class Scheme extends paper.Project {
    * @param is_snapshot {Boolean}
    * @param no_refill {Boolean}
    */
-  load_stamp(obx, is_snapshot, no_refill) {
+  load_stamp(obx, is_snapshot, no_refill, from_service) {
 
     const do_load = (obx) => {
 
@@ -1122,7 +1187,7 @@ class Scheme extends paper.Project {
         }
       }
 
-      return this.load(ox)
+      return this.load(ox, from_service)
         .then(() => ox._data._modified = true);
 
     };
@@ -1145,19 +1210,20 @@ class Scheme extends paper.Project {
    */
   get auto_align() {
     const {calc_order, base_block} = this.ox;
-    const {Шаблон} = $p.enm.obj_delivery_states;
-    if(base_block.empty() || calc_order.obj_delivery_state == Шаблон || base_block.calc_order.obj_delivery_state != Шаблон) {
+    const {enm: {obj_delivery_states: st}, job_prm: {properties}} = $p;
+
+    if(base_block.empty() || calc_order.obj_delivery_state == st.Шаблон || base_block.calc_order.obj_delivery_state != st.Шаблон) {
       return false;
     }
-    const {auto_align} = $p.job_prm.properties;
+
     let align;
-    if(auto_align) {
-      base_block.params.find_rows({param: auto_align}, (row) => {
+    if(properties.auto_align) {
+      base_block.params.find_rows({param: properties.auto_align, cnstr: 0}, (row) => {
         align = row.value;
         return false;
       });
-      return align && align != '_' && align;
     }
+    return align && align != '_' && align;
   }
 
   /**
@@ -1193,12 +1259,13 @@ class Scheme extends paper.Project {
           glasses.indexOf(filling) == -1 && glasses.push(filling);
         }
       }
-      this._scope.glass_align('width', glasses);
 
       // TODO: понять, что хотел автор
       // if(auto_align == $p.enm.align_types.ПоЗаполнениям) {
       //
       // }
+      this._scope.glass_align('width', glasses);
+
     }, 100);
 
   }
@@ -1426,7 +1493,12 @@ class Scheme extends paper.Project {
     }
 
     // если подходит текущая, возвращаем текущую
-    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+      if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
+        return attr.inset;
+      }
+    }
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
       return attr.inset;
     }
 

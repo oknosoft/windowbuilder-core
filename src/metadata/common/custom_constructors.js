@@ -29,10 +29,14 @@ class HideForciblyParamsRow extends HideParamsRow{
 }
 
 class SelectionParamsRow extends ElmParamsRow{
+  get area(){return this._getter('area')}
+  set area(v){this._setter('area',v)}
   get comparison_type(){return this._getter('comparison_type')}
   set comparison_type(v){this._setter('comparison_type',v)}
   get txt_row(){return this._getter('txt_row')}
   set txt_row(v){this._setter('txt_row',v)}
+  get origin(){return this._getter('origin')}
+  set origin(v){this._setter('origin',v)}
 }
 
 class Extra_fieldsRow extends TabularSectionRow{

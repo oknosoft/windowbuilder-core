@@ -1,3 +1,4 @@
+
 /**
  * ### Соединительный профиль
  * Класс описывает поведение соединительного профиля
@@ -54,13 +55,14 @@ class ProfileConnective extends ProfileItem {
    * @for ProfileItem
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
+   * @param [start_point] {paper.Point} - откуда началось движение
    */
-  move_points(delta, all_points) {
+  move_points(delta, all_points, start_point) {
 
     const nearests = this.joined_nearests();
     const moved = {profiles: []};
 
-    super.move_points(delta, all_points);
+    super.move_points(delta, all_points, start_point);
 
     // двигаем примыкающие
     if(all_points !== false && !paper.Key.isDown('control')){
@@ -137,7 +139,7 @@ class ProfileConnective extends ProfileItem {
     _row.parent = 0;
 
     // добавляем припуски соединений
-    _row.len = this.length;
+    _row.len = this.length.round(1);
 
     // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
@@ -203,6 +205,15 @@ class ConnectiveLayer extends paper.Layer {
 
   get skeleton() {
     return this.project._skeleton;
+  }
+
+  /**
+   * Продукция слоя соединителей
+   * Совпадает с продукцией проекта
+   * @return {CatCharacteristics}
+   */
+  get _ox() {
+    return this.project.ox;
   }
 
   redraw() {

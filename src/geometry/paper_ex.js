@@ -157,17 +157,18 @@ Object.defineProperties(paper.Path.prototype, {
      * возвращает фрагмент пути между точками
      * @param point1 {paper.Point}
      * @param point2 {paper.Point}
+     * @param [strict] {Boolean}
      * @return {paper.Path}
      */
   get_subpath: {
-      value: function get_subpath(point1, point2) {
+      value: function get_subpath(point1, point2, strict) {
         let tmp;
 
-        if(!this.length || !point1 || !point2 || (point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
-          tmp = this.clone(false);
+        if(!this.length || !point1 || !point2 || (!strict && point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
+          tmp = this.clone({insert: false, deep: false});
         }
-        else if(point2.is_nearest(this.firstSegment.point) && point1.is_nearest(this.lastSegment.point)){
-          tmp = this.clone(false);
+        else if(!strict && point2.is_nearest(this.firstSegment.point) && point1.is_nearest(this.lastSegment.point)){
+          tmp = this.clone({insert: false, deep: false});
           tmp.reverse();
           tmp._reversed = true;
         }
@@ -248,6 +249,12 @@ Object.defineProperties(paper.Path.prototype, {
 
           // для кривого бежим по точкам
           let len = this.length, step = len * 0.02, point;
+          if(step < 20) {
+            step = len * 0.04;
+          }
+          else if(step > 90) {
+            step = len * 0.014;
+          }
 
           for(let i = step; i < len; i += step) {
             point = this.getPointAt(i);
@@ -304,18 +311,21 @@ Object.defineProperties(paper.Path.prototype, {
      * @for Path
      * @param path {paper.Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
-     * @param elongate {Boolean|Number} - если истина, пути будут продолжены до пересечения
-     * @return other_point {paper.Point} - если указано, контролируем вектор пересечения
+     * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения
+     * @return [other_point] {paper.Point} - если указано, контролируем вектор пересечения
+     * @return [clone] {Boolean} - если указано, не удлиняем текущие пути
      */
   intersect_point: {
-      value: function intersect_point(path, point, elongate, other_point) {
+      value: function intersect_point(path, point, elongate, other_point, clone) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
 
         if(intersections.length === 1){
-          return intersections[0].point;
+          if(!point || typeof elongate !== 'number' || point.is_nearest(intersections[0].point, elongate * elongate)) {
+            return intersections[0].point;
+          }
         }
-        else if(intersections.length > 1){
+        if(intersections.length > 1){
 
           if(typeof point === 'string' && this.parent) {
             point = this.parent[point];
@@ -349,38 +359,45 @@ Object.defineProperties(paper.Path.prototype, {
         }
         else if(elongate){
 
+          if(!this.length || !path.length) {
+            return null;
+          }
+
+          const path1 = clone ? this.clone({insert: false, deep: false}) : this;
+          const path2 = clone ? path.clone({insert: false, deep: false}) : path;
+
           // продлеваем пути до пересечения
-          let p1 = this.getNearestPoint(point),
-            p2 = path.getNearestPoint(point),
-            p1last = this.firstSegment.point.getDistance(p1, true) > this.lastSegment.point.getDistance(p1, true),
-            p2last = path.firstSegment.point.getDistance(p2, true) > path.lastSegment.point.getDistance(p2, true),
+          let p1 = path1.getNearestPoint(point),
+            p2 = path2.getNearestPoint(point),
+            p1last = path1.firstSegment.point.getDistance(p1, true) > path1.lastSegment.point.getDistance(p1, true),
+            p2last = path2.firstSegment.point.getDistance(p2, true) > path2.lastSegment.point.getDistance(p2, true),
             tg;
 
-          if(!this.closed) {
-            tg = (p1last ? this.getTangentAt(this.length) : this.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(this.is_linear){
+          if(!path1.closed) {
+            tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
+            if(path1.is_linear){
               if(p1last) {
-                this.lastSegment.point = this.lastSegment.point.add(tg);
+                path1.lastSegment.point = path1.lastSegment.point.add(tg);
               }
               else {
-                this.firstSegment.point = this.firstSegment.point.add(tg);
+                path1.firstSegment.point = path1.firstSegment.point.add(tg);
               }
             }
           }
 
-          if(!path.closed) {
-            tg = (p2last ? path.getTangentAt(path.length) : path.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(path.is_linear){
+          if(!path2.closed) {
+            tg = (p2last ? path2.getTangentAt(path2.length) : path2.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
+            if(path2.is_linear){
               if(p2last) {
-                path.lastSegment.point = path.lastSegment.point.add(tg);
+                path2.lastSegment.point = path2.lastSegment.point.add(tg);
               }
               else {
-                path.firstSegment.point = path.firstSegment.point.add(tg);
+                path2.firstSegment.point = path2.firstSegment.point.add(tg);
               }
             }
           }
 
-          return this.intersect_point(path, point, false, other_point);
+          return path1.intersect_point(path2, point, false, other_point);
 
         }
       }
@@ -391,6 +408,9 @@ Object.defineProperties(paper.Path.prototype, {
    */
   point_pos: {
     value: function point_pos(point, interior) {
+      if(!point) {
+        return 0;
+      }
       const np = this.getNearestPoint(interior);
       const offset = this.getOffsetOf(np);
       const line = new paper.Line(np, np.add(this.getTangentAt(offset)));
@@ -474,7 +494,7 @@ Object.defineProperties(paper.Point.prototype, {
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }
-			return this.getDistance(point, true) < (sticking ? consts.sticking2 : 16);
+			return this.getDistance(point, true) < (typeof sticking === 'number' ? sticking : (sticking ? consts.sticking2 : 16));
 		}
 	},
 

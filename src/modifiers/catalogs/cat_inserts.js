@@ -9,7 +9,9 @@
  */
 
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
-(({md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm}) => {
+(($p) => {
+
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm} = $p;
 
   if(job_prm.use_ram !== false){
     md.once('predefined_elmnts_inited', () => {
@@ -310,8 +312,14 @@
   cat.inserts.metadata('specification').index = 'is_main_elm';
 
   // переопределяем прототип
-  $p.CatInserts = class CatInserts extends $p.CatInserts {
+  class CatInserts extends $p.CatInserts {
 
+    /**
+     * Возвращает строки спецификации основной номенклатуры
+     * @param [elm] {BuilderElement}
+     * @param [strict] {Boolean}
+     * @return {Array.<CatInsertsSpecificationRow>}
+     */
     main_rows(elm, strict) {
 
       const {_data} = this;
@@ -351,6 +359,62 @@
     }
 
     /**
+     * Выясняет, зависит ли номенклатура вставки от текущего параметра
+     * @param param {CchProperties}
+     * @return {Boolean}
+     */
+    is_depend_of(param) {
+      const {_data: {main_rows}, selection_params} = this;
+      if(!main_rows || main_rows.length === 1) {
+        return false;
+      }
+      for(const row of main_rows) {
+        if(selection_params.find({elm: row.elm, param: param.ref})) {
+          return true;
+        }
+      }
+    }
+
+    /**
+     * Выясняет, надо ли вытягивать данную вставку в продукцию
+     *
+     * @example
+     * // Пример формулы:
+     * let {elm, contour} = obj;
+     * if(!contour && elm) {
+     *  contour = elm.layer;
+     * }
+     * const {specification_order_row_types: types} = $p.enm;
+     * return contour ? types.Продукция : types.Нет;
+     *
+     * @param inset
+     * @param ox
+     * @param elm
+     * @param contour
+     * @return {boolean}
+     */
+    is_order_row_prod({ox, elm, contour}) {
+      const {enm: {specification_order_row_types: {Продукция}, inserts_types}, CatFormulas, cch} = $p;
+      const param = cch.properties.predefined('glass_separately');
+      let {is_order_row, insert_type} = this;
+      if(param && insert_type === inserts_types.Заполнение) {
+        ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
+          if(elm && (cnstr === -elm.elm)) {
+            is_order_row = value ? Продукция : '';
+            return false;
+          }
+          if(!cnstr || (contour && cnstr === contour.cnstr)) {
+            is_order_row = value ? Продукция : '';
+          }
+        });
+      }
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === Продукция;
+    }
+
+    /**
      * Возвращает номенклатуру вставки в завсисмости от свойств элемента
      */
     nom(elm, strict) {
@@ -364,7 +428,7 @@
       let _nom;
       const main_rows = this.main_rows(elm, !elm && strict);
 
-      if(main_rows.length && main_rows[0].nom instanceof $p.CatInserts){
+      if(main_rows.length && main_rows[0].nom instanceof CatInserts){
         if(main_rows[0].nom == this) {
           _nom = cat.nom.get();
         }
@@ -447,7 +511,7 @@
             .filter((prm) => prm);
 
         // установим номенклатуру продукции
-        res.owner = irow.nom instanceof $p.CatInserts ? irow.nom.nom() : irow.nom;
+        res.owner = irow.nom instanceof CatInserts ? irow.nom.nom() : irow.nom;
 
         // если в параметрах вставки задействованы свойства длина и или ширина - габариты получаем из свойств
         contour.project.ox.params.find_rows({
@@ -500,7 +564,7 @@
      * @param params {Array}
      */
     check_prm_restrictions({elm, len_angl, params}) {
-      const {lmin, lmax, hmin, hmax, smin, smax} = this;
+      const {lmin, lmax, hmin, hmax} = this;
       const {len, height, s} = elm;
 
       let name = this.name + ':', err = false;
@@ -605,13 +669,14 @@
      * Возвращает спецификацию вставки с фильтром
      * @method filtered_spec
      * @param elm {BuilderElement|Object} - элемент, к которому привязана вставка
+     * @param elm2 {BuilderElement|Object} - соседний элемент, имеет смысл, когда вставка вызвана из соединения
      * @param ox {CatCharacteristics} - текущая продукция
      * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
      * @param [len_angl] {Object} - контекст размеров элемента
      * @param [own_row] {CatInsertsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
-    filtered_spec({elm, is_high_level_call, len_angl, own_row, ox}) {
+    filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
 
       const res = [];
 
@@ -633,7 +698,7 @@
       }
 
       const {insert_type} = this;
-      const {Профиль, Заполнение} = enm.inserts_types;
+      const {inserts_types: {Профиль, Заполнение}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
 
       // для заполнений, можно переопределить состав верхнего уровня
@@ -669,8 +734,9 @@
         }
         if(!check_params({
           params: this.selection_params,
-          ox: ox,
-          elm: elm,
+          ox,
+          elm,
+          elm2,
           row_spec: row,
           cnstr: len_angl && len_angl.cnstr,
           origin: len_angl && len_angl.origin,
@@ -679,14 +745,20 @@
         }
 
         // Добавляем или разузловываем дальше
-        if(row.nom instanceof $p.CatInserts){
+        if(row.nom instanceof CatInserts){
           row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
             const fakerow = fake_row(subrow);
             fakerow.quantity = (subrow.quantity || 1) * (row.quantity || 1);
-            fakerow.coefficient = (subrow.coefficient || 1) * (row.coefficient || 1);
+            fakerow.coefficient = (subrow.coefficient || row.coefficient) ? (subrow.coefficient || 1) * (row.coefficient || 1) : 0;
             fakerow._origin = row.nom;
             if(fakerow.clr.empty()){
               fakerow.clr = row.clr;
+            }
+            if(fakerow.angle_calc_method === Основной) {
+              fakerow.angle_calc_method = row.angle_calc_method;
+            }
+            if(!fakerow.sz) {
+              fakerow.sz = row.sz;
             }
             res.push(fakerow);
           });
@@ -704,12 +776,13 @@
      * Дополняет спецификацию изделия спецификацией текущей вставки
      * @method calculate_spec
      * @param elm {BuilderElement}
-     * @param len_angl {Object}
+     * @param [elm2] {BuilderElement}
+     * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
      */
-    calculate_spec({elm, len_angl, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, ox, spec, clr}) {
 
       const {_row} = elm;
       const {
@@ -730,7 +803,7 @@
         spec = ox.specification;
       }
 
-      this.filtered_spec({elm, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
@@ -742,12 +815,12 @@
 
         // добавляем строку спецификации, если профиль или не про шагам
         if(![ПоПериметру, ПоШагам, ПоЗаполнениям].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
 
         if(count_calc_method == ПоФормуле && !formula.empty()){
           // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
         // для вставок в профиль способ расчета количества не учитывается
         else if(profile_items.includes(_row.elm_type) || count_calc_method == ДляЭлемента){
@@ -799,13 +872,14 @@
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
               if(this.check_restrictions(row_ins_spec, row_prm, true)){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
                   row_spec,
                   elm: rib.profile || rib,
+                  elm2,
                   cnstr: len_angl && len_angl.cnstr || 0,
                   inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
                   row_ins: row_ins_spec,
@@ -820,7 +894,7 @@
                 else {
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
-                calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
               }
               row_spec = null;
             });
@@ -862,13 +936,14 @@
               }
 
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
                   row_spec,
                   elm,
+                  elm2,
                   cnstr: len_angl && len_angl.cnstr || 0,
                   row_ins: row_ins_spec,
                   len: len_angl ? len_angl.len : _row.len
@@ -876,7 +951,7 @@
                 // TODO: непонятно, надо ли здесь учитывать fqty
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
-                calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
               }
               row_spec = null;
             }
@@ -922,14 +997,14 @@
           else if(count_calc_method == ПоЗаполнениям){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
               // виртуальный номер элемента для данного способа расчета количества
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(3);
-              calc_count_area_mass(row_spec, spec, _row);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row);
 
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
@@ -955,6 +1030,7 @@
             const qty = formula.execute({
               ox: ox,
               elm: elm,
+              elm2,
               cnstr: len_angl && len_angl.cnstr || 0,
               inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
               row_ins: row_ins_spec,
@@ -969,7 +1045,7 @@
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, _row, row_ins_spec.angle_calc_method);
+          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
         }
       });
 
@@ -1046,7 +1122,7 @@
         }
       });
 
-      const {CatFurns, enm: {predefined_formulas: {cx_prm}}} = $p;
+      const {cx_prm} = enm.predefined_formulas;
       this.specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
           for(const param of nom.used_params()) {
@@ -1061,6 +1137,22 @@
       return _data.used_params = sprms;
     }
 
+    get split_type(){
+      let {split_type} = this._obj;
+      if(!split_type) {
+        split_type = [];
+      }
+      else if(split_type.startsWith('[')) {
+        split_type = JSON.parse(split_type).map((ref) => enm.lay_split_types.get(ref));
+      }
+      else {
+        split_type = [enm.lay_split_types.get(split_type)];
+      }
+      return split_type;
+    }
+    set split_type(v){this._setter('split_type',v)}
+
   }
+  $p.CatInserts = CatInserts;
 
 })($p);

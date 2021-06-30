@@ -8,7 +8,6 @@
 
 const include = ['*'];
 const exclude = [
-  'cat.abonents',
   'cat.servers',
   'cch.mdm_groups',
   //'cat.property_values_hierarchy',
@@ -45,6 +44,19 @@ module.exports = function(meta) {
         'back_server,repl_server,owner,mode,server'.split(',').forEach((fld) => delete mgrs[name].fields[fld]);
         delete mgrs[name].tabular_sections.servers;
         delete mgrs[name].has_owners;
+      }
+
+      if(name === 'abonents' && cls === 'cat') {
+        for(const fld in mgrs[name].fields) {
+          if(!['name', 'id'].includes(fld)) {
+            delete mgrs[name].fields[fld];
+          }
+        }
+        for(const fld in mgrs[name].tabular_sections) {
+          if(fld !== 'servers') {
+            delete mgrs[name].tabular_sections[fld];
+          }
+        }
       }
 
       if(name === 'http_apis' && cls === 'cat') {

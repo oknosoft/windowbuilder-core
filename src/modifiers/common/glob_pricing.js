@@ -145,10 +145,11 @@ class Pricing {
   by_range(startkey, step = 0) {
 
     const {pouch} = $p.adapters;
+    const limit = 1200;
 
     return pouch.local.doc.query('server_nom_prices/slice_last',
         {
-          limit: 600,
+          limit,
           include_docs: false,
           startkey: startkey || [''],
           endkey: ['\ufff0'],
@@ -158,7 +159,7 @@ class Pricing {
       .then((res) => {
         this.build_cache(res.rows);
         pouch.emit('nom_prices', ++step);
-        if (res.rows.length === 600) {
+        if (res.rows.length === limit) {
           return this.by_range(res.rows[res.rows.length - 1].key, step);
         }
       })
@@ -173,8 +174,9 @@ class Pricing {
    * @return {Promise.<TResult>|*}
    */
   by_doc({goods}) {
-    const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic, price_type]);
-    return $p.adapters.pouch.local.doc.query('server_nom_prices/slice_last',
+    const {adapters: {pouch}, utils: {blank}} = $p
+    const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic || blank.guid, price_type]);
+    return pouch.local.doc.query('server_nom_prices/slice_last',
         {
           include_docs: false,
           keys: keys,
@@ -416,7 +418,7 @@ class Pricing {
 
     const {calc_order_row, price_type, first_cost} = prm;
     const {marginality_in_spec, not_update} = $p.job_prm.pricing;
-    const {rounding} = calc_order_row._owner._owner;
+    const {rounding, manager} = calc_order_row._owner._owner;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
     if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
@@ -447,7 +449,7 @@ class Pricing {
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
     let extra_charge = $p.wsql.get_user_param('surcharge_internal', 'number');
     // если пересчет выполняется менеджером, используем наценку по умолчанию
-    if(!$p.current_user.partners_uids.length || !extra_charge) {
+    if(!manager.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;
     }
 

@@ -23,9 +23,15 @@ class BuilderElement extends paper.Group {
   constructor(attr) {
 
     super(attr);
+    if(attr.parent){
+      this.parent = attr.parent;
+    }
+    else if(attr.proto && attr.proto.parent){
+      this.parent = attr.proto.parent;
+    }
 
     if(!attr.row){
-      attr.row = this.project.ox.coordinates.add();
+      attr.row = this.layer._ox.coordinates.add();
     }
 
     this._row = attr.row;
@@ -33,7 +39,7 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this.project.ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+      this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
 
     if(attr._nearest){
@@ -49,22 +55,12 @@ class BuilderElement extends paper.Group {
         this.inset = attr.proto.inset;
       }
 
-      if(attr.parent){
-        this.parent = attr.parent;
-      }
-      else if(attr.proto.parent){
-        this.parent = attr.proto.parent;
-      }
-
       if(attr.proto instanceof Profile){
         this.insertBelow(attr.proto);
       }
 
       this.clr = attr.proto.clr;
 
-    }
-    else if(attr.parent){
-      this.parent = attr.parent;
     }
 
     if(!this._row.cnstr && this.layer.cnstr){
@@ -190,7 +186,7 @@ class BuilderElement extends paper.Group {
 
     function cnn_choice_links(o, cnn_point){
 
-      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types);
+      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
 
       if(!iface || utils.is_data_obj(o)){
         return nom_cnns.some((cnn) => o.ref == cnn);
@@ -223,7 +219,7 @@ class BuilderElement extends paper.Group {
             // !iface - нет dhtmlx, чистый react
             if(!iface || utils.is_data_obj(o)){
               const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _inserts_types_filling.indexOf(insert_type) != -1 &&
+              return _inserts_types_filling.includes(insert_type) &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
                 (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
             }
@@ -242,7 +238,7 @@ class BuilderElement extends paper.Group {
           }
           else if(this instanceof Profile){
             if(this.nearest()){
-              selection = {elm_type: {in: [elm_types.Створка, elm_types.Добор]}};
+              selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
             }
             else{
               selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
@@ -292,7 +288,7 @@ class BuilderElement extends paper.Group {
         let nom_cnns = [utils.blank.guid];
 
         if(cnn_ii){
-          if (cnn_ii.elm instanceof Filling) {
+          if (cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
@@ -372,6 +368,12 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
+  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  get ox() {
+    const {_row} = this;
+    return _row ? _row._owner._owner : {cnn_elmnts: []};
+  }
+
   /**
    * ### Номенклатура
    * свойство только для чтения, т.к. вычисляется во вставке
@@ -409,12 +411,26 @@ class BuilderElement extends paper.Group {
 
   // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
   get sizeb() {
-    return this.inset.sizeb || 0;
+    const {sizeb} = this.inset;
+    if(sizeb === -1100) {
+      const {nom} = this;
+      return nom ? nom.sizeb : 0;
+    }
+    else if(sizeb === -1200) {
+      return this.width / 2;
+    }
+    return sizeb || 0;
   }
 
   // размер до фурнитурного паза
   get sizefurn() {
     return this.nom.sizefurn || 20;
+  }
+
+  // масса элемента
+  get weight() {
+    const {project, elm} = this;
+    return project.ox.elm_weight(elm);
   }
 
   /**
@@ -455,6 +471,117 @@ class BuilderElement extends paper.Group {
   }
 
   /**
+   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * @return {Array}
+   */
+  elm_props() {
+    const {_attr, _row, project, ox: {params}, inset} = this;
+    const {utils: {blank}, enm: {positions}} = $p;
+
+    // свойства, нужные вставке текущего элемента
+    const inset_params = inset.used_params();
+
+    // получаем список свойств
+    const props = [];
+    for(const {param, elm} of project._dp.sys.product_params) {
+      if (!inset_params.includes(param)) {
+        continue;
+      }
+      // если переопределение явно указано в системе
+      if(elm) {
+        props.push(param);
+      }
+      // если переопределение указано в самом параметре
+      else if([1, 2].includes(param.inheritance)) {
+        // дополнительно учтём тип и положение элемента
+        const {elm_type, pos, orientation} = this;
+        if(!param.applying.count()) {
+          props.push(param);
+        }
+        else {
+          for(const arow of param.applying) {
+            if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+              (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
+              props.push(param);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // удаляем возможные паразитные свойства
+    _attr.props && _attr.props.forEach((prop) => {
+      if(!props.includes(prop)) {
+        delete this[prop.ref];
+      }
+    });
+    _attr.props = props;
+    // создаём свойства
+    props.forEach((prop) => {
+      if(!this.hasOwnProperty(prop.ref)) {
+        Object.defineProperty(this, prop.ref, {
+          get() {
+            let prow;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(!prow || row.cnstr) {
+                prow = row;
+              }
+            });
+            return prow && prow.value;
+          },
+          set(v) {
+            let prow, prow0;
+            params.find_rows({
+              param: prop,
+              cnstr: {in: [0, -_row.row]},
+              inset: blank.guid
+            }, (row) => {
+              if(row.cnstr) {
+                prow = row;
+              }
+              else {
+                prow0 = row;
+              }
+            });
+            // если устанавливаемое значение совпадает со значением изделия - удаляем
+            if(prow0 && prow0.value == v) {
+              prow && prow._owner.del(prow);
+            }
+            else if(prow) {
+              prow.value = v;
+            }
+            else {
+              params.add({
+                param: prop,
+                cnstr: -_row.row,
+                inset: blank.guid,
+                value: v,
+              });
+            }
+            this.refresh_inset_depends(prop, true);
+          },
+          configurable: true,
+        });
+      }
+    });
+
+    return props;
+  }
+
+  /**
+   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param, with_neighbor) {
+
+  }
+
+  /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
    * @param [ignore_select] {Boolean}
@@ -467,6 +594,7 @@ class BuilderElement extends paper.Group {
         _attr._rays.clear(true);
       }
       project.register_change();
+      project._scope.eve.emit('set_inset', this);
     }
   }
 
@@ -498,9 +626,8 @@ class BuilderElement extends paper.Group {
    * Возвращает примыкающий элемент и строку табчасти соединений
    */
   selected_cnn_ii() {
-    const {project, elm} = this;
+    const {project, elm, ox} = this;
     const sel = project.getSelectedItems();
-    const {cnns} = project;
     const items = [];
     let res;
 
@@ -515,7 +642,7 @@ class BuilderElement extends paper.Group {
       items.some((item) => item == this) &&
       items.some((item) => {
         if(item != this){
-          cnns.forEach((row) => {
+          ox.cnn_elmnts.forEach((row) => {
             if(!row.node1 && !row.node2 &&
               ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
               res = {elm: item, row: row};
@@ -539,11 +666,13 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, _row} = this;
+    const {parent, project, _row, ox, elm} = this;
 
     parent && parent.on_remove_elm && parent.on_remove_elm(this);
 
-    if(_row && _row._owner && project.ox === _row._owner._owner){
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
       _row._owner.del(_row);
     }
 

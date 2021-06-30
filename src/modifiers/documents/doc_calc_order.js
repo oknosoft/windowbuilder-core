@@ -128,6 +128,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     const {acl_objs} = current_user;
 
+    //Менеджер
+    this.manager = current_user;
+
     //Организация
     acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
       this.organization = row.acl_obj;
@@ -152,9 +155,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     //Договор
     this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
 
-    //Менеджер
-    this.manager = current_user;
-
     //СостояниеТранспорта
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;
 
@@ -166,7 +166,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save() {
 
-    const {msg, pricing, utils: {blank}, cat, enm: {
+    const {msg, pricing, utils: {blank}, cat, job_prm, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -236,26 +236,28 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
-    this.production.forEach(({amount, amount_internal, characteristic}) => {
-      doc_amount += amount;
-      internal += amount_internal;
-      characteristic.specification.forEach(({nom, elm}) => {
-        if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
-          if(!errors.has(characteristic)){
-            errors.set(characteristic, new Map());
+    if(!job_prm.debug) {
+      this.production.forEach(({amount, amount_internal, characteristic}) => {
+        doc_amount += amount;
+        internal += amount_internal;
+        characteristic.specification.forEach(({nom, elm}) => {
+          if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
+            if(!errors.has(characteristic)){
+              errors.set(characteristic, new Map());
+            }
+            if(!errors.has(nom.elm_type)){
+              errors.set(nom.elm_type, new Set());
+            }
+            // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
+            if(!errors.get(characteristic).has(nom)){
+              errors.get(characteristic).set(nom, new Set());
+            }
+            errors.get(characteristic).get(nom).add(elm);
+            errors.get(nom.elm_type).add(nom);
           }
-          if(!errors.has(nom.elm_type)){
-            errors.set(nom.elm_type, new Set());
-          }
-          // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
-          if(!errors.get(characteristic).has(nom)){
-            errors.get(characteristic).set(nom, new Set());
-          }
-          errors.get(characteristic).get(nom).add(elm);
-          errors.get(nom.elm_type).add(nom);
-        }
+        });
       });
-    });
+    }
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
@@ -655,6 +657,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       (individual_person.Имя ? ' ' + individual_person.Имя[0].toUpperCase() + '.' : '' ) +
       (individual_person.Отчество ? ' ' + individual_person.Отчество[0].toUpperCase() + '.' : ''),
       СотрудникФИОРП: individual_person.ФамилияРП + ' ' + individual_person.ИмяРП + ' ' + individual_person.ОтчествоРП,
+      СотрудникТелефон: manager.contact_information._obj.reduce((val, row) => {
+        if(row.type == 'Телефон' && row.presentation) {
+          return row.presentation;
+        }}, ''),
+      СотрудникEmail: manager.contact_information._obj.reduce((val, row) => {
+        if(row.type == 'АдресЭлектроннойПочты' && row.presentation) {
+          return row.presentation;
+        }}, ''),
       СуммаДокумента: this.doc_amount.toFixed(2),
       СуммаДокументаПрописью: this.doc_amount.in_words(),
       СуммаДокументаБезСкидки: this.production._obj.reduce((val, row) => val + row.quantity * row.price, 0).toFixed(2),
@@ -667,6 +677,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ВсегоНаименований: this.production.count(),
       ВсегоИзделий: 0,
       ВсегоПлощадьИзделий: 0,
+      ВсегоМасса: 0,
+      ВсегоМассаЗаполнений: 0,
       Продукция: [],
       Аксессуары: [],
       Услуги: [],
@@ -707,10 +719,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.production.forEach((row) => {
         if(!row.characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
 
-          res.Продукция.push(this.row_description(row));
+          const description = this.row_description(row);
+          res.Продукция.push(description);
 
           res.ВсегоИзделий += row.quantity;
-          res.ВсегоПлощадьИзделий += row.quantity * row.s;
+          res.ВсегоПлощадьИзделий += row.quantity * row.characteristic.s;
+          res.ВсегоМасса += row.quantity * description.Масса;
+          res.ВсегоМассаЗаполнений += row.quantity * description.МассаЗаполнений;
 
           // если запросили эскиз без размерных линий или с иными параметрами...
           if(builder_props) {
@@ -742,21 +757,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
       res.ВсегоПлощадьИзделий = res.ВсегоПлощадьИзделий.round(3);
 
-      return imgs.then(() => {
-        editor && editor.unload();
-        return (get_imgs.length ? Promise.all(get_imgs) : Promise.resolve([]))
-          .then(() => {
-            // https://github.com/soldair/node-qrcode
-            if(typeof QRCode === 'object') {
-              const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
-              return QRCode.toString(text, {type: 'svg'}).then((qr) => {
-                res.qrcode = qr;
-                return res;
-              });
-            }
-            return res;
-          });
-      });
+      res.qrcode = () => {
+        // https://github.com/soldair/node-qrcode
+        return Promise.resolve().then(() => {
+          if(typeof QRCode === 'object') {
+            const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
+            return QRCode.toString(text, {type: 'svg'});
+          }
+        });
+      };
+
+      return imgs
+        .then(() => {
+          editor && editor.unload();
+          return Promise.all(get_imgs);
+        })
+        .then(() => res);
 
     });
 
@@ -774,6 +790,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     }
     const {characteristic, nom, s, quantity, note} = row;
+    let m = 0, gm = 0, skip = new Set();
+    characteristic.specification.forEach(({elm, nom, totqty}) => {
+      m += nom.density * totqty;
+      if(elm > 0 && !skip.has(elm)) {
+        if(characteristic.glasses.find({elm})) {
+          gm += nom.density * totqty;
+        }
+        else {
+          skip.add(elm);
+        }
+      }
+    });
+
     const res = {
       ref: characteristic.ref,
       НомерСтроки: row.row,
@@ -786,12 +815,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       Длина: row.len,
       Ширина: row.width,
       ВсегоПлощадь: s * quantity,
+      Масса: m,
+      ВсегоМасса: m * quantity,
+      МассаЗаполнений: gm,
+      ВсегоМассаЗаполнений: gm * quantity,
       Примечание: note,
       Комментарий: note,
       СистемаПрофилей: characteristic.sys.name,
       Номенклатура: nom.name_full || nom.name,
       Характеристика: characteristic.name,
       Заполнения: '',
+      ЗаполненияФормулы: '',
       Фурнитура: '',
       Параметры: [],
       Цена: row.price,
@@ -804,13 +838,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     };
 
     // формируем описание заполнений
-    characteristic.glasses.forEach((row) => {
-      const {name} = row.nom;
-      if(res.Заполнения.indexOf(name) == -1) {
+    characteristic.glasses.forEach(({nom, formula}) => {
+      const {name} = nom;
+      if(!res.Заполнения.includes(name)) {
         if(res.Заполнения) {
           res.Заполнения += ', ';
         }
         res.Заполнения += name;
+      }
+      if(!res.ЗаполненияФормулы.includes(formula)) {
+        if(res.ЗаполненияФормулы) {
+          res.ЗаполненияФормулы += ', ';
+        }
+        res.ЗаполненияФормулы += formula;
       }
     });
 
@@ -824,6 +864,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         res.Фурнитура += name;
       }
     });
+
+
 
     // параметры, помеченные к включению в описание
     const params = new Map();
@@ -851,7 +893,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.planning.clear();
 
     // получаем url сервиса
-    const {wsql, aes, current_user: {suffix}, msg, utils} = $p;
+    const {wsql, aes, adapters: {pouch}, msg, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
 
     // сериализуем документ и характеристики
@@ -867,17 +909,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       // выполняем запрос к сервису
       .then(() => {
-        const headers = new Headers();
-        headers.append('Authorization', 'Basic ' + btoa(unescape(encodeURIComponent(
-          wsql.get_user_param('user_name') + ':' + aes.Ctr.decrypt(wsql.get_user_param('user_pwd'))))));
-        if(suffix){
-          headers.append('suffix', suffix);
-        }
-        fetch(url, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(post_data)
-        })
+        pouch.fetch(url, {method: 'POST', body: JSON.stringify(post_data)})
           .then(response => response.json())
           // заполняем табчасть
           .then(json => {
@@ -982,15 +1014,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Создаёт строку заказа с уникальной характеристикой
-   * @param row_spec
-   * @param elm
-   * @param len_angl
-   * @param params
-   * @param create
-   * @param grid
-   * @return {Promise}
+   * @param [row_spec] {DpBuyers_orderProductionRow} - строка - генератор параметрика
+   * @param [elm]
+   * @param [len_angl]
+   * @param [params]
+   * @param [create]
+   * @param [grid]
+   * @param [cx] {Promise.<CatCharacteristics>}
+   * @return {Promise.<DocCalc_orderProductionRow>}
    */
-  create_product_row({row_spec, elm, len_angl, params, create, grid}) {
+  create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
     const row = row_spec instanceof $p.DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
       row_spec.characteristic.calc_order_row :
@@ -1011,7 +1044,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     // ищем объект продукции в RAM или берём из строки заказа
     const mgr = $p.cat.characteristics;
-    let cx;
     function fill_cx(ox) {
       if(ox._deleted){
         return;
@@ -1024,7 +1056,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       cx = Promise.resolve(ox);
       return false;
     }
-    if(!row.characteristic.empty() && !row.characteristic._deleted){
+    if(!cx && !row.characteristic.empty() && !row.characteristic._deleted){
       fill_cx(row.characteristic);
     }
 
@@ -1192,7 +1224,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             const {origin} = cx;
-            if(origin && !origin.empty() && !origin.slave) {
+            if(origin instanceof $p.CatInserts && !origin.empty() && !origin.slave) {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
@@ -1290,13 +1322,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * Устанавливает подразделение по умолчанию
    */
   static set_department() {
-    const department = $p.wsql.get_user_param('current_department');
+    const {wsql, cat} = $p
+    const department = wsql.get_user_param('current_department');
     if(department) {
       this.department = department;
     }
-    const {current_user, cat} = $p;
-    if(current_user && this.department.empty() || this.department.is_new()) {
-      current_user.acl_objs && current_user.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
+    if(this.department.empty() || this.department.is_new()) {
+      let {manager} = this;
+      if(!manager || manager.empty()) {
+        manager = $p.current_user;
+      }
+      manager && manager.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
         if(this.department != row.acl_obj) {
           this.department = row.acl_obj;
         }
@@ -1319,8 +1355,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm, current_user} = $p;
+    const {rounding, _slave_recalc, manager} = _owner._owner;
+    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
     if(rfield) {
@@ -1398,7 +1434,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         let extra_charge = wsql.get_user_param('surcharge_internal', 'number');
 
         // если пересчет выполняется менеджером, используем наценку по умолчанию
-        if(!current_user || !current_user.partners_uids.length || !extra_charge) {
+        if(!manager.partners_uids.length || !extra_charge) {
           pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
