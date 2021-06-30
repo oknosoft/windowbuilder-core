@@ -854,12 +854,15 @@ class Scheme extends paper.Project {
    */
   unload() {
     const {_dp, _attr, _calc_order_row} = this;
-    const pnames = '_loading,_saving';
+    const pnames = ['_loading', '_saving'];
     for (let fld in _attr) {
-      if(pnames.match(fld)) {
+      if(pnames.includes(fld)) {
         _attr[fld] = true;
       }
       else {
+        if(fld === '_vitrazh') {
+          _attr[fld].unload();
+        }
         delete _attr[fld];
       }
     }

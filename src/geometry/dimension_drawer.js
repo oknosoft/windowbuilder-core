@@ -27,6 +27,16 @@ class DimensionGroup {
     }
   }
 
+  sizes() {
+    const res = [];
+    for (let key in this) {
+      if(this[key].visible) {
+        res.push(this[key]);
+      }
+    }
+    return res;
+  }
+
 }
 
 /**

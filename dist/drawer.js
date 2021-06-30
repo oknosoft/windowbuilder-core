@@ -993,7 +993,6 @@ EditorInvisible.AbstractFilling = AbstractFilling;
  * @submodule contour
  */
 
-/* global paper, $p */
 
 /**
  * ### Сегмент заполнения
@@ -1231,7 +1230,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr = {};
 
     // узлы и рёбра текущего слоя
-    //this._skeleton = new Skeleton(this);
+    // this._skeleton = new Skeleton(this);
 
     const {project} = this;
 
@@ -2272,10 +2271,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-/**
- * Рисует ошибки соединений
- */
-
+  /**
+   * Рисует ошибки соединений
+   */
   draw_cnn_errors() {
 
     const {l_visualization} = this;
@@ -4204,6 +4202,16 @@ class DimensionGroup {
         return true;
       }
     }
+  }
+
+  sizes() {
+    const res = [];
+    for (let key in this) {
+      if(this[key].visible) {
+        res.push(this[key]);
+      }
+    }
+    return res;
   }
 
 }
@@ -14377,12 +14385,15 @@ class Scheme extends paper.Project {
    */
   unload() {
     const {_dp, _attr, _calc_order_row} = this;
-    const pnames = '_loading,_saving';
+    const pnames = ['_loading', '_saving'];
     for (let fld in _attr) {
-      if(pnames.match(fld)) {
+      if(pnames.includes(fld)) {
         _attr[fld] = true;
       }
       else {
+        if(fld === '_vitrazh') {
+          _attr[fld].unload();
+        }
         delete _attr[fld];
       }
     }
