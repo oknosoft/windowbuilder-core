@@ -1294,26 +1294,36 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(this._data._templates_loaded) {
       return Promise.resolve();
     }
+    if(this._data._templates_loading) {
+      return this._data._templates_loading;
+    }
     else if(this.obj_delivery_state == 'Шаблон') {
       const {adapters: {pouch}, cat} = $p;
-      return pouch.fetch(`/couchdb/mdm/${pouch.props.zone}/templates/${this.ref}`)
+      let zone = sessionStorage.getItem('zone');
+      if(!zone) {
+        zone = pouch.props.zone;
+      }
+      this._data._templates_loading = pouch.fetch(`/couchdb/mdm/${zone}/templates/${this.ref}`)
         .then((res) => res.json())
         .then(({rows}) => {
           if(rows) {
             cat.characteristics.load_array(rows);
             this._data._templates_loaded = true;
+            delete this._data._templates_loading;
             return this;
           }
           throw null;
         })
         .catch((err) => {
           err && console.log(err);
+          delete this._data._templates_loading;
           return this.load_production()
             .then(() => {
               this._data._templates_loaded = true;
               return this;
             })
         });
+      return this._data._templates_loading;
     }
     return this.load_production();
   }
