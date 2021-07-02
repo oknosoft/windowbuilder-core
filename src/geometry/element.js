@@ -695,13 +695,13 @@ class BuilderElement extends paper.Group {
     if(!nom){
       nom = $p.job_prm.nom.info_error;
     }
-    const {ox} = this.project;
-    if(!ox.specification.find_rows({elm: this.elm, nom}).length){
+    const {_ox} = this.layer;
+    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
       $p.ProductsBuilding.new_spec_row({
         elm: this,
         row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: ox.specification,
-        ox,
+        spec: _ox.specification,
+        ox: _ox,
       });
     }
     if(text){

@@ -6403,13 +6403,13 @@ class BuilderElement extends paper.Group {
     if(!nom){
       nom = $p.job_prm.nom.info_error;
     }
-    const {ox} = this.project;
-    if(!ox.specification.find_rows({elm: this.elm, nom}).length){
+    const {_ox} = this.layer;
+    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
       $p.ProductsBuilding.new_spec_row({
         elm: this,
         row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: ox.specification,
-        ox,
+        spec: _ox.specification,
+        ox: _ox,
       });
     }
     if(text){
@@ -20698,20 +20698,23 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const {_row} = elm;
+      const is_row = !utils.is_data_obj(row);
 
       // Главный элемент с нулевым количеством не включаем
-      if(row.is_main_elm && !row.quantity){
+      if(is_row && row.is_main_elm && !row.quantity){
         return false;
       }
 
-      if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
+      if (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру) {
         const len = len_angl ? len_angl.len : _row.len;
         if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
           return false;
         }
-        const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
-        if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
-          return false;
+        if (is_row) {
+          const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
+          if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
+            return false;
+          }
         }
       }
 
@@ -20849,6 +20852,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
 
       });
+
+      // контроль массы, размеров основной вставки
+      if([Профиль, Заполнение].includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
+        elm.err_spec_row(job_prm.nom.critical_error);
+      }
 
       return res;
     }
