@@ -12291,8 +12291,20 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  presentation() {
+    return 'Соединители';
+  }
+
+  get info() {
+    return this.presentation;
+  }
+
   get skeleton() {
     return this.project._skeleton;
+  }
+
+  get cnstr() {
+    return 1000000;
   }
 
   /**
@@ -12313,6 +12325,10 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   glasses() {
+    return [];
+  }
+
+  get contours() {
     return [];
   }
 
