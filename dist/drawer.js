@@ -12304,7 +12304,7 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   get cnstr() {
-    return 1000000;
+    return null;
   }
 
   /**
@@ -12324,13 +12324,35 @@ class ConnectiveLayer extends paper.Layer {
     this.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
   }
 
+  /**
+   * Заглушка
+   */
   glasses() {
     return [];
   }
 
+  /**
+   * Заглушка
+   */
   get contours() {
     return [];
   }
+
+  /**
+   * Заглушка
+   */
+  refresh_prm_links() {
+
+  }
+
+  get _manager() {
+    return this.project._dp._manager;
+  }
+
+  _metadata(fld) {
+    return Contour.prototype._metadata.call(this, fld);
+  }
+
 
   /**
    * Возвращает массив профилей текущего слоя
