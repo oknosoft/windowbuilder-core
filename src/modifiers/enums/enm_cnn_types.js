@@ -91,6 +91,7 @@
         i: [i],
         a: [av, ad, ah, t, xx, long, short],
         t: [t, xx],
+        xsl: [t, xx, long, short],
       }
     },
 

@@ -445,14 +445,17 @@ class ProductsBuilding {
         art2: true,
         node: 'e',
       };
-      const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, cnn_types.long, cnn_types.short];
+      const sl_types = [cnn_types.long, cnn_types.short];
+      const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, ...sl_types];
       if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
-
 
         len_angl.angle = len_angl.alp2;
 
-        // для ТОбразного и Незамкнутого контура надо рассчитать еще и с другой стороны
-        if(other_side_types.includes(b.cnn.cnn_type)) {
+        // для ТОбразного, Незамкнутого контура и short-long, надо рассчитать еще и с другой стороны
+        if(e.cnn && sl_types.includes(e.cnn.cnn_type)) {
+          cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
+        }
+        else if(other_side_types.includes(b.cnn.cnn_type)) {
           if(!other_side_types.includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
