@@ -100,10 +100,10 @@ class ProductsBuilding {
           if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
             const tmp_len_angl = Object.assign({}, len_angl);
             tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox});
           }
           else {
-            nom.calculate_spec({elm, elm2, len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox});
           }
         }
         else {

@@ -2096,6 +2096,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         furn: fields.furn,
         direction: fields.direction,
         h_ruch: fields.h_ruch,
+        flipped: fields.flipped,
       },
       tabular_sections: {
         params: tabular_sections.params,
@@ -3500,6 +3501,13 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set angle3d(v) {
     return this._row.angle3d = v;
+  }
+
+  get flipped() {
+    return this._row.flipped;
+  }
+  set flipped(v) {
+    return this._row.flipped = v;
   }
 
   /**
@@ -12307,6 +12315,13 @@ class ConnectiveLayer extends paper.Layer {
     return null;
   }
 
+  get flipped() {
+    return false;
+  }
+  set flipped(v) {
+    return false;
+  }
+
   /**
    * Продукция слоя соединителей
    * Совпадает с продукцией проекта
@@ -16771,10 +16786,10 @@ class ProductsBuilding {
           if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
             const tmp_len_angl = Object.assign({}, len_angl);
             tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox});
           }
           else {
-            nom.calculate_spec({elm, elm2, len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox});
           }
         }
         else {
@@ -19024,12 +19039,24 @@ $p.cat.clrs.__define({
         case 'КакИзделие':
           return clr_sch;
         case 'КакЭлементСнаружи':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакЭлементИзнутри'}, clr_elm);
+          }
           return clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
         case 'КакЭлементИзнутри':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm);
+          }
           return clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
         case 'КакИзделиеСнаружи':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакИзделиеИзнутри'}, clr_elm, clr_sch);
+          }
           return clr_sch.clr_out.empty() ? clr_sch : clr_sch.clr_out;
         case 'КакИзделиеИзнутри':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch);
+          }
           return clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
         case 'КакЭлементИнверсный':
           return this.inverted(clr_elm);
@@ -20811,7 +20838,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param ox {CatCharacteristics} - текущая продукция
      * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
      * @param [len_angl] {Object} - контекст размеров элемента
-     * @param [own_row] {CatInsertsSpecificationRow} - родительская строка для вложенных вставок
+     * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
     filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
@@ -20922,10 +20949,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param [elm2] {BuilderElement}
      * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
+     * @param own_row {CatCnnsSpecificationRow}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
      */
-    calculate_spec({elm, elm2, len_angl, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr}) {
 
       const {_row} = elm;
       const {
@@ -20946,7 +20974,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         spec = ox.specification;
       }
 
-      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;

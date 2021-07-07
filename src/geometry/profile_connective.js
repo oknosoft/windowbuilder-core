@@ -219,6 +219,13 @@ class ConnectiveLayer extends paper.Layer {
     return null;
   }
 
+  get flipped() {
+    return false;
+  }
+  set flipped(v) {
+    return false;
+  }
+
   /**
    * Продукция слоя соединителей
    * Совпадает с продукцией проекта

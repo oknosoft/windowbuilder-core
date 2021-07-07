@@ -1113,6 +1113,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         furn: fields.furn,
         direction: fields.direction,
         h_ruch: fields.h_ruch,
+        flipped: fields.flipped,
       },
       tabular_sections: {
         params: tabular_sections.params,
@@ -2517,6 +2518,13 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set angle3d(v) {
     return this._row.angle3d = v;
+  }
+
+  get flipped() {
+    return this._row.flipped;
+  }
+  set flipped(v) {
+    return this._row.flipped = v;
   }
 
   /**

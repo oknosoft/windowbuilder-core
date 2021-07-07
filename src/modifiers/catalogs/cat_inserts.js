@@ -676,7 +676,7 @@
      * @param ox {CatCharacteristics} - текущая продукция
      * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
      * @param [len_angl] {Object} - контекст размеров элемента
-     * @param [own_row] {CatInsertsSpecificationRow} - родительская строка для вложенных вставок
+     * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
     filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
@@ -787,10 +787,11 @@
      * @param [elm2] {BuilderElement}
      * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
+     * @param own_row {CatCnnsSpecificationRow}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
      */
-    calculate_spec({elm, elm2, len_angl, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr}) {
 
       const {_row} = elm;
       const {
@@ -811,7 +812,7 @@
         spec = ox.specification;
       }
 
-      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;

@@ -29,12 +29,24 @@ $p.cat.clrs.__define({
         case 'КакИзделие':
           return clr_sch;
         case 'КакЭлементСнаружи':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакЭлементИзнутри'}, clr_elm);
+          }
           return clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
         case 'КакЭлементИзнутри':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm);
+          }
           return clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
         case 'КакИзделиеСнаружи':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакИзделиеИзнутри'}, clr_elm, clr_sch);
+          }
           return clr_sch.clr_out.empty() ? clr_sch : clr_sch.clr_out;
         case 'КакИзделиеИзнутри':
+          if(elm && elm.layer.flipped) {
+            return this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch);
+          }
           return clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
         case 'КакЭлементИнверсный':
           return this.inverted(clr_elm);
