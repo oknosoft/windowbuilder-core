@@ -236,6 +236,12 @@ class BuilderElement extends paper.Group {
               return "_t_.ref in (" + refs + ")";
             }
           }
+          else if(this instanceof ProfileConnective){
+            selection = {elm_type: elm_types.Соединитель};
+          }
+          else if(this instanceof ProfileAddl){
+            selection = {elm_type: elm_types.Добор};
+          }
           else if(this instanceof Profile){
             if(this.nearest()){
               selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};

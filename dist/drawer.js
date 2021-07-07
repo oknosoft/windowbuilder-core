@@ -2337,7 +2337,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       _rays.e.check_err(err_attrs);
       // ошибки примыкающих соединений
       if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {
-        Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
+        const subpath = elm.path.get_subpath(_corns[1], _corns[2]);
+        Object.assign(subpath, err_attrs);
+        if(elm._attr._nearest instanceof ProfileConnective) {
+          subpath.parent = elm._attr._nearest.layer._errors;
+        }
       }
       // если у профиля есть доборы, проверим их соединения
       elm.addls.forEach((elm) => {
@@ -5951,6 +5955,12 @@ class BuilderElement extends paper.Group {
               });
               return "_t_.ref in (" + refs + ")";
             }
+          }
+          else if(this instanceof ProfileConnective){
+            selection = {elm_type: elm_types.Соединитель};
+          }
+          else if(this instanceof ProfileAddl){
+            selection = {elm_type: elm_types.Добор};
           }
           else if(this instanceof Profile){
             if(this.nearest()){
@@ -12299,6 +12309,11 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  constructor(attr) {
+    super(attr);
+    this._errors = new paper.Group({parent: this});
+  }
+
   presentation() {
     return 'Соединители';
   }
@@ -12332,7 +12347,10 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   redraw() {
-    this.children.forEach((elm) => elm.redraw());
+    const {_errors, children} = this;
+    children.forEach((elm) => elm !== _errors && elm.redraw());
+    _errors.removeChildren();
+    _errors.bringToFront();
   }
 
   save_coordinates() {

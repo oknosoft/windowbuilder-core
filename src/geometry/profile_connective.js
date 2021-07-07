@@ -203,6 +203,11 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  constructor(attr) {
+    super(attr);
+    this._errors = new paper.Group({parent: this});
+  }
+
   presentation() {
     return 'Соединители';
   }
@@ -236,7 +241,10 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   redraw() {
-    this.children.forEach((elm) => elm.redraw());
+    const {_errors, children} = this;
+    children.forEach((elm) => elm !== _errors && elm.redraw());
+    _errors.removeChildren();
+    _errors.bringToFront();
   }
 
   save_coordinates() {
