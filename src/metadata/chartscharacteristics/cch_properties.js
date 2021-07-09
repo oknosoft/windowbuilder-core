@@ -222,10 +222,11 @@ exports.CchProperties = class CchProperties extends Object {
           throw `Источник '${src.name}' не поддержан`;
         }
       }
+      const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
       params.find_rows({
         param: this,
         cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
-        inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
+        inset,
       }, (row) => {
         if(!prow || row.cnstr) {
           prow = row;
@@ -235,7 +236,7 @@ exports.CchProperties = class CchProperties extends Object {
         params.find_rows({
           param: this,
           cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.row]} : 0),
-          inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
+          inset,
         }, (row) => {
           if(!prow || row.cnstr) {
             prow = row;
