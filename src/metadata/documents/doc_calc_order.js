@@ -40,7 +40,12 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       });
   }
 
-  // копирует заказ, возвращает промис с новым заказом
+  /**
+   * Копирует заказ, возвращает промис с новым заказом
+   * @param src {Object}
+   * @param src.clone {Boolean} - если указано, создаётся копия объекта, иначе - новый объект с аналогичными свойствами
+   * @return {Promise<DocCalc_order>}
+   */
   async clone(src) {
     const {utils, cat} = this._owner.$p;
     if(utils.is_guid(src)) {
