@@ -90,6 +90,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     // дублируем контрагента для целей RLS
     this.partner = calc_order.partner;
 
+    return this;
+
   }
 
   /**

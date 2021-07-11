@@ -166,14 +166,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save() {
 
-    const {msg, pricing, utils: {blank}, cat, job_prm, enm: {
+    const {msg, pricing, utils: {blank, moment}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
 
     //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
     //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
-    const {obj_delivery_state, _obj, category, rounding} = this;
+    const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp} = this;
     const must_be_saved = ![Подтвержден, Отправлен].includes(obj_delivery_state);
 
     // если установлен признак проведения, проверим состояние транспорта
@@ -277,19 +277,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       });
 
-      msg.show_msg && msg.show_msg({
-        type: 'alert-warning',
-        title: 'Ошибки в заказе',
-        text,
-      });
-
-      console.error(text);
-
       if (critical && !must_be_saved) {
         if(obj_delivery_state == 'Отправлен') {
           this.obj_delivery_state = 'Черновик';
         }
-        return false;
+        throw new Error(text);
+      }
+      else {
+        msg.show_msg && msg.show_msg({
+          type: 'alert-warning',
+          title: 'Ошибки в заказе',
+          text,
+        });
       }
     }
 
@@ -326,34 +325,92 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       _obj.state = 'draft';
     }
 
-    // номера изделий в характеристиках
-    return this.product_rows(true)
+    // проверка заполненности полей теперь вызывает runtime-error
+    this.check_mandatory();
+
+    // массив сырых данных изменённых характеристик
+    const sobjs = this.product_rows(true);
+
+    // если изменился hash заказа, добавим его в sobjs
+    if(this._modified) {
+      const hash = this._hash();
+      if(this.timestamp && this.timestamp.hash === hash) {
+        this._modified = false;
+      }
+      else {
+        const tmp = Object.assign({_id: `${class_name}|${_obj.ref}`, class_name}, _obj);
+        delete tmp.ref;
+        tmp.timestamp = {
+          moment: moment().format('YYYY-MM-DDTHH:mm:ss ZZ'),
+          user: wsql.get_user_param('user_name'),
+          hash,
+        };
+        if (this._attachments) {
+          tmp._attachments = this._attachments;
+        }
+        sobjs.push(tmp);
+      }
+    }
+
     // пометим на удаление неиспользуемые характеристики
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
-      .then(() => {
-        return this._manager.pouch_db
-          .query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
-          .then(({rows}) => {
-            let res = Promise.resolve();
-            let deleted = 0;
-            for (const {id} of rows) {
-              const ref = id.substr(20);
-              if(this.production.find_rows({characteristic: ref}).length) {
-                continue;
-              }
-              deleted ++;
-              res = res
-                .then(() => cat.characteristics.get(ref, 'promise'))
-                .then((ox) => !ox.is_new() && !ox._deleted && ox.mark_deleted(true));
-            }
-            return res.then(() => deleted);
-          })
-          .then((res) => {
-            res && this._manager.emit_async('svgs', this);
-          })
-          .catch((err) => null);
+    const unused = () => _manager.pouch_db
+      .query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
+      .then(({rows}) => {
+        let res = Promise.resolve();
+        let deleted = 0;
+        for (const {id} of rows) {
+          const ref = id.substr(20);
+          if(this.production.find({characteristic: ref})) {
+            continue;
+          }
+          deleted ++;
+          res = res
+            .then(() => cat.characteristics.get(ref, 'promise'))
+            .then((ox) => !ox.is_new() && !ox._deleted && ox.mark_deleted(true));
+        }
+        return res.then(() => deleted);
       })
-      .then(() => this);
+      .then((res) => {
+        res && _manager.emit_async('svgs', this);
+        // null из before_save, прерывает стандартную обработку
+        return null;
+      })
+      .catch((err) => null);
+
+    const save_error = (reason) => {
+      throw new Error(`Ошибка при записи заказа ${this.presentation}, ${reason}`);
+    };
+
+    return !sobjs.length ? unused() : _manager.pouch_db.bulkDocs(sobjs)
+      .then((bres) => {
+        // освежаем ревизии, проверяем успешность записи и вызываем after_save
+        for(const row of bres) {
+          const [cname, ref] = row.id.split('|');
+          const mgr = md.mgr_by_class_name(cname);
+          const o = mgr.get(ref, true);
+          if(row.ok) {
+            if(mgr) {
+              if(o) {
+                o._obj._rev = row.rev;
+                o.after_save();
+                mgr.emit_promise('after_save', o)
+                  .then(() => o._modified = false);
+              }
+            }
+          }
+          else {
+            save_error(row.error === 'conflict' ?
+              'вероятно, объект изменён другим пользователем, обратитесь к администратору' :
+              `${row.reason} ${o && o !== this ? o.presentation : ''} повторите попытку записи через минуту`);
+          }
+        }
+        // null из before_save, прерывает стандартную обработку
+        return unused();
+      })
+      .catch((err) => {
+        save_error(`${err.message} повторите попытку записи через минуту`);
+      });
 
   }
 
@@ -492,25 +549,49 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   /**
    * Пересчитывает номера изделий в продукциях,
    * обновляет контрагента, состояние транспорта и подразделение
-   * @param save
+   * @param [save] {Boolean} - если указано, выполняет before_save характеристик
+   * @return {Array<Object>}
    */
   product_rows(save) {
-    let res = Promise.resolve();
+    let res = [];
+    const {production, partner, obj_delivery_state, department} = this;
+    const {utils, wsql} = $p;
+    const user = wsql.get_user_param('user_name');
     this.production.forEach(({row, characteristic}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
         if(characteristic.product !== row || characteristic._modified ||
-          characteristic.partner !== this.partner ||
-          characteristic.obj_delivery_state !== this.obj_delivery_state ||
-          characteristic.department !== this.department) {
+          characteristic.partner !== partner ||
+          characteristic.obj_delivery_state !== obj_delivery_state ||
+          characteristic.department !== department) {
 
           characteristic.product = row;
-          characteristic.obj_delivery_state = this.obj_delivery_state;
-          characteristic.partner = this.partner;
-          characteristic.department = this.department;
+          characteristic.obj_delivery_state = obj_delivery_state;
+          characteristic.partner = partner;
+          characteristic.department = department;
 
           if(!characteristic.owner.empty()) {
             if(save) {
-              res = res.then(() => characteristic.save());
+              if(characteristic.before_save() === false) {
+                const {_err} = characteristic._data;
+                throw new Error(_err ? _err.text : `Ошибка при записи продукции ${characteristic.prod_name()}`);
+              }
+              else {
+                characteristic.check_mandatory();
+                const hash = characteristic._hash();
+                const {ref, class_name, _obj} = characteristic;
+                if(characteristic.timestamp && characteristic.timestamp.hash === hash) {
+                  characteristic._modified = false;
+                }
+                else {
+                  const tmp = Object.assign({_id: `${class_name}|${ref}`, class_name}, _obj);
+                  delete tmp.ref;
+                  tmp.timestamp = {moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'), user, hash};
+                  if (characteristic._attachments) {
+                    tmp._attachments = characteristic._attachments;
+                  }
+                  res.push(tmp);
+                }
+              }
             }
             else {
               characteristic.name = characteristic.prod_name();
