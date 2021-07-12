@@ -2106,11 +2106,11 @@ class ProfileItem extends GeneratrixElement {
     path.closePath();
     path.reduce();
 
-    this.children.forEach((elm) => {
-      if(elm instanceof ProfileAddl) {
-        elm.redraw();
+    for(const chld of this.children) {
+      if(chld instanceof ProfileItem) {
+        chld.redraw();
       }
-    });
+    }
 
     return this;
   }

@@ -40,7 +40,12 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       });
   }
 
-  // копирует заказ, возвращает промис с новым заказом
+  /**
+   * Копирует заказ, возвращает промис с новым заказом
+   * @param src {Object}
+   * @param src.clone {Boolean} - если указано, создаётся копия объекта, иначе - новый объект с аналогичными свойствами
+   * @return {Promise<DocCalc_order>}
+   */
   async clone(src) {
     const {utils, cat} = this._owner.$p;
     if(utils.is_guid(src)) {
@@ -62,6 +67,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     if(!clone) {
       utils._mixin(dst._obj, others, null,
         'ref,date,number_doc,posted,_deleted,number_internal,production,planning,manager,obj_delivery_state'.split(','));
+      dst.extra_fields.load((src._obj || src).extra_fields);
     }
 
     // заполняем продукцию и сохраненные эскизы

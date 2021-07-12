@@ -44,7 +44,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}} = this;
+      const {_scope} = this.project;
 
       // Информируем контур о том, что у него появился новый ребёнок
       this.layer.on_insert_elm(this);

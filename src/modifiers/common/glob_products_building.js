@@ -100,10 +100,10 @@ class ProductsBuilding {
           if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
             const tmp_len_angl = Object.assign({}, len_angl);
             tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox});
           }
           else {
-            nom.calculate_spec({elm, elm2, len_angl, ox});
+            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox});
           }
         }
         else {
@@ -445,14 +445,17 @@ class ProductsBuilding {
         art2: true,
         node: 'e',
       };
-      const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, cnn_types.long, cnn_types.short];
+      const sl_types = [cnn_types.long, cnn_types.short];
+      const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, ...sl_types];
       if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
-
 
         len_angl.angle = len_angl.alp2;
 
-        // для ТОбразного и Незамкнутого контура надо рассчитать еще и с другой стороны
-        if(other_side_types.includes(b.cnn.cnn_type)) {
+        // для ТОбразного, Незамкнутого контура и short-long, надо рассчитать еще и с другой стороны
+        if(e.cnn && sl_types.includes(e.cnn.cnn_type)) {
+          cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
+        }
+        else if(other_side_types.includes(b.cnn.cnn_type)) {
           if(!other_side_types.includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }

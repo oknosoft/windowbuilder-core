@@ -1011,7 +1011,7 @@ class Scheme extends paper.Project {
   save_coordinates(attr) {
 
     try {
-      const {_attr, bounds, ox} = this;
+      const {_attr, bounds, ox, contours} = this;
 
       if(!bounds) {
         return;
@@ -1030,7 +1030,19 @@ class Scheme extends paper.Project {
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях
-      this.contours.forEach((contour) => contour.save_coordinates(false, attr && attr.save, attr && attr.close));
+      contours.forEach((contour) => {
+        if(attr && attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+          if(this.activeLayer === contour) {
+            const other = contours.find((el) => el !== contour);
+            other && other.activate();
+          }
+          contour.remove();
+          this._scope.eve.emit_async('rows', ox, {constructions: true});
+        }
+        else {
+          contour.save_coordinates(false, attr && attr.save, attr && attr.close);
+        }
+      });
 
       // вызываем метод save_coordinates в слое соединителей
       this.l_connective.save_coordinates();

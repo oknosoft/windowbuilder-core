@@ -236,6 +236,12 @@ class BuilderElement extends paper.Group {
               return "_t_.ref in (" + refs + ")";
             }
           }
+          else if(this instanceof ProfileConnective){
+            selection = {elm_type: elm_types.Соединитель};
+          }
+          else if(this instanceof ProfileAddl){
+            selection = {elm_type: elm_types.Добор};
+          }
           else if(this instanceof Profile){
             if(this.nearest()){
               selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
@@ -690,13 +696,13 @@ class BuilderElement extends paper.Group {
     if(!nom){
       nom = $p.job_prm.nom.info_error;
     }
-    const {ox} = this.project;
-    if(!ox.specification.find_rows({elm: this.elm, nom}).length){
+    const {_ox} = this.layer;
+    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
       $p.ProductsBuilding.new_spec_row({
         elm: this,
         row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: ox.specification,
-        ox,
+        spec: _ox.specification,
+        ox: _ox,
       });
     }
     if(text){

@@ -203,8 +203,32 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  constructor(attr) {
+    super(attr);
+    this._errors = new paper.Group({parent: this});
+  }
+
+  presentation() {
+    return 'Соединители';
+  }
+
+  get info() {
+    return this.presentation;
+  }
+
   get skeleton() {
     return this.project._skeleton;
+  }
+
+  get cnstr() {
+    return null;
+  }
+
+  get flipped() {
+    return false;
+  }
+  set flipped(v) {
+    return false;
   }
 
   /**
@@ -217,16 +241,45 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   redraw() {
-    this.children.forEach((elm) => elm.redraw());
+    const {_errors, children} = this;
+    children.forEach((elm) => elm !== _errors && elm.redraw());
+    _errors.removeChildren();
+    _errors.bringToFront();
   }
 
   save_coordinates() {
     this.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
   }
 
+  /**
+   * Заглушка
+   */
   glasses() {
     return [];
   }
+
+  /**
+   * Заглушка
+   */
+  get contours() {
+    return [];
+  }
+
+  /**
+   * Заглушка
+   */
+  refresh_prm_links() {
+
+  }
+
+  get _manager() {
+    return this.project._dp._manager;
+  }
+
+  _metadata(fld) {
+    return Contour.prototype._metadata.call(this, fld);
+  }
+
 
   /**
    * Возвращает массив профилей текущего слоя

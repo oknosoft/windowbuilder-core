@@ -434,7 +434,7 @@ exports.CatCnns = class CatCnns extends Object {
         return;
       }
       // для угловых, разрешаем art2 только явно для art2
-      if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
+      if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && !acn.xsl.includes(cnn_type) && set_specification != САртикулом2) {
         return;
       }
 

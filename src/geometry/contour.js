@@ -991,6 +991,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         furn: fields.furn,
         direction: fields.direction,
         h_ruch: fields.h_ruch,
+        flipped: fields.flipped,
       },
       tabular_sections: {
         params: tabular_sections.params,
@@ -1231,7 +1232,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       _rays.e.check_err(err_attrs);
       // ошибки примыкающих соединений
       if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {
-        Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
+        const subpath = elm.path.get_subpath(_corns[1], _corns[2]);
+        Object.assign(subpath, err_attrs);
+        if(elm._attr._nearest instanceof ProfileConnective) {
+          subpath.parent = elm._attr._nearest.layer._errors;
+        }
       }
       // если у профиля есть доборы, проверим их соединения
       elm.addls.forEach((elm) => {
@@ -2415,6 +2420,13 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set angle3d(v) {
     return this._row.angle3d = v;
+  }
+
+  get flipped() {
+    return this._row.flipped;
+  }
+  set flipped(v) {
+    return this._row.flipped = v;
   }
 
   /**

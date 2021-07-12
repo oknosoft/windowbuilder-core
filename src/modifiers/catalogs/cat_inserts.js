@@ -617,20 +617,23 @@
       }
 
       const {_row} = elm;
+      const is_row = !utils.is_data_obj(row);
 
       // Главный элемент с нулевым количеством не включаем
-      if(row.is_main_elm && !row.quantity){
+      if(is_row && row.is_main_elm && !row.quantity){
         return false;
       }
 
-      if (!utils.is_data_obj(row) && (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру)) {
+      if (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру) {
         const len = len_angl ? len_angl.len : _row.len;
         if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
           return false;
         }
-        const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
-        if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
-          return false;
+        if (is_row) {
+          const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
+          if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
+            return false;
+          }
         }
       }
 
@@ -673,7 +676,7 @@
      * @param ox {CatCharacteristics} - текущая продукция
      * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
      * @param [len_angl] {Object} - контекст размеров элемента
-     * @param [own_row] {CatInsertsSpecificationRow} - родительская строка для вложенных вставок
+     * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
     filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
@@ -749,7 +752,7 @@
           row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
             const fakerow = fake_row(subrow);
             fakerow.quantity = (subrow.quantity || 1) * (row.quantity || 1);
-            fakerow.coefficient = (subrow.coefficient || row.coefficient) ? (subrow.coefficient || 1) * (row.coefficient || 1) : 0;
+            fakerow.coefficient = (subrow.coefficient || row.coefficient) ? subrow.coefficient * (row.coefficient || 1) : 0;
             fakerow._origin = row.nom;
             if(fakerow.clr.empty()){
               fakerow.clr = row.clr;
@@ -769,6 +772,11 @@
 
       });
 
+      // контроль массы, размеров основной вставки
+      if([Профиль, Заполнение].includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
+        elm.err_spec_row(job_prm.nom.critical_error);
+      }
+
       return res;
     }
 
@@ -779,10 +787,11 @@
      * @param [elm2] {BuilderElement}
      * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
+     * @param own_row {CatCnnsSpecificationRow}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
      */
-    calculate_spec({elm, elm2, len_angl, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr}) {
 
       const {_row} = elm;
       const {
@@ -803,7 +812,7 @@
         spec = ox.specification;
       }
 
-      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, ox, clr}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
