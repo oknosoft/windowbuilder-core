@@ -4163,6 +4163,9 @@ class ContourVirtual extends Contour {
 
   constructor(attr) {
     super(attr);
+    if(!this._row.kind) {
+      this._row.kind = 1;
+    }
   }
 
   save_coordinates(short) {
@@ -8015,6 +8018,9 @@ class GeneratrixElement extends BuilderElement {
 
   /**
    * Вспомогательная функция do_bind, привязка импостов
+   * @param profile {ProfileItem} - к которому примыкает текущий импост
+   * @param node {String} - b,e
+   * @return {boolean|Point|undefined}
    */
   do_sub_bind(profile, node) {
     const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
@@ -13635,9 +13641,10 @@ class Scheme extends paper.Project {
     // массив с моментами времени изменений изделия
     this._ch = [];
 
-    /**
-     * Объект обработки с табличными частями
-     */
+    // узлы и рёбра
+    //this._skeleton = new Skeleton(this);
+
+    // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
 
     const isBrowser = typeof requestAnimationFrame === 'function';
@@ -17902,7 +17909,7 @@ class SpecBuilding {
    */
   specification_adjustment (attr, with_price) {
 
-    const {cat, pricing} = $p;
+    const {cat, pricing, enm: {elm_types}} = $p;
     const {scheme, calc_order_row, spec, save} = attr;
     const calc_order = calc_order_row._owner._owner;
     const order_rows = new Map();
@@ -17938,13 +17945,20 @@ class SpecBuilding {
       };
 
       // рассчитаем спецификацию вставки
-      if($p.enm.elm_types.stvs.includes(elm_type)) {
+      if(elm_types.Створка === elm_type) {
         for(const {contours} of scheme.contours) {
           for(const contour of contours) {
             elm.layer = contour;
             len_angl.cnstr = contour.cnstr;
             inset.calculate_spec({elm, len_angl, ox, spec});
           }
+        }
+      }
+      else if(elm_types.Рама === elm_type) {
+        for(const contour of scheme.contours) {
+          elm.layer = contour;
+          len_angl.cnstr = contour.cnstr;
+          inset.calculate_spec({elm, len_angl, ox, spec});
         }
       }
       else {

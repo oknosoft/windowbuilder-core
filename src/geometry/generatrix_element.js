@@ -316,6 +316,9 @@ class GeneratrixElement extends BuilderElement {
 
   /**
    * Вспомогательная функция do_bind, привязка импостов
+   * @param profile {ProfileItem} - к которому примыкает текущий импост
+   * @param node {String} - b,e
+   * @return {boolean|Point|undefined}
    */
   do_sub_bind(profile, node) {
     const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});

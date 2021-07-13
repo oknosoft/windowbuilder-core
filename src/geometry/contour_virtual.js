@@ -13,6 +13,9 @@ class ContourVirtual extends Contour {
 
   constructor(attr) {
     super(attr);
+    if(!this._row.kind) {
+      this._row.kind = 1;
+    }
   }
 
   save_coordinates(short) {

@@ -33,9 +33,10 @@ class Scheme extends paper.Project {
     // массив с моментами времени изменений изделия
     this._ch = [];
 
-    /**
-     * Объект обработки с табличными частями
-     */
+    // узлы и рёбра
+    //this._skeleton = new Skeleton(this);
+
+    // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
 
     const isBrowser = typeof requestAnimationFrame === 'function';
