@@ -2708,6 +2708,11 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     function add_prm(proto) {
       let row;
       let {param, value} = proto;
+
+      if(cnstr) {
+
+      }
+
       params.find_rows({cnstr, param}, (_row) => {
         row = _row;
         return false;

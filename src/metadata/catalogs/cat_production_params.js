@@ -132,6 +132,11 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     function add_prm(proto) {
       let row;
       let {param, value} = proto;
+
+      if(cnstr) {
+
+      }
+
       params.find_rows({cnstr, param}, (_row) => {
         row = _row;
         return false;

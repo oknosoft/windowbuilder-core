@@ -19820,9 +19820,15 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
 
     const sprms = [];
+    const {product, order} = $p.enm.plan_detailing;
 
-    this.selection_params.forEach(({param}) => {
-      !param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param) && sprms.push(param);
+    this.selection_params.forEach(({param, origin}) => {
+      if(param.empty() || origin === product || origin === order) {
+        return;
+      }
+      if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+        sprms.push(param);
+      }
     });
 
     const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
@@ -21331,9 +21337,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const sprms = [];
+      const {order} = $p.enm.plan_detailing;
 
-      this.selection_params.forEach(({param}) => {
-        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+      this.selection_params.forEach(({param, origin}) => {
+        if(param.empty() || origin === order) {
+          return;
+        }
+        if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
           sprms.push(param);
         }
       });

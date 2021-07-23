@@ -1118,9 +1118,13 @@
       }
 
       const sprms = [];
+      const {order} = $p.enm.plan_detailing;
 
-      this.selection_params.forEach(({param}) => {
-        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+      this.selection_params.forEach(({param, origin}) => {
+        if(param.empty() || origin === order) {
+          return;
+        }
+        if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
           sprms.push(param);
         }
       });
