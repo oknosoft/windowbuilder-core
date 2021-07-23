@@ -76,6 +76,25 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
     return res;
   }
 
+  load_array(aattr, forse) {
+    super.load_array(aattr, forse);
+    const {job_prm} = this._owner.$p;
+    if(!job_prm.properties) {
+      job_prm.__define('properties', {value: {}});
+    }
+    const parent = job_prm.properties;
+    for (const row of aattr) {
+      if(row.predefined_name) {
+        parent.__define(row.predefined_name, {
+          value: this.get(row, false, false),
+          configurable: true,
+          enumerable: true,
+          writable: true,
+        });
+      }
+    }
+  }
+
 }
 
 exports.CchProperties = class CchProperties extends Object {
@@ -408,6 +427,22 @@ exports.CchProperties = class CchProperties extends Object {
       prow.value = values[0]._obj.value;
       return true;
     }
+  }
+
+  /**
+   * Значение, уточняемое отделом абонента
+   * @param project {Scheme}
+   * @param [cnstr] {Number}
+   * @param [ox] {CatCharacteristics}
+   */
+  branch_value({project, cnstr = 0, ox}) {
+    const {branch} = project;
+    let brow = branch.extra_fields.find({property: this});
+    if(brow) {
+      return brow.value;
+    }
+    brow = ox && ox.params.find({param: this, cnstr, inset: $p.utils.blank.guid});
+    return brow && brow.value;
   }
 
   /**

@@ -3217,6 +3217,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
       }
+      else if(param.inheritance === 3) {
+        const bvalue = param.branch_value({project: this.project, cnstr, ox: this.project.ox});
+        if(prow.value !== bvalue) {
+          prow.value = bvalue;
+          notify = true;
+        }
+      }
       if (prow.hide !== hide) {
         prow.hide = hide;
         notify = true;
@@ -14430,6 +14437,22 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Отдел абонента текущего изделия
+   * По умолчанию, равен отделу абонента автора заказа, но может быть переопределён
+   */
+  get branch() {
+    const {ox} = this;
+    const param = $p.job_prm.properties.branch;
+    if(param) {
+      const prow = ox.params.find({param});
+      if(prow && !prow.value.empty()) {
+        return prow.value;
+      }
+    }
+    return ox.calc_order.manager.branch;
+  }
+
+  /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
    * @param type {String}
@@ -21862,6 +21885,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         };
         if (this._attachments) {
           tmp._attachments = this._attachments;
+        }
+        if(_manager.build_search) {
+          _manager.build_search(tmp, this);
+        }
+        else {
+          tmp.search = ((_obj.number_doc || '') + (_obj.note ? ' ' + _obj.note : '')).toLowerCase();
         }
         sobjs.push(tmp);
       }

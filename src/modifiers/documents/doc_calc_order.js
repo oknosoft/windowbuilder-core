@@ -348,6 +348,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         if (this._attachments) {
           tmp._attachments = this._attachments;
         }
+        if(_manager.build_search) {
+          _manager.build_search(tmp, this);
+        }
+        else {
+          tmp.search = ((_obj.number_doc || '') + (_obj.note ? ' ' + _obj.note : '')).toLowerCase();
+        }
         sobjs.push(tmp);
       }
     }

@@ -2234,6 +2234,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
       }
+      else if(param.inheritance === 3) {
+        const bvalue = param.branch_value({project: this.project, cnstr, ox: this.project.ox});
+        if(prow.value !== bvalue) {
+          prow.value = bvalue;
+          notify = true;
+        }
+      }
       if (prow.hide !== hide) {
         prow.hide = hide;
         notify = true;
