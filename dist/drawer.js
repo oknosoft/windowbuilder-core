@@ -10848,12 +10848,24 @@ class ProfileItem extends GeneratrixElement {
       }
       else {
         if(is_b) {
-          intersect_point(prays.outer, rays.outer, 1);
-          intersect_point(prays.inner, rays.inner, 4);
+          if(this.is_collinear(other)) {
+            delete _corns[1];
+            delete _corns[4];
+          }
+          else {
+            intersect_point(prays.outer, rays.outer, 1);
+            intersect_point(prays.inner, rays.inner, 4);
+          }
         }
         else if(is_e) {
-          intersect_point(prays.outer, rays.outer, 2);
-          intersect_point(prays.inner, rays.inner, 3);
+          if(this.is_collinear(other)) {
+            delete _corns[2];
+            delete _corns[3];
+          }
+          else {
+            intersect_point(prays.outer, rays.outer, 2);
+            intersect_point(prays.inner, rays.inner, 3);
+          }
         }
       }
 
