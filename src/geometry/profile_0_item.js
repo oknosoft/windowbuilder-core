@@ -1876,7 +1876,7 @@ class ProfileItem extends GeneratrixElement {
       }
       else {
         if(is_b) {
-          if(this.is_collinear(other)) {
+          if(this.is_collinear(other, 1)) {
             delete _corns[1];
             delete _corns[4];
           }
@@ -1886,7 +1886,7 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else if(is_e) {
-          if(this.is_collinear(other)) {
+          if(this.is_collinear(other, 1)) {
             delete _corns[2];
             delete _corns[3];
           }
@@ -2076,12 +2076,12 @@ class ProfileItem extends GeneratrixElement {
    * @param p {ProfileItem}
    * @return Boolean
    */
-  is_collinear(p) {
+  is_collinear(p, delta = 0) {
     let angl = p.e.subtract(p.b).getDirectedAngle(this.e.subtract(this.b));
     if(angl < -180) {
       angl += 180;
     }
-    return Math.abs(angl) < consts.orientation_delta;
+    return Math.abs(angl) < (delta || consts.orientation_delta);
   }
 
   /**
