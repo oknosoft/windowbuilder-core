@@ -1339,7 +1339,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const weight = _ox.elm_weight(-cnstr);
     return (layer ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
-      (weight ? `, ${weight.toFixed()} кг` : '');
+      (weight ? `, ${weight.toFixed()}кг` : '');
   }
 
   get info() {
@@ -6951,6 +6951,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   set_inset(v, ignore_select) {
 
     const inset = $p.cat.inserts.get(v);
+    const {insert_type} = inset;
 
     if(!ignore_select){
       const {project, elm, ox: {glass_specification}} = this;
@@ -6960,6 +6961,12 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
+      // если тип стеклопаке - заполняем по умолчанию
+      if(insert_type === insert_type._manager.Стеклопакет) {
+        for(const row of inset.specification) {
+          glass_specification.add({elm, inset: row.nom});
+        }
+      }
 
       // транслируем изменения на остальные выделенные заполнения
       project.selected_glasses().forEach((selm) => {
@@ -6968,6 +6975,12 @@ class Filling extends AbstractFilling(BuilderElement) {
           selm.set_inset(inset, true);
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
+          // если тип стеклопаке - заполняем по умолчанию
+          if(insert_type === insert_type._manager.Стеклопакет) {
+            for(const row of inset.specification) {
+              glass_specification.add({elm: selm.elm, inset: row.nom});
+            }
+          }
           // устанавливаем цвет, как у нас
           selm.clr = this.clr;
         }
@@ -7392,9 +7405,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * информация для редактора свойста
    */
   get info() {
-    const {elm, bounds: {width, height}, thickness, layer} = this;
+    const {elm, bounds: {width, height}, thickness, weight, layer} = this;
     return `№${layer instanceof ContourNestedContent ?
-      `${layer.layer.cnstr}-${elm}` : elm} w:${width.toFixed(0)} h:${height.toFixed(0)} z:${thickness.toFixed(0)}`;
+      `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
 
   /**
@@ -15818,19 +15831,7 @@ class Scheme extends paper.Project {
    * @returns {Array.<Filling>}
    */
   selected_glasses() {
-    const res = [];
-
-    this.selectedItems.forEach((item) => {
-
-      if(item instanceof Filling && res.indexOf(item) == -1) {
-        res.push(item);
-      }
-      else if(item.parent instanceof Filling && res.indexOf(item.parent) == -1) {
-        res.push(item.parent);
-      }
-    });
-
-    return res;
+    return this.selected_elements.filter((item) => item instanceof Filling);
   }
 
   /**
@@ -15841,17 +15842,28 @@ class Scheme extends paper.Project {
    * @returns {BuilderElement}
    */
   get selected_elm() {
-    let res;
-    this.selectedItems.some((item) => {
-      if(item instanceof BuilderElement) {
-        return res = item;
+    const {selected_elements} = this;
+    return selected_elements.length && selected_elements[0];
+  }
 
+  /**
+   * ### Выделенные элементы
+   * Возвращает массив выделенных элементов
+   *
+   * @property selected_elements
+   * @returns {Array.<BuilderElement>}
+   */
+  get selected_elements() {
+    const res = new Set();
+    for(const item of this.selectedItems) {
+      if(item instanceof BuilderElement) {
+        res.add(item);
       }
       else if(item.parent instanceof BuilderElement) {
-        return res = item.parent;
+        res.add(item.parent);
       }
-    });
-    return res;
+    }
+    return Array.from(res);
   }
 
   /**

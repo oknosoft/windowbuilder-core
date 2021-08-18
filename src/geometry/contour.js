@@ -356,7 +356,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const weight = _ox.elm_weight(-cnstr);
     return (layer ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
-      (weight ? `, ${weight.toFixed()} кг` : '');
+      (weight ? `, ${weight.toFixed()}кг` : '');
   }
 
   get info() {

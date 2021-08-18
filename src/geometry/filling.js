@@ -454,6 +454,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   set_inset(v, ignore_select) {
 
     const inset = $p.cat.inserts.get(v);
+    const {insert_type} = inset;
 
     if(!ignore_select){
       const {project, elm, ox: {glass_specification}} = this;
@@ -463,6 +464,12 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
+      // если тип стеклопаке - заполняем по умолчанию
+      if(insert_type === insert_type._manager.Стеклопакет) {
+        for(const row of inset.specification) {
+          glass_specification.add({elm, inset: row.nom});
+        }
+      }
 
       // транслируем изменения на остальные выделенные заполнения
       project.selected_glasses().forEach((selm) => {
@@ -471,6 +478,12 @@ class Filling extends AbstractFilling(BuilderElement) {
           selm.set_inset(inset, true);
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
+          // если тип стеклопаке - заполняем по умолчанию
+          if(insert_type === insert_type._manager.Стеклопакет) {
+            for(const row of inset.specification) {
+              glass_specification.add({elm: selm.elm, inset: row.nom});
+            }
+          }
           // устанавливаем цвет, как у нас
           selm.clr = this.clr;
         }
@@ -895,9 +908,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * информация для редактора свойста
    */
   get info() {
-    const {elm, bounds: {width, height}, thickness, layer} = this;
+    const {elm, bounds: {width, height}, thickness, weight, layer} = this;
     return `№${layer instanceof ContourNestedContent ?
-      `${layer.layer.cnstr}-${elm}` : elm} w:${width.toFixed(0)} h:${height.toFixed(0)} z:${thickness.toFixed(0)}`;
+      `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
 
   /**

@@ -1851,19 +1851,7 @@ class Scheme extends paper.Project {
    * @returns {Array.<Filling>}
    */
   selected_glasses() {
-    const res = [];
-
-    this.selectedItems.forEach((item) => {
-
-      if(item instanceof Filling && res.indexOf(item) == -1) {
-        res.push(item);
-      }
-      else if(item.parent instanceof Filling && res.indexOf(item.parent) == -1) {
-        res.push(item.parent);
-      }
-    });
-
-    return res;
+    return this.selected_elements.filter((item) => item instanceof Filling);
   }
 
   /**
@@ -1874,17 +1862,28 @@ class Scheme extends paper.Project {
    * @returns {BuilderElement}
    */
   get selected_elm() {
-    let res;
-    this.selectedItems.some((item) => {
-      if(item instanceof BuilderElement) {
-        return res = item;
+    const {selected_elements} = this;
+    return selected_elements.length && selected_elements[0];
+  }
 
+  /**
+   * ### Выделенные элементы
+   * Возвращает массив выделенных элементов
+   *
+   * @property selected_elements
+   * @returns {Array.<BuilderElement>}
+   */
+  get selected_elements() {
+    const res = new Set();
+    for(const item of this.selectedItems) {
+      if(item instanceof BuilderElement) {
+        res.add(item);
       }
       else if(item.parent instanceof BuilderElement) {
-        return res = item.parent;
+        res.add(item.parent);
       }
-    });
-    return res;
+    }
+    return Array.from(res);
   }
 
   /**
