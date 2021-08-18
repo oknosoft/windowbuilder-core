@@ -205,7 +205,7 @@ class BuilderElement extends paper.Group {
 
 
     // динамические отборы для вставок и соединений
-    const {_inserts_types_filling} = inserts;
+    const {_types_filling} = inserts;
 
 
     inset.choice_links = [{
@@ -219,7 +219,7 @@ class BuilderElement extends paper.Group {
             // !iface - нет dhtmlx, чистый react
             if(!iface || utils.is_data_obj(o)){
               const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _inserts_types_filling.includes(insert_type) &&
+              return _types_filling.includes(insert_type) &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
                 (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
             }

@@ -811,6 +811,22 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Отдел абонента текущего изделия
+   * По умолчанию, равен отделу абонента автора заказа, но может быть переопределён
+   */
+  get branch() {
+    const {ox} = this;
+    const param = $p.job_prm.properties.branch;
+    if(param) {
+      const prow = ox.params.find({param});
+      if(prow && !prow.value.empty()) {
+        return prow.value;
+      }
+    }
+    return ox.calc_order.manager.branch;
+  }
+
+  /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
    * @param type {String}

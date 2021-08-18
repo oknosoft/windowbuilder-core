@@ -60,6 +60,9 @@ class Profile extends ProfileItem {
           else if(row.elm_type === elm_types.Примыкание) {
             new ProfileAdjoining({row, parent: this});
           }
+          else if(elm_types.profiles.includes(row.elm_type)) {
+            new ProfileSegment({row, parent: this});
+          }
         });
       }
     }

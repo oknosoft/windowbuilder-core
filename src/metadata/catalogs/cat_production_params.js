@@ -125,21 +125,35 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
     const prm_ts = !cnstr ? this.product_params : this.furn_params;
     const adel = [];
-    const {enm, job_prm, EditorInvisible: {Contour}} = $p;
-    const auto_align = ox.calc_order.obj_delivery_state == enm.obj_delivery_states.Шаблон && job_prm.properties.auto_align;
+    const {enm, job_prm: {properties}, utils, EditorInvisible: {Contour}} = $p;
+    const auto_align = ox.calc_order.obj_delivery_state == enm.obj_delivery_states.Шаблон && properties.auto_align;
     const {params} = ox;
 
     function add_prm(proto) {
       let row;
-      params.find_rows({cnstr: cnstr, param: proto.param}, (_row) => {
+      let {param, value} = proto;
+
+      if(cnstr) {
+
+      }
+
+      params.find_rows({cnstr, param}, (_row) => {
         row = _row;
         return false;
       });
 
-      let {value} = proto;
-      const drow = defaults && defaults.find({param: proto.param});
+      const drow = defaults && defaults.find({param});
       if(drow) {
         value = drow.value;
+      }
+      else if(param === properties.branch) {
+        value = ox.calc_order.manager.branch;
+        if(value.empty()) {
+          value._manager.find_rows({parent: utils.blank.guid}, (branch) => {
+            value = branch;
+            return false;
+          });
+        }
       }
 
       // если не найден параметр изделия - добавляем. если нет параметра фурнитуры - пропускаем
@@ -147,17 +161,29 @@ exports.CatProduction_params = class CatProduction_params extends Object {
         if(cnstr){
           return;
         }
-        row = params.add({param: proto.param, cnstr, value});
+        row = params.add({param, cnstr, value});
       }
 
-      const links = proto.param.params_links({grid: {selection: {cnstr}}, obj: row});
+      const links = param.params_links({grid: {selection: {cnstr}}, obj: row});
       const hide = proto.hide || links.some((link) => link.hide);
       if(row.hide != hide){
         row.hide = hide;
       }
 
-      if((proto.forcibly || drow || force === 1) && value !== undefined){
-        row.value = value;
+      if(proto.forcibly || drow || force === 1){
+
+        if(param.inheritance === 3) {
+          // пытаемся получить свойство из отдела абонента
+          const bvalue = param.branch_value({project, cnstr, ox});
+          if(bvalue !== undefined) {
+            row.value = bvalue;
+            return;
+          }
+        }
+
+        if(value !== undefined) {
+          row.value = value;
+        }
       }
     }
 
@@ -165,7 +191,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     if(!cnstr){
       params.find_rows({cnstr: cnstr}, (row) => {
         const {param} = row;
-        if(param !== auto_align && prm_ts.find_rows({param}).length == 0){
+        if(param !== auto_align && !prm_ts.find({param})){
           adel.push(row);
         }
       });

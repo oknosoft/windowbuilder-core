@@ -155,6 +155,9 @@ class CnnPoint {
   check_err(style) {
     const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
+    if(!_corns.length) {
+      return;
+    }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
     const angle = _parent.angle_at(node);
     const {cnn} = this;
@@ -1840,12 +1843,24 @@ class ProfileItem extends GeneratrixElement {
       }
       else {
         if(is_b) {
-          intersect_point(prays.outer, rays.outer, 1);
-          intersect_point(prays.inner, rays.inner, 4);
+          if(this.is_collinear(other, 1)) {
+            delete _corns[1];
+            delete _corns[4];
+          }
+          else {
+            intersect_point(prays.outer, rays.outer, 1);
+            intersect_point(prays.inner, rays.inner, 4);
+          }
         }
         else if(is_e) {
-          intersect_point(prays.outer, rays.outer, 2);
-          intersect_point(prays.inner, rays.inner, 3);
+          if(this.is_collinear(other, 1)) {
+            delete _corns[2];
+            delete _corns[3];
+          }
+          else {
+            intersect_point(prays.outer, rays.outer, 2);
+            intersect_point(prays.inner, rays.inner, 3);
+          }
         }
       }
 
@@ -2028,12 +2043,12 @@ class ProfileItem extends GeneratrixElement {
    * @param p {ProfileItem}
    * @return Boolean
    */
-  is_collinear(p) {
+  is_collinear(p, delta = 0) {
     let angl = p.e.subtract(p.b).getDirectedAngle(this.e.subtract(this.b));
     if(angl < -180) {
       angl += 180;
     }
-    return Math.abs(angl) < consts.orientation_delta;
+    return Math.abs(angl) < (delta || consts.orientation_delta);
   }
 
   /**
