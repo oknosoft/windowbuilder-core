@@ -10247,9 +10247,7 @@ class ProfileItem extends GeneratrixElement {
     _attr.generatrix.strokeColor = 'gray';
 
     _attr.path = new paper.Path();
-    _attr.path.strokeColor = 'black';
-    _attr.path.strokeWidth = 1;
-    _attr.path.strokeScaling = false;
+    Object.assign(_attr.path, ProfileItem.path_attr);
     this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
 
     this.addChild(_attr.path);
@@ -11350,6 +11348,28 @@ class ProfileItem extends GeneratrixElement {
   }
 
 }
+
+ProfileItem.path_attr = {
+  strokeColor: 'black',
+  strokeWidth: 1,
+  strokeScaling: false,
+
+  onMouseEnter(event) {
+    const {fillColor, parent: {_attr}} = this;
+    _attr.fillColor = fillColor.clone();
+    const {red, green, blue, alpha} = fillColor;
+    fillColor.alpha = 0.9;
+    fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
+    fillColor.green = green > 0.7 ? green - 0.06 : green + 0.06;
+    fillColor.blue = blue > 0.7 ? blue - 0.08 : blue + 0.08;
+  },
+
+  onMouseLeave(event) {
+    const {_attr} = this.parent;
+    this.fillColor = _attr.fillColor;
+    delete _attr.fillColor;
+  }
+};
 
 EditorInvisible.ProfileItem = ProfileItem;
 EditorInvisible.ProfileRays = ProfileRays;
