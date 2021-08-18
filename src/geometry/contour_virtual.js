@@ -27,7 +27,7 @@ class ContourVirtual extends Contour {
         if (elm === l_text || elm === l_dimensions) {
           elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
         }
-        else if (elm.save_coordinates && !(elm instanceof ProfileNested)) {
+        else if (elm.save_coordinates && !(elm instanceof ProfileVirtual)) {
           elm.save_coordinates();
         }
       }

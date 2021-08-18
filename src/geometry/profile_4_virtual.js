@@ -1,42 +1,22 @@
 
 /**
- * Виртуальный профиль для вложенных слоёв
+ * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
  *
  * @module profile_virtual
  *
  * Created by Evgeniy Malyarov on 21.04.2020.
  */
 
-class ProfileNested extends Profile {
+class ProfileVirtual extends Profile {
 
   constructor(attr) {
-    const from_editor = !attr.row && attr._nearest;
-    if(from_editor) {
-      attr.row = attr._nearest.ox.coordinates.add({parent: attr._nearest.elm});
-    }
     super(attr);
-    if(from_editor) {
-      // при добавлении из рисовалки, ProfileParent подчиненного изделия, создаём сразу
-      const {coordinates} = this.layer._ox;
-      const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
-    }
-    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
-    Object.defineProperties(this._attr, {
-      _nearest: {
-        get() {
-          return nearest_elm;
-        },
-        set(v) {
-
-        }
+    Object.defineProperty(this._attr, '_nearest_cnn', {
+      get() {
+        return ProfileVirtual.nearest_cnn;
       },
-      _nearest_cnn: {
-        get() {
-          return ProfileNested.nearest_cnn;
-        },
-        set(v) {
+      set(v) {
 
-        }
       }
     });
     this.path.strokeColor = 'darkgreen';
@@ -53,13 +33,6 @@ class ProfileNested extends Profile {
 
   }
 
-  /**
-   * Возвращает тип элемента (Вложение)
-   */
-  get elm_type() {
-    return $p.enm.elm_types.Вложение;
-  }
-
   // вставка - внешний профиль
   get inset() {
     return this.nearest().inset;
@@ -74,10 +47,6 @@ class ProfileNested extends Profile {
 
   get sizeb() {
     return 0;
-  }
-
-  cnn_point(node, point) {
-    return ProfileParent.prototype.cnn_point.call(this, node, point);
   }
 
   path_points(cnn_point, profile_point) {
@@ -122,10 +91,10 @@ class ProfileNested extends Profile {
     }
 
     const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.inner : prays.outer;
+      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.outer : prays.inner;
 
     const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.inner : rays.outer;
+    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.outer : rays.inner;
 
     const offset = -2;
     if(profile_point == 'b') {
@@ -138,23 +107,6 @@ class ProfileNested extends Profile {
     }
 
     return cnn_point;
-  }
-
-  save_coordinates() {
-    super.save_coordinates();
-    const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
-    const {coordinates} = content._row._owner._owner;
-    const prow = coordinates.find({cnstr: 1, elm: _row.parent});
-    ['nom','inset','clr','r','len','angle_hor','orientation','pos','elm_type','alp1','alp1'].forEach((name) => prow[name] = _row[name]);
-
-    const path = generatrix.clone({insert: false});
-    path.translate([-lbounds.x, -lbounds.y]);
-    const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
-    prow.x1 = (b.x).round(1);
-    prow.y1 = (lbounds.height - b.y).round(1);
-    prow.x2 = (e.x).round(1);
-    prow.y2 = (lbounds.height - e.y).round(1);
-    prow.path_data = path.pathData;
   }
 
   redraw() {
@@ -209,11 +161,17 @@ class ProfileNested extends Profile {
     path.closePath();
     path.reduce();
 
+    this.children.forEach((elm) => {
+      if(elm instanceof ProfileAddl) {
+        elm.redraw();
+      }
+    });
+
     return this;
   }
 }
 
-ProfileNested.nearest_cnn = {
+ProfileVirtual.nearest_cnn = {
   size(profile) {
     return profile.nearest().width;
   },
@@ -225,9 +183,6 @@ ProfileNested.nearest_cnn = {
   },
   specification: [],
   selection_params: [],
-  filtered_spec() {
-    return [];
-  },
 }
 
-EditorInvisible.ProfileNested = ProfileNested;
+EditorInvisible.ProfileVirtual = ProfileVirtual;

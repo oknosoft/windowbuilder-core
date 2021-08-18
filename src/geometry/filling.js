@@ -661,16 +661,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     else if(Array.isArray(attr)){
       let {length} = attr;
       if(length > 1) {
-        let prev, curr, next, sub_path;
+        let prev, curr, next;
+        const {cat: {cnns}, enm: {cnn_types}} = $p;
         // получам эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
-          const {cat: {cnns}, enm: {cnn_types}} = $p;
           curr = attr[i];
           next = i === length - 1 ? attr[0] : attr[i + 1];
-          sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
-
+          const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
-
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
         // получам пересечения

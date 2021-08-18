@@ -11,7 +11,9 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas} = $p;
+
+  const {inserts_types} = enm;
 
   if(job_prm.use_ram !== false){
     md.once('predefined_elmnts_inited', () => {
@@ -21,9 +23,18 @@
 
   cat.inserts.__define({
 
-    _inserts_types_filling: {
+    _types_filling: {
       value: [
-        enm.inserts_types.Заполнение
+        inserts_types.Заполнение,
+        inserts_types.Стеклопакет,
+      ]
+    },
+
+    _types_main: {
+      value: [
+        inserts_types.Профиль,
+        inserts_types.Заполнение,
+        inserts_types.Стеклопакет,
       ]
     },
 
@@ -114,7 +125,7 @@
             value_change(field, type, value) {
               if(field === 'inset') {
                 value = cat.inserts.get(value);
-                if(value.insert_type == enm.inserts_types.Параметрик) {
+                if(value.insert_type == inserts_types.Параметрик) {
                   idata.tune_meta(value, this);
                 }
               }
@@ -134,7 +145,7 @@
           this.meta.fields.inset.disable_clear = true;
 
           // получаем возможные параметры вставок данного типа
-          if(item !== enm.inserts_types.Параметрик) {
+          if(item !== inserts_types.Параметрик) {
             const changed = this.tune_meta(item);
             const {current_user} = $p;
             for(const scheme of changed) {
@@ -265,7 +276,7 @@
 
         if(!this._by_thickness){
           this._by_thickness = new Map();
-          this.find_rows({insert_type: {in: this._inserts_types_filling}}, (ins) => {
+          this.find_rows({insert_type: {in: this._types_filling}}, (ins) => {
             if(ins.thickness > 0){
               if(!this._by_thickness.has(ins.thickness)) {
                 this._by_thickness.set(ins.thickness, []);
@@ -394,10 +405,11 @@
      * @return {boolean}
      */
     is_order_row_prod({ox, elm, contour}) {
-      const {enm: {specification_order_row_types: {Продукция}, inserts_types}, CatFormulas, cch} = $p;
+      const {Продукция} = enm.specification_order_row_types;
       const param = cch.properties.predefined('glass_separately');
-      let {is_order_row, insert_type} = this;
-      if(param && insert_type === inserts_types.Заполнение) {
+
+      let {is_order_row, insert_type, _manager: {_types_filling}} = this;
+      if(param && _types_filling.includes(insert_type)) {
         ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
             is_order_row = value ? Продукция : '';
@@ -538,7 +550,7 @@
               res: res
             });
           }
-          if(irow.count_calc_method == enm.count_calculating_ways.ПоПлощади && this.insert_type == enm.inserts_types.МоскитнаяСетка){
+          if(irow.count_calc_method == enm.count_calculating_ways.ПоПлощади && this.insert_type == inserts_types.МоскитнаяСетка){
             // получаем габариты смещенного периметра
             const bounds = contour.bounds_inner(irow.sz);
             res.x = bounds.width.round(1);
@@ -606,8 +618,8 @@
      * Проверяет ограничения вставки или строки вставки
      * @param row {CatInserts|CatInsertsSpecificationRow}
      * @param elm {BuilderElement}
-     * @param by_perimetr {Boolean}
-     * @param len_angl {Object}
+     * @param [by_perimetr] {Boolean}
+     * @param [len_angl] {Object}
      * @return {Boolean}
      */
     check_restrictions(row, elm, by_perimetr, len_angl) {
@@ -700,12 +712,12 @@
         }
       }
 
-      const {insert_type} = this;
-      const {inserts_types: {Профиль, Заполнение}, angle_calculating_ways: {Основной}} = enm;
+      const {insert_type, _manager: {_types_filling, _types_main}} = this;
+      const {inserts_types: {Профиль}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
 
       // для заполнений, можно переопределить состав верхнего уровня
-      if(is_high_level_call && (insert_type == Заполнение)){
+      if(is_high_level_call && _types_filling.includes(insert_type)){
 
         const glass_rows = [];
         ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {
@@ -773,7 +785,7 @@
       });
 
       // контроль массы, размеров основной вставки
-      if([Профиль, Заполнение].includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
         elm.err_spec_row(job_prm.nom.critical_error);
       }
 

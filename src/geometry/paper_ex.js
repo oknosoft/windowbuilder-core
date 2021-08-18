@@ -366,12 +366,23 @@ Object.defineProperties(paper.Path.prototype, {
           const path1 = clone ? this.clone({insert: false, deep: false}) : this;
           const path2 = clone ? path.clone({insert: false, deep: false}) : path;
 
-          // продлеваем пути до пересечения
           let p1 = path1.getNearestPoint(point),
             p2 = path2.getNearestPoint(point),
-            p1last = path1.firstSegment.point.getDistance(p1, true) > path1.lastSegment.point.getDistance(p1, true),
-            p2last = path2.firstSegment.point.getDistance(p2, true) > path2.lastSegment.point.getDistance(p2, true),
-            tg;
+            p1f = path1.firstSegment.point.getDistance(p1),
+            p1l = path1.lastSegment.point.getDistance(p1),
+            p2f = path2.firstSegment.point.getDistance(p2),
+            p2l = path2.lastSegment.point.getDistance(p2),
+            p1last = p1f > p1l,
+            p2last = p2f > p2l,
+            p4 = 4, tg;
+
+          if(p1.getDistance(p2) < 0.8) {
+            if((p1f < p4 || p1l < p4) && (p2f < p4 || p2l < p4)) {
+              return p1.add(p2).divide(2);
+            }
+          }
+
+          // продлеваем пути до пересечения
 
           if(!path1.closed) {
             tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);

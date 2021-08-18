@@ -4187,7 +4187,7 @@ class ContourVirtual extends Contour {
         if (elm === l_text || elm === l_dimensions) {
           elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
         }
-        else if (elm.save_coordinates && !(elm instanceof ProfileNested)) {
+        else if (elm.save_coordinates && !(elm instanceof ProfileVirtual)) {
           elm.save_coordinates();
         }
       }
@@ -5938,7 +5938,7 @@ class BuilderElement extends paper.Group {
 
 
     // динамические отборы для вставок и соединений
-    const {_inserts_types_filling} = inserts;
+    const {_types_filling} = inserts;
 
 
     inset.choice_links = [{
@@ -5952,7 +5952,7 @@ class BuilderElement extends paper.Group {
             // !iface - нет dhtmlx, чистый react
             if(!iface || utils.is_data_obj(o)){
               const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _inserts_types_filling.includes(insert_type) &&
+              return _types_filling.includes(insert_type) &&
                 thickness >= sys.tmin && thickness <= sys.tmax &&
                 (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
             }
@@ -7158,16 +7158,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     else if(Array.isArray(attr)){
       let {length} = attr;
       if(length > 1) {
-        let prev, curr, next, sub_path;
+        let prev, curr, next;
+        const {cat: {cnns}, enm: {cnn_types}} = $p;
         // получам эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
-          const {cat: {cnns}, enm: {cnn_types}} = $p;
           curr = attr[i];
           next = i === length - 1 ? attr[0] : attr[i + 1];
-          sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
-
+          const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
-
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
         // получам пересечения
@@ -8669,12 +8667,23 @@ Object.defineProperties(paper.Path.prototype, {
           const path1 = clone ? this.clone({insert: false, deep: false}) : this;
           const path2 = clone ? path.clone({insert: false, deep: false}) : path;
 
-          // продлеваем пути до пересечения
           let p1 = path1.getNearestPoint(point),
             p2 = path2.getNearestPoint(point),
-            p1last = path1.firstSegment.point.getDistance(p1, true) > path1.lastSegment.point.getDistance(p1, true),
-            p2last = path2.firstSegment.point.getDistance(p2, true) > path2.lastSegment.point.getDistance(p2, true),
-            tg;
+            p1f = path1.firstSegment.point.getDistance(p1),
+            p1l = path1.lastSegment.point.getDistance(p1),
+            p2f = path2.firstSegment.point.getDistance(p2),
+            p2l = path2.lastSegment.point.getDistance(p2),
+            p1last = p1f > p1l,
+            p2last = p2f > p2l,
+            p4 = 4, tg;
+
+          if(p1.getDistance(p2) < 0.8) {
+            if((p1f < p4 || p1l < p4) && (p2f < p4 || p2l < p4)) {
+              return p1.add(p2).divide(2);
+            }
+          }
+
+          // продлеваем пути до пересечения
 
           if(!path1.closed) {
             tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
@@ -9130,6 +9139,9 @@ class CnnPoint {
   check_err(style) {
     const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
+    if(!_corns.length) {
+      return;
+    }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
     const angle = _parent.angle_at(node);
     const {cnn} = this;
@@ -11939,6 +11951,429 @@ EditorInvisible.BundleRange = ProfileBundle;
 
 
 /**
+ * Виртуальный профиль для вложенных изделий (не путать с виртуальными слоями)
+ *
+ * @module profile_nested
+ *
+ * Created by Evgeniy Malyarov on 21.04.2020.
+ */
+
+class ProfileNested extends Profile {
+
+  constructor(attr) {
+    const from_editor = !attr.row && attr._nearest;
+    if(from_editor) {
+      attr.row = attr._nearest.ox.coordinates.add({parent: attr._nearest.elm});
+    }
+    super(attr);
+    if(from_editor) {
+      // при добавлении из рисовалки, ProfileParent подчиненного изделия, создаём сразу
+      const {coordinates} = this.layer._ox;
+      const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
+    }
+    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
+    Object.defineProperties(this._attr, {
+      _nearest: {
+        get() {
+          return nearest_elm;
+        },
+        set(v) {
+
+        }
+      },
+      _nearest_cnn: {
+        get() {
+          return ProfileNested.nearest_cnn;
+        },
+        set(v) {
+
+        }
+      }
+    });
+    this.path.strokeColor = 'darkgreen';
+    this.path.dashArray = [8, 4, 2, 4];
+  }
+
+  // ведущий элемент получаем в лоб
+  nearest() {
+    return this._attr._nearest;
+  }
+
+  // пересчет вставок и соединений не делаем
+  default_inset(all) {
+
+  }
+
+  /**
+   * Возвращает тип элемента (Вложение)
+   */
+  get elm_type() {
+    return $p.enm.elm_types.Вложение;
+  }
+
+  // вставка - внешний профиль
+  get inset() {
+    return this.nearest().inset;
+  }
+  set inset(v) {}
+
+  // цвет внешнего элемента
+  get clr() {
+    return this.nearest(true).clr;
+  }
+  set clr(v) {}
+
+  get sizeb() {
+    return 0;
+  }
+
+  cnn_point(node, point) {
+    return ProfileParent.prototype.cnn_point.call(this, node, point);
+  }
+
+  path_points(cnn_point, profile_point) {
+
+    const {_attr: {_corns}, generatrix, layer: {bounds}} = this;
+    if(!generatrix.curves.length) {
+      return cnn_point;
+    }
+    const {rays} = this.nearest();
+    const prays = cnn_point.profile.nearest().rays;
+
+    // ищет точку пересечения открытых путей
+    // если указан индекс, заполняет точку в массиве _corns. иначе - возвращает расстояние от узла до пересечения
+    function intersect_point(path1, path2, index, ipoint = cnn_point.point) {
+      const intersections = path1.getIntersections(path2);
+      let delta = Infinity, tdelta, point, tpoint;
+
+      if(intersections.length == 1) {
+        if(index) {
+          _corns[index] = intersections[0].point;
+        }
+        else {
+          return intersections[0].point.getDistance(ipoint, true);
+        }
+      }
+      else if(intersections.length > 1) {
+        intersections.forEach((o) => {
+          tdelta = o.point.getDistance(ipoint, true);
+          if(tdelta < delta) {
+            delta = tdelta;
+            point = o.point;
+          }
+        });
+        if(index) {
+          _corns[index] = point;
+        }
+        else {
+          return delta;
+        }
+      }
+      return delta;
+    }
+
+    const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
+      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.inner : prays.outer;
+
+    const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
+    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.inner : rays.outer;
+
+    const offset = -2;
+    if(profile_point == 'b') {
+      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 1);
+      intersect_point(pinner, inner, 4);
+    }
+    else if(profile_point == 'e') {
+      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 2);
+      intersect_point(pinner, inner, 3);
+    }
+
+    return cnn_point;
+  }
+
+  save_coordinates() {
+    super.save_coordinates();
+    const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
+    const {coordinates} = content._row._owner._owner;
+    const prow = coordinates.find({cnstr: 1, elm: _row.parent});
+    ['nom','inset','clr','r','len','angle_hor','orientation','pos','elm_type','alp1','alp1'].forEach((name) => prow[name] = _row[name]);
+
+    const path = generatrix.clone({insert: false});
+    path.translate([-lbounds.x, -lbounds.y]);
+    const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
+    prow.x1 = (b.x).round(1);
+    prow.y1 = (lbounds.height - b.y).round(1);
+    prow.x2 = (e.x).round(1);
+    prow.y2 = (lbounds.height - e.y).round(1);
+    prow.path_data = path.pathData;
+  }
+
+  redraw() {
+    // получаем узлы
+    const bcnn = this.cnn_point('b');
+    const ecnn = this.cnn_point('e');
+    const {rays} = this.nearest();
+    const {path, generatrix} = this;
+
+    // получаем соединения концов профиля и точки пересечения с соседями
+    this.path_points(bcnn, 'b');
+    this.path_points(ecnn, 'e');
+
+    // очищаем существующий путь
+    path.removeSegments();
+
+    path.add(this.corns(1));
+
+    // if(generatrix.is_linear()) {
+      path.add(this.corns(2));
+      path.add(this.corns(3));
+    // }
+    // else {
+    //
+    //   let tpath = new paper.Path({insert: false});
+    //   let offset1 = rays.outer.getNearestLocation(this.corns(1)).offset;
+    //   let offset2 = rays.outer.getNearestLocation(this.corns(2)).offset;
+    //   let step = (offset2 - offset1) / 50;
+    //
+    //   for (let i = offset1 + step; i < offset2; i += step) {
+    //     tpath.add(rays.outer.getPointAt(i));
+    //   }
+    //   tpath.simplify(0.8);
+    //   path.join(tpath);
+    //   path.add(this.corns(2));
+    //   this.corns(6) && path.add(this.corns(6));
+    //   path.add(this.corns(3));
+    //
+    //   tpath = new paper.Path({insert: false});
+    //   offset1 = rays.inner.getNearestLocation(this.corns(3)).offset;
+    //   offset2 = rays.inner.getNearestLocation(this.corns(4)).offset;
+    //   step = (offset2 - offset1) / 50;
+    //   for (let i = offset1 + step; i < offset2; i += step) {
+    //     tpath.add(rays.inner.getPointAt(i));
+    //   }
+    //   tpath.simplify(0.8);
+    //   path.join(tpath);
+    //
+    // }
+
+    path.add(this.corns(4));
+    path.closePath();
+    path.reduce();
+
+    return this;
+  }
+}
+
+ProfileNested.nearest_cnn = {
+  size(profile) {
+    return profile.nearest().width;
+  },
+  empty() {
+    return false;
+  },
+  get cnn_type() {
+    return $p.enm.cnn_types.ii;
+  },
+  specification: [],
+  selection_params: [],
+  filtered_spec() {
+    return [];
+  },
+}
+
+EditorInvisible.ProfileNested = ProfileNested;
+
+
+/**
+ * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
+ *
+ * @module profile_virtual
+ *
+ * Created by Evgeniy Malyarov on 21.04.2020.
+ */
+
+class ProfileVirtual extends Profile {
+
+  constructor(attr) {
+    super(attr);
+    Object.defineProperty(this._attr, '_nearest_cnn', {
+      get() {
+        return ProfileVirtual.nearest_cnn;
+      },
+      set(v) {
+
+      }
+    });
+    this.path.strokeColor = 'darkgreen';
+    this.path.dashArray = [8, 4, 2, 4];
+  }
+
+  // ведущий элемент получаем в лоб
+  nearest() {
+    return this._attr._nearest;
+  }
+
+  // пересчет вставок и соединений не делаем
+  default_inset(all) {
+
+  }
+
+  // вставка - внешний профиль
+  get inset() {
+    return this.nearest().inset;
+  }
+  set inset(v) {}
+
+  // цвет внешнего элемента
+  get clr() {
+    return this.nearest(true).clr;
+  }
+  set clr(v) {}
+
+  get sizeb() {
+    return 0;
+  }
+
+  path_points(cnn_point, profile_point) {
+
+    const {_attr: {_corns}, generatrix, layer: {bounds}} = this;
+    if(!generatrix.curves.length) {
+      return cnn_point;
+    }
+    const {rays} = this.nearest();
+    const prays = cnn_point.profile.nearest().rays;
+
+    // ищет точку пересечения открытых путей
+    // если указан индекс, заполняет точку в массиве _corns. иначе - возвращает расстояние от узла до пересечения
+    function intersect_point(path1, path2, index, ipoint = cnn_point.point) {
+      const intersections = path1.getIntersections(path2);
+      let delta = Infinity, tdelta, point, tpoint;
+
+      if(intersections.length == 1) {
+        if(index) {
+          _corns[index] = intersections[0].point;
+        }
+        else {
+          return intersections[0].point.getDistance(ipoint, true);
+        }
+      }
+      else if(intersections.length > 1) {
+        intersections.forEach((o) => {
+          tdelta = o.point.getDistance(ipoint, true);
+          if(tdelta < delta) {
+            delta = tdelta;
+            point = o.point;
+          }
+        });
+        if(index) {
+          _corns[index] = point;
+        }
+        else {
+          return delta;
+        }
+      }
+      return delta;
+    }
+
+    const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
+      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.outer : prays.inner;
+
+    const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
+    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.outer : rays.inner;
+
+    const offset = -2;
+    if(profile_point == 'b') {
+      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 1);
+      intersect_point(pinner, inner, 4);
+    }
+    else if(profile_point == 'e') {
+      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 2);
+      intersect_point(pinner, inner, 3);
+    }
+
+    return cnn_point;
+  }
+
+  redraw() {
+    // получаем узлы
+    const bcnn = this.cnn_point('b');
+    const ecnn = this.cnn_point('e');
+    const {rays} = this.nearest();
+    const {path, generatrix} = this;
+
+    // получаем соединения концов профиля и точки пересечения с соседями
+    this.path_points(bcnn, 'b');
+    this.path_points(ecnn, 'e');
+
+    // очищаем существующий путь
+    path.removeSegments();
+
+    path.add(this.corns(1));
+
+    // if(generatrix.is_linear()) {
+      path.add(this.corns(2));
+      path.add(this.corns(3));
+    // }
+    // else {
+    //
+    //   let tpath = new paper.Path({insert: false});
+    //   let offset1 = rays.outer.getNearestLocation(this.corns(1)).offset;
+    //   let offset2 = rays.outer.getNearestLocation(this.corns(2)).offset;
+    //   let step = (offset2 - offset1) / 50;
+    //
+    //   for (let i = offset1 + step; i < offset2; i += step) {
+    //     tpath.add(rays.outer.getPointAt(i));
+    //   }
+    //   tpath.simplify(0.8);
+    //   path.join(tpath);
+    //   path.add(this.corns(2));
+    //   this.corns(6) && path.add(this.corns(6));
+    //   path.add(this.corns(3));
+    //
+    //   tpath = new paper.Path({insert: false});
+    //   offset1 = rays.inner.getNearestLocation(this.corns(3)).offset;
+    //   offset2 = rays.inner.getNearestLocation(this.corns(4)).offset;
+    //   step = (offset2 - offset1) / 50;
+    //   for (let i = offset1 + step; i < offset2; i += step) {
+    //     tpath.add(rays.inner.getPointAt(i));
+    //   }
+    //   tpath.simplify(0.8);
+    //   path.join(tpath);
+    //
+    // }
+
+    path.add(this.corns(4));
+    path.closePath();
+    path.reduce();
+
+    this.children.forEach((elm) => {
+      if(elm instanceof ProfileAddl) {
+        elm.redraw();
+      }
+    });
+
+    return this;
+  }
+}
+
+ProfileVirtual.nearest_cnn = {
+  size(profile) {
+    return profile.nearest().width;
+  },
+  empty() {
+    return false;
+  },
+  get cnn_type() {
+    return $p.enm.cnn_types.ii;
+  },
+  specification: [],
+  selection_params: [],
+}
+
+EditorInvisible.ProfileVirtual = ProfileVirtual;
+
+
+/**
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -12876,240 +13311,6 @@ ProfileAdjoining.oxml = {
 };
 
 EditorInvisible.ProfileAdjoining = ProfileAdjoining;
-
-
-/**
- * Виртуальный профиль для вложенных слоёв
- *
- * @module profile_virtual
- *
- * Created by Evgeniy Malyarov on 21.04.2020.
- */
-
-class ProfileNested extends Profile {
-
-  constructor(attr) {
-    const from_editor = !attr.row && attr._nearest;
-    if(from_editor) {
-      attr.row = attr._nearest.ox.coordinates.add({parent: attr._nearest.elm});
-    }
-    super(attr);
-    if(from_editor) {
-      // при добавлении из рисовалки, ProfileParent подчиненного изделия, создаём сразу
-      const {coordinates} = this.layer._ox;
-      const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
-    }
-    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
-    Object.defineProperties(this._attr, {
-      _nearest: {
-        get() {
-          return nearest_elm;
-        },
-        set(v) {
-
-        }
-      },
-      _nearest_cnn: {
-        get() {
-          return ProfileNested.nearest_cnn;
-        },
-        set(v) {
-
-        }
-      }
-    });
-    this.path.strokeColor = 'darkgreen';
-    this.path.dashArray = [8, 4, 2, 4];
-  }
-
-  // ведущий элемент получаем в лоб
-  nearest() {
-    return this._attr._nearest;
-  }
-
-  // пересчет вставок и соединений не делаем
-  default_inset(all) {
-
-  }
-
-  /**
-   * Возвращает тип элемента (Вложение)
-   */
-  get elm_type() {
-    return $p.enm.elm_types.Вложение;
-  }
-
-  // вставка - внешний профиль
-  get inset() {
-    return this.nearest().inset;
-  }
-  set inset(v) {}
-
-  // цвет внешнего элемента
-  get clr() {
-    return this.nearest(true).clr;
-  }
-  set clr(v) {}
-
-  get sizeb() {
-    return 0;
-  }
-
-  cnn_point(node, point) {
-    return ProfileParent.prototype.cnn_point.call(this, node, point);
-  }
-
-  path_points(cnn_point, profile_point) {
-
-    const {_attr: {_corns}, generatrix, layer: {bounds}} = this;
-    if(!generatrix.curves.length) {
-      return cnn_point;
-    }
-    const {rays} = this.nearest();
-    const prays = cnn_point.profile.nearest().rays;
-
-    // ищет точку пересечения открытых путей
-    // если указан индекс, заполняет точку в массиве _corns. иначе - возвращает расстояние от узла до пересечения
-    function intersect_point(path1, path2, index, ipoint = cnn_point.point) {
-      const intersections = path1.getIntersections(path2);
-      let delta = Infinity, tdelta, point, tpoint;
-
-      if(intersections.length == 1) {
-        if(index) {
-          _corns[index] = intersections[0].point;
-        }
-        else {
-          return intersections[0].point.getDistance(ipoint, true);
-        }
-      }
-      else if(intersections.length > 1) {
-        intersections.forEach((o) => {
-          tdelta = o.point.getDistance(ipoint, true);
-          if(tdelta < delta) {
-            delta = tdelta;
-            point = o.point;
-          }
-        });
-        if(index) {
-          _corns[index] = point;
-        }
-        else {
-          return delta;
-        }
-      }
-      return delta;
-    }
-
-    const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.inner : prays.outer;
-
-    const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.inner : rays.outer;
-
-    const offset = -2;
-    if(profile_point == 'b') {
-      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 1);
-      intersect_point(pinner, inner, 4);
-    }
-    else if(profile_point == 'e') {
-      intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 2);
-      intersect_point(pinner, inner, 3);
-    }
-
-    return cnn_point;
-  }
-
-  save_coordinates() {
-    super.save_coordinates();
-    const {project: {bounds: pbounds}, layer: {content, lbounds}, _row, generatrix} = this;
-    const {coordinates} = content._row._owner._owner;
-    const prow = coordinates.find({cnstr: 1, elm: _row.parent});
-    ['nom','inset','clr','r','len','angle_hor','orientation','pos','elm_type','alp1','alp1'].forEach((name) => prow[name] = _row[name]);
-
-    const path = generatrix.clone({insert: false});
-    path.translate([-lbounds.x, -lbounds.y]);
-    const {firstSegment: {point: b}, lastSegment: {point: e}} = path;
-    prow.x1 = (b.x).round(1);
-    prow.y1 = (lbounds.height - b.y).round(1);
-    prow.x2 = (e.x).round(1);
-    prow.y2 = (lbounds.height - e.y).round(1);
-    prow.path_data = path.pathData;
-  }
-
-  redraw() {
-    // получаем узлы
-    const bcnn = this.cnn_point('b');
-    const ecnn = this.cnn_point('e');
-    const {rays} = this.nearest();
-    const {path, generatrix} = this;
-
-    // получаем соединения концов профиля и точки пересечения с соседями
-    this.path_points(bcnn, 'b');
-    this.path_points(ecnn, 'e');
-
-    // очищаем существующий путь
-    path.removeSegments();
-
-    path.add(this.corns(1));
-
-    // if(generatrix.is_linear()) {
-      path.add(this.corns(2));
-      path.add(this.corns(3));
-    // }
-    // else {
-    //
-    //   let tpath = new paper.Path({insert: false});
-    //   let offset1 = rays.outer.getNearestLocation(this.corns(1)).offset;
-    //   let offset2 = rays.outer.getNearestLocation(this.corns(2)).offset;
-    //   let step = (offset2 - offset1) / 50;
-    //
-    //   for (let i = offset1 + step; i < offset2; i += step) {
-    //     tpath.add(rays.outer.getPointAt(i));
-    //   }
-    //   tpath.simplify(0.8);
-    //   path.join(tpath);
-    //   path.add(this.corns(2));
-    //   this.corns(6) && path.add(this.corns(6));
-    //   path.add(this.corns(3));
-    //
-    //   tpath = new paper.Path({insert: false});
-    //   offset1 = rays.inner.getNearestLocation(this.corns(3)).offset;
-    //   offset2 = rays.inner.getNearestLocation(this.corns(4)).offset;
-    //   step = (offset2 - offset1) / 50;
-    //   for (let i = offset1 + step; i < offset2; i += step) {
-    //     tpath.add(rays.inner.getPointAt(i));
-    //   }
-    //   tpath.simplify(0.8);
-    //   path.join(tpath);
-    //
-    // }
-
-    path.add(this.corns(4));
-    path.closePath();
-    path.reduce();
-
-    return this;
-  }
-}
-
-ProfileNested.nearest_cnn = {
-  size(profile) {
-    return profile.nearest().width;
-  },
-  empty() {
-    return false;
-  },
-  get cnn_type() {
-    return $p.enm.cnn_types.ii;
-  },
-  specification: [],
-  selection_params: [],
-  filtered_spec() {
-    return [];
-  },
-}
-
-EditorInvisible.ProfileNested = ProfileNested;
 
 
 /**
@@ -20361,7 +20562,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas} = $p;
+
+  const {inserts_types} = enm;
 
   if(job_prm.use_ram !== false){
     md.once('predefined_elmnts_inited', () => {
@@ -20371,9 +20574,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
   cat.inserts.__define({
 
-    _inserts_types_filling: {
+    _types_filling: {
       value: [
-        enm.inserts_types.Заполнение
+        inserts_types.Заполнение,
+        inserts_types.Стеклопакет,
+      ]
+    },
+
+    _types_main: {
+      value: [
+        inserts_types.Профиль,
+        inserts_types.Заполнение,
+        inserts_types.Стеклопакет,
       ]
     },
 
@@ -20464,7 +20676,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             value_change(field, type, value) {
               if(field === 'inset') {
                 value = cat.inserts.get(value);
-                if(value.insert_type == enm.inserts_types.Параметрик) {
+                if(value.insert_type == inserts_types.Параметрик) {
                   idata.tune_meta(value, this);
                 }
               }
@@ -20484,7 +20696,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           this.meta.fields.inset.disable_clear = true;
 
           // получаем возможные параметры вставок данного типа
-          if(item !== enm.inserts_types.Параметрик) {
+          if(item !== inserts_types.Параметрик) {
             const changed = this.tune_meta(item);
             const {current_user} = $p;
             for(const scheme of changed) {
@@ -20615,7 +20827,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
         if(!this._by_thickness){
           this._by_thickness = new Map();
-          this.find_rows({insert_type: {in: this._inserts_types_filling}}, (ins) => {
+          this.find_rows({insert_type: {in: this._types_filling}}, (ins) => {
             if(ins.thickness > 0){
               if(!this._by_thickness.has(ins.thickness)) {
                 this._by_thickness.set(ins.thickness, []);
@@ -20744,10 +20956,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @return {boolean}
      */
     is_order_row_prod({ox, elm, contour}) {
-      const {enm: {specification_order_row_types: {Продукция}, inserts_types}, CatFormulas, cch} = $p;
+      const {Продукция} = enm.specification_order_row_types;
       const param = cch.properties.predefined('glass_separately');
-      let {is_order_row, insert_type} = this;
-      if(param && insert_type === inserts_types.Заполнение) {
+
+      let {is_order_row, insert_type, _manager: {_types_filling}} = this;
+      if(param && _types_filling.includes(insert_type)) {
         ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
             is_order_row = value ? Продукция : '';
@@ -20888,7 +21101,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               res: res
             });
           }
-          if(irow.count_calc_method == enm.count_calculating_ways.ПоПлощади && this.insert_type == enm.inserts_types.МоскитнаяСетка){
+          if(irow.count_calc_method == enm.count_calculating_ways.ПоПлощади && this.insert_type == inserts_types.МоскитнаяСетка){
             // получаем габариты смещенного периметра
             const bounds = contour.bounds_inner(irow.sz);
             res.x = bounds.width.round(1);
@@ -20956,8 +21169,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * Проверяет ограничения вставки или строки вставки
      * @param row {CatInserts|CatInsertsSpecificationRow}
      * @param elm {BuilderElement}
-     * @param by_perimetr {Boolean}
-     * @param len_angl {Object}
+     * @param [by_perimetr] {Boolean}
+     * @param [len_angl] {Object}
      * @return {Boolean}
      */
     check_restrictions(row, elm, by_perimetr, len_angl) {
@@ -21050,12 +21263,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
 
-      const {insert_type} = this;
-      const {inserts_types: {Профиль, Заполнение}, angle_calculating_ways: {Основной}} = enm;
+      const {insert_type, _manager: {_types_filling, _types_main}} = this;
+      const {inserts_types: {Профиль}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
 
       // для заполнений, можно переопределить состав верхнего уровня
-      if(is_high_level_call && (insert_type == Заполнение)){
+      if(is_high_level_call && _types_filling.includes(insert_type)){
 
         const glass_rows = [];
         ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {
@@ -21123,7 +21336,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       });
 
       // контроль массы, размеров основной вставки
-      if([Профиль, Заполнение].includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
         elm.err_spec_row(job_prm.nom.critical_error);
       }
 
