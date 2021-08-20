@@ -6964,7 +6964,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       // если тип стеклопаке - заполняем по умолчанию
       if(insert_type === insert_type._manager.Стеклопакет) {
         for(const row of inset.specification) {
-          glass_specification.add({elm, inset: row.nom});
+          row.quantity && glass_specification.add({elm, inset: row.nom});
         }
       }
 
@@ -6978,7 +6978,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           // если тип стеклопаке - заполняем по умолчанию
           if(insert_type === insert_type._manager.Стеклопакет) {
             for(const row of inset.specification) {
-              glass_specification.add({elm: selm.elm, inset: row.nom});
+              row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});
             }
           }
           // устанавливаем цвет, как у нас
