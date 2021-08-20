@@ -79,13 +79,22 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
         if(row.synonym === 'glass_chains') {
           const value = [];
           const tmp = [];
+          let name;
           for(const elm of row.elmnts) {
+            if(elm.elm) {
+              name = elm.elm;
+            }
             if(elm.value) {
               tmp.push(igt.get(elm.value));
             }
             else {
               if(tmp.length) {
-                value.push(tmp.splice(0));
+                const chain = tmp.splice(0);
+                if(name) {
+                  Object.defineProperty(chain, 'name', {value: name});
+                  name = '';
+                }
+                value.push(chain);
               }
             }
           }
