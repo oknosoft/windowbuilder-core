@@ -290,13 +290,13 @@ exports.CatCnns = class CatCnns extends Object {
     if(this.cnn_elmnts.find_rows({nom1: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art1});
     }
-    if(!ares.length && this.cnn_elmnts.find_rows({nom2: nom}).length){
+    if((!ares || !ares.length) && this.cnn_elmnts.find_rows({nom2: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art2});
     }
-    if(!ares.length) {
+    if((!ares || !ares.length)) {
       ares = this.specification.find_rows({nom: nom});
     }
-    if(ares.length) {
+    if(ares && ares.length) {
       return ares[0]._row;
     }
 

@@ -356,7 +356,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const weight = _ox.elm_weight(-cnstr);
     return (layer ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
-      (weight ? `, ${weight.toFixed()} кг` : '');
+      (weight ? `, ${weight.toFixed()}кг` : '');
   }
 
   get info() {
@@ -2134,6 +2134,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       // проверим вхождение значения в доступные и при необходимости изменим
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
+      }
+      else if(param.inheritance === 3) {
+        const bvalue = param.branch_value({project: this.project, cnstr, ox: this.project.ox});
+        if(prow.value !== bvalue) {
+          prow.value = bvalue;
+          notify = true;
+        }
       }
       if (prow.hide !== hide) {
         prow.hide = hide;

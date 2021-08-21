@@ -454,6 +454,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   set_inset(v, ignore_select) {
 
     const inset = $p.cat.inserts.get(v);
+    const {insert_type} = inset;
 
     if(!ignore_select){
       const {project, elm, ox: {glass_specification}} = this;
@@ -463,6 +464,12 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
+      // если тип стеклопаке - заполняем по умолчанию
+      if(insert_type === insert_type._manager.Стеклопакет) {
+        for(const row of inset.specification) {
+          row.quantity && glass_specification.add({elm, inset: row.nom});
+        }
+      }
 
       // транслируем изменения на остальные выделенные заполнения
       project.selected_glasses().forEach((selm) => {
@@ -471,6 +478,12 @@ class Filling extends AbstractFilling(BuilderElement) {
           selm.set_inset(inset, true);
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
+          // если тип стеклопаке - заполняем по умолчанию
+          if(insert_type === insert_type._manager.Стеклопакет) {
+            for(const row of inset.specification) {
+              row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});
+            }
+          }
           // устанавливаем цвет, как у нас
           selm.clr = this.clr;
         }
@@ -661,16 +674,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     else if(Array.isArray(attr)){
       let {length} = attr;
       if(length > 1) {
-        let prev, curr, next, sub_path;
+        let prev, curr, next;
+        const {cat: {cnns}, enm: {cnn_types}} = $p;
         // получам эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
-          const {cat: {cnns}, enm: {cnn_types}} = $p;
           curr = attr[i];
           next = i === length - 1 ? attr[0] : attr[i + 1];
-          sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
-
+          const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
-
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
         // получам пересечения
@@ -897,9 +908,9 @@ class Filling extends AbstractFilling(BuilderElement) {
    * информация для редактора свойста
    */
   get info() {
-    const {elm, bounds: {width, height}, thickness, layer} = this;
+    const {elm, bounds: {width, height}, thickness, weight, layer} = this;
     return `№${layer instanceof ContourNestedContent ?
-      `${layer.layer.cnstr}-${elm}` : elm} w:${width.toFixed(0)} h:${height.toFixed(0)} z:${thickness.toFixed(0)}`;
+      `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
 
   /**
