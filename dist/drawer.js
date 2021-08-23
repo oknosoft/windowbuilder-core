@@ -5977,15 +5977,17 @@ class BuilderElement extends paper.Group {
           if(this instanceof Filling){
             // !iface - нет dhtmlx, чистый react
             if(!iface || utils.is_data_obj(o)){
-              const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _types_filling.includes(insert_type) &&
-                thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
+              const insert = inserts.get(o);
+              const {insert_type, insert_glass_type} = insert;
+              if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+                return sys.thicknesses.includes(insert.thickness);
+              }
+              return false;
             }
             else{
               let refs = "";
-              inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == inserts_glass_types.Заполнение){
+              inserts.by_thickness(sys).forEach((o) => {
+                if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
                   if(refs){
                     refs += ", ";
                   }
@@ -20893,7 +20895,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     /**
      * Возвращает массив заполнений в заданном диапазоне толщин
-     * @param min {Number|Array}
+     * @param min {Number|Array|CatProduction_params}
      * @param max {Number|undefined}
      * @return {Array.<CatInserts>}
      */
@@ -20911,6 +20913,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               this._by_thickness.get(ins.thickness).push(ins);
             }
           });
+        }
+
+        if(min instanceof $p.CatProduction_params) {
+          min = min.thicknesses;
+          max = 0;
         }
 
         for (const [thin, arr] of this._by_thickness) {
@@ -21729,12 +21736,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       if(!_data.hasOwnProperty("thickness")){
         _data.thickness = 0;
         const nom = this.nom(null, true);
-        if(nom && !nom.empty()){
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)){
           _data.thickness = nom.thickness;
         }
         else{
-          this.specification.forEach(({nom}) => {
-            if(nom) {
+          this.specification.forEach(({nom, quantity}) => {
+            if(nom && quantity) {
               _data.thickness += nom.thickness;
             }
           });
@@ -21756,7 +21763,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const sprms = [];
-      const {order} = $p.enm.plan_detailing;
+      const {order} = enm.plan_detailing;
 
       this.selection_params.forEach(({param, origin}) => {
         if(param.empty() || origin === order) {
