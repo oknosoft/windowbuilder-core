@@ -1621,6 +1621,7 @@ class ProfileItem extends GeneratrixElement {
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
     const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
+
     // импосты рисуем с учетом стороны примыкания
     if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
@@ -1724,6 +1725,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
     }
+
     // крест в стык
     else if(cnn_type == cnn_types.xx) {
 
@@ -1781,6 +1783,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
     }
+
     // соединение с пустотой
     else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type == cnn_types.i) {
       // точки рассчитаются автоматически, как для ненайденных
@@ -1793,6 +1796,7 @@ class ProfileItem extends GeneratrixElement {
         delete _corns[3];
       }
     }
+
     // угловое диагональное
     else if(cnn_type == cnn_types.ad) {
       // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
@@ -1804,7 +1808,7 @@ class ProfileItem extends GeneratrixElement {
         if(is_b) {
           intersect_point(prays.inner, rays.inner, 4);
           const pt = _corns[4];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? 1 : -1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
           if(wprofile === this) {
@@ -1823,7 +1827,7 @@ class ProfileItem extends GeneratrixElement {
           intersect_point(prays.inner, rays.inner, 3);
 
           const pt = _corns[3];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? -1 : 1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
 
@@ -1861,8 +1865,8 @@ class ProfileItem extends GeneratrixElement {
           }
         }
       }
-
     }
+
     // угловое к вертикальной
     else if(cnn_type == cnn_types.av) {
       if(this.orientation == $p.enm.orientations.vert) {
@@ -1889,6 +1893,7 @@ class ProfileItem extends GeneratrixElement {
         cnn_point.err = 'orientation';
       }
     }
+
     // угловое к горизонтальной
     else if(cnn_type == cnn_types.ah) {
       if(this.orientation == $p.enm.orientations.vert) {
@@ -1915,17 +1920,21 @@ class ProfileItem extends GeneratrixElement {
         cnn_point.err = 'orientation';
       }
     }
+
     // короткое
     else if(cnn_type == cnn_types.short) {
+      const orays = prays[
+        other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner'];
       if(is_b) {
-        intersect_point(prays.inner, rays.outer, 1);
-        intersect_point(prays.inner, rays.inner, 4);
+        intersect_point(orays, rays.outer, 1);
+        intersect_point(orays, rays.inner, 4);
       }
       else if(is_e) {
-        intersect_point(prays.inner, rays.outer, 2);
-        intersect_point(prays.inner, rays.inner, 3);
+        intersect_point(orays, rays.outer, 2);
+        intersect_point(orays, rays.inner, 3);
       }
     }
+
     // длинное
     else if(cnn_type == cnn_types.long) {
       if(is_b) {

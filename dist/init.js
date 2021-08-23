@@ -230,13 +230,22 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
         if(row.synonym === 'glass_chains') {
           const value = [];
           const tmp = [];
+          let name;
           for(const elm of row.elmnts) {
+            if(elm.elm) {
+              name = elm.elm;
+            }
             if(elm.value) {
               tmp.push(igt.get(elm.value));
             }
             else {
               if(tmp.length) {
-                value.push(tmp.splice(0));
+                const chain = tmp.splice(0);
+                if(name) {
+                  Object.defineProperty(chain, 'name', {value: name});
+                  name = '';
+                }
+                value.push(chain);
               }
             }
           }
@@ -2599,10 +2608,13 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
    * @return {number[]}
    */
   get thicknesses() {
-    const thin = new Set();
-    const {Заполнение, Стекло} = $p.enm.elm_types;
-    this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => thin.add(nom.thickness));
-    return Array.from(thin);
+    const {_data} = this;
+    if(!_data.thin) {
+      _data.thin = new Set();
+      const {Заполнение, Стекло} = $p.enm.elm_types;
+      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => _data.thin.add(nom.thickness));
+    }
+    return Array.from(_data.thin);
   }
 
   /**

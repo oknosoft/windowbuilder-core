@@ -1943,8 +1943,20 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method remove
    */
   remove() {
-    //удаляем детей
+
+    // сначала удаляем створки и заполнения
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+
+    // затем - импосты
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+
+    // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
+
     while (children.length) {
       children[0].remove();
     }
@@ -3071,7 +3083,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
 
-    //$p.job_prm.debug && console.timeEnd();
+    //$p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
     this.draw_opening();
@@ -4325,7 +4337,6 @@ class DimensionDrawer extends paper.Group {
           dx2 = dxi - nom.sizefaltz;
         }
 
-
         this.ihor[`i${++index}`] = new DimensionLineImpost({
           elm1: elm,
           elm2: elm,
@@ -4337,7 +4348,6 @@ class DimensionDrawer extends paper.Group {
           offset: invert ? -150 : 150,
           outer: outer.includes(impost),
         });
-
       }
     }
 
@@ -4412,8 +4422,8 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
-    const {base_offset} = consts;
-    const offset = (pos == 'right' || pos == 'bottom') ? -base_offset - 40 : base_offset;
+    const {base_offset, dop_offset} = consts;
+    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
@@ -5837,15 +5847,17 @@ class BuilderElement extends paper.Group {
           if(this instanceof Filling){
             // !iface - нет dhtmlx, чистый react
             if(!iface || utils.is_data_obj(o)){
-              const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _types_filling.includes(insert_type) &&
-                thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
+              const insert = inserts.get(o);
+              const {insert_type, insert_glass_type} = insert;
+              if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+                return sys.thicknesses.includes(insert.thickness);
+              }
+              return false;
             }
             else{
               let refs = "";
-              inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == inserts_glass_types.Заполнение){
+              inserts.by_thickness(sys).forEach((o) => {
+                if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
                   if(refs){
                     refs += ", ";
                   }
@@ -6054,8 +6066,12 @@ class BuilderElement extends paper.Group {
 
   // масса элемента
   get weight() {
-    const {project, elm} = this;
-    return project.ox.elm_weight(elm);
+    let {project: {ox}, elm, inset, layer} = this;
+    // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
+    if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
+      ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
+    }
+    return ox.elm_weight(elm);
   }
 
   /**
@@ -10495,6 +10511,7 @@ class ProfileItem extends GeneratrixElement {
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
     const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
+
     // импосты рисуем с учетом стороны примыкания
     if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
@@ -10598,6 +10615,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
     }
+
     // крест в стык
     else if(cnn_type == cnn_types.xx) {
 
@@ -10655,6 +10673,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
     }
+
     // соединение с пустотой
     else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type == cnn_types.i) {
       // точки рассчитаются автоматически, как для ненайденных
@@ -10667,6 +10686,7 @@ class ProfileItem extends GeneratrixElement {
         delete _corns[3];
       }
     }
+
     // угловое диагональное
     else if(cnn_type == cnn_types.ad) {
       // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
@@ -10678,7 +10698,7 @@ class ProfileItem extends GeneratrixElement {
         if(is_b) {
           intersect_point(prays.inner, rays.inner, 4);
           const pt = _corns[4];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? 1 : -1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
           if(wprofile === this) {
@@ -10697,7 +10717,7 @@ class ProfileItem extends GeneratrixElement {
           intersect_point(prays.inner, rays.inner, 3);
 
           const pt = _corns[3];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? -1 : 1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
 
@@ -10735,8 +10755,8 @@ class ProfileItem extends GeneratrixElement {
           }
         }
       }
-
     }
+
     // угловое к вертикальной
     else if(cnn_type == cnn_types.av) {
       if(this.orientation == $p.enm.orientations.vert) {
@@ -10763,6 +10783,7 @@ class ProfileItem extends GeneratrixElement {
         cnn_point.err = 'orientation';
       }
     }
+
     // угловое к горизонтальной
     else if(cnn_type == cnn_types.ah) {
       if(this.orientation == $p.enm.orientations.vert) {
@@ -10789,17 +10810,21 @@ class ProfileItem extends GeneratrixElement {
         cnn_point.err = 'orientation';
       }
     }
+
     // короткое
     else if(cnn_type == cnn_types.short) {
+      const orays = prays[
+        other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner'];
       if(is_b) {
-        intersect_point(prays.inner, rays.outer, 1);
-        intersect_point(prays.inner, rays.inner, 4);
+        intersect_point(orays, rays.outer, 1);
+        intersect_point(orays, rays.inner, 4);
       }
       else if(is_e) {
-        intersect_point(prays.inner, rays.outer, 2);
-        intersect_point(prays.inner, rays.inner, 3);
+        intersect_point(orays, rays.outer, 2);
+        intersect_point(orays, rays.inner, 3);
       }
     }
+
     // длинное
     else if(cnn_type == cnn_types.long) {
       if(is_b) {
@@ -20167,9 +20192,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Ищет характеристику в озу, в indexeddb не лезет, если нет в озу - создаёт
    * @param elm {Number} - номер элемента или контура
    * @param origin {CatInserts} - порождающая вставка
+   * @param [modify] {Boolean} - если false - не изменяем - только поиск
    * @return {CatCharacteristics}
    */
-  find_create_cx(elm, origin) {
+  find_create_cx(elm, origin, modify) {
     const {_manager, calc_order, params, inserts} = this;
     let cx;
     _manager.find_rows({leading_product: this, leading_elm: elm, origin}, (obj) => {
@@ -20187,19 +20213,21 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       }, false, true)._set_loaded();
     }
 
-    // переносим в cx параметры
-    const {length, width} = $p.job_prm.properties;
-    cx.params.clear();
-    params.find_rows({cnstr: -elm, inset: origin}, (row) => {
-      if(row.param != length && row.param != width) {
-        cx.params.add({param: row.param, value: row.value});
-      }
-    });
-    // переносим в cx цвет
-    inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
-      cx.clr = row.clr;
-    });
-    cx.name = cx.prod_name();
+    if(modify !== false) {
+      // переносим в cx параметры
+      const {length, width} = $p.job_prm.properties;
+      cx.params.clear();
+      params.find_rows({cnstr: -elm, inset: origin}, (row) => {
+        if(row.param != length && row.param != width) {
+          cx.params.add({param: row.param, value: row.value});
+        }
+      });
+      // переносим в cx цвет
+      inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
+        cx.clr = row.clr;
+      });
+      cx.name = cx.prod_name();
+    }
     return cx;
   }
 
@@ -20540,6 +20568,16 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       }
       weight += nom.density * totqty;
     });
+    // элементы внутри слоя могут быть вынесены в отдельные строки заказа
+    if(elmno < 0) {
+      const contour = {cnstr: -elmno};
+      coordinates.find_rows(contour, ({elm, inset}) => {
+        if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {
+          const cx = this.find_create_cx(elm, $p.utils.blank.guid, false);
+          weight += cx.elm_weight();
+        }
+      });
+    }
     return weight;
   }
 
@@ -22016,7 +22054,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     /**
      * Возвращает массив заполнений в заданном диапазоне толщин
-     * @param min {Number|Array}
+     * @param min {Number|Array|CatProduction_params}
      * @param max {Number|undefined}
      * @return {Array.<CatInserts>}
      */
@@ -22034,6 +22072,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               this._by_thickness.get(ins.thickness).push(ins);
             }
           });
+        }
+
+        if(min instanceof $p.CatProduction_params) {
+          min = min.thicknesses;
+          max = 0;
         }
 
         for (const [thin, arr] of this._by_thickness) {
@@ -22148,11 +22191,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * const {specification_order_row_types: types} = $p.enm;
      * return contour ? types.Продукция : types.Нет;
      *
-     * @param inset
-     * @param ox
-     * @param elm
-     * @param contour
-     * @return {boolean}
+     * @param ox {CatCharacteristics}
+     * @param elm {BuilderElement}
+     * @param [contour] {Contour}
+     * @return {Boolean}
      */
     is_order_row_prod({ox, elm, contour}) {
       const {Продукция} = enm.specification_order_row_types;
@@ -22853,12 +22895,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       if(!_data.hasOwnProperty("thickness")){
         _data.thickness = 0;
         const nom = this.nom(null, true);
-        if(nom && !nom.empty()){
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)){
           _data.thickness = nom.thickness;
         }
         else{
-          this.specification.forEach(({nom}) => {
-            if(nom) {
+          this.specification.forEach(({nom, quantity}) => {
+            if(nom && quantity) {
               _data.thickness += nom.thickness;
             }
           });
@@ -22880,7 +22922,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const sprms = [];
-      const {order} = $p.enm.plan_detailing;
+      const {order} = enm.plan_detailing;
 
       this.selection_params.forEach(({param, origin}) => {
         if(param.empty() || origin === order) {

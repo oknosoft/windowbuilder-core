@@ -247,9 +247,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Ищет характеристику в озу, в indexeddb не лезет, если нет в озу - создаёт
    * @param elm {Number} - номер элемента или контура
    * @param origin {CatInserts} - порождающая вставка
+   * @param [modify] {Boolean} - если false - не изменяем - только поиск
    * @return {CatCharacteristics}
    */
-  find_create_cx(elm, origin) {
+  find_create_cx(elm, origin, modify) {
     const {_manager, calc_order, params, inserts} = this;
     let cx;
     _manager.find_rows({leading_product: this, leading_elm: elm, origin}, (obj) => {
@@ -267,19 +268,21 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       }, false, true)._set_loaded();
     }
 
-    // переносим в cx параметры
-    const {length, width} = $p.job_prm.properties;
-    cx.params.clear();
-    params.find_rows({cnstr: -elm, inset: origin}, (row) => {
-      if(row.param != length && row.param != width) {
-        cx.params.add({param: row.param, value: row.value});
-      }
-    });
-    // переносим в cx цвет
-    inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
-      cx.clr = row.clr;
-    });
-    cx.name = cx.prod_name();
+    if(modify !== false) {
+      // переносим в cx параметры
+      const {length, width} = $p.job_prm.properties;
+      cx.params.clear();
+      params.find_rows({cnstr: -elm, inset: origin}, (row) => {
+        if(row.param != length && row.param != width) {
+          cx.params.add({param: row.param, value: row.value});
+        }
+      });
+      // переносим в cx цвет
+      inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
+        cx.clr = row.clr;
+      });
+      cx.name = cx.prod_name();
+    }
     return cx;
   }
 
@@ -620,6 +623,16 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       }
       weight += nom.density * totqty;
     });
+    // элементы внутри слоя могут быть вынесены в отдельные строки заказа
+    if(elmno < 0) {
+      const contour = {cnstr: -elmno};
+      coordinates.find_rows(contour, ({elm, inset}) => {
+        if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {
+          const cx = this.find_create_cx(elm, $p.utils.blank.guid, false);
+          weight += cx.elm_weight();
+        }
+      });
+    }
     return weight;
   }
 

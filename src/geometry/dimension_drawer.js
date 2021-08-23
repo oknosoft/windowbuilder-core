@@ -248,7 +248,6 @@ class DimensionDrawer extends paper.Group {
           dx2 = dxi - nom.sizefaltz;
         }
 
-
         this.ihor[`i${++index}`] = new DimensionLineImpost({
           elm1: elm,
           elm2: elm,
@@ -260,7 +259,6 @@ class DimensionDrawer extends paper.Group {
           offset: invert ? -150 : 150,
           outer: outer.includes(impost),
         });
-
       }
     }
 
@@ -335,8 +333,8 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
-    const {base_offset} = consts;
-    const offset = (pos == 'right' || pos == 'bottom') ? -base_offset - 40 : base_offset;
+    const {base_offset, dop_offset} = consts;
+    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;

@@ -218,15 +218,17 @@ class BuilderElement extends paper.Group {
           if(this instanceof Filling){
             // !iface - нет dhtmlx, чистый react
             if(!iface || utils.is_data_obj(o)){
-              const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _types_filling.includes(insert_type) &&
-                thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
+              const insert = inserts.get(o);
+              const {insert_type, insert_glass_type} = insert;
+              if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+                return sys.thicknesses.includes(insert.thickness);
+              }
+              return false;
             }
             else{
               let refs = "";
-              inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == inserts_glass_types.Заполнение){
+              inserts.by_thickness(sys).forEach((o) => {
+                if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
                   if(refs){
                     refs += ", ";
                   }
@@ -435,8 +437,12 @@ class BuilderElement extends paper.Group {
 
   // масса элемента
   get weight() {
-    const {project, elm} = this;
-    return project.ox.elm_weight(elm);
+    let {project: {ox}, elm, inset, layer} = this;
+    // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
+    if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
+      ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
+    }
+    return ox.elm_weight(elm);
   }
 
   /**

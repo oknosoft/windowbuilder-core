@@ -952,8 +952,20 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method remove
    */
   remove() {
-    //удаляем детей
+
+    // сначала удаляем створки и заполнения
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+
+    // затем - импосты
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+
+    // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
+
     while (children.length) {
       children[0].remove();
     }
@@ -2080,7 +2092,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
 
-    //$p.job_prm.debug && console.timeEnd();
+    //$p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
     this.draw_opening();
