@@ -74,6 +74,7 @@ class DimensionLine extends paper.Group {
 
     !this.project._attr._from_service && this.on({
       mouseenter: this._mouseenter,
+      mouseleave: this._mouseleave,
       click: this._click
     });
 
@@ -112,7 +113,21 @@ class DimensionLine extends paper.Group {
   }
 
   _mouseenter() {
-    this.project._scope.canvas_cursor(`cursor-arrow-ruler${this.is_disabled() ? '-dis' : ''}`);
+    const {children: {text}, project: {_scope}} = this;
+    const dis = this.is_disabled();
+    _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
+    if(!dis) {
+      text.fontWeight = 'bold';
+      text.shadowBlur = 10;
+      text.shadowOffset = 10;
+    }
+  }
+
+  _mouseleave() {
+    const {text} = this.children;
+    text.fontWeight = 'normal';
+    text.shadowBlur = 0;
+    text.shadowOffset = 0;
   }
 
   _click(event) {
@@ -313,7 +328,7 @@ class DimensionLine extends paper.Group {
     const e = path.lastSegment.point;
     const normal = path.getNormalAt(0).multiply(this.offset + path.offset);
     const nl = normal.length;
-    const ns = nl > 30 ? normal.normalize(nl - 20) : normal;
+    const ns = nl > 30 ? normal.normalize(nl - 10) : normal;
     const bs = b.add(ns);
     const es = e.add(ns);
 

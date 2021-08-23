@@ -62,4 +62,12 @@ const consts = {
 	move_handle: 'move_handle',
 	move_shapes: 'move-shapes',
 
+  get base_offset() {
+	  const {font_size} = this;
+    return font_size < 80 ? 90 : font_size + 12;
+  },
+  get dop_offset() {
+	  return this.base_offset + 40;
+  }
+
 };
