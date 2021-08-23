@@ -398,11 +398,10 @@
      * const {specification_order_row_types: types} = $p.enm;
      * return contour ? types.Продукция : types.Нет;
      *
-     * @param inset
-     * @param ox
-     * @param elm
-     * @param contour
-     * @return {boolean}
+     * @param ox {CatCharacteristics}
+     * @param elm {BuilderElement}
+     * @param [contour] {Contour}
+     * @return {Boolean}
      */
     is_order_row_prod({ox, elm, contour}) {
       const {Продукция} = enm.specification_order_row_types;

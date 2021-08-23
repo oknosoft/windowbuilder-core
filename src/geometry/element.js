@@ -438,7 +438,7 @@ class BuilderElement extends paper.Group {
     let {project: {ox}, elm, inset, layer} = this;
     // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
-      ox = ox.find_create_cx(elm, $p.utils.blank.guid);
+      ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
     }
     return ox.elm_weight(elm);
   }
