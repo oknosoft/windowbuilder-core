@@ -62,6 +62,14 @@ const consts = {
 	move_handle: 'move_handle',
 	move_shapes: 'move-shapes',
 
+  get base_offset() {
+	  const {font_size} = this;
+    return font_size < 80 ? 90 : font_size + 12;
+  },
+  get dop_offset() {
+	  return this.base_offset + 40;
+  }
+
 };
 
 
@@ -4537,7 +4545,8 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
-    const offset = (pos == 'right' || pos == 'bottom') ? -130 : 90;
+    const {base_offset, dop_offset} = consts;
+    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
@@ -4562,7 +4571,8 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии от габарита
    */
   by_base(arr, collection, pos) {
-    let offset = (pos == 'right' || pos == 'bottom') ? -130 : 90;
+    const {base_offset, dop_offset} = consts;
+    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
         collection[i - 1] = new DimensionLine({
@@ -4575,7 +4585,7 @@ class DimensionDrawer extends paper.Group {
           offset: offset,
           impost: true
         });
-        offset += 90;
+        offset += base_offset;
       }
     }
   }
@@ -4587,7 +4597,7 @@ class DimensionDrawer extends paper.Group {
 
     const {project, parent} = this;
     const {bounds} = parent;
-
+    const {base_offset, dop_offset} = consts;
 
     if(project.contours.length > 1 || forse) {
 
@@ -4597,12 +4607,12 @@ class DimensionDrawer extends paper.Group {
             this.left = new DimensionLine({
               pos: 'left',
               parent: this,
-              offset: ihor.length > 2 ? 220 : 90,
+              offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
               contour: true
             });
           }
           else {
-            this.left.offset = ihor.length > 2 ? 220 : 90;
+            this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
           }
         }
       }
@@ -4619,12 +4629,12 @@ class DimensionDrawer extends paper.Group {
             this.right = new DimensionLine({
               pos: 'right',
               parent: this,
-              offset: ihor.length > 2 ? -260 : -130,
+              offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
               contour: true
             });
           }
           else {
-            this.right.offset = ihor.length > 2 ? -260 : -130;
+            this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
           }
         }
       }
@@ -4641,12 +4651,12 @@ class DimensionDrawer extends paper.Group {
             this.top = new DimensionLine({
               pos: 'top',
               parent: this,
-              offset: ivert.length > 2 ? 220 : 90,
+              offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
               contour: true
             });
           }
           else {
-            this.top.offset = ivert.length > 2 ? 220 : 90;
+            this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
           }
         }
       }
@@ -4663,12 +4673,12 @@ class DimensionDrawer extends paper.Group {
             this.bottom = new DimensionLine({
               pos: 'bottom',
               parent: this,
-              offset: ivert.length > 2 ? -260 : -130,
+              offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
               contour: true
             });
           }
           else {
-            this.bottom.offset = ivert.length > 2 ? -260 : -130;
+            this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
           }
         }
       }
@@ -4690,11 +4700,12 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии контура по фальцу
    */
   by_faltz(ihor, ivert, by_side) {
+    const {base_offset} = consts;
     if (!this.left) {
       this.left = new DimensionLine({
         pos: 'left',
         parent: this,
-        offset: 90,
+        offset: base_offset,
         contour: true,
         faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
       });
@@ -4703,7 +4714,7 @@ class DimensionDrawer extends paper.Group {
       this.top = new DimensionLine({
         pos: 'top',
         parent: this,
-        offset: 90,
+        offset: base_offset,
         contour: true,
         faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
       });
@@ -4844,6 +4855,7 @@ class DimensionLine extends paper.Group {
 
     !this.project._attr._from_service && this.on({
       mouseenter: this._mouseenter,
+      mouseleave: this._mouseleave,
       click: this._click
     });
 
@@ -4882,7 +4894,21 @@ class DimensionLine extends paper.Group {
   }
 
   _mouseenter() {
-    this.project._scope.canvas_cursor(`cursor-arrow-ruler${this.is_disabled() ? '-dis' : ''}`);
+    const {children: {text}, project: {_scope}} = this;
+    const dis = this.is_disabled();
+    _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
+    if(!dis) {
+      text.fontWeight = 'bold';
+      text.shadowBlur = 10;
+      text.shadowOffset = 10;
+    }
+  }
+
+  _mouseleave() {
+    const {text} = this.children;
+    text.fontWeight = 'normal';
+    text.shadowBlur = 0;
+    text.shadowOffset = 0;
   }
 
   _click(event) {
@@ -5083,7 +5109,7 @@ class DimensionLine extends paper.Group {
     const e = path.lastSegment.point;
     const normal = path.getNormalAt(0).multiply(this.offset + path.offset);
     const nl = normal.length;
-    const ns = nl > 30 ? normal.normalize(nl - 20) : normal;
+    const ns = nl > 30 ? normal.normalize(nl - 10) : normal;
     const bs = b.add(ns);
     const es = e.add(ns);
 
@@ -10841,7 +10867,7 @@ class ProfileItem extends GeneratrixElement {
         if(is_b) {
           intersect_point(prays.inner, rays.inner, 4);
           const pt = _corns[4];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? 1 : -1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
           if(wprofile === this) {
@@ -10860,7 +10886,7 @@ class ProfileItem extends GeneratrixElement {
           intersect_point(prays.inner, rays.inner, 3);
 
           const pt = _corns[3];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? -1 : 1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
 
@@ -13189,6 +13215,7 @@ BaseLine.oxml = {
 };
 
 EditorInvisible.BaseLine = BaseLine;
+
 
 
 /**

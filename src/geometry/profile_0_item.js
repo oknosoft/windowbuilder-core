@@ -1840,7 +1840,7 @@ class ProfileItem extends GeneratrixElement {
         if(is_b) {
           intersect_point(prays.inner, rays.inner, 4);
           const pt = _corns[4];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? 1 : -1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
           if(wprofile === this) {
@@ -1859,7 +1859,7 @@ class ProfileItem extends GeneratrixElement {
           intersect_point(prays.inner, rays.inner, 3);
 
           const pt = _corns[3];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.angle_at('b') / 2) * (wprofile === this ? -1 : 1));
+          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
           const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
 
