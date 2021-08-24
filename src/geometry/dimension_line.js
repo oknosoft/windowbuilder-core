@@ -166,7 +166,8 @@ class DimensionLine extends paper.Group {
 
     let _bounds, delta;
 
-    const {_attr, pos} = this;
+    const {_attr, pos, project} = this;
+    const {Point} = project._scope;
 
     // получаем дельту - на сколько смещать
     if(_attr.elm1){
@@ -181,22 +182,22 @@ class DimensionLine extends paper.Group {
       if(pos == 'top' || pos == 'bottom') {
         const size = Math.abs(p1.x - p2.x);
         if(event.name == 'right') {
-          delta = new paper.Point(event.size - size, 0);
+          delta = new Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
         }
         else {
-          delta = new paper.Point(size - event.size, 0);
+          delta = new Point(size - event.size, 0);
           _bounds[event.name] = Math.min(p1.x, p2.x);
         }
       }
       else{
         const size = Math.abs(p1.y - p2.y);
         if(event.name == 'bottom') {
-          delta = new paper.Point(0, event.size - size);
+          delta = new Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
         }
         else {
-          delta = new paper.Point(0, size - event.size);
+          delta = new Point(0, size - event.size);
           _bounds[event.name] = Math.min(p1.y, p2.y);
         }
       }
@@ -205,42 +206,87 @@ class DimensionLine extends paper.Group {
       _bounds = this.layer.bounds;
       if(pos == 'top' || pos == 'bottom') {
         if(event.name == 'right') {
-          delta = new paper.Point(event.size - _bounds.width, 0);
+          delta = new Point(event.size - _bounds.width, 0);
         }
         else {
-          delta = new paper.Point(_bounds.width - event.size, 0);
+          delta = new Point(_bounds.width - event.size, 0);
         }
       }
       else{
         if(event.name == 'bottom') {
-          delta = new paper.Point(0, event.size - _bounds.height);
+          delta = new Point(0, event.size - _bounds.height);
         }
         else {
-          delta = new paper.Point(0, _bounds.height - event.size);
+          delta = new Point(0, _bounds.height - event.size);
         }
       }
     }
 
     if(delta.length){
-      const {project} = this;
-      project.deselect_all_points();
+      // помещаем в move_shapes и move_points, элементы и узлы к сдвигу
+      const move_shapes = [], move_points = [];
+      let start;
+
+      project.deselectAll();
       project.getItems({class: ProfileItem})
-        .forEach(({b, e, generatrix, width}) => {
-          width = width / 2 + 1;
+        .forEach((profile) => {
+          let {b, e, generatrix, width} = profile;
+          if(!start) {
+            start = b.add(e).divide(2);
+          }
+          width /= 2 + 1;
           if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.segments.forEach((segm) => segm.selected = true)
+            move_shapes.push(profile);
+            //generatrix.segments.forEach((segm) => segm.selected = true)
           }
           else if(Math.abs(b[xy] - _bounds[event.name]) < width){
-            generatrix.firstSegment.selected = true;
+            move_points.push({profile, node: 'b'});
           }
           else if(Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.lastSegment.selected = true;
+            move_points.push({profile, node: 'e'});
           }
       });
-      delta._dimln = true;
-      project.move_points(delta, false);
-      project.deselect_all_points(true);
-      project.register_update();
+
+      let need_redraw;
+      // двигаем целые профили
+      if(move_shapes.length) {
+        for(const profile of move_shapes) {
+          profile.selected = true;
+        }
+        const vertexes = project.mover.snap_to_edges({
+          start,
+          mode: consts.move_shapes,
+          event: {point: start.add(delta), modifiers: {shift: true}},
+        });
+        project.mover.move_shapes(vertexes);
+        project.deselectAll();
+        need_redraw = true;
+      }
+
+      // двигаем отдельные узлы
+      for(const {profile, node} of move_points) {
+        const cnn = profile.cnn_point(node);
+        if(move_shapes.includes(cnn.profile)) {
+          continue;
+        }
+        profile[node].selected = true;
+
+        const mdelta = project.mover.snap_to_edges({
+          start: profile[node],
+          mode: consts.move_points,
+          event: {point: profile[node].add(delta), modifiers: {shift: true}},
+        });
+        project.move_points(mdelta);
+        project.deselectAll();
+        need_redraw = true;
+      }
+
+      need_redraw && project.redraw();
+
+
+      // project.move_points(delta, false);
+      // project.deselect_all_points(true);
+      // project.register_update();
     }
 
   }

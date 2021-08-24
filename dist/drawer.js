@@ -4881,24 +4881,73 @@ class DimensionLine extends paper.Group {
 
     if(delta.length){
       const {project} = this;
-      project.deselect_all_points();
+      const {_scope} = project;
+      //const originalContent = _scope.capture_selection_state();
+      const move_shapes = [], move_points = [];
+      let start;
+
+      //project.deselect_all_points();
+      project.deselectAll();
       project.getItems({class: ProfileItem})
-        .forEach(({b, e, generatrix, width}) => {
-          width = width / 2 + 1;
+        .forEach((profile) => {
+          let {b, e, generatrix, width} = profile;
+          if(!start) {
+            start = b.add(e).divide(2);
+          }
+          width /= 2 + 1;
           if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.segments.forEach((segm) => segm.selected = true)
+            move_shapes.push(profile);
+            //generatrix.segments.forEach((segm) => segm.selected = true)
           }
           else if(Math.abs(b[xy] - _bounds[event.name]) < width){
-            generatrix.firstSegment.selected = true;
+            move_points.push({profile, node: 'b'});
           }
           else if(Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.lastSegment.selected = true;
+            move_points.push({profile, node: 'e'});
           }
       });
-      delta._dimln = true;
-      project.move_points(delta, false);
-      project.deselect_all_points(true);
-      project.register_update();
+
+      let need_redraw;
+      if(move_shapes.length) {
+        for(const profile of move_shapes) {
+          profile.selected = true;
+        }
+        const vertexes = project.mover.snap_to_edges({
+          start,
+          mode: consts.move_shapes,
+          event: {point: start.add(delta), modifiers: {shift: true}},
+        });
+        project.mover.move_shapes(vertexes);
+        project.deselectAll();
+        need_redraw = true;
+
+      }
+
+      for(const {profile, node} of move_points) {
+        const cnn = profile.cnn_point(node);
+        if(move_shapes.includes(cnn.profile)) {
+          continue;
+        }
+        profile[node].selected = true;
+
+        const mdelta = project.mover.snap_to_edges({
+          start: profile[node],
+          mode: consts.move_points,
+          event: {point: profile[node].add(delta), modifiers: {shift: true}},
+        });
+        project.move_points(mdelta);
+        //project.deselect_all_points();
+        project.deselectAll();
+        need_redraw = true;
+      }
+
+      //_scope.restore_selection_state(originalContent);
+      need_redraw && project.redraw();
+
+
+      // project.move_points(delta, false);
+      // project.deselect_all_points(true);
+      // project.register_update();
     }
 
   }

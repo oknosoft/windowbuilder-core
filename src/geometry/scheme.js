@@ -400,7 +400,7 @@ class Scheme extends paper.Project {
    * ### Читает изделие по ссылке или объекту продукции
    * Выполняет следующую последовательность действий:
    * - Если передана ссылка, получает объект из базы данных
-   * - Удаляет все слои и элементы текущего графисеского контекста
+   * - Удаляет все слои и элементы текущего графического контекста
    * - Рекурсивно создаёт контуры изделия по данным табличной части конструкций текущей продукции
    * - Рассчитывает габариты эскиза
    * - Згружает пользовательские размерные линии
@@ -1189,8 +1189,9 @@ class Scheme extends paper.Project {
    *
    * @method load_stamp
    * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
-   * @param is_snapshot {Boolean}
-   * @param no_refill {Boolean}
+   * @param [is_snapshot] {Boolean}
+   * @param [no_refill] {Boolean}
+   * @param [from_service] {Boolean}
    */
   load_stamp(obx, is_snapshot, no_refill, from_service) {
 
