@@ -6437,9 +6437,16 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row, ox, elm} = this;
+    const {parent, project, observer, _row, ox, elm, path} = this;
 
-    parent && parent.on_remove_elm && parent.on_remove_elm(this);
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
+
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
 
     if (observer){
       project._scope.eve.off(consts.move_points, observer);
