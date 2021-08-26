@@ -11431,7 +11431,7 @@ EditorInvisible.CnnPoint = CnnPoint;
 
 
 /**
- * Сегмент связки
+ * Сегмент (кусочек) связки
  *
  * Created 26.07.2021.
  */
@@ -11519,9 +11519,7 @@ EditorInvisible.ProfileSegment = ProfileSegment;
 
 
 /**
- * Created 24.07.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author  Evgeniy Malyarov
+ * Created 24.07.2015
  *
  * @module geometry
  * @submodule profile
