@@ -11,7 +11,7 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, EditorInvisible} = $p;
 
   const {inserts_types} = enm;
 
@@ -640,10 +640,12 @@
         return false;
       }
 
-      if (by_perimetr || row.count_calc_method != enm.count_calculating_ways.ПоПериметру) {
-        const len = len_angl ? len_angl.len : _row.len;
-        if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
-          return false;
+      if (by_perimetr || row.count_calc_method !== enm.count_calculating_ways.ПоПериметру) {
+        if(!(elm instanceof EditorInvisible.Filling)) {
+          const len = len_angl ? len_angl.len : _row.len;
+          if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
+            return false;
+          }
         }
         if (is_row) {
           const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
@@ -668,15 +670,27 @@
       const {_row} = elm;
       const is_linear = elm.is_linear ? elm.is_linear() : true;
 
-      // проверяем площадь
-      if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
-        return false;
+
+      if(elm instanceof EditorInvisible.Filling) {
+        // проверяем площадь
+        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+          return false;
+        }
+        // и фильтр по габаритам
+        if(row instanceof CatInserts) {
+          const {width, height} = elm.bounds;
+          if((row.lmin > width) || (row.lmax && row.lmax < width) || (row.hmin > height) || (row.hmax && row.hmax < height)){
+            return false;
+          }
+        }
+      }
+      else {
+        // только для прямых или только для кривых профилей
+        if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
+          return false;
+        }
       }
 
-      // только для прямых или только для кривых профилей
-      if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
-        return false;
-      }
       if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
         return false;
       }
