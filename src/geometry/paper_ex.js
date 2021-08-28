@@ -491,7 +491,9 @@ Object.defineProperties(paper.Path.prototype, {
 
 });
 
-
+/**
+ * Расширение класса Point
+ */
 Object.defineProperties(paper.Point.prototype, {
 
 	/**
@@ -675,6 +677,29 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 });
+
+class PathUnselectable extends paper.Path {
+
+  setSelection(selection) {
+    const {parent, project: {_scope}} = this;
+    if(parent) {
+      _scope.Item.prototype.setSelection.call(parent, selection);
+    }
+  }
+}
+
+class TextUnselectable extends paper.PointText {
+
+  setSelection(selection) {
+    const {parent, project: {_scope}} = this;
+    if(parent) {
+      _scope.Item.prototype.setSelection.call(parent, selection);
+    }
+  }
+}
+
+EditorInvisible.PathUnselectable = PathUnselectable;
+EditorInvisible.TextUnselectable = TextUnselectable;
 
 
 

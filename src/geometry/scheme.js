@@ -497,6 +497,9 @@ class Scheme extends paper.Project {
         else if(row.elm_type === elm_types.Линия) {
           new BaseLine({row});
         }
+        else if(row.elm_type === elm_types.Сечение) {
+          new ProfileCut({row});
+        }
       });
 
       // если указаны внешние builder_props, установим их для текущего проекта

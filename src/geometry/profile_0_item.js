@@ -2380,7 +2380,10 @@ ProfileItem.path_attr = {
   strokeScaling: false,
 
   onMouseEnter(event) {
-    const {fillColor, parent: {_attr}} = this;
+    const {fillColor, parent: {_attr}, project} = this;
+    if(project._attr._from_service) {
+      return;
+    }
     _attr.fillColor = fillColor.clone();
     const {red, green, blue, alpha} = fillColor;
     fillColor.alpha = 0.9;
@@ -2390,7 +2393,10 @@ ProfileItem.path_attr = {
   },
 
   onMouseLeave(event) {
-    const {_attr} = this.parent;
+    const {_attr, project} = this.parent;
+    if(project._attr._from_service) {
+      return;
+    }
     this.fillColor = _attr.fillColor;
     delete _attr.fillColor;
   }
