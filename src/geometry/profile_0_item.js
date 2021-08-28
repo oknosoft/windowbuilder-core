@@ -2,7 +2,7 @@
 /**
  * Базовые классы профиля
  *
- * Created by Evgeniy Malyarov on 14.10.2020.
+ * Created by Evgeniy Malyarov on 24.07.2015.
  */
 
 /**

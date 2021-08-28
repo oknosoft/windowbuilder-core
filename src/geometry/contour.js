@@ -1074,7 +1074,18 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method remove
    */
   remove() {
-    //удаляем детей
+
+    // сначала удаляем створки и заполнения
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+
+    // затем - импосты
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+
+    // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
       children[0].remove();

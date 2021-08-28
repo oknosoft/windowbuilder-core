@@ -2065,7 +2065,18 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method remove
    */
   remove() {
-    //удаляем детей
+
+    // сначала удаляем створки и заполнения
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+
+    // затем - импосты
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+
+    // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
       children[0].remove();
@@ -4459,7 +4470,6 @@ class DimensionDrawer extends paper.Group {
           dx2 = dxi - nom.sizefaltz;
         }
 
-
         this.ihor[`i${++index}`] = new DimensionLineImpost({
           elm1: elm,
           elm2: elm,
@@ -4471,7 +4481,6 @@ class DimensionDrawer extends paper.Group {
           offset: invert ? -150 : 150,
           outer: outer.includes(impost),
         });
-
       }
     }
 
@@ -4955,7 +4964,8 @@ class DimensionLine extends paper.Group {
 
     let _bounds, delta;
 
-    const {_attr, pos} = this;
+    const {_attr, pos, project} = this;
+    const {Point} = project._scope;
 
     // получаем дельту - на сколько смещать
     if(_attr.elm1){
@@ -4970,22 +4980,22 @@ class DimensionLine extends paper.Group {
       if(pos == 'top' || pos == 'bottom') {
         const size = Math.abs(p1.x - p2.x);
         if(event.name == 'right') {
-          delta = new paper.Point(event.size - size, 0);
+          delta = new Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
         }
         else {
-          delta = new paper.Point(size - event.size, 0);
+          delta = new Point(size - event.size, 0);
           _bounds[event.name] = Math.min(p1.x, p2.x);
         }
       }
       else{
         const size = Math.abs(p1.y - p2.y);
         if(event.name == 'bottom') {
-          delta = new paper.Point(0, event.size - size);
+          delta = new Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
         }
         else {
-          delta = new paper.Point(0, size - event.size);
+          delta = new Point(0, size - event.size);
           _bounds[event.name] = Math.min(p1.y, p2.y);
         }
       }
@@ -4994,18 +5004,18 @@ class DimensionLine extends paper.Group {
       _bounds = this.layer.bounds;
       if(pos == 'top' || pos == 'bottom') {
         if(event.name == 'right') {
-          delta = new paper.Point(event.size - _bounds.width, 0);
+          delta = new Point(event.size - _bounds.width, 0);
         }
         else {
-          delta = new paper.Point(_bounds.width - event.size, 0);
+          delta = new Point(_bounds.width - event.size, 0);
         }
       }
       else{
         if(event.name == 'bottom') {
-          delta = new paper.Point(0, event.size - _bounds.height);
+          delta = new Point(0, event.size - _bounds.height);
         }
         else {
-          delta = new paper.Point(0, _bounds.height - event.size);
+          delta = new Point(0, _bounds.height - event.size);
         }
       }
     }
@@ -9039,7 +9049,7 @@ Object.defineProperties(paper.Point.prototype, {
 /**
  * Базовые классы профиля
  *
- * Created by Evgeniy Malyarov on 14.10.2020.
+ * Created by Evgeniy Malyarov on 24.07.2015.
  */
 
 /**
@@ -12454,6 +12464,166 @@ EditorInvisible.ProfileVirtual = ProfileVirtual;
 
 
 /**
+ * ### Опорная линия
+ * Вспомогательная линия для привязки узлов и уравнивания
+ *
+ * - у линии есть координаты конца и начала
+ * - есть путь образующей - прямая или кривая линия, такая же, как у {{#crossLink "Profile"}}{{/crossLink}}
+ * - живут линии в слое соединителей изделия
+ * - никаких соединений у линии нет
+ *
+ * @class Baseline
+ * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
+ * @constructor
+ * @extends GeneratrixElement
+ * @menuorder 45
+ * @tooltip Линия
+ */
+class BaseLine extends ProfileItem {
+
+  constructor(attr) {
+    super(attr);
+    if(!attr.preserv_parent) {
+      this.parent = this.project.l_connective;
+    }
+    Object.assign(this.generatrix, {
+      strokeColor: 'brown',
+      fillColor: new paper.Color(1, 0.1),
+      strokeScaling: false,
+      strokeWidth: 2,
+      dashOffset: 4,
+      dashArray: [4, 4],
+    });
+  }
+
+  get d0() {
+    return 0;
+  }
+
+  get d1() {
+    return 0;
+  }
+
+  get d2() {
+    return 0;
+  }
+
+  /**
+   * Путь линии равен образующей
+   * @return {paper.Path}
+   */
+  get path() {
+    return this.generatrix;
+  }
+  set path(v) {
+  }
+
+  setSelection(selection) {
+    paper.Item.prototype.setSelection.call(this, selection);
+  }
+
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    return BaseLine.oxml;
+  }
+
+  /**
+   * Возвращает тип элемента (линия)
+   */
+  get elm_type() {
+    return $p.enm.elm_types.Линия;
+  }
+
+  get length() {
+    return this.generatrix.length;
+  }
+
+  /**
+   * У линии не бывает ведущих элементов
+   */
+  nearest() {
+    return null;
+  }
+
+  /**
+   * Возвращает массив примыкающих рам
+   */
+  joined_nearests() {
+
+    const res = [];
+
+    this.project.contours.forEach((contour) => {
+      contour.profiles.forEach((profile) => {
+        if(profile.nearest(true) === this){
+          res.push(profile);
+        }
+      });
+    });
+
+    return res;
+
+  }
+
+  /**
+   * К линиям ипосты не крепятся
+   */
+  joined_imposts(check_only) {
+    const tinner = [];
+    const touter = [];
+    return check_only ? false : {inner: tinner, outer: touter};
+  }
+
+  /**
+   * Вычисляемые поля в таблице координат
+   */
+  save_coordinates() {
+
+    if(!this._attr.generatrix){
+      return;
+    }
+
+    const {_row} = this;
+
+    _row.x1 = this.x1;
+    _row.y1 = this.y1;
+    _row.x2 = this.x2;
+    _row.y2 = this.y2;
+    _row.path_data = this.generatrix.pathData;
+    _row.parent = this.parent.elm;
+    _row.len = this.length;
+    _row.angle_hor = this.angle_hor;
+    _row.elm_type = this.elm_type;
+    _row.orientation = this.orientation;
+  }
+
+  cnn_point(node) {
+    return this.rays[node];
+  }
+
+  /**
+   * Для перерисовки линии, накаих вычислений не требуется
+   */
+  redraw() {
+
+  }
+
+}
+
+BaseLine.oxml = {
+  ' ': [
+    {id: 'info', path: 'o.info', type: 'ro'},
+  ],
+  'Начало': ['x1', 'y1'],
+  'Конец': ['x2', 'y2']
+};
+
+EditorInvisible.BaseLine = BaseLine;
+
+
+
+/**
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -13074,165 +13244,17 @@ class ConnectiveLayer extends paper.Layer {
 EditorInvisible.ProfileConnective = ProfileConnective;
 EditorInvisible.ConnectiveLayer = ConnectiveLayer;
 
-
 /**
- * ### Опорная линия
- * Вспомогательная линия для привязки узлов и уравнивания
+ * Сечение фрагмена изделия
  *
- * - у линии есть координаты конца и начала
- * - есть путь образующей - прямая или кривая линия, такая же, как у {{#crossLink "Profile"}}{{/crossLink}}
- * - живут линии в слое соединителей изделия
- * - никаких соединений у линии нет
- *
- * @class Baseline
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
- * @extends GeneratrixElement
- * @menuorder 45
- * @tooltip Линия
+ * Created by Evgeniy Malyarov on 28.08.2021.
  */
-class BaseLine extends ProfileItem {
 
-  constructor(attr) {
-    super(attr);
-    if(!attr.preserv_parent) {
-      this.parent = this.project.l_connective;
-    }
-    Object.assign(this.generatrix, {
-      strokeColor: 'brown',
-      fillColor: new paper.Color(1, 0.1),
-      strokeScaling: false,
-      strokeWidth: 2,
-      dashOffset: 4,
-      dashArray: [4, 4],
-    });
-  }
-
-  get d0() {
-    return 0;
-  }
-
-  get d1() {
-    return 0;
-  }
-
-  get d2() {
-    return 0;
-  }
-
-  /**
-   * Путь линии равен образующей
-   * @return {paper.Path}
-   */
-  get path() {
-    return this.generatrix;
-  }
-  set path(v) {
-  }
-
-  setSelection(selection) {
-    paper.Item.prototype.setSelection.call(this, selection);
-  }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    return BaseLine.oxml;
-  }
-
-  /**
-   * Возвращает тип элемента (линия)
-   */
-  get elm_type() {
-    return $p.enm.elm_types.Линия;
-  }
-
-  get length() {
-    return this.generatrix.length;
-  }
-
-  /**
-   * У линии не бывает ведущих элементов
-   */
-  nearest() {
-    return null;
-  }
-
-  /**
-   * Возвращает массив примыкающих рам
-   */
-  joined_nearests() {
-
-    const res = [];
-
-    this.project.contours.forEach((contour) => {
-      contour.profiles.forEach((profile) => {
-        if(profile.nearest(true) === this){
-          res.push(profile);
-        }
-      });
-    });
-
-    return res;
-
-  }
-
-  /**
-   * К линиям ипосты не крепятся
-   */
-  joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
-  }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
-  save_coordinates() {
-
-    if(!this._attr.generatrix){
-      return;
-    }
-
-    const {_row} = this;
-
-    _row.x1 = this.x1;
-    _row.y1 = this.y1;
-    _row.x2 = this.x2;
-    _row.y2 = this.y2;
-    _row.path_data = this.generatrix.pathData;
-    _row.parent = this.parent.elm;
-    _row.len = this.length;
-    _row.angle_hor = this.angle_hor;
-    _row.elm_type = this.elm_type;
-    _row.orientation = this.orientation;
-  }
-
-  cnn_point(node) {
-    return this.rays[node];
-  }
-
-  /**
-   * Для перерисовки линии, накаих вычислений не требуется
-   */
-  redraw() {
-
-  }
+class ProfileCut extends BaseLine {
 
 }
 
-BaseLine.oxml = {
-  ' ': [
-    {id: 'info', path: 'o.info', type: 'ro'},
-  ],
-  'Начало': ['x1', 'y1'],
-  'Конец': ['x2', 'y2']
-};
-
-EditorInvisible.BaseLine = BaseLine;
-
+EditorInvisible.ProfileCut = ProfileCut;
 
 
 /**
@@ -14487,7 +14509,7 @@ class Scheme extends paper.Project {
    * ### Читает изделие по ссылке или объекту продукции
    * Выполняет следующую последовательность действий:
    * - Если передана ссылка, получает объект из базы данных
-   * - Удаляет все слои и элементы текущего графисеского контекста
+   * - Удаляет все слои и элементы текущего графического контекста
    * - Рекурсивно создаёт контуры изделия по данным табличной части конструкций текущей продукции
    * - Рассчитывает габариты эскиза
    * - Згружает пользовательские размерные линии
@@ -15227,8 +15249,9 @@ class Scheme extends paper.Project {
    *
    * @method load_stamp
    * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
-   * @param is_snapshot {Boolean}
-   * @param no_refill {Boolean}
+   * @param [is_snapshot] {Boolean}
+   * @param [no_refill] {Boolean}
+   * @param [from_service] {Boolean}
    */
   load_stamp(obx, is_snapshot, no_refill, from_service) {
 
@@ -21272,7 +21295,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      */
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
-      if(!this.check_base_restrictions(row, elm, by_perimetr)) {
+      if(!this.check_base_restrictions(row, elm)) {
         return false;
       }
 
@@ -21310,7 +21333,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param elm
      * @return {boolean}
      */
-    check_base_restrictions(row, elm, by_perimetr) {
+    check_base_restrictions(row, elm) {
       const {_row} = elm;
       const is_linear = elm.is_linear ? elm.is_linear() : true;
 
