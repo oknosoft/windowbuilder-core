@@ -45,9 +45,23 @@ exports.CatChoice_paramsManager = class CatChoice_paramsManager extends Object {
         }
         // дополняем отбор
         obj.key.params.forEach((row) => {
+          const {_obj, comparison_type, property} = row;
+          let v
+          if(!property.empty()) {
+            v = property.extract_value(row);
+          }
+          else if(_obj.txt_row) {
+            v = _obj.txt_row.split(',');
+          }
+          else if(_obj.value) {
+            v = _obj.value;
+          }
+          else {
+            return;
+          }
           mf.choice_params.push({
             name: obj.field || 'ref',
-            path: {[row.comparison_type.valueOf()]: row.property.extract_value(row)}
+            path: {[comparison_type.valueOf()]: v}
           });
         });
       });
