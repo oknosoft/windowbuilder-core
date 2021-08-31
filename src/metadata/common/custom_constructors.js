@@ -92,6 +92,8 @@ class CatFurnsSelection_paramsRow extends SelectionParamsRow{
 class CatCharacteristicsParamsRow extends HideParamsRow{
   get cnstr(){return this._getter('cnstr')}
   set cnstr(v){this._setter('cnstr',v)}
+  get region(){return this._getter('region')}
+  set region(v){this._setter('region',v)}
   get inset(){return this._getter('inset')}
   set inset(v){this._setter('inset',v)}
   get _list() {

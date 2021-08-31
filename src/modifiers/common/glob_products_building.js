@@ -725,7 +725,7 @@ class ProductsBuilding {
 
       // для всех контуров изделия
       const contours = scheme.getItems({class: Contour});
-      for (const contour of contours) {
+      for (const contour of contours.reverse()) {
 
         // для всех профилей контура
         for (const elm of contour.children) {

@@ -176,13 +176,12 @@ class BuilderElement extends paper.Group {
     const t = this,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
-      arc_h = Object.assign({}, _xfields.r, {synonym: "Высота дуги"}),
-      info = Object.assign({}, fields.note, {synonym: "Элемент"}),
-      cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn),
-      cnn2 = Object.assign({}, cnn1),
-      cnn3 = Object.assign({}, cnn1);
-
-    const {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+      arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
+      info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
+      cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
+      cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
+      {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
 
     function cnn_choice_links(o, cnn_point){
 
@@ -327,22 +326,22 @@ class BuilderElement extends paper.Group {
     clrs.selection_exclude_service(_xfields.clr, this);
 
     const mfields = {
-      info: info,
-      inset: inset,
+      info,
+      inset,
       clr: _xfields.clr,
       x1: _xfields.x1,
       x2: _xfields.x2,
       y1: _xfields.y1,
       y2: _xfields.y2,
-      cnn1: cnn1,
-      cnn2: cnn2,
-      cnn3: cnn3,
-      arc_h: arc_h,
+      cnn1,
+      cnn2,
+      cnn3,
+      arc_h,
       r: _xfields.r,
       arc_ccw: _xfields.arc_ccw,
-      a1: Object.assign({}, _xfields.x1, {synonym: "Угол1"}),
-      a2: Object.assign({}, _xfields.x1, {synonym: "Угол2"}),
-      offset: Object.assign({}, _xfields.x1, {synonym: "Смещение"}),
+      a1: Object.assign({}, _xfields.x1, {synonym: 'Угол 1'}),
+      a2: Object.assign({}, _xfields.x1, {synonym: 'Угол 2'}),
+      offset: Object.assign({}, _xfields.x1, {synonym: 'Смещение'}),
       region: _xfields.region,
     };
 
@@ -678,9 +677,16 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, _row, ox, elm} = this;
+    const {parent, project, _row, ox, elm, path} = this;
 
-    parent && parent.on_remove_elm && parent.on_remove_elm(this);
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
+
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
 
     if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});

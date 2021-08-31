@@ -965,7 +965,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
-
     while (children.length) {
       children[0].remove();
     }
@@ -1220,8 +1219,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.fill_error();
       }
       else {
-        const {form_area, inset: {smin, smax}} = glass;
-        if((smin && smin > form_area) || (smax && smax < form_area)) {
+        const {form_area, inset: {smin, smax, lmin, lmax, hmin, hmax}, bounds: {width, height}} = glass;
+        if((smin && smin > form_area) || (smax && smax < form_area) ||
+          (lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
           glass.fill_error();
         }
         else {

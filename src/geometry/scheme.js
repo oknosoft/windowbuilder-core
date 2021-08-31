@@ -39,6 +39,12 @@ class Scheme extends paper.Project {
     // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
 
+    // бит, что мы в браузере
+    this.isBrowser = typeof requestAnimationFrame === 'function';
+
+    // биндим redraw
+    this.redraw = this.redraw.bind(this);
+
     // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
       // наблюдатель за изменениями свойств изделия
@@ -255,7 +261,7 @@ class Scheme extends paper.Project {
   /**
    * ХарактеристикаОбъект текущего изделия
    * @property ox
-   * @type _cat.characteristics
+   * @type CatCharacteristics
    */
   get ox() {
     return this._dp.characteristic;
@@ -437,6 +443,9 @@ class Scheme extends paper.Project {
         }
         else if(row.elm_type === elm_types.Линия) {
           new BaseLine({row});
+        }
+        else if(row.elm_type === elm_types.Сечение) {
+          new ProfileCut({row});
         }
       });
 
@@ -655,31 +664,35 @@ class Scheme extends paper.Project {
   redraw(attr = {}) {
 
     const {with_links} = attr;
-    const {_attr, _ch} = this;
+    const {_attr, _ch, contours, isBrowser} = this;
     const {length} = _ch;
 
     if(_attr._saving || !length) {
       return;
     }
 
-    const {contours} = this;
-
     if(contours.length) {
 
-      // перерисовываем соединительные профили
-      this.l_connective.redraw();
+      if(_attr.elm_fragment > 0) {
+        const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+        elm && elm.draw_fragment && elm.draw_fragment(true);
+      }
+      else {
+        // перерисовываем соединительные профили
+        this.l_connective.redraw();
 
-      // обновляем связи параметров изделия
-      with_links && !_attr._silent && contours[0].refresh_prm_links(true);
+        // обновляем связи параметров изделия
+        isBrowser && with_links && !_attr._silent && contours[0].refresh_prm_links(true);
 
-      // перерисовываем все контуры
-      for (let contour of contours) {
-        contour.redraw();
+        // перерисовываем все контуры
+        for (let contour of contours) {
+          contour.redraw();
+        }
       }
 
       // если перерисованы все контуры, перерисовываем их размерные линии
       _attr._bounds = null;
-      contours.forEach((contour) => this.refresh_recursive(contour, typeof requestAnimationFrame === 'function'));
+      contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
 
       // перерисовываем габаритные размерные линии изделия
       this.draw_sizes();
@@ -693,7 +706,6 @@ class Scheme extends paper.Project {
     }
 
     _ch.length = 0;
-
   }
 
   /**

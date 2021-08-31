@@ -127,7 +127,7 @@ class BaseLine extends ProfileItem {
     _row.x2 = this.x2;
     _row.y2 = this.y2;
     _row.path_data = this.generatrix.pathData;
-    _row.parent = this.parent.elm;
+    _row.parent = 0;
     _row.len = this.length;
     _row.angle_hor = this.angle_hor;
     _row.elm_type = this.elm_type;
