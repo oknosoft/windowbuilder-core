@@ -34,69 +34,16 @@ class Scheme extends paper.Project {
     this._ch = [];
 
     // узлы и рёбра
-    //this._skeleton = new Skeleton(this);
+    this._skeleton = new Skeleton(this);
 
     // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
 
-    const isBrowser = typeof requestAnimationFrame === 'function';
+    // бит, что мы в браузере
+    this.isBrowser = typeof requestAnimationFrame === 'function';
 
-    /**
-     * Перерисовывает все контуры изделия. Не занимается биндингом.
-     * Предполагается, что взаимное перемещение профилей уже обработано
-     */
-    this.redraw = () => {
-
-      _attr._opened && !_attr._silent && this._scope && isBrowser && requestAnimationFrame(this.redraw);
-
-      const {length} = this._ch;
-
-      if(!_attr._opened || _attr._saving || !length) {
-        return;
-      }
-
-      const {contours} = this;
-
-      if(contours.length) {
-
-        if(_attr.elm_fragment > 0) {
-          const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
-          elm && elm.draw_fragment && elm.draw_fragment(true);
-        }
-        else {
-          // перерисовываем соединительные профили
-          this.l_connective.redraw();
-
-          // TODO: обновляем связи параметров изделия
-          isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
-
-          // перерисовываем все контуры
-          for (let contour of contours) {
-            contour.redraw();
-            if(this._ch.length > length) {
-              return;
-            }
-          }
-        }
-
-        // если перерисованы все контуры, перерисовываем их размерные линии
-        _attr._bounds = null;
-        contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
-
-        // перерисовываем габаритные размерные линии изделия
-        this.draw_sizes();
-
-        // обновляем изображение на экране
-        this.view.update();
-
-      }
-      else {
-        this.draw_sizes();
-      }
-
-      this._ch.length = 0;
-
-    };
+    // биндим redraw
+    this.redraw = this.redraw.bind(this);
 
     // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
@@ -314,7 +261,7 @@ class Scheme extends paper.Project {
   /**
    * ХарактеристикаОбъект текущего изделия
    * @property ox
-   * @type _cat.characteristics
+   * @type CatCharacteristics
    */
   get ox() {
     return this._dp.characteristic;
@@ -708,6 +655,61 @@ class Scheme extends paper.Project {
     l_connective.visible = true;
     view.update();
     this.zoom_fit();
+  }
+
+  /**
+   * Перерисовывает все контуры изделия. Не занимается биндингом.
+   * Предполагается, что взаимное перемещение профилей уже обработано
+   */
+  redraw(attr = {}) {
+
+    const {_attr, _ch, contours, isBrowser, _scope} = this;
+    const {length} = _ch;
+
+    _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
+
+    if(!_attr._opened || _attr._saving || !length) {
+      return;
+    }
+
+    if(contours.length) {
+
+      if(_attr.elm_fragment > 0) {
+        const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+        elm && elm.draw_fragment && elm.draw_fragment(true);
+      }
+      else {
+        // перерисовываем соединительные профили
+        this.l_connective.redraw();
+
+        // TODO: обновляем связи параметров изделия
+        isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
+
+        // перерисовываем все контуры
+        for (let contour of contours) {
+          contour.redraw();
+          if(_ch.length > length) {
+            return;
+          }
+        }
+      }
+
+      // если перерисованы все контуры, перерисовываем их размерные линии
+      _attr._bounds = null;
+      contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
+
+      // перерисовываем габаритные размерные линии изделия
+      this.draw_sizes();
+
+      // обновляем изображение на экране
+      this.view.update();
+
+    }
+    else {
+      this.draw_sizes();
+    }
+
+    _ch.length = 0;
   }
 
   /**
@@ -1128,7 +1130,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Bозвращает строку svg эскиза изделия
+   * ### Возвращает строку svg эскиза изделия
    * Вызывается при записи изделия. Полученный эскиз сохраняется во вложении к характеристике
    *
    * @method get_svg
@@ -1363,7 +1365,7 @@ class Scheme extends paper.Project {
    * ### Цвет текущего изделия
    *
    * @property clr
-   * @type _cat.clrs
+   * @type CatClrs
    */
   get clr() {
     return this.ox.clr;

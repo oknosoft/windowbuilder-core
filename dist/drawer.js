@@ -1238,7 +1238,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr = {};
 
     // узлы и рёбра текущего слоя
-    // this._skeleton = new Skeleton(this);
+    this._skeleton = new Skeleton(this);
 
     const {project} = this;
 
@@ -4923,10 +4923,7 @@ class DimensionLine extends paper.Group {
 
   _click(event) {
     event.stop();
-    if(this.is_disabled()) {
-      return ;
-    }
-    if(typeof EditorInvisible.RulerWnd === 'function') {
+    if(!this.is_disabled() && typeof EditorInvisible.RulerWnd === 'function') {
       this.wnd = new EditorInvisible.RulerWnd(null, this);
       this.wnd.size = this.size;
     }
@@ -5946,13 +5943,12 @@ class BuilderElement extends paper.Group {
     const t = this,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
-      arc_h = Object.assign({}, _xfields.r, {synonym: "Высота дуги"}),
-      info = Object.assign({}, fields.note, {synonym: "Элемент"}),
-      cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn),
-      cnn2 = Object.assign({}, cnn1),
-      cnn3 = Object.assign({}, cnn1);
-
-    const {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+      arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
+      info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
+      cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
+      cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
+      {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
 
     function cnn_choice_links(o, cnn_point){
 
@@ -6097,22 +6093,22 @@ class BuilderElement extends paper.Group {
     clrs.selection_exclude_service(_xfields.clr, this);
 
     const mfields = {
-      info: info,
-      inset: inset,
+      info,
+      inset,
       clr: _xfields.clr,
       x1: _xfields.x1,
       x2: _xfields.x2,
       y1: _xfields.y1,
       y2: _xfields.y2,
-      cnn1: cnn1,
-      cnn2: cnn2,
-      cnn3: cnn3,
-      arc_h: arc_h,
+      cnn1,
+      cnn2,
+      cnn3,
+      arc_h,
       r: _xfields.r,
       arc_ccw: _xfields.arc_ccw,
-      a1: Object.assign({}, _xfields.x1, {synonym: "Угол1"}),
-      a2: Object.assign({}, _xfields.x1, {synonym: "Угол2"}),
-      offset: Object.assign({}, _xfields.x1, {synonym: "Смещение"}),
+      a1: Object.assign({}, _xfields.x1, {synonym: 'Угол 1'}),
+      a2: Object.assign({}, _xfields.x1, {synonym: 'Угол 2'}),
+      offset: Object.assign({}, _xfields.x1, {synonym: 'Смещение'}),
       region: _xfields.region,
     };
 
@@ -6448,7 +6444,7 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, observer, _row, ox, elm, path} = this;
+    const {parent, project, _row, ox, elm, path} = this;
 
     if(parent && parent.on_remove_elm) {
       parent.on_remove_elm(this);
@@ -6459,8 +6455,8 @@ class BuilderElement extends paper.Group {
       path.onMouseLeave = null;
     }
 
-    if (observer){
-      project._scope.eve.off(consts.move_points, observer);
+    if (this.observer){
+      project._scope.eve.off(consts.move_points, this.observer);
       delete this.observer;
     }
 
@@ -6583,7 +6579,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   initialize(attr) {
 
     // узлы и рёбра раскладок заполнения
-    //this._skeleton = new Skeleton(this);
+    this._skeleton = new Skeleton(this);
 
     const _row = attr.row;
     const {_attr, project, layer} = this;
@@ -13363,8 +13359,8 @@ class ProfileCut extends BaseLine {
       const pt1 = thick1.getPointAt(tlength / 2);
       const pt2 = thick2.getPointAt(tlength / 2);
       const tnormal = thick1.getNormalAt(0), ttangent = thick1.getTangentAt(0);
-      text1.position = pt1.add(tnormal.multiply(tlength + 20));
-      text2.position = pt2.add(tnormal.multiply(tlength + 20));
+      text1.position = pt1.add(tnormal.multiply(tlength + 30));
+      text2.position = pt2.add(tnormal.multiply(tlength + 30));
     }
 
   }
@@ -14201,69 +14197,16 @@ class Scheme extends paper.Project {
     this._ch = [];
 
     // узлы и рёбра
-    //this._skeleton = new Skeleton(this);
+    this._skeleton = new Skeleton(this);
 
     // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
 
-    const isBrowser = typeof requestAnimationFrame === 'function';
+    // бит, что мы в браузере
+    this.isBrowser = typeof requestAnimationFrame === 'function';
 
-    /**
-     * Перерисовывает все контуры изделия. Не занимается биндингом.
-     * Предполагается, что взаимное перемещение профилей уже обработано
-     */
-    this.redraw = () => {
-
-      _attr._opened && !_attr._silent && this._scope && isBrowser && requestAnimationFrame(this.redraw);
-
-      const {length} = this._ch;
-
-      if(!_attr._opened || _attr._saving || !length) {
-        return;
-      }
-
-      const {contours} = this;
-
-      if(contours.length) {
-
-        if(_attr.elm_fragment > 0) {
-          const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
-          elm && elm.draw_fragment && elm.draw_fragment(true);
-        }
-        else {
-          // перерисовываем соединительные профили
-          this.l_connective.redraw();
-
-          // TODO: обновляем связи параметров изделия
-          isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
-
-          // перерисовываем все контуры
-          for (let contour of contours) {
-            contour.redraw();
-            if(this._ch.length > length) {
-              return;
-            }
-          }
-        }
-
-        // если перерисованы все контуры, перерисовываем их размерные линии
-        _attr._bounds = null;
-        contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
-
-        // перерисовываем габаритные размерные линии изделия
-        this.draw_sizes();
-
-        // обновляем изображение на экране
-        this.view.update();
-
-      }
-      else {
-        this.draw_sizes();
-      }
-
-      this._ch.length = 0;
-
-    };
+    // биндим redraw
+    this.redraw = this.redraw.bind(this);
 
     // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
@@ -14481,7 +14424,7 @@ class Scheme extends paper.Project {
   /**
    * ХарактеристикаОбъект текущего изделия
    * @property ox
-   * @type _cat.characteristics
+   * @type CatCharacteristics
    */
   get ox() {
     return this._dp.characteristic;
@@ -14875,6 +14818,61 @@ class Scheme extends paper.Project {
     l_connective.visible = true;
     view.update();
     this.zoom_fit();
+  }
+
+  /**
+   * Перерисовывает все контуры изделия. Не занимается биндингом.
+   * Предполагается, что взаимное перемещение профилей уже обработано
+   */
+  redraw(attr = {}) {
+
+    const {_attr, _ch, contours, isBrowser, _scope} = this;
+    const {length} = _ch;
+
+    _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
+
+    if(!_attr._opened || _attr._saving || !length) {
+      return;
+    }
+
+    if(contours.length) {
+
+      if(_attr.elm_fragment > 0) {
+        const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
+        elm && elm.draw_fragment && elm.draw_fragment(true);
+      }
+      else {
+        // перерисовываем соединительные профили
+        this.l_connective.redraw();
+
+        // TODO: обновляем связи параметров изделия
+        isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
+
+        // перерисовываем все контуры
+        for (let contour of contours) {
+          contour.redraw();
+          if(_ch.length > length) {
+            return;
+          }
+        }
+      }
+
+      // если перерисованы все контуры, перерисовываем их размерные линии
+      _attr._bounds = null;
+      contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
+
+      // перерисовываем габаритные размерные линии изделия
+      this.draw_sizes();
+
+      // обновляем изображение на экране
+      this.view.update();
+
+    }
+    else {
+      this.draw_sizes();
+    }
+
+    _ch.length = 0;
   }
 
   /**
@@ -15295,7 +15293,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Bозвращает строку svg эскиза изделия
+   * ### Возвращает строку svg эскиза изделия
    * Вызывается при записи изделия. Полученный эскиз сохраняется во вложении к характеристике
    *
    * @method get_svg
@@ -15530,7 +15528,7 @@ class Scheme extends paper.Project {
    * ### Цвет текущего изделия
    *
    * @property clr
-   * @type _cat.clrs
+   * @type CatClrs
    */
   get clr() {
     return this.ox.clr;
@@ -16589,6 +16587,20 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
+
+
+/**
+ * Болванка пустого класса, чтобы файлы двух веток меньше отличались
+ *
+ * @module Skeleton
+ *
+ * Created by Evgeniy Malyarov on 02.05.2020.
+ */
+
+class Skeleton {
+
+};
+
 
 
 /**

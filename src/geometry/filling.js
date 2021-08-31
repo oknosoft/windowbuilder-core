@@ -36,7 +36,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   initialize(attr) {
 
     // узлы и рёбра раскладок заполнения
-    //this._skeleton = new Skeleton(this);
+    this._skeleton = new Skeleton(this);
 
     const _row = attr.row;
     const {_attr, project, layer} = this;
