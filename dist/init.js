@@ -4000,7 +4000,7 @@ set roles(v){this._setter('roles',v)}
 $p.CatUsersSubscribersRow = CatUsersSubscribersRow;
 class CatUsersManager extends CatManager {
 
-  // при загрузке пользователей, морозим объект, чтобы его невозможно было изменить из интерфейса
+  // после загрузки пользователей, морозим объект, чтобы его невозможно было изменить из интерфейса
   load_array(aattr, forse) {
     const res = [];
     for (let aobj of aattr) {
@@ -4044,7 +4044,7 @@ class CatUsersManager extends CatManager {
   unload_obj() {	}
 
 }
-$p.cat.create('users', CatUsersManager, true);
+$p.cat.create('users', CatUsersManager, false);
 
 /**
 * ### Справочник Проекты
