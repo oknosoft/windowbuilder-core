@@ -5938,7 +5938,7 @@ class BuilderElement extends paper.Group {
   }
 
   // виртуальные метаданные для автоформ
-  get _metadata() {
+  __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
@@ -5948,7 +5948,11 @@ class BuilderElement extends paper.Group {
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
       cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
-      {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+
+    if(iface !== false) {
+      iface = $p.iface;
+    }
 
     function cnn_choice_links(o, cnn_point){
 
@@ -5979,70 +5983,70 @@ class BuilderElement extends paper.Group {
       path: [(o, f) => {
         const {sys} = this.project._dp;
 
-          let selection;
+        let selection;
 
-          if(this instanceof Filling){
-            // !iface - нет dhtmlx, чистый react
-            if(!iface || utils.is_data_obj(o)){
-              const insert = inserts.get(o);
-              const {insert_type, insert_glass_type} = insert;
-              if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
-                return sys.thicknesses.includes(insert.thickness);
-              }
-              return false;
-            }
-            else{
-              let refs = "";
-              inserts.by_thickness(sys).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
-                  if(refs){
-                    refs += ", ";
-                  }
-                  refs += "'" + o.ref + "'";
-                }
-              });
-              return "_t_.ref in (" + refs + ")";
-            }
-          }
-          else if(this instanceof ProfileConnective){
-            selection = {elm_type: elm_types.Соединитель};
-          }
-          else if(this instanceof ProfileAddl){
-            selection = {elm_type: elm_types.Добор};
-          }
-          else if(this instanceof Profile){
-            if(this.nearest()){
-              selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
-            }
-            else{
-              selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
-            }
-          }
-          else{
-            selection = {elm_type: this.nom.elm_type};
-          }
-
+        if(this instanceof Filling){
           // !iface - нет dhtmlx, чистый react
           if(!iface || utils.is_data_obj(o)){
-            let ok = false;
-            selection.nom = inserts.get(o);
-            sys.elmnts.find_rows(selection, (row) => {
-              ok = true;
-              return false;
-            });
-            return ok;
+            const insert = inserts.get(o);
+            const {insert_type, insert_glass_type} = insert;
+            if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+              return sys.thicknesses.includes(insert.thickness);
+            }
+            return false;
           }
           else{
             let refs = "";
-            sys.elmnts.find_rows(selection, (row) => {
-              if(refs){
-                refs += ", ";
+            inserts.by_thickness(sys).forEach((o) => {
+              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
+                if(refs){
+                  refs += ", ";
+                }
+                refs += "'" + o.ref + "'";
               }
-              refs += "'" + row.nom.ref + "'";
             });
             return "_t_.ref in (" + refs + ")";
           }
-        }]}
+        }
+        else if(this instanceof ProfileConnective){
+          selection = {elm_type: elm_types.Соединитель};
+        }
+        else if(this instanceof ProfileAddl){
+          selection = {elm_type: elm_types.Добор};
+        }
+        else if(this instanceof Profile){
+          if(this.nearest()){
+            selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
+          }
+          else{
+            selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+          }
+        }
+        else{
+          selection = {elm_type: this.nom.elm_type};
+        }
+
+        // !iface - нет dhtmlx, чистый react
+        if(!iface || utils.is_data_obj(o)){
+          let ok = false;
+          selection.nom = inserts.get(o);
+          sys.elmnts.find_rows(selection, (row) => {
+            ok = true;
+            return false;
+          });
+          return ok;
+        }
+        else{
+          let refs = "";
+          sys.elmnts.find_rows(selection, (row) => {
+            if(refs){
+              refs += ", ";
+            }
+            refs += "'" + row.nom.ref + "'";
+          });
+          return "_t_.ref in (" + refs + ")";
+        }
+      }]}
     ];
 
     cnn1.choice_links = [{
@@ -6135,6 +6139,9 @@ class BuilderElement extends paper.Group {
         }
       }),
     };
+  }
+  get _metadata() {
+    return this.__metadata();
   }
 
   // виртуальный датаменеджер для автоформ
