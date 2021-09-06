@@ -424,6 +424,125 @@ class Profile extends ProfileItem {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
+
+  /**
+   * Возвращает виртуальный профиль ряда, вставка и соединения которого, заданы в отдельных свойствах
+   * DataObj, транслирующий свойства допвставки через свойства элемента
+   * @param num {Number}
+   * @return {Profile}
+   */
+  region(num) {
+    const {_attr, rays, layer: {_ox}, elm} = this;
+    const {cat: {cnns, inserts}, utils} = $p;
+
+    // параметры выбора для ряда
+    function cnn_choice_links(elm1, o, cnn_point) {
+      const nom_cnns = cnns.nom_cnn(elm1, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
+      return nom_cnns.some((cnn) => {
+        return o.ref == cnn;
+      });
+    }
+
+    // возаращает строку соединяемых элементов для ряда
+    function cn_row(prop, add) {
+      let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
+      const {profile, profile_point} = rays[node1] || {};
+      node1 += num;
+      const node2 = profile_point ? (profile_point + num) : `t${num}`;
+      const elm2 = profile ? profile.elm : 0;
+      let row = _ox.cnn_elmnts.find({elm1: elm, elm2, node1, node2});
+      if(!row && add) {
+        row = _ox.cnn_elmnts.add({elm1: elm, elm2, node1, node2});
+      }
+      return row;
+    }
+
+    if(!_attr._ranges) {
+      _attr._ranges = new Map();
+    }
+    if(!_attr._ranges.get(num)) {
+      _attr._ranges.set(num, new Proxy(this, {
+        get(target, prop, receiver) {
+          switch (prop){
+          case 'cnn1':
+          case 'cnn2':
+          case 'cnn3':
+            if(!_attr._ranges.get(`cnns${num}`)) {
+              _attr._ranges.set(`cnns${num}`, {});
+            }
+            const cn = _attr._ranges.get(`cnns${num}`);
+            if(!cn[prop]) {
+              const row = cn_row(prop);
+              cn[prop] = row ? row.cnn : cnns.get();
+            }
+            return cn[prop];
+
+          case 'rnum':
+            return num;
+
+          case 'irow':
+            return _ox.inserts.find({cnstr: -elm, region: num});
+
+          case 'inset':
+            const {irow} = receiver;
+            return irow ? irow.inset : inserts.get();
+
+          case 'nom':
+            return receiver.inset.nom(target);
+
+          case 'ref':
+            const {nom} = receiver;
+            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
+
+          case '_metadata':
+            const meta = target.__metadata(false);
+            const {fields} = meta;
+            const {cnn1, cnn2} = fields;
+            const {b, e} = rays;
+            delete cnn1.choice_links;
+            delete cnn2.choice_links;
+            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+            return meta;
+
+          default:
+            let prow;
+            if(utils.is_guid(prop)) {
+              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+            }
+            return prow ? prow.value : target[prop];
+          }
+        },
+
+        set(target, prop, val, receiver) {
+          switch (prop){
+          case 'cnn1':
+          case 'cnn2':
+          case 'cnn3':
+            const cn = _attr._ranges.get(`cnns${num}`);
+            cn[prop] = cnns.get(val);
+            const row = cn_row(prop, true);
+            if(row.cnn !== cn[prop]) {
+              row.cnn = cn[prop];
+            }
+            break;
+
+          default:
+            if(utils.is_guid(prop)) {
+              const prow = _ox.params.find({param: prop, cnstr: -elm, region: num}) || _ox.params.add({param: prop, cnstr: -elm, region: num});
+              prow.value = val;
+            }
+            else {
+              target[prop] = val;
+            }
+          }
+          target.project._scope.eve.emit('region_change', receiver, prop);
+          return true;
+        },
+      }));
+    }
+    return _attr._ranges.get(num);
+  }
 }
 
 EditorInvisible.Profile = Profile;

@@ -5941,14 +5941,14 @@ class BuilderElement extends paper.Group {
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
-      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
-      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'});
 
     if(iface !== false) {
       iface = $p.iface;
@@ -6260,7 +6260,7 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props() {
-    const {_attr, _row, project, ox: {params}, inset} = this;
+    const {_attr, _row, project, ox: {params}, inset, rnum} = this;
     const {utils: {blank}, enm: {positions}} = $p;
 
     // свойства, нужные вставке текущего элемента
@@ -6295,65 +6295,71 @@ class BuilderElement extends paper.Group {
       }
     }
 
-    // удаляем возможные паразитные свойства
-    _attr.props && _attr.props.forEach((prop) => {
-      if(!props.includes(prop)) {
-        delete this[prop.ref];
-      }
-    });
-    _attr.props = props;
-    // создаём свойства
-    props.forEach((prop) => {
-      if(!this.hasOwnProperty(prop.ref)) {
-        Object.defineProperty(this, prop.ref, {
-          get() {
-            let prow;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(!prow || row.cnstr) {
-                prow = row;
+    if(!rnum) {
+      // удаляем возможные паразитные свойства
+      _attr.props && _attr.props.forEach((prop) => {
+        if(!props.includes(prop)) {
+          delete this[prop.ref];
+        }
+      });
+      _attr.props = props;
+      // создаём свойства
+      props.forEach((prop) => {
+        if(!this.hasOwnProperty(prop.ref)) {
+          Object.defineProperty(this, prop.ref, {
+            get() {
+              let prow;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: blank.guid,
+                region: 0,
+              }, (row) => {
+                if(!prow || row.cnstr) {
+                  prow = row;
+                }
+              });
+              return prow && prow.value;
+            },
+            set(v) {
+              let prow, prow0;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: blank.guid,
+                region: 0,
+              }, (row) => {
+                if(row.cnstr) {
+                  prow = row;
+                }
+                else {
+                  prow0 = row;
+                }
+              });
+              // если устанавливаемое значение совпадает со значением изделия - удаляем
+              if(prow0 && prow0.value == v) {
+                prow && prow._owner.del(prow);
               }
-            });
-            return prow && prow.value;
-          },
-          set(v) {
-            let prow, prow0;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(row.cnstr) {
-                prow = row;
+              else if(prow) {
+                prow.value = v;
               }
               else {
-                prow0 = row;
+                params.add({
+                  param: prop,
+                  cnstr: -_row.row,
+                  region: 0,
+                  inset: blank.guid,
+                  value: v,
+                });
               }
-            });
-            // если устанавливаемое значение совпадает со значением изделия - удаляем
-            if(prow0 && prow0.value == v) {
-              prow && prow._owner.del(prow);
-            }
-            else if(prow) {
-              prow.value = v;
-            }
-            else {
-              params.add({
-                param: prop,
-                cnstr: -_row.row,
-                inset: blank.guid,
-                value: v,
-              });
-            }
-            this.refresh_inset_depends(prop, true);
-          },
-          configurable: true,
-        });
-      }
-    });
+              this.refresh_inset_depends(prop, true);
+              return true;
+            },
+            configurable: true,
+          });
+        }
+      });
+    }
 
     return props;
   }
@@ -11995,6 +12001,125 @@ class Profile extends ProfileItem {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
+
+  /**
+   * Возвращает виртуальный профиль ряда, вставка и соединения которого, заданы в отдельных свойствах
+   * DataObj, транслирующий свойства допвставки через свойства элемента
+   * @param num {Number}
+   * @return {Profile}
+   */
+  region(num) {
+    const {_attr, rays, layer: {_ox}, elm} = this;
+    const {cat: {cnns, inserts}, utils} = $p;
+
+    // параметры выбора для ряда
+    function cnn_choice_links(elm1, o, cnn_point) {
+      const nom_cnns = cnns.nom_cnn(elm1, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
+      return nom_cnns.some((cnn) => {
+        return o.ref == cnn;
+      });
+    }
+
+    // возаращает строку соединяемых элементов для ряда
+    function cn_row(prop, add) {
+      let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
+      const {profile, profile_point} = rays[node1] || {};
+      node1 += num;
+      const node2 = profile_point ? (profile_point + num) : `t${num}`;
+      const elm2 = profile ? profile.elm : 0;
+      let row = _ox.cnn_elmnts.find({elm1: elm, elm2, node1, node2});
+      if(!row && add) {
+        row = _ox.cnn_elmnts.add({elm1: elm, elm2, node1, node2});
+      }
+      return row;
+    }
+
+    if(!_attr._ranges) {
+      _attr._ranges = new Map();
+    }
+    if(!_attr._ranges.get(num)) {
+      _attr._ranges.set(num, new Proxy(this, {
+        get(target, prop, receiver) {
+          switch (prop){
+          case 'cnn1':
+          case 'cnn2':
+          case 'cnn3':
+            if(!_attr._ranges.get(`cnns${num}`)) {
+              _attr._ranges.set(`cnns${num}`, {});
+            }
+            const cn = _attr._ranges.get(`cnns${num}`);
+            if(!cn[prop]) {
+              const row = cn_row(prop);
+              cn[prop] = row ? row.cnn : cnns.get();
+            }
+            return cn[prop];
+
+          case 'rnum':
+            return num;
+
+          case 'irow':
+            return _ox.inserts.find({cnstr: -elm, region: num});
+
+          case 'inset':
+            const {irow} = receiver;
+            return irow ? irow.inset : inserts.get();
+
+          case 'nom':
+            return receiver.inset.nom(target);
+
+          case 'ref':
+            const {nom} = receiver;
+            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
+
+          case '_metadata':
+            const meta = target.__metadata(false);
+            const {fields} = meta;
+            const {cnn1, cnn2} = fields;
+            const {b, e} = rays;
+            delete cnn1.choice_links;
+            delete cnn2.choice_links;
+            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+            return meta;
+
+          default:
+            let prow;
+            if(utils.is_guid(prop)) {
+              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+            }
+            return prow ? prow.value : target[prop];
+          }
+        },
+
+        set(target, prop, val, receiver) {
+          switch (prop){
+          case 'cnn1':
+          case 'cnn2':
+          case 'cnn3':
+            const cn = _attr._ranges.get(`cnns${num}`);
+            cn[prop] = cnns.get(val);
+            const row = cn_row(prop, true);
+            if(row.cnn !== cn[prop]) {
+              row.cnn = cn[prop];
+            }
+            break;
+
+          default:
+            if(utils.is_guid(prop)) {
+              const prow = _ox.params.find({param: prop, cnstr: -elm, region: num}) || _ox.params.add({param: prop, cnstr: -elm, region: num});
+              prow.value = val;
+            }
+            else {
+              target[prop] = val;
+            }
+          }
+          target.project._scope.eve.emit('region_change', receiver, prop);
+          return true;
+        },
+      }));
+    }
+    return _attr._ranges.get(num);
+  }
 }
 
 EditorInvisible.Profile = Profile;
@@ -17340,11 +17465,12 @@ class ProductsBuilding {
      * @return {Number|DataObj}
      */
     function cnn_row(elm1, elm2) {
-      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2});
+      const nodes = ['b', 'e', 't', ''];
+      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: nodes, node2: nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1});
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: nodes, node2: nodes});
       if(res.length) {
         return res[0].row;
       }

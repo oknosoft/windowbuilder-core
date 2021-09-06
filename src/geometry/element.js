@@ -174,14 +174,14 @@ class BuilderElement extends paper.Group {
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
-      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
-      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'});
 
     if(iface !== false) {
       iface = $p.iface;
@@ -493,7 +493,7 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props() {
-    const {_attr, _row, project, ox: {params}, inset} = this;
+    const {_attr, _row, project, ox: {params}, inset, rnum} = this;
     const {utils: {blank}, enm: {positions}} = $p;
 
     // свойства, нужные вставке текущего элемента
@@ -528,65 +528,71 @@ class BuilderElement extends paper.Group {
       }
     }
 
-    // удаляем возможные паразитные свойства
-    _attr.props && _attr.props.forEach((prop) => {
-      if(!props.includes(prop)) {
-        delete this[prop.ref];
-      }
-    });
-    _attr.props = props;
-    // создаём свойства
-    props.forEach((prop) => {
-      if(!this.hasOwnProperty(prop.ref)) {
-        Object.defineProperty(this, prop.ref, {
-          get() {
-            let prow;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(!prow || row.cnstr) {
-                prow = row;
+    if(!rnum) {
+      // удаляем возможные паразитные свойства
+      _attr.props && _attr.props.forEach((prop) => {
+        if(!props.includes(prop)) {
+          delete this[prop.ref];
+        }
+      });
+      _attr.props = props;
+      // создаём свойства
+      props.forEach((prop) => {
+        if(!this.hasOwnProperty(prop.ref)) {
+          Object.defineProperty(this, prop.ref, {
+            get() {
+              let prow;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: blank.guid,
+                region: 0,
+              }, (row) => {
+                if(!prow || row.cnstr) {
+                  prow = row;
+                }
+              });
+              return prow && prow.value;
+            },
+            set(v) {
+              let prow, prow0;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: blank.guid,
+                region: 0,
+              }, (row) => {
+                if(row.cnstr) {
+                  prow = row;
+                }
+                else {
+                  prow0 = row;
+                }
+              });
+              // если устанавливаемое значение совпадает со значением изделия - удаляем
+              if(prow0 && prow0.value == v) {
+                prow && prow._owner.del(prow);
               }
-            });
-            return prow && prow.value;
-          },
-          set(v) {
-            let prow, prow0;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(row.cnstr) {
-                prow = row;
+              else if(prow) {
+                prow.value = v;
               }
               else {
-                prow0 = row;
+                params.add({
+                  param: prop,
+                  cnstr: -_row.row,
+                  region: 0,
+                  inset: blank.guid,
+                  value: v,
+                });
               }
-            });
-            // если устанавливаемое значение совпадает со значением изделия - удаляем
-            if(prow0 && prow0.value == v) {
-              prow && prow._owner.del(prow);
-            }
-            else if(prow) {
-              prow.value = v;
-            }
-            else {
-              params.add({
-                param: prop,
-                cnstr: -_row.row,
-                inset: blank.guid,
-                value: v,
-              });
-            }
-            this.refresh_inset_depends(prop, true);
-          },
-          configurable: true,
-        });
-      }
-    });
+              this.refresh_inset_depends(prop, true);
+              return true;
+            },
+            configurable: true,
+          });
+        }
+      });
+    }
 
     return props;
   }
