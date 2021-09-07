@@ -19776,14 +19776,14 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
 
       //Проверяем дубли вставок (их не должно быть, иначе параметры перезаписываются)
       if (value != blank.guid) {
-        const res = _owner.params.find_rows({cnstr, inset: value, row: {not: this.row}});
+        const res = _owner.params.find_rows({cnstr, region, inset: value, row: {not: this.row}});
         if (res.length) {
           $p.md.emit('alert', {
             obj: _owner,
             row: this,
             title: $p.msg.data_error,
             type: 'alert-error',
-            text: 'Нельзя добавлять две одинаковые вставки в один контур'
+            text: 'Нельзя добавлять две одинаковые вставки в один элемент или слой'
           });
           return false;
         }
