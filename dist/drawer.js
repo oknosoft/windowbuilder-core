@@ -6257,11 +6257,15 @@ class BuilderElement extends paper.Group {
 
   /**
    * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * [inset] {CatInserts} - указываем для дополнительных вставок
    * @return {Array}
    */
-  elm_props() {
-    const {_attr, _row, project, ox: {params}, inset, rnum} = this;
+  elm_props(inset) {
+    const {_attr, _row, project, ox: {params}, rnum} = this;
     const {utils: {blank}, enm: {positions}} = $p;
+    if(!inset) {
+      inset = this.inset;
+    }
 
     // свойства, нужные вставке текущего элемента
     const inset_params = inset.used_params();
@@ -19183,16 +19187,41 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   }
 
+  // при удалении строки вставок, удаляем параметры и соединения
+  del_row(row) {
+    if(row instanceof $p.CatCharacteristicsInsertsRow) {
+      const {cnstr, inset, region, _owner} = row;
+      const {params} = _owner._owner;
+      if(!inset.empty()) {
+        params.del({cnstr, inset});
+      }
+      if(region) {
+        params.del({cnstr, region});
+      }
+    }
+  }
+
+  // при добавлении строки вставок, устанавливаем ряд
+  add_row(row, attr) {
+    if(row instanceof $p.CatCharacteristicsInsertsRow) {
+      if(attr.inset && !attr.region) {
+        row.inset = attr.inset;
+        attr.region = row.inset.region;
+      }
+    }
+  }
+
   /**
    * Добавляет параметры вставки, пересчитывает признак hide
    * @param inset
    * @param cnstr
-   * @param blank_inset
+   * @param [blank_inset]
+   * @param [region]
    */
-  add_inset_params(inset, cnstr, blank_inset) {
+  add_inset_params(inset, cnstr, blank_inset, region) {
     const ts_params = this.params;
     const params = new Set();
-    const filter = {cnstr, inset: blank_inset || inset};
+    const filter = region ? {cnstr, region} : {cnstr, inset: blank_inset || inset};
 
     ts_params.find_rows(filter, ({param}) => params.add(param));
 
@@ -19200,12 +19229,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     inset.used_params().forEach((param) => {
       if((!param.is_calculated || param.show_calculated) && !params.has(param)) {
         const def = product_params.find({param});
-        ts_params.add({
-          cnstr: cnstr,
-          inset: blank_inset || inset,
-          param: param,
-          value: (def && def.value) || "",
-        });
+        ts_params.add(region ? {cnstr, region, param, value: (def && def.value) || ""} :
+          {cnstr, inset: blank_inset || inset, param, value: (def && def.value) || ""});
         params.add(param);
       }
     });
@@ -19746,10 +19771,11 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
   if(field == 'inset') {
     if (value != this.inset) {
       const {_owner} = this._owner;
-      const {cnstr} = this;
+      const {cnstr, region} = this;
+      const {blank} = $p.utils;
 
       //Проверяем дубли вставок (их не должно быть, иначе параметры перезаписываются)
-      if (value != $p.utils.blank.guid) {
+      if (value != blank.guid) {
         const res = _owner.params.find_rows({cnstr, inset: value, row: {not: this.row}});
         if (res.length) {
           $p.md.emit('alert', {
@@ -19767,13 +19793,18 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
       !this.inset.empty() && _owner.params.clear({inset: this.inset, cnstr});
 
       // устанавливаем значение новой вставки
-      this._obj.inset = value;
+      this._obj.inset = value.valueOf();
+
+      // устанавливаем ряд по умолчанию
+      if(!region && this.inset.region) {
+        this._obj.region = this.inset.region;
+      }
 
       // при необходимости, обновим цвет по данным доступных цветов вставки
       this.inset.clr_group.default_clr(this);
 
       // заполняем параметры по умолчанию
-      _owner.add_inset_params(this.inset, cnstr);
+      _owner.add_inset_params(this.inset, cnstr, null, region);
     }
   }
 }

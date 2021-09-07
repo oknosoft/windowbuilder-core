@@ -490,11 +490,15 @@ class BuilderElement extends paper.Group {
 
   /**
    * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * [inset] {CatInserts} - указываем для дополнительных вставок
    * @return {Array}
    */
-  elm_props() {
-    const {_attr, _row, project, ox: {params}, inset, rnum} = this;
+  elm_props(inset) {
+    const {_attr, _row, project, ox: {params}, rnum} = this;
     const {utils: {blank}, enm: {positions}} = $p;
+    if(!inset) {
+      inset = this.inset;
+    }
 
     // свойства, нужные вставке текущего элемента
     const inset_params = inset.used_params();
