@@ -1401,6 +1401,14 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Отдел абрнента текущего слоя получаем из проекта
+   * @return {CatBranches}
+   */
+  get branch() {
+    return this.project.branch;
+  }
+
+  /**
    * ### Габаритная площадь контура
    */
   get area() {
@@ -3025,7 +3033,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // пересчитываем вставки створок
-    this.profiles.forEach((p) => p.default_inset());
+    if(!(this instanceof ContourNestedContent)) {
+      this.profiles.forEach((p) => p.default_inset());
+    }
 
     // информируем систему об изменениях
     if (noti.points.length) {
@@ -3946,6 +3956,7 @@ class ContourNested extends Contour {
       const {project} = this;
       const fin = (tx, fields) => {
         if(tx === _ox && fields.constructions) {
+          templates._select_template.refill = false;
           project._scope.eve.off('rows', fin);
           this.load_stamp();
         }
@@ -11482,7 +11493,7 @@ ProfileItem.path_attr = {
     if(project._attr._from_service) {
       return;
     }
-    _attr.fillColor = fillColor.clone();
+    _attr.fillColor = fillColor ? fillColor.clone() : null;
     const {red, green, blue, alpha} = fillColor;
     fillColor.alpha = 0.9;
     fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
@@ -15141,6 +15152,7 @@ class Scheme extends paper.Project {
   /**
    * Отдел абонента текущего изделия
    * По умолчанию, равен отделу абонента автора заказа, но может быть переопределён
+   * @type {CatBranches}
    */
   get branch() {
     const {ox} = this;

@@ -829,6 +829,7 @@ class Scheme extends paper.Project {
   /**
    * Отдел абонента текущего изделия
    * По умолчанию, равен отделу абонента автора заказа, но может быть переопределён
+   * @type {CatBranches}
    */
   get branch() {
     const {ox} = this;

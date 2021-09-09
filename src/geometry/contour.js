@@ -410,6 +410,14 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Отдел абрнента текущего слоя получаем из проекта
+   * @return {CatBranches}
+   */
+  get branch() {
+    return this.project.branch;
+  }
+
+  /**
    * ### Габаритная площадь контура
    */
   get area() {
@@ -2034,7 +2042,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // пересчитываем вставки створок
-    this.profiles.forEach((p) => p.default_inset());
+    if(!(this instanceof ContourNestedContent)) {
+      this.profiles.forEach((p) => p.default_inset());
+    }
 
     // информируем систему об изменениях
     if (noti.points.length) {

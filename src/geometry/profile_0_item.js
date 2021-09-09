@@ -2384,7 +2384,7 @@ ProfileItem.path_attr = {
     if(project._attr._from_service) {
       return;
     }
-    _attr.fillColor = fillColor.clone();
+    _attr.fillColor = fillColor ? fillColor.clone() : null;
     const {red, green, blue, alpha} = fillColor;
     fillColor.alpha = 0.9;
     fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
