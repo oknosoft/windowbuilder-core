@@ -494,8 +494,9 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props(inset) {
-    const {_attr, _row, project, ox: {params}, rnum} = this;
-    const {utils: {blank}, enm: {positions}} = $p;
+    const {_attr, _row, project: {_dp}, ox: {params}, rnum} = this;
+    const {utils, md, enm: {positions}} = $p;
+    const concat = inset || rnum;
     if(!inset) {
       inset = this.inset;
     }
@@ -505,7 +506,8 @@ class BuilderElement extends paper.Group {
 
     // получаем список свойств
     const props = [];
-    for(const {param, elm} of project._dp.sys.product_params) {
+    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : _dp.sys.product_params;
+    for(const {param, elm} of product_params) {
       if (!inset_params.includes(param)) {
         continue;
       }
@@ -536,34 +538,45 @@ class BuilderElement extends paper.Group {
       // удаляем возможные паразитные свойства
       _attr.props && _attr.props.forEach((prop) => {
         if(!props.includes(prop)) {
-          delete this[prop.ref];
+          delete this[concat ? concat.ref + prop.ref : prop.ref];
         }
       });
       _attr.props = props;
       // создаём свойства
       props.forEach((prop) => {
-        if(!this.hasOwnProperty(prop.ref)) {
-          Object.defineProperty(this, prop.ref, {
+        const key = concat ? concat.ref + prop.ref : prop.ref;
+        if(!this.hasOwnProperty(key)) {
+          Object.defineProperty(this, key, {
             get() {
               let prow;
               params.find_rows({
                 param: prop,
                 cnstr: {in: [0, -_row.row]},
-                inset: blank.guid,
+                inset: concat || utils.blank.guid,
                 region: 0,
               }, (row) => {
                 if(!prow || row.cnstr) {
                   prow = row;
                 }
               });
-              return prow && prow.value;
+
+              if(prow) {
+                return prow.value;
+              }
+              const type = prop.type.types[0];
+              if(type.includes('.')) {
+                const mgr = md.mgr_by_class_name(type);
+                if(mgr) {
+                  return mgr.get();
+                }
+              }
             },
             set(v) {
               let prow, prow0;
               params.find_rows({
                 param: prop,
                 cnstr: {in: [0, -_row.row]},
-                inset: blank.guid,
+                inset: concat || utils.blank.guid,
                 region: 0,
               }, (row) => {
                 if(row.cnstr) {
@@ -585,7 +598,7 @@ class BuilderElement extends paper.Group {
                   param: prop,
                   cnstr: -_row.row,
                   region: 0,
-                  inset: blank.guid,
+                  inset: concat || utils.blank.guid,
                   value: v,
                 });
               }
