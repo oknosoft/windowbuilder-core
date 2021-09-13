@@ -3516,23 +3516,30 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Дополнительные свойства json
+   * @return {Object}
+   */
+  get dop() {
+    return this._row.dop;
+  }
+  set dop(v) {
+    this._row.dop = v;
+  }
+
+  /**
    * Элемент, вокруг образующей которого повёрнут слой
    * @return {BuilderElement}
    */
   get rotation_elm() {
-    const {_row, project} = this;
-    return _row.rotation_elm ? project.getItem({class: BuilderElement, elm: _row.rotation_elm}) : null;
+    const {dop, project} = this;
+    return dop.rotation_elm ? project.getItem({class: BuilderElement, elm: dop.rotation_elm}) : null;
   }
   set rotation_elm(v) {
-    const {_row, project} = this;
     if(v instanceof BuilderElement) {
-      _row.rotation_elm = v.elm;
+      this.dop = {rotation_elm: v.elm};
     }
-    else if(typeof v === 'number') {
-      const elm = project.getItem({class: BuilderElement, elm: v});
-      if(v) {
-        _row.rotation_elm = v;
-      }
+    else {
+      this.dop = {rotation_elm: v};
     }
   }
 
@@ -3541,10 +3548,10 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Number}
    */
   get angle3d() {
-    return this._row.angle3d;
+    return this.dop.angle3d || 0;
   }
   set angle3d(v) {
-    return this._row.angle3d = v;
+    this.dop = {angle3d: v};
   }
 
   get flipped() {
@@ -6125,6 +6132,9 @@ class BuilderElement extends paper.Group {
       a2: Object.assign({}, _xfields.x1, {synonym: 'Угол 2'}),
       offset: Object.assign({}, _xfields.x1, {synonym: 'Смещение'}),
       region: _xfields.region,
+      note: fields.note,
+      price: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Цена продажи'}),
+      first_cost: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Себестоимость план'}),
     };
 
     return {
@@ -6264,6 +6274,50 @@ class BuilderElement extends paper.Group {
   }
   set clr(v) {
     this.set_clr(v);
+  }
+
+  /**
+   * Дополнительные свойства json
+   * @return {Object}
+   */
+  get dop() {
+    return this._row.dop;
+  }
+  set dop(v) {
+    this._row.dop = v;
+  }
+
+  /**
+   * Произвольный комментарий
+   * @return {String}
+   */
+  get note() {
+    return this.dop.note || '';
+  }
+  set note(v) {
+    this.dop = {note: v};
+  }
+
+  /**
+   * Плановая себестоимость единицы хранения в валюте упр. учёта
+   * @return {Number}
+   */
+  get first_cost() {
+    return this.dop.first_cost || 0;
+  }
+  set first_cost(v) {
+    this.dop = {first_cost: v};
+  }
+
+  /**
+   * Плановая цена продажи единицы хранения в валюте упр. учёта
+   * @return {Number}
+   */
+  get price() {
+    return this.dop.price || 0;
+  }
+  set price(v) {
+    this.dop = {price: v};
   }
 
   /**

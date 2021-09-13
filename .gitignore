@@ -9,5 +9,5 @@ build/
 
 # npm files
 node_modules
-package-lock.json
+*.lock
 *.log
