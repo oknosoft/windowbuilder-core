@@ -202,7 +202,7 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
 
   // создаёт константу
   job_prm(row) {
-    const {job_prm, md, utils, enm: {inserts_glass_types: igt}} = this._owner.$p;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = this._owner.$p;
     const {parents} = this;
     const parent = job_prm[parents[row.parent.valueOf()]];
     const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
@@ -244,7 +244,7 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
               if(tmp.length) {
                 const chain = tmp.splice(0);
                 if(name) {
-                  Object.defineProperty(chain, 'name', {value: name});
+                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name) ? vh.get(name) : name});
                   name = '';
                 }
                 value.push(chain);
