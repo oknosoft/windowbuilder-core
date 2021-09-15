@@ -778,17 +778,18 @@ class Filling extends AbstractFilling(BuilderElement) {
     path.reduce();
 
     // прочищаем от колинеарных кусочков
-    for (let i = 0; i < path.segments.length; i++) {
+    for (let i = 0; i < path.segments.length;) {
       const prev = i === 0 ? path.segments[path.segments.length - 1] : path.segments[i - 1];
       const curr = path.segments[i];
       const next = i === (path.segments.length - 1) ? path.segments[0] : path.segments[i + 1];
-      if(prev.hasHandles() || curr.hasHandles() || next.hasHandles()) {
-        continue;
+      if(!prev.hasHandles() && !curr.hasHandles() && !next.hasHandles()) {
+        const tmp = new paper.Path({insert: false, segments: [prev, next]});
+        if(tmp.is_nearest(curr.point, 1)) {
+          curr.remove();
+          continue;
+        }
       }
-      const tmp = new paper.Path({insert: false, segments: [prev, next]});
-      if(tmp.is_nearest(curr.point, 1)) {
-        curr.remove();
-      }
+      i++;
     }
   }
 
