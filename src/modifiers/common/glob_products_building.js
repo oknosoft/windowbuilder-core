@@ -963,7 +963,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long}, comparison_types: ct},
+      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
       cch: {properties},
     } = $p;
 
@@ -1011,6 +1011,14 @@ class ProductsBuilding {
             row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
           }
         });
+      }
+      else if(row_base.algorithm === clr_in) {
+        const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
+        row_spec.clr = clrs.composite({clr_in: clr, clr_out: row_base.clr, with_inverted: false, sync: true});
+      }
+      else if(row_base.algorithm === clr_out) {
+        const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
+        row_spec.clr = clrs.composite({clr_in: clr, clr_out: row_base.clr, with_inverted: false, sync: true});
       }
       // длина штапика
       else if([gb_short, gb_long].includes(row_base.algorithm) && len_angl) {

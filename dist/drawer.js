@@ -18479,7 +18479,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long}, comparison_types: ct},
+      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
       cch: {properties},
     } = $p;
 
@@ -18527,6 +18527,14 @@ class ProductsBuilding {
             row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
           }
         });
+      }
+      else if(row_base.algorithm === clr_in) {
+        const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
+        row_spec.clr = clrs.composite({clr_in: clr, clr_out: row_base.clr, with_inverted: false, sync: true});
+      }
+      else if(row_base.algorithm === clr_out) {
+        const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
+        row_spec.clr = clrs.composite({clr_in: clr, clr_out: row_base.clr, with_inverted: false, sync: true});
       }
       // длина штапика
       else if([gb_short, gb_long].includes(row_base.algorithm) && len_angl) {
@@ -19906,7 +19914,7 @@ $p.cat.clrs.__define({
 	 * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
 	 * @param clr_elm {CatClrs} - цвет элемента
 	 * @param clr_sch {CatClrs} - цвет изделия
-	 * @return {*}
+	 * @return {CatClrs}
 	 */
   by_predefined: {
     value(clr, clr_elm, clr_sch, elm, spec, row) {
@@ -19976,21 +19984,82 @@ $p.cat.clrs.__define({
   },
 
   /**
+   * ищет по цветам снаружи-изнутри
+   * @return {CatClrs}
+   */
+  by_in_out: {
+    value({clr_in, clr_out}) {
+      const {wsql, utils: {blank}} = $p;
+      // скомпилированный запрос
+      if(!this._by_in_out) {
+        this._by_in_out = wsql.alasql.compile('select top 1 ref from ? where clr_in = ? and clr_out = ? and (not ref = ?)');
+      }
+      // ищем в справочнике цветов
+      const ares = this._by_in_out([this.alatable, clr_in.valueOf(), clr_out.valueOf(), blank.guid]);
+      return this.get(ares[0]);
+    }
+  },
+
+  /**
    * ### Инверсный цвет
    * Возвращает элемент, цвета которого изнутри и снаружи перевёрнуты местами
    * @param clr {CatClrs} - исходный цвет
    */
   inverted: {
     value(clr){
-      const {clr_in, clr_out, ref} = clr;
-      if(clr_in === clr_out || clr_in.empty() || clr_out.empty()){
+      if(clr.clr_in == clr.clr_out || clr.clr_in.empty() || clr.clr_out.empty()) {
         return clr;
       }
-      // ищем в справочнике цветов
-      const rin = clr_in.ref, rout = clr_out.ref;
-      const {blank} = $p.utils;
-      const ares = this.alatable.find(({clr_in, clr_out, ref}) => clr_in === rout && clr_out === rin && ref !== blank.guid);
-      return ares ? this.get(ares) : clr;
+      const by_in_out = this.by_in_out({clr_in: clr.clr_out, clr_out: clr.clr_in});
+      return by_in_out.empty() ? clr : by_in_out;
+    }
+  },
+
+  /**
+   * Клиентская часть создания составного цвета
+   * @param clr_in {CatClrs} - цвет изнутри
+   * @param clr_out {CatClrs} - цвет снаружи
+   * @param with_inverted {Boolean} - создавать инверсный
+   * @param sync {Boolean} - создавать болванку и возвращать её uid перед запросом к общим данным
+   */
+  composite: {
+    value({clr_in, clr_out, with_inverted = true, sync = false}) {
+      const {utils, job_prm, adapters: {pouch}} = $p;
+      let by_in_out = this.by_in_out({clr_in, clr_out});
+      let ref;
+      if(!by_in_out.empty()) {
+        return by_in_out;
+      }
+      if(clr_in.empty()) {
+        return clr_out;
+      }
+      if(clr_out.empty()) {
+        return clr_in;
+      }
+      if(sync) {
+        ref = utils.generate_guid();
+        by_in_out = this.create({
+          ref,
+          clr_in: clr_in.ref,
+          clr_out: clr_out.ref,
+          name: `${clr_in.name} \\ ${clr_out.name}`,
+          parent: job_prm.builder.composite_clr_folder,
+        });
+      }
+      const req = pouch.fetch(pouch.props.path.replace(job_prm.local_storage_prefix, 'common/cat.clrs/composite'), {
+        method: 'POST',
+        body: JSON.stringify({ref, clr_in: clr_in.ref, clr_out: clr_out.ref, with_inverted}),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          this.load_array([res.clr, res.inverted]);
+          // чистим кеш цветогрупп
+          cat.color_price_groups.forEach(({_data}) => {
+            delete _data.clrs;
+          });
+          return this.get(res.clr);
+        });
+      return sync ? by_in_out : req;
     }
   },
 
