@@ -737,7 +737,12 @@ class Filling extends AbstractFilling(BuilderElement) {
         // формируем путь
         for (let i = 0; i < length; i++) {
           curr = attr[i];
-          path.addSegments(curr.sub_path.segments);
+          path.addSegments(curr.sub_path.segments.filter((v, index) => {
+            if(index || !path.segments.length) {
+              return true;
+            }
+            return !v.hasHandles() && !path.lastSegment.point.is_nearest(v.point, 1);
+          }));
           ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
           _attr._profiles.push(curr);
         }
@@ -772,6 +777,19 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     path.reduce();
 
+    // прочищаем от колинеарных кусочков
+    for (let i = 0; i < path.segments.length; i++) {
+      const prev = i === 0 ? path.segments[path.segments.length - 1] : path.segments[i - 1];
+      const curr = path.segments[i];
+      const next = i === (path.segments.length - 1) ? path.segments[0] : path.segments[i + 1];
+      if(prev.hasHandles() || curr.hasHandles() || next.hasHandles()) {
+        continue;
+      }
+      const tmp = new paper.Path({insert: false, segments: [prev, next]});
+      if(tmp.is_nearest(curr.point, 1)) {
+        curr.remove();
+      }
+    }
   }
 
   // возвращает текущие (ранее установленные) узлы заполнения
