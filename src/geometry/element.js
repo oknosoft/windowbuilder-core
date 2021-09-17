@@ -171,17 +171,21 @@ class BuilderElement extends paper.Group {
   }
 
   // виртуальные метаданные для автоформ
-  get _metadata() {
+  __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
-      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
-      {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'});
+
+    if(iface !== false) {
+      iface = $p.iface;
+    }
 
     function cnn_choice_links(o, cnn_point){
 
@@ -212,70 +216,70 @@ class BuilderElement extends paper.Group {
       path: [(o, f) => {
         const {sys} = this.project._dp;
 
-          let selection;
+        let selection;
 
-          if(this instanceof Filling){
-            // !iface - нет dhtmlx, чистый react
-            if(!iface || utils.is_data_obj(o)){
-              const insert = inserts.get(o);
-              const {insert_type, insert_glass_type} = insert;
-              if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
-                return sys.thicknesses.includes(insert.thickness);
-              }
-              return false;
-            }
-            else{
-              let refs = "";
-              inserts.by_thickness(sys).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
-                  if(refs){
-                    refs += ", ";
-                  }
-                  refs += "'" + o.ref + "'";
-                }
-              });
-              return "_t_.ref in (" + refs + ")";
-            }
-          }
-          else if(this instanceof ProfileConnective){
-            selection = {elm_type: elm_types.Соединитель};
-          }
-          else if(this instanceof ProfileAddl){
-            selection = {elm_type: elm_types.Добор};
-          }
-          else if(this instanceof Profile){
-            if(this.nearest()){
-              selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
-            }
-            else{
-              selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
-            }
-          }
-          else{
-            selection = {elm_type: this.nom.elm_type};
-          }
-
+        if(this instanceof Filling){
           // !iface - нет dhtmlx, чистый react
           if(!iface || utils.is_data_obj(o)){
-            let ok = false;
-            selection.nom = inserts.get(o);
-            sys.elmnts.find_rows(selection, (row) => {
-              ok = true;
-              return false;
-            });
-            return ok;
+            const insert = inserts.get(o);
+            const {insert_type, insert_glass_type} = insert;
+            if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+              return sys.thicknesses.includes(insert.thickness);
+            }
+            return false;
           }
           else{
             let refs = "";
-            sys.elmnts.find_rows(selection, (row) => {
-              if(refs){
-                refs += ", ";
+            inserts.by_thickness(sys).forEach((o) => {
+              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
+                if(refs){
+                  refs += ", ";
+                }
+                refs += "'" + o.ref + "'";
               }
-              refs += "'" + row.nom.ref + "'";
             });
             return "_t_.ref in (" + refs + ")";
           }
-        }]}
+        }
+        else if(this instanceof ProfileConnective){
+          selection = {elm_type: elm_types.Соединитель};
+        }
+        else if(this instanceof ProfileAddl){
+          selection = {elm_type: elm_types.Добор};
+        }
+        else if(this instanceof Profile){
+          if(this.nearest()){
+            selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
+          }
+          else{
+            selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+          }
+        }
+        else{
+          selection = {elm_type: this.nom.elm_type};
+        }
+
+        // !iface - нет dhtmlx, чистый react
+        if(!iface || utils.is_data_obj(o)){
+          let ok = false;
+          selection.nom = inserts.get(o);
+          sys.elmnts.find_rows(selection, (row) => {
+            ok = true;
+            return false;
+          });
+          return ok;
+        }
+        else{
+          let refs = "";
+          sys.elmnts.find_rows(selection, (row) => {
+            if(refs){
+              refs += ", ";
+            }
+            refs += "'" + row.nom.ref + "'";
+          });
+          return "_t_.ref in (" + refs + ")";
+        }
+      }]}
     ];
 
     cnn1.choice_links = [{
@@ -343,6 +347,9 @@ class BuilderElement extends paper.Group {
       a2: Object.assign({}, _xfields.x1, {synonym: 'Угол 2'}),
       offset: Object.assign({}, _xfields.x1, {synonym: 'Смещение'}),
       region: _xfields.region,
+      note: fields.note,
+      price: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Цена продажи'}),
+      first_cost: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Себестоимость план'}),
     };
 
     return {
@@ -368,6 +375,9 @@ class BuilderElement extends paper.Group {
         }
       }),
     };
+  }
+  get _metadata() {
+    return this.__metadata();
   }
 
   // виртуальный датаменеджер для автоформ
@@ -482,19 +492,69 @@ class BuilderElement extends paper.Group {
   }
 
   /**
+   * Дополнительные свойства json
+   * @return {Object}
+   */
+  get dop() {
+    return this._row.dop;
+  }
+  set dop(v) {
+    this._row.dop = v;
+  }
+
+  /**
+   * Произвольный комментарий
+   * @return {String}
+   */
+  get note() {
+    return this.dop.note || '';
+  }
+  set note(v) {
+    this.dop = {note: v};
+  }
+
+  /**
+   * Плановая себестоимость единицы хранения в валюте упр. учёта
+   * @return {Number}
+   */
+  get first_cost() {
+    return this.dop.first_cost || 0;
+  }
+  set first_cost(v) {
+    this.dop = {first_cost: v};
+  }
+
+  /**
+   * Плановая цена продажи единицы хранения в валюте упр. учёта
+   * @return {Number}
+   */
+  get price() {
+    return this.dop.price || 0;
+  }
+  set price(v) {
+    this.dop = {price: v};
+  }
+
+  /**
    * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * [inset] {CatInserts} - указываем для дополнительных вставок
    * @return {Array}
    */
-  elm_props() {
-    const {_attr, _row, project, ox: {params}, inset} = this;
-    const {utils: {blank}, enm: {positions}} = $p;
+  elm_props(inset) {
+    const {_attr, _row, project: {_dp}, ox: {params}, rnum} = this;
+    const {utils, md, enm: {positions}} = $p;
+    const concat = inset || rnum;
+    if(!inset) {
+      inset = this.inset;
+    }
 
     // свойства, нужные вставке текущего элемента
     const inset_params = inset.used_params();
 
     // получаем список свойств
     const props = [];
-    for(const {param, elm} of project._dp.sys.product_params) {
+    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : _dp.sys.product_params;
+    for(const {param, elm} of product_params) {
       if (!inset_params.includes(param)) {
         continue;
       }
@@ -521,65 +581,82 @@ class BuilderElement extends paper.Group {
       }
     }
 
-    // удаляем возможные паразитные свойства
-    _attr.props && _attr.props.forEach((prop) => {
-      if(!props.includes(prop)) {
-        delete this[prop.ref];
-      }
-    });
-    _attr.props = props;
-    // создаём свойства
-    props.forEach((prop) => {
-      if(!this.hasOwnProperty(prop.ref)) {
-        Object.defineProperty(this, prop.ref, {
-          get() {
-            let prow;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(!prow || row.cnstr) {
-                prow = row;
+    if(!rnum) {
+      // удаляем возможные паразитные свойства
+      _attr.props && _attr.props.forEach((prop) => {
+        if(!props.includes(prop)) {
+          delete this[concat ? concat.ref + prop.ref : prop.ref];
+        }
+      });
+      _attr.props = props;
+      // создаём свойства
+      props.forEach((prop) => {
+        const key = concat ? concat.ref + prop.ref : prop.ref;
+        if(!this.hasOwnProperty(key)) {
+          Object.defineProperty(this, key, {
+            get() {
+              let prow;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: concat || utils.blank.guid,
+                region: 0,
+              }, (row) => {
+                if(!prow || row.cnstr) {
+                  prow = row;
+                }
+              });
+
+              if(prow) {
+                return prow.value;
               }
-            });
-            return prow && prow.value;
-          },
-          set(v) {
-            let prow, prow0;
-            params.find_rows({
-              param: prop,
-              cnstr: {in: [0, -_row.row]},
-              inset: blank.guid
-            }, (row) => {
-              if(row.cnstr) {
-                prow = row;
+              const type = prop.type.types[0];
+              if(type.includes('.')) {
+                const mgr = md.mgr_by_class_name(type);
+                if(mgr) {
+                  return mgr.get();
+                }
+              }
+            },
+            set(v) {
+              let prow, prow0;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: concat || utils.blank.guid,
+                region: 0,
+              }, (row) => {
+                if(row.cnstr) {
+                  prow = row;
+                }
+                else {
+                  prow0 = row;
+                }
+              });
+              // если устанавливаемое значение совпадает со значением изделия - удаляем
+              if(prow0 && prow0.value == v) {
+                prow && prow._owner.del(prow);
+              }
+              else if(prow) {
+                prow.value = v;
               }
               else {
-                prow0 = row;
+                params.add({
+                  param: prop,
+                  cnstr: -_row.row,
+                  region: 0,
+                  inset: concat || utils.blank.guid,
+                  value: v,
+                });
               }
-            });
-            // если устанавливаемое значение совпадает со значением изделия - удаляем
-            if(prow0 && prow0.value == v) {
-              prow && prow._owner.del(prow);
-            }
-            else if(prow) {
-              prow.value = v;
-            }
-            else {
-              params.add({
-                param: prop,
-                cnstr: -_row.row,
-                inset: blank.guid,
-                value: v,
-              });
-            }
-            this.refresh_inset_depends(prop, true);
-          },
-          configurable: true,
-        });
-      }
-    });
+              this.refresh_inset_depends(prop, true);
+              return true;
+            },
+            configurable: true,
+          });
+        }
+      });
+    }
 
     return props;
   }

@@ -825,6 +825,7 @@ class Scheme extends paper.Project {
   /**
    * Отдел абонента текущего изделия
    * По умолчанию, равен отделу абонента автора заказа, но может быть переопределён
+   * @type {CatBranches}
    */
   get branch() {
     const {ox} = this;
@@ -1127,7 +1128,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Bозвращает строку svg эскиза изделия
+   * ### Возвращает строку svg эскиза изделия
    * Вызывается при записи изделия. Полученный эскиз сохраняется во вложении к характеристике
    *
    * @method get_svg
@@ -1362,7 +1363,7 @@ class Scheme extends paper.Project {
    * ### Цвет текущего изделия
    *
    * @property clr
-   * @type _cat.clrs
+   * @type CatClrs
    */
   get clr() {
     return this.ox.clr;

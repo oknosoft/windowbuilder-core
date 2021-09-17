@@ -234,6 +234,7 @@ class ContourNested extends Contour {
       const {project} = this;
       const fin = (tx, fields) => {
         if(tx === _ox && fields.constructions) {
+          templates._select_template.refill = false;
           project._scope.eve.off('rows', fin);
           this.load_stamp();
         }

@@ -148,8 +148,12 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
           if(is_nom1 && is_nom2){
             return false;
           }
-          is_nom1 = is_nom1 || (row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2));
-          is_nom2 = is_nom2 || (row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1));
+          if(!is_nom1) {
+            is_nom1 = row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2);
+          }
+          if(!is_nom2) {
+            is_nom2 = row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1);
+          }
         });
         if(is_nom1 && is_nom2){
           a2.push(cnn);

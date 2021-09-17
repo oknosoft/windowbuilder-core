@@ -9,7 +9,7 @@
 
 exports.CatUsersManager = class CatUsersManager extends Object {
 
-  // при загрузке пользователей, морозим объект, чтобы его невозможно было изменить из интерфейса
+  // после загрузки пользователей, морозим объект, чтобы его невозможно было изменить из интерфейса
   load_array(aattr, forse) {
     const res = [];
     for (let aobj of aattr) {
