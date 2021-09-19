@@ -738,10 +738,10 @@ class Filling extends AbstractFilling(BuilderElement) {
         for (let i = 0; i < length; i++) {
           curr = attr[i];
           path.addSegments(curr.sub_path.segments.filter((v, index) => {
-            if(index || !path.segments.length) {
+            if(index || !path.segments.length || v.hasHandles()) {
               return true;
             }
-            return !v.hasHandles() && !path.lastSegment.point.is_nearest(v.point, 1);
+            return !path.lastSegment.point.is_nearest(v.point, 1);
           }));
           ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
           _attr._profiles.push(curr);

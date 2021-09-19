@@ -2626,11 +2626,12 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   get thicknesses() {
     const {_data} = this;
     if(!_data.thin) {
-      _data.thin = new Set();
+      const thin = new Set();
       const {Заполнение, Стекло} = $p.enm.elm_types;
-      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => _data.thin.add(nom.thickness));
+      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => thin.add(nom.thickness));
+      _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
-    return Array.from(_data.thin);
+    return _data.thin;
   }
 
   /**

@@ -271,94 +271,70 @@
      * @return {Array.<CatInserts>}
      */
      by_thickness: {
-           value(min, max) {
-             const res = [];
+      value(min, max) {
+        const res = [];
 
-             if (!this._by_thickness) {
-               this._by_thickness = new Map();
-               this.find_rows({
-                 insert_type: {
-                   in: this._types_filling
-                 },
-                 _top: 10000
-               }, (ins) => {
-                 if (ins.thickness > 0) {
-                   if (!this._by_thickness.has(ins.thickness)) {
-                     this._by_thickness.set(ins.thickness, []);
-                   }
-                   this._by_thickness.get(ins.thickness).push(ins);
-                 }
-               });
-             }
+        if(!this._by_thickness) {
+          this._by_thickness = new Map();
+          this.find_rows({
+            insert_type: {in: this._types_filling},
+            _top: 10000
+          }, (ins) => {
+            if(ins.thickness) {
+              if(!this._by_thickness.has(ins.thickness)) {
+                this._by_thickness.set(ins.thickness, []);
+              }
+              this._by_thickness.get(ins.thickness).push(ins);
+            }
+          });
+        }
 
+        if(min instanceof $p.CatProduction_params) {
+          const {thicknesses, glass_thickness} = min;
+          max = 0;
 
-             if (sys instanceof $p.CatProduction_params) {
-               min_arr = min.thicknesses;
-               max = 0;
-               var sys = min;
-               const {
-                 glass_thickness
-               } = sys;
-               /********************/
+          if(glass_thickness === 0) {
+            min = thicknesses;
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = $p.enm.elm_types;
+            min.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => res.push(nom));
+            return res;
+          }
+          else if(glass_thickness === 2) {
+            const min_in_sys = thicknesses[0];
+            const max_in_sys = thicknesses[thicknesses.length - 1];
+            for (const [thin, arr] of this._by_thickness) {
+              if(thin >= min_in_sys && thin <= max_in_sys) {
+                Array.prototype.push.apply(res, arr);
+              }
+            }
+            return res;
+          }
+          else if(glass_thickness === 3) {
+            for (const obj of this._by_thickness) {
+              Array.prototype.push.apply(res, obj[1]);
+            }
+            return res;
+          }
+        }
 
-               if (glass_thickness === 0) {
-                 sys.thicknesses.forEach((i) => {
-                   Array.prototype.push.apply(res, this._by_thickness.get(i));
+        for (const [thin, arr] of this._by_thickness) {
+          if(!max && Array.isArray(min)) {
+            if(min.includes(thin)) {
+              Array.prototype.push.apply(res, arr);
+            }
+          }
+          else {
+            if(thin >= min && thin <= max) {
+              Array.prototype.push.apply(res, arr);
+            }
+          }
+        }
 
-                 });
-
-
-
-               } else if (glass_thickness === 1) {
-                 const {
-                   Заполнение,
-                   Стекло
-                 } = $p.enm.elm_types;
-                 sys.elmnts.find_rows({
-                   elm_type: {
-                     in: [Заполнение, Стекло]
-                   },
-                   // nom: insert
-                 }, ({
-                   nom
-                 }) => res.push(nom));
-
-
-               } else if (glass_thickness === 2) {
-
-                 let min_in_sys = sys.thicknesses[0];
-                 let max_in_sys = sys.thicknesses[sys.thicknesses.length - 1];
-
-
-                 for (const [thin, arr] of this._by_thickness) {
-
-
-                   if (thin >= min_in_sys && thin <= max_in_sys) {
-                     Array.prototype.push.apply(res, arr);
-                   }
-
-                 }
-
-               } else if (glass_thickness === 3) {
-                 for (const obj of this._by_thickness) {
-                   Array.prototype.push.apply(res, obj[1]);
-                 }
-
-               }
-
-             }          else {
-                for (const [thin, arr] of this._by_thickness) {
-               if(thin >= min && thin <= max) {
-                 Array.prototype.push.apply(res, arr);
-               }
-             }}
-
-
-
-
-             return res;
-           }
-   },
+        return res;
+      }
+    },
 
     sql_selection_list_flds: {
       value(initial_value) {

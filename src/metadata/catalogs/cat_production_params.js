@@ -25,12 +25,12 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   get thicknesses() {
     const {_data} = this;
     if(!_data.thin) {
-      _data.thin = new Set();
+      const thin = new Set();
       const {Заполнение, Стекло} = $p.enm.elm_types;
-      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => _data.thin.add(nom.thickness));
+      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => thin.add(nom.thickness));
+      _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
-    //Возвращает сортированыый массив 
-    return Array.from(_data.thin).sort(function(a, b) {  return a - b; });
+    return _data.thin;
   }
 
   /**

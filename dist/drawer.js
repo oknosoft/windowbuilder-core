@@ -5980,21 +5980,20 @@ class BuilderElement extends paper.Group {
         return nom_cnns.some((cnn) => o.ref == cnn);
       }
       else{
-        let refs = "";
+        let refs = '';
         nom_cnns.forEach((cnn) => {
-          if(refs){
-            refs += ", ";
+          if(refs) {
+            refs += ', ';
           }
-          refs += "'" + cnn.ref + "'";
+          refs += `'${cnn.ref}'`;
         });
-        return "_t_.ref in (" + refs + ")";
+        return `_t_.ref in (${refs})`;
       }
     }
 
 
     // динамические отборы для вставок и соединений
     const {_types_filling} = inserts;
-
 
     inset.choice_links = [{
       name: ['selection', 'ref'],
@@ -6003,49 +6002,72 @@ class BuilderElement extends paper.Group {
 
         let selection;
 
-        if(this instanceof Filling){
+        if(this instanceof Filling) {
+          const {glass_thickness, thicknesses} = sys;
+
           // !iface - нет dhtmlx, чистый react
-          if(!iface || utils.is_data_obj(o)){
+          if(!iface || utils.is_data_obj(o)) {
             const insert = inserts.get(o);
             const {insert_type, insert_glass_type} = insert;
             if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
-              return sys.thicknesses.includes(insert.thickness);
+              /*разбор параметра glass_thickness*/
+              if(glass_thickness === 0) {
+                return thicknesses.includes(insert.thickness);
+              }
+              else if(glass_thickness === 1) {
+                const {Заполнение, Стекло} = elm_types;
+                return !!sys.elmnts.find({
+                  elm_type: {in: [Заполнение, Стекло]},
+                  nom: insert
+                });
+
+              }
+              else if(glass_thickness === 2) {
+                let min = thicknesses[0];
+                let max = thicknesses[thicknesses.length - 1];
+                if(insert.thickness >= min && insert.thickness <= max) {
+                  return true;
+                }
+              }
+              else if(glass_thickness === 3) {
+                return true;
+              }
             }
             return false;
           }
-          else{
-            let refs = "";
+          else {
+            let refs = '';
             inserts.by_thickness(sys).forEach((o) => {
-              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
-                if(refs){
-                  refs += ", ";
+              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение) {
+                if(refs) {
+                  refs += ', ';
                 }
-                refs += "'" + o.ref + "'";
+                refs += `'${o.ref}'`;
               }
             });
-            return "_t_.ref in (" + refs + ")";
+            return `_t_.ref in (${refs})`;
           }
         }
-        else if(this instanceof ProfileConnective){
+        else if(this instanceof ProfileConnective) {
           selection = {elm_type: elm_types.Соединитель};
         }
-        else if(this instanceof ProfileAddl){
+        else if(this instanceof ProfileAddl) {
           selection = {elm_type: elm_types.Добор};
         }
-        else if(this instanceof Profile){
-          if(this.nearest()){
+        else if(this instanceof Profile) {
+          if(this.nearest()) {
             selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
           }
-          else{
+          else {
             selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
           }
         }
-        else{
+        else {
           selection = {elm_type: this.nom.elm_type};
         }
 
         // !iface - нет dhtmlx, чистый react
-        if(!iface || utils.is_data_obj(o)){
+        if(!iface || utils.is_data_obj(o)) {
           let ok = false;
           selection.nom = inserts.get(o);
           sys.elmnts.find_rows(selection, (row) => {
@@ -6054,18 +6076,18 @@ class BuilderElement extends paper.Group {
           });
           return ok;
         }
-        else{
-          let refs = "";
+        else {
+          let refs = '';
           sys.elmnts.find_rows(selection, (row) => {
-            if(refs){
-              refs += ", ";
+            if(refs) {
+              refs += ', ';
             }
-            refs += "'" + row.nom.ref + "'";
+            refs += `'${row.nom.ref}'`;
           });
-          return "_t_.ref in (" + refs + ")";
+          return `_t_.ref in (${refs})`;
         }
-      }]}
-    ];
+      }]
+    }];
 
     cnn1.choice_links = [{
       name: ['selection', 'ref'],
@@ -6083,11 +6105,11 @@ class BuilderElement extends paper.Group {
         const cnn_ii = this.selected_cnn_ii();
         let nom_cnns = [utils.blank.guid];
 
-        if(cnn_ii){
-          if (cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
+        if(cnn_ii) {
+          if(cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
-          else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
+          else if(cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else {
@@ -6095,18 +6117,18 @@ class BuilderElement extends paper.Group {
           }
         }
 
-        if (!iface || utils.is_data_obj(o)) {
+        if(!iface || utils.is_data_obj(o)) {
           return nom_cnns.some((cnn) => o.ref == cnn);
         }
         else {
-          let refs = "";
+          let refs = '';
           nom_cnns.forEach((cnn) => {
-            if (refs) {
-              refs += ", ";
+            if(refs) {
+              refs += ', ';
             }
-            refs += "'" + cnn.ref + "'";
+            refs += `'${cnn.ref}'`;
           });
-          return "_t_.ref in (" + refs + ")";
+          return `_t_.ref in (${refs})`;
         }
       }]
     }];
@@ -7376,10 +7398,10 @@ class Filling extends AbstractFilling(BuilderElement) {
         for (let i = 0; i < length; i++) {
           curr = attr[i];
           path.addSegments(curr.sub_path.segments.filter((v, index) => {
-            if(index || !path.segments.length) {
+            if(index || !path.segments.length || v.hasHandles()) {
               return true;
             }
-            return !v.hasHandles() && !path.lastSegment.point.is_nearest(v.point, 1);
+            return !path.lastSegment.point.is_nearest(v.point, 1);
           }));
           ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
           _attr._profiles.push(curr);
@@ -21400,14 +21422,17 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param max {Number|undefined}
      * @return {Array.<CatInserts>}
      */
-    by_thickness: {
+     by_thickness: {
       value(min, max) {
         const res = [];
 
-        if(!this._by_thickness){
+        if(!this._by_thickness) {
           this._by_thickness = new Map();
-          this.find_rows({insert_type: {in: this._types_filling}}, (ins) => {
-            if(ins.thickness > 0){
+          this.find_rows({
+            insert_type: {in: this._types_filling},
+            _top: 10000
+          }, (ins) => {
+            if(ins.thickness) {
               if(!this._by_thickness.has(ins.thickness)) {
                 this._by_thickness.set(ins.thickness, []);
               }
@@ -21417,8 +21442,33 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
 
         if(min instanceof $p.CatProduction_params) {
-          min = min.thicknesses;
+          const {thicknesses, glass_thickness} = min;
           max = 0;
+
+          if(glass_thickness === 0) {
+            min = thicknesses;
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = $p.enm.elm_types;
+            min.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => res.push(nom));
+            return res;
+          }
+          else if(glass_thickness === 2) {
+            const min_in_sys = thicknesses[0];
+            const max_in_sys = thicknesses[thicknesses.length - 1];
+            for (const [thin, arr] of this._by_thickness) {
+              if(thin >= min_in_sys && thin <= max_in_sys) {
+                Array.prototype.push.apply(res, arr);
+              }
+            }
+            return res;
+          }
+          else if(glass_thickness === 3) {
+            for (const obj of this._by_thickness) {
+              Array.prototype.push.apply(res, obj[1]);
+            }
+            return res;
+          }
         }
 
         for (const [thin, arr] of this._by_thickness) {
@@ -21442,7 +21492,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
           " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_inserts AS _t_" +
-          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 1000 ";
+          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 2000 ";
       }
     },
 
