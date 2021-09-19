@@ -216,19 +216,55 @@ class BuilderElement extends paper.Group {
       path: [(o, f) => {
         const {sys} = this.project._dp;
 
-        let selection;
+            let selection;
 
-        if(this instanceof Filling){
-          // !iface - нет dhtmlx, чистый react
-          if(!iface || utils.is_data_obj(o)){
-            const insert = inserts.get(o);
-            const {insert_type, insert_glass_type} = insert;
-            if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
-              return sys.thicknesses.includes(insert.thickness);
-            }
-            return false;
-          }
-          else{
+            if (this instanceof Filling) {
+              const {
+                glass_thickness
+              } = sys;
+
+              // !iface - нет dhtmlx, чистый react
+              if (!iface || utils.is_data_obj(o)) {
+                const insert = inserts.get(o);
+                const {
+                  insert_type,
+                  insert_glass_type
+                } = insert;
+                if (_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+                  /*разбор параметра glass_thickness*/
+                  if (glass_thickness === 0) {
+                    return sys.thicknesses.includes(insert.thickness);
+                  } else if (glass_thickness === 1) {
+                    const {
+                      Заполнение,
+                      Стекло
+                    } = $p.enm.elm_types;
+                    if (sys.elmnts.find_rows({
+                        elm_type: {
+                          in: [Заполнение, Стекло]
+                        },
+                        nom: insert
+                      }).length) {
+                      return true;
+                    } else {
+                      return false;
+                    }
+
+                  } else if (glass_thickness === 2) {
+
+                    let min = sys.thicknesses[0];
+                    let max = sys.thicknesses[sys.thicknesses.length - 1];
+                    if (insert.thickness >= min && insert.thickness <= max) {
+                      return true;
+                    }
+                  } else if (glass_thickness === 3) {
+                    return true;
+
+                  }
+
+                }
+                return false;
+                  }else{
             let refs = "";
             inserts.by_thickness(sys).forEach((o) => {
               if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
