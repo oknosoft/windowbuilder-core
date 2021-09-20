@@ -675,7 +675,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       let {length} = attr;
       if(length > 1) {
         let prev, curr, next;
-        const {cat: {cnns}, enm: {cnn_types}} = $p;
+        const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
         // получам эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
           curr = attr[i];
@@ -690,26 +690,26 @@ class Filling extends AbstractFilling(BuilderElement) {
           curr = attr[i];
           next = i === length-1 ? attr[0] : attr[i+1];
           if(!curr.pb) {
-            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking, null, true);
+            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
             if(prev !== next) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
-            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking, null, true);
+            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
             if(prev !== next) {
               next.pb = curr.pe;
             }
           }
-          if(!curr.pb || !curr.pe){
-            if($p.job_prm.debug) {
-              throw 'Filling:path';
-            }
-            else {
-              continue;
-            }
+        }
+        for (let i = 0; i < length; i++) {
+          curr = attr[i];
+          if(curr.pb && curr.pe){
+            curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe, true);
           }
-          curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe, true);
+          else if(job_prm.debug) {
+            throw 'Filling:path';
+          }
         }
 
         // прочищаем для пересечений
