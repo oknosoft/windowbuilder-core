@@ -148,6 +148,48 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * Двигает элемент за один такт
+   * Синхронно тянет импосты и угловые соединения
+   * @param delta
+   */
+  move_gen(delta) {
+
+    // сразу получаем сегменты примыкающих импостов
+    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
+    const isegments = [];
+    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+      const {b, e} = profile.rays;
+      if(b.profile === this) {
+        isegments.push({profile, node: 'b'});
+      }
+      if(e.profile === this) {
+        isegments.push({profile, node: 'e'});
+      }
+    });
+
+    // угловые соединения b, e
+    const {generatrix, rays} = this;
+    generatrix.translate(delta);
+    for(const {profile, profile_point, point} of [rays.b, rays.e]) {
+      if(profile && profile_point) {
+        profile.generatrix.segments.forEach((segm) => segm.selected = false);
+        profile[profile_point].selected = true;
+        profile.move_points(point.subtract(profile[profile_point]));
+        profile[profile_point].selected = false;
+      }
+    }
+
+    // ранняя привязка импостов
+    rays.clear();
+    isegments.forEach(({profile, node}) => {
+      profile.do_sub_bind(this, node);
+      profile.rays.clear();
+    });
+    rays.clear();
+
+  }
+
+  /**
    * ### Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
@@ -200,14 +242,14 @@ class GeneratrixElement extends BuilderElement {
 
         if(segm.point == this.b){
           cnn_point = this.rays.b;
-          if(!cnn_point.profile_point || paper.Key.isDown('control')){
-            cnn_point = this.cnn_point("b", free_point);
+          if(!cnn_point.profile_point || paper.Key.isDown('control')) {
+            cnn_point = this.cnn_point('b', free_point);
           }
         }
         else if(segm.point == this.e){
           cnn_point = this.rays.e;
           if(!cnn_point.profile_point || paper.Key.isDown('control')){
-            cnn_point = this.cnn_point("e", free_point);
+            cnn_point = this.cnn_point('e', free_point);
           }
         }
 

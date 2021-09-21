@@ -30,11 +30,19 @@ class GraphEdge {
   }
 
   /**
+   * Длина ребра по прямой, может отличаться от длины профиля
+   */
+  get length() {
+    const {startVertex, endVertex} = this;
+    return startVertex.point.getDistance(endVertex.point);
+  }
+
+  /**
    * @return {string}
    */
-  getKey() {
+  get key() {
     const {startVertex, endVertex} = this;
-    return `${startVertex.getKey()}_${endVertex.getKey()}`;
+    return `${startVertex.key}_${endVertex.key}`;
   }
 
   /**
@@ -144,6 +152,6 @@ class GraphEdge {
    * @return {string}
    */
   toString() {
-    return this.getKey();
+    return this.key;
   }
 }

@@ -274,10 +274,13 @@
       value(min, max) {
         const res = [];
 
-        if(!this._by_thickness){
+        if(!this._by_thickness) {
           this._by_thickness = new Map();
-          this.find_rows({insert_type: {in: this._types_filling}}, (ins) => {
-            if(ins.thickness > 0){
+          this.find_rows({
+            insert_type: {in: this._types_filling},
+            _top: 10000
+          }, (ins) => {
+            if(ins.thickness) {
               if(!this._by_thickness.has(ins.thickness)) {
                 this._by_thickness.set(ins.thickness, []);
               }
@@ -287,8 +290,33 @@
         }
 
         if(min instanceof $p.CatProduction_params) {
-          min = min.thicknesses;
+          const {thicknesses, glass_thickness} = min;
           max = 0;
+
+          if(glass_thickness === 0) {
+            min = thicknesses;
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = $p.enm.elm_types;
+            min.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => res.push(nom));
+            return res;
+          }
+          else if(glass_thickness === 2) {
+            const min_in_sys = thicknesses[0];
+            const max_in_sys = thicknesses[thicknesses.length - 1];
+            for (const [thin, arr] of this._by_thickness) {
+              if(thin >= min_in_sys && thin <= max_in_sys) {
+                Array.prototype.push.apply(res, arr);
+              }
+            }
+            return res;
+          }
+          else if(glass_thickness === 3) {
+            for (const obj of this._by_thickness) {
+              Array.prototype.push.apply(res, obj[1]);
+            }
+            return res;
+          }
         }
 
         for (const [thin, arr] of this._by_thickness) {
@@ -312,7 +340,7 @@
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
           " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_inserts AS _t_" +
-          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 1000 ";
+          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 2000 ";
       }
     },
 

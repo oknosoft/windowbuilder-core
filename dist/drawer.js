@@ -3082,7 +3082,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           fillColor: 'black',
           fontFamily: consts.font_family,
           fontSize: consts.elm_font_size * 2,
-          content: v.getKey(),
+          content: v.key,
           point: v.point.add([10, 20]),
         })
       });
@@ -5888,21 +5888,20 @@ class BuilderElement extends paper.Group {
         return nom_cnns.some((cnn) => o.ref == cnn);
       }
       else{
-        let refs = "";
+        let refs = '';
         nom_cnns.forEach((cnn) => {
-          if(refs){
-            refs += ", ";
+          if(refs) {
+            refs += ', ';
           }
-          refs += "'" + cnn.ref + "'";
+          refs += `'${cnn.ref}'`;
         });
-        return "_t_.ref in (" + refs + ")";
+        return `_t_.ref in (${refs})`;
       }
     }
 
 
     // динамические отборы для вставок и соединений
     const {_types_filling} = inserts;
-
 
     inset.choice_links = [{
       name: ['selection', 'ref'],
@@ -5911,49 +5910,72 @@ class BuilderElement extends paper.Group {
 
         let selection;
 
-        if(this instanceof Filling){
+        if(this instanceof Filling) {
+          const {glass_thickness, thicknesses} = sys;
+
           // !iface - нет dhtmlx, чистый react
-          if(!iface || utils.is_data_obj(o)){
+          if(!iface || utils.is_data_obj(o)) {
             const insert = inserts.get(o);
             const {insert_type, insert_glass_type} = insert;
             if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
-              return sys.thicknesses.includes(insert.thickness);
+              /*разбор параметра glass_thickness*/
+              if(glass_thickness === 0) {
+                return thicknesses.includes(insert.thickness);
+              }
+              else if(glass_thickness === 1) {
+                const {Заполнение, Стекло} = elm_types;
+                return !!sys.elmnts.find({
+                  elm_type: {in: [Заполнение, Стекло]},
+                  nom: insert
+                });
+
+              }
+              else if(glass_thickness === 2) {
+                let min = thicknesses[0];
+                let max = thicknesses[thicknesses.length - 1];
+                if(insert.thickness >= min && insert.thickness <= max) {
+                  return true;
+                }
+              }
+              else if(glass_thickness === 3) {
+                return true;
+              }
             }
             return false;
           }
-          else{
-            let refs = "";
+          else {
+            let refs = '';
             inserts.by_thickness(sys).forEach((o) => {
-              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение){
-                if(refs){
-                  refs += ", ";
+              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение) {
+                if(refs) {
+                  refs += ', ';
                 }
-                refs += "'" + o.ref + "'";
+                refs += `'${o.ref}'`;
               }
             });
-            return "_t_.ref in (" + refs + ")";
+            return `_t_.ref in (${refs})`;
           }
         }
-        else if(this instanceof ProfileConnective){
+        else if(this instanceof ProfileConnective) {
           selection = {elm_type: elm_types.Соединитель};
         }
-        else if(this instanceof ProfileAddl){
+        else if(this instanceof ProfileAddl) {
           selection = {elm_type: elm_types.Добор};
         }
-        else if(this instanceof Profile){
-          if(this.nearest()){
+        else if(this instanceof Profile) {
+          if(this.nearest()) {
             selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
           }
-          else{
+          else {
             selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
           }
         }
-        else{
+        else {
           selection = {elm_type: this.nom.elm_type};
         }
 
         // !iface - нет dhtmlx, чистый react
-        if(!iface || utils.is_data_obj(o)){
+        if(!iface || utils.is_data_obj(o)) {
           let ok = false;
           selection.nom = inserts.get(o);
           sys.elmnts.find_rows(selection, (row) => {
@@ -5962,18 +5984,18 @@ class BuilderElement extends paper.Group {
           });
           return ok;
         }
-        else{
-          let refs = "";
+        else {
+          let refs = '';
           sys.elmnts.find_rows(selection, (row) => {
-            if(refs){
-              refs += ", ";
+            if(refs) {
+              refs += ', ';
             }
-            refs += "'" + row.nom.ref + "'";
+            refs += `'${row.nom.ref}'`;
           });
-          return "_t_.ref in (" + refs + ")";
+          return `_t_.ref in (${refs})`;
         }
-      }]}
-    ];
+      }]
+    }];
 
     cnn1.choice_links = [{
       name: ['selection', 'ref'],
@@ -5991,11 +6013,11 @@ class BuilderElement extends paper.Group {
         const cnn_ii = this.selected_cnn_ii();
         let nom_cnns = [utils.blank.guid];
 
-        if(cnn_ii){
-          if (cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
+        if(cnn_ii) {
+          if(cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
-          else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
+          else if(cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else {
@@ -6003,18 +6025,18 @@ class BuilderElement extends paper.Group {
           }
         }
 
-        if (!iface || utils.is_data_obj(o)) {
+        if(!iface || utils.is_data_obj(o)) {
           return nom_cnns.some((cnn) => o.ref == cnn);
         }
         else {
-          let refs = "";
+          let refs = '';
           nom_cnns.forEach((cnn) => {
-            if (refs) {
-              refs += ", ";
+            if(refs) {
+              refs += ', ';
             }
-            refs += "'" + cnn.ref + "'";
+            refs += `'${cnn.ref}'`;
           });
-          return "_t_.ref in (" + refs + ")";
+          return `_t_.ref in (${refs})`;
         }
       }]
     }];
@@ -7216,7 +7238,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       let {length} = attr;
       if(length > 1) {
         let prev, curr, next;
-        const {cat: {cnns}, enm: {cnn_types}} = $p;
+        const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
         // получам эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
           curr = attr[i];
@@ -7231,26 +7253,26 @@ class Filling extends AbstractFilling(BuilderElement) {
           curr = attr[i];
           next = i === length-1 ? attr[0] : attr[i+1];
           if(!curr.pb) {
-            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking, null, true);
+            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
             if(prev !== next) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
-            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking, null, true);
+            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
             if(prev !== next) {
               next.pb = curr.pe;
             }
           }
-          if(!curr.pb || !curr.pe){
-            if($p.job_prm.debug) {
-              throw 'Filling:path';
-            }
-            else {
-              continue;
-            }
+        }
+        for (let i = 0; i < length; i++) {
+          curr = attr[i];
+          if(curr.pb && curr.pe){
+            curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe, true);
           }
-          curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe, true);
+          else if(job_prm.debug) {
+            throw 'Filling:path';
+          }
         }
 
         // прочищаем для пересечений
@@ -7934,6 +7956,48 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * Двигает элемент за один такт
+   * Синхронно тянет импосты и угловые соединения
+   * @param delta
+   */
+  move_gen(delta) {
+
+    // сразу получаем сегменты примыкающих импостов
+    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
+    const isegments = [];
+    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+      const {b, e} = profile.rays;
+      if(b.profile === this) {
+        isegments.push({profile, node: 'b'});
+      }
+      if(e.profile === this) {
+        isegments.push({profile, node: 'e'});
+      }
+    });
+
+    // угловые соединения b, e
+    const {generatrix, rays} = this;
+    generatrix.translate(delta);
+    for(const {profile, profile_point, point} of [rays.b, rays.e]) {
+      if(profile && profile_point) {
+        profile.generatrix.segments.forEach((segm) => segm.selected = false);
+        profile[profile_point].selected = true;
+        profile.move_points(point.subtract(profile[profile_point]));
+        profile[profile_point].selected = false;
+      }
+    }
+
+    // ранняя привязка импостов
+    rays.clear();
+    isegments.forEach(({profile, node}) => {
+      profile.do_sub_bind(this, node);
+      profile.rays.clear();
+    });
+    rays.clear();
+
+  }
+
+  /**
    * ### Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
@@ -7986,14 +8050,14 @@ class GeneratrixElement extends BuilderElement {
 
         if(segm.point == this.b){
           cnn_point = this.rays.b;
-          if(!cnn_point.profile_point || paper.Key.isDown('control')){
-            cnn_point = this.cnn_point("b", free_point);
+          if(!cnn_point.profile_point || paper.Key.isDown('control')) {
+            cnn_point = this.cnn_point('b', free_point);
           }
         }
         else if(segm.point == this.e){
           cnn_point = this.rays.e;
           if(!cnn_point.profile_point || paper.Key.isDown('control')){
-            cnn_point = this.cnn_point("e", free_point);
+            cnn_point = this.cnn_point('e', free_point);
           }
         }
 
@@ -8759,7 +8823,7 @@ Object.defineProperties(paper.Path.prototype, {
 
           if(!path1.closed) {
             tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(path1.is_linear){
+            if(path1.is_linear()){
               if(p1last) {
                 path1.lastSegment.point = path1.lastSegment.point.add(tg);
               }
@@ -8771,7 +8835,7 @@ Object.defineProperties(paper.Path.prototype, {
 
           if(!path2.closed) {
             tg = (p2last ? path2.getTangentAt(path2.length) : path2.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(path2.is_linear){
+            if(path2.is_linear()){
               if(p2last) {
                 path2.lastSegment.point = path2.lastSegment.point.add(tg);
               }
@@ -9036,6 +9100,16 @@ Object.defineProperties(paper.Point.prototype, {
         new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
+
+  /**
+   * Выясняет одинаковость направлений векторов
+   */
+  some_angle: {
+    value: function some_angle(point) {
+      const delta = Math.abs(this.angle - point.angle);
+      return delta < 1 || (delta > 179 && delta < 181);
+    }
+  },
 
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
@@ -13382,15 +13456,14 @@ class ProfileCut extends BaseLine {
       strokeColor: 'grey',
       fillColor: '',
       strokeScaling: false,
-      strokeWidth: 1,
       dashOffset: 0,
       dashArray: [],
     });
 
     // создаём детей
     const content = this.text_content();
-    new PathUnselectable({parent: this, name: 'callout1', strokeColor: 'black', guide: true});
-    new PathUnselectable({parent: this, name: 'callout2', strokeColor: 'black', guide: true});
+    new PathUnselectable({parent: this, name: 'callout1', strokeColor: 'black', guide: true, strokeScaling: false});
+    new PathUnselectable({parent: this, name: 'callout2', strokeColor: 'black', guide: true, strokeScaling: false});
     new PathUnselectable({parent: this, name: 'thick1', strokeColor: 'black', strokeScaling: false, strokeWidth: 5});
     new PathUnselectable({parent: this, name: 'thick2', strokeColor: 'black', strokeScaling: false, strokeWidth: 5});
     new TextUnselectable({
@@ -13445,14 +13518,31 @@ class ProfileCut extends BaseLine {
     const tlength = length > 200 ? 90 : (length/2 - 10);
     thick1.removeSegments();
     thick2.removeSegments();
+    callout1.removeSegments();
+    callout2.removeSegments();
     if(tlength > 0) {
       thick1.addSegments([generatrix.firstSegment.point, generatrix.getPointAt(tlength)]);
       thick2.addSegments([generatrix.getPointAt(length - tlength), generatrix.lastSegment.point]);
       const pt1 = thick1.getPointAt(tlength / 2);
       const pt2 = thick2.getPointAt(tlength / 2);
-      const tnormal = thick1.getNormalAt(0), ttangent = thick1.getTangentAt(0);
+      const tnormal = thick1.getNormalAt(0);
+      const ttangent = thick1.getTangentAt(0);
       text1.position = pt1.add(tnormal.multiply(tlength + 30));
       text2.position = pt2.add(tnormal.multiply(tlength + 30));
+
+      const c1base = pt1.subtract(ttangent.multiply(20)).add(tnormal.multiply(20));
+      callout1.moveTo(c1base.add(tnormal.multiply(60)));
+      callout1.lineTo(c1base);
+      callout1.lineTo(c1base.add(tnormal.multiply(24)).add(ttangent.multiply(6)));
+      callout1.lineTo(c1base.add(tnormal.multiply(24)).subtract(ttangent.multiply(6)));
+      callout1.lineTo(c1base);
+
+      const c2base = pt2.add(ttangent.multiply(20)).add(tnormal.multiply(20));
+      callout2.moveTo(c2base.add(tnormal.multiply(60)));
+      callout2.lineTo(c2base);
+      callout2.lineTo(c2base.add(tnormal.multiply(24)).add(ttangent.multiply(6)));
+      callout2.lineTo(c2base.add(tnormal.multiply(24)).subtract(ttangent.multiply(6)));
+      callout2.lineTo(c2base);
     }
 
   }
@@ -16788,11 +16878,19 @@ class GraphEdge {
   }
 
   /**
+   * Длина ребра по прямой, может отличаться от длины профиля
+   */
+  get length() {
+    const {startVertex, endVertex} = this;
+    return startVertex.point.getDistance(endVertex.point);
+  }
+
+  /**
    * @return {string}
    */
-  getKey() {
+  get key() {
     const {startVertex, endVertex} = this;
-    return `${startVertex.getKey()}_${endVertex.getKey()}`;
+    return `${startVertex.key}_${endVertex.key}`;
   }
 
   /**
@@ -16902,7 +17000,7 @@ class GraphEdge {
    * @return {string}
    */
   toString() {
-    return this.getKey();
+    return this.key;
   }
 }
 
@@ -16940,7 +17038,7 @@ class Graph {
    * @returns {Graph}
    */
   addVertex(newVertex) {
-    this.vertices[newVertex.getKey()] = newVertex;
+    this.vertices[newVertex.key] = newVertex;
     return this;
   }
 
@@ -16972,7 +17070,7 @@ class Graph {
    * @return {Graph}
    */
   deleteVertex(vertex) {
-    delete this.vertices[vertex.getKey()];
+    delete this.vertices[vertex.key];
     return this;
   }
 
@@ -16989,26 +17087,26 @@ class Graph {
    */
   addEdge(edge) {
     // Try to find and end start vertices.
-    let startVertex = this.getVertexByKey(edge.startVertex.getKey());
-    let endVertex = this.getVertexByKey(edge.endVertex.getKey());
+    let startVertex = this.getVertexByKey(edge.startVertex.key);
+    let endVertex = this.getVertexByKey(edge.endVertex.key);
 
     // Insert start vertex if it wasn't inserted.
     if (!startVertex) {
       this.addVertex(edge.startVertex);
-      startVertex = this.getVertexByKey(edge.startVertex.getKey());
+      startVertex = this.getVertexByKey(edge.startVertex.key);
     }
 
     // Insert end vertex if it wasn't inserted.
     if (!endVertex) {
       this.addVertex(edge.endVertex);
-      endVertex = this.getVertexByKey(edge.endVertex.getKey());
+      endVertex = this.getVertexByKey(edge.endVertex.key);
     }
 
     // Check if edge has been already added.
-    if (this.edges[edge.getKey()]) {
+    if (this.edges[edge.key]) {
       throw new Error('Edge has already been added before');
     } else {
-      this.edges[edge.getKey()] = edge;
+      this.edges[edge.key] = edge;
     }
 
     // Add edge to the vertices.
@@ -17034,11 +17132,11 @@ class Graph {
    */
   deleteEdge(edge) {
     // Delete edge from the list of edges.
-    delete this.edges[edge.getKey()];
+    delete this.edges[edge.key];
 
     // Try to find and end start vertices and delete edge from them.
-    const startVertex = this.getVertexByKey(edge.startVertex.getKey());
-    const endVertex = this.getVertexByKey(edge.endVertex.getKey());
+    const startVertex = this.getVertexByKey(edge.startVertex.key);
+    const endVertex = this.getVertexByKey(edge.endVertex.key);
 
     startVertex.deleteEdge(edge);
     endVertex.deleteEdge(edge);
@@ -17052,7 +17150,7 @@ class Graph {
    * @return {(GraphEdge|null)}
    */
   findEdge(startVertex, endVertex) {
-    const vertex = this.getVertexByKey(startVertex.getKey());
+    const vertex = this.getVertexByKey(startVertex.key);
 
     if (!vertex) {
       return null;
@@ -17071,12 +17169,57 @@ class Graph {
   }
 
   /**
+   * @return {Map}
+   */
+  getLengths(vertex, delta) {
+    const res = new Map();
+    const pt = vertex.point.add(delta);
+    const all = this.getAllVertices().filter((v) => v !== vertex);
+    let cmin = Infinity, cmax = -Infinity;
+    if(Math.abs(delta.x) > 1) {
+      for(const curr of all) {
+        const x = curr.point.x.round();
+        if(cmin > x) {
+          cmin = x;
+        }
+        if(cmax < x) {
+          cmax = x;
+        }
+        if(Math.abs(vertex.point.x - x) > 1 && !res.has(x)) {
+          const line = new paper.Line(new paper.Point(x, -100000), new paper.Point(x, 100000));
+          const lold = line.getDistance(vertex.point);
+          let lnew = line.getDistance(pt);
+          if(line.getSide(vertex.point) !== line.getSide(pt)) {
+            lnew *= -1;
+          }
+          res.set(x, [lold, lnew]);
+        }
+      }
+    }
+    if(Math.abs(delta.y) > 1) {
+      for(const curr of all) {
+        const y = curr.point.y.round();
+        if(Math.abs(vertex.point.y - y) > 1 && !res.has(y)) {
+          const line = new paper.Line(new paper.Point(-100000, y), new paper.Point(100000, y));
+          const lold = line.getDistance(vertex.point);
+          let lnew = line.getDistance(pt);
+          if(line.getSide(vertex.point) !== line.getSide(pt)) {
+            lnew *= -1;
+          }
+          res.set(y, [lold, lnew]);
+        }
+      }
+    }
+    return res;
+  }
+
+  /**
    * @return {object}
    */
   getVerticesIndices() {
     const verticesIndices = {};
     this.getAllVertices().forEach((vertex, index) => {
-      verticesIndices[vertex.getKey()] = index;
+      verticesIndices[vertex.key] = index;
     });
 
     return verticesIndices;
@@ -17098,7 +17241,7 @@ class Graph {
     // Fill the columns.
     vertices.forEach((vertex, vertexIndex) => {
       vertex.getNeighbors().forEach((neighbor) => {
-        const neighborIndex = verticesIndices[neighbor.getKey()];
+        const neighborIndex = verticesIndices[neighbor.key];
         adjacencyMatrix[vertexIndex][neighborIndex] = this.findEdge(vertex, neighbor).weight;
       });
     });
@@ -17983,7 +18126,7 @@ class GraphVertex {
   /**
    * @returns {string}
    */
-  getKey() {
+  get key() {
     return this.value;
   }
 
@@ -18010,11 +18153,10 @@ class GraphVertex {
  * @param {GraphEdge} edgeB
  */
 GraphVertex.edgeComparator = (edgeA, edgeB) => {
-  if (edgeA.getKey() === edgeB.getKey()) {
+  if (edgeA.key === edgeB.key) {
     return 0;
   }
-
-  return edgeA.getKey() < edgeB.getKey() ? -1 : 1;
+  return edgeA.key < edgeB.key ? -1 : 1;
 };
 
 
@@ -18748,11 +18890,12 @@ class ProductsBuilding {
      * @return {Number|DataObj}
      */
     function cnn_row(elm1, elm2) {
-      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2});
+      const nodes = ['b', 'e', 't', ''];
+      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: nodes, node2: nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1});
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: nodes, node2: nodes});
       if(res.length) {
         return res[0].row;
       }
@@ -19678,7 +19821,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long}, comparison_types: ct},
+      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
       cch: {properties},
     } = $p;
 
@@ -19726,6 +19869,14 @@ class ProductsBuilding {
             row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
           }
         });
+      }
+      else if(row_base.algorithm === clr_in) {
+        const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
+        row_spec.clr = clrs.composite({clr_in: clr, clr_out: row_base.clr, with_inverted: false, sync: true});
+      }
+      else if(row_base.algorithm === clr_out) {
+        const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
+        row_spec.clr = clrs.composite({clr_in: clr, clr_out: row_base.clr, with_inverted: false, sync: true});
       }
       // длина штапика
       else if([gb_short, gb_long].includes(row_base.algorithm) && len_angl) {
@@ -20465,16 +20616,41 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   }
 
+  // при удалении строки вставок, удаляем параметры и соединения
+  del_row(row) {
+    if(row instanceof $p.CatCharacteristicsInsertsRow) {
+      const {cnstr, inset, region, _owner} = row;
+      const {params} = _owner._owner;
+      if(!inset.empty()) {
+        params.del({cnstr, inset});
+      }
+      if(region) {
+        params.del({cnstr, region});
+      }
+    }
+  }
+
+  // при добавлении строки вставок, устанавливаем ряд
+  add_row(row, attr) {
+    if(row instanceof $p.CatCharacteristicsInsertsRow) {
+      if(attr.inset && !attr.region) {
+        row.inset = attr.inset;
+        attr.region = row.inset.region;
+      }
+    }
+  }
+
   /**
    * Добавляет параметры вставки, пересчитывает признак hide
    * @param inset
    * @param cnstr
-   * @param blank_inset
+   * @param [blank_inset]
+   * @param [region]
    */
-  add_inset_params(inset, cnstr, blank_inset) {
+  add_inset_params(inset, cnstr, blank_inset, region) {
     const ts_params = this.params;
     const params = new Set();
-    const filter = {cnstr, inset: blank_inset || inset};
+    const filter = region ? {cnstr, region} : {cnstr, inset: blank_inset || inset};
 
     ts_params.find_rows(filter, ({param}) => params.add(param));
 
@@ -20482,12 +20658,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     inset.used_params().forEach((param) => {
       if((!param.is_calculated || param.show_calculated) && !params.has(param)) {
         const def = product_params.find({param});
-        ts_params.add({
-          cnstr: cnstr,
-          inset: blank_inset || inset,
-          param: param,
-          value: (def && def.value) || "",
-        });
+        ts_params.add(region ? {cnstr, region, param, value: (def && def.value) || ""} :
+          {cnstr, inset: blank_inset || inset, param, value: (def && def.value) || ""});
         params.add(param);
       }
     });
@@ -21028,18 +21200,19 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
   if(field == 'inset') {
     if (value != this.inset) {
       const {_owner} = this._owner;
-      const {cnstr} = this;
+      const {cnstr, region} = this;
+      const {blank} = $p.utils;
 
       //Проверяем дубли вставок (их не должно быть, иначе параметры перезаписываются)
-      if (value != $p.utils.blank.guid) {
-        const res = _owner.params.find_rows({cnstr, inset: value, row: {not: this.row}});
+      if (value != blank.guid) {
+        const res = _owner.params.find_rows({cnstr, region, inset: value, row: {not: this.row}});
         if (res.length) {
           $p.md.emit('alert', {
             obj: _owner,
             row: this,
             title: $p.msg.data_error,
             type: 'alert-error',
-            text: 'Нельзя добавлять две одинаковые вставки в один контур'
+            text: 'Нельзя добавлять две одинаковые вставки в один элемент или слой'
           });
           return false;
         }
@@ -21049,13 +21222,18 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
       !this.inset.empty() && _owner.params.clear({inset: this.inset, cnstr});
 
       // устанавливаем значение новой вставки
-      this._obj.inset = value;
+      this._obj.inset = value.valueOf();
+
+      // устанавливаем ряд по умолчанию
+      if(!region && this.inset.region) {
+        this._obj.region = this.inset.region;
+      }
 
       // при необходимости, обновим цвет по данным доступных цветов вставки
       this.inset.clr_group.default_clr(this);
 
       // заполняем параметры по умолчанию
-      _owner.add_inset_params(this.inset, cnstr);
+      _owner.add_inset_params(this.inset, cnstr, null, region);
     }
   }
 }
@@ -21078,7 +21256,7 @@ $p.cat.clrs.__define({
 	 * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
 	 * @param clr_elm {CatClrs} - цвет элемента
 	 * @param clr_sch {CatClrs} - цвет изделия
-	 * @return {*}
+	 * @return {CatClrs}
 	 */
   by_predefined: {
     value(clr, clr_elm, clr_sch, elm, spec, row) {
@@ -21148,21 +21326,82 @@ $p.cat.clrs.__define({
   },
 
   /**
+   * ищет по цветам снаружи-изнутри
+   * @return {CatClrs}
+   */
+  by_in_out: {
+    value({clr_in, clr_out}) {
+      const {wsql, utils: {blank}} = $p;
+      // скомпилированный запрос
+      if(!this._by_in_out) {
+        this._by_in_out = wsql.alasql.compile('select top 1 ref from ? where clr_in = ? and clr_out = ? and (not ref = ?)');
+      }
+      // ищем в справочнике цветов
+      const ares = this._by_in_out([this.alatable, clr_in.valueOf(), clr_out.valueOf(), blank.guid]);
+      return this.get(ares[0]);
+    }
+  },
+
+  /**
    * ### Инверсный цвет
    * Возвращает элемент, цвета которого изнутри и снаружи перевёрнуты местами
    * @param clr {CatClrs} - исходный цвет
    */
   inverted: {
     value(clr){
-      const {clr_in, clr_out, ref} = clr;
-      if(clr_in === clr_out || clr_in.empty() || clr_out.empty()){
+      if(clr.clr_in == clr.clr_out || clr.clr_in.empty() || clr.clr_out.empty()) {
         return clr;
       }
-      // ищем в справочнике цветов
-      const rin = clr_in.ref, rout = clr_out.ref;
-      const {blank} = $p.utils;
-      const ares = this.alatable.find(({clr_in, clr_out, ref}) => clr_in === rout && clr_out === rin && ref !== blank.guid);
-      return ares ? this.get(ares) : clr;
+      const by_in_out = this.by_in_out({clr_in: clr.clr_out, clr_out: clr.clr_in});
+      return by_in_out.empty() ? clr : by_in_out;
+    }
+  },
+
+  /**
+   * Клиентская часть создания составного цвета
+   * @param clr_in {CatClrs} - цвет изнутри
+   * @param clr_out {CatClrs} - цвет снаружи
+   * @param with_inverted {Boolean} - создавать инверсный
+   * @param sync {Boolean} - создавать болванку и возвращать её uid перед запросом к общим данным
+   */
+  composite: {
+    value({clr_in, clr_out, with_inverted = true, sync = false}) {
+      const {utils, job_prm, adapters: {pouch}} = $p;
+      let by_in_out = this.by_in_out({clr_in, clr_out});
+      let ref;
+      if(!by_in_out.empty()) {
+        return by_in_out;
+      }
+      if(clr_in.empty()) {
+        return clr_out;
+      }
+      if(clr_out.empty()) {
+        return clr_in;
+      }
+      if(sync) {
+        ref = utils.generate_guid();
+        by_in_out = this.create({
+          ref,
+          clr_in: clr_in.ref,
+          clr_out: clr_out.ref,
+          name: `${clr_in.name} \\ ${clr_out.name}`,
+          parent: job_prm.builder.composite_clr_folder,
+        });
+      }
+      const req = pouch.fetch(pouch.props.path.replace(job_prm.local_storage_prefix, 'common/cat.clrs/composite'), {
+        method: 'POST',
+        body: JSON.stringify({ref, clr_in: clr_in.ref, clr_out: clr_out.ref, with_inverted}),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          this.load_array([res.clr, res.inverted]);
+          // чистим кеш цветогрупп
+          cat.color_price_groups.forEach(({_data}) => {
+            delete _data.clrs;
+          });
+          return this.get(res.clr);
+        });
+      return sync ? by_in_out : req;
     }
   },
 
@@ -22488,10 +22727,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       value(min, max) {
         const res = [];
 
-        if(!this._by_thickness){
+        if(!this._by_thickness) {
           this._by_thickness = new Map();
-          this.find_rows({insert_type: {in: this._types_filling}}, (ins) => {
-            if(ins.thickness > 0){
+          this.find_rows({
+            insert_type: {in: this._types_filling},
+            _top: 10000
+          }, (ins) => {
+            if(ins.thickness) {
               if(!this._by_thickness.has(ins.thickness)) {
                 this._by_thickness.set(ins.thickness, []);
               }
@@ -22501,8 +22743,33 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
 
         if(min instanceof $p.CatProduction_params) {
-          min = min.thicknesses;
+          const {thicknesses, glass_thickness} = min;
           max = 0;
+
+          if(glass_thickness === 0) {
+            min = thicknesses;
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = $p.enm.elm_types;
+            min.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => res.push(nom));
+            return res;
+          }
+          else if(glass_thickness === 2) {
+            const min_in_sys = thicknesses[0];
+            const max_in_sys = thicknesses[thicknesses.length - 1];
+            for (const [thin, arr] of this._by_thickness) {
+              if(thin >= min_in_sys && thin <= max_in_sys) {
+                Array.prototype.push.apply(res, arr);
+              }
+            }
+            return res;
+          }
+          else if(glass_thickness === 3) {
+            for (const obj of this._by_thickness) {
+              Array.prototype.push.apply(res, obj[1]);
+            }
+            return res;
+          }
         }
 
         for (const [thin, arr] of this._by_thickness) {
@@ -22526,7 +22793,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
           " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_inserts AS _t_" +
-          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 1000 ";
+          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 2000 ";
       }
     },
 

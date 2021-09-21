@@ -386,7 +386,7 @@ Object.defineProperties(paper.Path.prototype, {
 
           if(!path1.closed) {
             tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(path1.is_linear){
+            if(path1.is_linear()){
               if(p1last) {
                 path1.lastSegment.point = path1.lastSegment.point.add(tg);
               }
@@ -398,7 +398,7 @@ Object.defineProperties(paper.Path.prototype, {
 
           if(!path2.closed) {
             tg = (p2last ? path2.getTangentAt(path2.length) : path2.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
-            if(path2.is_linear){
+            if(path2.is_linear()){
               if(p2last) {
                 path2.lastSegment.point = path2.lastSegment.point.add(tg);
               }
@@ -663,6 +663,16 @@ Object.defineProperties(paper.Point.prototype, {
         new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
+
+  /**
+   * Выясняет одинаковость направлений векторов
+   */
+  some_angle: {
+    value: function some_angle(point) {
+      const delta = Math.abs(this.angle - point.angle);
+      return delta < 1 || (delta > 179 && delta < 181);
+    }
+  },
 
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {

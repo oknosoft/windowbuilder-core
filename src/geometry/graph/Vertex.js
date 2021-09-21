@@ -153,7 +153,7 @@ class GraphVertex {
   /**
    * @returns {string}
    */
-  getKey() {
+  get key() {
     return this.value;
   }
 
@@ -180,9 +180,8 @@ class GraphVertex {
  * @param {GraphEdge} edgeB
  */
 GraphVertex.edgeComparator = (edgeA, edgeB) => {
-  if (edgeA.getKey() === edgeB.getKey()) {
+  if (edgeA.key === edgeB.key) {
     return 0;
   }
-
-  return edgeA.getKey() < edgeB.getKey() ? -1 : 1;
+  return edgeA.key < edgeB.key ? -1 : 1;
 };

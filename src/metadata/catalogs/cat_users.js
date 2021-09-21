@@ -54,6 +54,6 @@ exports.CatUsersManager = class CatUsersManager extends Object {
 
 }
 
-exports.CatUsersManager._freeze = true;
+//exports.CatUsersManager._freeze = true;
 
 //exports.CatUsers = class CatUsers {};
