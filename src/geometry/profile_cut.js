@@ -17,15 +17,14 @@ class ProfileCut extends BaseLine {
       strokeColor: 'grey',
       fillColor: '',
       strokeScaling: false,
-      strokeWidth: 1,
       dashOffset: 0,
       dashArray: [],
     });
 
     // создаём детей
     const content = this.text_content();
-    new PathUnselectable({parent: this, name: 'callout1', strokeColor: 'black', guide: true, strokeScaling: false, strokeWidth: 1});
-    new PathUnselectable({parent: this, name: 'callout2', strokeColor: 'black', guide: true, strokeScaling: false, strokeWidth: 1});
+    new PathUnselectable({parent: this, name: 'callout1', strokeColor: 'black', guide: true, strokeScaling: false});
+    new PathUnselectable({parent: this, name: 'callout2', strokeColor: 'black', guide: true, strokeScaling: false});
     new PathUnselectable({parent: this, name: 'thick1', strokeColor: 'black', strokeScaling: false, strokeWidth: 5});
     new PathUnselectable({parent: this, name: 'thick2', strokeColor: 'black', strokeScaling: false, strokeWidth: 5});
     new TextUnselectable({
