@@ -349,11 +349,12 @@ class ProfileRays {
       // прибиваем соединения примыкающих к текущему импостов
       const {inner, outer} = parent.joined_imposts();
       const elm2 = parent.elm;
+      const {cnn_nodes} = ProductsBuilding;
       for (const {profile} of inner.concat(outer)) {
         for(const node of ['b', 'e']) {
           const n = profile.rays[node];
           if(n.profile == parent && n.cnn) {
-            cnn_elmnts.clear({elm1: profile, elm2: parent});
+            cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
             n.cnn = null;
           }
         }
@@ -363,12 +364,12 @@ class ProfileRays {
       for (const {_attr, elm} of parent.joined_nearests()) {
         _attr._rays && _attr._rays.clear(true);
         _attr._nearest_cnn = null;
-        cnn_elmnts.clear({elm1: elm, elm2});
+        cnn_elmnts.clear({elm1: elm, node1: cnn_nodes, elm2});
       }
 
       // так же, пересчитываем соединения с примыкающими заполнениями
       parent.layer.glasses(false, true).forEach((glass) => {
-        cnn_elmnts.clear({elm1: glass.elm, elm2});
+        cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
     }
   }

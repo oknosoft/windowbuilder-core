@@ -9550,11 +9550,12 @@ class ProfileRays {
       // прибиваем соединения примыкающих к текущему импостов
       const {inner, outer} = parent.joined_imposts();
       const elm2 = parent.elm;
+      const {cnn_nodes} = ProductsBuilding;
       for (const {profile} of inner.concat(outer)) {
         for(const node of ['b', 'e']) {
           const n = profile.rays[node];
           if(n.profile == parent && n.cnn) {
-            cnn_elmnts.clear({elm1: profile, elm2: parent});
+            cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
             n.cnn = null;
           }
         }
@@ -9564,12 +9565,12 @@ class ProfileRays {
       for (const {_attr, elm} of parent.joined_nearests()) {
         _attr._rays && _attr._rays.clear(true);
         _attr._nearest_cnn = null;
-        cnn_elmnts.clear({elm1: elm, elm2});
+        cnn_elmnts.clear({elm1: elm, node1: cnn_nodes, elm2});
       }
 
       // так же, пересчитываем соединения с примыкающими заполнениями
       parent.layer.glasses(false, true).forEach((glass) => {
-        cnn_elmnts.clear({elm1: glass.elm, elm2});
+        cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
     }
   }
@@ -15499,7 +15500,11 @@ class Scheme extends paper.Project {
       ox.s = this.area;
 
       // чистим табчасти, которые будут перезаполнены
-      ox.cnn_elmnts.clear();
+      const {cnn_nodes} = ProductsBuilding;
+      const {inserts} = ox;
+      ox.cnn_elmnts.clear(({elm1, node1}) => {
+        return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+      });
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях
@@ -17612,12 +17617,12 @@ class ProductsBuilding {
      * @return {Number|DataObj}
      */
     function cnn_row(elm1, elm2) {
-      const nodes = ['b', 'e', 't', ''];
-      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: nodes, node2: nodes});
+      const {cnn_nodes} = ProductsBuilding;
+      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: nodes, node2: nodes});
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
@@ -18745,6 +18750,7 @@ class ProductsBuilding {
 
 }
 
+ProductsBuilding.cnn_nodes = ['b', 'e', 't', ''];
 if(typeof global !== 'undefined'){
   global.ProductsBuilding = ProductsBuilding;
 }
@@ -19342,12 +19348,15 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   del_row(row) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {
       const {cnstr, inset, region, _owner} = row;
-      const {params} = _owner._owner;
+      const {params, cnn_elmnts} = _owner._owner;
       if(!inset.empty()) {
         params.del({cnstr, inset});
       }
       if(region) {
         params.del({cnstr, region});
+        cnn_elmnts.clear(({elm1, node1}) => {
+          return elm1 === -cnstr && node1.endsWith(region.toString());
+        });
       }
     }
   }
@@ -19356,8 +19365,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   add_row(row, attr) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {
       if(attr.inset && !attr.region) {
-        row.inset = attr.inset;
-        attr.region = row.inset.region;
+        attr.region = $p.cat.inserts.get(attr.inset).region;
       }
     }
   }
