@@ -120,11 +120,11 @@ class Scheme extends paper.Project {
 
       obj.sys.refill_prm(ox, 0, true);
 
-      // cменить на  цвет по умолчанию если не входит в список доступных
+      // cменить на цвет по умолчанию если не входит в список доступных
       const clrs = obj.sys.clr_group.clrs();
       if (clrs.length && !clrs.includes(ox.clr)){
         const {default_clr} = obj.sys;
-        set_clr(default_clr.empty() ? default_clr._manager.predefined('Белый') : default_clr);
+        set_clr(default_clr.empty() ? clrs[0] : default_clr);
       }
 
       // обновляем свойства изделия и створки
