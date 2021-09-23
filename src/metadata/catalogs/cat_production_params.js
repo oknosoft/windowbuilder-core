@@ -212,10 +212,6 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     if(!cnstr){
       ox.sys = this;
       ox.owner = ox.prod_nom;
-      //Сменить на  цвет по умолчанию если не входит в список доступных
-      if (!(ox.sys.clr_group.clrs().includes(ox.clr))){
-        ox.clr = ox.sys.default_clr;
-      }
 
       if(project instanceof Contour) {
         return;
