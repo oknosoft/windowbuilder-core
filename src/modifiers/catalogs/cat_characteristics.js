@@ -98,12 +98,15 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   del_row(row) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {
       const {cnstr, inset, region, _owner} = row;
-      const {params} = _owner._owner;
+      const {params, cnn_elmnts} = _owner._owner;
       if(!inset.empty()) {
         params.del({cnstr, inset});
       }
       if(region) {
         params.del({cnstr, region});
+        cnn_elmnts.clear(({elm1, node1}) => {
+          return elm1 === -cnstr && node1.endsWith(region.toString());
+        });
       }
     }
   }
@@ -112,8 +115,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   add_row(row, attr) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {
       if(attr.inset && !attr.region) {
-        row.inset = attr.inset;
-        attr.region = row.inset.region;
+        attr.region = $p.cat.inserts.get(attr.inset).region;
       }
     }
   }

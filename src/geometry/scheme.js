@@ -1068,7 +1068,11 @@ class Scheme extends paper.Project {
       ox.s = this.area;
 
       // чистим табчасти, которые будут перезаполнены
-      ox.cnn_elmnts.clear();
+      const {cnn_nodes} = ProductsBuilding;
+      const {inserts} = ox;
+      ox.cnn_elmnts.clear(({elm1, node1}) => {
+        return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+      });
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях

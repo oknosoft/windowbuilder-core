@@ -32,12 +32,12 @@ class ProductsBuilding {
      * @return {Number|DataObj}
      */
     function cnn_row(elm1, elm2) {
-      const nodes = ['b', 'e', 't', ''];
-      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: nodes, node2: nodes});
+      const {cnn_nodes} = ProductsBuilding;
+      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: nodes, node2: nodes});
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
@@ -1165,6 +1165,7 @@ class ProductsBuilding {
 
 }
 
+ProductsBuilding.cnn_nodes = ['b', 'e', 't', ''];
 if(typeof global !== 'undefined'){
   global.ProductsBuilding = ProductsBuilding;
 }
