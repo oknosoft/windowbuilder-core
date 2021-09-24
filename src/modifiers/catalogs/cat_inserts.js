@@ -1137,6 +1137,95 @@
     }
 
     /**
+     * Дополняет спецификацию изделия спецификацией текущего ряда
+     * @method region_spec
+     * @param elm {BuilderElement}
+     * @param [len_angl] {Object}
+     * @param ox {CatCharacteristics}
+     * @param spec {TabularSection}
+     * @param region {Number}
+     */
+    region_spec({elm, len_angl, ox, spec, region}) {
+      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}}, products_building} = $p;
+      const relm = elm.region(region);
+      const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
+      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];
+      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, e.profile, e.cnn_types, false, undefined, e)[0];
+      if(cnn1 && cnn2) {
+        const row_cnn_prev = cnn1.main_row(relm);
+        const row_cnn_next = cnn2.main_row(relm);
+        const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
+        const row_base = row_cnn_prev || row_cnn_next;
+        if(row_base) {
+          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, spec, ox});
+          row_spec.qty = row_base.quantity;
+
+          // длина с учетом соединений
+          row_spec.len = (_row.len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
+
+          // припуск для гнутых элементов
+          if(!elm.is_linear()) {
+            row_spec.len = row_spec.len + row_spec.nom.arc_elongation / 1000;
+          }
+
+          // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
+          if(!row_cnn_prev.formula.empty()) {
+            row_cnn_prev.formula.execute({
+              ox,
+              elm: relm,
+              inset: this,
+              row_cnn: row_cnn_prev || row_cnn_next,
+              row_spec
+            });
+          }
+          else if(!row_cnn_next.formula.empty()) {
+            row_cnn_next.formula.execute({
+              ox,
+              elm: relm,
+              inset: this,
+              row_cnn: row_cnn_next|| row_cnn_prev,
+              row_spec
+            });
+          }
+
+          // РассчитатьКоличествоПлощадьМассу
+          const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
+          const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
+          calc_count_area_mass(
+            row_spec,
+            spec,
+            _row,
+            angle_calc_method_prev,
+            angle_calc_method_next,
+            angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? b.profile.generatrix.angle_between(elm.generatrix, b.point) : 0,
+            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0
+          );
+
+          // добавляем спецификации соединений
+          const len_angl = {
+            angle: 0,
+            alp1: b.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+            alp2: e.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
+            len: row_spec ? row_spec.len * 1000 : _row.len,
+            art1: false,
+            art2: true,
+            node: 'e',
+          };
+          len_angl.angle = len_angl.alp2;
+          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, e.profile);
+          // с дрйгой стороны
+          len_angl.angle = len_angl.alp1;
+          len_angl.art2 = false;
+          len_angl.art1 = true;
+          len_angl.node = 'b';
+          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, b.profile);
+        }
+      }
+      // спецификация вставки
+      this.calculate_spec({elm: relm, len_angl, ox, spec});
+    }
+
+    /**
      * Возвращает толщину вставки
      *
      * @property thickness

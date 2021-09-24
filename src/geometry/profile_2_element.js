@@ -446,7 +446,8 @@ class Profile extends ProfileItem {
     // возаращает строку соединяемых элементов для ряда
     function cn_row(prop, add) {
       let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
-      const {profile, profile_point} = rays[node1] || {};
+      const cnn_point = rays[node1] || {};
+      const {profile, profile_point} = cnn_point;
       node1 += num;
       const node2 = profile_point ? (profile_point + num) : `t${num}`;
       const elm2 = profile ? profile.elm : 0;
@@ -454,7 +455,7 @@ class Profile extends ProfileItem {
       if(!row && add) {
         row = _ox.cnn_elmnts.add({elm1: elm, elm2, node1, node2});
       }
-      return row;
+      return add === 0 ? {row, cnn_point} : row;
     }
 
     if(!_attr._ranges) {
@@ -476,6 +477,11 @@ class Profile extends ProfileItem {
               cn[prop] = row ? row.cnn : cnns.get();
             }
             return cn[prop];
+
+          case 'cnn1_row':
+          case 'cnn2_row':
+          case 'cnn3_row':
+            return cn_row(prop.substr(0, 4), 0);
 
           case 'rnum':
             return num;

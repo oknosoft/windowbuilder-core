@@ -497,7 +497,7 @@ class ProductsBuilding {
       const spec_tmp = spec;
 
       // спецификация вложенных в элемент вставок
-      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
+      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
 
         // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
@@ -514,7 +514,14 @@ class ProductsBuilding {
         len_angl.cnstr = -elm.elm;
         delete len_angl.art1;
         delete len_angl.art2;
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        delete len_angl.node;
+        if(region) {
+          inset.region_spec({elm, len_angl, ox, spec, region});
+        }
+        else {
+          inset.calculate_spec({elm, len_angl, ox, spec});
+        }
+
 
       });
       spec = spec_tmp;
@@ -772,10 +779,12 @@ class ProductsBuilding {
 
     }
 
+    this.cnn_add_spec = cnn_add_spec;
+
     /**
      * Пересчет спецификации при записи изделия
      */
-    this.recalc = function (scheme, attr) {
+    this.recalc = function recalc(scheme, attr) {
 
       // console.time('base_spec');
       // console.profile();
