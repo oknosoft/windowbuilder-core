@@ -247,7 +247,6 @@ class DimensionLine extends paper.Group {
           }
       });
 
-      let need_redraw;
       // двигаем целые профили
       if(move_shapes.length) {
         for(const profile of move_shapes) {
@@ -260,7 +259,7 @@ class DimensionLine extends paper.Group {
         });
         project.mover.move_shapes(vertexes);
         project.deselectAll();
-        need_redraw = true;
+        project.register_change(true);
       }
 
       // двигаем отдельные узлы
@@ -278,15 +277,11 @@ class DimensionLine extends paper.Group {
         });
         project.move_points(mdelta);
         project.deselectAll();
-        need_redraw = true;
+        project.register_change(true);
       }
 
-      need_redraw && project.redraw();
+      project.redraw();
 
-
-      // project.move_points(delta, false);
-      // project.deselect_all_points(true);
-      // project.register_update();
     }
 
   }

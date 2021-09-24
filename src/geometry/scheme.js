@@ -89,6 +89,14 @@ class Scheme extends paper.Project {
 
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
+    const set_clr = (clr) => {
+      ox.clr = clr;
+      this.getItems({class: ProfileItem}).forEach((elm) => {
+        if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
+          elm.clr = clr;
+        }
+      });
+    };
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
@@ -105,17 +113,19 @@ class Scheme extends paper.Project {
     }
 
     if(fields.hasOwnProperty('clr')) {
-      ox.clr = obj.clr;
-      this.getItems({class: BuilderElement}).forEach((elm) => {
-        if(!(elm instanceof Onlay) && !(elm instanceof Filling)) {
-          elm.clr = obj.clr;
-        }
-      });
+      set_clr(obj.clr);
     }
 
     if(fields.hasOwnProperty('sys') && !obj.sys.empty()) {
 
       obj.sys.refill_prm(ox, 0, true);
+
+      // cменить на цвет по умолчанию если не входит в список доступных
+      const clrs = obj.sys.clr_group.clrs();
+      if (clrs.length && !clrs.includes(ox.clr)){
+        const {default_clr} = obj.sys;
+        set_clr(default_clr.empty() ? clrs[0] : default_clr);
+      }
 
       // обновляем свойства изделия и створки
       obj._manager.emit_async('rows', obj, {extra_fields: true});
@@ -1055,7 +1065,11 @@ class Scheme extends paper.Project {
       ox.s = this.area;
 
       // чистим табчасти, которые будут перезаполнены
-      ox.cnn_elmnts.clear();
+      const {cnn_nodes} = ProductsBuilding;
+      const {inserts} = ox;
+      ox.cnn_elmnts.clear(({elm1, node1}) => {
+        return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+      });
       ox.glasses.clear();
 
       // вызываем метод save_coordinates в дочерних слоях

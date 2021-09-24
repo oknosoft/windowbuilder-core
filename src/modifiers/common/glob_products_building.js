@@ -32,12 +32,12 @@ class ProductsBuilding {
      * @return {Number|DataObj}
      */
     function cnn_row(elm1, elm2) {
-      const nodes = ['b', 'e', 't', ''];
-      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: nodes, node2: nodes});
+      const {cnn_nodes} = ProductsBuilding;
+      let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: nodes, node2: nodes});
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
@@ -497,7 +497,7 @@ class ProductsBuilding {
       const spec_tmp = spec;
 
       // спецификация вложенных в элемент вставок
-      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
+      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
 
         // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
@@ -514,7 +514,14 @@ class ProductsBuilding {
         len_angl.cnstr = -elm.elm;
         delete len_angl.art1;
         delete len_angl.art2;
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        delete len_angl.node;
+        if(region) {
+          inset.region_spec({elm, len_angl, ox, spec, region});
+        }
+        else {
+          inset.calculate_spec({elm, len_angl, ox, spec});
+        }
+
 
       });
       spec = spec_tmp;
@@ -772,10 +779,12 @@ class ProductsBuilding {
 
     }
 
+    this.cnn_add_spec = cnn_add_spec;
+
     /**
      * Пересчет спецификации при записи изделия
      */
-    this.recalc = function (scheme, attr) {
+    this.recalc = function recalc(scheme, attr) {
 
       // console.time('base_spec');
       // console.profile();
@@ -1165,6 +1174,7 @@ class ProductsBuilding {
 
 }
 
+ProductsBuilding.cnn_nodes = ['b', 'e', 't', ''];
 if(typeof global !== 'undefined'){
   global.ProductsBuilding = ProductsBuilding;
 }

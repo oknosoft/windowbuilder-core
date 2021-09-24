@@ -1489,7 +1489,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }, props, {
           strokeColor: 'lightgray',
           strokeOpacity: 0.5,
-          strokeWidth: 1,
           fillColor: 'gray',
           opacity: 0.6,
         }));
@@ -1504,7 +1503,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }, props, {
           strokeColor: 'lightgray',
           strokeOpacity: 0.5,
-          strokeWidth: 1,
           fillColor: 'lightgray',
           opacity: 0.6,
         }));
@@ -1570,7 +1568,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           shadowBlur: 20,
           shadowOffset: [10, 20],
           opacity: 0.7,
-          strokeWidth: 1,
           strokeScaling: false,
           closed: true,
           segments: [
