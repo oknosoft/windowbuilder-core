@@ -10662,6 +10662,22 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Дополняет cnn_point свойствами соединения
+   *
+   * @method postcalc_cnn
+   * @param node {String} b, e - начало или конец элемента
+   * @return CnnPoint
+   */
+  postcalc_cnn(node) {
+    const cnn_point = this.cnn_point(node);
+    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
+    if(!cnn_point.point) {
+      cnn_point.point = this[node];
+    }
+    return cnn_point;
+  }
+
+  /**
    * ### Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
    *
@@ -11224,8 +11240,8 @@ class ProfileItem extends GeneratrixElement {
       return this;
     }
     // получаем узлы
-    const bcnn = this.cnn_point('b');
-    const ecnn = this.cnn_point('e');
+    const bcnn = this.postcalc_cnn('b');
+    const ecnn = this.postcalc_cnn('e');
     const {path, generatrix, rays} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями
@@ -11950,50 +11966,53 @@ class Profile extends ProfileItem {
     }
 
     // Если привязка не нарушена, возвращаем предыдущее значение
+    let ok;
     if(profile && profile.children.length) {
       if(!project.has_changes()) {
-        return res;
+        ok = true;
       }
-      if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
-        return res;
+      else if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
+        ok = true;
       }
     }
 
     // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
-    res.clear();
-    if(parent) {
-      const {allow_open_cnn} = project._dp.sys;
-      const ares = [];
+    if(!ok) {
+      res.clear();
+      if(parent) {
+        const {allow_open_cnn} = project._dp.sys;
+        const ares = [];
 
-      for(const profile of parent.profiles) {
-        if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
-          ares.push({
-            profile_point: res.profile_point,
-            profile: profile,
-            cnn_types: res.cnn_types,
-            point: res.point
-          });
-          res.clear();
-        }
-      }
-
-      if(ares.length === 1) {
-        res._mixin(ares[0]);
-      }
-      // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
-      else if(ares.length >= 2) {
-        if(this.max_right_angle(ares)) {
-          res._mixin(ares[0]);
-          // если установленное ранее соединение проходит по типу, нового не ищем
-          if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
-            res.cnn = cnn;
+        for(const profile of parent.profiles) {
+          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
+            ares.push({
+              profile_point: res.profile_point,
+              profile: profile,
+              cnn_types: res.cnn_types,
+              point: res.point
+            });
+            res.clear();
           }
         }
-        // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
-        else {
-          res.clear();
+
+        if(ares.length === 1) {
+          res._mixin(ares[0]);
         }
-        res.is_cut = true;
+        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
+        else if(ares.length >= 2) {
+          if(this.max_right_angle(ares)) {
+            res._mixin(ares[0]);
+            // если установленное ранее соединение проходит по типу, нового не ищем
+            if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
+              res.cnn = cnn;
+            }
+          }
+          // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
+          else {
+            res.clear();
+          }
+          res.is_cut = true;
+        }
       }
     }
 
@@ -13764,21 +13783,8 @@ class ProfileNestedContent extends Profile {
       super(attr);
       this._attr._nearest = pelm;
     }
-
-
   }
 
-  postcalc_cnn(node) {
-    const cnn_point = this.cnn_point(node);
-
-    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn);
-
-    if(!cnn_point.point) {
-      cnn_point.point = this[node];
-    }
-
-    return cnn_point;
-  }
 
   move_points(delta, all_points, start_point) {
     if(delta && delta._dimln) {
@@ -14492,6 +14498,8 @@ class Scheme extends paper.Project {
         this.register_change(true);
       }
     }
+
+    this._ch.length && this.redraw();
 
   }
 
@@ -17223,9 +17231,7 @@ class Graph {
         }
       }
     }
-    return Array.from(res).sort(([f1, [a]], [f2, [b]]) => {
-      return b - a;
-    });
+    return Array.from(res).sort(([f1, [a]], [f2, [b]]) => b - a);
   }
 
   /**

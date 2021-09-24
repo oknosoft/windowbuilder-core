@@ -1515,6 +1515,22 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Дополняет cnn_point свойствами соединения
+   *
+   * @method postcalc_cnn
+   * @param node {String} b, e - начало или конец элемента
+   * @return CnnPoint
+   */
+  postcalc_cnn(node) {
+    const cnn_point = this.cnn_point(node);
+    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
+    if(!cnn_point.point) {
+      cnn_point.point = this[node];
+    }
+    return cnn_point;
+  }
+
+  /**
    * ### Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
    *
@@ -2077,8 +2093,8 @@ class ProfileItem extends GeneratrixElement {
       return this;
     }
     // получаем узлы
-    const bcnn = this.cnn_point('b');
-    const ecnn = this.cnn_point('e');
+    const bcnn = this.postcalc_cnn('b');
+    const ecnn = this.postcalc_cnn('e');
     const {path, generatrix, rays} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями

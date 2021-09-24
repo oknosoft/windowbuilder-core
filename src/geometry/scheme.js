@@ -154,6 +154,8 @@ class Scheme extends paper.Project {
       }
     }
 
+    this._ch.length && this.redraw();
+
   }
 
   /**

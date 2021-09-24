@@ -204,9 +204,7 @@ class Graph {
         }
       }
     }
-    return Array.from(res).sort(([f1, [a]], [f2, [b]]) => {
-      return b - a;
-    });
+    return Array.from(res).sort(([f1, [a]], [f2, [b]]) => b - a);
   }
 
   /**
