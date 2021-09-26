@@ -693,7 +693,7 @@ class Scheme extends paper.Project {
         // перерисовываем соединительные профили
         this.l_connective.redraw();
 
-        // обновляем связи параметров изделия
+        // TODO: обновляем связи параметров изделия
         isBrowser && with_links && !_attr._silent && contours[0].refresh_prm_links(true);
 
         // перерисовываем все контуры

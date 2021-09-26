@@ -66,8 +66,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set x1(v) {
     const {bounds} = this.project;
-    if(bounds && (v = parseFloat(v) + bounds.x - this.b.x)){
-      this.select_node("b");
+    if(bounds && (v = parseFloat(v) + bounds.x - this.b.x)) {
+      this.select_node('b');
       this.move_points(new paper.Point(v, 0));
     }
   }
@@ -84,8 +84,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set y1(v) {
     const {bounds} = this.project;
-    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.b.y)){
-      this.select_node("b");
+    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.b.y)) {
+      this.select_node('b');
       this.move_points(new paper.Point(0, v));
     }
   }
@@ -102,8 +102,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set x2(v) {
     const {bounds} = this.project;
-    if(bounds && (v = parseFloat(v) + bounds.x - this.e.x)){
-      this.select_node("e");
+    if(bounds && (v = parseFloat(v) + bounds.x - this.e.x)) {
+      this.select_node('e');
       this.move_points(new paper.Point(v, 0));
     }
   }
@@ -120,8 +120,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set y2(v) {
     const {bounds} = this.project;
-    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.e.y)){
-      this.select_node("e");
+    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.e.y)) {
+      this.select_node('e');
       this.move_points(new paper.Point(0, v));
     }
   }
@@ -135,13 +135,13 @@ class GeneratrixElement extends BuilderElement {
   select_node(node) {
     const {generatrix, project, _attr, view} = this;
     project.deselect_all_points();
-    if(_attr.path){
+    if(_attr.path) {
       _attr.path.selected = false;
     }
-    if(node == "b"){
+    if(node == 'b') {
       generatrix.firstSegment.selected = true;
     }
-    else{
+    else {
       generatrix.lastSegment.selected = true;
     }
     view.update();
