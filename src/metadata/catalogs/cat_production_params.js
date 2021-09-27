@@ -34,21 +34,11 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
   get tmin() {
-    if (this.glass_thickness === 3) {
-      return 0;
-    } else {
-      return this.thicknesses[0];
-    }
-
-
-
+    return this.glass_thickness === 3 ? 0 : this.thicknesses[0];
   }
+
   get tmax() {
-      if (this.glass_thickness === 3) {
-        return Infinity;
-      } else {
-        return this.thicknesses[this.thicknesses.length - 1];
-      }
+    return this.glass_thickness === 3 ? Infinity : this.thicknesses[this.thicknesses.length - 1];
   }
 
   /**

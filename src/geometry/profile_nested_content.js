@@ -53,21 +53,8 @@ class ProfileNestedContent extends Profile {
       super(attr);
       this._attr._nearest = pelm;
     }
-
-
   }
 
-  postcalc_cnn(node) {
-    const cnn_point = this.cnn_point(node);
-
-    cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn);
-
-    if(!cnn_point.point) {
-      cnn_point.point = this[node];
-    }
-
-    return cnn_point;
-  }
 
   move_points(delta, all_points, start_point) {
     if(delta && delta._dimln) {
