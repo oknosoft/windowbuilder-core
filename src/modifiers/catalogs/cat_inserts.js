@@ -700,17 +700,18 @@
 
 
       if(elm instanceof EditorInvisible.Filling) {
-        // проверяем площадь
-        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
-          return false;
-        }
-        // и фильтр по габаритам
+
+
         if(row instanceof CatInserts) {
-          const {width, height} = elm.bounds;
-          if((row.lmin > width) || (row.lmax && row.lmax < width) || (row.hmin > height) || (row.hmax && row.hmax < height)){
-            return false;
-          }
-        }
+            // фильтр по габаритам и площади
+          if (!elm.check_sizes_inset(row)) {
+                return false;
+              }
+        } else
+         // проверяем площадь
+                if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+                  return false;
+                }
       }
       else {
         // только для прямых или только для кривых профилей

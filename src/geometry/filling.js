@@ -603,6 +603,60 @@ class Filling extends AbstractFilling(BuilderElement) {
 
 
   /**
+   *проверка
+   *подходит ли вставка для  Элемента
+   *@return{Boolean}
+   */
+   check_sizes_inset(inset) {
+    const {
+
+      form_area,
+      bounds: {
+        width,
+        height
+      }
+
+    } = this;
+
+    /*А если вставка не определенна,
+    проверять нечего,     вернём false*/
+    if (inset.empty()) {
+      return false;
+    }
+
+    const {
+      lmin,
+      lmax,
+      hmin,
+      hmax,
+      smin,
+      smax,
+      can_rotate
+    } = inset;
+
+    /*Площадь не зависит от поворота */
+    if (form_area < smin || form_area > smax) {
+      return false;
+    }
+
+    /*Если можно вращать то проверим 2 варианта расположения*/
+    if (can_rotate) {
+      /*w(Ширина)(1or2)вариант
+        h(Высота)(1or2)вариант */
+      let w1 = (width >= lmin && width <= lmax);
+      let h1 = (height >= hmin && height <= hmax);
+      let w2 = (height >= lmin && height <= lmax);
+      let h2 = (width >= hmin && width <= hmax);
+      if (!((w1 && h1) || (w2 && h2))) {
+        return false;
+      }
+
+    } else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
+      return false;
+    }
+    return true;
+  }
+  /**
    * Габаритная площадь заполнения
    * @return {number}
    */
