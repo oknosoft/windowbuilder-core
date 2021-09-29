@@ -1629,7 +1629,42 @@ get main_currency(){return this._getter('main_currency')}
 set main_currency(v){this._setter('main_currency',v)}
 get parameters_russian_recipe(){return this._getter('parameters_russian_recipe')}
 set parameters_russian_recipe(v){this._setter('parameters_russian_recipe',v)}
-}
+
+
+  to_currency(amount, date, to) {
+    if(this == to){
+      return amount;
+    }
+
+    const {job_prm: {pricing}, wsql} = $p;
+
+    if(!to || to.empty()){
+      to = pricing.main_currency;
+    }
+
+    if(!date){
+      date = new Date();
+    }
+    if(!this._manager.cource_sql){
+      this._manager.cource_sql = wsql.alasql.compile('select top 1 * from `ireg_currency_courses` where `currency` = ? and `period` <= ? order by `period` desc');
+    }
+
+    let cfrom = {course: 1, multiplicity: 1}, cto = {course: 1, multiplicity: 1};
+    if(this !== pricing.main_currency){
+      const tmp = this._manager.cource_sql([this.ref, date]);
+      if(tmp.length) {
+        cfrom = tmp[0];
+      }
+    }
+    if(to !== pricing.main_currency){
+      const tmp = this._manager.cource_sql([to.ref, date]);
+      if(tmp.length) {
+        cto = tmp[0];
+      }
+    }
+
+    return (amount * cfrom.course / cfrom.multiplicity) * cto.multiplicity / cto.course;
+  }}
 $p.CatCurrencies = CatCurrencies;
 $p.cat.create('currencies');
 
@@ -2056,10 +2091,10 @@ set demand(v){this._setter_ts('demand',v)}
    * @private
    */
   _price(attr) {
-    const {job_prm, utils, cat, pricing} = this._manager._owner.$p;
+    const {job_prm: {pricing}, utils, cat} = this._manager._owner.$p;
 
     let price = 0,
-      currency = job_prm.pricing.main_currency,
+      currency = pricing.main_currency,
       start_date = utils.blank.date;
 
     if(!attr){
@@ -2173,7 +2208,7 @@ set demand(v){this._setter_ts('demand',v)}
     }
 
     // Пересчитать из валюты в валюту
-    return pricing.from_currency_to_currency(price, attr.date, currency, attr.currency);
+    return currency.to_currency(price, attr.date, attr.currency);
   }
 
   /**
