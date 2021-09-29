@@ -139,7 +139,7 @@ class Pricing {
    */
   by_doc({goods, date}) {
     const {cat: {nom, currencies, characteristics}, utils} = $p;
-
+    const fix_date = utils.fix_date(date, true);
     for(const row of goods) {
       const currency = currencies.get(row.currency);
       const onom = nom.get(row.nom, true);
@@ -163,7 +163,7 @@ class Pricing {
       }
       onom._data._price[key1][key2].push({
         currency: currency,
-        date: utils.fix_date(date, true),
+        date: fix_date,
         price: row.price
       });
 
