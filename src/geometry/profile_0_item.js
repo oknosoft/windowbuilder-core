@@ -1540,13 +1540,10 @@ class ProfileItem extends GeneratrixElement {
    */
   postcalc_cnn(node) {
     const cnn_point = this.cnn_point(node);
-
     cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
-
     if(!cnn_point.point) {
       cnn_point.point = this[node];
     }
-
     return cnn_point;
   }
 
