@@ -4990,19 +4990,28 @@ class DimensionLine extends paper.Group {
         break;
 
       case 'auto':
-        const {impost, pos, elm1, elm2} = this._attr;
+        const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
         const {positions} = $p.enm;
         if(pos == 'top' || pos == 'bottom') {
           event.name = 'right';
-          if(impost && pos == 'bottom' && elm2.pos === positions.right) {
+          if(impost && elm2.pos === positions.right) {
+            event.name = 'left';
+          }
+          else if(project.contours.length > 1 && layer.is_pos && layer.is_pos('left')) {
             event.name = 'left';
           }
           this._move_points(event, 'x');
         }
         if(pos == 'left' || pos == 'right') {
           event.name = 'top';
-          if(impost && pos == 'right' && elm2.pos === positions.top) {
+          if(impost && elm2.pos === positions.top) {
             event.name = 'bottom';
+          }
+          else if(project.contours.length > 1) {
+            const other = project.contours.find((v) => v !== layer);
+            if(layer.bounds.top === other.bounds.top || layer.bounds.height < other.bounds.height) {
+              event.name = 'bottom';
+            }
           }
           this._move_points(event, 'y');
         }
@@ -7866,8 +7875,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set x1(v) {
     const {bounds} = this.project;
-    if(bounds && (v = parseFloat(v) + bounds.x - this.b.x)){
-      this.select_node("b");
+    if(bounds && (v = parseFloat(v) + bounds.x - this.b.x)) {
+      this.select_node('b');
       this.move_points(new paper.Point(v, 0));
     }
   }
@@ -7884,8 +7893,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set y1(v) {
     const {bounds} = this.project;
-    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.b.y)){
-      this.select_node("b");
+    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.b.y)) {
+      this.select_node('b');
       this.move_points(new paper.Point(0, v));
     }
   }
@@ -7902,8 +7911,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set x2(v) {
     const {bounds} = this.project;
-    if(bounds && (v = parseFloat(v) + bounds.x - this.e.x)){
-      this.select_node("e");
+    if(bounds && (v = parseFloat(v) + bounds.x - this.e.x)) {
+      this.select_node('e');
       this.move_points(new paper.Point(v, 0));
     }
   }
@@ -7920,8 +7929,8 @@ class GeneratrixElement extends BuilderElement {
   }
   set y2(v) {
     const {bounds} = this.project;
-    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.e.y)){
-      this.select_node("e");
+    if(bounds && (v = bounds.height + bounds.y - parseFloat(v) - this.e.y)) {
+      this.select_node('e');
       this.move_points(new paper.Point(0, v));
     }
   }
@@ -7935,13 +7944,13 @@ class GeneratrixElement extends BuilderElement {
   select_node(node) {
     const {generatrix, project, _attr, view} = this;
     project.deselect_all_points();
-    if(_attr.path){
+    if(_attr.path) {
       _attr.path.selected = false;
     }
-    if(node == "b"){
+    if(node == 'b') {
       generatrix.firstSegment.selected = true;
     }
-    else{
+    else {
       generatrix.lastSegment.selected = true;
     }
     view.update();
@@ -7954,7 +7963,7 @@ class GeneratrixElement extends BuilderElement {
    */
   move_gen(delta) {
 
-    // сразу получаем сегменты примыкающих импостов
+    // сразу получаем сегменты примыкающих импостов и створок
     const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
     const isegments = [];
     imposts.inner.concat(imposts.outer).forEach(({profile}) => {
@@ -7966,6 +7975,7 @@ class GeneratrixElement extends BuilderElement {
         isegments.push({profile, node: 'e'});
       }
     });
+    const nearests = this.joined_nearests();
 
     // угловые соединения b, e
     const {generatrix, rays} = this;
@@ -7985,6 +7995,12 @@ class GeneratrixElement extends BuilderElement {
       profile.do_sub_bind(this, node);
       profile.rays.clear();
     });
+
+    // ранняя привязка створок
+    for(const profile of nearests) {
+      profile.move_gen(delta);
+    }
+
     rays.clear();
 
   }
@@ -15038,7 +15054,7 @@ class Scheme extends paper.Project {
         // перерисовываем соединительные профили
         this.l_connective.redraw();
 
-        // обновляем связи параметров изделия
+        // TODO: обновляем связи параметров изделия
         isBrowser && with_links && !_attr._silent && contours[0].refresh_prm_links(true);
 
         // перерисовываем все контуры
@@ -18219,7 +18235,7 @@ class Pricing {
     }
 
     // сначала, пытаемся из local
-    return this.by_range()
+    return this.by_range({})
       .then(() => {
         const {doc: {calc_order}, wsql} = $p;
         // излучаем событие "можно открывать формы"
@@ -18239,7 +18255,7 @@ class Pricing {
           }).on('change', (change) => {
             // формируем новый
             if(change.doc.class_name == 'doc.nom_prices_setup') {
-              setTimeout(() => this.by_doc(change.doc), 500);
+              this.by_doc(change.doc);
             }
             else if(change.doc.class_name == calc_order.class_name) {
               if(pouch.props.user_node) {
@@ -18257,66 +18273,32 @@ class Pricing {
       });
   }
 
-  build_cache(rows) {
-    const {nom, currencies} = $p.cat;
-    //const note = 'Индекс цен номенклатуры';
-    for(const {key, value} of rows){
-      const onom = nom.get(key[0], false, true);
-      if (!onom || !onom._data){
- //       $p.record_log({
- //         class: 'error',
- //         note,
- //         obj: {nom: key[0], value}
- //       });
-        continue;
-      }
-      if (!onom._data._price){
-        onom._data._price = {};
-      }
-      const {_price} = onom._data;
-
-      if (!_price[key[1]]){
-        _price[key[1]] = {};
-      }
-      _price[key[1]][key[2]] = value.map((v) => ({
-        date: new Date(v.date),
-        currency: currencies.get(v.currency),
-        price: v.price
-      }));
+  /**
+   * Грузит после паузы при изменении документа установки цен
+   * пауза нужна, чтобы не создавать водопад при пакетном изменении документов
+   * индекс в этом случае, надо пересчитывать один наз, а не на каждый документ
+   * @param [force] {Boolean}
+   */
+  deffered_load_prices(log, force) {
+    const {job_prm: {server}, cat: {nom}, adapters: {pouch}} = $p;
+    if(this.prices_timeout) {
+      clearTimeout(this.prices_timeout);
+      this.prices_timeout = 0;
     }
-  }
-
-  build_cache_local(prices) {
-
-    const {nom, currencies} = $p.cat;
-    const note = 'Индекс цен номенклатуры';
-    const date = new Date('2010-01-01');
-
-    for(const ref in prices) {
-      if(ref[0] === '_' || ref === 'remote_rev') {
-        continue;
-      }
-      const onom = nom.get(ref, false, true);
-      const value = prices[ref];
-
-      if (!onom || !onom._data){
-        // $p.record_log({
-        //   class: 'error',
-        //   note,
-        //   obj: {nom: ref, value}
-        // });
-        continue;
-      }
-      onom._data._price = value;
-
-      for(const cref in value){
-        for(const pref in value[cref]) {
-          const price = value[cref][pref][0];
-          price.date = date;
-          price.currency = currencies.get(price.currency);
+    if(!force) {
+      const defer = server ? server.defer : 200000;
+      this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
+      return;
+    }
+    // чистим старые цены
+    for(const onom of nom) {
+      if (onom._data && onom._data._price) {
+        for(const cx in onom._data._price) {
+          delete onom._data._price[cx];
         }
       }
     }
+    this.by_range({log}).then(() => pouch.emit('nom_price'));
   }
 
   /**
@@ -18324,29 +18306,27 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_range(startkey, step = 0) {
+  by_range({bookmark, step=1, limit=50, log=null}) {
+    const {utils, adapters: {pouch}} = $p;
 
-    const {pouch} = $p.adapters;
-    const limit = 1200;
+    (log || console.log)(`load_prices: page №${step}`);
 
-    return pouch.local.doc.query('server_nom_prices/slice_last',
-        {
-          limit,
-          include_docs: false,
-          startkey: startkey || [''],
-          endkey: ['\ufff0'],
-          reduce: true,
-          group: true,
-        })
+    return utils.sleep(200)
+      .then(() => pouch.remote.doc.find({
+        selector: {
+          class_name: 'doc.nom_prices_setup',
+          posted: true,
+        },
+        limit,
+        bookmark,
+      }))
       .then((res) => {
-        this.build_cache(res.rows);
-        pouch.emit('nom_prices', ++step);
-        if (res.rows.length === limit) {
-          return this.by_range(res.rows[res.rows.length - 1].key, step);
+        step++;
+        bookmark = res.bookmark;
+        for (const doc of res.docs) {
+          this.by_doc(doc);
         }
-      })
-      .catch((err) => {
-        $p.record_log(err);
+        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log}) : 'done';
       });
   }
 
@@ -18355,19 +18335,39 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_doc({goods}) {
-    const {adapters: {pouch}, utils: {blank}} = $p
-    const keys = goods.map(({nom, nom_characteristic, price_type}) => [nom, nom_characteristic || blank.guid, price_type]);
-    return pouch.local.doc.query('server_nom_prices/slice_last',
-        {
-          include_docs: false,
-          keys: keys,
-          reduce: true,
-          group: true,
-        })
-      .then((res) => {
-        this.build_cache(res.rows);
+  by_doc({goods, date}) {
+    const {cat: {nom, currencies, characteristics}, utils} = $p;
+    date = utils.fix_date(date, true);
+    for(const row of goods) {
+      const currency = currencies.get(row.currency);
+      const onom = nom.get(row.nom, true);
+      const characteristic = characteristics.get(row.nom_characteristic, true);
+
+      // если в озу нет подходящей номенклатуры или в строке не задан тип цен - уходим
+      if (!onom || !onom._data || !row.price_type){
+        continue;
+      }
+
+      if (!onom._data._price) {
+        onom._data._price = {};
+      }
+      const key1 = characteristic ? characteristic.ref : utils.blank.guid;
+      if (!onom._data._price[key1]) {
+        onom._data._price[key1] = {};
+      }
+      const key2 = row.price_type.valueOf();
+      if (!onom._data._price[key1][key2]) {
+        onom._data._price[key1][key2] = [];
+      }
+      onom._data._price[key1][key2].push({
+        currency,
+        date,
+        price: row.price
       });
+
+      // сразу сортируем массив по датам, т.к. порядок используется в других местах
+      onom._data._price[key1][key2].sort((a, b) => b.date - a.date);
+    }
   }
 
   /**
@@ -18683,187 +18683,9 @@ class Pricing {
    * @return {Number}
    */
   from_currency_to_currency (amount, date, from, to) {
-
-    const {main_currency} = $p.job_prm.pricing;
-
-    if(!to || to.empty()){
-      to = main_currency;
-    }
-    if(!from || from.empty()){
-      from = main_currency;
-    }
-    if(from == to){
-      return amount;
-    }
-    if(!date){
-      date = new Date();
-    }
-    if(!this.cource_sql){
-      this.cource_sql = $p.wsql.alasql.compile("select top 1 * from `ireg_currency_courses` where `currency` = ? and `period` <= ? order by `period` desc");
-    }
-
-    let cfrom = {course: 1, multiplicity: 1},
-      cto = {course: 1, multiplicity: 1};
-    if(from != main_currency){
-      const tmp = this.cource_sql([from.ref, date]);
-      if(tmp.length)
-        cfrom = tmp[0];
-    }
-    if(to != main_currency){
-      const tmp = this.cource_sql([to.ref, date]);
-      if(tmp.length)
-        cto = tmp[0];
-    }
-
-    return (amount * cfrom.course / cfrom.multiplicity) * cto.multiplicity / cto.course;
+    return from.to_currency(amount, date, to);
   }
 
-  /**
-   * Выгружает в CouchDB изменённые в RAM справочники
-   */
-  cut_upload () {
-
-    if(!$p.current_user.role_available("СогласованиеРасчетовЗаказов") && !$p.current_user.role_available("ИзменениеТехнологическойНСИ")){
-      $p.msg.show_msg({
-        type: "alert-error",
-        text: $p.msg.error_low_acl,
-        title: $p.msg.error_rights
-      });
-      return true;
-    }
-
-    function upload_acc() {
-      const mgrs = [
-        "cat.users",
-        "cat.individuals",
-        "cat.organizations",
-        "cat.partners",
-        "cat.contracts",
-        "cat.currencies",
-        "cat.nom_prices_types",
-        "cat.price_groups",
-        "cat.cashboxes",
-        "cat.partner_bank_accounts",
-        "cat.organization_bank_accounts",
-        "cat.projects",
-        "cat.stores",
-        "cat.cash_flow_articles",
-        "cat.cost_items",
-        "cat.price_groups",
-        "cat.delivery_areas",
-        "ireg.currency_courses",
-        "ireg.margin_coefficients"
-      ];
-
-      const {pouch} = $p.adapters;
-      pouch.local.ram.replicate.to(pouch.remote.ram, {
-        filter: (doc) => mgrs.indexOf(doc._id.split("|")[0]) != -1
-      })
-        .on('change', (info) => {
-          //handle change
-
-        })
-        .on('paused', (err) => {
-          // replication paused (e.g. replication up to date, user went offline)
-
-        })
-        .on('active', () => {
-          // replicate resumed (e.g. new changes replicating, user went back online)
-
-        })
-        .on('denied', (err) => {
-          // a document failed to replicate (e.g. due to permissions)
-          $p.msg.show_msg(err.reason);
-          $p.record_log(err);
-
-        })
-        .on('complete', (info) => {
-
-          if($p.current_user.role_available("ИзменениеТехнологическойНСИ"))
-            upload_tech();
-
-          else
-            $p.msg.show_msg({
-              type: "alert-info",
-              text: $p.msg.sync_complite,
-              title: $p.msg.sync_title
-            });
-
-        })
-        .on('error', (err) => {
-          $p.msg.show_msg(err.reason);
-          $p.record_log(err);
-
-        });
-    }
-
-    function upload_tech() {
-      const mgrs = [
-        "cat.units",
-        "cat.nom",
-        "cat.nom_groups",
-        "cat.nom_units",
-        "cat.nom_kinds",
-        "cat.elm_visualization",
-        "cat.destinations",
-        "cat.property_values",
-        "cat.property_values_hierarchy",
-        "cat.inserts",
-        "cat.insert_bind",
-        "cat.color_price_groups",
-        "cat.clrs",
-        "cat.furns",
-        "cat.cnns",
-        "cat.production_params",
-        "cat.parameters_keys",
-        "cat.formulas",
-        "cch.properties",
-        "cch.predefined_elmnts"
-
-      ];
-      const {pouch} = $p.adapters;
-      pouch.local.ram.replicate.to(pouch.remote.ram, {
-        filter: (doc) => mgrs.indexOf(doc._id.split("|")[0]) != -1
-      })
-        .on('change', (info) => {
-          //handle change
-
-        })
-        .on('paused', (err) => {
-          // replication paused (e.g. replication up to date, user went offline)
-
-        })
-        .on('active', () => {
-          // replicate resumed (e.g. new changes replicating, user went back online)
-
-        })
-        .on('denied', (err) => {
-          // a document failed to replicate (e.g. due to permissions)
-          $p.msg.show_msg(err.reason);
-          $p.record_log(err);
-
-        })
-        .on('complete', (info) => {
-          $p.msg.show_msg({
-            type: "alert-info",
-            text: $p.msg.sync_complite,
-            title: $p.msg.sync_title
-          });
-
-        })
-        .on('error', (err) => {
-          $p.msg.show_msg(err.reason);
-          $p.record_log(err);
-
-        });
-    }
-
-    if($p.current_user.role_available("СогласованиеРасчетовЗаказов"))
-      upload_acc();
-    else
-      upload_tech();
-
-  }
 
 }
 
@@ -18871,9 +18693,6 @@ class Pricing {
 /**
  * ### Модуль Ценообразование
  * Аналог УПзП-шного __ЦенообразованиеСервер__ в контексте MetaEngine
- *
- * @property pricing
- * @type Pricing
  */
 $p.pricing = new Pricing($p);
 
@@ -24223,7 +24042,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
-    this.amount_operation = pricing.from_currency_to_currency(doc_amount, this.date, this.doc_currency).round(rounding);
+    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.date).round(rounding);
 
     if (errors.size) {
       let critical, text = '';

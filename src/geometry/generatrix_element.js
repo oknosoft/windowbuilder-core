@@ -154,7 +154,7 @@ class GeneratrixElement extends BuilderElement {
    */
   move_gen(delta) {
 
-    // сразу получаем сегменты примыкающих импостов
+    // сразу получаем сегменты примыкающих импостов и створок
     const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
     const isegments = [];
     imposts.inner.concat(imposts.outer).forEach(({profile}) => {
@@ -166,6 +166,7 @@ class GeneratrixElement extends BuilderElement {
         isegments.push({profile, node: 'e'});
       }
     });
+    const nearests = this.joined_nearests();
 
     // угловые соединения b, e
     const {generatrix, rays} = this;
@@ -185,6 +186,12 @@ class GeneratrixElement extends BuilderElement {
       profile.do_sub_bind(this, node);
       profile.rays.clear();
     });
+
+    // ранняя привязка створок
+    for(const profile of nearests) {
+      profile.move_gen(delta);
+    }
+
     rays.clear();
 
   }
