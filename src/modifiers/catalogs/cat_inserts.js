@@ -270,7 +270,7 @@
      * @param max {Number|undefined}
      * @return {Array.<CatInserts>}
      */
-     by_thickness: {
+    by_thickness: {
       value(min, max) {
         const res = [];
 

@@ -9157,6 +9157,16 @@ Object.defineProperties(paper.Point.prototype, {
 		}
 	},
 
+  /**
+   * Выясняет одинаковость направлений векторов
+   */
+  some_angle: {
+    value: function some_angle(point) {
+      const delta = Math.abs(this.angle - point.angle);
+      return delta < 1 || (delta > 179 && delta < 181);
+    }
+  },
+
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
       return activeLayer && activeLayer.nodes.some((point) => {
@@ -10795,7 +10805,7 @@ class ProfileItem extends GeneratrixElement {
       this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset}), true);
     }
     if(nearest) {
-      _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn);
+      _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn || project.elm_cnn(this, nearest));
     }
   }
 
@@ -15403,6 +15413,7 @@ class Scheme extends paper.Project {
       }
     }
 
+    const {Импост} = $p.enm.elm_types;
     for (const item of selected) {
       const {parent, layer} = item;
 
@@ -15422,7 +15433,7 @@ class Scheme extends paper.Project {
         else if(!parent.nearest || !parent.nearest()) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
-          if(auto_align && parent.elm_type === $p.enm.elm_types.Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
+          if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
             continue;
           }
 
@@ -21253,7 +21264,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param max {Number|undefined}
      * @return {Array.<CatInserts>}
      */
-     by_thickness: {
+    by_thickness: {
       value(min, max) {
         const res = [];
 

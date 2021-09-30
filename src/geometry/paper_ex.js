@@ -664,6 +664,16 @@ Object.defineProperties(paper.Point.prototype, {
 		}
 	},
 
+  /**
+   * Выясняет одинаковость направлений векторов
+   */
+  some_angle: {
+    value: function some_angle(point) {
+      const delta = Math.abs(this.angle - point.angle);
+      return delta < 1 || (delta > 179 && delta < 181);
+    }
+  },
+
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
       return activeLayer && activeLayer.nodes.some((point) => {
