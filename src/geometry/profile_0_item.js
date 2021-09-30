@@ -321,41 +321,39 @@ class ProfileRays {
       this.e.clear();
     }
     if(with_cnn === 'with_neighbor') {
+      const {cnns} = $p.cat;
       const {parent} = this;
       delete parent._attr.d0;
 
       // прибиваем соединения в точках b и e
-      const b = parent.cnn_point('b');
-      const e = parent.cnn_point('e');
-      const {cnn_elmnts} = parent.ox;
-
-      if(b.profile && b.profile_point == 'e') {
-        const {_rays, _corns} = b.profile._attr;
-        if(_rays) {
-          _rays.clear();
-          _rays.e.cnn = null;
-          _corns.length = 0;
-        }
-      }
-      if(e.profile && e.profile_point == 'b') {
-        const {_rays, _corns} = e.profile._attr;
-        if(_rays) {
-          _rays.clear();
-          _rays.b.cnn = null;
-          _corns.length = 0;
+      for(const node of ['b', 'e']) {
+        const {profile, profile_point} = parent.cnn_point(node);
+        const other = node === 'b' ? 'e' : 'b';
+        if(profile && profile_point == other) {
+          const {_rays, _corns} = profile._attr;
+          if(_rays) {
+            _rays.clear();
+            _corns.length = 0;
+            const cnn_point = _rays[other];
+            cnn_point.cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
+          }
         }
       }
 
       // прибиваем соединения примыкающих к текущему импостов
       const {inner, outer} = parent.joined_imposts();
       const elm2 = parent.elm;
+      const {cnn_elmnts} = parent.ox;
       const {cnn_nodes} = ProductsBuilding;
       for (const {profile} of inner.concat(outer)) {
         for(const node of ['b', 'e']) {
-          const n = profile.rays[node];
-          if(n.profile == parent && n.cnn) {
-            cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
-            n.cnn = null;
+          const cnn_point = profile.rays[node];
+          if(cnn_point.profile == parent && cnn_point.cnn) {
+            const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
+            if(cnn !== cnn_point.cnn) {
+              cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
+              cnn_point.cnn = cnn;
+            }
           }
         }
       }
