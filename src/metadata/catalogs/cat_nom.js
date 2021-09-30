@@ -138,10 +138,10 @@ exports.CatNom = class CatNom extends Object {
    * @private
    */
   _price(attr) {
-    const {job_prm, utils, cat, pricing} = this._manager._owner.$p;
+    const {job_prm: {pricing}, utils, cat} = this._manager._owner.$p;
 
     let price = 0,
-      currency = job_prm.pricing.main_currency,
+      currency = pricing.main_currency,
       start_date = utils.blank.date;
 
     if(!attr){
@@ -255,7 +255,7 @@ exports.CatNom = class CatNom extends Object {
     }
 
     // Пересчитать из валюты в валюту
-    return pricing.from_currency_to_currency(price, attr.date, currency, attr.currency);
+    return currency.to_currency(price, attr.date, attr.currency);
   }
 
   /**

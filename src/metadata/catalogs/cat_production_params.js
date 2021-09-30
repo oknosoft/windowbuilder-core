@@ -33,6 +33,14 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     return _data.thin;
   }
 
+  get tmin() {
+    return this.glass_thickness === 3 ? 0 : this.thicknesses[0];
+  }
+
+  get tmax() {
+    return this.glass_thickness === 3 ? Infinity : this.thicknesses[this.thicknesses.length - 1];
+  }
+
   /**
    * возвращает доступные в данной системе фурнитуры
    * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура

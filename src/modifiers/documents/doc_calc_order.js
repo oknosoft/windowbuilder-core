@@ -261,7 +261,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
-    this.amount_operation = pricing.from_currency_to_currency(doc_amount, this.date, this.doc_currency).round(rounding);
+    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.date).round(rounding);
 
     if (errors.size) {
       let critical, text = '';
