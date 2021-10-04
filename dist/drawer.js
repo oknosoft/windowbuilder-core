@@ -2330,27 +2330,25 @@ class Contour extends AbstractFilling(paper.Layer) {
     // ошибки соединений с заполнениями
     this.glasses(false, true).forEach(glass => {
       let err;
-      glass.profiles.forEach(({cnn, sub_path}) => {
+      const {_row, path, profiles, imposts, inset} = glass;
+      _row.s = glass.form_area;
+
+      profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {
           Object.assign(sub_path, err_attrs);
           err = true;
         }
       });
-      if (err || glass.path.is_self_intersected()) {
+
+      if (err || path.is_self_intersected() || !inset.check_base_restrictions(inset, glass)) {
         glass.fill_error();
       }
       else {
-        const {form_area, inset: {smin, smax, lmin, lmax, hmin, hmax}, bounds: {width, height}} = glass;
-        if((smin && smin > form_area) || (smax && smax < form_area) ||
-          (lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
-          glass.fill_error();
-        }
-        else {
-          glass.path.fillColor = BuilderElement.clr_by_clr.call(glass, glass._row.clr, false);
-        }
+        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr, false);
       }
+
       // Ошибки соединений Onlay в этом заполнении
-      glass.imposts.forEach((impost) => {
+      imposts.forEach((impost) => {
         if(impost instanceof Onlay) {
           const {b, e} = impost._attr._rays;
           const oerr_attrs = Object.assign({radius: 50}, err_attrs);
@@ -21454,6 +21452,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     /**
      * Возвращает номенклатуру вставки в завсисмости от свойств элемента
+     * @param elm {BuilderElement}
+     * @param [strict] {Boolean} - строгий режим
      */
     nom(elm, strict) {
 
@@ -21506,19 +21506,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     /**
      * Ширина основной номенклатуры вставки
-     * @param elm
-     * @param strict
+     * @param elm {BuilderElement}
+     * @param [strict] {Boolean} - строгий режим
      * @return {*|number}
      */
     width(elm, strict) {
       const {_data} = this;
-      if(!_data.width) {
-        // если у всех основных номенклатур одинаковая ширина, её и возвращаем без фильтра
-        const widths = new Set();
-        this.specification._obj.filter(({is_main_elm}) => is_main_elm).forEach(({_row}) => widths.add(_row.nom.width));
-        _data.width = widths.size === 1 ? widths.values()[0] : -1;
+      if(!_data.width || strict) {
+        _data.width = this.nom(elm, strict).width || 80;
       }
-      return (_data.width > 0 ? _data.width : this.nom(elm, strict).width) || 80;
+      return _data.width;
     }
 
     /**
@@ -21690,8 +21687,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      */
     check_base_restrictions(row, elm) {
       const {_row} = elm;
-      const is_linear = elm.is_linear ? elm.is_linear() : true;
-
 
       if(elm instanceof EditorInvisible.Filling) {
         // проверяем площадь
@@ -21701,12 +21696,24 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         // и фильтр по габаритам
         if(row instanceof CatInserts) {
           const {width, height} = elm.bounds;
-          if((row.lmin > width) || (row.lmax && row.lmax < width) || (row.hmin > height) || (row.hmax && row.hmax < height)){
+          const {lmin, lmax, hmin, hmax, can_rotate} = row;
+          // Если можно вращать то проверим 2 направления
+          if (can_rotate) {
+            const w1 = width > lmin && width < lmax;
+            const h1 = height > hmin && height < hmax;
+            const w2 = height > lmin && height < lmax;
+            const h2 = width > hmin && width < hmax;
+            if (!((w1 && h1) || (w2 && h2))) {
+              return false;
+            }
+          }
+          else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
             return false;
           }
         }
       }
       else {
+        const is_linear = elm.is_linear ? elm.is_linear() : true;
         // только для прямых или только для кривых профилей
         if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
           return false;
