@@ -532,20 +532,33 @@ set applying(v){this._setter_ts('applying',v)}
           throw `Источник '${src.name}' не поддержан`;
         }
       }
-      const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
-      params.find_rows({
-        param: this,
-        cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
-        inset,
-      }, (row) => {
-        if(!prow || row.cnstr) {
+      const {rnum} = elm;
+      if(rnum) {
+        params.find_rows({
+          param: this,
+          cnstr: -elm.elm,
+          region: rnum,
+        }, (row) => {
           prow = row;
-        }
-      });
+          return false;
+        });
+      }
+      else {
+        const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
+        params.find_rows({
+          param: this,
+          cnstr: cnstr || (elm._row ? {in: [0, -elm._row.elm]} : 0),
+          inset,
+        }, (row) => {
+          if(!prow || row.cnstr) {
+            prow = row;
+          }
+        });
+      }
       if(!prow && (cnstr0 || elm0)) {
         params.find_rows({
           param: this,
-          cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.row]} : 0),
+          cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.elm]} : 0),
           inset,
         }, (row) => {
           if(!prow || row.cnstr) {
