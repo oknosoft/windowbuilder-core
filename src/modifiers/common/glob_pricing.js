@@ -137,11 +137,11 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_doc({goods, date}) {
+  by_doc({goods, date, currency}) {
     const {cat: {nom, currencies, characteristics}, utils} = $p;
     date = utils.fix_date(date, true);
+    currency = currencies.get(currency);
     for(const row of goods) {
-      const currency = currencies.get(row.currency);
       const onom = nom.get(row.nom, true);
       const characteristic = characteristics.get(row.nom_characteristic, true);
 
