@@ -61,12 +61,39 @@ exports.CatNom = class CatNom extends Object {
    */
   get grouping() {
     if(!this.hasOwnProperty('_grouping')){
-      const {extra_fields, _manager: {_owner}} = this;
-      extra_fields.find_rows({property: _owner.$p.job_prm.properties.grouping}, (row) => {
-        this._grouping = row.value.name;
-      });
+      const {extra_fields, _manager} = this;
+      if(!_manager.hasOwnProperty('_grouping')) {
+        _manager._grouping = _manager._owner.$p.cch.properties.predefined('grouping');
+      }
+      if(_manager._grouping) {
+        const row = extra_fields.find({property: _manager._grouping});
+        this._grouping = row ? row.value.name : '';
+      }
+      else {
+        this._grouping = '';
+      }
     }
-    return this._grouping || '';
+    return this._grouping;
+  }
+
+  /**
+   * Возвращает значение допреквизита минимальный объём
+   */
+  get min_volume() {
+    if(!this.hasOwnProperty('_min_volume')){
+      const {extra_fields, _manager} = this;
+      if(!_manager.hasOwnProperty('_min_volume')) {
+        _manager._min_volume = _manager._owner.$p.cch.properties.predefined('min_volume');
+      }
+      if(_manager._min_volume) {
+        const row = extra_fields.find({property: _manager._min_volume});
+        this._min_volume = row ? row.value : 0;
+      }
+      else {
+        this._min_volume = 0;
+      }
+    }
+    return this._min_volume;
   }
 
   /**

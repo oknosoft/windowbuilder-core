@@ -1166,7 +1166,7 @@ class ProductsBuilding {
       row_spec.totqty = row_spec.qty;
     }
 
-    row_spec.totqty1 = row_spec.totqty * row_spec.nom.loss_factor;
+    row_spec.totqty1 = Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));
