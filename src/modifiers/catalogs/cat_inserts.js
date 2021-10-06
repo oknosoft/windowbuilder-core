@@ -1153,7 +1153,7 @@
      * @param region {Number}
      */
     region_spec({elm, len_angl, ox, spec, region}) {
-      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}}, products_building} = $p;
+      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
       const relm = elm.region(region);
       const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
       const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];
@@ -1168,11 +1168,14 @@
           row_spec.qty = row_base.quantity;
 
           // длина с учетом соединений
-          row_spec.len = (_row.len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
+          const k001 = 0.001;
+          const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?
+            elm.generatrix.length : _row.len;
+          row_spec.len = (len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
 
           // припуск для гнутых элементов
           if(!elm.is_linear()) {
-            row_spec.len = row_spec.len + row_spec.nom.arc_elongation / 1000;
+            row_spec.len = row_spec.len + row_spec.nom.arc_elongation * k001;
           }
 
           // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации

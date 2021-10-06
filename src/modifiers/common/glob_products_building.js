@@ -88,7 +88,7 @@ class ProductsBuilding {
       if(!cnn) {
         return;
       }
-      const {enm: {predefined_formulas: {gb_short, gb_long}, cnn_types}, CatInserts, utils} = $p;
+      const {enm: {predefined_formulas: {gb_short, gb_long, w2}, cnn_types}, CatInserts, utils} = $p;
       const sign = cnn.cnn_type == cnn_types.ii ? -1 : 1;
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
@@ -101,6 +101,9 @@ class ProductsBuilding {
           if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
             const tmp_len_angl = Object.assign({}, len_angl);
             tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
+            if(row_base.algorithm === w2 && elm2) {
+
+            }
             nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox});
           }
           else {
@@ -135,7 +138,12 @@ class ProductsBuilding {
                 });
               }
               if(!finded) {
-                sz *= 2;
+                if(row_base.algorithm === w2 && elm2) {
+
+                }
+                else {
+                  sz *= 2;
+                }
               }
               if(!row_spec.qty && finded && len_angl.art1) {
                 row_spec.qty = qty;
@@ -177,7 +185,6 @@ class ProductsBuilding {
 
       });
     }
-
 
     /**
      * Спецификации фурнитуры
@@ -343,7 +350,7 @@ class ProductsBuilding {
      */
     function base_spec_profile(elm) {
 
-      const {enm: {angle_calculating_ways, cnn_types}, cat, utils: {blank}} = $p;
+      const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
@@ -383,8 +390,15 @@ class ProductsBuilding {
           row_cnn_next.angle_calc_method == seam && _row.alp2 > 0 ? row_cnn_next.sz * d45 / Math.sin(_row.alp2 / 180 * Math.PI) : row_cnn_next.sz
         ) : 0;
 
+        const k001 = 0.001;
         row_spec.len = (_row.len - dprev - dnext)
-          * ((row_cnn_prev ? row_cnn_prev.coefficient : 0.001) + (row_cnn_next ? row_cnn_next.coefficient : 0.001)) / 2;
+          * ((row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
+        if(row_cnn_prev && row_cnn_prev.algorithm === w2) {
+          row_spec.len += prev.width * k001;
+        }
+        if(row_cnn_next && row_cnn_next.algorithm === w2) {
+          row_spec.len += next.width * k001;
+        }
 
         // profile._len - то, что получится после обработки
         // row_spec.len - сколько взять (отрезать)
@@ -392,11 +406,11 @@ class ProductsBuilding {
         _row.len = (_row.len
           - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
           - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
-          * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : 0.001) + (row_cnn_next ? row_cnn_next.coefficient : 0.001)) / 2;
+          * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
 
         // припуск для гнутых элементов
         if(!elm.is_linear()) {
-          row_spec.len = row_spec.len + _row.nom.arc_elongation / 1000;
+          row_spec.len = row_spec.len + _row.nom.arc_elongation * k001;
         }
 
         // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
