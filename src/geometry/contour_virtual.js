@@ -18,6 +18,11 @@ class ContourVirtual extends Contour {
     }
   }
 
+  presentation(bounds) {
+    const text = super.presentation(bounds);
+    return text.replace('Створка', 'Виртуал');
+  }
+
   save_coordinates(short) {
 
     if (!short) {
