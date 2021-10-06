@@ -3669,12 +3669,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else {
         // заполнения проверяем по толщине
-        if(refill || elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax) {
+        const {thickness, project} = elm;
+        const {tmin, tmax} = project._dp.sys
+        if(refill || thickness < tmin || thickness > tmax) {
           let {elm_type} = elm.nom;
           if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
             elm_type = elm_types.Стекло;
           }
-          elm._row.inset = elm.project.default_inset({elm_type: [elm_type]});
+          elm._row.inset = project.default_inset({elm_type: [elm_type]});
         }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
@@ -5954,7 +5956,7 @@ class BuilderElement extends paper.Group {
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
-      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
@@ -6007,7 +6009,7 @@ class BuilderElement extends paper.Group {
             if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
               /*разбор параметра glass_thickness*/
               if(glass_thickness === 0) {
-                return thicknesses.includes(insert.thickness);
+                return thicknesses.includes(insert.thickness(this));
               }
               else if(glass_thickness === 1) {
                 const {Заполнение, Стекло} = elm_types;
@@ -6018,11 +6020,8 @@ class BuilderElement extends paper.Group {
 
               }
               else if(glass_thickness === 2) {
-                let min = thicknesses[0];
-                let max = thicknesses[thicknesses.length - 1];
-                if(insert.thickness >= min && insert.thickness <= max) {
-                  return true;
-                }
+                const thickness = insert.thickness(this);
+                return thickness >= thicknesses[0] && thickness <= thicknesses[thicknesses.length - 1];
               }
               else if(glass_thickness === 3) {
                 return true;
@@ -6050,11 +6049,14 @@ class BuilderElement extends paper.Group {
           selection = {elm_type: elm_types.Добор};
         }
         else if(this instanceof Profile) {
+          const {Любое} = positions;
           if(this.nearest()) {
-            selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
+            selection = {pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
           }
           else {
-            selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+            selection = {pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
           }
         }
         else {
@@ -6225,7 +6227,7 @@ class BuilderElement extends paper.Group {
 
   // толщина (для заполнений и, возможно, профилей в 3D)
   get thickness() {
-    return this.inset.thickness;
+    return this.inset.thickness(this);
   }
 
   // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
@@ -6789,7 +6791,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, layer, profiles, bounds, imposts, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, imposts, area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -6800,10 +6802,10 @@ class Filling extends AbstractFilling(BuilderElement) {
       formula: this.formula(),
       width: bounds.width,
       height: bounds.height,
-      s: this.area,
+      s: area,
       is_rectangular: this.is_rectangular,
       is_sandwich: nom.elm_type == $p.enm.elm_types.Заполнение,
-      thickness: this.thickness,
+      thickness,
     });
 
     let curr, prev,	next
@@ -6813,7 +6815,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.y1 = (h - bounds.bottomLeft.y).round(3);
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.s = this.area;
+    _row.s = area;
     if(layer instanceof ContourNestedContent) {
       const {lbounds} = layer.layer;
       const path = this.path.clone({insert: false});
@@ -7631,19 +7633,15 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(!_attr._ins_proxy || _attr._ins_proxy.ref != _row.inset){
       _attr._ins_proxy = new Proxy(_row.inset, {
         get: (target, prop) => {
-          switch (prop){
-            case 'presentation':
-              return this.formula();
-
-            case 'thickness':
-              let res = 0;
-              ox.glass_specification.find_rows({elm: this.elm}, (row) => {
-                res += row.inset.thickness;
-              });
-              return res || _row.inset.thickness;
-
-            default:
-              return target[prop];
+          switch (prop) {
+          case 'presentation':
+            return this.formula();
+          case 'thickness':
+            return this._thickness;
+          case 'target':
+            return target;
+          default:
+            return target[prop];
           }
         }
       });
@@ -7652,6 +7650,14 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   set inset(v) {
     this.set_inset(v);
+  }
+
+  _thickness(elm) {
+    let res = 0;
+    elm.ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+      res += inset.thickness(elm);
+    });
+    return res || this.target.thickness(elm);
   }
 
 }
@@ -17022,11 +17028,11 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_doc({goods, date}) {
+  by_doc({goods, date, currency}) {
     const {cat: {nom, currencies, characteristics}, utils} = $p;
     date = utils.fix_date(date, true);
+    currency = currencies.get(currency);
     for(const row of goods) {
-      const currency = currencies.get(row.currency);
       const onom = nom.get(row.nom, true);
       const characteristic = characteristics.get(row.nom_characteristic, true);
 
@@ -17046,11 +17052,7 @@ class Pricing {
       if (!onom._data._price[key1][key2]) {
         onom._data._price[key1][key2] = [];
       }
-      onom._data._price[key1][key2].push({
-        currency,
-        date,
-        price: row.price
-      });
+      onom._data._price[key1][key2].push({currency, date, price: row.price});
 
       // сразу сортируем массив по датам, т.к. порядок используется в других местах
       onom._data._price[key1][key2].sort((a, b) => b.date - a.date);
@@ -18551,7 +18553,7 @@ class ProductsBuilding {
       row_spec.totqty = row_spec.qty;
     }
 
-    row_spec.totqty1 = row_spec.totqty * row_spec.nom.loss_factor;
+    row_spec.totqty1 = Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));
@@ -21268,15 +21270,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
         if(!this._by_thickness) {
           this._by_thickness = new Map();
-          this.find_rows({
-            insert_type: {in: this._types_filling},
-            _top: 10000
-          }, (ins) => {
-            if(ins.thickness) {
-              if(!this._by_thickness.has(ins.thickness)) {
-                this._by_thickness.set(ins.thickness, []);
+          this.find_rows({insert_type: {in: this._types_filling}, _top: 10000}, (ins) => {
+            const thickness = ins.thickness();
+            if(thickness) {
+              if(!this._by_thickness.has(thickness)) {
+                this._by_thickness.set(thickness, []);
               }
-              this._by_thickness.get(ins.thickness).push(ins);
+              this._by_thickness.get(thickness).push(ins);
             }
           });
         }
@@ -21464,7 +21464,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       let _nom;
-      const main_rows = this.main_rows(elm, !elm && strict);
+      const main_rows = this.main_rows(elm, strict);
 
       if(main_rows.length && main_rows[0].nom instanceof CatInserts){
         if(main_rows[0].nom == this) {
@@ -22228,26 +22228,49 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     /**
      * Возвращает толщину вставки
-     *
-     * @property thickness
-     * @return {Number}
+     * @param {elm} {BuilderElement}
+     * @param [strict] {Number}
+     * @return {number}
      */
-    get thickness() {
+    thickness(elm, strict) {
+
+      if(elm) {
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
+          return nom.thickness;
+        }
+        const {check_params} = ProductsBuilding;
+        const {_ox} = elm.layer;
+        let thickness = 0;
+        for(const row of this.specification) {
+          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({
+            params: this.selection_params,
+            ox: _ox,
+            elm,
+            row_spec: row,
+            cnstr: 0,
+            origin: elm.fake_origin || 0,
+          })) {
+            const {nom} = row;
+            thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+          }
+        }
+        return thickness;
+      }
 
       const {_data} = this;
-
-      if(!_data.hasOwnProperty("thickness")){
+      if(!_data.hasOwnProperty('thickness')) {
         _data.thickness = 0;
-        const nom = this.nom(null, true);
-        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)){
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
           _data.thickness = nom.thickness;
         }
-        else{
-          this.specification.forEach(({nom, quantity}) => {
+        else {
+          for(const {nom, quantity} of this.specification) {
             if(nom && quantity) {
-              _data.thickness += nom.thickness;
+              _data.thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
             }
-          });
+          }
         }
       }
 

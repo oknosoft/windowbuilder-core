@@ -134,7 +134,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, layer, profiles, bounds, imposts, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, imposts, area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -145,10 +145,10 @@ class Filling extends AbstractFilling(BuilderElement) {
       formula: this.formula(),
       width: bounds.width,
       height: bounds.height,
-      s: this.area,
+      s: area,
       is_rectangular: this.is_rectangular,
       is_sandwich: nom.elm_type == $p.enm.elm_types.Заполнение,
-      thickness: this.thickness,
+      thickness,
     });
 
     let curr, prev,	next
@@ -158,7 +158,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.y1 = (h - bounds.bottomLeft.y).round(3);
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.s = this.area;
+    _row.s = area;
     if(layer instanceof ContourNestedContent) {
       const {lbounds} = layer.layer;
       const path = this.path.clone({insert: false});
@@ -976,19 +976,15 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(!_attr._ins_proxy || _attr._ins_proxy.ref != _row.inset){
       _attr._ins_proxy = new Proxy(_row.inset, {
         get: (target, prop) => {
-          switch (prop){
-            case 'presentation':
-              return this.formula();
-
-            case 'thickness':
-              let res = 0;
-              ox.glass_specification.find_rows({elm: this.elm}, (row) => {
-                res += row.inset.thickness;
-              });
-              return res || _row.inset.thickness;
-
-            default:
-              return target[prop];
+          switch (prop) {
+          case 'presentation':
+            return this.formula();
+          case 'thickness':
+            return this._thickness;
+          case 'target':
+            return target;
+          default:
+            return target[prop];
           }
         }
       });
@@ -997,6 +993,14 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   set inset(v) {
     this.set_inset(v);
+  }
+
+  _thickness(elm) {
+    let res = 0;
+    elm.ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+      res += inset.thickness(elm);
+    });
+    return res || this.target.thickness(elm);
   }
 
 }

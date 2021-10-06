@@ -227,7 +227,7 @@ class BuilderElement extends paper.Group {
             if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
               /*разбор параметра glass_thickness*/
               if(glass_thickness === 0) {
-                return thicknesses.includes(insert.thickness);
+                return thicknesses.includes(insert.thickness(this));
               }
               else if(glass_thickness === 1) {
                 const {Заполнение, Стекло} = elm_types;
@@ -238,11 +238,8 @@ class BuilderElement extends paper.Group {
 
               }
               else if(glass_thickness === 2) {
-                let min = thicknesses[0];
-                let max = thicknesses[thicknesses.length - 1];
-                if(insert.thickness >= min && insert.thickness <= max) {
-                  return true;
-                }
+                const thickness = insert.thickness(this);
+                return thickness >= thicknesses[0] && thickness <= thicknesses[thicknesses.length - 1];
               }
               else if(glass_thickness === 3) {
                 return true;
@@ -448,7 +445,7 @@ class BuilderElement extends paper.Group {
 
   // толщина (для заполнений и, возможно, профилей в 3D)
   get thickness() {
-    return this.inset.thickness;
+    return this.inset.thickness(this);
   }
 
   // опорный размер (0 для рам и створок, 1/2 ширины для импостов)

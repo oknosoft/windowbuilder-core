@@ -2678,12 +2678,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else {
         // заполнения проверяем по толщине
-        if(refill || elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax) {
+        const {thickness, project} = elm;
+        const {tmin, tmax} = project._dp.sys
+        if(refill || thickness < tmin || thickness > tmax) {
           let {elm_type} = elm.nom;
           if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
             elm_type = elm_types.Стекло;
           }
-          elm._row.inset = elm.project.default_inset({elm_type: [elm_type]});
+          elm._row.inset = project.default_inset({elm_type: [elm_type]});
         }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {

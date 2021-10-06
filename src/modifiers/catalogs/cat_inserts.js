@@ -276,15 +276,13 @@
 
         if(!this._by_thickness) {
           this._by_thickness = new Map();
-          this.find_rows({
-            insert_type: {in: this._types_filling},
-            _top: 10000
-          }, (ins) => {
-            if(ins.thickness) {
-              if(!this._by_thickness.has(ins.thickness)) {
-                this._by_thickness.set(ins.thickness, []);
+          this.find_rows({insert_type: {in: this._types_filling}, _top: 10000}, (ins) => {
+            const thickness = ins.thickness();
+            if(thickness) {
+              if(!this._by_thickness.has(thickness)) {
+                this._by_thickness.set(thickness, []);
               }
-              this._by_thickness.get(ins.thickness).push(ins);
+              this._by_thickness.get(thickness).push(ins);
             }
           });
         }
@@ -472,7 +470,7 @@
       }
 
       let _nom;
-      const main_rows = this.main_rows(elm, !elm && strict);
+      const main_rows = this.main_rows(elm, strict);
 
       if(main_rows.length && main_rows[0].nom instanceof CatInserts){
         if(main_rows[0].nom == this) {
@@ -1236,26 +1234,49 @@
 
     /**
      * Возвращает толщину вставки
-     *
-     * @property thickness
-     * @return {Number}
+     * @param {elm} {BuilderElement}
+     * @param [strict] {Number}
+     * @return {number}
      */
-    get thickness() {
+    thickness(elm, strict) {
+
+      if(elm) {
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
+          return nom.thickness;
+        }
+        const {check_params} = ProductsBuilding;
+        const {_ox} = elm.layer;
+        let thickness = 0;
+        for(const row of this.specification) {
+          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({
+            params: this.selection_params,
+            ox: _ox,
+            elm,
+            row_spec: row,
+            cnstr: 0,
+            origin: elm.fake_origin || 0,
+          })) {
+            const {nom} = row;
+            thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+          }
+        }
+        return thickness;
+      }
 
       const {_data} = this;
-
-      if(!_data.hasOwnProperty("thickness")){
+      if(!_data.hasOwnProperty('thickness')) {
         _data.thickness = 0;
-        const nom = this.nom(null, true);
-        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)){
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
           _data.thickness = nom.thickness;
         }
-        else{
-          this.specification.forEach(({nom, quantity}) => {
+        else {
+          for(const {nom, quantity} of this.specification) {
             if(nom && quantity) {
-              _data.thickness += nom.thickness;
+              _data.thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
             }
-          });
+          }
         }
       }
 

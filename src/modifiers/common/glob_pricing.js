@@ -161,11 +161,7 @@ class Pricing {
       if (!onom._data._price[key1][key2]) {
         onom._data._price[key1][key2] = [];
       }
-      onom._data._price[key1][key2].push({
-        currency,
-        date,
-        price: row.price
-      });
+      onom._data._price[key1][key2].push({currency, date, price: row.price});
 
       // сразу сортируем массив по датам, т.к. порядок используется в других местах
       onom._data._price[key1][key2].sort((a, b) => b.date - a.date);
