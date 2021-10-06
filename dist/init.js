@@ -2708,9 +2708,15 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   get tmin() {
     return this.glass_thickness === 3 ? 0 : this.thicknesses[0];
   }
+  set tmin(v) {
+    return true;
+  }
 
   get tmax() {
     return this.glass_thickness === 3 ? Infinity : this.thicknesses[this.thicknesses.length - 1];
+  }
+  set tmax(v) {
+    return true;
   }
 
   /**
