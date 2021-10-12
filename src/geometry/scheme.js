@@ -758,6 +758,7 @@ class Scheme extends paper.Project {
       // сбрасываем d0 для всех профилей
       this.getItems({class: Profile}).forEach((p) => {
         delete p._attr.d0;
+        delete p._attr.nom;
       });
 
       // регистрируем изменённость характеристики

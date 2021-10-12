@@ -6206,7 +6206,11 @@ class BuilderElement extends paper.Group {
    * @type CatNom
    */
   get nom() {
-    return this.inset.nom(this);
+    const {_attr} = this;
+    if(!_attr.nom) {
+      _attr.nom = this.inset.nom(this);
+    }
+    return _attr.nom;
   }
 
   // номер элемента - свойство только для чтения
@@ -6227,7 +6231,7 @@ class BuilderElement extends paper.Group {
 
   // ширина
   get width() {
-    return this.inset.width(this);
+    return this.nom.width || 80;
   }
 
   // толщина (для заполнений и, возможно, профилей в 3D)
@@ -15197,6 +15201,7 @@ class Scheme extends paper.Project {
       // сбрасываем d0 для всех профилей
       this.getItems({class: Profile}).forEach((p) => {
         delete p._attr.d0;
+        delete p._attr.nom;
       });
 
       // регистрируем изменённость характеристики
@@ -21530,11 +21535,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @return {*|number}
      */
     width(elm, strict) {
-      const {_data} = this;
-      if(!_data.width || strict) {
-        _data.width = this.nom(elm, strict).width || 80;
-      }
-      return _data.width;
+      return this.nom(elm, strict).width || 80;
     }
 
     /**

@@ -517,11 +517,7 @@
      * @return {*|number}
      */
     width(elm, strict) {
-      const {_data} = this;
-      if(!_data.width || strict) {
-        _data.width = this.nom(elm, strict).width || 80;
-      }
-      return _data.width;
+      return this.nom(elm, strict).width || 80;
     }
 
     /**

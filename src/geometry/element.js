@@ -419,7 +419,11 @@ class BuilderElement extends paper.Group {
    * @type CatNom
    */
   get nom() {
-    return this.inset.nom(this);
+    const {_attr} = this;
+    if(!_attr.nom) {
+      _attr.nom = this.inset.nom(this);
+    }
+    return _attr.nom;
   }
 
   // номер элемента - свойство только для чтения
@@ -440,7 +444,7 @@ class BuilderElement extends paper.Group {
 
   // ширина
   get width() {
-    return this.inset.width(this);
+    return this.nom.width || 80;
   }
 
   // толщина (для заполнений и, возможно, профилей в 3D)
