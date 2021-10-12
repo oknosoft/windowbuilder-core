@@ -76,7 +76,7 @@ $p.enm.create('individual_legal');
 * Хранит значения настроек и параметров подсистем
 * @class CchPredefined_elmnts
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CchPredefined_elmnts extends CatObj{
 
@@ -343,7 +343,7 @@ $p.cch.create('predefined_elmnts', CchPredefined_elmntsManager, false);
 * Дополнительные реквизиты и сведения
 * @class CchProperties
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CchProperties extends CatObj{
 get shown(){return this._getter('shown')}
@@ -880,7 +880,7 @@ $p.cch.create('properties', CchPropertiesManager, false);
 * Подчиненные параметры
 * @class CatParams_links
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatParams_links extends CatObj{
 get master(){return this._getter('master')}
@@ -958,7 +958,7 @@ $p.cat.create('params_links');
 * Для привязки ключей параметров к метаданным
 * @class CatChoice_params
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatChoice_params extends CatObj{
 get key(){return this._getter('key')}
@@ -1050,7 +1050,7 @@ $p.cat.create('choice_params', CatChoice_paramsManager, false);
 * Банковские счета сторонних контрагентов и физических лиц.
 * @class CatPartner_bank_accounts
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatPartner_bank_accounts extends CatObj{
 get account_number(){return this._getter('account_number')}
@@ -1091,10 +1091,10 @@ $p.cat.create('partner_bank_accounts');
 
 /**
 * ### Справочник БанковскиеСчетаОрганизаций
-* Банковские счета собственных организаций. 
+* Банковские счета собственных организаций.
 * @class CatOrganization_bank_accounts
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatOrganization_bank_accounts extends CatObj{
 get bank(){return this._getter('bank')}
@@ -1126,7 +1126,7 @@ $p.cat.create('organization_bank_accounts');
 * Виды рабочих центров
 * @class CatWork_center_kinds
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatWork_center_kinds extends CatObj{
 get applying(){return this._getter('applying')}
@@ -1144,7 +1144,7 @@ $p.cat.create('work_center_kinds');
 * Дополнительные значения (иерархия)
 * @class CatProperty_values_hierarchy
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatProperty_values_hierarchy extends CatObj{
 get heft(){return this._getter('heft')}
@@ -1162,7 +1162,7 @@ $p.cat.create('property_values_hierarchy');
 * Классификатор банков РФ
 * @class CatBanks_qualifier
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatBanks_qualifier extends CatObj{
 get correspondent_account(){return this._getter('correspondent_account')}
@@ -1190,7 +1190,7 @@ $p.cat.create('banks_qualifier');
 * Наборы дополнительных реквизитов и сведений
 * @class CatDestinations
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatDestinations extends CatObj{
 get predefined_name(){return this._getter('predefined_name')}
@@ -1224,7 +1224,7 @@ $p.cat.create('destinations');
 * Страны мира
 * @class CatCountries
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCountries extends CatObj{
 get name_full(){return this._getter('name_full')}
@@ -1240,7 +1240,7 @@ $p.cat.create('countries');
 * Формулы пользователя, для выполнения при расчете спецификаций, модификаторы, вычисляемые свойства
 * @class CatFormulas
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatFormulas extends CatObj{
 get formula(){return this._getter('formula')}
@@ -1423,7 +1423,7 @@ $p.cat.create('formulas', CatFormulasManager, false);
 * Строки svg для рисования петель, ручек и графических примитивов
 * @class CatElm_visualization
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatElm_visualization extends CatObj{
 get svg_path(){return this._getter('svg_path')}
@@ -1465,7 +1465,7 @@ $p.cat.create('elm_visualization');
 * Отделы абонентов
 * @class CatBranches
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatBranches extends CatObj{
 get suffix(){return this._getter('suffix')}
@@ -1607,7 +1607,7 @@ $p.cat.create('branches', CatBranchesManager, false);
 * Дополнительные значения
 * @class CatProperty_values
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatProperty_values extends CatObj{
 get heft(){return this._getter('heft')}
@@ -1631,7 +1631,7 @@ $p.cat.create('property_values');
 * Валюты, используемые при расчетах
 * @class CatCurrencies
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCurrencies extends CatObj{
 get name_full(){return this._getter('name_full')}
@@ -1686,7 +1686,7 @@ $p.cat.create('currencies');
 * Виды контактной информации
 * @class CatContact_information_kinds
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatContact_information_kinds extends CatObj{
 get mandatory_fields(){return this._getter('mandatory_fields')}
@@ -1706,7 +1706,7 @@ $p.cat.create('contact_information_kinds');
 * Виды номенклатуры
 * @class CatNom_kinds
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatNom_kinds extends CatObj{
 get nom_type(){return this._getter('nom_type')}
@@ -1730,7 +1730,7 @@ $p.cat.create('nom_kinds');
 * Перечень договоров, заключенных с контрагентами
 * @class CatContracts
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatContracts extends CatObj{
 get settlements_currency(){return this._getter('settlements_currency')}
@@ -1790,7 +1790,7 @@ $p.cat.create('contracts');
 * Перечень единиц измерения номенклатуры и номенклатурных групп
 * @class CatNom_units
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatNom_units extends CatObj{
 get qualifier_unit(){return this._getter('qualifier_unit')}
@@ -1814,7 +1814,7 @@ $p.cat.create('nom_units');
 * Идентификаторы объектов метаданных для использования в базе данных.
 * @class CatMeta_ids
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatMeta_ids extends CatObj{
 get full_moniker(){return this._getter('full_moniker')}
@@ -1827,10 +1827,10 @@ $p.cat.create('meta_ids');
 
 /**
 * ### Справочник Кассы
-* Список мест фактического хранения и движения наличных денежных средств предприятия. Кассы разделены по организациям и валютам денежных средств. 
+* Список мест фактического хранения и движения наличных денежных средств предприятия. Кассы разделены по организациям и валютам денежных средств.
 * @class CatCashboxes
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCashboxes extends CatObj{
 get funds_currency(){return this._getter('funds_currency')}
@@ -1850,7 +1850,7 @@ $p.cat.create('cashboxes');
 * Классификатор единиц измерения
 * @class CatUnits
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatUnits extends CatObj{
 get name_full(){return this._getter('name_full')}
@@ -1866,7 +1866,7 @@ $p.cat.create('units');
 * Список юридических или физических лиц клиентов (поставщиков, покупателей).
 * @class CatPartners
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatPartners extends CatObj{
 get name_full(){return this._getter('name_full')}
@@ -1935,7 +1935,7 @@ $p.cat.create('partners');
 * Перечень товаров, продукции, материалов, полуфабрикатов, тары, услуг
 * @class CatNom
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatNom extends CatObj{
 get article(){return this._getter('article')}
@@ -2366,7 +2366,7 @@ $p.cat.create('nom', CatNomManager, false);
 * Организации
 * @class CatOrganizations
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatOrganizations extends CatObj{
 get prefix(){return this._getter('prefix')}
@@ -2439,7 +2439,7 @@ $p.cat.create('organizations');
 * Армирование, пленки, вставки - дополнение спецификации, которое зависит от одного элемента
 * @class CatInserts
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatInserts extends CatObj{
 get article(){return this._getter('article')}
@@ -2582,7 +2582,7 @@ $p.cat.create('inserts');
 
 * @class CatParameters_keys
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatParameters_keys extends CatObj{
 get priority(){return this._getter('priority')}
@@ -2627,7 +2627,7 @@ $p.cat.create('parameters_keys');
 * Настройки системы профилей и фурнитуры
 * @class CatProduction_params
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatProduction_params extends CatObj{
 get default_clr(){return this._getter('default_clr')}
@@ -3074,7 +3074,7 @@ $p.cat.create('production_params', CatProduction_paramsManager, false);
 * Районы доставки
 * @class CatDelivery_areas
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatDelivery_areas extends CatObj{
 get country(){return this._getter('country')}
@@ -3109,7 +3109,7 @@ $p.cat.create('delivery_areas');
 * Спецификации соединений элементов
 * @class CatCnns
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCnns extends CatObj{
 get priority(){return this._getter('priority')}
@@ -3644,7 +3644,7 @@ class CatCnnsManager extends CatManager {
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
 
       // TODO: проверить геометрию
-      if(!curr_cnn.stop_applying(cnn_point)) {
+      if(!curr_cnn.stop_applying(cnn_point) && ign_side !== 0) {
         if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
           if(typeof is_outer == 'boolean'){
             if(!is_outer){
@@ -3687,7 +3687,7 @@ $p.cat.create('cnns', CatCnnsManager, false);
 * Описывает ограничения и правила формирования спецификаций фурнитуры
 * @class CatFurns
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatFurns extends CatObj{
 get flap_weight_max(){return this._getter('flap_weight_max')}
@@ -3839,7 +3839,7 @@ $p.cat.create('furns');
 * Цвета
 * @class CatClrs
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatClrs extends CatObj{
 get ral(){return this._getter('ral')}
@@ -3867,7 +3867,7 @@ $p.cat.create('clrs');
 * Цвето-ценовые группы
 * @class CatColor_price_groups
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatColor_price_groups extends CatObj{
 get color_price_group_destination(){return this._getter('color_price_group_destination')}
@@ -3972,7 +3972,7 @@ $p.cat.create('color_price_groups');
 * Перечень подразделений предприятия
 * @class CatDivisions
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatDivisions extends CatObj{
 get main_project(){return this._getter('main_project')}
@@ -3999,7 +3999,7 @@ $p.cat.create('divisions');
 * Пользователи
 * @class CatUsers
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatUsers extends CatObj{
 get invalid(){return this._getter('invalid')}
@@ -4147,7 +4147,7 @@ $p.cat.create('users', CatUsersManager, false);
 * Проекты
 * @class CatProjects
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatProjects extends CatObj{
 get finished(){return this._getter('finished')}
@@ -4191,7 +4191,7 @@ $p.cat.create('projects');
 * Сведения о местах хранения товаров (складах), их структуре и физических лицах, назначенных материально ответственными (МОЛ) за тот или иной склад
 * @class CatStores
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatStores extends CatObj{
 get department(){return this._getter('department')}
@@ -4220,10 +4220,10 @@ $p.cat.create('stores');
 
 /**
 * ### Справочник СтатьиДвиженияДенежныхСредств
-* Перечень статей движения денежных средств (ДДС), используемых в предприятии для проведения анализа поступлений и расходов в разрезе статей движения денежных средств. 
+* Перечень статей движения денежных средств (ДДС), используемых в предприятии для проведения анализа поступлений и расходов в разрезе статей движения денежных средств.
 * @class CatCash_flow_articles
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCash_flow_articles extends CatObj{
 get definition(){return this._getter('definition')}
@@ -4243,7 +4243,7 @@ $p.cat.create('cash_flow_articles');
 * Перечень типов отпускных цен предприятия
 * @class CatNom_prices_types
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatNom_prices_types extends CatObj{
 get price_currency(){return this._getter('price_currency')}
@@ -4267,7 +4267,7 @@ $p.cat.create('nom_prices_types');
 * Физические лица
 * @class CatIndividuals
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatIndividuals extends CatObj{
 get birth_date(){return this._getter('birth_date')}
@@ -4346,7 +4346,7 @@ $p.cat.create('individuals');
 * Дополнительные характеристики элементов номенклатуры: цвет, размер и т.п.
 * @class CatCharacteristics
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCharacteristics extends CatObj{
 get x(){return this._getter('x')}
@@ -4626,7 +4626,7 @@ $p.cat.create('characteristics');
 * Ценовые группы
 * @class CatPrice_groups
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatPrice_groups extends CatObj{
 get definition(){return this._getter('definition')}
@@ -4644,7 +4644,7 @@ $p.cat.create('price_groups');
 * Этапы проектов
 * @class CatStages
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatStages extends CatObj{
 get note(){return this._getter('note')}
@@ -4660,7 +4660,7 @@ $p.cat.create('stages');
 * Категории проектов
 * @class CatProject_categories
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatProject_categories extends CatObj{
 get note(){return this._getter('note')}
@@ -4683,7 +4683,7 @@ $p.cat.create('project_categories');
 * Перечень номенклатурных групп для учета затрат и укрупненного планирования продаж, закупок и производства
 * @class CatNom_groups
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatNom_groups extends CatObj{
 get vat_rate(){return this._getter('vat_rate')}
@@ -4703,7 +4703,7 @@ $p.cat.create('nom_groups');
 * Абоненты
 * @class CatAbonents
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatAbonents extends CatObj{
 get servers(){return this._getter_ts('servers')}
@@ -4726,7 +4726,7 @@ $p.cat.create('abonents');
 * Замена регистра "Корректировка спецификации"
 * @class CatInsert_bind
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatInsert_bind extends CatObj{
 get key(){return this._getter('key')}
@@ -4760,7 +4760,7 @@ $p.cat.create('insert_bind');
 * Для "быстрых окон"
 * @class CatTemplates
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatTemplates extends CatObj{
 get note(){return this._getter('note')}
@@ -4805,7 +4805,7 @@ $p.cat.create('templates');
 * Рабочие центры
 * @class CatWork_centers
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatWork_centers extends CatObj{
 get department(){return this._getter('department')}
@@ -4828,7 +4828,7 @@ $p.cat.create('work_centers');
 * Признаки нестандартов
 * @class CatNonstandard_attributes
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatNonstandard_attributes extends CatObj{
 get crooked(){return this._getter('crooked')}
@@ -4850,7 +4850,7 @@ $p.cat.create('nonstandard_attributes');
 * Объединяет районы, территории или подразделения продаж
 * @class CatDelivery_directions
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatDelivery_directions extends CatObj{
 get composition(){return this._getter_ts('composition')}
@@ -4878,7 +4878,7 @@ $p.cat.create('delivery_directions');
 * Поставщики с внешним API
 * @class CatHttp_apis
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatHttp_apis extends CatObj{
 get nom(){return this._getter_ts('nom')}
@@ -4942,7 +4942,7 @@ $p.cat.create('http_apis');
 * Источники лидов
 * @class CatLead_src
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatLead_src extends CatObj{
 get type(){return this._getter('type')}
@@ -4956,7 +4956,7 @@ $p.cat.create('lead_src');
 * Лиды
 * @class CatLeads
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatLeads extends CatObj{
 get origin(){return this._getter('origin')}
@@ -4970,7 +4970,7 @@ $p.cat.create('leads');
 * Скидки (наценки)
 * @class CatCharges_discounts
 * @extends CatObj
-* @constructor 
+* @constructor
 */
 class CatCharges_discounts extends CatObj{
 get price_type(){return this._getter('price_type')}
@@ -5019,7 +5019,7 @@ $p.cat.create('charges_discounts');
 * Документы отражают поступление товаров и услуг
 * @class DocPurchase
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5099,7 +5099,7 @@ $p.doc.create('purchase');
 * Инвентаризация деловой обрези
 * @class DocInventory_cuts
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocInventory_cuts extends DocObj{
 get transactions_kind(){return this._getter('transactions_kind')}
@@ -5138,7 +5138,7 @@ $p.doc.create('inventory_cuts');
 * Инвентаризация товаров на складе
 * @class DocInventory_goods
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocInventory_goods extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5185,7 +5185,7 @@ $p.doc.create('inventory_goods');
 * Задание рабочему центру
 * @class DocWork_centers_task
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocWork_centers_task extends DocObj{
 get key(){return this._getter('key')}
@@ -5314,7 +5314,7 @@ $p.doc.create('work_centers_task');
 Содержит инструменты для формирования спецификаций и подготовки данных производства и диспетчеризации
 * @class DocCalc_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocCalc_order extends DocObj{
 get number_internal(){return this._getter('number_internal')}
@@ -5645,7 +5645,7 @@ $p.doc.create('calc_order', DocCalc_orderManager, false);
 * Оплата от покупателя платежной картой
 * @class DocCredit_card_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocCredit_card_order extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5673,7 +5673,7 @@ $p.doc.create('credit_card_order');
 * Мощности рабочих центров
 * @class DocWork_centers_performance
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocWork_centers_performance extends DocObj{
 get start_date(){return this._getter('start_date')}
@@ -5704,7 +5704,7 @@ $p.doc.create('work_centers_performance');
 * Платежное поручение входящее
 * @class DocDebit_bank_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocDebit_bank_order extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5734,7 +5734,7 @@ $p.doc.create('debit_bank_order');
 * Платежное поручение исходящее
 * @class DocCredit_bank_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocCredit_bank_order extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5764,7 +5764,7 @@ $p.doc.create('credit_bank_order');
 * Приходный кассовый ордер
 * @class DocDebit_cash_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocDebit_cash_order extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5794,7 +5794,7 @@ $p.doc.create('debit_cash_order');
 * Расходный кассовый ордер
 * @class DocCredit_cash_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocCredit_cash_order extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5824,7 +5824,7 @@ $p.doc.create('credit_cash_order');
 * Документы отражают факт реализации (отгрузки) товаров
 * @class DocSelling
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocSelling extends DocObj{
 get organization(){return this._getter('organization')}
@@ -5900,7 +5900,7 @@ $p.doc.create('selling');
 * Установка цен номенклатуры
 * @class DocNom_prices_setup
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocNom_prices_setup extends DocObj{
 get price_type(){return this._getter('price_type')}
@@ -5933,7 +5933,7 @@ $p.doc.create('nom_prices_setup');
 * Событие планирования
 * @class DocPlanning_event
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocPlanning_event extends DocObj{
 get phase(){return this._getter('phase')}
@@ -5989,7 +5989,7 @@ $p.doc.create('planning_event');
 * Заказ поставщику
 * @class DocPurchase_order
 * @extends DocObj
-* @constructor 
+* @constructor
 */
 class DocPurchase_order extends DocObj{
 get organization(){return this._getter('organization')}
@@ -6062,7 +6062,7 @@ $p.doc.create('purchase_order');
 * Просмотр журнала событий
 * @class IregLog_view
 * @extends RegisterRow
-* @constructor 
+* @constructor
 */
 class IregLog_view extends RegisterRow{
 get key(){return this._getter('key')}
@@ -6078,7 +6078,7 @@ $p.ireg.create('log_view');
 * Курсы валют
 * @class IregCurrency_courses
 * @extends RegisterRow
-* @constructor 
+* @constructor
 */
 class IregCurrency_courses extends RegisterRow{
 get currency(){return this._getter('currency')}
@@ -6098,7 +6098,7 @@ $p.ireg.create('currency_courses');
 * Маржинальные коэффициенты
 * @class IregMargin_coefficients
 * @extends RegisterRow
-* @constructor 
+* @constructor
 */
 class IregMargin_coefficients extends RegisterRow{
 get price_group(){return this._getter('price_group')}
@@ -6144,7 +6144,7 @@ $p.ireg.create('margin_coefficients');
 * Метаданные инструмента ruler
 * @class DpBuilder_size
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuilder_size extends DataProcessorObj{
 get offset(){return this._getter('offset')}
@@ -6178,7 +6178,7 @@ $p.dp.create('builder_size');
 * Метаданные инструмента coordinates
 * @class DpBuilder_coordinates
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuilder_coordinates extends DataProcessorObj{
 get bind(){return this._getter('bind')}
@@ -6209,7 +6209,7 @@ $p.dp.create('builder_coordinates');
 * Метаданные инструмента pen (рисование профилей)
 * @class DpBuilder_pen
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuilder_pen extends DataProcessorObj{
 get elm_type(){return this._getter('elm_type')}
@@ -6235,7 +6235,7 @@ $p.dp.create('builder_pen');
 * Метаданные карточки цен номенклатуры
 * @class DpBuilder_price
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuilder_price extends DataProcessorObj{
 get nom(){return this._getter('nom')}
@@ -6266,7 +6266,7 @@ $p.dp.create('builder_price');
 * Заказ покупателя
 * @class DpBuyers_order
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuyers_order extends DataProcessorObj{
 get nom(){return this._getter('nom')}
@@ -6468,7 +6468,7 @@ $p.dp.create('buyers_order');
 * Метаданные инструмента text
 * @class DpBuilder_text
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuilder_text extends DataProcessorObj{
 get text(){return this._getter('text')}
@@ -6498,7 +6498,7 @@ $p.dp.create('builder_text');
 * Импосты и раскладки
 * @class DpBuilder_lay_impost
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class DpBuilder_lay_impost extends DataProcessorObj{
 get elm_type(){return this._getter('elm_type')}
@@ -6549,7 +6549,7 @@ $p.dp.create('builder_lay_impost');
 * Потребность в материалах
 * @class RepMaterials_demand
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class RepMaterials_demand extends DataProcessorObj{
 get calc_order(){return this._getter('calc_order')}
@@ -6631,7 +6631,7 @@ $p.rep.create('materials_demand');
 * Денежные средства
 * @class RepCash
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class RepCash extends DataProcessorObj{
 get data(){return this._getter_ts('data')}
@@ -6664,7 +6664,7 @@ $p.rep.create('cash');
 * Товары на складах
 * @class RepGoods
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class RepGoods extends DataProcessorObj{
 get data(){return this._getter_ts('data')}
@@ -6707,7 +6707,7 @@ $p.rep.create('goods');
 * Исполнение заказов
 * @class RepInvoice_execution
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class RepInvoice_execution extends DataProcessorObj{
 get data(){return this._getter_ts('data')}
@@ -6748,7 +6748,7 @@ $p.rep.create('invoice_execution');
 * Взаиморасчеты
 * @class RepMutual_settlements
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class RepMutual_settlements extends DataProcessorObj{
 get data(){return this._getter_ts('data')}
@@ -6783,7 +6783,7 @@ $p.rep.create('mutual_settlements');
 * Продажи
 * @class RepSelling
 * @extends DataProcessorObj
-* @constructor 
+* @constructor
 */
 class RepSelling extends DataProcessorObj{
 get data(){return this._getter_ts('data')}

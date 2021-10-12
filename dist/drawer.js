@@ -9555,7 +9555,7 @@ class ProfileRays {
             _rays.clear();
             _corns.length = 0;
             const cnn_point = _rays[other];
-            cnn_point.cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
+            cnn_point.cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, 0, undefined, cnn_point);
           }
         }
       }

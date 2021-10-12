@@ -232,7 +232,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
 
       // TODO: проверить геометрию
-      if(!curr_cnn.stop_applying(cnn_point)) {
+      if(!curr_cnn.stop_applying(cnn_point) && ign_side !== 0) {
         if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
           if(typeof is_outer == 'boolean'){
             if(!is_outer){
