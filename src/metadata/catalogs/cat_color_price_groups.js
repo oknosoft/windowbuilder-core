@@ -31,7 +31,7 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    */
   clrs() {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
-    const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
+    const {cat} = _owner.$p;
     if(!_data.clrs) {
       _data.clrs = new Set();
 

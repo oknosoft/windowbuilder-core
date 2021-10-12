@@ -358,7 +358,6 @@ exports.CatCnns = class CatCnns extends Object {
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
-    const {CatInserts} = this._manager._owner.$p;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom) {

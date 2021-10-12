@@ -591,7 +591,10 @@ set applying(v){this._setter_ts('applying',v)}
     case comparison_types.in:
     case comparison_types.nin:
 
-      if(!txt_row) {
+      if(value instanceof CatColor_price_groups) {
+        return value.clrs();
+      }
+      else if(!txt_row) {
         return value;
       }
       try {
@@ -912,7 +915,6 @@ set values(v){this._setter_ts('values',v)}
    * @return {*[]}
    */
   append_values(values = []) {
-    const {CatColor_price_groups} = this._manager._owner.$p;
     this.values.forEach((row) => {
       if(row.value instanceof CatColor_price_groups) {
         for(const value of row.value.clrs()) {
@@ -2974,7 +2976,6 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   }
 
   prm_defaults(param, cnstr) {
-    const {CatNom} = $p;
     const ts = param instanceof CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
     return ts.find({param});
   }
@@ -3253,7 +3254,6 @@ set priorities(v){this._setter_ts('priorities',v)}
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
-    const {CatInserts} = this._manager._owner.$p;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom) {
@@ -3911,7 +3911,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
    */
   clrs() {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
-    const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
+    const {cat} = _owner.$p;
     if(!_data.clrs) {
       _data.clrs = new Set();
 

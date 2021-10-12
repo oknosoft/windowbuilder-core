@@ -300,7 +300,10 @@ exports.CchProperties = class CchProperties extends Object {
     case comparison_types.in:
     case comparison_types.nin:
 
-      if(!txt_row) {
+      if(value instanceof CatColor_price_groups) {
+        return value.clrs();
+      }
+      else if(!txt_row) {
         return value;
       }
       try {

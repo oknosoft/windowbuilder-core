@@ -300,7 +300,6 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
   prm_defaults(param, cnstr) {
-    const {CatNom} = $p;
     const ts = param instanceof CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
     return ts.find({param});
   }
