@@ -17244,9 +17244,10 @@ class Pricing {
    */
   calc_first_cost(prm) {
 
-    const {marginality_in_spec} = $p.job_prm.pricing;
+    const {marginality_in_spec, price_grp_in_spec} = $p.job_prm.pricing;
     const fake_row = {};
     const {calc_order_row, spec} = prm;
+    const price_grp = new Map();
 
     if(!spec) {
       return;
@@ -17258,19 +17259,40 @@ class Pricing {
 
         const {_obj, nom, characteristic} = row;
 
-        this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj);
-        _obj.amount = _obj.price * _obj.totqty1;
-
-        if(marginality_in_spec){
-          fake_row.nom = nom;
-          const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row);
-          _obj.amount_marged = tmp_price * _obj.totqty1;
+        if(price_grp_in_spec) {
+          const {price_group} = nom;
+          if(!price_grp.has(price_group)) {
+            const pprm = {
+              calc_order_row: {
+                nom,
+                characteristic: calc_order_row.characteristic,
+                _owner: calc_order_row._owner,
+              }
+            };
+            this.price_type(pprm);
+            price_grp.set(price_group, {
+              marginality: pprm.price_type.marginality || 1,
+              price_type: pprm.price_type.price_type_first_cost,
+            });
+          }
+          const {marginality, price_type} = price_grp.get(price_group);
+          this.nom_price(nom, characteristic, price_type, prm, _obj);
+          _obj.amount = _obj.price * _obj.totqty1;
+          _obj.amount_marged = _obj.amount * marginality;
         }
-
+        else {
+          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj);
+          _obj.amount = _obj.price * _obj.totqty1;
+          if(marginality_in_spec){
+            fake_row.nom = nom;
+            const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row);
+            _obj.amount_marged = tmp_price * _obj.totqty1;
+          }
+        }
       });
       calc_order_row.first_cost = spec.aggregate([], ["amount"]).round(2);
     }
-    else{
+    else {
       // расчет себестомиости по номенклатуре строки расчета
       fake_row.nom = calc_order_row.nom;
       fake_row.characteristic = calc_order_row.characteristic;
@@ -24233,6 +24255,6 @@ $p.md.once('predefined_elmnts_inited', () => {
   }
 });
 
- 
+
 return EditorInvisible;
 }
