@@ -6259,7 +6259,7 @@ class BuilderElement extends paper.Group {
 
   // масса элемента
   get weight() {
-    let {project: {ox}, elm, inset, layer} = this;
+    let {ox, elm, inset, layer} = this;
     // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
       ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
@@ -11601,10 +11601,10 @@ ProfileItem.path_attr = {
 
   onMouseEnter(event) {
     const {fillColor, parent: {_attr}, project} = this;
-    if(project._attr._from_service) {
+    if(project._attr._from_service || !fillColor) {
       return;
     }
-    _attr.fillColor = fillColor ? fillColor.clone() : null;
+    _attr.fillColor = fillColor.clone();
     const {red, green, blue, alpha} = fillColor;
     fillColor.alpha = 0.9;
     fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
@@ -21427,7 +21427,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return main_rows;
       }
       const {check_params} = ProductsBuilding;
-      const {ox} = elm.project;
+      const {ox} = elm;
       return main_rows.filter((row) => {
         return this.check_base_restrictions(row, elm) && check_params({
           params: this.selection_params,
@@ -24255,6 +24255,6 @@ $p.md.once('predefined_elmnts_inited', () => {
   }
 });
 
-
+ 
 return EditorInvisible;
 }

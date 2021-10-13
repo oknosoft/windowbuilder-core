@@ -2377,10 +2377,10 @@ ProfileItem.path_attr = {
 
   onMouseEnter(event) {
     const {fillColor, parent: {_attr}, project} = this;
-    if(project._attr._from_service) {
+    if(project._attr._from_service || !fillColor) {
       return;
     }
-    _attr.fillColor = fillColor ? fillColor.clone() : null;
+    _attr.fillColor = fillColor.clone();
     const {red, green, blue, alpha} = fillColor;
     fillColor.alpha = 0.9;
     fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
