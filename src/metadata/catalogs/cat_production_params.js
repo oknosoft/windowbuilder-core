@@ -26,8 +26,9 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     const {_data} = this;
     if(!_data.thin) {
       const thin = new Set();
-      const {Заполнение, Стекло} = $p.enm.elm_types;
-      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => thin.add(nom.thickness()));
+      for(const nom of this.glasses()) {
+        thin.add(nom.thickness());
+      }
       _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
     return _data.thin;
@@ -129,6 +130,20 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     });
 
     return __noms.map((e) => e.nom);
+  }
+
+  /**
+   * возвращает доступные в данной системе заполнения (вставки)
+   * @return {[]}
+   */
+  glasses() {
+    const {_data} = this;
+    if(!_data.glasses) {
+      const {Заполнение, Стекло} = $p.enm.elm_types;
+      _data.glasses = [];
+      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => _data.glasses.push(nom));
+    }
+    return _data.glasses;
   }
 
   /**

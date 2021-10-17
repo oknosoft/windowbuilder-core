@@ -231,11 +231,7 @@ class BuilderElement extends paper.Group {
               }
               else if(glass_thickness === 1) {
                 const {Заполнение, Стекло} = elm_types;
-                return !!sys.elmnts.find({
-                  elm_type: {in: [Заполнение, Стекло]},
-                  nom: insert
-                });
-
+                return sys.glasses().includes(insert);
               }
               else if(glass_thickness === 2) {
                 const thickness = insert.thickness(this);
