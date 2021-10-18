@@ -1003,6 +1003,47 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res || this.target.thickness(elm);
   }
 
+  region(row) {
+    const {utils} = $p;
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        switch (prop){
+        case 'rnum':
+          return row.num;
+        case 'irow':
+          return row;
+        case 'inset':
+          return row.inset;
+        case 'clr':
+          return row.clr;
+        default:
+          let prow;
+          if(utils.is_guid(prop)) {
+            prow = receiver.ox.params.find({param: prop, cnstr: -receiver.elm, region: row.num});
+          }
+          return prow ? prow.value : target[prop];
+        }
+      },
+
+      set(target, prop, val, receiver) {
+        switch (prop){
+        case 'clr':
+          row.clr = val;
+          return true;
+        default:
+          if(utils.is_guid(prop)) {
+            const prow = receiver.ox.params.find({param: prop, cnstr: -receiver.ox.elm, region: row.num}) ||
+              receiver.ox.params.add({param: prop, cnstr: -receiver.elm, region: row.num});
+            prow.value = val;
+          }
+          else {
+            target[prop] = val;
+          }
+        }
+      }
+    });
+  }
+
 }
 
 EditorInvisible.Filling = Filling;
