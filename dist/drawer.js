@@ -6018,11 +6018,7 @@ class BuilderElement extends paper.Group {
               }
               else if(glass_thickness === 1) {
                 const {Заполнение, Стекло} = elm_types;
-                return !!sys.elmnts.find({
-                  elm_type: {in: [Заполнение, Стекло]},
-                  nom: insert
-                });
-
+                return sys.glasses().includes(insert);
               }
               else if(glass_thickness === 2) {
                 const thickness = insert.thickness(this);
@@ -6490,6 +6486,7 @@ class BuilderElement extends paper.Group {
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
+      delete _attr.nom;
       _row.inset = v;
       if(_attr && _attr._rays){
         _attr._rays.clear(true);
@@ -7667,6 +7664,47 @@ class Filling extends AbstractFilling(BuilderElement) {
       res += inset.thickness(elm);
     });
     return res || this.target.thickness(elm);
+  }
+
+  region(row) {
+    const {utils} = $p;
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        switch (prop){
+        case 'rnum':
+          return row.num;
+        case 'irow':
+          return row;
+        case 'inset':
+          return row.inset;
+        case 'clr':
+          return row.clr;
+        default:
+          let prow;
+          if(utils.is_guid(prop)) {
+            prow = receiver.ox.params.find({param: prop, cnstr: -receiver.elm, region: row.num});
+          }
+          return prow ? prow.value : target[prop];
+        }
+      },
+
+      set(target, prop, val, receiver) {
+        switch (prop){
+        case 'clr':
+          row.clr = val;
+          return true;
+        default:
+          if(utils.is_guid(prop)) {
+            const prow = receiver.ox.params.find({param: prop, cnstr: -receiver.ox.elm, region: row.num}) ||
+              receiver.ox.params.add({param: prop, cnstr: -receiver.elm, region: row.num});
+            prow.value = val;
+          }
+          else {
+            target[prop] = val;
+          }
+        }
+      }
+    });
   }
 
 }
@@ -8900,6 +8938,14 @@ Object.defineProperties(paper.Path.prototype, {
                 path1.firstSegment.point = path1.firstSegment.point.add(tg);
               }
             }
+            else {
+              if(p1last) {
+                path1.add(path1.lastSegment.point.add(tg));
+              }
+              else {
+                path1.insert(0, path1.firstSegment.point.add(tg));
+              }
+            }
           }
 
           if(!path2.closed) {
@@ -8910,6 +8956,14 @@ Object.defineProperties(paper.Path.prototype, {
               }
               else {
                 path2.firstSegment.point = path2.firstSegment.point.add(tg);
+              }
+            }
+            else {
+              if(p2last) {
+                path2.add(path2.lastSegment.point.add(tg));
+              }
+              else {
+                path2.insert(0, path2.firstSegment.point.add(tg));
               }
             }
           }
@@ -9550,7 +9604,8 @@ class ProfileRays {
       delete parent._attr.d0;
 
       // прибиваем соединения в точках b и e
-      for(const node of ['b', 'e']) {
+      const nodes = ['b', 'e'];
+      for(const node of nodes) {
         const {profile, profile_point} = parent.cnn_point(node);
         const other = node === 'b' ? 'e' : 'b';
         if(profile && profile_point == other) {
@@ -9570,7 +9625,7 @@ class ProfileRays {
       const {cnn_elmnts} = parent.ox;
       const {cnn_nodes} = ProductsBuilding;
       for (const {profile} of inner.concat(outer)) {
-        for(const node of ['b', 'e']) {
+        for(const node of nodes) {
           const cnn_point = profile.rays[node];
           if(cnn_point.profile == parent && cnn_point.cnn) {
             const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
@@ -10729,6 +10784,7 @@ class ProfileItem extends GeneratrixElement {
 
       // для уже нарисованных элементов...
       if(_attr && _attr._rays) {
+        delete _attr.nom;
         _attr._rays.clear('with_neighbor');
       }
 
@@ -21816,7 +21872,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         // если спецификация верхнего уровня задана в изделии, используем её, параллельно формируем формулу
         if(glass_rows.length){
           glass_rows.forEach((row) => {
-            row.inset.filtered_spec({elm, len_angl, ox, own_row: {clr: row.clr}}).forEach((row) => {
+            const relm = elm.region(row);
+            row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}}).forEach((row) => {
               res.push(row);
             });
           });
@@ -22638,6 +22695,11 @@ class FakeElm {
 
   get y2() {
     return this.len;
+  }
+
+  get ox() {
+    const {project, row_spec} = this;
+    return project ? project.ox : row_spec._owner._owner;
   }
 
 }

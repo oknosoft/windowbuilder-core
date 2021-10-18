@@ -326,7 +326,8 @@ class ProfileRays {
       delete parent._attr.d0;
 
       // прибиваем соединения в точках b и e
-      for(const node of ['b', 'e']) {
+      const nodes = ['b', 'e'];
+      for(const node of nodes) {
         const {profile, profile_point} = parent.cnn_point(node);
         const other = node === 'b' ? 'e' : 'b';
         if(profile && profile_point == other) {
@@ -346,7 +347,7 @@ class ProfileRays {
       const {cnn_elmnts} = parent.ox;
       const {cnn_nodes} = ProductsBuilding;
       for (const {profile} of inner.concat(outer)) {
-        for(const node of ['b', 'e']) {
+        for(const node of nodes) {
           const cnn_point = profile.rays[node];
           if(cnn_point.profile == parent && cnn_point.cnn) {
             const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
@@ -1505,6 +1506,7 @@ class ProfileItem extends GeneratrixElement {
 
       // для уже нарисованных элементов...
       if(_attr && _attr._rays) {
+        delete _attr.nom;
         _attr._rays.clear('with_neighbor');
       }
 

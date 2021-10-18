@@ -699,6 +699,7 @@ class BuilderElement extends paper.Group {
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
+      delete _attr.nom;
       _row.inset = v;
       if(_attr && _attr._rays){
         _attr._rays.clear(true);
