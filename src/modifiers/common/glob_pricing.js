@@ -138,12 +138,11 @@ class Pricing {
    * @return {Promise.<TResult>|*}
    */
   by_doc({goods, date, currency}) {
-    const {cat: {nom, currencies, characteristics}, utils} = $p;
+    const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
     currency = currencies.get(currency);
     for(const row of goods) {
       const onom = nom.get(row.nom, true);
-      const characteristic = characteristics.get(row.nom_characteristic, true);
 
       // если в озу нет подходящей номенклатуры или в строке не задан тип цен - уходим
       if (!onom || !onom._data || !row.price_type){
@@ -153,7 +152,7 @@ class Pricing {
       if (!onom._data._price) {
         onom._data._price = {};
       }
-      const key1 = characteristic ? characteristic.ref : utils.blank.guid;
+      const key1 = (row.nom_characteristic || utils.blank.guid).valueOf();
       if (!onom._data._price[key1]) {
         onom._data._price[key1] = {};
       }
