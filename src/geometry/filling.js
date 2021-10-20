@@ -464,7 +464,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
-      // если тип стеклопаке - заполняем по умолчанию
+      // если тип стеклопакет - заполняем по умолчанию
       if(insert_type === insert_type._manager.Стеклопакет) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
@@ -1004,12 +1004,12 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   region(row) {
-    const {utils} = $p;
+    const {utils, cch} = $p;
     return new Proxy(this, {
       get(target, prop, receiver) {
         switch (prop){
         case 'rnum':
-          return row.num;
+          return row.row;
         case 'irow':
           return row;
         case 'inset':
@@ -1017,11 +1017,15 @@ class Filling extends AbstractFilling(BuilderElement) {
         case 'clr':
           return row.clr;
         default:
-          let prow;
+          let pvalue;
           if(utils.is_guid(prop)) {
-            prow = receiver.ox.params.find({param: prop, cnstr: -receiver.elm, region: row.num});
+            const param = cch.properties.get(prop);
+            if(!param.empty()) {
+              const {params} = row.dop;
+              pvalue = param.fetch_type(params ? params[prop] : '');
+            }
           }
-          return prow ? prow.value : target[prop];
+          return pvalue === undefined ? target[prop] : pvalue;
         }
       },
 
@@ -1032,9 +1036,15 @@ class Filling extends AbstractFilling(BuilderElement) {
           return true;
         default:
           if(utils.is_guid(prop)) {
-            const prow = receiver.ox.params.find({param: prop, cnstr: -receiver.ox.elm, region: row.num}) ||
-              receiver.ox.params.add({param: prop, cnstr: -receiver.elm, region: row.num});
-            prow.value = val;
+            const param = cch.properties.get(prop);
+            if(!param.empty()) {
+              let {params} = row.dop;
+              if(!params) {
+                params = {};
+              }
+              params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              row.dop = {params};
+            }
           }
           else {
             target[prop] = val;

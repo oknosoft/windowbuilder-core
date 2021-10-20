@@ -7127,7 +7127,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
-      // если тип стеклопаке - заполняем по умолчанию
+      // если тип стеклопакет - заполняем по умолчанию
       if(insert_type === insert_type._manager.Стеклопакет) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
@@ -7667,12 +7667,12 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   region(row) {
-    const {utils} = $p;
+    const {utils, cch} = $p;
     return new Proxy(this, {
       get(target, prop, receiver) {
         switch (prop){
         case 'rnum':
-          return row.num;
+          return row.row;
         case 'irow':
           return row;
         case 'inset':
@@ -7680,11 +7680,15 @@ class Filling extends AbstractFilling(BuilderElement) {
         case 'clr':
           return row.clr;
         default:
-          let prow;
+          let pvalue;
           if(utils.is_guid(prop)) {
-            prow = receiver.ox.params.find({param: prop, cnstr: -receiver.elm, region: row.num});
+            const param = cch.properties.get(prop);
+            if(!param.empty()) {
+              const {params} = row.dop;
+              pvalue = param.fetch_type(params ? params[prop] : '');
+            }
           }
-          return prow ? prow.value : target[prop];
+          return pvalue === undefined ? target[prop] : pvalue;
         }
       },
 
@@ -7695,9 +7699,15 @@ class Filling extends AbstractFilling(BuilderElement) {
           return true;
         default:
           if(utils.is_guid(prop)) {
-            const prow = receiver.ox.params.find({param: prop, cnstr: -receiver.ox.elm, region: row.num}) ||
-              receiver.ox.params.add({param: prop, cnstr: -receiver.elm, region: row.num});
-            prow.value = val;
+            const param = cch.properties.get(prop);
+            if(!param.empty()) {
+              let {params} = row.dop;
+              if(!params) {
+                params = {};
+              }
+              params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              row.dop = {params};
+            }
           }
           else {
             target[prop] = val;
@@ -18457,6 +18467,9 @@ class ProductsBuilding {
       row_spec = spec.add();
     }
     row_spec.nom = nom || row_base.nom;
+    if(row_base.relm) {
+      elm = row_base.relm;
+    }
 
     const {
       utils: {blank},
@@ -18485,14 +18498,10 @@ class ProductsBuilding {
     if(row_base.algorithm === cx_clr) {
       const {ref} = properties.predefined('clr_elm');
       const clr = row_spec.clr.ref;
-      // перебираем все характеристики текущей номенклатуры
-      characteristics.find_rows({owner: row_spec.nom}, ({params}) => {
-        // если в параметрах характеристики цвет соответствует цвету элемента, помещаем характеристику в спецификацию
-        const prow = params._obj.find(({param, value}) => param === ref && value === clr);
-        if(prow) {
-          row_spec.characteristic = params._owner;
-          return false;
-        }
+      // перебираем характеристики текущей номенклатуры
+      characteristics.find_rows({owner: row_spec.nom, clr: row_spec.clr}, (cx) => {
+        row_spec.characteristic = cx;
+        return false;
       });
     }
     else {
@@ -21873,9 +21882,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(glass_rows.length){
           glass_rows.forEach((row) => {
             const relm = elm.region(row);
-            row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}}).forEach((row) => {
-              res.push(row);
-            });
+            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
+              const frow = fake_row(srow);
+              frow.relm = relm;
+              res.push(frow);
+            }
           });
           return res;
         }
@@ -22354,7 +22365,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             origin: elm.fake_origin || 0,
           })) {
             const {nom} = row;
-            thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            if(nom) {
+              thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            }
           }
         }
         return thickness;

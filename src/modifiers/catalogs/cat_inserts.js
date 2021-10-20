@@ -777,9 +777,11 @@
         if(glass_rows.length){
           glass_rows.forEach((row) => {
             const relm = elm.region(row);
-            row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}}).forEach((row) => {
-              res.push(row);
-            });
+            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
+              const frow = fake_row(srow);
+              frow.relm = relm;
+              res.push(frow);
+            }
           });
           return res;
         }
@@ -1258,7 +1260,9 @@
             origin: elm.fake_origin || 0,
           })) {
             const {nom} = row;
-            thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            if(nom) {
+              thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            }
           }
         }
         return thickness;

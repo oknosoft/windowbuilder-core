@@ -345,6 +345,52 @@ exports.CchProperties = class CchProperties extends Object {
   }
 
   /**
+   * Возвращает значение параметра с приведением типов
+   * @param v
+   */
+  fetch_type(v) {
+    const {type, _manager} = this;
+    const {utils} = $p;
+    if(type.is_ref) {
+
+      if(type.digits && typeof v === 'number') {
+        return v;
+      }
+
+      if(type.hasOwnProperty('str_len') && !utils.is_guid(v)) {
+        return v;
+      }
+
+      const mgr = _manager.value_mgr({v}, 'v', type);
+      if(mgr) {
+        if(utils.is_data_mgr(mgr)) {
+          return mgr.get(v, false, false);
+        }
+        else {
+          return utils.fetch_type(v, mgr);
+        }
+      }
+
+      if(v) {
+        return null;
+      }
+
+    }
+    else if(type.date_part) {
+      return utils.fix_date(v, true);
+    }
+    else if(type.digits) {
+      return utils.fix_number(v, !type.hasOwnProperty('str_len'));
+    }
+    else if(type.types[0] == 'boolean') {
+      return utils.fix_boolean(v);
+    }
+    else if(type.types[0] == 'json') {
+      return typeof v === 'object' ? v : {};
+    }
+  }
+
+  /**
    * Возвращает массив связей текущего параметра
    */
   params_links(attr) {

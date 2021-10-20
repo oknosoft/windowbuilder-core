@@ -982,6 +982,9 @@ class ProductsBuilding {
       row_spec = spec.add();
     }
     row_spec.nom = nom || row_base.nom;
+    if(row_base.relm) {
+      elm = row_base.relm;
+    }
 
     const {
       utils: {blank},
@@ -1010,14 +1013,10 @@ class ProductsBuilding {
     if(row_base.algorithm === cx_clr) {
       const {ref} = properties.predefined('clr_elm');
       const clr = row_spec.clr.ref;
-      // перебираем все характеристики текущей номенклатуры
-      characteristics.find_rows({owner: row_spec.nom}, ({params}) => {
-        // если в параметрах характеристики цвет соответствует цвету элемента, помещаем характеристику в спецификацию
-        const prow = params._obj.find(({param, value}) => param === ref && value === clr);
-        if(prow) {
-          row_spec.characteristic = params._owner;
-          return false;
-        }
+      // перебираем характеристики текущей номенклатуры
+      characteristics.find_rows({owner: row_spec.nom, clr: row_spec.clr}, (cx) => {
+        row_spec.characteristic = cx;
+        return false;
       });
     }
     else {
