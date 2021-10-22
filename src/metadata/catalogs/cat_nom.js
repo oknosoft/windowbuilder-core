@@ -165,7 +165,11 @@ exports.CatNom = class CatNom extends Object {
    * @private
    */
   _price(attr) {
-    const {job_prm: {pricing}, utils, cat} = this._manager._owner.$p;
+    const {
+      job_prm: {pricing},
+      cat: {characteristics: {by_ref: characteristics}, color_price_groups: {by_ref: color_price_groups}},
+      utils,
+    } = this._manager._owner.$p;
 
     let price = 0,
       currency = pricing.main_currency,
@@ -192,16 +196,15 @@ exports.CatNom = class CatNom extends Object {
         attr.characteristic = ref;
         if(!calc_order.empty()){
           const tmp = [];
-          const {by_ref} = cat.characteristics;
           for(let clrx in _price) {
-            const cx = by_ref[clrx];
-            if(cx && cx.clr == clr){
+            const cx = characteristics[clrx];
+            if(cx && cx.clr == clr) {
               // если на подходящую характеристику есть цена по нашему типу цен - запоминаем
-              if(_price[clrx][attr.price_type]){
-                if(cx.x && x && cx.x - x < -10){
+              if(_price[clrx][attr.price_type]) {
+                if(cx.x && x && cx.x - x < -10) {
                   continue;
                 }
-                if(cx.y && y && cx.y - y < -10){
+                if(cx.y && y && cx.y - y < -10) {
                   continue;
                 }
                 tmp.push({
@@ -211,41 +214,59 @@ exports.CatNom = class CatNom extends Object {
               }
             }
           }
-          if(tmp.length){
+          if(tmp.length) {
             tmp.sort((a, b) => a.rate - b.rate);
             attr.characteristic = tmp[0].cx.ref;
           }
         }
       }
+
       if(!attr.date){
         attr.date = new Date();
       }
 
       // если для номенклатуры существует структура цен, ищем подходящую
       if(_price){
-        if(_price[attr.characteristic]){
+        if(attr.clr && attr.characteristic == utils.blank.guid) {
+          for(let clrx in _price){
+            const cpg = color_price_groups[clrx];
+            if(cpg && cpg.clrs().includes(attr.clr)){
+              if(_price[clrx][attr.price_type]){
+                _price[clrx][attr.price_type].some((row) => {
+                  if(row.date > start_date && row.date <= attr.date){
+                    price = row.price;
+                    currency = row.currency;
+                    return true;
+                  }
+                });
+                break;
+              }
+            }
+          }
+        }
+        if(!price && _price[attr.characteristic]){
           if(_price[attr.characteristic][attr.price_type]){
-            _price[attr.characteristic][attr.price_type].forEach((row) => {
+            _price[attr.characteristic][attr.price_type].some((row) => {
               if(row.date > start_date && row.date <= attr.date){
                 price = row.price;
                 currency = row.currency;
-                start_date = row.date;
+                return true;
               }
             });
           }
         }
         // если нет цены на характеристику, ищем по цвету
-        else if(attr.clr){
-          const {by_ref} = cat.characteristics;
+        if(!price && attr.clr){
           for(let clrx in _price){
-            const cx = by_ref[clrx];
-            if(cx && cx.clr == attr.clr){
+            const cx = characteristics[clrx];
+            const cpg = color_price_groups[clrx];
+            if((cx && cx.clr == attr.clr) || (cpg && cpg.clrs().includes(attr.clr))){
               if(_price[clrx][attr.price_type]){
-                _price[clrx][attr.price_type].forEach((row) => {
+                _price[clrx][attr.price_type].some((row) => {
                   if(row.date > start_date && row.date <= attr.date){
                     price = row.price;
                     currency = row.currency;
-                    start_date = row.date;
+                    return true;
                   }
                 });
                 break;
@@ -256,18 +277,17 @@ exports.CatNom = class CatNom extends Object {
       }
     }
 
-
     // если есть формула - выполняем вне зависимости от установленной цены
     if(attr.formula){
 
       // если нет цены на характеристику, ищем цену без характеристики
       if(!price && _price && _price[utils.blank.guid]){
         if(_price[utils.blank.guid][attr.price_type]){
-          _price[utils.blank.guid][attr.price_type].forEach((row) => {
+          _price[utils.blank.guid][attr.price_type].some((row) => {
             if(row.date > start_date && row.date <= attr.date){
               price = row.price;
               currency = row.currency;
-              start_date = row.date;
+              return true;
             }
           });
         }
@@ -275,7 +295,7 @@ exports.CatNom = class CatNom extends Object {
       // формулу выполняем в любом случае - она может и не опираться на цены из регистра
       price = attr.formula.execute({
         nom: this,
-        characteristic: cat.characteristics.get(attr.characteristic, false),
+        characteristic: characteristics[attr.characteristic.valueOf()],
         date: attr.date,
         price, currency, x, y, z, clr, calc_order,
       });

@@ -2179,7 +2179,11 @@ set demand(v){this._setter_ts('demand',v)}
    * @private
    */
   _price(attr) {
-    const {job_prm: {pricing}, utils, cat} = this._manager._owner.$p;
+    const {
+      job_prm: {pricing},
+      cat: {characteristics: {by_ref: characteristics}, color_price_groups: {by_ref: color_price_groups}},
+      utils,
+    } = this._manager._owner.$p;
 
     let price = 0,
       currency = pricing.main_currency,
@@ -2206,16 +2210,15 @@ set demand(v){this._setter_ts('demand',v)}
         attr.characteristic = ref;
         if(!calc_order.empty()){
           const tmp = [];
-          const {by_ref} = cat.characteristics;
           for(let clrx in _price) {
-            const cx = by_ref[clrx];
-            if(cx && cx.clr == clr){
+            const cx = characteristics[clrx];
+            if(cx && cx.clr == clr) {
               // если на подходящую характеристику есть цена по нашему типу цен - запоминаем
-              if(_price[clrx][attr.price_type]){
-                if(cx.x && x && cx.x - x < -10){
+              if(_price[clrx][attr.price_type]) {
+                if(cx.x && x && cx.x - x < -10) {
                   continue;
                 }
-                if(cx.y && y && cx.y - y < -10){
+                if(cx.y && y && cx.y - y < -10) {
                   continue;
                 }
                 tmp.push({
@@ -2225,41 +2228,59 @@ set demand(v){this._setter_ts('demand',v)}
               }
             }
           }
-          if(tmp.length){
+          if(tmp.length) {
             tmp.sort((a, b) => a.rate - b.rate);
             attr.characteristic = tmp[0].cx.ref;
           }
         }
       }
+
       if(!attr.date){
         attr.date = new Date();
       }
 
       // если для номенклатуры существует структура цен, ищем подходящую
       if(_price){
-        if(_price[attr.characteristic]){
+        if(attr.clr && attr.characteristic == utils.blank.guid) {
+          for(let clrx in _price){
+            const cpg = color_price_groups[clrx];
+            if(cpg && cpg.clrs().includes(attr.clr)){
+              if(_price[clrx][attr.price_type]){
+                _price[clrx][attr.price_type].some((row) => {
+                  if(row.date > start_date && row.date <= attr.date){
+                    price = row.price;
+                    currency = row.currency;
+                    return true;
+                  }
+                });
+                break;
+              }
+            }
+          }
+        }
+        if(!price && _price[attr.characteristic]){
           if(_price[attr.characteristic][attr.price_type]){
-            _price[attr.characteristic][attr.price_type].forEach((row) => {
+            _price[attr.characteristic][attr.price_type].some((row) => {
               if(row.date > start_date && row.date <= attr.date){
                 price = row.price;
                 currency = row.currency;
-                start_date = row.date;
+                return true;
               }
             });
           }
         }
         // если нет цены на характеристику, ищем по цвету
-        else if(attr.clr){
-          const {by_ref} = cat.characteristics;
+        if(!price && attr.clr){
           for(let clrx in _price){
-            const cx = by_ref[clrx];
-            if(cx && cx.clr == attr.clr){
+            const cx = characteristics[clrx];
+            const cpg = color_price_groups[clrx];
+            if((cx && cx.clr == attr.clr) || (cpg && cpg.clrs().includes(attr.clr))){
               if(_price[clrx][attr.price_type]){
-                _price[clrx][attr.price_type].forEach((row) => {
+                _price[clrx][attr.price_type].some((row) => {
                   if(row.date > start_date && row.date <= attr.date){
                     price = row.price;
                     currency = row.currency;
-                    start_date = row.date;
+                    return true;
                   }
                 });
                 break;
@@ -2270,18 +2291,17 @@ set demand(v){this._setter_ts('demand',v)}
       }
     }
 
-
     // если есть формула - выполняем вне зависимости от установленной цены
     if(attr.formula){
 
       // если нет цены на характеристику, ищем цену без характеристики
       if(!price && _price && _price[utils.blank.guid]){
         if(_price[utils.blank.guid][attr.price_type]){
-          _price[utils.blank.guid][attr.price_type].forEach((row) => {
+          _price[utils.blank.guid][attr.price_type].some((row) => {
             if(row.date > start_date && row.date <= attr.date){
               price = row.price;
               currency = row.currency;
-              start_date = row.date;
+              return true;
             }
           });
         }
@@ -2289,7 +2309,7 @@ set demand(v){this._setter_ts('demand',v)}
       // формулу выполняем в любом случае - она может и не опираться на цены из регистра
       price = attr.formula.execute({
         nom: this,
-        characteristic: cat.characteristics.get(attr.characteristic, false),
+        characteristic: characteristics[attr.characteristic.valueOf()],
         date: attr.date,
         price, currency, x, y, z, clr, calc_order,
       });
@@ -3974,44 +3994,47 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
     const {cat} = _owner.$p;
     if(!_data.clrs) {
-      _data.clrs = new Set();
+      const clrs = new Set();
 
       clr_conformity.forEach(({clr1}) => {
         if(clr1 instanceof CatClrs) {
           if(clr1.is_folder) {
-            clr1._children().forEach((clr) => _data.clrs.add(clr));
+            clr1._children().forEach((clr) => clrs.add(clr));
           }
           else {
-            _data.clrs.add(clr1);
+            clrs.add(clr1);
           }
         }
         else if(clr1 instanceof CatColor_price_groups) {
           for(const clr of clr1.clrs()) {
-            _data.clrs.add(clr);
+            clrs.add(clr);
           }
         }
       });
 
       // уточним по формуле условия
       if(!formula.empty()) {
-        const attr = {clrs: _data.clrs};
+        const attr = {clrs};
         if(!mode) {
-          const res = Array.from(_data.clrs);
-          _data.clrs = new Set(res.filter((clr) => formula.execute(clr, attr)));
+          _data.clrs = Array.from(clrs).filter((clr) => formula.execute(clr, attr));
         }
         else {
           cat.clrs.forEach((clr) => {
-            if(clr.parent.predefined_name || _data.clrs.has(clr)) {
+            if(clr.parent.predefined_name || clrs.has(clr)) {
               return;
             }
             if(formula.execute(clr, attr)) {
-              _data.clrs.add(clr);
+              clrs.add(clr);
             }
           })
         }
       }
+
+      if(!_data.clrs) {
+        _data.clrs = Array.from(clrs);
+      }
     }
-    return Array.from(_data.clrs);
+    return _data.clrs;
   }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{

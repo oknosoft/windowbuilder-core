@@ -173,13 +173,14 @@ class Pricing {
    *
    * Аналог УПзП-шного __ПолучитьЦенуНоменклатуры__
    * @method nom_price
-   * @param nom
-   * @param characteristic
-   * @param price_type
-   * @param prm
-   * @param row
+   * @param nom {CatNom}
+   * @param characteristic {CatCharacteristics}
+   * @param price_type {CatNom_prices_types}
+   * @param prm {Object}
+   * @param row {Object}
+   * @param [clr] {CatClrs}
    */
-  nom_price(nom, characteristic, price_type, prm, row) {
+  nom_price(nom, characteristic, price_type, prm, row, clr) {
 
     if (row && prm) {
       // _owner = calc_order
@@ -197,11 +198,15 @@ class Pricing {
       else if(price_type == prm.price_type.price_type_sale && !prm.price_type.sale_formula.empty()){
         price_prm.formula = prm.price_type.sale_formula;
       }
-      if(!characteristic.clr.empty()){
+
+      if(clr && !clr.empty()) {
+        price_prm.clr = clr;
+      }
+      else if(!characteristic.clr.empty()){
         price_prm.clr = characteristic.clr;
       }
-      row.price = nom._price(price_prm);
 
+      row.price = nom._price(price_prm);
       return row.price;
     }
   }
@@ -355,7 +360,7 @@ class Pricing {
     if(spec.count()){
       spec.forEach((row) => {
 
-        const {_obj, nom, characteristic} = row;
+        const {_obj, nom, characteristic, clr} = row;
 
         if(price_grp_in_spec) {
           const {price_group} = nom;
@@ -374,7 +379,7 @@ class Pricing {
             });
           }
           const {marginality, price_type} = price_grp.get(price_group);
-          this.nom_price(nom, characteristic, price_type, prm, _obj);
+          this.nom_price(nom, characteristic, price_type, prm, _obj, clr);
           _obj.amount = _obj.price * _obj.totqty1;
           _obj.amount_marged = _obj.amount * marginality;
         }
