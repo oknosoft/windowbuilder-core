@@ -78,4 +78,4 @@ class ProfileNestedContent extends Profile {
 
 }
 
-EditorInvisible.ProfileNested = ProfileNested;
+EditorInvisible.ProfileNestedContent = ProfileNestedContent;

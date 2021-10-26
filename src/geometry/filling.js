@@ -1030,10 +1030,10 @@ class Filling extends AbstractFilling(BuilderElement) {
       },
 
       set(target, prop, val, receiver) {
-        switch (prop){
+        switch (prop) {
         case 'clr':
           row.clr = val;
-          return true;
+          break;
         default:
           if(utils.is_guid(prop)) {
             const param = cch.properties.get(prop);
@@ -1050,6 +1050,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             target[prop] = val;
           }
         }
+        return true;
       }
     });
   }

@@ -243,14 +243,15 @@ exports.CchProperties = class CchProperties extends Object {
       }
       const {rnum} = elm;
       if(rnum) {
-        params.find_rows({
-          param: this,
-          cnstr: -elm.elm,
-          region: rnum,
-        }, (row) => {
-          prow = row;
-          return false;
-        });
+        return elm[this.valueOf()];
+        // params.find_rows({
+        //   param: this,
+        //   cnstr: -elm.elm,
+        //   region: rnum,
+        // }, (row) => {
+        //   prow = row;
+        //   return false;
+        // });
       }
       else {
         const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
