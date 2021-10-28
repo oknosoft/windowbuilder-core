@@ -174,7 +174,7 @@ class BuilderElement extends paper.Group {
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
-      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
@@ -227,22 +227,15 @@ class BuilderElement extends paper.Group {
             if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
               /*разбор параметра glass_thickness*/
               if(glass_thickness === 0) {
-                return thicknesses.includes(insert.thickness);
+                return thicknesses.includes(insert.thickness(this));
               }
               else if(glass_thickness === 1) {
                 const {Заполнение, Стекло} = elm_types;
-                return !!sys.elmnts.find({
-                  elm_type: {in: [Заполнение, Стекло]},
-                  nom: insert
-                });
-
+                return sys.glasses().includes(insert);
               }
               else if(glass_thickness === 2) {
-                let min = thicknesses[0];
-                let max = thicknesses[thicknesses.length - 1];
-                if(insert.thickness >= min && insert.thickness <= max) {
-                  return true;
-                }
+                const thickness = insert.thickness(this);
+                return thickness >= thicknesses[0] && thickness <= thicknesses[thicknesses.length - 1];
               }
               else if(glass_thickness === 3) {
                 return true;
@@ -270,11 +263,14 @@ class BuilderElement extends paper.Group {
           selection = {elm_type: elm_types.Добор};
         }
         else if(this instanceof Profile) {
+          const {Любое} = positions;
           if(this.nearest()) {
-            selection = {elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
+            selection = {pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
           }
           else {
-            selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+            selection = {pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
           }
         }
         else {
@@ -419,7 +415,11 @@ class BuilderElement extends paper.Group {
    * @type CatNom
    */
   get nom() {
-    return this.inset.nom(this);
+    const {_attr} = this;
+    if(!_attr.nom) {
+      _attr.nom = this.inset.nom(this);
+    }
+    return _attr.nom;
   }
 
   // номер элемента - свойство только для чтения
@@ -440,12 +440,12 @@ class BuilderElement extends paper.Group {
 
   // ширина
   get width() {
-    return this.inset.width(this);
+    return this.nom.width || 80;
   }
 
   // толщина (для заполнений и, возможно, профилей в 3D)
   get thickness() {
-    return this.inset.thickness;
+    return this.inset.thickness(this);
   }
 
   // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
@@ -468,7 +468,7 @@ class BuilderElement extends paper.Group {
 
   // масса элемента
   get weight() {
-    let {project: {ox}, elm, inset, layer} = this;
+    let {ox, elm, inset, layer} = this;
     // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
       ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
@@ -699,6 +699,7 @@ class BuilderElement extends paper.Group {
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
+      delete _attr.nom;
       _row.inset = v;
       if(_attr && _attr._rays){
         _attr._rays.clear(true);

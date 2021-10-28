@@ -1217,27 +1217,25 @@ class Contour extends AbstractFilling(paper.Layer) {
     // ошибки соединений с заполнениями
     this.glasses(false, true).forEach(glass => {
       let err;
-      glass.profiles.forEach(({cnn, sub_path}) => {
+      const {_row, path, profiles, imposts, inset} = glass;
+      _row.s = glass.form_area;
+
+      profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {
           Object.assign(sub_path, err_attrs);
           err = true;
         }
       });
-      if (err || glass.path.is_self_intersected()) {
+
+      if (err || path.is_self_intersected() || !inset.check_base_restrictions(inset, glass)) {
         glass.fill_error();
       }
       else {
-        const {form_area, inset: {smin, smax, lmin, lmax, hmin, hmax}, bounds: {width, height}} = glass;
-        if((smin && smin > form_area) || (smax && smax < form_area) ||
-          (lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
-          glass.fill_error();
-        }
-        else {
-          glass.path.fillColor = BuilderElement.clr_by_clr.call(glass, glass._row.clr, false);
-        }
+        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr, false);
       }
+
       // Ошибки соединений Onlay в этом заполнении
-      glass.imposts.forEach((impost) => {
+      imposts.forEach((impost) => {
         if(impost instanceof Onlay) {
           const {b, e} = impost._attr._rays;
           const oerr_attrs = Object.assign({radius: 50}, err_attrs);
@@ -2578,12 +2576,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else {
         // заполнения проверяем по толщине
-        if(refill || elm.thickness < elm.project._dp.sys.tmin || elm.thickness > elm.project._dp.sys.tmax) {
+        const {thickness, project} = elm;
+        const {tmin, tmax} = project._dp.sys
+        if(refill || thickness < tmin || thickness > tmax) {
           let {elm_type} = elm.nom;
           if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
             elm_type = elm_types.Стекло;
           }
-          elm._row.inset = elm.project.default_inset({elm_type: [elm_type]});
+          elm._row.inset = project.default_inset({elm_type: [elm_type]});
         }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {

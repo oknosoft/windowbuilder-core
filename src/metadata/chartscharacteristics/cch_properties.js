@@ -241,20 +241,26 @@ exports.CchProperties = class CchProperties extends Object {
           throw `Источник '${src.name}' не поддержан`;
         }
       }
-      const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
-      params.find_rows({
-        param: this,
-        cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
-        inset,
-      }, (row) => {
-        if(!prow || row.cnstr) {
-          prow = row;
-        }
-      });
+      const {rnum} = elm;
+      if(rnum) {
+        return elm[this.valueOf()];
+      }
+      else {
+        const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
+        params.find_rows({
+          param: this,
+          cnstr: cnstr || (elm._row ? {in: [0, -elm._row.elm]} : 0),
+          inset,
+        }, (row) => {
+          if(!prow || row.cnstr) {
+            prow = row;
+          }
+        });
+      }
       if(!prow && (cnstr0 || elm0)) {
         params.find_rows({
           param: this,
-          cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.row]} : 0),
+          cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.elm]} : 0),
           inset,
         }, (row) => {
           if(!prow || row.cnstr) {
@@ -287,7 +293,10 @@ exports.CchProperties = class CchProperties extends Object {
     case comparison_types.in:
     case comparison_types.nin:
 
-      if(!txt_row) {
+      if(value instanceof CatColor_price_groups) {
+        return value.clrs();
+      }
+      else if(!txt_row) {
         return value;
       }
       try {
@@ -325,6 +334,52 @@ exports.CchProperties = class CchProperties extends Object {
 
     default:
       return value;
+    }
+  }
+
+  /**
+   * Возвращает значение параметра с приведением типов
+   * @param v
+   */
+  fetch_type(v) {
+    const {type, _manager} = this;
+    const {utils} = $p;
+    if(type.is_ref) {
+
+      if(type.digits && typeof v === 'number') {
+        return v;
+      }
+
+      if(type.hasOwnProperty('str_len') && !utils.is_guid(v)) {
+        return v;
+      }
+
+      const mgr = _manager.value_mgr({v}, 'v', type);
+      if(mgr) {
+        if(utils.is_data_mgr(mgr)) {
+          return mgr.get(v, false, false);
+        }
+        else {
+          return utils.fetch_type(v, mgr);
+        }
+      }
+
+      if(v) {
+        return null;
+      }
+
+    }
+    else if(type.date_part) {
+      return utils.fix_date(v, true);
+    }
+    else if(type.digits) {
+      return utils.fix_number(v, !type.hasOwnProperty('str_len'));
+    }
+    else if(type.types[0] == 'boolean') {
+      return utils.fix_boolean(v);
+    }
+    else if(type.types[0] == 'json') {
+      return typeof v === 'object' ? v : {};
     }
   }
 

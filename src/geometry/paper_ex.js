@@ -394,6 +394,14 @@ Object.defineProperties(paper.Path.prototype, {
                 path1.firstSegment.point = path1.firstSegment.point.add(tg);
               }
             }
+            else {
+              if(p1last) {
+                path1.add(path1.lastSegment.point.add(tg));
+              }
+              else {
+                path1.insert(0, path1.firstSegment.point.add(tg));
+              }
+            }
           }
 
           if(!path2.closed) {
@@ -404,6 +412,14 @@ Object.defineProperties(paper.Path.prototype, {
               }
               else {
                 path2.firstSegment.point = path2.firstSegment.point.add(tg);
+              }
+            }
+            else {
+              if(p2last) {
+                path2.add(path2.lastSegment.point.add(tg));
+              }
+              else {
+                path2.insert(0, path2.firstSegment.point.add(tg));
               }
             }
           }

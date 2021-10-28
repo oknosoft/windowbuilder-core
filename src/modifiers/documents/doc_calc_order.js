@@ -95,6 +95,11 @@ class FakeElm {
     return this.len;
   }
 
+  get ox() {
+    const {project, row_spec} = this;
+    return project ? project.ox : row_spec._owner._owner;
+  }
+
 }
 
 // свойства и методы объекта

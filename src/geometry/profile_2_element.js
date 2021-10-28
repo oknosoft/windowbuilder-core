@@ -493,7 +493,7 @@ class Profile extends ProfileItem {
             return irow ? irow.inset : inserts.get();
 
           case 'nom':
-            return receiver.inset.nom(target);
+            return receiver.inset.nom(receiver);
 
           case 'ref':
             const {nom} = receiver;

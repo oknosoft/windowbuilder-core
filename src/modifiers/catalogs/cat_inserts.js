@@ -276,15 +276,13 @@
 
         if(!this._by_thickness) {
           this._by_thickness = new Map();
-          this.find_rows({
-            insert_type: {in: this._types_filling},
-            _top: 10000
-          }, (ins) => {
-            if(ins.thickness) {
-              if(!this._by_thickness.has(ins.thickness)) {
-                this._by_thickness.set(ins.thickness, []);
+          this.find_rows({insert_type: {in: this._types_filling}, _top: 10000}, (ins) => {
+            const thickness = ins.thickness();
+            if(thickness) {
+              if(!this._by_thickness.has(thickness)) {
+                this._by_thickness.set(thickness, []);
               }
-              this._by_thickness.get(ins.thickness).push(ins);
+              this._by_thickness.get(thickness).push(ins);
             }
           });
         }
@@ -389,7 +387,7 @@
         return main_rows;
       }
       const {check_params} = ProductsBuilding;
-      const {ox} = elm.project;
+      const {ox} = elm;
       return main_rows.filter((row) => {
         return this.check_base_restrictions(row, elm) && check_params({
           params: this.selection_params,
@@ -460,6 +458,8 @@
 
     /**
      * Возвращает номенклатуру вставки в завсисмости от свойств элемента
+     * @param elm {BuilderElement}
+     * @param [strict] {Boolean} - строгий режим
      */
     nom(elm, strict) {
 
@@ -470,7 +470,7 @@
       }
 
       let _nom;
-      const main_rows = this.main_rows(elm, !elm && strict);
+      const main_rows = this.main_rows(elm, strict);
 
       if(main_rows.length && main_rows[0].nom instanceof CatInserts){
         if(main_rows[0].nom == this) {
@@ -512,19 +512,12 @@
 
     /**
      * Ширина основной номенклатуры вставки
-     * @param elm
-     * @param strict
+     * @param elm {BuilderElement}
+     * @param [strict] {Boolean} - строгий режим
      * @return {*|number}
      */
     width(elm, strict) {
-      const {_data} = this;
-      if(!_data.width) {
-        // если у всех основных номенклатур одинаковая ширина, её и возвращаем без фильтра
-        const widths = new Set();
-        this.specification._obj.filter(({is_main_elm}) => is_main_elm).forEach(({_row}) => widths.add(_row.nom.width));
-        _data.width = widths.size === 1 ? widths.values()[0] : -1;
-      }
-      return (_data.width > 0 ? _data.width : this.nom(elm, strict).width) || 80;
+      return this.nom(elm, strict).width || 80;
     }
 
     /**
@@ -696,8 +689,6 @@
      */
     check_base_restrictions(row, elm) {
       const {_row} = elm;
-      const is_linear = elm.is_linear ? elm.is_linear() : true;
-
 
       if(elm instanceof EditorInvisible.Filling) {
         // проверяем площадь
@@ -707,12 +698,24 @@
         // и фильтр по габаритам
         if(row instanceof CatInserts) {
           const {width, height} = elm.bounds;
-          if((row.lmin > width) || (row.lmax && row.lmax < width) || (row.hmin > height) || (row.hmax && row.hmax < height)){
+          const {lmin, lmax, hmin, hmax, can_rotate} = row;
+          // Если можно вращать то проверим 2 направления
+          if (can_rotate) {
+            const w1 = width > lmin && width < lmax;
+            const h1 = height > hmin && height < hmax;
+            const w2 = height > lmin && height < lmax;
+            const h2 = width > hmin && width < hmax;
+            if (!((w1 && h1) || (w2 && h2))) {
+              return false;
+            }
+          }
+          else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
             return false;
           }
         }
       }
       else {
+        const is_linear = elm.is_linear ? elm.is_linear() : true;
         // только для прямых или только для кривых профилей
         if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
           return false;
@@ -773,9 +776,12 @@
         // если спецификация верхнего уровня задана в изделии, используем её, параллельно формируем формулу
         if(glass_rows.length){
           glass_rows.forEach((row) => {
-            row.inset.filtered_spec({elm, len_angl, ox, own_row: {clr: row.clr}}).forEach((row) => {
-              res.push(row);
-            });
+            const relm = elm.region(row);
+            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
+              const frow = fake_row(srow);
+              frow.relm = relm;
+              res.push(frow);
+            }
           });
           return res;
         }
@@ -1146,7 +1152,7 @@
      * @param region {Number}
      */
     region_spec({elm, len_angl, ox, spec, region}) {
-      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}}, products_building} = $p;
+      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
       const relm = elm.region(region);
       const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
       const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];
@@ -1161,11 +1167,14 @@
           row_spec.qty = row_base.quantity;
 
           // длина с учетом соединений
-          row_spec.len = (_row.len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
+          const k001 = 0.001;
+          const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?
+            elm.generatrix.length : _row.len;
+          row_spec.len = (len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
 
           // припуск для гнутых элементов
           if(!elm.is_linear()) {
-            row_spec.len = row_spec.len + row_spec.nom.arc_elongation / 1000;
+            row_spec.len = row_spec.len + row_spec.nom.arc_elongation * k001;
           }
 
           // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
@@ -1227,26 +1236,51 @@
 
     /**
      * Возвращает толщину вставки
-     *
-     * @property thickness
-     * @return {Number}
+     * @param {elm} {BuilderElement}
+     * @param [strict] {Number}
+     * @return {number}
      */
-    get thickness() {
+    thickness(elm, strict) {
+
+      if(elm) {
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
+          return nom.thickness;
+        }
+        const {check_params} = ProductsBuilding;
+        const {_ox} = elm.layer;
+        let thickness = 0;
+        for(const row of this.specification) {
+          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({
+            params: this.selection_params,
+            ox: _ox,
+            elm,
+            row_spec: row,
+            cnstr: 0,
+            origin: elm.fake_origin || 0,
+          })) {
+            const {nom} = row;
+            if(nom) {
+              thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            }
+          }
+        }
+        return thickness;
+      }
 
       const {_data} = this;
-
-      if(!_data.hasOwnProperty("thickness")){
+      if(!_data.hasOwnProperty('thickness')) {
         _data.thickness = 0;
-        const nom = this.nom(null, true);
-        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)){
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
           _data.thickness = nom.thickness;
         }
-        else{
-          this.specification.forEach(({nom, quantity}) => {
+        else {
+          for(const {nom, quantity} of this.specification) {
             if(nom && quantity) {
-              _data.thickness += nom.thickness;
+              _data.thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
             }
-          });
+          }
         }
       }
 

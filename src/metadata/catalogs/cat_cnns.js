@@ -232,7 +232,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
 
       // TODO: проверить геометрию
-      if(!curr_cnn.stop_applying(cnn_point)) {
+      if(!curr_cnn.stop_applying(cnn_point) && ign_side !== 0) {
         if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
           if(typeof is_outer == 'boolean'){
             if(!is_outer){
@@ -358,7 +358,6 @@ exports.CatCnns = class CatCnns extends Object {
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
-    const {CatInserts} = this._manager._owner.$p;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom) {

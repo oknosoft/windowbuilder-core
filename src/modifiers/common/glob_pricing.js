@@ -137,13 +137,12 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_doc({goods, date}) {
-    const {cat: {nom, currencies, characteristics}, utils} = $p;
+  by_doc({goods, date, currency}) {
+    const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
+    currency = currencies.get(currency);
     for(const row of goods) {
-      const currency = currencies.get(row.currency);
       const onom = nom.get(row.nom, true);
-      const characteristic = characteristics.get(row.nom_characteristic, true);
 
       // если в озу нет подходящей номенклатуры или в строке не задан тип цен - уходим
       if (!onom || !onom._data || !row.price_type){
@@ -153,7 +152,7 @@ class Pricing {
       if (!onom._data._price) {
         onom._data._price = {};
       }
-      const key1 = characteristic ? characteristic.ref : utils.blank.guid;
+      const key1 = (row.nom_characteristic || utils.blank.guid).valueOf();
       if (!onom._data._price[key1]) {
         onom._data._price[key1] = {};
       }
@@ -161,11 +160,7 @@ class Pricing {
       if (!onom._data._price[key1][key2]) {
         onom._data._price[key1][key2] = [];
       }
-      onom._data._price[key1][key2].push({
-        currency,
-        date,
-        price: row.price
-      });
+      onom._data._price[key1][key2].push({currency, date, price: row.price});
 
       // сразу сортируем массив по датам, т.к. порядок используется в других местах
       onom._data._price[key1][key2].sort((a, b) => b.date - a.date);
@@ -178,13 +173,14 @@ class Pricing {
    *
    * Аналог УПзП-шного __ПолучитьЦенуНоменклатуры__
    * @method nom_price
-   * @param nom
-   * @param characteristic
-   * @param price_type
-   * @param prm
-   * @param row
+   * @param nom {CatNom}
+   * @param characteristic {CatCharacteristics}
+   * @param price_type {CatNom_prices_types}
+   * @param prm {Object}
+   * @param row {Object}
+   * @param [clr] {CatClrs}
    */
-  nom_price(nom, characteristic, price_type, prm, row) {
+  nom_price(nom, characteristic, price_type, prm, row, clr) {
 
     if (row && prm) {
       // _owner = calc_order
@@ -202,11 +198,15 @@ class Pricing {
       else if(price_type == prm.price_type.price_type_sale && !prm.price_type.sale_formula.empty()){
         price_prm.formula = prm.price_type.sale_formula;
       }
-      if(!characteristic.clr.empty()){
+
+      if(clr && !clr.empty()) {
+        price_prm.clr = clr;
+      }
+      else if(!characteristic.clr.empty()){
         price_prm.clr = characteristic.clr;
       }
-      row.price = nom._price(price_prm);
 
+      row.price = nom._price(price_prm);
       return row.price;
     }
   }
@@ -347,9 +347,10 @@ class Pricing {
    */
   calc_first_cost(prm) {
 
-    const {marginality_in_spec} = $p.job_prm.pricing;
+    const {marginality_in_spec, price_grp_in_spec} = $p.job_prm.pricing;
     const fake_row = {};
     const {calc_order_row, spec} = prm;
+    const price_grp = new Map();
 
     if(!spec) {
       return;
@@ -359,21 +360,42 @@ class Pricing {
     if(spec.count()){
       spec.forEach((row) => {
 
-        const {_obj, nom, characteristic} = row;
+        const {_obj, nom, characteristic, clr} = row;
 
-        this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj);
-        _obj.amount = _obj.price * _obj.totqty1;
-
-        if(marginality_in_spec){
-          fake_row.nom = nom;
-          const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row);
-          _obj.amount_marged = tmp_price * _obj.totqty1;
+        if(price_grp_in_spec) {
+          const {price_group} = nom;
+          if(!price_grp.has(price_group)) {
+            const pprm = {
+              calc_order_row: {
+                nom,
+                characteristic: calc_order_row.characteristic,
+                _owner: calc_order_row._owner,
+              }
+            };
+            this.price_type(pprm);
+            price_grp.set(price_group, {
+              marginality: pprm.price_type.marginality || 1,
+              price_type: pprm.price_type.price_type_first_cost,
+            });
+          }
+          const {marginality, price_type} = price_grp.get(price_group);
+          this.nom_price(nom, characteristic, price_type, prm, _obj, clr);
+          _obj.amount = _obj.price * _obj.totqty1;
+          _obj.amount_marged = _obj.amount * marginality;
         }
-
+        else {
+          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj);
+          _obj.amount = _obj.price * _obj.totqty1;
+          if(marginality_in_spec){
+            fake_row.nom = nom;
+            const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row);
+            _obj.amount_marged = tmp_price * _obj.totqty1;
+          }
+        }
       });
       calc_order_row.first_cost = spec.aggregate([], ["amount"]).round(2);
     }
-    else{
+    else {
       // расчет себестомиости по номенклатуре строки расчета
       fake_row.nom = calc_order_row.nom;
       fake_row.characteristic = calc_order_row.characteristic;
@@ -431,7 +453,7 @@ class Pricing {
 
 
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
-    let extra_charge = $p.wsql.get_user_param('surcharge_internal', 'number');
+    let extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
     // если пересчет выполняется менеджером, используем наценку по умолчанию
     if(!manager.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;

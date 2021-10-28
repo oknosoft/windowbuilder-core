@@ -756,6 +756,7 @@ class Scheme extends paper.Project {
       // сбрасываем d0 для всех профилей
       this.getItems({class: Profile}).forEach((p) => {
         delete p._attr.d0;
+        delete p._attr.nom;
       });
 
       // регистрируем изменённость характеристики
@@ -981,6 +982,7 @@ class Scheme extends paper.Project {
       }
     }
 
+    const {Импост} = $p.enm.elm_types;
     for (const item of selected) {
       const {parent, layer} = item;
 
@@ -1000,7 +1002,7 @@ class Scheme extends paper.Project {
         else if(!parent.nearest || !parent.nearest()) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
-          if(auto_align && parent.elm_type === $p.enm.elm_types.Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
+          if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
             continue;
           }
 

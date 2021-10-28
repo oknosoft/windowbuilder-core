@@ -31,45 +31,48 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    */
   clrs() {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
-    const {cat, CatClrs, CatColor_price_groups} = _owner.$p;
+    const {cat} = _owner.$p;
     if(!_data.clrs) {
-      _data.clrs = new Set();
+      const clrs = new Set();
 
       clr_conformity.forEach(({clr1}) => {
         if(clr1 instanceof CatClrs) {
           if(clr1.is_folder) {
-            clr1._children().forEach((clr) => _data.clrs.add(clr));
+            clr1._children().forEach((clr) => clrs.add(clr));
           }
           else {
-            _data.clrs.add(clr1);
+            clrs.add(clr1);
           }
         }
         else if(clr1 instanceof CatColor_price_groups) {
           for(const clr of clr1.clrs()) {
-            _data.clrs.add(clr);
+            clrs.add(clr);
           }
         }
       });
 
       // уточним по формуле условия
       if(!formula.empty()) {
-        const attr = {clrs: _data.clrs};
+        const attr = {clrs};
         if(!mode) {
-          const res = Array.from(_data.clrs);
-          _data.clrs = new Set(res.filter((clr) => formula.execute(clr, attr)));
+          _data.clrs = Array.from(clrs).filter((clr) => formula.execute(clr, attr));
         }
         else {
           cat.clrs.forEach((clr) => {
-            if(clr.parent.predefined_name || _data.clrs.has(clr)) {
+            if(clr.parent.predefined_name || clrs.has(clr)) {
               return;
             }
             if(formula.execute(clr, attr)) {
-              _data.clrs.add(clr);
+              clrs.add(clr);
             }
           })
         }
       }
+
+      if(!_data.clrs) {
+        _data.clrs = Array.from(clrs);
+      }
     }
-    return Array.from(_data.clrs);
+    return _data.clrs;
   }
 };

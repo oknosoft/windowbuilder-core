@@ -13,7 +13,6 @@ exports.CatParams_links = class CatParams_links extends Object {
    * @return {*[]}
    */
   append_values(values = []) {
-    const {CatColor_price_groups} = this._manager._owner.$p;
     this.values.forEach((row) => {
       if(row.value instanceof CatColor_price_groups) {
         for(const value of row.value.clrs()) {
