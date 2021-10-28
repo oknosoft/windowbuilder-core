@@ -453,7 +453,7 @@ class Pricing {
 
 
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
-    let extra_charge = $p.wsql.get_user_param('surcharge_internal', 'number');
+    let extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
     // если пересчет выполняется менеджером, используем наценку по умолчанию
     if(!manager.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;
