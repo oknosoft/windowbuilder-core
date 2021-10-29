@@ -118,7 +118,7 @@ class CnnPoint {
       delete _attr.d0;
       delete _attr.nom;
       if(this.profile && this.cnn) {
-        this.cnn = cnns.elm_cnn(this._parent, this.profile, this.cnn_types, this.cnn, 0, undefined, this);
+        this.cnn = $p.cat.cnns.elm_cnn(this._parent, this.profile, this.cnn_types, this.cnn, 0, undefined, this);
       }
       return;
     }
