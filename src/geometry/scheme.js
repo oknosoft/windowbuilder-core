@@ -33,6 +33,9 @@ class Scheme extends paper.Project {
     // массив с моментами времени изменений изделия
     this._ch = [];
 
+    // массив с функциями, ожидающими redraw
+    this._deffer = [];
+
     // узлы и рёбра
     this._skeleton = new Skeleton(this);
 
@@ -673,12 +676,13 @@ class Scheme extends paper.Project {
    */
   redraw(attr = {}) {
 
-    const {_attr, _ch, contours, isBrowser, _scope} = this;
+    const {_attr, _ch, contours, isBrowser, _scope, _deffer} = this;
     const {length} = _ch;
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
 
     if(!_attr._opened || _attr._saving || !length) {
+      _deffer.length = 0;
       return;
     }
 
@@ -719,7 +723,14 @@ class Scheme extends paper.Project {
       this.draw_sizes();
     }
 
+    // сбрасываем счетчик изменений
     _ch.length = 0;
+
+    // выполняем отложенные подписки
+    for(const deffer of _deffer) {
+      deffer(this);
+    }
+    _deffer.length = 0;
   }
 
   /**
@@ -746,9 +757,9 @@ class Scheme extends paper.Project {
   /**
    * Регистрирует факты изменения элемнтов
    */
-  register_change(with_update) {
+  register_change(with_update, deffer) {
 
-    const {_attr, _ch} = this;
+    const {_attr, _ch, _deffer} = this;
 
     if(!_attr._loading) {
 
@@ -766,6 +777,7 @@ class Scheme extends paper.Project {
       this.notify(this, 'scheme_changed');
     }
     _ch.push(Date.now());
+    deffer && _deffer.push(deffer);
 
     if(with_update) {
       this.register_update();
@@ -887,7 +899,8 @@ class Scheme extends paper.Project {
    * Деструктор
    */
   unload() {
-    const {_dp, _attr, _calc_order_row} = this;
+    const {_dp, _attr, _calc_order_row, _deffer} = this;
+    _deffer.length = 0;
     const pnames = ['_loading', '_saving'];
     for (let fld in _attr) {
       if(pnames.includes(fld)) {
