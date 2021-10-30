@@ -716,4 +716,5 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
       _owner.add_inset_params(this.inset, cnstr, null, region);
     }
   }
-}
+};
+
