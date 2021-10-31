@@ -358,7 +358,6 @@ class Profile extends ProfileItem {
     // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     res.clear();
     if(parent) {
-      const {allow_open_cnn} = project._dp.sys;
       const ares = [];
 
       for(const profile of parent.profiles) {

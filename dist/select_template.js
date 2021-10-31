@@ -179,7 +179,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
         const prow = calc_order.extra_fields.find({property: permitted_sys});
         if(prow && prow.txt_row) {
           res.push({
-            name: "ref",
+            name: 'ref',
             path: {inh: prow.txt_row.split(',').map((ref) => production_params.get(ref))}
           });
         }
@@ -201,11 +201,17 @@ export default function ({classes, cat: {characteristics, templates, params_link
       else {
         mf.choice_params = [];
       }
-      const {base_block, obj_delivery_state} = ox;
-      if(obj_delivery_state !== Шаблон &&
-        (base_block.obj_delivery_state === Шаблон || base_block.calc_order.obj_delivery_state === Шаблон)) {
-        this.permitted_sys(base_block.calc_order, mf.choice_params);
+      const {base_block, obj_delivery_state, sys} = ox;
+      if(obj_delivery_state !== Шаблон){
+        if (base_block.obj_delivery_state === Шаблон || base_block.calc_order.obj_delivery_state === Шаблон) {
+          this.permitted_sys(base_block.calc_order, mf.choice_params);
+        }
+        mf.choice_params.push({
+          name: 'template',
+          path: sys.template,
+        });
       }
+
     }
 
   }
