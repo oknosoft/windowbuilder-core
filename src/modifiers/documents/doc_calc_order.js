@@ -393,8 +393,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       throw new Error(`Ошибка при записи заказа ${this.presentation}, ${reason}`);
     };
 
-    return !sobjs.length ? unused() : _manager.pouch_db.bulkDocs(sobjs)
-      .then((bres) => {
+    const bulk = () => {
+      const _id = `${class_name}|${_obj.ref}`;
+      const rev = (this.is_new() || _obj._rev) ?
+        Promise.resolve() :
+        _manager.pouch_db.get(_id)
+          .then(({_rev}) => sobjs.some((o) => {
+            if(o._id === _id) {
+              o._rev = _rev;
+              return true;
+            }
+          }))
+          .catch(() => null);
+      return rev.then(() => _manager.pouch_db.bulkDocs(sobjs));
+    };
+
+    return !sobjs.length ? unused() : bulk().then((bres) => {
         // освежаем ревизии, проверяем успешность записи и вызываем after_save
         for(const row of bres) {
           const [cname, ref] = row.id.split('|');
