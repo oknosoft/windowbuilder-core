@@ -458,7 +458,10 @@ class Pricing {
     if(!manager.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;
     }
-
+    // Учтём наценку в строке 
+    if (calc_order_row.extra_charge_external !== 0) {
+      extra_charge = calc_order_row.extra_charge_external;
+    }
     // TODO: учесть формулу
     calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
 
