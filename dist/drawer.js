@@ -15460,7 +15460,7 @@ class Scheme extends paper.Project {
       }
     }
     this.getItems({class: ContourNested}).forEach(({_ox}) => {
-      if(ox._modified) {
+      if(_ox._modified) {
         revert = revert.then(() => _ox.load());
       }
     });
@@ -24304,7 +24304,7 @@ $p.DocCalc_orderProductionRow.rfields = {
   s: 'n',
 };
 
-$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal';
+$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal,extra_charge_external';
 
 
 /**
