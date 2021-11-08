@@ -132,7 +132,7 @@ class Onlay extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
             this.cnn_point(node).is_cut = true;
             return true;
           }

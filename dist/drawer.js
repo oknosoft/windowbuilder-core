@@ -12072,7 +12072,7 @@ class Profile extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(this.cnn_side(null, ip, rays) === Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) === Снаружи) {
             //this.cnn_point(node).is_cut = true;
             this.rays[node].is_cut = true;
             return true;
@@ -14119,7 +14119,7 @@ class Onlay extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
             this.cnn_point(node).is_cut = true;
             return true;
           }
@@ -14649,10 +14649,11 @@ class Scheme extends paper.Project {
       obj.sys.refill_prm(ox, 0, true);
 
       // cменить на цвет по умолчанию если не входит в список доступных
+      $p.cat.clrs.selection_exclude_service(this._meta.fields.clr, obj.sys, ox);
       const clrs = obj.sys.clr_group.clrs();
       if (clrs.length && !clrs.includes(ox.clr)){
         const {default_clr} = obj.sys;
-        set_clr(default_clr.empty() ? clrs[0] : default_clr);
+        set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
       }
 
       // обновляем свойства изделия и створки
@@ -14666,10 +14667,6 @@ class Scheme extends paper.Project {
 
       if(obj.sys != $p.wsql.get_user_param('editor_last_sys')) {
         $p.wsql.set_user_param('editor_last_sys', obj.sys.ref);
-      }
-
-      if(ox.clr.empty()) {
-        ox.clr = obj.sys.default_clr;
       }
 
       this.register_change(true);
@@ -15463,7 +15460,7 @@ class Scheme extends paper.Project {
       }
     }
     this.getItems({class: ContourNested}).forEach(({_ox}) => {
-      if(ox._modified) {
+      if(_ox._modified) {
         revert = revert.then(() => _ox.load());
       }
     });
@@ -20095,7 +20092,7 @@ $p.cat.clrs.__define({
 	 * @param mf {Object} - описание метаданных поля
 	 */
 	selection_exclude_service: {
-		value(mf, sys) {
+		value(mf, sys, ox) {
 
       if(mf.choice_params) {
         mf.choice_params.length = 0;
@@ -20104,60 +20101,79 @@ $p.cat.clrs.__define({
         mf.choice_params = [];
       }
 
+      const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, CatProduction_params, Editor} = $p;
+
       mf.choice_params.push({
-				name: "parent",
-				path: {not: $p.cat.clrs.predefined("СЛУЖЕБНЫЕ")}
-			});
+        name: 'parent',
+        path: {not: clrs.predefined('СЛУЖЕБНЫЕ')}
+      });
 
-			if(sys){
-				mf.choice_params.push({
-					name: "ref",
-					get path(){
+      if(sys) {
+
+        // связи параметров для цвета изделия
+        const {clr_product} = job_prm.properties;
+        if(clr_product && ox && sys instanceof CatProduction_params) {
+          const links = clr_product.params_links({grid: {selection: {}}, obj: {ox}});
+          // проверим вхождение значения в доступные и при необходимости изменим
+          if(links.length) {
+            const filter = {}
+            clr_product.filter_params_links(filter, null, links);
+            filter.ref && mf.choice_params.push({
+              name: 'ref',
+              path: filter.ref,
+            });
+          }
+        }
+
+        // фильтр доступных цвнетов системы
+        mf.choice_params.push({
+          name: 'ref',
+          get path() {
             const res = [];
-						let clr_group;
+            let clr_group;
 
-						function add_by_clr(clr) {
-              if(clr instanceof $p.CatClrs){
+            function add_by_clr(clr) {
+              if(clr instanceof CatClrs) {
                 const {ref} = clr;
-                if(clr.is_folder){
-                  $p.cat.clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
+                if(clr.is_folder) {
+                  clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
                 }
-                else{
+                else {
                   res.push(ref);
                 }
               }
-              else if(clr instanceof $p.CatColor_price_groups){
+              else if(clr instanceof CatColor_price_groups) {
                 clr.clrs().forEach(add_by_clr);
               }
             }
 
             // ищем непустую цветогруппу
-						if(sys instanceof $p.Editor.BuilderElement){
-							clr_group = sys.inset.clr_group;
-							if(clr_group.empty() && !(sys instanceof $p.Editor.Filling)){
+            if(sys instanceof Editor.BuilderElement) {
+              clr_group = sys.inset.clr_group;
+              if(clr_group.empty() && !(sys instanceof Editor.Filling)) {
                 clr_group = sys.project._dp.sys.clr_group;
               }
-						}
+            }
             else if(sys.hasOwnProperty('sys') && sys.profile && sys.profile.inset) {
               const sclr_group = sys.sys.clr_group;
               const iclr_group = sys.profile.inset.clr_group;
               clr_group = iclr_group.empty() ? sclr_group : iclr_group;
             }
-            else if(sys.sys && sys.sys.clr_group){
+            else if(sys.sys && sys.sys.clr_group) {
               clr_group = sys.sys.clr_group;
             }
-						else{
-							clr_group = sys.clr_group;
-						}
+            else {
+              clr_group = sys.clr_group;
+            }
 
-						if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())){
+            if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())) {
               return {not: ''};
-						}
+            }
             add_by_clr(clr_group);
-						return {in: res};
-					}
-				});
-			}
+            return {in: res};
+          }
+        });
+      }
 		}
 	},
 
@@ -23041,8 +23057,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       throw new Error(`Ошибка при записи заказа ${this.presentation}, ${reason}`);
     };
 
-    return !sobjs.length ? unused() : _manager.pouch_db.bulkDocs(sobjs)
-      .then((bres) => {
+    const bulk = () => {
+      const _id = `${class_name}|${_obj.ref}`;
+      const rev = (this.is_new() || _obj._rev) ?
+        Promise.resolve() :
+        _manager.pouch_db.get(_id)
+          .then(({_rev}) => sobjs.some((o) => {
+            if(o._id === _id) {
+              o._rev = _rev;
+              return true;
+            }
+          }))
+          .catch(() => null);
+      return rev.then(() => _manager.pouch_db.bulkDocs(sobjs));
+    };
+
+    return !sobjs.length ? unused() : bulk().then((bres) => {
         // освежаем ревизии, проверяем успешность записи и вызываем after_save
         for(const row of bres) {
           const [cname, ref] = row.id.split('|');
@@ -24274,7 +24304,7 @@ $p.DocCalc_orderProductionRow.rfields = {
   s: 'n',
 };
 
-$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal';
+$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal,extra_charge_external';
 
 
 /**

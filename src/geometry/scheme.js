@@ -124,10 +124,11 @@ class Scheme extends paper.Project {
       obj.sys.refill_prm(ox, 0, true);
 
       // cменить на цвет по умолчанию если не входит в список доступных
+      $p.cat.clrs.selection_exclude_service(this._meta.fields.clr, obj.sys, ox);
       const clrs = obj.sys.clr_group.clrs();
       if (clrs.length && !clrs.includes(ox.clr)){
         const {default_clr} = obj.sys;
-        set_clr(default_clr.empty() ? clrs[0] : default_clr);
+        set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
       }
 
       // обновляем свойства изделия и створки
@@ -141,10 +142,6 @@ class Scheme extends paper.Project {
 
       if(obj.sys != $p.wsql.get_user_param('editor_last_sys')) {
         $p.wsql.set_user_param('editor_last_sys', obj.sys.ref);
-      }
-
-      if(ox.clr.empty()) {
-        ox.clr = obj.sys.default_clr;
       }
 
       this.register_change(true);
@@ -938,7 +935,7 @@ class Scheme extends paper.Project {
       }
     }
     this.getItems({class: ContourNested}).forEach(({_ox}) => {
-      if(ox._modified) {
+      if(_ox._modified) {
         revert = revert.then(() => _ox.load());
       }
     });

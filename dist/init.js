@@ -697,7 +697,7 @@ set applying(v){this._setter_ts('applying',v)}
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
       //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущиъ для проверки
-      const arr = !use_master ? [{key:link.master}] : link.leadings;
+      const arr = !use_master ? [{key: link.master}] : link.leadings;
 
       arr.forEach((row_key) => {
         let ok_key = true;
@@ -715,7 +715,7 @@ set applying(v){this._setter_ts('applying',v)}
             // выполнение условия рассчитывает объект CchProperties
             grp_ok = row.property.check_condition({
               cnstr: attr.grid.selection.cnstr,
-              ox: attr.obj._owner._owner,
+              ox: attr.ox || attr.obj._owner._owner,
               prm_row: row,
               elm: attr.obj,
             });
