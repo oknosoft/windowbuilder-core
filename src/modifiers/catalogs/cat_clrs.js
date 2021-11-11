@@ -170,7 +170,7 @@ $p.cat.clrs.__define({
 	 * @param mf {Object} - описание метаданных поля
 	 */
 	selection_exclude_service: {
-		value(mf, sys, ox) {
+		value(mf, sys) {
 
       if(mf.choice_params) {
         mf.choice_params.length = 0;
@@ -179,7 +179,7 @@ $p.cat.clrs.__define({
         mf.choice_params = [];
       }
 
-      const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, CatProduction_params, Editor} = $p;
+      const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, DpBuyers_order, Editor} = $p;
 
       mf.choice_params.push({
         name: 'parent',
@@ -190,8 +190,8 @@ $p.cat.clrs.__define({
 
         // связи параметров для цвета изделия
         const {clr_product} = job_prm.properties;
-        if(clr_product && ox && sys instanceof CatProduction_params) {
-          const links = clr_product.params_links({grid: {selection: {}}, obj: {ox}});
+        if(clr_product && sys instanceof DpBuyers_order) {
+          const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
           // проверим вхождение значения в доступные и при необходимости изменим
           if(links.length) {
             const filter = {}

@@ -1299,10 +1299,10 @@
       }
 
       const sprms = [];
-      const {order} = enm.plan_detailing;
+      const {order, product, nearest} = enm.plan_detailing;
 
       this.selection_params.forEach(({param, origin}) => {
-        if(param.empty() || origin === order) {
+        if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
         if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){

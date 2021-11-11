@@ -714,8 +714,8 @@ set applying(v){this._setter_ts('applying',v)}
           for(const row of grp) {
             // выполнение условия рассчитывает объект CchProperties
             grp_ok = row.property.check_condition({
-              cnstr: attr.grid.selection.cnstr,
-              ox: attr.ox || attr.obj._owner._owner,
+              cnstr: attr.grid ? attr.grid.selection.cnstr : 0,
+              ox: attr.obj._owner._owner,
               prm_row: row,
               elm: attr.obj,
             });

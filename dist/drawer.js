@@ -3223,7 +3223,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
-    const {_dp} = this.project;
+    const {project} = this;
+    const {_dp} = project;
     const {sys} = _dp;
     let notify;
 
@@ -3246,7 +3247,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
       else if(param.inheritance === 3) {
-        const bvalue = param.branch_value({project: this.project, cnstr, ox: this.project.ox});
+        const bvalue = param.branch_value({project, cnstr, ox: project.ox});
         if(prow.value !== bvalue) {
           prow.value = bvalue;
           notify = true;
@@ -3263,6 +3264,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
+        project.check_clr();
       }
     };
 
@@ -14602,6 +14604,45 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Устанавливает цвет всех профилей изделия
+   * @param clr {CatClrs}
+   */
+  set_clr(clr) {
+    const {ox, _dp} = this;
+    ox._obj.clr = _dp._obj.clr = clr.valueOf();
+    this.getItems({class: ProfileItem}).forEach((elm) => {
+      if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
+        elm.clr = clr;
+      }
+    });
+  }
+
+  /**
+   * Освежает отбор в метаданных доступных цветов и при необходимости, цвет изделия
+   */
+  check_clr() {
+    const {ox, _dp} = this;
+    const {cat, utils} = $p;
+    const cmeta = _dp._metadata('clr');
+    cat.clrs.selection_exclude_service(cmeta, _dp);
+    const clrs = [..._dp.sys.clr_group.clrs()];
+    if(cmeta.choice_params.length > 2) {
+      const all = clrs.length ? clrs.splice(0) : cat.clrs;
+      for (const clr of all) {
+        if(cmeta.choice_params.every(({name, path}) => {
+          return utils._selection(clr, {[name]: path});
+        })) {
+          clrs.push(clr);
+        }
+      }
+    }
+    if (clrs.length && !clrs.includes(ox.clr)){
+      const {default_clr} = _dp.sys;
+      this.set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
+    }
+  }
+
+  /**
    * наблюдатель за изменениями свойств изделия
    * @param obj
    * @param fields
@@ -14617,14 +14658,6 @@ class Scheme extends paper.Project {
 
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
-    const set_clr = (clr) => {
-      ox.clr = clr;
-      this.getItems({class: ProfileItem}).forEach((elm) => {
-        if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
-          elm.clr = clr;
-        }
-      });
-    };
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
@@ -14641,7 +14674,7 @@ class Scheme extends paper.Project {
     }
 
     if(fields.hasOwnProperty('clr')) {
-      set_clr(obj.clr);
+      this.set_clr(obj.clr);
     }
 
     if(fields.hasOwnProperty('sys') && !obj.sys.empty()) {
@@ -14649,12 +14682,7 @@ class Scheme extends paper.Project {
       obj.sys.refill_prm(ox, 0, true);
 
       // cменить на цвет по умолчанию если не входит в список доступных
-      $p.cat.clrs.selection_exclude_service(this._meta.fields.clr, obj.sys, ox);
-      const clrs = obj.sys.clr_group.clrs();
-      if (clrs.length && !clrs.includes(ox.clr)){
-        const {default_clr} = obj.sys;
-        set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
-      }
+      this.check_clr();
 
       // обновляем свойства изделия и створки
       obj._manager.emit_async('rows', obj, {extra_fields: true});
@@ -15002,6 +15030,7 @@ class Scheme extends paper.Project {
 
       // ограничиваем список систем в интерфейсе
       templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve, reject) => {
@@ -15398,7 +15427,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope.eve.emit_async(type, obj, fields);
+    this._scope && this._scope.eve.emit_async(type, obj, fields);
   }
 
   /**
@@ -19919,6 +19948,31 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
   }
 };
 
+// при изменении реквизита табчасти состава заполнения
+$p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
+  // для вставок состава, перезаполняем параметры
+  const {_obj} = this;
+  if(field === 'inset' && value != this.inset) {
+    _obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
+    const {inset, clr, dop} = this;
+    const {product_params} = inset;
+    const params = {};
+    inset.used_params().forEach((param) => {
+      if((!param.is_calculated || param.show_calculated)) {
+        const def = product_params.find({param});
+        if(def) {
+          params[param.valueOf()] = param.fetch_type(def.value);
+        }
+      }
+    });
+    const clrs = inset.clr_group.clrs();
+    if(clrs.length && !clrs.includes(clr)) {
+      _obj.clr = clrs[0].valueOf();
+    }
+    this.dop = Object.assign(dop, {params});
+  }
+};
+
 
 
 /**
@@ -20092,7 +20146,7 @@ $p.cat.clrs.__define({
 	 * @param mf {Object} - описание метаданных поля
 	 */
 	selection_exclude_service: {
-		value(mf, sys, ox) {
+		value(mf, sys) {
 
       if(mf.choice_params) {
         mf.choice_params.length = 0;
@@ -20101,7 +20155,7 @@ $p.cat.clrs.__define({
         mf.choice_params = [];
       }
 
-      const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, CatProduction_params, Editor} = $p;
+      const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, DpBuyers_order, Editor} = $p;
 
       mf.choice_params.push({
         name: 'parent',
@@ -20112,8 +20166,8 @@ $p.cat.clrs.__define({
 
         // связи параметров для цвета изделия
         const {clr_product} = job_prm.properties;
-        if(clr_product && ox && sys instanceof CatProduction_params) {
-          const links = clr_product.params_links({grid: {selection: {}}, obj: {ox}});
+        if(clr_product && sys instanceof DpBuyers_order) {
+          const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
           // проверим вхождение значения в доступные и при необходимости изменим
           if(links.length) {
             const filter = {}
@@ -20755,10 +20809,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
 
     const sprms = [];
-    const {product, order} = $p.enm.plan_detailing;
+    const {order, product, nearest} = $p.enm.plan_detailing;
 
     this.selection_params.forEach(({param, origin}) => {
-      if(param.empty() || origin === product || origin === order) {
+      if(param.empty() || origin === product || origin === order || origin === nearest) {
         return;
       }
       if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
@@ -22453,10 +22507,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const sprms = [];
-      const {order} = enm.plan_detailing;
+      const {order, product, nearest} = enm.plan_detailing;
 
       this.selection_params.forEach(({param, origin}) => {
-        if(param.empty() || origin === order) {
+        if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
         if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){

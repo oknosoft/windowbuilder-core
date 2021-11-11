@@ -77,6 +77,45 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Устанавливает цвет всех профилей изделия
+   * @param clr {CatClrs}
+   */
+  set_clr(clr) {
+    const {ox, _dp} = this;
+    ox._obj.clr = _dp._obj.clr = clr.valueOf();
+    this.getItems({class: ProfileItem}).forEach((elm) => {
+      if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
+        elm.clr = clr;
+      }
+    });
+  }
+
+  /**
+   * Освежает отбор в метаданных доступных цветов и при необходимости, цвет изделия
+   */
+  check_clr() {
+    const {ox, _dp} = this;
+    const {cat, utils} = $p;
+    const cmeta = _dp._metadata('clr');
+    cat.clrs.selection_exclude_service(cmeta, _dp);
+    const clrs = [..._dp.sys.clr_group.clrs()];
+    if(cmeta.choice_params.length > 2) {
+      const all = clrs.length ? clrs.splice(0) : cat.clrs;
+      for (const clr of all) {
+        if(cmeta.choice_params.every(({name, path}) => {
+          return utils._selection(clr, {[name]: path});
+        })) {
+          clrs.push(clr);
+        }
+      }
+    }
+    if (clrs.length && !clrs.includes(ox.clr)){
+      const {default_clr} = _dp.sys;
+      this.set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
+    }
+  }
+
+  /**
    * наблюдатель за изменениями свойств изделия
    * @param obj
    * @param fields
@@ -92,14 +131,6 @@ class Scheme extends paper.Project {
 
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
-    const set_clr = (clr) => {
-      ox.clr = clr;
-      this.getItems({class: ProfileItem}).forEach((elm) => {
-        if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
-          elm.clr = clr;
-        }
-      });
-    };
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
@@ -116,7 +147,7 @@ class Scheme extends paper.Project {
     }
 
     if(fields.hasOwnProperty('clr')) {
-      set_clr(obj.clr);
+      this.set_clr(obj.clr);
     }
 
     if(fields.hasOwnProperty('sys') && !obj.sys.empty()) {
@@ -124,12 +155,7 @@ class Scheme extends paper.Project {
       obj.sys.refill_prm(ox, 0, true);
 
       // cменить на цвет по умолчанию если не входит в список доступных
-      $p.cat.clrs.selection_exclude_service(this._meta.fields.clr, obj.sys, ox);
-      const clrs = obj.sys.clr_group.clrs();
-      if (clrs.length && !clrs.includes(ox.clr)){
-        const {default_clr} = obj.sys;
-        set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
-      }
+      this.check_clr();
 
       // обновляем свойства изделия и створки
       obj._manager.emit_async('rows', obj, {extra_fields: true});
@@ -477,6 +503,7 @@ class Scheme extends paper.Project {
 
       // ограничиваем список систем в интерфейсе
       templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve, reject) => {
@@ -873,7 +900,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope.eve.emit_async(type, obj, fields);
+    this._scope && this._scope.eve.emit_async(type, obj, fields);
   }
 
   /**
