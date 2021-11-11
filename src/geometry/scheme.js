@@ -900,7 +900,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope.eve.emit_async(type, obj, fields);
+    this._scope && this._scope.eve.emit_async(type, obj, fields);
   }
 
   /**

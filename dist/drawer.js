@@ -15427,7 +15427,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope.eve.emit_async(type, obj, fields);
+    this._scope && this._scope.eve.emit_async(type, obj, fields);
   }
 
   /**
@@ -19954,7 +19954,7 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
   const {_obj} = this;
   if(field === 'inset' && value != this.inset) {
     _obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    const {inset, dop} = this;
+    const {inset, clr, dop} = this;
     const {product_params} = inset;
     const params = {};
     inset.used_params().forEach((param) => {
@@ -19965,6 +19965,10 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
         }
       }
     });
+    const clrs = inset.clr_group.clrs();
+    if(clrs.length && !clrs.includes(clr)) {
+      _obj.clr = clrs[0].valueOf();
+    }
     this.dop = Object.assign(dop, {params});
   }
 };
@@ -20805,10 +20809,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
 
     const sprms = [];
-    const {product, order} = $p.enm.plan_detailing;
+    const {order, product, nearest} = $p.enm.plan_detailing;
 
     this.selection_params.forEach(({param, origin}) => {
-      if(param.empty() || origin === product || origin === order) {
+      if(param.empty() || origin === product || origin === order || origin === nearest) {
         return;
       }
       if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
@@ -22503,10 +22507,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const sprms = [];
-      const {order} = enm.plan_detailing;
+      const {order, product, nearest} = enm.plan_detailing;
 
       this.selection_params.forEach(({param, origin}) => {
-        if(param.empty() || origin === order) {
+        if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
         if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){

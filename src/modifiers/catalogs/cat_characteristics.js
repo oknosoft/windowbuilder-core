@@ -724,7 +724,7 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
   const {_obj} = this;
   if(field === 'inset' && value != this.inset) {
     _obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    const {inset, dop} = this;
+    const {inset, clr, dop} = this;
     const {product_params} = inset;
     const params = {};
     inset.used_params().forEach((param) => {
@@ -735,6 +735,10 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
         }
       }
     });
+    const clrs = inset.clr_group.clrs();
+    if(clrs.length && !clrs.includes(clr)) {
+      _obj.clr = clrs[0].valueOf();
+    }
     this.dop = Object.assign(dop, {params});
   }
 };
