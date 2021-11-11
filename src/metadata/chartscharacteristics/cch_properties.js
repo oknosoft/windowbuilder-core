@@ -158,7 +158,8 @@ exports.CchProperties = class CchProperties extends Object {
       elm,
       elm2,
       ox,
-      calc_order
+      calc_order,
+      prm_row,
     }) : this.extract_value(prm_row);
 
     let ok = false;
