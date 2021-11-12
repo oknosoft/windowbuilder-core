@@ -437,8 +437,8 @@ set applying(v){this._setter_ts('applying',v)}
     // для алгоритма clr_prm и цветового параметра, фильтр отключаем
     if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
       (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq) &&
-        type.types.includes('cat.clrs') &&
-        (!prm_row.value || prm_row.value.empty())) {
+      type.types.includes('cat.clrs') &&
+      (!prm_row.value || prm_row.value.empty())) {
       return true;
     }
 
@@ -450,7 +450,7 @@ set applying(v){this._setter_ts('applying',v)}
       elm2,
       ox,
       calc_order,
-      prm_row
+      prm_row,
     }) : this.extract_value(prm_row);
 
     let ok = false;

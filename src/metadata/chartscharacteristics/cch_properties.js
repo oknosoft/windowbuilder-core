@@ -146,8 +146,8 @@ exports.CchProperties = class CchProperties extends Object {
     // для алгоритма clr_prm и цветового параметра, фильтр отключаем
     if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
       (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq) &&
-        type.types.includes('cat.clrs') &&
-        (!prm_row.value || prm_row.value.empty())) {
+      type.types.includes('cat.clrs') &&
+      (!prm_row.value || prm_row.value.empty())) {
       return true;
     }
 
