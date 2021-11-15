@@ -196,7 +196,7 @@ class CnnPoint {
         }), style);
       }
       else {
-        _parent.err_spec_row($p.job_prm.nom.critical_error, cnn ? $p.msg.err_seam_len : $p.msg.err_no_cnn);
+        _parent.err_spec_row($p.job_prm.nom.critical_error, cnn ? $p.msg.err_seam_len : $p.msg.err_no_cnn,_parent.inset);
       }
     }
   }

@@ -1538,6 +1538,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
 
       isNaN(_obj.price) && (_obj.price = 0);
+      isNaN(_obj.extra_charge_external) && (_obj.extra_charge_external = 0);
       isNaN(_obj.price_internal) && (_obj.price_internal = 0);
       isNaN(_obj.discount_percent) && (_obj.discount_percent = 0);
       isNaN(_obj.discount_percent_internal) && (_obj.discount_percent_internal = 0);
@@ -1554,7 +1555,10 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
-
+        // если есть наценка в строке применим ее
+        if (_obj.extra_charge_external !== 0) {
+          extra_charge = _obj.extra_charge_external;
+        }
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
         }

@@ -291,7 +291,7 @@ class Pricing {
           if(!ok){
             return false;
           }
-        })
+        });
       }
       if(ok){
         ares.push(row);
@@ -407,7 +407,7 @@ class Pricing {
       const fake_prm = {
         spec: value.characteristic.specification,
         calc_order_row: value
-      }
+      };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);
     });
@@ -428,7 +428,7 @@ class Pricing {
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
     if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
-      ;
+
     }
     else {
       const price_cost = marginality_in_spec && prm.spec.count() ?
