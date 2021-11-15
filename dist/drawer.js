@@ -6605,7 +6605,7 @@ class BuilderElement extends paper.Group {
    * @param critical {Boolean}
    * @param text {String}
    */
-  err_spec_row(nom, text) {
+  err_spec_row(nom, text, origin) {
     if(!nom){
       nom = $p.job_prm.nom.info_error;
     }
@@ -6616,6 +6616,7 @@ class BuilderElement extends paper.Group {
         row_base: {clr: $p.cat.clrs.get(), nom},
         spec: _ox.specification,
         ox: _ox,
+        origin,
       });
     }
     if(text){
@@ -9495,7 +9496,8 @@ class CnnPoint {
         }), style);
       }
       else {
-        _parent.err_spec_row($p.job_prm.nom.critical_error, cnn ? $p.msg.err_seam_len : $p.msg.err_no_cnn);
+        const {job_prm: {nom}, msg} = $p;
+        _parent.err_spec_row(nom.critical_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
       }
     }
   }
@@ -17312,7 +17314,7 @@ class Pricing {
           if(!ok){
             return false;
           }
-        })
+        });
       }
       if(ok){
         ares.push(row);
@@ -17428,7 +17430,7 @@ class Pricing {
       const fake_prm = {
         spec: value.characteristic.specification,
         calc_order_row: value
-      }
+      };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);
     });
@@ -22051,7 +22053,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
       // контроль массы, размеров основной вставки
       if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
-        elm.err_spec_row(job_prm.nom.critical_error);
+        elm.err_spec_row(job_prm.nom.critical_error, this);
       }
 
       return res;
@@ -24261,6 +24263,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
 
       isNaN(_obj.price) && (_obj.price = 0);
+      isNaN(_obj.extra_charge_external) && (_obj.extra_charge_external = 0);
       isNaN(_obj.price_internal) && (_obj.price_internal = 0);
       isNaN(_obj.discount_percent) && (_obj.discount_percent = 0);
       isNaN(_obj.discount_percent_internal) && (_obj.discount_percent_internal = 0);
@@ -24277,7 +24280,10 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
-
+        // если есть наценка в строке применим ее
+        if (_obj.extra_charge_external !== 0) {
+          extra_charge = _obj.extra_charge_external;
+        }
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
         }

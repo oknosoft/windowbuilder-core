@@ -809,7 +809,7 @@ class BuilderElement extends paper.Group {
    * @param critical {Boolean}
    * @param text {String}
    */
-  err_spec_row(nom, text,_owner) {
+  err_spec_row(nom, text, origin) {
     if(!nom){
       nom = $p.job_prm.nom.info_error;
     }
@@ -820,7 +820,7 @@ class BuilderElement extends paper.Group {
         row_base: {clr: $p.cat.clrs.get(), nom},
         spec: _ox.specification,
         ox: _ox,
-        origin:_owner,
+        origin,
       });
     }
     if(text){

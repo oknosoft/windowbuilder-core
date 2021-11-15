@@ -838,7 +838,7 @@
 
       // контроль массы, размеров основной вставки
       if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
-        elm.err_spec_row(job_prm.nom.critical_error,elm.inset);
+        elm.err_spec_row(job_prm.nom.critical_error, this);
       }
 
       return res;
