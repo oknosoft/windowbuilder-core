@@ -18292,6 +18292,11 @@ class ProductsBuilding {
       const contours = scheme.getItems({class: Contour});
       for (const contour of contours.reverse()) {
 
+        // пропускаем слои вложенных изделий
+        if(contour._ox !== ox) {
+          continue;
+        }
+
         // для всех профилей контура
         for (const elm of contour.children) {
           elm instanceof Profile && !(elm instanceof ProfileParent) && base_spec_profile(elm);
