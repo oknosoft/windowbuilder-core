@@ -291,7 +291,7 @@ class Pricing {
           if(!ok){
             return false;
           }
-        })
+        });
       }
       if(ok){
         ares.push(row);
@@ -407,7 +407,7 @@ class Pricing {
       const fake_prm = {
         spec: value.characteristic.specification,
         calc_order_row: value
-      }
+      };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);
     });
@@ -428,7 +428,7 @@ class Pricing {
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
     if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
-      ;
+
     }
     else {
       const price_cost = marginality_in_spec && prm.spec.count() ?
@@ -458,7 +458,7 @@ class Pricing {
     if(!manager.partners_uids.length || !extra_charge) {
       extra_charge = price_type.extra_charge_external || 0;
     }
-    // Учтём наценку в строке 
+    // Учтём наценку в строке
     if (calc_order_row.extra_charge_external !== 0) {
       extra_charge = calc_order_row.extra_charge_external;
     }
