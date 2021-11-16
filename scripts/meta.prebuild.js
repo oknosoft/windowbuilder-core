@@ -257,10 +257,18 @@ function obj_constructor_text(_m, category, name, categoties) {
       for (f in meta.fields) {
         if(category === 'cch' && f === 'type') {
           text += `get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
-        set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
+set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
         }
         else {
-          text += `get ${f}(){return this._getter('${f}')}\n`;
+
+          const mf = f === 'clr' && meta.fields[f];
+          if(mf && mf.type.str_len === 72 && !mf.type.types.includes('cat.color_price_groups')) {
+            text += `get ${f}(){return $p.cat.clrs.getter(this._obj.clr)}\n`;
+          }
+          else {
+            text += `get ${f}(){return this._getter('${f}')}\n`;
+          }
+
           if(!meta.read_only) {
             text += `set ${f}(v){this._setter('${f}',v)}\n`;
           }
@@ -306,7 +314,14 @@ function obj_constructor_text(_m, category, name, categoties) {
 
     // в прототипе строки табчасти создаём свойства в соответствии с полями табчасти
     for (const rf in meta.tabular_sections[ts].fields) {
-      text += `get ${rf}(){return this._getter('${rf}')}\nset ${rf}(v){this._setter('${rf}',v)}\n`;
+      const mf = rf === 'clr' && meta.tabular_sections[ts].fields[rf];
+      if(mf && mf.type.str_len === 72 && !mf.type.types.includes('cat.color_price_groups')) {
+        text += `get ${rf}(){return $p.cat.clrs.getter(this._obj.clr)}`;
+      }
+      else {
+        text += `get ${rf}(){return this._getter('${rf}')}`;
+      }
+      text += `\nset ${rf}(v){this._setter('${rf}',v)}\n`;
     }
 
     text += `}\n`;

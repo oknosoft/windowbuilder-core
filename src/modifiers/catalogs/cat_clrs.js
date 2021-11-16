@@ -86,6 +86,18 @@ $p.cat.clrs.__define({
   },
 
   /**
+   * Получает цвет с учётом длинных гвидов
+   */
+  getter: {
+    value(clr) {
+      if(clr && clr.length === 72) {
+        return this.by_in_out({clr_in: clr.substr(0, 36), clr_out: clr.substr(36)});
+      }
+      return this.get(clr);
+    }
+  },
+
+  /**
    * ищет по цветам снаружи-изнутри
    * @return {CatClrs}
    */

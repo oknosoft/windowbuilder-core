@@ -140,23 +140,13 @@ export default function ({classes, cat: {characteristics, templates, params_link
       }
     }
 
-    get clr() {
-      return this._getter('clr');
-    }
-    set clr(v) {
-      this._setter('clr', v);
-    }
+    get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+    set clr(v){this._setter('clr',v)}
 
-    get template_props() {
-      return this._getter('template_props');
-    }
-    set template_props(v) {
-      this._setter('template_props', v);
-    }
+    get template_props() {return this._getter('template_props')}
+    set template_props(v) {this._setter('template_props', v)}
 
-    get params() {
-      return this._getter_ts('params');
-    }
+    get params() {return this._getter_ts('params')}
 
     value_change(field, type, value) {
       if(field == 'calc_order' && this[field] != value) {
