@@ -113,6 +113,15 @@ class CnnPoint {
 
   clear(mode) {
     const {_attr} = this._parent;
+    if(mode === 'with_neighbor') {
+      _attr._corns.length = 0;
+      delete _attr.d0;
+      delete _attr.nom;
+      if(this.profile && this.cnn) {
+        this.cnn = $p.cat.cnns.elm_cnn(this._parent, this.profile, this.cnn_types, this.cnn, 0, undefined, this);
+      }
+      return;
+    }
     if(this.profile_point) {
       this.profile_point = '';
     }
@@ -187,7 +196,8 @@ class CnnPoint {
         }), style);
       }
       else {
-        _parent.err_spec_row($p.job_prm.nom.critical_error, cnn ? $p.msg.err_seam_len : $p.msg.err_no_cnn);
+        const {job_prm: {nom}, msg} = $p;
+        _parent.err_spec_row(nom.critical_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
       }
     }
   }
@@ -323,7 +333,6 @@ class ProfileRays {
     if(with_cnn === 'with_neighbor') {
       const {cnns} = $p.cat;
       const {parent} = this;
-      delete parent._attr.d0;
 
       // прибиваем соединения в точках b и e
       const nodes = ['b', 'e'];

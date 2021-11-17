@@ -33,6 +33,9 @@ class Scheme extends paper.Project {
     // массив с моментами времени изменений изделия
     this._ch = [];
 
+    // массив с функциями, ожидающими redraw
+    this._deffer = [];
+
     // узлы и рёбра
     this._skeleton = new Skeleton(this);
 
@@ -74,6 +77,45 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Устанавливает цвет всех профилей изделия
+   * @param clr {CatClrs}
+   */
+  set_clr(clr) {
+    const {ox, _dp} = this;
+    ox._obj.clr = _dp._obj.clr = clr.valueOf();
+    this.getItems({class: ProfileItem}).forEach((elm) => {
+      if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
+        elm.clr = clr;
+      }
+    });
+  }
+
+  /**
+   * Освежает отбор в метаданных доступных цветов и при необходимости, цвет изделия
+   */
+  check_clr() {
+    const {ox, _dp} = this;
+    const {cat, utils} = $p;
+    const cmeta = _dp._metadata('clr');
+    cat.clrs.selection_exclude_service(cmeta, _dp);
+    const clrs = [..._dp.sys.clr_group.clrs()];
+    if(cmeta.choice_params.length > 2) {
+      const all = clrs.length ? clrs.splice(0) : cat.clrs;
+      for (const clr of all) {
+        if(cmeta.choice_params.every(({name, path}) => {
+          return utils._selection(clr, {[name]: path});
+        })) {
+          clrs.push(clr);
+        }
+      }
+    }
+    if (clrs.length && !clrs.includes(ox.clr)){
+      const {default_clr} = _dp.sys;
+      this.set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
+    }
+  }
+
+  /**
    * наблюдатель за изменениями свойств изделия
    * @param obj
    * @param fields
@@ -89,14 +131,6 @@ class Scheme extends paper.Project {
 
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
-    const set_clr = (clr) => {
-      ox.clr = clr;
-      this.getItems({class: ProfileItem}).forEach((elm) => {
-        if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
-          elm.clr = clr;
-        }
-      });
-    };
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
@@ -113,7 +147,7 @@ class Scheme extends paper.Project {
     }
 
     if(fields.hasOwnProperty('clr')) {
-      set_clr(obj.clr);
+      this.set_clr(obj.clr);
     }
 
     if(fields.hasOwnProperty('sys') && !obj.sys.empty()) {
@@ -121,11 +155,7 @@ class Scheme extends paper.Project {
       obj.sys.refill_prm(ox, 0, true);
 
       // cменить на цвет по умолчанию если не входит в список доступных
-      const clrs = obj.sys.clr_group.clrs();
-      if (clrs.length && !clrs.includes(ox.clr)){
-        const {default_clr} = obj.sys;
-        set_clr(default_clr.empty() ? clrs[0] : default_clr);
-      }
+      this.check_clr();
 
       // обновляем свойства изделия и створки
       obj._manager.emit_async('rows', obj, {extra_fields: true});
@@ -138,10 +168,6 @@ class Scheme extends paper.Project {
 
       if(obj.sys != $p.wsql.get_user_param('editor_last_sys')) {
         $p.wsql.set_user_param('editor_last_sys', obj.sys.ref);
-      }
-
-      if(ox.clr.empty()) {
-        ox.clr = obj.sys.default_clr;
       }
 
       this.register_change(true);
@@ -479,6 +505,7 @@ class Scheme extends paper.Project {
 
       // ограничиваем список систем в интерфейсе
       templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve, reject) => {
@@ -676,10 +703,11 @@ class Scheme extends paper.Project {
   redraw(attr = {}) {
 
     const {with_links} = attr;
-    const {_attr, _ch, contours, isBrowser} = this;
+    const {_attr, _ch, contours, isBrowser, _deffer} = this;
     const {length} = _ch;
 
     if(_attr._saving || !length) {
+      _deffer.length = 0;
       return;
     }
 
@@ -717,7 +745,14 @@ class Scheme extends paper.Project {
       this.draw_sizes();
     }
 
+    // сбрасываем счетчик изменений
     _ch.length = 0;
+
+    // выполняем отложенные подписки
+    for(const deffer of _deffer) {
+      deffer(this);
+    }
+    _deffer.length = 0;
   }
 
   /**
@@ -744,9 +779,9 @@ class Scheme extends paper.Project {
   /**
    * Регистрирует факты изменения элемнтов
    */
-  register_change(with_update) {
+  register_change(with_update, deffer) {
 
-    const {_attr, _ch} = this;
+    const {_attr, _ch, _deffer} = this;
 
     if(!_attr._loading) {
 
@@ -764,6 +799,7 @@ class Scheme extends paper.Project {
       this.notify(this, 'scheme_changed');
     }
     _ch.push(Date.now());
+    deffer && _deffer.push(deffer);
 
     if(with_update) {
       this.register_update();
@@ -862,7 +898,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope.eve.emit_async(type, obj, fields);
+    this._scope && this._scope.eve.emit_async(type, obj, fields);
   }
 
   /**
@@ -885,7 +921,8 @@ class Scheme extends paper.Project {
    * Деструктор
    */
   unload() {
-    const {_dp, _attr, _calc_order_row} = this;
+    const {_dp, _attr, _calc_order_row, _deffer} = this;
+    _deffer.length = 0;
     const pnames = ['_loading', '_saving'];
     for (let fld in _attr) {
       if(pnames.includes(fld)) {
@@ -923,7 +960,7 @@ class Scheme extends paper.Project {
       }
     }
     this.getItems({class: ContourNested}).forEach(({_ox}) => {
-      if(ox._modified) {
+      if(_ox._modified) {
         revert = revert.then(() => _ox.load());
       }
     });
@@ -1646,7 +1683,7 @@ class Scheme extends paper.Project {
    * @returns {Boolean|undefined}
    */
   check_distance(element, profile, res, point, check_only) {
-    //const {allow_open_cnn} = this._dp.sys;
+
     const {elm_types, cnn_types: {acn, av, ah, long}, orientations} = $p.enm;
 
 
@@ -1658,7 +1695,6 @@ class Scheme extends paper.Project {
     // Проверяет дистанцию в окрестности начала или конца соседнего элемента
     function check_node_distance(node) {
       distance = element[node].getDistance(point)
-      // allow_open_cnn ? parseFloat(consts.sticking_l) : consts.sticking)
       if(distance < parseFloat(consts.sticking_l)) {
 
         if(typeof res.distance == 'number' && res.distance < distance) {

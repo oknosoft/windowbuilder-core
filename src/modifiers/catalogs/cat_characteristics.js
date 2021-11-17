@@ -716,4 +716,30 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
       _owner.add_inset_params(this.inset, cnstr, null, region);
     }
   }
-}
+};
+
+// при изменении реквизита табчасти состава заполнения
+$p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
+  // для вставок состава, перезаполняем параметры
+  const {_obj} = this;
+  if(field === 'inset' && value != this.inset) {
+    _obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
+    const {inset, clr, dop} = this;
+    const {product_params} = inset;
+    const params = {};
+    inset.used_params().forEach((param) => {
+      if((!param.is_calculated || param.show_calculated)) {
+        const def = product_params.find({param});
+        if(def) {
+          params[param.valueOf()] = param.fetch_type(def.value);
+        }
+      }
+    });
+    const clrs = inset.clr_group.clrs();
+    if(clrs.length && !clrs.includes(clr)) {
+      _obj.clr = clrs[0].valueOf();
+    }
+    this.dop = Object.assign(dop, {params});
+  }
+};
+

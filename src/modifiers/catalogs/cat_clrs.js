@@ -86,6 +86,18 @@ $p.cat.clrs.__define({
   },
 
   /**
+   * Получает цвет с учётом длинных гвидов
+   */
+  getter: {
+    value(clr) {
+      if(clr && clr.length === 72) {
+        return this.by_in_out({clr_in: clr.substr(0, 36), clr_out: clr.substr(36)});
+      }
+      return this.get(clr);
+    }
+  },
+
+  /**
    * ищет по цветам снаружи-изнутри
    * @return {CatClrs}
    */
@@ -179,60 +191,79 @@ $p.cat.clrs.__define({
         mf.choice_params = [];
       }
 
+      const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, DpBuyers_order, Editor} = $p;
+
       mf.choice_params.push({
-				name: "parent",
-				path: {not: $p.cat.clrs.predefined("СЛУЖЕБНЫЕ")}
-			});
+        name: 'parent',
+        path: {not: clrs.predefined('СЛУЖЕБНЫЕ')}
+      });
 
-			if(sys){
-				mf.choice_params.push({
-					name: "ref",
-					get path(){
+      if(sys) {
+
+        // связи параметров для цвета изделия
+        const {clr_product} = job_prm.properties;
+        if(clr_product && sys instanceof DpBuyers_order) {
+          const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
+          // проверим вхождение значения в доступные и при необходимости изменим
+          if(links.length) {
+            const filter = {}
+            clr_product.filter_params_links(filter, null, links);
+            filter.ref && mf.choice_params.push({
+              name: 'ref',
+              path: filter.ref,
+            });
+          }
+        }
+
+        // фильтр доступных цвнетов системы
+        mf.choice_params.push({
+          name: 'ref',
+          get path() {
             const res = [];
-						let clr_group;
+            let clr_group;
 
-						function add_by_clr(clr) {
-              if(clr instanceof $p.CatClrs){
+            function add_by_clr(clr) {
+              if(clr instanceof CatClrs) {
                 const {ref} = clr;
-                if(clr.is_folder){
-                  $p.cat.clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
+                if(clr.is_folder) {
+                  clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
                 }
-                else{
+                else {
                   res.push(ref);
                 }
               }
-              else if(clr instanceof $p.CatColor_price_groups){
+              else if(clr instanceof CatColor_price_groups) {
                 clr.clrs().forEach(add_by_clr);
               }
             }
 
             // ищем непустую цветогруппу
-						if(sys instanceof $p.Editor.BuilderElement){
-							clr_group = sys.inset.clr_group;
-							if(clr_group.empty() && !(sys instanceof $p.Editor.Filling)){
+            if(sys instanceof Editor.BuilderElement) {
+              clr_group = sys.inset.clr_group;
+              if(clr_group.empty() && !(sys instanceof Editor.Filling)) {
                 clr_group = sys.project._dp.sys.clr_group;
               }
-						}
+            }
             else if(sys.hasOwnProperty('sys') && sys.profile && sys.profile.inset) {
               const sclr_group = sys.sys.clr_group;
               const iclr_group = sys.profile.inset.clr_group;
               clr_group = iclr_group.empty() ? sclr_group : iclr_group;
             }
-            else if(sys.sys && sys.sys.clr_group){
+            else if(sys.sys && sys.sys.clr_group) {
               clr_group = sys.sys.clr_group;
             }
-						else{
-							clr_group = sys.clr_group;
-						}
+            else {
+              clr_group = sys.clr_group;
+            }
 
-						if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())){
+            if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())) {
               return {not: ''};
-						}
+            }
             add_by_clr(clr_group);
-						return {in: res};
-					}
-				});
-			}
+            return {in: res};
+          }
+        });
+      }
 		}
 	},
 

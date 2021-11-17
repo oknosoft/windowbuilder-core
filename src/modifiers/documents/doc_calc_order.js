@@ -393,8 +393,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       throw new Error(`Ошибка при записи заказа ${this.presentation}, ${reason}`);
     };
 
-    return !sobjs.length ? unused() : _manager.pouch_db.bulkDocs(sobjs)
-      .then((bres) => {
+    const bulk = () => {
+      const _id = `${class_name}|${_obj.ref}`;
+      const rev = (this.is_new() || _obj._rev) ?
+        Promise.resolve() :
+        _manager.pouch_db.get(_id)
+          .then(({_rev}) => sobjs.some((o) => {
+            if(o._id === _id) {
+              o._rev = _rev;
+              return true;
+            }
+          }))
+          .catch(() => null);
+      return rev.then(() => _manager.pouch_db.bulkDocs(sobjs));
+    };
+
+    return !sobjs.length ? unused() : bulk().then((bres) => {
         // освежаем ревизии, проверяем успешность записи и вызываем after_save
         for(const row of bres) {
           const [cname, ref] = row.id.split('|');
@@ -1524,6 +1538,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
 
       isNaN(_obj.price) && (_obj.price = 0);
+      isNaN(_obj.extra_charge_external) && (_obj.extra_charge_external = 0);
       isNaN(_obj.price_internal) && (_obj.price_internal = 0);
       isNaN(_obj.discount_percent) && (_obj.discount_percent = 0);
       isNaN(_obj.discount_percent_internal) && (_obj.discount_percent_internal = 0);
@@ -1540,7 +1555,10 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
-
+        // если есть наценка в строке применим ее
+        if (_obj.extra_charge_external !== 0) {
+          extra_charge = _obj.extra_charge_external;
+        }
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
         }
@@ -1626,4 +1644,4 @@ $p.DocCalc_orderProductionRow.rfields = {
   s: 'n',
 };
 
-$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal';
+$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal,extra_charge_external';

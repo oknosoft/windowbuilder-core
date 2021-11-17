@@ -838,7 +838,7 @@
 
       // контроль массы, размеров основной вставки
       if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
-        elm.err_spec_row(job_prm.nom.critical_error);
+        elm.err_spec_row(job_prm.nom.critical_error, this);
       }
 
       return res;
@@ -1299,10 +1299,10 @@
       }
 
       const sprms = [];
-      const {order} = enm.plan_detailing;
+      const {order, product, nearest} = enm.plan_detailing;
 
       this.selection_params.forEach(({param, origin}) => {
-        if(param.empty() || origin === order) {
+        if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
         if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){

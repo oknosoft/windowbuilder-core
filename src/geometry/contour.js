@@ -2130,7 +2130,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
-    const {_dp} = this.project;
+    const {project} = this;
+    const {_dp} = project;
     const {sys} = _dp;
     let notify;
 
@@ -2153,7 +2154,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
       else if(param.inheritance === 3) {
-        const bvalue = param.branch_value({project: this.project, cnstr, ox: this.project.ox});
+        const bvalue = param.branch_value({project, cnstr, ox: project.ox});
         if(prow.value !== bvalue) {
           prow.value = bvalue;
           notify = true;
@@ -2170,6 +2171,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
+        project.check_clr();
       }
     };
 

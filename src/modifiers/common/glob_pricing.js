@@ -291,7 +291,7 @@ class Pricing {
           if(!ok){
             return false;
           }
-        })
+        });
       }
       if(ok){
         ares.push(row);
@@ -407,7 +407,7 @@ class Pricing {
       const fake_prm = {
         spec: value.characteristic.specification,
         calc_order_row: value
-      }
+      };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);
     });

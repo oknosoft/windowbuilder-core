@@ -269,7 +269,7 @@ class Profile extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(this.cnn_side(null, ip, rays) === Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) === Снаружи) {
             //this.cnn_point(node).is_cut = true;
             this.rays[node].is_cut = true;
             return true;
@@ -541,7 +541,7 @@ class Profile extends ProfileItem {
               target[prop] = val;
             }
           }
-          target.project._scope.eve.emit('region_change', receiver, prop);
+          target.project.register_change(true, ({_scope}) => _scope.eve.emit_async('region_change', receiver, prop));
           return true;
         },
       }));

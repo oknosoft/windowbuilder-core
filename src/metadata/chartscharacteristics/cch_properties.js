@@ -146,8 +146,8 @@ exports.CchProperties = class CchProperties extends Object {
     // для алгоритма clr_prm и цветового параметра, фильтр отключаем
     if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
       (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq) &&
-        type.types.includes('cat.clrs') &&
-        (!prm_row.value || prm_row.value.empty())) {
+      type.types.includes('cat.clrs') &&
+      (!prm_row.value || prm_row.value.empty())) {
       return true;
     }
 
@@ -158,7 +158,8 @@ exports.CchProperties = class CchProperties extends Object {
       elm,
       elm2,
       ox,
-      calc_order
+      calc_order,
+      prm_row,
     }) : this.extract_value(prm_row);
 
     let ok = false;
@@ -398,7 +399,7 @@ exports.CchProperties = class CchProperties extends Object {
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
       //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущиъ для проверки
-      const arr = !use_master ? [{key:link.master}] : link.leadings;
+      const arr = !use_master ? [{key: link.master}] : link.leadings;
 
       arr.forEach((row_key) => {
         let ok_key = true;
@@ -415,7 +416,7 @@ exports.CchProperties = class CchProperties extends Object {
           for(const row of grp) {
             // выполнение условия рассчитывает объект CchProperties
             grp_ok = row.property.check_condition({
-              cnstr: attr.grid.selection.cnstr,
+              cnstr: attr.grid ? attr.grid.selection.cnstr : 0,
               ox: attr.obj._owner._owner,
               prm_row: row,
               elm: attr.obj,
