@@ -245,14 +245,6 @@ exports.CchProperties = class CchProperties extends Object {
       const {rnum} = elm;
       if(rnum) {
         return elm[this.valueOf()];
-        // params.find_rows({
-        //   param: this,
-        //   cnstr: -elm.elm,
-        //   region: rnum,
-        // }, (row) => {
-        //   prow = row;
-        //   return false;
-        // });
       }
       else {
         const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
@@ -425,7 +417,7 @@ exports.CchProperties = class CchProperties extends Object {
             // выполнение условия рассчитывает объект CchProperties
             grp_ok = row.property.check_condition({
               cnstr: attr.grid ? attr.grid.selection.cnstr : 0,
-              ox: attr.obj._owner._owner,
+              ox: attr.obj._owner ? attr.obj._owner._owner : attr.obj.ox,
               prm_row: row,
               elm: attr.obj,
             });
