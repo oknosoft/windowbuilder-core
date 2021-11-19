@@ -1295,11 +1295,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   recalc(attr = {}, editor) {
 
     // при необходимости, создаём редактор
+    const {EditorInvisible} = $p;
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
-    const project = editor.create_scheme();
+    let {project} = editor;
+    if(!(project instanceof EditorInvisible.Scheme)) {
+      project = editor.create_scheme();
+    }
     let tmp = Promise.resolve();
 
     // если передали ссылку dp, меняем при пересчете свойства в соответствии с полями обработки
@@ -1369,11 +1373,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   draw(attr = {}, editor) {
 
     // при необходимости, создаём редактор
+    const {EditorInvisible} = $p;
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
-    const project = editor.create_scheme();
+    let {project} = editor;
+    if(!(project instanceof EditorInvisible.Scheme)) {
+      project = editor.create_scheme();
+    }
 
     attr.res = {number_doc: this.number_doc};
 
@@ -1387,7 +1395,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             tmp = tmp.then(() => ox.draw(attr, editor));
           }
         }
-        return tmp;
+        return tmp.then((res) => {
+          project.ox = '';
+          if(remove) {
+            editor.unload();
+          }
+          else {
+            project.remove();
+          }
+          return res;
+        });
       });
 
   }

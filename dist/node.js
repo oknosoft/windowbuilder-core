@@ -31,9 +31,11 @@ module.exports = function ($p, log) {
       if(!view._countItemEvent) {
         view._countItemEvent = function () {};
       }
+      return this.project;
     }
   }
   $p.Editor = Editor;
+  $p.EditorInvisible = Editor;
 
   log('paper: required, inited & modified');
 
