@@ -63,6 +63,10 @@ module.exports = function(meta) {
         delete mgrs[name].fields.server;
       }
 
+      if(name === 'lead_src' && cls === 'cat') {
+        delete mgrs[name].fields.server;
+      }
+
       if(!writable.includes('*') && !writable.includes(`${cls}.${name}`)) {
         mgrs[name].read_only = true;
       }
