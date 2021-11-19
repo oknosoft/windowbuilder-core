@@ -3,6 +3,7 @@ module.exports = function ($p, log) {
 
   const paper = require('paper/dist/paper-core');
   global.paper = paper;
+  $p.patchCatUsers && $p.patchCatUsers();
 
 
   /**
