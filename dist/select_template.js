@@ -198,7 +198,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
         }
         mf.choice_params.push({
           name: 'template',
-          path: sys.template,
+          path: sys.template ? true : {not: true},
         });
       }
 
