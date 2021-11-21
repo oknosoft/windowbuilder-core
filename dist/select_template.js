@@ -140,23 +140,13 @@ export default function ({classes, cat: {characteristics, templates, params_link
       }
     }
 
-    get clr() {
-      return this._getter('clr');
-    }
-    set clr(v) {
-      this._setter('clr', v);
-    }
+    get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+    set clr(v){this._setter('clr',v)}
 
-    get template_props() {
-      return this._getter('template_props');
-    }
-    set template_props(v) {
-      this._setter('template_props', v);
-    }
+    get template_props() {return this._getter('template_props')}
+    set template_props(v) {this._setter('template_props', v)}
 
-    get params() {
-      return this._getter_ts('params');
-    }
+    get params() {return this._getter_ts('params')}
 
     value_change(field, type, value) {
       if(field == 'calc_order' && this[field] != value) {
@@ -179,7 +169,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
         const prow = calc_order.extra_fields.find({property: permitted_sys});
         if(prow && prow.txt_row) {
           res.push({
-            name: "ref",
+            name: 'ref',
             path: {inh: prow.txt_row.split(',').map((ref) => production_params.get(ref))}
           });
         }
@@ -201,11 +191,17 @@ export default function ({classes, cat: {characteristics, templates, params_link
       else {
         mf.choice_params = [];
       }
-      const {base_block, obj_delivery_state} = ox;
-      if(obj_delivery_state !== Шаблон &&
-        (base_block.obj_delivery_state === Шаблон || base_block.calc_order.obj_delivery_state === Шаблон)) {
-        this.permitted_sys(base_block.calc_order, mf.choice_params);
+      const {base_block, obj_delivery_state, sys} = ox;
+      if(obj_delivery_state !== Шаблон){
+        if (base_block.obj_delivery_state === Шаблон || base_block.calc_order.obj_delivery_state === Шаблон) {
+          this.permitted_sys(base_block.calc_order, mf.choice_params);
+        }
+        mf.choice_params.push({
+          name: 'template',
+          path: sys.template ? true : {not: true},
+        });
       }
+
     }
 
   }
