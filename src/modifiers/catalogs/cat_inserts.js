@@ -387,7 +387,7 @@
         return main_rows;
       }
       const {check_params} = ProductsBuilding;
-      const {ox} = elm;
+      const ox = elm.prm_ox || elm.ox;
       return main_rows.filter((row) => {
         return this.check_base_restrictions(row, elm) && check_params({
           params: this.selection_params,

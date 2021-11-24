@@ -14386,6 +14386,11 @@ class ProfileParent extends Profile {
 
   }
 
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.ox.leading_product;
+  }
+
   cnn_point(node, point) {
     const {project, parent, rays} = this;
     const res = rays[node];
@@ -21614,7 +21619,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return main_rows;
       }
       const {check_params} = ProductsBuilding;
-      const {ox} = elm;
+      const ox = elm.prm_ox || elm.ox;
       return main_rows.filter((row) => {
         return this.check_base_restrictions(row, elm) && check_params({
           params: this.selection_params,
