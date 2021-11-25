@@ -87,13 +87,39 @@ $p.cat.clrs.__define({
 
   /**
    * Получает цвет с учётом длинных гвидов
+   * при необходимости, создаёт составной на лету
    */
   getter: {
-    value(clr) {
-      if(clr && clr.length === 72) {
-        return this.by_in_out({clr_in: clr.substr(0, 36), clr_out: clr.substr(36)});
+    value(ref) {
+      if(ref && ref.length === 72) {
+        const clr_in = ref.substr(0, 36);
+        const clr_out = ref.substr(36);
+        let in_out = this.by_in_out({clr_in, clr_out});
+        if(in_out.empty()) {
+          in_out = this.create({ref, clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder}, false, true);
+          in_out._obj.name = `${in_out.clr_in.name} \\ ${in_out.clr_out.name}`;
+        }
+        return in_out;
       }
-      return this.get(clr);
+      return this.get(ref);
+    }
+  },
+
+  composite_ref: {
+    value(curr, other, v) {
+      let clr = this.get(v);
+      if(clr.empty()) {
+        clr = this.predefined('БезЦвета');
+      }
+      else if(!clr[curr].empty()) {
+        clr = clr[curr];
+      }
+
+      if(other.empty()) {
+        other = this.predefined('БезЦвета');
+      }
+
+      return curr === 'clr_in' ? clr.valueOf() + other.valueOf() : other.valueOf() + clr.valueOf();
     }
   },
 

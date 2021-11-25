@@ -1427,7 +1427,6 @@ class Scheme extends paper.Project {
   get clr() {
     return this.ox.clr;
   }
-
   set clr(v) {
     this.ox.clr = v;
   }

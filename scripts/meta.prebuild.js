@@ -179,7 +179,7 @@ function create_modules(_m) {
       doc: {mgr: 'DocManager', proto: 'DocObj', dir: 'documents'},
       ireg: {mgr: 'InfoRegManager', proto: 'RegisterRow'},
       areg: {mgr: 'AccumRegManager', proto: 'RegisterRow'},
-      dp: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj'},
+      dp: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj', dir: 'dataprocessors'},
       rep: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj', dir: 'reports'},
     };
   let text = `(function(){

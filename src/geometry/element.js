@@ -513,6 +513,20 @@ class BuilderElement extends paper.Group {
     this.set_clr(v);
   }
 
+  get clr_in() {
+    return this.clr.clr_in;
+  }
+  set clr_in(v) {
+    this.clr = $p.cat.clrs.composite_ref('clr_in', this.clr_out, v);
+  }
+
+  get clr_out() {
+    return this.clr.clr_out;
+  }
+  set clr_out(v) {
+    this.clr = $p.cat.clrs.composite_ref('clr_out', this.clr_in, v);
+  }
+
   /**
    * Дополнительные свойства json
    * @return {Object}

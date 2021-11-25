@@ -6420,7 +6420,20 @@ get sys_furn(){return this._getter_ts('sys_furn')}
 set sys_furn(v){this._setter_ts('sys_furn',v)}
 get sys_profile(){return this._getter_ts('sys_profile')}
 set sys_profile(v){this._setter_ts('sys_profile',v)}
-}
+
+  get clr_in() {
+    return this.clr.clr_in;
+  }
+  set clr_in(v) {
+    this.clr = $p.cat.clrs.composite_ref('clr_in', this.clr_out, v);
+  }
+
+  get clr_out() {
+    return this.clr.clr_out;
+  }
+  set clr_out(v) {
+    this.clr = $p.cat.clrs.composite_ref('clr_out', this.clr_in, v);
+  }}
 $p.DpBuyers_order = DpBuyers_order;
 class DpBuyers_orderProductionRow extends TabularSectionRow{
 get inset(){return this._getter('inset')}
