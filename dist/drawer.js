@@ -3149,6 +3149,15 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Массив примыканий
+   * @return {Array.<ProfileAdjoining>}
+   */
+  get adjoinings() {
+    return this.children.filter((elm) => elm instanceof ProfileAdjoining);
+  }
+
+
+  /**
    * Массив раскладок
    * @return {Array.<Onlay>}
    */
@@ -13846,7 +13855,9 @@ class ProfileAdjoining extends BaseLine {
 
   save_coordinates() {
     super.save_coordinates();
+    const {_row, parent} = this;
     const {row} = this.selected_cnn_ii();
+    _row.parent = parent.elm;
     row.aperture_len = this.generatrix.length.round(1);
   }
 
@@ -15557,6 +15568,9 @@ class Scheme extends paper.Project {
 
     const {Импост} = $p.enm.elm_types;
     for (const item of selected) {
+      if(!item) {
+        continue;
+      }
       const {parent, layer} = item;
 
       if(!profiles.has(parent)) {

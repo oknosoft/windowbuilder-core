@@ -2158,6 +2158,15 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Массив примыканий
+   * @return {Array.<ProfileAdjoining>}
+   */
+  get adjoinings() {
+    return this.children.filter((elm) => elm instanceof ProfileAdjoining);
+  }
+
+
+  /**
    * Массив раскладок
    * @return {Array.<Onlay>}
    */

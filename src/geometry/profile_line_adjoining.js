@@ -96,7 +96,9 @@ class ProfileAdjoining extends BaseLine {
 
   save_coordinates() {
     super.save_coordinates();
+    const {_row, parent} = this;
     const {row} = this.selected_cnn_ii();
+    _row.parent = parent.elm;
     row.aperture_len = this.generatrix.length.round(1);
   }
 

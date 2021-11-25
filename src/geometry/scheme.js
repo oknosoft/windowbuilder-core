@@ -1023,6 +1023,9 @@ class Scheme extends paper.Project {
 
     const {Импост} = $p.enm.elm_types;
     for (const item of selected) {
+      if(!item) {
+        continue;
+      }
       const {parent, layer} = item;
 
       if(!profiles.has(parent)) {
