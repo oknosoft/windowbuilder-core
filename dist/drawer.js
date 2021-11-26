@@ -20231,76 +20231,6 @@ $p.cat.clrs.__define({
   },
 
   /**
-   * Получает цвет с учётом длинных гвидов
-   * при необходимости, создаёт составной на лету
-   */
-  getter: {
-    value(ref) {
-      if(ref && ref.length === 72) {
-        const clr_in = ref.substr(0, 36);
-        const clr_out = ref.substr(36);
-        let in_out = this.by_in_out({clr_in, clr_out});
-        if(in_out.empty()) {
-          in_out = this.create({ref, clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder}, false, true);
-          in_out._obj.name = `${in_out.clr_in.name} \\ ${in_out.clr_out.name}`;
-        }
-        return in_out;
-      }
-      return this.get(ref);
-    }
-  },
-
-  composite_ref: {
-    value(curr, other, v) {
-      let clr = this.get(v);
-      if(clr.empty()) {
-        clr = this.predefined('БезЦвета');
-      }
-      else if(!clr[curr].empty()) {
-        clr = clr[curr];
-      }
-
-      if(other.empty()) {
-        other = this.predefined('БезЦвета');
-      }
-
-      return curr === 'clr_in' ? clr.valueOf() + other.valueOf() : other.valueOf() + clr.valueOf();
-    }
-  },
-
-  /**
-   * ищет по цветам снаружи-изнутри
-   * @return {CatClrs}
-   */
-  by_in_out: {
-    value({clr_in, clr_out}) {
-      const {wsql, utils: {blank}} = $p;
-      // скомпилированный запрос
-      if(!this._by_in_out) {
-        this._by_in_out = wsql.alasql.compile('select top 1 ref from ? where clr_in = ? and clr_out = ? and (not ref = ?)');
-      }
-      // ищем в справочнике цветов
-      const ares = this._by_in_out([this.alatable, clr_in.valueOf(), clr_out.valueOf(), blank.guid]);
-      return this.get(ares[0]);
-    }
-  },
-
-  /**
-   * ### Инверсный цвет
-   * Возвращает элемент, цвета которого изнутри и снаружи перевёрнуты местами
-   * @param clr {CatClrs} - исходный цвет
-   */
-  inverted: {
-    value(clr){
-      if(clr.clr_in == clr.clr_out || clr.clr_in.empty() || clr.clr_out.empty()) {
-        return clr;
-      }
-      const by_in_out = this.by_in_out({clr_in: clr.clr_out, clr_out: clr.clr_in});
-      return by_in_out.empty() ? clr : by_in_out;
-    }
-  },
-
-  /**
    * Клиентская часть создания составного цвета
    * @param clr_in {CatClrs} - цвет изнутри
    * @param clr_out {CatClrs} - цвет снаружи
@@ -20631,14 +20561,6 @@ $p.cat.clrs.__define({
 		}
 	},
 
-  /**
-   * Возвращает предопределенный цвет НеВключатьВСпецификацию
-   */
-  ignored: {
-    value() {
-      return this.predefined('НеВключатьВСпецификацию');
-    }
-  },
 
 });
 
