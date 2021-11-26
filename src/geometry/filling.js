@@ -1003,6 +1003,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res || this.target.thickness(elm);
   }
 
+  /**
+   * Proxy-обёртка над заполнением
+   * @param row
+   * @return {Proxy.<Filling>}
+   */
   region(row) {
     const {utils, cch} = $p;
     return new Proxy(this, {

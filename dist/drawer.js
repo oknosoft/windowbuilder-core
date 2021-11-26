@@ -7699,6 +7699,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     return res || this.target.thickness(elm);
   }
 
+  /**
+   * Proxy-обёртка над заполнением
+   * @param row
+   * @return {Proxy.<Filling>}
+   */
   region(row) {
     const {utils, cch} = $p;
     return new Proxy(this, {
@@ -16630,6 +16635,128 @@ EditorInvisible.Scheme = Scheme;
 
 
 /**
+ * fake-элемент для допвставок и параметров
+ *
+ * Created 26.11.2021.
+ */
+
+class FakePrmElm {
+  constructor(project) {
+    this.project = project;
+    this.inserts = $p.cat.inserts.find_rows({insert_type: 'Изделие', available: true});
+  }
+
+  get inset() {
+    const {inserts} = this;
+    return {
+      inserts: {
+        count() {
+          return inserts.length;
+        },
+        unload_column() {
+          return inserts;
+        }
+      },
+      valueOf() {
+        return this.ref;
+      },
+      get ref() {
+        return $p.utils.blank.guid;
+      }
+    };
+  }
+
+  get ox() {
+    return this.project.ox;
+  }
+
+  get elm() {
+    return 0;
+  }
+
+  get _metadata() {
+    return {fields: FakePrmElm.fields};
+  }
+
+  region(row) {
+    return FakePrmElm.region(row, this.project);
+  }
+
+}
+
+FakePrmElm.fields = new Proxy({}, {
+  get(target, prop) {
+    const param = $p.cch.properties.get(prop);
+    if(param) {
+      const mf = {
+        type: param.type,
+        synonym: param.name,
+      };
+      if(param.type.types.includes('cat.property_values')) {
+        mf.choice_params = [{
+          name: 'owner',
+          path: param.ref,
+        }];
+      }
+      return mf;
+    }
+  }
+});
+
+/**
+ * Proxy-обёртка над строкой допвставок
+ * @param row {CatCharacteristicsInsertsRow}
+ * @param target {Scheme}
+ * @return {Proxy}
+ */
+FakePrmElm.region = function region(row, target) {
+  const {utils} = $p;
+  return new Proxy(target, {
+    get(target, prop, receiver) {
+      switch (prop){
+      case 'rnum':
+        return row.row;
+      case 'irow':
+        return row;
+      case 'inset':
+        return row.inset;
+      case 'clr':
+        return row.clr;
+      default:
+        let prow;
+        if(utils.is_guid(prop)) {
+          prow = target.ox.params.find({param: prop, cnstr: 0, region: 0, inset: row.inset});
+        }
+        return prow ? prow.value : target[prop];
+      }
+    },
+
+    set(target, prop, val, receiver) {
+      switch (prop) {
+      case 'clr':
+        row.clr = val;
+        break;
+      default:
+        if(utils.is_guid(prop)) {
+          const {params} = target.ox;
+          const prow = params.find({param: prop, cnstr: 0, region: 0, inset: row.inset}) || params.add({param: prop, inset: row.inset});
+          prow.value = val;
+        }
+        else {
+          target[prop] = val;
+        }
+      }
+      const project = target instanceof Scheme ? target : target.project;
+      project.register_change(true);
+      return true;
+    }
+  });
+};
+
+Scheme.FakePrmElm = FakePrmElm;
+
+
+/**
  * ### Разрез
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -18370,6 +18497,9 @@ class ProductsBuilding {
         project: scheme,
         get perimeter() {
           return this.project.perimeter;
+        },
+        glasses() {
+          return this.project.glasses;
         }
       });
 

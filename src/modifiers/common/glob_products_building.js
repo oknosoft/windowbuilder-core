@@ -793,6 +793,9 @@ class ProductsBuilding {
         project: scheme,
         get perimeter() {
           return this.project.perimeter;
+        },
+        glasses() {
+          return this.project.glasses;
         }
       });
 
