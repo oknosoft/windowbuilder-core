@@ -74,7 +74,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   /**
    * Возвращает предопределенный цвет НеВключатьВСпецификацию
    */
-  get ignored() {
+  ignored() {
     return this.predefined('НеВключатьВСпецификацию');
   }
 

@@ -4005,7 +4005,7 @@ class CatClrsManager extends CatManager {
   /**
    * Возвращает предопределенный цвет НеВключатьВСпецификацию
    */
-  get ignored() {
+  ignored() {
     return this.predefined('НеВключатьВСпецификацию');
   }
 
