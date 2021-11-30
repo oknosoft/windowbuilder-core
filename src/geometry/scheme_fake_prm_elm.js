@@ -57,6 +57,9 @@ FakePrmElm.fields = new Proxy({}, {
         type: param.type,
         synonym: param.name,
       };
+      if(param.Editor) {
+        mf.Editor = param.Editor;
+      }
       if(param.type.types.includes('cat.property_values')) {
         mf.choice_params = [{
           name: 'owner',
@@ -75,7 +78,7 @@ FakePrmElm.fields = new Proxy({}, {
  * @return {Proxy}
  */
 FakePrmElm.region = function region(row, target) {
-  const {utils} = $p;
+  const {utils, cch: {properties}, enm} = $p;
   return new Proxy(target, {
     get(target, prop, receiver) {
       switch (prop){
@@ -90,9 +93,19 @@ FakePrmElm.region = function region(row, target) {
       default:
         let prow;
         if(utils.is_guid(prop)) {
-          prow = target.ox.params.find({param: prop, cnstr: 0, region: 0, inset: row.inset});
+          const param = properties.get(prop);
+          if(!param.empty()) {
+            return param.extract_pvalue({
+              ox: target.ox,
+              cnstr: 0,
+              elm: {elm: 0},
+              origin: row.inset,
+              prm_row: {origin: enm.plan_detailing.get()},
+            });
+          }
+          //prow = target.ox.params.find({param: prop, cnstr: 0, region: 0, inset: row.inset});
         }
-        return prow ? prow.value : target[prop];
+        return target[prop];
       }
     },
 
@@ -103,9 +116,21 @@ FakePrmElm.region = function region(row, target) {
         break;
       default:
         if(utils.is_guid(prop)) {
-          const {params} = target.ox;
-          const prow = params.find({param: prop, cnstr: 0, region: 0, inset: row.inset}) || params.add({param: prop, inset: row.inset});
-          prow.value = val;
+          const param = properties.get(prop);
+          if(!param.empty() && param.set_pvalue) {
+            param.set_pvalue({
+              ox: target.ox,
+              cnstr: 0,
+              elm: {elm: 0},
+              origin: row.inset,
+              value: val,
+            });
+          }
+          else {
+            const {params} = target.ox;
+            const prow = params.find({param: prop, cnstr: 0, region: 0, inset: row.inset}) || params.add({param: prop, inset: row.inset});
+            prow.value = val;
+          }
         }
         else {
           target[prop] = val;

@@ -3970,7 +3970,9 @@ class CatClrsManager extends CatManager {
     if(other.empty()) {
       other = this.predefined('БезЦвета');
     }
-
+    if(clr.valueOf() === other.valueOf()) {
+      return clr.valueOf();
+    }
     return curr === 'clr_in' ? clr.valueOf() + other.valueOf() : other.valueOf() + clr.valueOf();
   }
 
