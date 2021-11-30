@@ -1495,16 +1495,19 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
-   * @param ignore_select {Boolean}
+   * @param ign_select {Boolean}
+   * @param ign_rays {Boolean}
    */
-  set_inset(v, ignore_select) {
+  set_inset(v, ign_select, ign_rays) {
 
     const {_row, _attr, project} = this;
+    const profiles = [];
 
-    if(!ignore_select && project.selectedItems.length > 1) {
+    if(!ign_select && project.selectedItems.length > 1) {
       project.selected_profiles(true).forEach((elm) => {
         if(elm != this && elm.elm_type == this.elm_type) {
-          elm.set_inset(v, true);
+          profiles.push(elm);
+          elm.set_inset(v, true, true);
         }
       });
     }
@@ -1516,11 +1519,15 @@ class ProfileItem extends GeneratrixElement {
       // для уже нарисованных элементов...
       if(_attr && _attr._rays) {
         delete _attr.nom;
-        _attr._rays.clear('with_neighbor');
+        _attr._rays.clear(ign_rays ? undefined : 'with_neighbor');
       }
 
       project.register_change();
       project._scope.eve.emit('set_inset', this);
+    }
+
+    for(const {_attr} of profiles) {
+      _attr && _attr._rays && _attr._rays.clear('with_neighbor');
     }
   }
 
