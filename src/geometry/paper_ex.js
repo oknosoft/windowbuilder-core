@@ -95,7 +95,7 @@ Object.defineProperties(paper.Path.prototype, {
         if(interior && res > 180){
           res = 180 - (res - 180);
         }
-        return round ? res.round(round) : res.round(1);
+        return typeof round === 'number' ? res.round(round) : res.round(1);
       }
     },
 

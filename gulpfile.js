@@ -19,6 +19,7 @@ gulp.task('build-drawer', function () {
     './src/modifiers/common/*.js',
     './src/modifiers/enums/*.js',
     './src/modifiers/catalogs/*.js',
+    './src/modifiers/chartscharacteristics/*.js',
     './src/modifiers/documents/*.js',
   ])
     .pipe(concat('drawer.js'))

@@ -817,11 +817,17 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   get perimeter() {
     const res = [];
-    this.profiles.forEach((curr) => {
+    const {profiles} = this;
+    profiles.forEach((curr, index) => {
+      const next = profiles[index === profiles.length - 1 ? 0 : index + 1];
       const tmp = {
+        b: curr.b,
+        e: curr.e,
         len: curr.sub_path.length,
         angle: curr.e.subtract(curr.b).angle,
-        profile: curr.profile
+        profile: curr.profile,
+        next: next.profile,
+        angle_next: curr.profile.generatrix.angle_to(next.profile.generatrix, curr.e, true, 0),
       }
       res.push(tmp);
       if(tmp.angle < 0){

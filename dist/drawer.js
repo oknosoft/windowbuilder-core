@@ -7513,11 +7513,17 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   get perimeter() {
     const res = [];
-    this.profiles.forEach((curr) => {
+    const {profiles} = this;
+    profiles.forEach((curr, index) => {
+      const next = profiles[index === profiles.length - 1 ? 0 : index + 1];
       const tmp = {
+        b: curr.b,
+        e: curr.e,
         len: curr.sub_path.length,
         angle: curr.e.subtract(curr.b).angle,
-        profile: curr.profile
+        profile: curr.profile,
+        next: next.profile,
+        angle_next: curr.profile.generatrix.angle_to(next.profile.generatrix, curr.e, true, 0),
       }
       res.push(tmp);
       if(tmp.angle < 0){
@@ -8689,7 +8695,7 @@ Object.defineProperties(paper.Path.prototype, {
         if(interior && res > 180){
           res = 180 - (res - 180);
         }
-        return round ? res.round(round) : res.round(1);
+        return typeof round === 'number' ? res.round(round) : res.round(1);
       }
     },
 
@@ -22081,6 +22087,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
               const frow = fake_row(srow);
               frow.relm = relm;
+              frow.origin = row.inset;
               res.push(frow);
             }
           });
@@ -22238,14 +22245,21 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
           else if(count_calc_method == ПоПериметру){
-            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
             const perimeter = elm.perimeter ? elm.perimeter : (
               this.insert_type == enm.inserts_types.МоскитнаяСетка ? elm.layer.perimeter_inner(sz) : elm.layer.perimeter
             )
+            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
+            const {check_params} = ProductsBuilding;
             perimeter.forEach((rib) => {
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
-              if(this.check_restrictions(row_ins_spec, row_prm, true)){
+              if(this.check_restrictions(row_ins_spec, row_prm, true) && check_params({
+                params: (row_ins_spec.origin || this).selection_params,
+                ox,
+                elm: row_prm,
+                row_spec: row_ins_spec,
+                origin: row_ins_spec.origin || this,
+              })){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
                 const fqty = !formula.empty() && formula.execute({
@@ -22807,6 +22821,29 @@ $p.CatPartners.prototype.__define({
 			return res;
 		}
 	}
+});
+
+
+/**
+ * Предопределенное поведение параметра angle_next
+ *
+ * Created 05.12.2021.
+ */
+
+$p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
+  const {cch, EditorInvisible, utils} = $p;
+  const prm = cch.properties.predefined('angle_next');
+  if(prm) {
+    prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
+      if(elm instanceof EditorInvisible.BuilderElement && row_spec.count_calc_method == 'ПоПериметру') {
+        return true;
+      }
+      if(elm && elm._row && elm._row.hasOwnProperty('angle_next')) {
+        return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager)
+      }
+      return Object.getPrototypeOf(this).check_condition.call(this, {row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+    }
+  }
 });
 
 
