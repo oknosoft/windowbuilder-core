@@ -81,3 +81,26 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   }
 
 }
+
+exports.CatClrs = class CatClrs extends Object {
+
+  inverted() {
+    return this._manager.inverted(this);
+  }
+
+  set_grouping(values) {
+    const {clr_in, clr_out, _manager} = this;
+    const white = _manager.predefined('Белый');
+    const grp_in = clr_in === white ? 'Белый' : clr_in.grouping.name.split(' ')[0];
+    const grp_out = clr_out === white ? 'Белый' : clr_out.grouping.name.split(' ')[0];
+    if(!grp_in || grp_in === 'Нет' || !grp_out || grp_out === 'Нет') {
+      this.grouping = values.find((v) => v.name === 'Нет');
+    }
+    else {
+      this.grouping = values.find((v) => v.name.startsWith(grp_in) && v.name.endsWith(grp_out));
+    }
+  }
+
+}
+
+

@@ -11,80 +11,13 @@
 
 (function(_mgr){
 
-  const {
-    УгловоеДиагональное: ad,
-    УгловоеКВертикальной: av,
-    УгловоеКГоризонтальной: ah,
-    Длинное: long,
-    Короткое: short,
-    ТОбразное: t,
-    Наложение: ii,
-    НезамкнутыйКонтур: i,
-    КрестПересечение: xt,
-    КрестВСтык: xx,
-  } = _mgr;
+  const {ad, av, ah, long, short, t, ii, i, xt, xx} = _mgr;
 
-
-	/**
-	 * Короткие псевдонимы перечисления "Типы соединений"
-	 * @type Object
-	 */
+  /**
+   * Массивы Типов соединений
+   * @type Array.<EnumObj>
+   */
 	Object.defineProperties(_mgr, {
-	  ad: {
-	    get() {
-        return ad;
-      }
-    },
-    av: {
-      get() {
-        return av;
-      }
-    },
-    ah: {
-      get() {
-        return ah;
-      }
-    },
-    long: {
-      get() {
-        return long;
-      }
-    },
-    short: {
-      get() {
-        return short;
-      }
-    },
-    t: {
-      get() {
-        return t;
-      }
-    },
-    ii: {
-      get() {
-        return ii;
-      }
-    },
-    i: {
-      get() {
-        return i;
-      }
-    },
-    xt: {
-      get() {
-        return xt;
-      }
-    },
-    xx: {
-      get() {
-        return xx;
-      }
-    },
-
-    /**
-     * Массивы Типов соединений
-     * @type Object
-     */
     acn: {
       value: {
         ii: [ii],
@@ -94,7 +27,6 @@
         xsl: [t, xx, long, short],
       }
     },
-
   });
 
 })($p.enm.cnn_types);
