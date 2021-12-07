@@ -75,4 +75,19 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
     }
     return _data.clrs;
   }
+
+  /**
+   * Проверяйет, подходит ли цвет данной группе
+   * @param clr
+   * @returns {boolean}
+   */
+  contains(clr, clrs) {
+    if(!clrs) {
+      clrs = this.clrs();
+    }
+    if(!clrs.length) {
+      return true;
+    }
+    return clr.is_composite() ? clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out) : clrs.includes(clr);
+  }
 };

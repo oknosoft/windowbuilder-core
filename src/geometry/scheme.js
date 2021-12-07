@@ -97,8 +97,10 @@ class Scheme extends paper.Project {
     const {ox, _dp} = this;
     const {cat, utils} = $p;
     const cmeta = _dp._metadata('clr');
+    const {clr_group} = _dp.sys;
+    const clrs = [...clr_group.clrs()];
+
     cat.clrs.selection_exclude_service(cmeta, _dp);
-    const clrs = [..._dp.sys.clr_group.clrs()];
     if(cmeta.choice_params.length > 2) {
       const all = clrs.length ? clrs.splice(0) : cat.clrs;
       for (const clr of all) {
@@ -109,7 +111,7 @@ class Scheme extends paper.Project {
         }
       }
     }
-    if (clrs.length && !clrs.includes(ox.clr)){
+    if (!clr_group.contains(ox.clr, clrs)){
       const {default_clr} = _dp.sys;
       this.set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
     }

@@ -80,14 +80,42 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     return this.predefined('НеВключатьВСпецификацию');
   }
 
+  /**
+   * Скрывает составные цвета в отборе
+   * @param mf
+   */
+  hide_composite(mf) {
+    const choice_param = mf.choice_params.find(({name}) => name === 'parent');
+    if(choice_param.path.not) {
+      choice_param.path = {nin: [choice_param.path.not, $p.job_prm.builder.composite_clr_folder]}
+    }
+  }
+
 }
 
 exports.CatClrs = class CatClrs extends Object {
 
+  /**
+   * Возвращает инверсный по отношению к текущему
+   * @returns {CatClrs}
+   */
   inverted() {
     return this._manager.inverted(this);
   }
 
+  /**
+   * Признак составного
+   * @returns {boolean}
+   */
+  is_composite() {
+    const {clr_in, clr_out} = this;
+    return clr_in != clr_out && !(clr_in.empty() || clr_out.empty());
+  }
+
+  /**
+   * Рассчитывает реквизит grouping
+   * @param values {Array}
+   */
   set_grouping(values) {
     const {clr_in, clr_out, _manager} = this;
     const white = _manager.predefined('Белый');
