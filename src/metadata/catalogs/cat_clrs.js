@@ -66,7 +66,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
    * @param clr {CatClrs} - исходный цвет
    */
   inverted(clr){
-    if(clr.clr_in == clr.clr_out || clr.clr_in.empty() || clr.clr_out.empty()) {
+    if(!clr.is_composite()) {
       return clr;
     }
     const by_in_out = this.by_in_out({clr_in: clr.clr_out, clr_out: clr.clr_in});
