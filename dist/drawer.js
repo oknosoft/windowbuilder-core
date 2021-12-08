@@ -6322,14 +6322,16 @@ class BuilderElement extends paper.Group {
     return this.clr.clr_in;
   }
   set clr_in(v) {
-    this.clr = $p.cat.clrs.composite_ref('clr_in', this.clr_out, v);
+    const {clr} = this;
+    this.clr = $p.cat.clrs.composite_ref('clr_in', clr.clr_out.empty() ? clr : clr.clr_out, v);
   }
 
   get clr_out() {
     return this.clr.clr_out;
   }
   set clr_out(v) {
-    this.clr = $p.cat.clrs.composite_ref('clr_out', this.clr_in, v);
+    const {clr} = this;
+    this.clr = $p.cat.clrs.composite_ref('clr_out', clr.clr_in.empty() ? clr : clr.clr_in, v);
   }
 
   /**
@@ -20299,54 +20301,44 @@ $p.cat.clrs.__define({
           }
         }
 
-        // фильтр доступных цвнетов системы
+        // фильтр доступных цветов системы или вставки
+        let clr_group = clrs.find_group(sys);
+
+        function add_by_clr(clr, res) {
+          if(clr instanceof CatClrs) {
+            const {ref} = clr;
+            if(clr.is_folder) {
+              clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
+            }
+            else {
+              res.push(ref);
+            }
+          }
+          else if(clr instanceof CatColor_price_groups) {
+            for(const c of clr.clrs()) {
+              add_by_clr(c, res)
+            };
+          }
+          return res;
+        }
+
         mf.choice_params.push({
           name: 'ref',
           get path() {
-            const res = [];
-            let clr_group;
-
-            function add_by_clr(clr) {
-              if(clr instanceof CatClrs) {
-                const {ref} = clr;
-                if(clr.is_folder) {
-                  clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
-                }
-                else {
-                  res.push(ref);
-                }
-              }
-              else if(clr instanceof CatColor_price_groups) {
-                clr.clrs().forEach(add_by_clr);
-              }
-            }
-
-            // ищем непустую цветогруппу
-            if(sys instanceof Editor.BuilderElement) {
-              clr_group = sys.inset.clr_group;
-              if(clr_group.empty() && !(sys instanceof Editor.Filling)) {
-                clr_group = sys.project._dp.sys.clr_group;
-              }
-            }
-            else if(sys.hasOwnProperty('sys') && sys.profile && sys.profile.inset) {
-              const sclr_group = sys.sys.clr_group;
-              const iclr_group = sys.profile.inset.clr_group;
-              clr_group = iclr_group.empty() ? sclr_group : iclr_group;
-            }
-            else if(sys.sys && sys.sys.clr_group) {
-              clr_group = sys.sys.clr_group;
-            }
-            else {
-              clr_group = sys.clr_group;
-            }
-
             if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())) {
               return {not: ''};
             }
-            add_by_clr(clr_group);
-            return {in: res};
+            return {in: add_by_clr(clr_group, [])};
           }
         });
+
+        // подмешиваем признак сокрытия составных
+        if(clr_group.hide_composite) {
+          mf.hide_composite = true;
+        }
+        else if(mf.hide_composite) {
+          mf.hide_composite = false;
+        }
       }
 		}
 	},
