@@ -18684,9 +18684,10 @@ class ProductsBuilding {
    * @param row_spec {TabularSectionRow}
    * @param elm {BuilderElement}
    * @param [cnstr] {Number} - номер конструкции или элемента
+   * @param [count_calc_method] {EnumObj.<count_calculating_ways>} - способ расчёта количества
    * @return {boolean}
    */
-  static check_params({params, row_spec, elm, elm2, cnstr, origin, ox}) {
+  static check_params({params, row_spec, elm, elm2, cnstr, origin, ox, count_calc_method}) {
 
     let ok = true;
 
@@ -18702,6 +18703,16 @@ class ProductsBuilding {
     for(const grp of or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
+
+        // перед проверкой условий выясняем, примерима ли проверка к данному способу расчёта
+        const {use} = prm_row.param;
+        if(count_calc_method && !use.find({count_calc_method})) {
+          continue;
+        }
+        if(!count_calc_method && use.count() && !use.find({count_calc_method: $p.enm.count_calculating_ways.get()})) {
+          continue;
+        }
+
         // выполнение условия рассчитывает объект CchProperties
         grp_ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
         // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
@@ -22261,6 +22272,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 elm: row_prm,
                 row_spec: row_ins_spec,
                 origin: row_ins_spec.origin || this,
+                count_calc_method,
               })){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
@@ -22833,13 +22845,22 @@ $p.CatPartners.prototype.__define({
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch, EditorInvisible, utils} = $p;
+  const {cch, cat, EditorInvisible, utils} = $p;
   const prm = cch.properties.predefined('angle_next');
   if(prm) {
+    // fake-формула
+    if(prm.calculated.empty()) {
+      prm.calculated = cat.formulas.create({name: 'angle_next'}, false, true);
+      prm.calculated._data._formula = function (obj) {
+        const {elm} = obj;
+      };
+    }
+    // fake-признак использования
+    if(!prm.use.count()) {
+      prm.use.add({count_calc_method: 'ПоПериметру'});
+    }
+    // проверка условия
     prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
-      if(elm instanceof EditorInvisible.BuilderElement && row_spec.count_calc_method == 'ПоПериметру') {
-        return true;
-      }
       if(elm && elm._row && elm._row.hasOwnProperty('angle_next')) {
         return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager)
       }

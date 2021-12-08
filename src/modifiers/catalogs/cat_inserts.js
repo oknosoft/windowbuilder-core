@@ -952,6 +952,7 @@
                 elm: row_prm,
                 row_spec: row_ins_spec,
                 origin: row_ins_spec.origin || this,
+                count_calc_method,
               })){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
