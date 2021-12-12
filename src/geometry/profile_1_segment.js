@@ -71,7 +71,7 @@ class ProfileSegment extends ProfileItem {
   }
 
   cnn_side () {
-    return $p.enm.cnn_sides.Изнутри;
+    return $p.enm.cnn_sides.inner;
   }
 
   observer() {

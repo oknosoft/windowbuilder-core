@@ -98,7 +98,7 @@ class Onlay extends ProfileItem {
 
     const add_impost = (ip, curr, point) => {
       const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.Снаружи) {
+      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.outer) {
         touter.push(res);
       }
       else {
@@ -132,7 +132,7 @@ class Onlay extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.outer) {
             this.cnn_point(node).is_cut = true;
             return true;
           }

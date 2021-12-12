@@ -293,7 +293,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Возвращает сторону соединения заполнения с профилем раскладки
    */
   cnn_side() {
-    return $p.enm.cnn_sides.Изнутри;
+    return $p.enm.cnn_sides.inner;
   }
 
   /**

@@ -1730,12 +1730,12 @@ class ProfileItem extends GeneratrixElement {
         }
       });
 
-      const side = other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
+      const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
 
       if(profile2) {
         const interior = generatrix.getPointAt(generatrix.length/2)
         const {rays: prays2} = profile2;
-        const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.Снаружи ? 'outer' : 'inner';
+        const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
         const pt1 = intersect_point(prays[side], rays.outer, 0, interior);
         const pt2 = intersect_point(prays[side], rays.inner, 0, interior);
         const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
@@ -1974,7 +1974,7 @@ class ProfileItem extends GeneratrixElement {
     // короткое
     else if(cnn_type == cnn_types.short) {
       const orays = prays[
-        other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner'];
+        other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner'];
       if(is_b) {
         intersect_point(orays, rays.outer, 1);
         intersect_point(orays, rays.inner, 4);

@@ -218,7 +218,7 @@ class ProfileAddl extends ProfileItem {
 
       if(profile_point == "b"){
         // в зависимости от стороны соединения
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.Снаружи){
+        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer){
           intersect_point(prays.outer, rays.outer, 1);
           intersect_point(prays.outer, rays.inner, 4);
         }
@@ -229,7 +229,7 @@ class ProfileAddl extends ProfileItem {
       }
       else if(profile_point == "e"){
         // в зависимости от стороны соединения
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.Снаружи){
+        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer){
           intersect_point(prays.outer, rays.outer, 2);
           intersect_point(prays.outer, rays.inner, 3);
         }

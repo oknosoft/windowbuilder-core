@@ -370,7 +370,7 @@ class EditorInvisible extends paper.PaperScope {
           }
 
           const gl = glmap.get(profile);
-          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.Снаружи)){
+          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.outer)){
             gl.is_outer = true;
           }
           else{
@@ -6991,7 +6991,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Возвращает сторону соединения заполнения с профилем раскладки
    */
   cnn_side() {
-    return $p.enm.cnn_sides.Изнутри;
+    return $p.enm.cnn_sides.inner;
   }
 
   /**
@@ -11066,12 +11066,12 @@ class ProfileItem extends GeneratrixElement {
         }
       });
 
-      const side = other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner';
+      const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
 
       if(profile2) {
         const interior = generatrix.getPointAt(generatrix.length/2)
         const {rays: prays2} = profile2;
-        const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.Снаружи ? 'outer' : 'inner';
+        const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
         const pt1 = intersect_point(prays[side], rays.outer, 0, interior);
         const pt2 = intersect_point(prays[side], rays.inner, 0, interior);
         const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
@@ -11310,7 +11310,7 @@ class ProfileItem extends GeneratrixElement {
     // короткое
     else if(cnn_type == cnn_types.short) {
       const orays = prays[
-        other.cnn_side(this, null, prays) === cnn_sides.Снаружи ? 'outer' : 'inner'];
+        other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner'];
       if(is_b) {
         intersect_point(orays, rays.outer, 1);
         intersect_point(orays, rays.inner, 4);
@@ -11829,7 +11829,7 @@ class ProfileSegment extends ProfileItem {
   }
 
   cnn_side () {
-    return $p.enm.cnn_sides.Изнутри;
+    return $p.enm.cnn_sides.inner;
   }
 
   observer() {
@@ -13275,7 +13275,7 @@ class ProfileAddl extends ProfileItem {
 
       if(profile_point == "b"){
         // в зависимости от стороны соединения
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.Снаружи){
+        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer){
           intersect_point(prays.outer, rays.outer, 1);
           intersect_point(prays.outer, rays.inner, 4);
         }
@@ -13286,7 +13286,7 @@ class ProfileAddl extends ProfileItem {
       }
       else if(profile_point == "e"){
         // в зависимости от стороны соединения
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.Снаружи){
+        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer){
           intersect_point(prays.outer, rays.outer, 2);
           intersect_point(prays.outer, rays.inner, 3);
         }
@@ -14134,7 +14134,7 @@ class Onlay extends ProfileItem {
 
     const add_impost = (ip, curr, point) => {
       const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.Снаружи) {
+      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.outer) {
         touter.push(res);
       }
       else {
@@ -14168,7 +14168,7 @@ class Onlay extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.outer) {
             this.cnn_point(node).is_cut = true;
             return true;
           }

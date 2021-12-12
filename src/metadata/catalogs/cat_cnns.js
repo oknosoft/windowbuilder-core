@@ -10,7 +10,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
   sort_cnns(elm1, elm2) {
 
     const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
-    const sides = [cnn_sides.Изнутри, cnn_sides.Снаружи];
+    const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
     const sys = elm1 instanceof BuilderElement ? elm1.project._dp.sys : (elm2 instanceof BuilderElement && elm2.project._dp.sys);
     const priority = (cnn) => {
@@ -97,7 +97,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       cat: {nom}, utils} = this._owner.$p;
 
     // если оба элемента - профили, определяем сторону
-    const side = is_outer ? cnn_sides.Снаружи :
+    const side = is_outer ? cnn_sides.outer :
       (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
 
     let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
@@ -188,11 +188,11 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
             if(!side){
               return true;
             }
-            if(cnn.sd1 == cnn_sides.Изнутри){
-              return side == cnn_sides.Изнутри;
+            if(cnn.sd1 == cnn_sides.inner){
+              return side == cnn_sides.inner;
             }
-            else if(cnn.sd1 == cnn_sides.Снаружи){
-              return side == cnn_sides.Снаружи;
+            else if(cnn.sd1 == cnn_sides.outer){
+              return side == cnn_sides.outer;
             }
             else{
               return true;
@@ -233,20 +233,20 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
 
       // TODO: проверить геометрию
       if(!curr_cnn.stop_applying(cnn_point) && ign_side !== 0) {
-        if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
+        if(!ign_side && curr_cnn.sd1 == cnn_sides.inner){
           if(typeof is_outer == 'boolean'){
             if(!is_outer){
               return curr_cnn;
             }
           }
           else{
-            if(elm2.cnn_side(elm1) == cnn_sides.Изнутри){
+            if(elm2.cnn_side(elm1) == cnn_sides.inner){
               return curr_cnn;
             }
           }
         }
-        else if(!ign_side && curr_cnn.sd1 == cnn_sides.Снаружи){
-          if(is_outer || elm2.cnn_side(elm1) == cnn_sides.Снаружи)
+        else if(!ign_side && curr_cnn.sd1 == cnn_sides.outer){
+          if(is_outer || elm2.cnn_side(elm1) == cnn_sides.outer)
             return curr_cnn;
         }
         else{

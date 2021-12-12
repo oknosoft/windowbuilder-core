@@ -296,7 +296,7 @@ class EditorInvisible extends paper.PaperScope {
           }
 
           const gl = glmap.get(profile);
-          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.Снаружи)){
+          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.outer)){
             gl.is_outer = true;
           }
           else{
