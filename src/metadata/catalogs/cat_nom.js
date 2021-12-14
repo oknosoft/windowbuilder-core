@@ -297,7 +297,7 @@ exports.CatNom = class CatNom extends Object {
         nom: this,
         characteristic: characteristics[attr.characteristic.valueOf()],
         date: attr.date,
-        prm:attr.prm,
+        prm: attr.prm,
         price, currency, x, y, z, clr, calc_order,
       });
     }
