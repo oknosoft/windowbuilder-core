@@ -180,7 +180,7 @@ class Pricing {
    * @param row {Object}
    * @param [clr] {CatClrs}
    */
-  nom_price(nom, characteristic, price_type, prm, row, clr) {
+  nom_price(nom, characteristic, price_type, prm, row, clr,stage) {
 
     if (row && prm) {
       // _owner = calc_order
@@ -192,10 +192,16 @@ class Pricing {
           currency: _owner.doc_currency
         };
 
-      if (price_type == prm.price_type.price_type_first_cost && !prm.price_type.formula.empty()) {
+  /*     if (price_type == prm.price_type.price_type_first_cost && !prm.price_type.formula.empty()) {
         price_prm.formula = prm.price_type.formula;
       }
       else if(price_type == prm.price_type.price_type_sale && !prm.price_type.sale_formula.empty()){
+        price_prm.formula = prm.price_type.sale_formula;
+      } */
+      if (stage === 1 && !prm.price_type.formula.empty()) {
+        price_prm.formula = prm.price_type.formula;
+      }
+      else if(stage === 2 && !prm.price_type.sale_formula.empty()){
         price_prm.formula = prm.price_type.sale_formula;
       }
 
@@ -205,6 +211,7 @@ class Pricing {
       else if(!characteristic.clr.empty()){
         price_prm.clr = characteristic.clr;
       }
+      price_prm.prm = prm;
 
       row.price = nom._price(price_prm);
       return row.price;
@@ -379,16 +386,16 @@ class Pricing {
             });
           }
           const {marginality, price_type} = price_grp.get(price_group);
-          this.nom_price(nom, characteristic, price_type, prm, _obj, clr);
+          this.nom_price(nom, characteristic, price_type, prm, _obj, clr,1);
           _obj.amount = _obj.price * _obj.totqty1;
           _obj.amount_marged = _obj.amount * marginality;
         }
         else {
-          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj);
+          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj,false,1);
           _obj.amount = _obj.price * _obj.totqty1;
           if(marginality_in_spec){
             fake_row.nom = nom;
-            const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row);
+            const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row,false,2);
             _obj.amount_marged = tmp_price * _obj.totqty1;
           }
         }
@@ -399,7 +406,7 @@ class Pricing {
       // расчет себестомиости по номенклатуре строки расчета
       fake_row.nom = calc_order_row.nom;
       fake_row.characteristic = calc_order_row.characteristic;
-      calc_order_row.first_cost = this.nom_price(fake_row.nom, fake_row.characteristic, prm.price_type.price_type_first_cost, prm, fake_row);
+      calc_order_row.first_cost = this.nom_price(fake_row.nom, fake_row.characteristic, prm.price_type.price_type_first_cost, prm, fake_row,false,1);
     }
 
     // себестоимость вытянутых строк спецификации в заказ
@@ -433,14 +440,14 @@ class Pricing {
     else {
       const price_cost = marginality_in_spec && prm.spec.count() ?
         prm.spec.aggregate([], ['amount_marged']) :
-        this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {});
+        this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},false,2);
 
       // цена продажи
       if(price_cost) {
         calc_order_row.price = price_cost.round(rounding);
       }
       else if(marginality_in_spec && !first_cost) {
-        calc_order_row.price = this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {});
+        calc_order_row.price = this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},false,2);
       }
       else {
         calc_order_row.price = (calc_order_row.first_cost * price_type.marginality).round(rounding);

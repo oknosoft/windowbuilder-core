@@ -359,7 +359,7 @@ class ProfileRays {
         for(const node of nodes) {
           const cnn_point = profile.rays[node];
           if(cnn_point.profile == parent && cnn_point.cnn) {
-            const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
+            const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, 0, undefined, cnn_point);
             if(cnn !== cnn_point.cnn) {
               cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
               cnn_point.cnn = cnn;
