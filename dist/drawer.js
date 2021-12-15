@@ -7157,6 +7157,10 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   set_inset(v, ignore_select) {
 
+    if(this.inset == v) {
+      return;
+    }
+
     const inset = $p.cat.inserts.get(v);
     const {insert_type} = inset;
 
