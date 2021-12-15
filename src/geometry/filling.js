@@ -73,10 +73,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.strokeWidth = 0;
 
     // для нового устанавливаем вставку по умолчанию
-    const {elm_types} = $p.enm;
-    const gl_types = [elm_types.Стекло, elm_types.Заполнение];
+    const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
-      _row.inset = project.default_inset({elm_type: gl_types});
+      _row.inset = project.default_inset({elm_type: elm_types.glasses});
     }
 
     // для нового устанавливаем цвет по умолчанию
@@ -87,7 +86,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       });
     }
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({elm_type: {in: gl_types}}, (row) => {
+      project._dp.sys.elmnts.find_rows({elm_type: {in: elm_types.glasses}}, (row) => {
         _row.clr = row.clr;
         return false;
       });
@@ -111,12 +110,16 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     // спецификация стеклопакета прототипа
     if (attr.proto) {
-      const {glass_specification} = this.ox;
+      const {glass_specification, _data} = this.ox;
+      const {_loading} = _data;
       const tmp = [];
-      glass_specification.find_rows({elm: attr.proto.elm}, (row) => {
-        tmp.push({clr: row.clr, elm: this.elm, inset: row.inset});
+      glass_specification.find_rows({elm: attr.proto.elm}, ({clr, inset, dop}) => {
+        tmp.push({elm: this.elm, clr, inset, dop: utils._clone(dop)});
       });
+      _data._loading = true;
+      glass_specification.clear({elm: this.elm});
       tmp.forEach((row) => glass_specification.add(row));
+      _data._loading = _loading;
     }
 
   }
