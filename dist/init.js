@@ -4072,8 +4072,14 @@ class CatClrsManager extends CatManager {
    */
   hide_composite(mf) {
     const choice_param = mf.choice_params.find(({name}) => name === 'parent');
-    if(choice_param.path.not) {
+    if(choice_param && choice_param.path.not) {
       choice_param.path = {nin: [choice_param.path.not, $p.job_prm.builder.composite_clr_folder]}
+    }
+    else {
+      mf.choice_params.push({
+        name: 'parent',
+        path: {not: $p.job_prm.builder.composite_clr_folder},
+      });
     }
   }
 
