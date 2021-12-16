@@ -4023,6 +4023,14 @@ class ContourNested extends Contour {
   }
 
   /**
+   * При изменении системы внешнего изделия, с внутренним почти ничего делать не надо
+   */
+  on_sys_changed() {
+    this.profiles.forEach((elm) => elm.rays.clear('with_neighbor'));
+    this.contours.forEach((contour) => contour.on_sys_changed());
+  }
+
+  /**
    * Перерисовывает элементы контура
    * @method redraw
    * @for Contour
@@ -4154,6 +4162,14 @@ class ContourNestedContent extends Contour {
 
   get l_dimensions() {
     return ContourNested._dimlns;
+  }
+
+  /**
+   * При изменении системы внешнего изделия, с внутренним почти ничего делать не надо
+   */
+  on_sys_changed() {
+    this.profiles.forEach((elm) => elm.rays.clear('with_neighbor'));
+    this.contours.forEach((contour) => contour.on_sys_changed());
   }
 
 }
