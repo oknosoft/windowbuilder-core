@@ -1522,6 +1522,18 @@ class ProfileItem extends GeneratrixElement {
         _attr._rays.clear(ign_rays ? undefined : 'with_neighbor');
       }
 
+      // если в новой вставке не разрешены текущие вставки в элемент - удаляем
+      const rm = [];
+      const {inset: {inserts}, _owner: {_owner}} = _row;
+      _owner.inserts.find_rows({cnstr: -this.elm}, (row) => {
+        if(!inserts.find({inset: row.inset})) {
+          rm.push(row);
+        }
+      });
+      for(const row of rm) {
+        _owner.inserts.del(row);
+      }
+
       project.register_change();
       project._scope.eve.emit('set_inset', this);
     }
