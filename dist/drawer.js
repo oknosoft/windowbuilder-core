@@ -3387,6 +3387,72 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Проверяет, подходит ли фурнитура текущему слою
+   * @param [furn] {CatFurns}
+   * @param [cache] {Object}
+   * @param [bool] {Boolean} - только проверка без формирования массива ошибочных профилей
+   * @return {Array.<Profile>|boolean}
+   */
+  open_restrictions_err({furn, cache, bool}) {
+    if(!furn) {
+      furn = this.furn;
+    }
+    if(!cache) {
+      cache = this.furn_cache;
+    }
+    let err = [];
+    const {side_count, direction} = this;
+    const {open_types, open_directions} = $p.enm;
+
+    // проверяем количество сторон
+    if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
+      if(bool) {
+        return true;
+      }
+      this.profiles.forEach(err.push.bind(err));
+    }
+
+    if(!err.length) {
+      if(furn.formula.empty()) {
+        // геометрия по табчасти настроек открывания
+        for(const row of furn.open_tunes) {
+          const elm = this.profile_by_furn_side(row.side, cache);
+          const prev = this.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
+          const next = this.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
+          const len = elm._row.len - prev.nom.sizefurn - next.nom.sizefurn;
+
+          const angle = direction == open_directions.Правое ?
+            elm.generatrix.angle_between(prev.generatrix, elm.e) :
+            prev.generatrix.angle_between(elm.generatrix, elm.b);
+
+          const {lmin, lmax, amin, amax} = row;
+          if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
+            if(bool) {
+              return true;
+            }
+            err.push(elm);
+          }
+        }
+      }
+      else {
+        // габариты по формуле
+        try {
+          const path = furn.formula.execute();
+          if(!path.contains([cache.w, cache.h])) {
+            if(bool) {
+              return true;
+            }
+            this.profiles.forEach(err.push.bind(err));
+          }
+        }
+        catch (e) {}
+      }
+    }
+
+    return err;
+  }
+
+  /**
    * Возаращает линию, проходящую через ручку
    *
    * @param elm {Profile}
@@ -18074,43 +18140,18 @@ class ProductsBuilding {
      * @return {boolean}
      */
     function furn_check_opening_restrictions(contour, cache) {
-
-      let ok = true;
-      const {new_spec_row} = ProductsBuilding;
-      const {side_count, furn, direction} = contour;
-      const {cat: {clrs}, enm: {open_types, open_directions}, job_prm} = $p;
-
-      // проверяем количество сторон фурнитуры
-      if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
-        // Визуализируем все стороны
-        const row_base = {clr: clrs.get(), nom: job_prm.nom.furn_error};
-        contour.profiles.forEach(elm => {
-          new_spec_row({elm, row_base, origin: furn, spec, ox});
+      const err = contour.open_restrictions_err({cache});
+      if(err.length) {
+        const {new_spec_row} = ProductsBuilding;
+        const {cat: {clrs}, job_prm: {nom}} = $p;
+        const row_base = {clr: clrs.get(), nom: nom.furn_error};
+        err.forEach(elm => {
+          new_spec_row({elm, row_base, origin: contour.furn, spec, ox});
         });
-        return ok = false;
+        return false;
       }
-
-      // проверка геометрии
-      furn.open_tunes.forEach((row) => {
-        const elm = contour.profile_by_furn_side(row.side, cache);
-        const prev = contour.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
-        const next = contour.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
-        const len = elm._row.len - prev.nom.sizefurn - next.nom.sizefurn;
-
-        const angle = direction == open_directions.Правое ?
-          elm.generatrix.angle_between(prev.generatrix, elm.e) :
-          prev.generatrix.angle_between(elm.generatrix, elm.b);
-
-        const {lmin, lmax, amin, amax} = row;
-        if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
-          new_spec_row({elm, row_base: {clr: clrs.get(), nom: job_prm.nom.furn_error}, origin: furn, spec, ox});
-          ok = false;
-        }
-      });
-
-      return ok;
+      return true;
     }
-
 
     /**
      * Спецификации соединений примыкающих профилей
