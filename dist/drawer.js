@@ -7308,10 +7308,13 @@ class Filling extends AbstractFilling(BuilderElement) {
     paths.forEach((p) => p !== path && p.remove());
   }
 
+  /**
+   * Заливка красным с градиентом
+   */
   fill_error() {
     const {path} = this;
     path.fillColor = new paper.Color({
-      stops: ["#fee", "#fcc", "#fdd"],
+      stops: ['#fee', '#faa', '#fcc'],
       origin: path.bounds.bottomLeft,
       destination: path.bounds.topRight
     });
@@ -7323,9 +7326,10 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   formula(by_art) {
     const {elm, inset, ox} = this;
+    const {utils: {blank}, cch: {properties}} = $p;
     let res;
-    ox.glass_specification.find_rows({elm, inset: {not: $p.utils.blank.guid}}, ({inset}) => {
-      let {name, article} = inset;
+    ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
+      let {name, article, clr_group} = inset;
       const aname = name.split(' ');
       if(by_art && article){
         name = article;
@@ -7339,6 +7343,31 @@ class Filling extends AbstractFilling(BuilderElement) {
       else{
         res += (by_art ? '*' : 'x') + name;
       }
+      // подмешаем цвет, если он отличается от умолчания
+      if(!clr_group.empty() && !clr.empty() && clr_group.clrs()[0] != clr) {
+        res += clr.machine_tools_clr || clr.name;
+      }
+
+      // подмешаем параметры с битом 'включать в наименование'
+      if(params) {
+        for(const ref in params) {
+          const param = properties.get(ref);
+          if(param.include_to_name) {
+            const pname = param.predefined_name || param.name.split(' ')[0];
+            if(param.type.types[0] == 'boolean') {
+              if(params[ref]) {
+                res += pname;
+              }
+              continue;
+            }
+            const v = param.fetch_type(params[ref]);
+            if(v != undefined) {
+              res += `${pname}:${v.toString()}`;
+            }
+          }
+        }
+      }
+
     });
     return res || (by_art ? inset.article || inset.name : inset.name);
   }
