@@ -51,16 +51,15 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   /**
    * возвращает доступные в данной системе фурнитуры
    * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура
-   * @property furns
-   * @for Production_params
    */
-  furns(ox, cnstr = 0){
+  furns(ox, layer){
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
     if(properties.furn){
       const links = properties.furn.params_links({
-        grid: {selection: {cnstr}},
-        obj: {_owner: {_owner: ox}}
+        grid: {selection: {cnstr: layer.cnstr}},
+        obj: {_owner: {_owner: ox}},
+        layer
       });
       if(links.length){
         // собираем все доступные значения в одном массиве
@@ -149,7 +148,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   /**
    * @method refill_prm
    * @param ox {CatCharacteristics} - объект характеристики, табчасть которого надо перезаполнить
-   * @param cnstr {Nomber} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
+   * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
    * @param [project] {Scheme} - текущий проект
    * @param [defaults] {TabularSection} - внешние умоляания
@@ -161,6 +160,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     const {enm, job_prm: {properties}, utils, EditorInvisible: {Contour}} = $p;
     const auto_align = ox.calc_order.obj_delivery_state == enm.obj_delivery_states.Шаблон && properties.auto_align;
     const {params} = ox;
+    const layer = project instanceof Contour ?  project : project && project.getItem({class: Contour, cnstr: cnstr || 1});
 
     function add_prm(proto) {
       let row;
@@ -197,7 +197,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
         row = params.add({param, cnstr, value});
       }
 
-      const links = param.params_links({grid: {selection: {cnstr}}, obj: row});
+      const links = param.params_links({grid: {selection: {cnstr}}, obj: row, layer});
       const hide = proto.hide || links.some((link) => link.hide);
       if(row.hide != hide){
         row.hide = hide;
@@ -251,8 +251,9 @@ exports.CatProduction_params = class CatProduction_params extends Object {
       ox.constructions.forEach((row) => {
         if(!row.furn.empty()) {
           let changed = force;
+          const layer = project && project.getItem({class: Contour, cnstr: row.cnstr});
           // если для системы через связи параметров ограничен список фурнитуры...
-          const furns = this.furns(ox, row.cnstr);
+          const furns = this.furns(ox, layer);
           const shtulp_kind = row.furn.shtulp_kind();
           if(furns.length) {
             if(furns.some((frow) => {

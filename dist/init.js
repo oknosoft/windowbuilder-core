@@ -432,7 +432,7 @@ set use(v){this._setter_ts('use',v)}
   /**
    * ### Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer}) {
 
     const {is_calculated, type} = this;
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
@@ -454,6 +454,7 @@ set use(v){this._setter_ts('use',v)}
       ox,
       calc_order,
       prm_row,
+      layer,
     }) : this.extract_value(prm_row);
 
     let ok = false;
@@ -714,6 +715,7 @@ set use(v){this._setter_ts('use',v)}
               ox: attr.obj._owner ? attr.obj._owner._owner : attr.obj.ox,
               prm_row: row,
               elm: attr.obj,
+              layer: attr.layer,
             });
             // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
             if (!grp_ok) {
@@ -2805,16 +2807,15 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   /**
    * возвращает доступные в данной системе фурнитуры
    * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура
-   * @property furns
-   * @for Production_params
    */
-  furns(ox, cnstr = 0){
+  furns(ox, layer){
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
     if(properties.furn){
       const links = properties.furn.params_links({
-        grid: {selection: {cnstr}},
-        obj: {_owner: {_owner: ox}}
+        grid: {selection: {cnstr: layer.cnstr}},
+        obj: {_owner: {_owner: ox}},
+        layer
       });
       if(links.length){
         // собираем все доступные значения в одном массиве
@@ -2903,7 +2904,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   /**
    * @method refill_prm
    * @param ox {CatCharacteristics} - объект характеристики, табчасть которого надо перезаполнить
-   * @param cnstr {Nomber} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
+   * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
    * @param [project] {Scheme} - текущий проект
    * @param [defaults] {TabularSection} - внешние умоляания
@@ -2915,6 +2916,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     const {enm, job_prm: {properties}, utils, EditorInvisible: {Contour}} = $p;
     const auto_align = ox.calc_order.obj_delivery_state == enm.obj_delivery_states.Шаблон && properties.auto_align;
     const {params} = ox;
+    const layer = project instanceof Contour ?  project : project && project.getItem({class: Contour, cnstr: cnstr || 1});
 
     function add_prm(proto) {
       let row;
@@ -2951,7 +2953,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
         row = params.add({param, cnstr, value});
       }
 
-      const links = param.params_links({grid: {selection: {cnstr}}, obj: row});
+      const links = param.params_links({grid: {selection: {cnstr}}, obj: row, layer});
       const hide = proto.hide || links.some((link) => link.hide);
       if(row.hide != hide){
         row.hide = hide;
@@ -3005,8 +3007,9 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
       ox.constructions.forEach((row) => {
         if(!row.furn.empty()) {
           let changed = force;
+          const layer = project && project.getItem({class: Contour, cnstr: row.cnstr});
           // если для системы через связи параметров ограничен список фурнитуры...
-          const furns = this.furns(ox, row.cnstr);
+          const furns = this.furns(ox, layer);
           const shtulp_kind = row.furn.shtulp_kind();
           if(furns.length) {
             if(furns.some((frow) => {
@@ -3334,7 +3337,13 @@ set priorities(v){this._setter_ts('priorities',v)}
   size(elm) {
     let {sz, sizes} = this;
     sizes.forEach((prm_row) => {
-      if(prm_row.param.check_condition({row_spec: {}, prm_row, elm, cnstr: 0, ox: elm.project.ox})) {
+      if(prm_row.param.check_condition({
+        row_spec: {},
+        prm_row,
+        elm,
+        cnstr: 0,
+        ox: elm.project.ox,
+      })) {
         sz = prm_row.elm;
         return false;
       }

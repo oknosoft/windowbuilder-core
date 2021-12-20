@@ -3240,7 +3240,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     // пробегаем по всем строкам
     this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
       const {param} = prow;
-      const links = param.params_links({grid: {selection: {cnstr}}, obj: prow});
+      const links = param.params_links({
+        grid: {selection: {cnstr}},
+        obj: prow,
+        layer: this,
+      });
 
       // сокрытие по умолчаниям или связям
       let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);
@@ -20947,8 +20951,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   /**
    * Перезаполняет табчасть параметров указанного контура
    */
-  refill_prm({project, furn, cnstr}, force=false) {
+  refill_prm(layer, force=false) {
 
+    const {project, furn, cnstr} = layer;
     const fprms = project.ox.params;
     const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction, opening}}} = $p;
@@ -20993,7 +20998,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       // умолчания по связям параметров
       param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
-        obj: {_owner: {_owner: project.ox}}
+        obj: {_owner: {_owner: project.ox}},
+        layer,
       }), prm_row);
 
     });
@@ -21350,7 +21356,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       for (const prm_row of grp) {
         // выполнение условия рассчитывает объект CchProperties
         grp_ok = (prop_direction == prm_row.param) ?
-          direction == prm_row.value : prm_row.param.check_condition({row_spec: this, prm_row, elm: profile, cnstr, ox: cache.ox});
+          direction == prm_row.value : prm_row.param.check_condition({
+            row_spec: this,
+            prm_row,
+            elm: profile,
+            cnstr,
+            ox: cache.ox,
+            layer: contour,
+          });
         // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
         if (!grp_ok) {
           break;

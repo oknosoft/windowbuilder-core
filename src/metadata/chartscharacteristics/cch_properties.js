@@ -138,7 +138,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * ### Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer}) {
 
     const {is_calculated, type} = this;
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
@@ -160,6 +160,7 @@ exports.CchProperties = class CchProperties extends Object {
       ox,
       calc_order,
       prm_row,
+      layer,
     }) : this.extract_value(prm_row);
 
     let ok = false;
@@ -420,6 +421,7 @@ exports.CchProperties = class CchProperties extends Object {
               ox: attr.obj._owner ? attr.obj._owner._owner : attr.obj.ox,
               prm_row: row,
               elm: attr.obj,
+              layer: attr.layer,
             });
             // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
             if (!grp_ok) {

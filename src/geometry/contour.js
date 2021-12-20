@@ -2249,7 +2249,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     // пробегаем по всем строкам
     this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
       const {param} = prow;
-      const links = param.params_links({grid: {selection: {cnstr}}, obj: prow});
+      const links = param.params_links({
+        grid: {selection: {cnstr}},
+        obj: prow,
+        layer: this,
+      });
 
       // сокрытие по умолчаниям или связям
       let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);

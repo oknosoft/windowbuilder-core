@@ -345,7 +345,13 @@ exports.CatCnns = class CatCnns extends Object {
   size(elm) {
     let {sz, sizes} = this;
     sizes.forEach((prm_row) => {
-      if(prm_row.param.check_condition({row_spec: {}, prm_row, elm, cnstr: 0, ox: elm.project.ox})) {
+      if(prm_row.param.check_condition({
+        row_spec: {},
+        prm_row,
+        elm,
+        cnstr: 0,
+        ox: elm.project.ox,
+      })) {
         sz = prm_row.elm;
         return false;
       }
