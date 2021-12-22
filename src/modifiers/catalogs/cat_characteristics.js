@@ -724,12 +724,15 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
   const {_obj} = this;
   if(field === 'inset' && value != this.inset) {
     _obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    const {inset, clr, dop} = this;
+    const {inset, clr, dop, _owner: {_owner}} = this;
     const {product_params} = inset;
+    const own_row = _owner.coordinates.find({elm: _obj.elm});
+    const own_params = own_row && own_row.inset.product_params;
+
     const params = {};
     inset.used_params().forEach((param) => {
       if((!param.is_calculated || param.show_calculated)) {
-        const def = product_params.find({param});
+        const def = product_params.find({param}) || (own_params && own_params.find({param}));
         if(def) {
           params[param.valueOf()] = param.fetch_type(def.value);
         }

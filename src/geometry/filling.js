@@ -463,8 +463,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     const inset = $p.cat.inserts.get(v);
     const {insert_type} = inset;
 
+    const {project, elm, _row, _attr, ox: {glass_specification}} = this;
+    _row.inset = inset;
+    delete _attr.nom;
+
     if(!ignore_select){
-      const {project, elm, ox: {glass_specification}} = this;
 
       // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
@@ -497,7 +500,8 @@ class Filling extends AbstractFilling(BuilderElement) {
       });
     }
 
-    super.set_inset(inset);
+    project.register_change();
+    project._scope.eve.emit('set_inset', this);
   }
 
   /**
