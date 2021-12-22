@@ -3947,7 +3947,7 @@ class ContourNested extends Contour {
           _ox.specification.clear();
           const map = new Map();
           const {_row} = content;
-          const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max');
+          const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;
           let elm = elm0;
           for(const trow of tx.constructions) {
             if(trow.parent === 1) {
@@ -16411,7 +16411,6 @@ class Scheme extends paper.Project {
 
     const {elm_types, cnn_types: {acn, av, ah, long}, orientations} = $p.enm;
 
-
     let distance, cnns, addls,
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
       bind_generatrix = typeof check_only == 'string' ? check_only.indexOf('generatrix') != -1 : check_only,
@@ -16523,7 +16522,7 @@ class Scheme extends paper.Project {
     // если к доборам не привязались - проверяем профиль
     //const gp = element.generatrix.getNearestPoint(point);
     const gp = element._attr._nearest && (!profile || !profile._attr._nearest) ?
-      element.rays.outer.getNearestPoint(point) :
+      (element.rays.outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
 

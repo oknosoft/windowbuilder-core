@@ -140,7 +140,7 @@ class ContourNested extends Contour {
           _ox.specification.clear();
           const map = new Map();
           const {_row} = content;
-          const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max');
+          const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;
           let elm = elm0;
           for(const trow of tx.constructions) {
             if(trow.parent === 1) {
