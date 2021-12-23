@@ -3063,7 +3063,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
               contour.notify(contour, 'furn_changed');
             }
             else {
-              ox.sys.refill_prm(ox, row.cnstr, force);
+              ox.sys.refill_prm(ox, row.cnstr, force, project);
             }
           }
         }

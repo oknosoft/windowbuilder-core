@@ -307,7 +307,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
               contour.notify(contour, 'furn_changed');
             }
             else {
-              ox.sys.refill_prm(ox, row.cnstr, force);
+              ox.sys.refill_prm(ox, row.cnstr, force, project);
             }
           }
         }
