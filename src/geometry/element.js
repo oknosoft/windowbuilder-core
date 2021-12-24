@@ -181,7 +181,8 @@ class BuilderElement extends paper.Group {
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
-      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'});
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
+      clr = Object.assign(utils._clone(_xfields.clr), {choice_params: []});
 
     if(iface !== false) {
       iface = $p.iface;
@@ -345,12 +346,12 @@ class BuilderElement extends paper.Group {
     }];
 
     // дополняем свойства поля цвет отбором по служебным цветам
-    clrs.selection_exclude_service(_xfields.clr, this);
+    clrs.selection_exclude_service(clr, this);
 
     const mfields = {
       info,
       inset,
-      clr: _xfields.clr,
+      clr,
       x1: _xfields.x1,
       x2: _xfields.x2,
       y1: _xfields.y1,

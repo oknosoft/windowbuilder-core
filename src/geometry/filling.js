@@ -1057,6 +1057,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   region(row) {
     const {utils, cch} = $p;
+    const _metadata = this.__metadata(false);
     return new Proxy(this, {
       get(target, prop, receiver) {
         switch (prop){
@@ -1068,6 +1069,8 @@ class Filling extends AbstractFilling(BuilderElement) {
           return row.inset;
         case 'clr':
           return row.clr;
+        case '_metadata':
+          return _metadata;
         default:
           let pvalue;
           if(utils.is_guid(prop)) {
