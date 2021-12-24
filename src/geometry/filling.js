@@ -453,10 +453,11 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
    * @param [ignore_select] {Boolean}
+   * @param [force] {Boolean}
    */
-  set_inset(v, ignore_select) {
+  set_inset(v, ignore_select, force) {
 
-    if(this.inset == v) {
+    if(!force && this.inset == v) {
       return;
     }
 
@@ -485,7 +486,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       project.selected_glasses().forEach((selm) => {
         if(selm !== this){
           // копируем вставку
-          selm.set_inset(inset, true);
+          selm.set_inset(inset, true, force);
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
           // если тип стеклопаке - заполняем по умолчанию
