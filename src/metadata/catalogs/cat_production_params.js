@@ -27,7 +27,8 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     if(!_data.thin) {
       const thin = new Set();
       for(const nom of this.glasses()) {
-        thin.add(nom.thickness());
+        const thickness = nom.thickness();
+        thickness && thin.add(nom.thickness());
       }
       _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
@@ -77,10 +78,11 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * @property inserts
    * @for Production_params
    * @param elm_types - допустимые типы элементов
-   * @param by_default {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
+   * @param [by_default] {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
+   * @param [context] {BuilderElement|Scheme} - указатель на элемент или проект, чтобы отфильтровать по ключам
    * @return Array.<CatInserts>
    */
-  inserts(elm_types, by_default){
+  inserts(elm_types, by_default, context){
     const __noms = [];
     const {enm} = $p;
     if(!elm_types) {

@@ -2783,7 +2783,8 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     if(!_data.thin) {
       const thin = new Set();
       for(const nom of this.glasses()) {
-        thin.add(nom.thickness());
+        const thickness = nom.thickness();
+        thickness && thin.add(nom.thickness());
       }
       _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
@@ -2833,10 +2834,11 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
    * @property inserts
    * @for Production_params
    * @param elm_types - допустимые типы элементов
-   * @param by_default {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
+   * @param [by_default] {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
+   * @param [context] {BuilderElement|Scheme} - указатель на элемент или проект, чтобы отфильтровать по ключам
    * @return Array.<CatInserts>
    */
-  inserts(elm_types, by_default){
+  inserts(elm_types, by_default, context){
     const __noms = [];
     const {enm} = $p;
     if(!elm_types) {
@@ -4030,7 +4032,6 @@ class CatClrsManager extends CatManager {
     else if(!clr[curr].empty()) {
       clr = clr[curr];
     }
-
     if(other.empty()) {
       other = this.predefined('БезЦвета');
     }
@@ -4082,10 +4083,10 @@ class CatClrsManager extends CatManager {
   hide_composite(mf) {
     const choice_param = mf.choice_params && mf.choice_params.find(({name}) => name === 'parent');
     const {composite_clr_folder: ccf} = $p.job_prm.builder;
-    if(choice_param && choice_param.path.not) {
+    if(choice_param?.path.not) {
       choice_param.path = {nin: [choice_param.path.not, ccf]};
     }
-    else if(choice_param.path.nin && !choice_param.path.nin.find(v => v === ccf)) {
+    else if(choice_param?.path.nin && !choice_param.path.nin.find(v => v === ccf)) {
       choice_param.path.nin.push();
     }
     else {

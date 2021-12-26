@@ -2758,20 +2758,33 @@ class Contour extends AbstractFilling(paper.Layer) {
         elm.on_sys_changed(refill);
       }
       else {
-        // заполнения проверяем по толщине
+        // заполнения проверяем с учетом правила системы - по толщине, массиву толщин или явному вхождению вставки
         const {thickness, project} = elm;
-        const {tmin, tmax} = project._dp.sys
-        if(refill || thickness < tmin || thickness > tmax) {
-          let {elm_type} = elm.nom;
-          if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
+        if(!refill) {
+          const {thicknesses, glass_thickness} = project._dp.sys;
+          if(glass_thickness === 0) {
+            refill = !thicknesses.includes(thickness);
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = elm_types;
+            refill = !project._dp.sys.glasses().includes(elm.insert);
+          }
+          else if(glass_thickness === 2) {
+            refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];
+          }
+        }
+        if(refill) {
+          let {elm_type} = elm.nom; // тип элемента номенклатуры, чтобы выявить непрозрачные заполнения
+          if(!elm_types.glasses.includes(elm_type)) {
             elm_type = elm_types.Стекло;
           }
-          elm._row.inset = project.default_inset({elm_type: [elm_type]});
+          elm.set_inset(project.default_inset({elm_type: [elm_type]}));
         }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
-          if (!curr.cnn || !curr.cnn.check_nom2(curr.profile))
+          if(!curr.cnn || !curr.cnn.check_nom2(curr.profile)) {
             curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);
+          }
         });
       }
     });

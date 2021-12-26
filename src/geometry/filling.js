@@ -452,10 +452,10 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
-   * @param [ignore_select] {Boolean}
+   * @param [ign_select] {Boolean}
    * @param [force] {Boolean}
    */
-  set_inset(v, ignore_select, force) {
+  set_inset(v, ign_select, force) {
 
     if(!force && this.inset == v) {
       return;
@@ -468,7 +468,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.inset = inset;
     delete _attr.nom;
 
-    if(!ignore_select){
+    if(!ign_select){
 
       // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
@@ -508,10 +508,10 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * Сеттер цвета элемента
    * @param v {CatClrs}
-   * @param ignore_select {Boolean}
+   * @param ign_select {Boolean}
    */
-  set_clr(v, ignore_select) {
-    if(!ignore_select && this.project.selectedItems.length > 1){
+  set_clr(v, ign_select) {
+    if(!ign_select && this.project.selectedItems.length > 1){
       this.project.selected_glasses().forEach((elm) => {
         if(elm !== this){
           elm.set_clr(v, true);

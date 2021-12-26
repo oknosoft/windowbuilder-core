@@ -599,8 +599,7 @@ class Scheme extends paper.Project {
     }
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
-        .then((ox) =>
-          doc.calc_order.get(ox.calc_order, true, true)
+        .then((ox) => doc.calc_order.get(ox.calc_order, true, true)
             .then((calc_order) => calc_order.load_linked_refs())
             .then(() => load_object(ox))
         );
@@ -1575,8 +1574,9 @@ class Scheme extends paper.Project {
    *
    * @method default_inset
    * @param [attr] {Object}
-   * @param [attr.pos] {_enm.positions} - положение элемента
-   * @param [attr.elm_type] {_enm.elm_types} - тип элемента
+   * @param [attr.elm] {BuilderElement}
+   * @param [attr.pos] {EnmPositions} - положение элемента
+   * @param [attr.elm_type] {EnmElm_types} - тип элемента
    * @returns {Array.<ProfileItem>}
    */
   default_inset(attr) {

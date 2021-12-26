@@ -3751,18 +3751,31 @@ class Contour extends AbstractFilling(paper.Layer) {
       else {
         // заполнения проверяем по толщине
         const {thickness, project} = elm;
-        const {tmin, tmax} = project._dp.sys
-        if(refill || thickness < tmin || thickness > tmax) {
-          let {elm_type} = elm.nom;
-          if(![elm_types.Стекло, elm_types.Заполнение].includes(elm_type)) {
+        if(!refill) {
+          const {thicknesses, glass_thickness} = project._dp.sys;
+          if(glass_thickness === 0) {
+            refill = !thicknesses.includes(thickness);
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = elm_types;
+            refill = !project._dp.sys.glasses().includes(elm.insert);
+          }
+          else if(glass_thickness === 2) {
+            refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];
+          }
+        }
+        if(refill) {
+          let {elm_type} = elm.nom; // тип элемента номенклатуры, чтобы выявить непрозрачные заполнения
+          if(!elm_types.glasses.includes(elm_type)) {
             elm_type = elm_types.Стекло;
           }
-          elm._row.inset = project.default_inset({elm_type: [elm_type]});
+          elm.set_inset(project.default_inset({elm_type: [elm_type]}));
         }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
-          if (!curr.cnn || !curr.cnn.check_nom2(curr.profile))
+          if(!curr.cnn || !curr.cnn.check_nom2(curr.profile)) {
             curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);
+          }
         });
       }
     });
@@ -6122,7 +6135,6 @@ class BuilderElement extends paper.Group {
                 return thicknesses.includes(insert.thickness(this));
               }
               else if(glass_thickness === 1) {
-                const {Заполнение, Стекло} = elm_types;
                 return sys.glasses().includes(insert);
               }
               else if(glass_thickness === 2) {
@@ -7240,10 +7252,10 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
-   * @param [ignore_select] {Boolean}
+   * @param [ign_select] {Boolean}
    * @param [force] {Boolean}
    */
-  set_inset(v, ignore_select, force) {
+  set_inset(v, ign_select, force) {
 
     if(!force && this.inset == v) {
       return;
@@ -7256,7 +7268,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.inset = inset;
     delete _attr.nom;
 
-    if(!ignore_select){
+    if(!ign_select){
 
       // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
@@ -7296,10 +7308,10 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * Сеттер цвета элемента
    * @param v {CatClrs}
-   * @param ignore_select {Boolean}
+   * @param ign_select {Boolean}
    */
-  set_clr(v, ignore_select) {
-    if(!ignore_select && this.project.selectedItems.length > 1){
+  set_clr(v, ign_select) {
+    if(!ign_select && this.project.selectedItems.length > 1){
       this.project.selected_glasses().forEach((elm) => {
         if(elm !== this){
           elm.set_clr(v, true);
@@ -15324,8 +15336,7 @@ class Scheme extends paper.Project {
     }
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
-        .then((ox) =>
-          doc.calc_order.get(ox.calc_order, true, true)
+        .then((ox) => doc.calc_order.get(ox.calc_order, true, true)
             .then((calc_order) => calc_order.load_linked_refs())
             .then(() => load_object(ox))
         );
@@ -16300,8 +16311,9 @@ class Scheme extends paper.Project {
    *
    * @method default_inset
    * @param [attr] {Object}
-   * @param [attr.pos] {_enm.positions} - положение элемента
-   * @param [attr.elm_type] {_enm.elm_types} - тип элемента
+   * @param [attr.elm] {BuilderElement}
+   * @param [attr.pos] {EnmPositions} - положение элемента
+   * @param [attr.elm_type] {EnmElm_types} - тип элемента
    * @returns {Array.<ProfileItem>}
    */
   default_inset(attr) {
@@ -20288,7 +20300,6 @@ $p.cat.clrs.__define({
 	 */
   by_predefined: {
     value(clr, clr_elm, clr_sch, elm, spec, row) {
-
       const {predefined_name} = clr;
       if(predefined_name) {
         const flipped = elm && elm.layer && elm.layer.flipped;

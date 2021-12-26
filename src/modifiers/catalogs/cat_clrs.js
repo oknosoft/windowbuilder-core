@@ -20,7 +20,6 @@ $p.cat.clrs.__define({
 	 */
   by_predefined: {
     value(clr, clr_elm, clr_sch, elm, spec, row) {
-
       const {predefined_name} = clr;
       if(predefined_name) {
         const flipped = elm && elm.layer && elm.layer.flipped;
