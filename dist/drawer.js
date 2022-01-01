@@ -3406,7 +3406,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     let err = [];
     const {side_count, direction} = this;
-    const {open_types, open_directions} = $p.enm;
+    const {open_types, open_directions, elm_types} = $p.enm;
 
     // проверяем количество сторон
     if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
@@ -3434,7 +3434,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             if(bool) {
               return true;
             }
-            err.push(elm);
+            !err.includes(elm) && err.push(elm);
           }
         }
       }
@@ -3453,7 +3453,20 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-    return err;
+    // в створках без импоста штульповые не используем и наоборот
+    for(const row of furn.open_tunes) {
+      const elm = this.profile_by_furn_side(row.side, cache);
+      const {elm_type} = elm;
+      if((row.shtulp_available && elm_type !== elm_types.Импост) ||
+          (!row.shtulp_available && elm_type === elm_types.Импост && elm.nom.elm_type === elm_types.Штульп)) {
+        if(bool) {
+          return true;
+        }
+        !err.includes(elm) && err.push(elm);
+      }
+    }
+
+    return bool ? false : err;
   }
 
   /**
@@ -3749,7 +3762,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         elm.on_sys_changed(refill);
       }
       else {
-        // заполнения проверяем по толщине
+        // заполнения проверяем с учетом правила системы - по толщине, массиву толщин или явному вхождению вставки
         const {thickness, project} = elm;
         if(!refill) {
           const {thicknesses, glass_thickness} = project._dp.sys;
@@ -18194,10 +18207,10 @@ class ProductsBuilding {
       }
 
       // ограничения размеров по графикам
-      const checks = ox.sys.graph_restrictions(new paper.Point(contour.bounds.width, contour.bounds.height).divide(10), contour.is_clr());
-      if(Object.keys(checks)) {
-        console.table(checks);
-      }
+      // const checks = ox.sys.graph_restrictions(new paper.Point(contour.bounds.width, contour.bounds.height).divide(10), contour.is_clr());
+      // if(Object.keys(checks)) {
+      //   console.table(checks);
+      // }
     }
 
     /**
