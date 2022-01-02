@@ -3456,9 +3456,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     // в створках без импоста штульповые не используем и наоборот
     for(const row of furn.open_tunes) {
       const elm = this.profile_by_furn_side(row.side, cache);
-      const {elm_type} = elm;
-      if((row.shtulp_available && elm_type !== elm_types.Импост) ||
-          (!row.shtulp_available && elm_type === elm_types.Импост && elm.nom.elm_type === elm_types.Штульп)) {
+      const {elm_type, nom} = elm.nearest();
+      if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
+          (!row.shtulp_available && nom.elm_type === elm_types.Штульп)) {
         if(bool) {
           return true;
         }
@@ -20466,31 +20466,13 @@ $p.cat.clrs.__define({
         // фильтр доступных цветов системы или вставки
         let clr_group = clrs.find_group(sys);
 
-        function add_by_clr(clr, res) {
-          if(clr instanceof CatClrs) {
-            const {ref} = clr;
-            if(clr.is_folder) {
-              clrs.alatable.forEach((row) => row.parent == ref && res.push(row.ref));
-            }
-            else {
-              res.push(ref);
-            }
-          }
-          else if(clr instanceof CatColor_price_groups) {
-            for(const c of clr.clrs()) {
-              add_by_clr(c, res)
-            };
-          }
-          return res;
-        }
-
         mf.choice_params.push({
           name: 'ref',
           get path() {
             if(clr_group.empty() || (!clr_group.clr_conformity.count() && clr_group.condition_formula.empty())) {
               return {not: ''};
             }
-            return {in: add_by_clr(clr_group, [])};
+            return {in: clr_group.clrs()};
           }
         });
 
@@ -20500,6 +20482,14 @@ $p.cat.clrs.__define({
         }
         else if(mf.hide_composite) {
           mf.hide_composite = false;
+        }
+
+        // если разрешен единственный цвет, установим ro
+        if(!clr_group.empty() && clr_group.clrs().length === 1) {
+          mf.single_value = clr_group.clrs()[0];
+        }
+        else if(mf.single_value) {
+          delete mf.single_value;
         }
       }
 		}
