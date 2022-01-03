@@ -28,16 +28,30 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
         filtered.push(v);
       }
     });
+
+    const compare = (a, b) => {
+      if (a.name < b.name) {
+        return -1;
+      }
+      if (a.name > b.name) {
+        return 1;
+      }
+      return 0;
+    };
+
     filtered.sort((a, b) => a.sorting_field - b.sorting_field).forEach((formula) => {
       // формируем списки печатных форм и внешних обработок
       if(formula.parent == parents[0]) {
         formula.params.find_rows({param: 'destination'}, (dest) => {
           const dmgr = md.mgr_by_class_name(dest.value);
           if(dmgr) {
-            if(!dmgr._printing_plates) {
-              dmgr._printing_plates = {};
+            const tmp = dmgr._printing_plates ? Object.values(dmgr._printing_plates) : [];
+            tmp.push(formula);
+            tmp.sort(compare);
+            dmgr._printing_plates = {};
+            for(const elm of tmp) {
+              dmgr._printing_plates[`prn_${elm.ref}`] = elm;
             }
-            dmgr._printing_plates[`prn_${formula.ref}`] = formula;
           }
         });
       }
