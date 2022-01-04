@@ -527,10 +527,17 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * @param editor
    */
   draw(attr = {}, editor) {
+    const link = {imgs: {}};
 
-    const ref = $p.utils.snake_ref(this.ref);
-    const res = attr.res || {};
-    res[ref] = {imgs: {}};
+    if(attr.res instanceof Map) {
+      attr.res.set(this, link);
+    }
+    else {
+      if(!attr.res) {
+        attr.res = {};
+      }
+      attr.res[$p.utils.snake_ref(this.ref)] = link;
+    }
 
     // загружаем изделие в редактор
     const remove = !editor;
@@ -543,25 +550,31 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         const {_obj: {glasses, constructions, coordinates}} = this;
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {
-          project.draw_fragment({elm: attr.elm});
-          const num = attr.elm > 0 ? `g${attr.elm}` : `l${attr.elm}`;
-          if(attr.format === 'png') {
-            res[ref].imgs[num] = project.view.element.toDataURL('image/png').substr(22);
-          }
-          else {
-            res[ref].imgs[num] = project.get_svg(attr);
+          const elmnts = Array.isArray(attr.elm) ? attr.elm : [attr.elm];
+          for(const elm of elmnts) {
+            const item = project.draw_fragment({elm});
+            const num = elm > 0 ? `g${elm}` : `l${elm}`;
+            if(attr.format === 'png') {
+              link.imgs[num] = project.view.element.toDataURL('image/png').substr(22);
+            }
+            else {
+              link.imgs[num] = project.get_svg(attr);
+            }
+            if(item){
+              item.visible = false;
+            }
           }
         }
         else if(attr.glasses) {
-          res[ref].glasses = glasses.map((glass) => Object.assign({}, glass));
-          res[ref].glasses.forEach((row) => {
+          link.glasses = glasses.map((glass) => Object.assign({}, glass));
+          link.glasses.forEach((row) => {
             const glass = project.draw_fragment({elm: row.elm});
             // подтянем формулу стеклопакета
             if(attr.format === 'png') {
-              res[ref].imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
+              link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
-              res[ref].imgs[`g${row.elm}`] = project.get_svg(attr);
+              link.imgs[`g${row.elm}`] = project.get_svg(attr);
             }
             if(glass){
               row.formula_long = glass.formula(true);
@@ -571,19 +584,19 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         }
         else {
           if(attr.format === 'png') {
-            res[ref].imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
           else {
-            res[ref].imgs[`l0`] = project.get_svg(attr);
+            link.imgs[`l0`] = project.get_svg(attr);
           }
           if(attr.glasses !== false) {
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
               if(attr.format === 'png') {
-                res[ref].imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
+                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
               }
               else {
-                res[ref].imgs[`l${cnstr}`] = project.get_svg(attr);
+                link.imgs[`l${cnstr}`] = project.get_svg(attr);
               }
             });
           }
@@ -597,7 +610,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         else {
           project.unload();
         }
-        return res;
+        return attr.res;
       });
   }
 
