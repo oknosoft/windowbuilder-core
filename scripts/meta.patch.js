@@ -10,8 +10,8 @@ const include = ['*'];
 const exclude = [
   'cat.servers',
   'cch.mdm_groups',
-  //'cat.property_values_hierarchy',
   'doc.registers_correction',
+  'ireg.i18n',
   'ireg.delivery_schedules',
   'ireg.delivery_scheme',
 ];
