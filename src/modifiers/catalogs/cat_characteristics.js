@@ -94,6 +94,22 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   }
 
+  // шаблоны читаем из ram
+  load(attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.load(attr);
+  }
+
+  // шаблоны сохраняем в базу ram
+  save(post, operational, attachments, attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.save(post, operational, attachments, attr);
+  }
+
   // при удалении строки вставок, удаляем параметры и соединения
   del_row(row) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {

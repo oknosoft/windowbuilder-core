@@ -42,36 +42,6 @@ class Pricing {
         const {doc: {calc_order}, wsql} = $p;
         // излучаем событие "можно открывать формы"
         pouch.emit('pouch_complete_loaded');
-
-        // следим за изменениями документа установки цен, чтобы при необходимости обновить кеш
-        if(pouch.local.doc === pouch.remote.doc) {
-          const class_names = [calc_order.class_name];
-          if(pouch.props.user_node) {
-            class_names.push('doc.nom_prices_setup');
-          }
-          this._changes = pouch.local.doc.changes({
-            since: 'now',
-            live: true,
-            include_docs: true,
-            selector: {class_name: {$in: class_names}}
-          }).on('change', (change) => {
-            // формируем новый
-            if(change.doc.class_name == 'doc.nom_prices_setup') {
-              this.by_doc(change.doc);
-            }
-            else if(change.doc.class_name == calc_order.class_name) {
-              if(pouch.props.user_node) {
-                return calc_order.emit('change', change.doc);
-              }
-              const doc = calc_order.by_ref[change.id.substr(15)];
-              const user = pouch.authorized || wsql.get_user_param('user_name');
-              if(!doc || user === change.doc.timestamp.user) {
-                return;
-              }
-              pouch.load_changes({docs: [change.doc], update_only: true});
-            }
-          });
-        }
       });
   }
 
@@ -88,7 +58,7 @@ class Pricing {
       this.prices_timeout = 0;
     }
     if(!force) {
-      const defer = server ? server.defer : 200000;
+      const defer = server ? server.defer : 180000;
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
@@ -114,7 +84,7 @@ class Pricing {
     (log || console.log)(`load_prices: page №${step}`);
 
     return utils.sleep(200)
-      .then(() => pouch.remote.doc.find({
+      .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,

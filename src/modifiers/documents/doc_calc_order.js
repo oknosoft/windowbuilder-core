@@ -439,6 +439,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  // шаблоны читаем из ram
+  load(attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.load(attr);
+  }
+
+  // шаблоны сохраняем в базу ram
+  save(post, operational, attachments, attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.save(post, operational, attachments, attr);
+  }
+
   // проверяет заполненность цен
   check_prices() {
     const {job_prm, pricing} = $p;
