@@ -203,7 +203,7 @@ class ProductsBuilding {
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
       // проверяем, подходит ли фурнитура под геометрию контура
-      if(!furn_check_opening_restrictions(contour, furn_cache)) {
+      if(!furn_cache.profiles.length || !furn_check_opening_restrictions(contour, furn_cache)) {
         return;
       }
 

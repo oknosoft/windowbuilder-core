@@ -15290,7 +15290,11 @@ class Scheme extends paper.Project {
           delete _attr._loading;
 
           // при необходимости загружаем типовой блок
-          ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new()) ? Promise.resolve() : _scheme.ox.base_block.load().catch(() => null))
+          ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
+            ?
+            Promise.resolve()
+            :
+            _scheme.ox.base_block.load().catch(() => null))
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
@@ -17450,36 +17454,6 @@ class Pricing {
         const {doc: {calc_order}, wsql} = $p;
         // излучаем событие "можно открывать формы"
         pouch.emit('pouch_complete_loaded');
-
-        // следим за изменениями документа установки цен, чтобы при необходимости обновить кеш
-        if(pouch.local.doc === pouch.remote.doc) {
-          const class_names = [calc_order.class_name];
-          if(pouch.props.user_node) {
-            class_names.push('doc.nom_prices_setup');
-          }
-          this._changes = pouch.local.doc.changes({
-            since: 'now',
-            live: true,
-            include_docs: true,
-            selector: {class_name: {$in: class_names}}
-          }).on('change', (change) => {
-            // формируем новый
-            if(change.doc.class_name == 'doc.nom_prices_setup') {
-              this.by_doc(change.doc);
-            }
-            else if(change.doc.class_name == calc_order.class_name) {
-              if(pouch.props.user_node) {
-                return calc_order.emit('change', change.doc);
-              }
-              const doc = calc_order.by_ref[change.id.substr(15)];
-              const user = pouch.authorized || wsql.get_user_param('user_name');
-              if(!doc || user === change.doc.timestamp.user) {
-                return;
-              }
-              pouch.load_changes({docs: [change.doc], update_only: true});
-            }
-          });
-        }
       });
   }
 
@@ -17496,7 +17470,7 @@ class Pricing {
       this.prices_timeout = 0;
     }
     if(!force) {
-      const defer = server ? server.defer : 200000;
+      const defer = server ? server.defer : 180000;
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
@@ -17522,7 +17496,7 @@ class Pricing {
     (log || console.log)(`load_prices: page №${step}`);
 
     return utils.sleep(200)
-      .then(() => pouch.remote.doc.find({
+      .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
@@ -18134,7 +18108,7 @@ class ProductsBuilding {
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
       // проверяем, подходит ли фурнитура под геометрию контура
-      if(!furn_check_opening_restrictions(contour, furn_cache)) {
+      if(!furn_cache.profiles.length || !furn_check_opening_restrictions(contour, furn_cache)) {
         return;
       }
 
@@ -19467,78 +19441,6 @@ $p.spec_building = new SpecBuilding($p);
 
   });
 
-  enm.open_directions.__define({
-    folding: {
-      get() {return this.Откидное;}
-    },
-  });
-
-	/**
-	 * Синонимы в ориентации
-	 */
-	enm.orientations.__define({
-
-		hor: {
-			get() {return this.Горизонтальная;}
-		},
-
-		vert: {
-			get() {return this.Вертикальная;}
-		},
-
-		incline: {
-			get() {return this.Наклонная;}
-		}
-	});
-
-	/**
-	 * Синонимы в ПоложенииЭлемента
-	 */
-	enm.positions.__define({
-
-		left: {
-			get() {
-				return this.Лев;
-			}
-		},
-
-		right: {
-			get() {
-				return this.Прав;
-			}
-		},
-
-		top: {
-			get() {
-				return this.Верх;
-			}
-		},
-
-		bottom: {
-			get() {
-				return this.Низ;
-			}
-		},
-
-		hor: {
-			get() {
-				return this.ЦентрГоризонталь;
-			}
-		},
-
-		vert: {
-			get() {
-				return this.ЦентрВертикаль;
-			}
-		},
-
-    any: {
-      get() {
-        return this.Любое;
-      }
-    }
-	});
-
 
 })($p);
 
@@ -19636,6 +19538,22 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
     return this;
 
+  }
+
+  // шаблоны читаем из ram
+  load(attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.load(attr);
+  }
+
+  // шаблоны сохраняем в базу ram
+  save(post, operational, attachments, attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.save(post, operational, attachments, attr);
   }
 
   // при удалении строки вставок, удаляем параметры и соединения
@@ -21008,19 +20926,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {project, furn, cnstr} = layer;
     const fprms = project.ox.params;
     const {sys} = project._dp;
-    const {CatNom, job_prm: {properties: {direction, opening}}} = $p;
+    const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
     const aprm = furn.furn_set.used_params();
-    aprm.sort((a, b) => {
-      if (a.presentation > b.presentation) {
-        return 1;
-      }
-      if (a.presentation < b.presentation) {
-        return -1;
-      }
-      return 0;
-    });
+    aprm.sort(utils.sort('presentation'));
 
     // дозаполняем и приклеиваем значения по умолчанию
     aprm.forEach((v) => {
@@ -21058,7 +20968,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     // удаляем лишние строки, сохраняя параметры допвставок
     const adel = [];
-    fprms.find_rows({cnstr: cnstr, inset: $p.utils.blank.guid}, (row) => {
+    fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {
       if(aprm.indexOf(row.param) == -1){
         adel.push(row);
       }
@@ -23005,34 +22915,38 @@ $p.CatPartners.prototype.__define({
 
 
 /**
- * Предопределенное поведение параметра angle_next
+ * Предопределенное поведение параметров
  *
  * Created 05.12.2021.
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch, cat, EditorInvisible, utils} = $p;
-  const prm = cch.properties.predefined('angle_next');
-  if(prm) {
-    // fake-формула
-    if(prm.calculated.empty()) {
-      prm.calculated = cat.formulas.create({name: 'angle_next'}, false, true);
-      prm.calculated._data._formula = function (obj) {
-        const {elm} = obj;
-      };
-    }
-    // fake-признак использования
-    if(!prm.use.count()) {
-      prm.use.add({count_calc_method: 'ПоПериметру'});
-    }
-    // проверка условия
-    prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
-      if(elm && elm._row && elm._row.hasOwnProperty('angle_next')) {
-        return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager)
+  const {cch: {properties}, cat: {formulas}, EditorInvisible, utils} = $p;
+
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function (obj) {
+          const {elm} = obj;
+        };
       }
-      return Object.getPrototypeOf(this).check_condition.call(this, {row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+      // fake-признак использования
+      if(!prm.use.count()) {
+        prm.use.add({count_calc_method: 'ПоПериметру'});
+      }
+      // проверка условия
+      prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
+        if(elm && elm._row && elm._row.hasOwnProperty(name)) {
+          return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager)
+        }
+        return Object.getPrototypeOf(this).check_condition.call(this, {row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+      }
     }
-  }
+  })('angle_next');
+
 });
 
 
@@ -23474,6 +23388,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         save_error(`${err.message} повторите попытку записи через минуту`);
       });
 
+  }
+
+  // шаблоны читаем из ram
+  load(attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.load(attr);
+  }
+
+  // шаблоны сохраняем в базу ram
+  save(post, operational, attachments, attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.save(post, operational, attachments, attr);
   }
 
   // проверяет заполненность цен

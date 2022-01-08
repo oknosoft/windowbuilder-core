@@ -39,7 +39,7 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
       return 0;
     };
 
-    filtered.sort((a, b) => a.sorting_field - b.sorting_field).forEach((formula) => {
+    filtered.sort(utils.sort('sorting_field')).forEach((formula) => {
       // формируем списки печатных форм и внешних обработок
       if(formula.parent == parents[0]) {
         formula.params.find_rows({param: 'destination'}, (dest) => {

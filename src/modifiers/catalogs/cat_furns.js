@@ -34,19 +34,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {project, furn, cnstr} = layer;
     const fprms = project.ox.params;
     const {sys} = project._dp;
-    const {CatNom, job_prm: {properties: {direction, opening}}} = $p;
+    const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
     const aprm = furn.furn_set.used_params();
-    aprm.sort((a, b) => {
-      if (a.presentation > b.presentation) {
-        return 1;
-      }
-      if (a.presentation < b.presentation) {
-        return -1;
-      }
-      return 0;
-    });
+    aprm.sort(utils.sort('presentation'));
 
     // дозаполняем и приклеиваем значения по умолчанию
     aprm.forEach((v) => {
@@ -84,7 +76,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     // удаляем лишние строки, сохраняя параметры допвставок
     const adel = [];
-    fprms.find_rows({cnstr: cnstr, inset: $p.utils.blank.guid}, (row) => {
+    fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {
       if(aprm.indexOf(row.param) == -1){
         adel.push(row);
       }
