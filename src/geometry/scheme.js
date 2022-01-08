@@ -540,7 +540,11 @@ class Scheme extends paper.Project {
           delete _attr._loading;
 
           // при необходимости загружаем типовой блок
-          ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new()) ? Promise.resolve() : _scheme.ox.base_block.load().catch(() => null))
+          ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
+            ?
+            Promise.resolve()
+            :
+            _scheme.ox.base_block.load().catch(() => null))
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
