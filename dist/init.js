@@ -537,12 +537,12 @@ set use(v){this._setter_ts('use',v)}
           throw `Источник '${src.name}' не поддержан`;
         }
       }
+      const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
       const {rnum} = elm;
       if(rnum) {
         return elm[this.valueOf()];
       }
       else {
-        const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
         params.find_rows({
           param: this,
           cnstr: cnstr || (elm._row ? {in: [0, -elm._row.elm]} : 0),

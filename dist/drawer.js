@@ -17493,7 +17493,7 @@ class Pricing {
   by_range({bookmark, step=1, limit=50, log=null}) {
     const {utils, adapters: {pouch}} = $p;
 
-    (log || console.log)(`load_prices: page №${step}`);
+    (log || console.log)(`load prices: page №${step}`);
 
     return utils.sleep(200)
       .then(() => pouch.remote.ram.find({
