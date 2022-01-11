@@ -341,7 +341,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Возвращает номенклатуру продукции по системе
    */
   get prod_nom() {
-    const {sys, params} = this;
+    const {sys, params, calc_order} = this;
     if(!sys.empty()) {
 
       let setted;
@@ -357,11 +357,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           }
 
           if(row.param && !row.param.empty()) {
-            params.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
+            if(row.param.check_condition({prm_row: row, ox: this, calc_order})) {
               setted = true;
               this.owner = row.nom;
               return false;
-            });
+            }
           }
 
         });

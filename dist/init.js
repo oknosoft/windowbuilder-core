@@ -436,10 +436,11 @@ set use(v){this._setter_ts('use',v)}
 
     const {is_calculated, type} = this;
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
+    const ct = prm_row.comparison_type || comparison_types.eq;
 
     // для алгоритма clr_prm и цветового параметра, фильтр отключаем
     if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
-      (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq) &&
+      (ct.empty() || ct === comparison_types.eq) &&
       type.types.includes('cat.clrs') &&
       (!prm_row.value || prm_row.value.empty())) {
       return true;
@@ -460,7 +461,7 @@ set use(v){this._setter_ts('use',v)}
     let ok = false;
 
     // если сравнение на равенство - решаем в лоб, если вычисляемый параметр типа массив - выясняем вхождение значения в параметр
-    if(ox && !Array.isArray(val) && (prm_row.comparison_type.empty() || prm_row.comparison_type === comparison_types.eq)) {
+    if(ox && !Array.isArray(val) && (ct.empty() || ct === comparison_types.eq)) {
       if(is_calculated) {
         ok = val == prm_row.value;
       }
@@ -472,12 +473,12 @@ set use(v){this._setter_ts('use',v)}
     // вычисляемый параметр - его значение уже рассчитано формулой (val) - сравниваем со значением в строке ограничений
     else if(is_calculated) {
       const value = this.extract_value(prm_row);
-      ok = utils.check_compare(val, value, prm_row.comparison_type, comparison_types);
+      ok = utils.check_compare(val, value, ct, comparison_types);
     }
     // параметр явно указан в табчасти параметров изделия
     else {
       const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
-      ok = (value !== undefined) && utils.check_compare(value, val, prm_row.comparison_type, comparison_types);
+      ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
     }
     return ok;
   }
@@ -485,7 +486,7 @@ set use(v){this._setter_ts('use',v)}
   /**
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
    */
-  extract_pvalue({ox, cnstr, elm, origin, prm_row}) {
+  extract_pvalue({ox, cnstr, elm = {}, origin, prm_row}) {
     const {product_params, params} = ox;
     let prow, cnstr0, elm0;
     if(params) {
@@ -537,7 +538,7 @@ set use(v){this._setter_ts('use',v)}
           throw `Источник '${src.name}' не поддержан`;
         }
       }
-      const inset = src.empty() ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
+      const inset = (!src || src.empty()) ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
       const {rnum} = elm;
       if(rnum) {
         return elm[this.valueOf()];

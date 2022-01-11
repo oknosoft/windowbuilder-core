@@ -18228,7 +18228,7 @@ class ProductsBuilding {
      * Спецификация профиля
      * @param elm {Profile}
      */
-    function base_spec_profile(elm) {
+    function base_spec_profile(elm, totqty0) {
 
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
@@ -18326,7 +18326,8 @@ class ProductsBuilding {
           angle_calc_method_prev,
           angle_calc_method_next,
           angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
-          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0
+          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
+          totqty0,
         );
       }
 
@@ -18477,7 +18478,7 @@ class ProductsBuilding {
     function base_spec_glass(elm) {
 
       const {profiles, imposts, _row} = elm;
-      const {utils: {blank}, cat: {clrs}} = $p;
+      const {utils: {blank}, cat: {clrs}, cch} = $p;
 
       if(_row.clr == clrs.ignored()) {
         return;
@@ -18537,11 +18538,17 @@ class ProductsBuilding {
         spec = cx.specification.clear();
       }
 
+      // учтём параметр without_glasses
+      const param = cch.properties.predefined('without_glasses');
+      const totqty0 = Boolean(param && ox.params.find({param, value: true}));
+
       // добавляем спецификацию вставки в заполнение
-      elm.inset.calculate_spec({elm, ox, spec});
+      elm.inset.calculate_spec({elm, ox, spec, totqty0});
 
       // для всех раскладок заполнения
-      imposts.forEach(base_spec_profile);
+      for(const lay of imposts) {
+        base_spec_profile(lay, totqty0)
+      }
 
       // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
@@ -18562,7 +18569,7 @@ class ProductsBuilding {
         else {
           spec = spec_tmp;
         }
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        inset.calculate_spec({elm, len_angl, ox, spec, totqty0});
       });
 
       // возвращаем указатель на спецификацию на место
@@ -19005,10 +19012,17 @@ class ProductsBuilding {
 
   /**
    * РассчитатьКоличествоПлощадьМассу
+   *
    * @param row_spec
+   * @param spec
    * @param row_coord
+   * @param angle_calc_method_prev
+   * @param angle_calc_method_next
+   * @param alp1
+   * @param alp2
+   * @param totqty0
    */
-  static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2) {
+  static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
 
     if(!row_spec.qty) {
       // dop=-1 - визуализация, dop=-2 - техоперация,
@@ -19078,7 +19092,7 @@ class ProductsBuilding {
       row_spec.totqty = row_spec.qty;
     }
 
-    row_spec.totqty1 = Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
+    row_spec.totqty1 = totqty0 ? 0 : Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));
@@ -19787,7 +19801,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Возвращает номенклатуру продукции по системе
    */
   get prod_nom() {
-    const {sys, params} = this;
+    const {sys, params, calc_order} = this;
     if(!sys.empty()) {
 
       let setted;
@@ -19803,11 +19817,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           }
 
           if(row.param && !row.param.empty()) {
-            params.find_rows({cnstr: 0, param: row.param, value: row.value}, () => {
+            if(row.param.check_condition({prm_row: row, ox: this, calc_order})) {
               setted = true;
               this.owner = row.nom;
               return false;
-            });
+            }
           }
 
         });
@@ -22251,8 +22265,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param own_row {CatCnnsSpecificationRow}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
+     * @param totqty0 {Boolean} - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
      */
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {
 
       const {_row} = elm;
       const {
@@ -22372,7 +22387,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 else {
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
-                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             });
@@ -22429,7 +22445,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 // TODO: непонятно, надо ли здесь учитывать fqty
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
-                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             }
@@ -22482,7 +22499,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(3);
-              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, 0, 0, totqty0);
 
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
@@ -22523,7 +22540,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
+          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+            row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
         }
       });
 
@@ -22556,7 +22574,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param spec {TabularSection}
      * @param region {Number}
      */
-    region_spec({elm, len_angl, ox, spec, region}) {
+    region_spec({elm, len_angl, ox, spec, region, totqty0}) {
       const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
       const relm = elm.region(region);
       const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
@@ -22612,7 +22630,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             angle_calc_method_prev,
             angle_calc_method_next,
             angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? b.profile.generatrix.angle_between(elm.generatrix, b.point) : 0,
-            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0
+            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0,
+            totqty0,
           );
 
           // добавляем спецификации соединений
