@@ -2824,13 +2824,16 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   /**
    * возвращает доступные в данной системе фурнитуры
    * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура
+   * @param ox {CatCharacteristics}
+   * @param [layer] {Contour}
+   * @return {*[]}
    */
   furns(ox, layer){
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
     if(properties.furn){
       const links = properties.furn.params_links({
-        grid: {selection: {cnstr: layer.cnstr}},
+        grid: {selection: {cnstr: layer ? layer.cnstr : 0}},
         obj: {_owner: {_owner: ox}},
         layer
       });
