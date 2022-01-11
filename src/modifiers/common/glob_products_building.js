@@ -323,7 +323,7 @@ class ProductsBuilding {
      * Спецификация профиля
      * @param elm {Profile}
      */
-    function base_spec_profile(elm) {
+    function base_spec_profile(elm, totqty0) {
 
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
       const {_row, rays} = elm;
@@ -421,7 +421,8 @@ class ProductsBuilding {
           angle_calc_method_prev,
           angle_calc_method_next,
           angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
-          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0
+          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
+          totqty0,
         );
       }
 
@@ -572,7 +573,7 @@ class ProductsBuilding {
     function base_spec_glass(elm) {
 
       const {profiles, imposts, _row} = elm;
-      const {utils: {blank}, cat: {clrs}} = $p;
+      const {utils: {blank}, cat: {clrs}, cch} = $p;
 
       if(_row.clr == clrs.ignored()) {
         return;
@@ -632,11 +633,17 @@ class ProductsBuilding {
         spec = cx.specification.clear();
       }
 
+      // учтём параметр without_glasses
+      const param = cch.properties.predefined('without_glasses');
+      const totqty0 = Boolean(param && ox.params.find({param, value: true}));
+
       // добавляем спецификацию вставки в заполнение
-      elm.inset.calculate_spec({elm, ox, spec});
+      elm.inset.calculate_spec({elm, ox, spec, totqty0});
 
       // для всех раскладок заполнения
-      imposts.forEach(base_spec_profile);
+      for(const lay of imposts) {
+        base_spec_profile(lay, totqty0)
+      }
 
       // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
@@ -657,7 +664,7 @@ class ProductsBuilding {
         else {
           spec = spec_tmp;
         }
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        inset.calculate_spec({elm, len_angl, ox, spec, totqty0});
       });
 
       // возвращаем указатель на спецификацию на место
@@ -1100,10 +1107,17 @@ class ProductsBuilding {
 
   /**
    * РассчитатьКоличествоПлощадьМассу
+   *
    * @param row_spec
+   * @param spec
    * @param row_coord
+   * @param angle_calc_method_prev
+   * @param angle_calc_method_next
+   * @param alp1
+   * @param alp2
+   * @param totqty0
    */
-  static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2) {
+  static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
 
     if(!row_spec.qty) {
       // dop=-1 - визуализация, dop=-2 - техоперация,
@@ -1173,7 +1187,7 @@ class ProductsBuilding {
       row_spec.totqty = row_spec.qty;
     }
 
-    row_spec.totqty1 = Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
+    row_spec.totqty1 = totqty0 ? 0 : Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));

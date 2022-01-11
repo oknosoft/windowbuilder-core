@@ -855,8 +855,9 @@
      * @param own_row {CatCnnsSpecificationRow}
      * @param spec {TabularSection}
      * @param clr {CatClrs}
+     * @param totqty0 {Boolean} - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
      */
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {
 
       const {_row} = elm;
       const {
@@ -976,7 +977,8 @@
                 else {
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
-                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             });
@@ -1033,7 +1035,8 @@
                 // TODO: непонятно, надо ли здесь учитывать fqty
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
-                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             }
@@ -1086,7 +1089,7 @@
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(3);
-              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, 0, 0, totqty0);
 
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
@@ -1127,7 +1130,8 @@
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, row_ins_spec.angle_calc_method);
+          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+            row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
         }
       });
 
@@ -1160,7 +1164,7 @@
      * @param spec {TabularSection}
      * @param region {Number}
      */
-    region_spec({elm, len_angl, ox, spec, region}) {
+    region_spec({elm, len_angl, ox, spec, region, totqty0}) {
       const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
       const relm = elm.region(region);
       const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
@@ -1216,7 +1220,8 @@
             angle_calc_method_prev,
             angle_calc_method_next,
             angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? b.profile.generatrix.angle_between(elm.generatrix, b.point) : 0,
-            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0
+            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0,
+            totqty0,
           );
 
           // добавляем спецификации соединений
