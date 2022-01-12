@@ -52,7 +52,7 @@ class BuilderElement extends paper.Group {
     if(attr.proto){
 
       if(attr.proto.inset){
-        this.inset = attr.proto.inset;
+        this.set_inset(attr.proto.inset, true);
       }
 
       if(attr.proto instanceof Profile){
