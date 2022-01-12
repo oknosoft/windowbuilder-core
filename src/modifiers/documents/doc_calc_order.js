@@ -1058,21 +1058,27 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
-    const {Черновик, Шаблон, Отозван, Отправлен} = $p.enm.obj_delivery_states;
+    let {current_user, adapters: {pouch}, cat: {abonents}, enm} = $p;
+    const {Черновик, Шаблон, Отозван, Отправлен} = enm.obj_delivery_states;
+    if(!current_user) {
+      current_user = this.manager;
+    }
+
     let ro = false;
     // технолог может изменять шаблоны
     if(obj_delivery_state == Шаблон) {
-      ro = !$p.current_user.role_available('ИзменениеТехнологическойНСИ');
+      const {no_mdm} = abonents.by_id(pouch.props.zone) || {};
+      ro = !no_mdm || !current_user.role_available('ИзменениеТехнологическойНСИ');
     }
     // ведущий менеджер может изменять проведенные
     else if(posted || _data._deleted) {
-      ro = !$p.current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     else if(obj_delivery_state == Отправлен) {
-      ro = !_data._saving_trans && !$p.current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = !_data._saving_trans && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     else if(!obj_delivery_state.empty()) {
-      ro = obj_delivery_state != Черновик && obj_delivery_state != Отозван && !$p.current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = obj_delivery_state != Черновик && obj_delivery_state != Отозван && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     return ro;
   }
