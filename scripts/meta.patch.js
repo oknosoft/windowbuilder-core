@@ -48,7 +48,7 @@ module.exports = function(meta) {
 
       if(name === 'abonents' && cls === 'cat') {
         for(const fld in mgrs[name].fields) {
-          if(!['name', 'id'].includes(fld)) {
+          if(!['name', 'id', 'no_mdm'].includes(fld)) {
             delete mgrs[name].fields[fld];
           }
         }
