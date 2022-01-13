@@ -171,7 +171,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save() {
 
-    const {msg, pricing, utils: {blank, moment}, wsql, job_prm, md, cat, enm: {
+    const {msg, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -339,7 +339,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // если изменился hash заказа, добавим его в sobjs
     if(this._modified) {
       const hash = this._hash();
-      if(this.timestamp && this.timestamp.hash === hash) {
+      if(timestamp && timestamp.hash === hash) {
         this._modified = false;
       }
       else {
@@ -363,10 +363,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
+    const db = obj_delivery_state == 'Шаблон' ?  pouch.remote.ram : pouch.db(_manager);
+
     // пометим на удаление неиспользуемые характеристики
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
-    const unused = () => _manager.pouch_db
-      .query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
+    const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
       .then(({rows}) => {
         let res = Promise.resolve();
         let deleted = 0;
@@ -397,7 +398,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const _id = `${class_name}|${_obj.ref}`;
       const rev = (this.is_new() || _obj._rev) ?
         Promise.resolve() :
-        _manager.pouch_db.get(_id)
+        db.get(_id)
           .then(({_rev}) => sobjs.some((o) => {
             if(o._id === _id) {
               o._rev = _rev;
@@ -405,7 +406,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           }))
           .catch(() => null);
-      return rev.then(() => _manager.pouch_db.bulkDocs(sobjs));
+      return rev.then(() => db.bulkDocs(sobjs));
     };
 
     return !sobjs.length ? unused() : bulk().then((bres) => {
@@ -436,7 +437,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       .catch((err) => {
         save_error(`${err.message} повторите попытку записи через минуту`);
       });
-
   }
 
   // шаблоны читаем из ram
