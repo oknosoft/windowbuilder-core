@@ -23409,7 +23409,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const sobjs = this.product_rows(true);
 
     // если изменился hash заказа, добавим его в sobjs
-    if(this._modified) {
+    if(this._modified || this.is_new()) {
       const hash = this._hash();
       if(timestamp && timestamp.hash === hash) {
         this._modified = false;
