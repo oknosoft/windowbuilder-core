@@ -112,22 +112,36 @@ class Profile extends ProfileItem {
    * Положение элемента в контуре
    */
   get pos() {
-    const by_side = this.layer.profiles_by_side();
-    const {positions} = $p.enm;
-    if(by_side.top == this) {
-      return positions.Верх;
+    const {top, bottom, left, right} = this.layer.profiles_by_side();
+    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
+    if(top === this) {
+      return Верх;
     }
-    if(by_side.bottom == this) {
-      return positions.Низ;
+    if(bottom === this) {
+      return Низ;
     }
-    if(by_side.left == this) {
-      return positions.Лев;
+    if(left === this) {
+      return Лев;
     }
-    if(by_side.right == this) {
-      return positions.Прав;
+    if(right === this) {
+      return Прав;
+    }
+    const {x1, x2, y1, y2} = this;
+    const delta = 60;
+    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+      return Верх;
+    }
+    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+      return Низ;
+    }
+    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+      return Лев;
+    }
+    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+      return Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return positions.Центр;
+    return Центр;
   }
 
   /**
