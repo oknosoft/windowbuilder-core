@@ -9727,6 +9727,48 @@ class CnnPoint {
   }
 
   /**
+   * Возвращает профиль и узел, если есть соединение с outer-стороны профиля
+   *
+   * @return {{node: string, profile: ProfileItem}}
+   */
+  find_other() {
+
+    const {parent, profile, point}  = this;
+    const {rays, layer} = parent;
+    const {outer} = $p.enm.cnn_sides;
+
+    // ищем концы профилей в окрестности нас
+    for(const elm of profile.layer.profiles) {
+      if(elm === parent || elm === profile) {
+        continue;
+      }
+      for(const node of 'be') {
+        if(elm[node].is_nearest(point, true) && parent.cnn_side(elm, null, rays) === outer) {
+          return {profile: elm, node};
+        }
+      }
+    }
+  }
+
+  cnno(other) {
+    // ищем концы профилей в окрестности e
+    if(!other) {
+      other = this.find_other();
+    }
+    if(other) {
+      const {parent, node} = this;
+      const {cnn_elmnts} = parent.ox;
+      let row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
+      if(!row) {
+        row = cnn_elmnts.find({elm1: other.profile.elm, elm2: parent.elm, node1: other.node});
+      }
+      if(row) {
+        return row.cnn;
+      }
+    }
+  }
+
+  /**
    * fake-структура для расчета спецификации
    * @return {{art2: boolean, art1: boolean, angle: number}}
    */
@@ -10054,6 +10096,21 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Соединение в точке 'b' c обратной стороны
+   *
+   * @property cnn1o
+   * @type CatCnns
+   * @private
+   */
+  get cnn1o() {
+    return this.rays.b.cnno();
+  }
+
+  set cnn1o(v) {
+    this.setcnnn(v, 'b');
+  }
+
+  /**
    * Соединение в точке 'e' для диалога свойств
    *
    * @property cnn2
@@ -10065,6 +10122,21 @@ class ProfileItem extends GeneratrixElement {
   }
 
   set cnn2(v) {
+    this.setcnnn(v, 'e');
+  }
+
+  /**
+   * Соединение в точке 'e' c обратной стороны
+   *
+   * @property cnn2o
+   * @type CatCnns
+   * @private
+   */
+  get cnn2o() {
+    return this.rays.e.cnno();
+  }
+
+  set cnn2o(v) {
     this.setcnnn(v, 'e');
   }
 
@@ -10680,7 +10752,7 @@ class ProfileItem extends GeneratrixElement {
           row_e.node2 = 'b';
         }
         else if(e.profile.e.is_nearest(e.point)) {
-          row_e.node2 = 'b';
+          row_e.node2 = 'e';
         }
         else {
           row_e.node2 = 't';
@@ -11133,11 +11205,11 @@ class ProfileItem extends GeneratrixElement {
    */
   path_points(cnn_point, profile_point) {
 
+    const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const {_attr, rays, generatrix} = this;
     if(!generatrix.curves.length) {
       return cnn_point;
     }
-    const other = cnn_point.profile;
     const {_corns} = _attr;
 
     // ищет точку пересечения открытых путей
@@ -11173,11 +11245,15 @@ class ProfileItem extends GeneratrixElement {
     }
 
     // если пересечение в узлах, используем лучи профиля
+    const other = cnn_point.profile;
     const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {inner: other.path, outer: other.path} : undefined);
     const is_b = profile_point === 'b';
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
-    const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
+
+    const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
+    const oinner = prays[side];
+    const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
 
     // импосты рисуем с учетом стороны примыкания
     if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
@@ -11237,29 +11313,27 @@ class ProfileItem extends GeneratrixElement {
         }
       });
 
-      const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
-
       if(profile2) {
         const interior = generatrix.getPointAt(generatrix.length/2)
         const {rays: prays2} = profile2;
         const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
-        const pt1 = intersect_point(prays[side], rays.outer, 0, interior);
-        const pt2 = intersect_point(prays[side], rays.inner, 0, interior);
+        const pt1 = intersect_point(oinner, rays.outer, 0, interior);
+        const pt2 = intersect_point(oinner, rays.inner, 0, interior);
         const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
         const pt4 = intersect_point(prays2[side2], rays.inner, 0, interior);
 
         if(is_b) {
-          pt1 < pt3 ? intersect_point(prays[side], rays.outer, 1) : intersect_point(prays2[side2], rays.outer, 1);
-          pt2 < pt4 ? intersect_point(prays[side], rays.inner, 4) : intersect_point(prays2[side2], rays.inner, 4);
-          intersect_point(prays2[side2], prays[side], 5);
+          pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2[side2], rays.outer, 1);
+          pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2[side2], rays.inner, 4);
+          intersect_point(prays2[side2], oinner, 5);
           if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
             delete _corns[5];
           }
         }
         else if(is_e) {
-          pt1 < pt3 ? intersect_point(prays[side], rays.outer, 2) : intersect_point(prays2[side2], rays.outer, 2);
-          pt2 < pt4 ? intersect_point(prays[side], rays.inner, 3) : intersect_point(prays2[side2], rays.inner, 3);
-          intersect_point(prays2[side2], prays[side], 6);
+          pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2[side2], rays.outer, 2);
+          pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2[side2], rays.inner, 3);
+          intersect_point(prays2[side2], oinner, 6);
           if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
             delete _corns[6];
           }
@@ -11269,14 +11343,14 @@ class ProfileItem extends GeneratrixElement {
         // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
         if(is_b) {
           // в зависимости от стороны соединения
-          intersect_point(prays[side], rays.outer, 1);
-          intersect_point(prays[side], rays.inner, 4);
+          intersect_point(oinner, rays.outer, 1);
+          intersect_point(oinner, rays.inner, 4);
           delete _corns[5];
         }
         else if(is_e) {
           // в зависимости от стороны соединения
-          intersect_point(prays[side], rays.outer, 2);
-          intersect_point(prays[side], rays.inner, 3);
+          intersect_point(oinner, rays.outer, 2);
+          intersect_point(oinner, rays.inner, 3);
           delete _corns[6];
         }
       }
@@ -11311,20 +11385,20 @@ class ProfileItem extends GeneratrixElement {
         const profile2 = cnn_point2 && cnn_point2.profile;
         if(profile2) {
           const prays2 = profile2 && profile2.rays;
-          const pt1 = intersect_point(prays.inner, rays.outer);
-          const pt2 = intersect_point(prays.inner, rays.inner);
+          const pt1 = intersect_point(oinner, rays.outer);
+          const pt2 = intersect_point(oinner, rays.inner);
           const pt3 = intersect_point(prays2.inner, rays.outer);
           const pt4 = intersect_point(prays2.inner, rays.inner);
 
           if(is_b) {
-            intersect_point(prays2.inner, prays.inner, 5);
-            pt1 > pt3 ? intersect_point(prays.inner, rays.outer, 1) : intersect_point(prays2.inner, rays.outer, 1);
-            pt2 > pt4 ? intersect_point(prays.inner, rays.inner, 4) : intersect_point(prays2.inner, rays.inner, 4);
+            intersect_point(prays2.inner, oinner, 5);
+            pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2.inner, rays.outer, 1);
+            pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2.inner, rays.inner, 4);
           }
           else if(is_e) {
-            pt1 > pt3 ? intersect_point(prays.inner, rays.outer, 2) : intersect_point(prays2.inner, rays.outer, 2);
-            pt2 > pt4 ? intersect_point(prays.inner, rays.inner, 3) : intersect_point(prays2.inner, rays.inner, 3);
-            intersect_point(prays2.inner, prays.inner, 6);
+            pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2.inner, rays.outer, 2);
+            pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2.inner, rays.inner, 3);
+            intersect_point(prays2.inner, oinner, 6);
           }
         }
         else{
@@ -11354,79 +11428,151 @@ class ProfileItem extends GeneratrixElement {
       }
     }
 
-    // угловое диагональное
-    else if(cnn_type == cnn_types.ad) {
-      // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
-      const tw = this.width, ow = other.width;
-      let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
-      if(check_a2 && check_a2.angle_calc_method == a2) {
-        const wprofile = tw > ow ? this : other;
-        const {inner} = wprofile.rays;
-        if(is_b) {
-          intersect_point(prays.inner, rays.inner, 4);
-          const pt = _corns[4];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
-          const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
+    // варианты угловых соединений
+    else {
+      // если есть соединение с обратной стороны, его надо учитывать при отрисовке узла
+      const cnn_other = cnn_point.find_other();
+      const cnno = cnn_other && cnn_point.find_other(cnn_other);
 
-          if(wprofile === this) {
-            intersect_point(prays.outer, median, 5);
-            intersect_point(rays.outer, median, 7);
-            intersect_point(prays.outer, rays.outer, 1);
-          }
-          else {
-            intersect_point(rays.outer, median, 1);
-            delete _corns[5];
-            delete _corns[7];
-          }
+      // угловое диагональное
+      if(cnn_type == cnn_types.ad) {
+        // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
+        const tw = this.width, ow = other.width;
+        let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
+        if(check_a2 && check_a2.angle_calc_method == a2) {
+          const wprofile = tw > ow ? this : other;
+          const winner = wprofile === this ? rays.inner : oinner;
+          //const oray = wprofile.rays[side];
+          if(is_b) {
+            intersect_point(oinner, rays.inner, 4);
+            const pt = _corns[4];
+            const tg = winner.getTangentAt(winner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
+            const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
 
+            if(wprofile === this) {
+              intersect_point(oouter, median, 5);
+              intersect_point(rays.outer, median, 7);
+              intersect_point(oouter, rays.outer, 1);
+            }
+            else {
+              intersect_point(rays.outer, median, 1);
+              delete _corns[5];
+              delete _corns[7];
+            }
+
+          }
+          else if(is_e) {
+            intersect_point(oinner, rays.inner, 3);
+
+            const pt = _corns[3];
+            const tg = winner.getTangentAt(winner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
+            const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
+
+
+            if(wprofile === this) {
+              intersect_point(oouter, median, 6);
+              intersect_point(rays.outer, median, 8);
+              intersect_point(oouter, rays.outer, 2);
+            }
+            else {
+              intersect_point(rays.outer, median, 2);
+              delete _corns[6];
+              delete _corns[8];
+            }
+          }
         }
-        else if(is_e) {
-          intersect_point(prays.inner, rays.inner, 3);
-
-          const pt = _corns[3];
-          const tg = inner.getTangentAt(inner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
-          const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
-
-
-          if(wprofile === this) {
-            intersect_point(prays.outer, median, 6);
-            intersect_point(rays.outer, median, 8);
-            intersect_point(prays.outer, rays.outer, 2);
+        else {
+          if(is_b) {
+            if(this.is_collinear(other, 1)) {
+              delete _corns[1];
+              delete _corns[4];
+            }
+            else {
+              intersect_point(prays.outer, rays.outer, 1);
+              intersect_point(oinner, rays.inner, 4);
+            }
           }
-          else {
-            intersect_point(rays.outer, median, 2);
-            delete _corns[6];
-            delete _corns[8];
+          else if(is_e) {
+            if(this.is_collinear(other, 1)) {
+              delete _corns[2];
+              delete _corns[3];
+            }
+            else {
+              intersect_point(prays.outer, rays.outer, 2);
+              intersect_point(oinner, rays.inner, 3);
+            }
           }
         }
       }
-      else {
-        if(is_b) {
-          if(this.is_collinear(other, 1)) {
-            delete _corns[1];
-            delete _corns[4];
-          }
-          else {
+
+      // угловое к вертикальной
+      else if(cnn_type == cnn_types.av) {
+        if(this.orientation == $p.enm.orientations.vert) {
+          if(is_b) {
             intersect_point(prays.outer, rays.outer, 1);
-            intersect_point(prays.inner, rays.inner, 4);
+            intersect_point(prays.outer, rays.inner, 4);
+          }
+          else if(is_e) {
+            intersect_point(prays.outer, rays.outer, 2);
+            intersect_point(prays.outer, rays.inner, 3);
           }
         }
-        else if(is_e) {
-          if(this.is_collinear(other, 1)) {
-            delete _corns[2];
-            delete _corns[3];
+        else if(this.orientation == $p.enm.orientations.hor) {
+          if(is_b) {
+            intersect_point(oinner, rays.outer, 1);
+            intersect_point(oinner, rays.inner, 4);
           }
-          else {
-            intersect_point(prays.outer, rays.outer, 2);
-            intersect_point(prays.inner, rays.inner, 3);
+          else if(is_e) {
+            intersect_point(oinner, rays.outer, 2);
+            intersect_point(oinner, rays.inner, 3);
           }
+        }
+        else {
+          cnn_point.err = 'orientation';
         }
       }
-    }
 
-    // угловое к вертикальной
-    else if(cnn_type == cnn_types.av) {
-      if(this.orientation == $p.enm.orientations.vert) {
+      // угловое к горизонтальной
+      else if(cnn_type == cnn_types.ah) {
+        if(this.orientation == $p.enm.orientations.vert) {
+          if(is_b) {
+            intersect_point(oinner, rays.outer, 1);
+            intersect_point(oinner, rays.inner, 4);
+          }
+          else if(is_e) {
+            intersect_point(oinner, rays.outer, 2);
+            intersect_point(oinner, rays.inner, 3);
+          }
+        }
+        else if(this.orientation == $p.enm.orientations.hor) {
+          if(is_b) {
+            intersect_point(prays.outer, rays.outer, 1);
+            intersect_point(prays.outer, rays.inner, 4);
+          }
+          else if(is_e) {
+            intersect_point(prays.outer, rays.outer, 2);
+            intersect_point(prays.outer, rays.inner, 3);
+          }
+        }
+        else {
+          cnn_point.err = 'orientation';
+        }
+      }
+
+      // короткое
+      else if(cnn_type == cnn_types.short) {
+        if(is_b) {
+          intersect_point(oinner, rays.outer, 1);
+          intersect_point(oinner, rays.inner, 4);
+        }
+        else if(is_e) {
+          intersect_point(oinner, rays.outer, 2);
+          intersect_point(oinner, rays.inner, 3);
+        }
+      }
+
+      // длинное
+      else if(cnn_type == cnn_types.long) {
         if(is_b) {
           intersect_point(prays.outer, rays.outer, 1);
           intersect_point(prays.outer, rays.inner, 4);
@@ -11435,72 +11581,6 @@ class ProfileItem extends GeneratrixElement {
           intersect_point(prays.outer, rays.outer, 2);
           intersect_point(prays.outer, rays.inner, 3);
         }
-      }
-      else if(this.orientation == $p.enm.orientations.hor) {
-        if(is_b) {
-          intersect_point(prays.inner, rays.outer, 1);
-          intersect_point(prays.inner, rays.inner, 4);
-        }
-        else if(is_e) {
-          intersect_point(prays.inner, rays.outer, 2);
-          intersect_point(prays.inner, rays.inner, 3);
-        }
-      }
-      else {
-        cnn_point.err = 'orientation';
-      }
-    }
-
-    // угловое к горизонтальной
-    else if(cnn_type == cnn_types.ah) {
-      if(this.orientation == $p.enm.orientations.vert) {
-        if(is_b) {
-          intersect_point(prays.inner, rays.outer, 1);
-          intersect_point(prays.inner, rays.inner, 4);
-        }
-        else if(is_e) {
-          intersect_point(prays.inner, rays.outer, 2);
-          intersect_point(prays.inner, rays.inner, 3);
-        }
-      }
-      else if(this.orientation == $p.enm.orientations.hor) {
-        if(is_b) {
-          intersect_point(prays.outer, rays.outer, 1);
-          intersect_point(prays.outer, rays.inner, 4);
-        }
-        else if(is_e) {
-          intersect_point(prays.outer, rays.outer, 2);
-          intersect_point(prays.outer, rays.inner, 3);
-        }
-      }
-      else {
-        cnn_point.err = 'orientation';
-      }
-    }
-
-    // короткое
-    else if(cnn_type == cnn_types.short) {
-      const orays = prays[
-        other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner'];
-      if(is_b) {
-        intersect_point(orays, rays.outer, 1);
-        intersect_point(orays, rays.inner, 4);
-      }
-      else if(is_e) {
-        intersect_point(orays, rays.outer, 2);
-        intersect_point(orays, rays.inner, 3);
-      }
-    }
-
-    // длинное
-    else if(cnn_type == cnn_types.long) {
-      if(is_b) {
-        intersect_point(prays.outer, rays.outer, 1);
-        intersect_point(prays.outer, rays.inner, 4);
-      }
-      else if(is_e) {
-        intersect_point(prays.outer, rays.outer, 2);
-        intersect_point(prays.outer, rays.inner, 3);
       }
     }
 
@@ -12129,22 +12209,36 @@ class Profile extends ProfileItem {
    * Положение элемента в контуре
    */
   get pos() {
-    const by_side = this.layer.profiles_by_side();
-    const {positions} = $p.enm;
-    if(by_side.top == this) {
-      return positions.Верх;
+    const {top, bottom, left, right} = this.layer.profiles_by_side();
+    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
+    if(top === this) {
+      return Верх;
     }
-    if(by_side.bottom == this) {
-      return positions.Низ;
+    if(bottom === this) {
+      return Низ;
     }
-    if(by_side.left == this) {
-      return positions.Лев;
+    if(left === this) {
+      return Лев;
     }
-    if(by_side.right == this) {
-      return positions.Прав;
+    if(right === this) {
+      return Прав;
+    }
+    const {x1, x2, y1, y2} = this;
+    const delta = 60;
+    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+      return Верх;
+    }
+    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+      return Низ;
+    }
+    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+      return Лев;
+    }
+    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+      return Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return positions.Центр;
+    return Центр;
   }
 
   /**
@@ -14367,14 +14461,14 @@ class Onlay extends ProfileItem {
     const {b, e} = rays;
     const row_b = cnns.add({
       elm1: _row.elm,
-      node1: "b",
-      cnn: b.cnn ? b.cnn.ref : "",
+      node1: 'b',
+      cnn: b.cnn ? b.cnn.ref : '',
       aperture_len: this.corns(1).getDistance(this.corns(4))
     });
     const row_e = cnns.add({
       elm1: _row.elm,
-      node1: "e",
-      cnn: e.cnn ? e.cnn.ref : "",
+      node1: 'e',
+      cnn: e.cnn ? e.cnn.ref : '',
       aperture_len: this.corns(2).getDistance(this.corns(3))
     });
 
@@ -14391,27 +14485,35 @@ class Onlay extends ProfileItem {
     _row.len = this.length;
 
     // сохраняем информацию о соединениях
-    if(b.profile){
+    if(b.profile) {
       row_b.elm2 = b.profile.elm;
-      if(b.profile instanceof Filling)
-        row_b.node2 = "t";
-      else if(b.profile.e.is_nearest(b.point))
-        row_b.node2 = "e";
-      else if(b.profile.b.is_nearest(b.point))
-        row_b.node2 = "b";
-      else
-        row_b.node2 = "t";
+      if(b.profile instanceof Filling) {
+        row_b.node2 = 't';
+      }
+      else if(b.profile.e.is_nearest(b.point)) {
+        row_b.node2 = 'e';
+      }
+      else if(b.profile.b.is_nearest(b.point)) {
+        row_b.node2 = 'b';
+      }
+      else {
+        row_b.node2 = 't';
+      }
     }
-    if(e.profile){
+    if(e.profile) {
       row_e.elm2 = e.profile.elm;
-      if(e.profile instanceof Filling)
-        row_e.node2 = "t";
-      else if(e.profile.b.is_nearest(e.point))
-        row_e.node2 = "b";
-      else if(e.profile.e.is_nearest(e.point))
-        row_e.node2 = "b";
-      else
-        row_e.node2 = "t";
+      if(e.profile instanceof Filling) {
+        row_e.node2 = 't';
+      }
+      else if(e.profile.b.is_nearest(e.point)) {
+        row_e.node2 = 'b';
+      }
+      else if(e.profile.e.is_nearest(e.point)) {
+        row_e.node2 = 'e';
+      }
+      else {
+        row_e.node2 = 't';
+      }
     }
 
     // получаем углы между элементами и к горизонту
