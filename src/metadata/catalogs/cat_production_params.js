@@ -82,10 +82,10 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * @for Production_params
    * @param elm_types - допустимые типы элементов
    * @param [by_default] {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
-   * @param [context] {BuilderElement|Scheme} - указатель на элемент или проект, чтобы отфильтровать по ключам
+   * @param [elm] {BuilderElement} - указатель на элемент или проект, чтобы отфильтровать по ключам
    * @return Array.<CatInserts>
    */
-  inserts(elm_types, by_default, context){
+  inserts(elm_types, by_default, elm){
     const __noms = [];
     const {enm} = $p;
     if(!elm_types) {
@@ -98,11 +98,13 @@ exports.CatProduction_params = class CatProduction_params extends Object {
       elm_types = [elm_types];
     }
 
-    this.elmnts.forEach((row) => {
-      if(!row.nom.empty() && elm_types.includes(row.elm_type) && (by_default == 'rows' || !__noms.some((e) => row.nom == e.nom))) {
+    for(const row of this.elmnts) {
+      const {key, nom, elm_type} = row;
+      if(!nom.empty() && elm_types.includes(elm_type) &&
+        (by_default == 'rows' || !__noms.some((e) => nom == e.nom)) && key.check_condition({elm})) {
         __noms.push(row);
       }
-    });
+    }
 
     if(by_default == 'rows') {
       return __noms;
@@ -143,9 +145,8 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   glasses() {
     const {_data} = this;
     if(!_data.glasses) {
-      const {Заполнение, Стекло} = $p.enm.elm_types;
       _data.glasses = [];
-      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => _data.glasses.push(nom));
+      this.elmnts.find_rows({elm_type: {in: $p.enm.elm_types.glasses}}, ({nom}) => _data.glasses.push(nom));
     }
     return _data.glasses;
   }

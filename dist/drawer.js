@@ -3456,13 +3456,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     // в створках без импоста штульповые не используем и наоборот
     for(const row of furn.open_tunes) {
       const elm = this.profile_by_furn_side(row.side, cache);
-      const {elm_type, nom} = elm.nearest();
-      if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
+      const nearest = elm && elm.nearest();
+      if(nearest) {
+        const {elm_type, nom} = nearest;
+        if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
           (!row.shtulp_available && nom.elm_type === elm_types.Штульп)) {
-        if(bool) {
-          return true;
+          if(bool) {
+            return true;
+          }
+          !err.includes(elm) && err.push(elm);
         }
-        !err.includes(elm) && err.push(elm);
       }
     }
 
@@ -6888,7 +6891,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     // для нового устанавливаем вставку по умолчанию
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
-      _row.inset = project.default_inset({elm_type: elm_types.glasses});
+      _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
     }
 
     // для нового устанавливаем цвет по умолчанию
@@ -11188,7 +11191,7 @@ class ProfileItem extends GeneratrixElement {
           pos = [pos, positions.ЦентрГоризонталь];
         }
       }
-      this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset}), true);
+      this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset, elm: this}), true);
     }
     if(nearest) {
       _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn || project.elm_cnn(this, nearest));
@@ -16440,7 +16443,7 @@ class Scheme extends paper.Project {
     let rows;
 
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true);
+      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -16448,7 +16451,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows');
+    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
@@ -17726,56 +17729,16 @@ class Pricing {
     };
 
     const {calc_order_row} = prm;
-    const {nom, characteristic} = calc_order_row;
-    const {partner} = calc_order_row._owner._owner;
+    const {nom, characteristic, _owner: {_owner}} = calc_order_row;
+    const {partner} = _owner;
     const filter = nom.price_group.empty() ?
         {price_group: nom.price_group} :
         {price_group: {in: [nom.price_group, cat.price_groups.get()]}};
     const ares = [];
 
-
+    // фильтруем по параметрам
     ireg.margin_coefficients.find_rows(filter, (row) => {
-
-      // фильтруем по параметрам
-      let ok = true;
-      if(!row.key.empty()){
-        row.key.params.forEach((row_prm) => {
-
-          const {property} = row_prm;
-          // для вычисляемых параметров выполняем формулу
-          if(property.is_calculated){
-            ok = utils.check_compare(property.calculated_value({calc_order_row}), property.extract_value(row_prm), row_prm.comparison_type, enm.comparison_types);
-          }
-          // заглушка для совместимости с УПзП
-          else if(property.empty()){
-            const vpartner = cat.partners.get(row_prm._obj.value);
-            if(vpartner && !vpartner.empty()){
-              ok = vpartner == partner;
-            }
-          }
-          // обычные параметры ищем в параметрах изделия
-          else{
-            let finded;
-            characteristic.params.find_rows({
-              cnstr: 0,
-              param: property
-            }, (row_x) => {
-              finded = row_x;
-              return false;
-            });
-            if(finded){
-              ok = utils.check_compare(finded.value, property.extract_value(row_prm), row_prm.comparison_type, enm.comparison_types);
-            }
-            else{
-              ok = false;
-            }
-          }
-          if(!ok){
-            return false;
-          }
-        });
-      }
-      if(ok){
+      if(row.key.check_condition({ox: characteristic, calc_order_row})){
         ares.push(row);
       }
     });
@@ -23067,6 +23030,29 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('angle_next');
+
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function (obj) {};
+      }
+      // проверка условия
+      prm.check_condition = function ({layer, prm_row}) {
+        if(layer) {
+          let level = 0;
+          while (layer.layer) {
+            level++;
+            layer = layer.layer;
+          }
+          return utils.check_compare(level, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
+        }
+        return true;
+      }
+    }
+  })('layer_level');
 
 });
 

@@ -212,56 +212,16 @@ class Pricing {
     };
 
     const {calc_order_row} = prm;
-    const {nom, characteristic} = calc_order_row;
-    const {partner} = calc_order_row._owner._owner;
+    const {nom, characteristic, _owner: {_owner}} = calc_order_row;
+    const {partner} = _owner;
     const filter = nom.price_group.empty() ?
         {price_group: nom.price_group} :
         {price_group: {in: [nom.price_group, cat.price_groups.get()]}};
     const ares = [];
 
-
+    // фильтруем по параметрам
     ireg.margin_coefficients.find_rows(filter, (row) => {
-
-      // фильтруем по параметрам
-      let ok = true;
-      if(!row.key.empty()){
-        row.key.params.forEach((row_prm) => {
-
-          const {property} = row_prm;
-          // для вычисляемых параметров выполняем формулу
-          if(property.is_calculated){
-            ok = utils.check_compare(property.calculated_value({calc_order_row}), property.extract_value(row_prm), row_prm.comparison_type, enm.comparison_types);
-          }
-          // заглушка для совместимости с УПзП
-          else if(property.empty()){
-            const vpartner = cat.partners.get(row_prm._obj.value);
-            if(vpartner && !vpartner.empty()){
-              ok = vpartner == partner;
-            }
-          }
-          // обычные параметры ищем в параметрах изделия
-          else{
-            let finded;
-            characteristic.params.find_rows({
-              cnstr: 0,
-              param: property
-            }, (row_x) => {
-              finded = row_x;
-              return false;
-            });
-            if(finded){
-              ok = utils.check_compare(finded.value, property.extract_value(row_prm), row_prm.comparison_type, enm.comparison_types);
-            }
-            else{
-              ok = false;
-            }
-          }
-          if(!ok){
-            return false;
-          }
-        });
-      }
-      if(ok){
+      if(row.key.check_condition({ox: characteristic, calc_order_row})){
         ares.push(row);
       }
     });

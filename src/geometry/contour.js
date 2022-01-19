@@ -2465,13 +2465,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     // в створках без импоста штульповые не используем и наоборот
     for(const row of furn.open_tunes) {
       const elm = this.profile_by_furn_side(row.side, cache);
-      const {elm_type, nom} = elm.nearest();
-      if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
+      const nearest = elm && elm.nearest();
+      if(nearest) {
+        const {elm_type, nom} = nearest;
+        if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
           (!row.shtulp_available && nom.elm_type === elm_types.Штульп)) {
-        if(bool) {
-          return true;
+          if(bool) {
+            return true;
+          }
+          !err.includes(elm) && err.push(elm);
         }
-        !err.includes(elm) && err.push(elm);
       }
     }
 

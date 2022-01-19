@@ -1693,7 +1693,7 @@ class ProfileItem extends GeneratrixElement {
           pos = [pos, positions.ЦентрГоризонталь];
         }
       }
-      this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset}), true);
+      this.set_inset(project.default_inset({elm_type, pos, inset: refill ? null : inset, elm: this}), true);
     }
     if(nearest) {
       _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn || project.elm_cnn(this, nearest));

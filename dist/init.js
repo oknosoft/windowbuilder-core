@@ -433,7 +433,7 @@ set use(v){this._setter_ts('use',v)}
   /**
    * ### Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
     const {is_calculated, type} = this;
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
@@ -457,6 +457,7 @@ set use(v){this._setter_ts('use',v)}
       calc_order,
       prm_row,
       layer,
+      calc_order_row,
     }) : this.extract_value(prm_row);
 
     let ok = false;
@@ -2703,6 +2704,43 @@ get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get params(){return this._getter_ts('params')}
 set params(v){this._setter_ts('params',v)}
+
+
+  check_condition({elm, ox, cnstr, layer, calc_order_row}) {
+
+    if(this.empty()) {
+      return true;
+    }
+    if(!ox && elm) {
+      ox = elm.ox;
+    }
+    if(!layer && elm) {
+      layer = elm.layer;
+    }
+    if(!cnstr && layer) {
+      cnstr = layer.cnstr;
+    }
+    const {calc_order} = ox;
+
+    for(const prm_row of this.params) {
+      const {property, origin} = prm_row;
+      let ok;
+      // заглушка для совместимости с УПзП
+      if(calc_order_row && property.empty()){
+        const vpartner = $p.cat.partners.get(prm_row._obj.value);
+        if(vpartner && !vpartner.empty() && vpartner != calc_order.partner){
+          return false;
+        }
+      }
+      else {
+        if(!property.check_condition({prm_row, elm, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
 }
 $p.CatParameters_keys = CatParameters_keys;
 class CatParameters_keysParamsRow extends TabularSectionRow{
@@ -2858,10 +2896,10 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
    * @for Production_params
    * @param elm_types - допустимые типы элементов
    * @param [by_default] {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
-   * @param [context] {BuilderElement|Scheme} - указатель на элемент или проект, чтобы отфильтровать по ключам
+   * @param [elm] {BuilderElement} - указатель на элемент или проект, чтобы отфильтровать по ключам
    * @return Array.<CatInserts>
    */
-  inserts(elm_types, by_default, context){
+  inserts(elm_types, by_default, elm){
     const __noms = [];
     const {enm} = $p;
     if(!elm_types) {
@@ -2874,11 +2912,13 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
       elm_types = [elm_types];
     }
 
-    this.elmnts.forEach((row) => {
-      if(!row.nom.empty() && elm_types.includes(row.elm_type) && (by_default == 'rows' || !__noms.some((e) => row.nom == e.nom))) {
+    for(const row of this.elmnts) {
+      const {key, nom, elm_type} = row;
+      if(!nom.empty() && elm_types.includes(elm_type) &&
+        (by_default == 'rows' || !__noms.some((e) => nom == e.nom)) && key.check_condition({elm})) {
         __noms.push(row);
       }
-    });
+    }
 
     if(by_default == 'rows') {
       return __noms;
@@ -2919,9 +2959,8 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
   glasses() {
     const {_data} = this;
     if(!_data.glasses) {
-      const {Заполнение, Стекло} = $p.enm.elm_types;
       _data.glasses = [];
-      this.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => _data.glasses.push(nom));
+      this.elmnts.find_rows({elm_type: {in: $p.enm.elm_types.glasses}}, ({nom}) => _data.glasses.push(nom));
     }
     return _data.glasses;
   }

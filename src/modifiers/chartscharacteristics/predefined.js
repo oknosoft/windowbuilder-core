@@ -32,4 +32,27 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('angle_next');
 
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function (obj) {};
+      }
+      // проверка условия
+      prm.check_condition = function ({layer, prm_row}) {
+        if(layer) {
+          let level = 0;
+          while (layer.layer) {
+            level++;
+            layer = layer.layer;
+          }
+          return utils.check_compare(level, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
+        }
+        return true;
+      }
+    }
+  })('layer_level');
+
 });

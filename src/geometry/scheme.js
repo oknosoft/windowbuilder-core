@@ -1588,7 +1588,7 @@ class Scheme extends paper.Project {
     let rows;
 
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true);
+      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -1596,7 +1596,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows');
+    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {

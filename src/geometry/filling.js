@@ -75,7 +75,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     // для нового устанавливаем вставку по умолчанию
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
-      _row.inset = project.default_inset({elm_type: elm_types.glasses});
+      _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
     }
 
     // для нового устанавливаем цвет по умолчанию
