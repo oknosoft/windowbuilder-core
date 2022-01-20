@@ -5056,7 +5056,14 @@ get proxy(){return this._getter('proxy')}
 set proxy(v){this._setter('proxy',v)}
 }
 $p.CatAbonentsServersRow = CatAbonentsServersRow;
-$p.cat.create('abonents');
+class CatAbonentsManager extends CatManager {
+
+  get current() {
+    const {session_zone, zone} = $p.job_prm;
+    return this.by_id(session_zone || zone);
+  }
+}
+$p.cat.create('abonents', CatAbonentsManager, false);
 
 /**
 * ### Справочник ПривязкиВставок

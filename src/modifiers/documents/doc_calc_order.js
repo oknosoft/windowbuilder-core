@@ -1058,7 +1058,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
-    let {current_user, adapters: {pouch}, cat: {abonents}, enm} = $p;
+    let {current_user, cat: {abonents}, enm} = $p;
     const {Черновик, Шаблон, Отозван, Отправлен} = enm.obj_delivery_states;
     if(!current_user) {
       current_user = this.manager;
@@ -1067,7 +1067,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     let ro = false;
     // технолог может изменять шаблоны
     if(obj_delivery_state == Шаблон) {
-      const {no_mdm} = abonents.by_id(pouch.props.zone) || {};
+      const {no_mdm} = abonents.current;
       ro = !no_mdm || !current_user.role_available('ИзменениеТехнологическойНСИ');
     }
     // ведущий менеджер может изменять проведенные
