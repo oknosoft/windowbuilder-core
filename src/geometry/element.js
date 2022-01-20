@@ -231,7 +231,7 @@ class BuilderElement extends paper.Group {
                 return thicknesses.includes(insert.thickness(this));
               }
               else if(glass_thickness === 1) {
-                return sys.glasses().includes(insert);
+                return sys.glasses({elm: this}).includes(insert);
               }
               else if(glass_thickness === 2) {
                 const thickness = insert.thickness(this);

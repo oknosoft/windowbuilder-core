@@ -492,7 +492,7 @@ set use(v){this._setter_ts('use',v)}
     const {product_params, params} = ox;
     let prow, cnstr0, elm0;
     if(params) {
-      const {enm: {plan_detailing}, utils} = $p;
+      const {enm: {plan_detailing}, utils, CatInserts} = $p;
       const src = prm_row.origin;
       if(src && !src.empty()) {
         switch (src) {
@@ -540,7 +540,7 @@ set use(v){this._setter_ts('use',v)}
           throw `Источник '${src.name}' не поддержан`;
         }
       }
-      const inset = (!src || src.empty()) ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
+      const inset = (!src || src.empty()) ? ((origin instanceof CatInserts) ? origin : utils.blank.guid) : utils.blank.guid;
       const {rnum} = elm;
       if(rnum) {
         return elm[this.valueOf()];
@@ -2717,9 +2717,6 @@ set params(v){this._setter_ts('params',v)}
     if(!layer && elm) {
       layer = elm.layer;
     }
-    if(!cnstr && layer) {
-      cnstr = layer.cnstr;
-    }
     const {calc_order} = ox;
 
     for(const prm_row of this.params) {
@@ -2840,10 +2837,10 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     const {_data} = this;
     if(!_data.thin) {
       const thin = new Set();
-      for(const nom of this.glasses()) {
+      this.elmnts.find_rows({elm_type: {in: $p.enm.elm_types.glasses}}, ({nom}) => {
         const thickness = nom.thickness();
         thickness && thin.add(nom.thickness());
-      }
+      });
       _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
     return _data.thin;
@@ -2895,11 +2892,11 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
    * @property inserts
    * @for Production_params
    * @param elm_types - допустимые типы элементов
-   * @param [by_default] {Boolean|String} - сортировать по признаку умолчания или по наименованию вставки
+   * @param [rows] {String} - возвращать вставки или строки табчасти "Элементы"
    * @param [elm] {BuilderElement} - указатель на элемент или проект, чтобы отфильтровать по ключам
-   * @return Array.<CatInserts>
+   * @return {Array.<CatInserts>}
    */
-  inserts(elm_types, by_default, elm){
+  inserts(elm_types, rows, elm){
     const __noms = [];
     const {enm} = $p;
     if(!elm_types) {
@@ -2915,28 +2912,23 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     for(const row of this.elmnts) {
       const {key, nom, elm_type} = row;
       if(!nom.empty() && elm_types.includes(elm_type) &&
-        (by_default == 'rows' || !__noms.some((e) => nom == e.nom)) && key.check_condition({elm})) {
+        (rows === 'rows' || !__noms.some((e) => nom == e.nom)) && key.check_condition({elm})) {
         __noms.push(row);
       }
     }
 
-    if(by_default == 'rows') {
+    if(rows === 'rows') {
       return __noms;
     }
 
     __noms.sort((a, b) => {
-      if(by_default){
-        if(a.by_default && !b.by_default) {
-          return -1;
-        }
-        else if(!a.by_default && b.by_default) {
-          return 1;
-        }
-        else {
-          return 0;
-        }
+      if(a.by_default && !b.by_default) {
+        return -1;
       }
-      else{
+      else if(!a.by_default && b.by_default) {
+        return 1;
+      }
+      else {
         if(a.nom.name < b.nom.name) {
           return -1;
         }
@@ -2954,15 +2946,10 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
   /**
    * возвращает доступные в данной системе заполнения (вставки)
-   * @return {[]}
+   * @return {Array.<CatInserts>}
    */
-  glasses() {
-    const {_data} = this;
-    if(!_data.glasses) {
-      _data.glasses = [];
-      this.elmnts.find_rows({elm_type: {in: $p.enm.elm_types.glasses}}, ({nom}) => _data.glasses.push(nom));
-    }
-    return _data.glasses;
+  glasses({elm, layer}) {
+    return this.inserts($p.enm.elm_types.glasses, false, elm);
   }
 
   /**

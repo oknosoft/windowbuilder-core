@@ -197,7 +197,7 @@ exports.CchProperties = class CchProperties extends Object {
     const {product_params, params} = ox;
     let prow, cnstr0, elm0;
     if(params) {
-      const {enm: {plan_detailing}, utils} = $p;
+      const {enm: {plan_detailing}, utils, CatInserts} = $p;
       const src = prm_row.origin;
       if(src && !src.empty()) {
         switch (src) {
@@ -245,7 +245,7 @@ exports.CchProperties = class CchProperties extends Object {
           throw `Источник '${src.name}' не поддержан`;
         }
       }
-      const inset = (!src || src.empty()) ? ((typeof origin !== 'number' && origin) || utils.blank.guid) : utils.blank.guid;
+      const inset = (!src || src.empty()) ? ((origin instanceof CatInserts) ? origin : utils.blank.guid) : utils.blank.guid;
       const {rnum} = elm;
       if(rnum) {
         return elm[this.valueOf()];

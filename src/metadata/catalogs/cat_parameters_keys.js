@@ -19,9 +19,6 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
     if(!layer && elm) {
       layer = elm.layer;
     }
-    if(!cnstr && layer) {
-      cnstr = layer.cnstr;
-    }
     const {calc_order} = ox;
 
     for(const prm_row of this.params) {

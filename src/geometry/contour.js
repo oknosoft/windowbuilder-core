@@ -2782,8 +2782,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             refill = !thicknesses.includes(thickness);
           }
           else if(glass_thickness === 1) {
-            const {Заполнение, Стекло} = elm_types;
-            refill = !project._dp.sys.glasses().includes(elm.insert);
+            refill = !project._dp.sys.glasses({elm, layer: this}).includes(elm.insert);
           }
           else if(glass_thickness === 2) {
             refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];
