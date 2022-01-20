@@ -15459,7 +15459,7 @@ class Scheme extends paper.Project {
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
         .then((ox) => doc.calc_order.get(ox.calc_order, true, true)
-            .then((calc_order) => calc_order.load_linked_refs())
+            .then((calc_order) => calc_order.load_templates())
             .then(() => load_object(ox))
         );
     }
@@ -24501,12 +24501,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       return this._data._templates_loading;
     }
     else if(this.obj_delivery_state == 'Шаблон') {
-      const {adapters: {pouch}, cat} = $p;
-      let zone = sessionStorage.getItem('zone');
-      if(!zone) {
-        zone = pouch.props.zone;
-      }
-      this._data._templates_loading = pouch.fetch(`/couchdb/mdm/${zone}/templates/${this.ref}`)
+      const {adapters, job_prm, cat} = $p;
+      this._data._templates_loading = adapters.pouch.fetch(`/couchdb/mdm/${job_prm.session_zone}/templates/${this.ref}`)
         .then((res) => res.json())
         .then(({rows}) => {
           if(rows) {

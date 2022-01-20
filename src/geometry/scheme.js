@@ -604,7 +604,7 @@ class Scheme extends paper.Project {
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
         .then((ox) => doc.calc_order.get(ox.calc_order, true, true)
-            .then((calc_order) => calc_order.load_linked_refs())
+            .then((calc_order) => calc_order.load_templates())
             .then(() => load_object(ox))
         );
     }
