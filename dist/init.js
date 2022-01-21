@@ -4051,10 +4051,11 @@ class CatClrsManager extends CatManager {
     if(ref && ref.length === 72) {
       const clr_in = ref.substr(0, 36);
       const clr_out = ref.substr(36);
-      let in_out = this.by_in_out({clr_in, clr_out});
-      if(in_out.empty()) {
-        in_out = this.create({ref, clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder}, false, true);
+      let in_out = this.get(ref);
+      if(in_out.is_new()) {
+        Object.assign(in_out._obj, {clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder.valueOf()});
         in_out._obj.name = `${in_out.clr_in.name} \\ ${in_out.clr_out.name}`;
+        in_out._set_loaded(ref);
       }
       return in_out;
     }
@@ -4110,8 +4111,8 @@ class CatClrsManager extends CatManager {
     if(!clr.is_composite()) {
       return clr;
     }
-    const by_in_out = this.by_in_out({clr_in: clr.clr_out, clr_out: clr.clr_in});
-    return by_in_out.empty() ? clr : by_in_out;
+    const {clr_in, clr_out} = this;
+    return this.getter(`${clr_out.valueOf()}${clr_in.valueOf()}`);
   }
 
   /**
