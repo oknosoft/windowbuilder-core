@@ -373,7 +373,7 @@ class ProfileRays {
       this.e.clear(with_cnn);
     }
     if(with_cnn === 'with_neighbor') {
-      const {cnns} = $p.cat;
+      const {enm: {cnn_types}, cat: {cnns}} = $p;
       const {parent} = this;
 
       // прибиваем соединения в точках b и e
@@ -411,10 +411,11 @@ class ProfileRays {
       }
 
       // для соединительных профилей и элементов со створками, пересчитываем соседей
-      for (const {_attr, elm} of parent.joined_nearests()) {
-        _attr._rays && _attr._rays.clear(true);
+      for (const nearest of parent.joined_nearests()) {
+        const {_attr, elm} = nearest;
+        _attr._rays && _attr._rays.clear(with_cnn);
         _attr._nearest_cnn = null;
-        cnn_elmnts.clear({elm1: elm, node1: cnn_nodes, elm2});
+        //cnn_elmnts.clear({elm1: elm, node1: cnn_nodes, elm2});
       }
 
       // так же, пересчитываем соединения с примыкающими заполнениями
@@ -1192,6 +1193,9 @@ class ProfileItem extends GeneratrixElement {
 
     if(!generatrix) {
       return;
+    }
+    else if(!_attr._corns.length) {
+      this.redraw();
     }
 
     _row.x1 = this.x1;

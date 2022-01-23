@@ -963,12 +963,18 @@ class Scheme extends paper.Project {
         ox.unload();
       }
       else {
-        revert = revert.then(() => ox.load());
+        revert = revert.then(() => {
+          ox._data._loading = false;
+          return ox.load();
+        });
       }
     }
     this.getItems({class: ContourNested}).forEach(({_ox}) => {
       if(_ox._modified) {
-        revert = revert.then(() => _ox.load());
+        revert = revert.then(() => {
+          _ox._data._loading = false;
+          return _ox.load();
+        });
       }
     });
 
