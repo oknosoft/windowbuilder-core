@@ -852,40 +852,14 @@ class ProductsBuilding {
       // информируем мир о записи продукции
       if(attr.save) {
 
-        // console.time("save");
-        // console.profile();
-
         // сохраняем картинку вместе с изделием
         if(attr.svg !== false) {
           ox.svg = scheme.get_svg();
         }
 
-        return ox.save().then(() => {
-          attr.svg !== false && $p.msg.show_msg([ox.name, 'Спецификация рассчитана']);
-          finish();
 
-          ox.calc_order.characteristic_saved(scheme, attr);
-          scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
-
-          // console.timeEnd("save");
-          // console.profileEnd();
-        })
-          .then(() => {
-            if(!scheme._attr._from_service && !attr._from_service && (scheme._scope || attr.close)) {
-              return new Promise((resolve, reject) => {
-                setTimeout(() => ox.calc_order._modified ?
-                  ox.calc_order.save()
-                    .then(resolve)
-                    .catch(reject)
-                  :
-                  resolve(ox), 1000)
-              });
-            }
-          })
+        return this.saver({ox, scheme, attr, finish})
           .catch((err) => {
-
-            // console.timeEnd("save");
-            // console.profileEnd();
 
             finish();
 
@@ -914,6 +888,35 @@ class ProductsBuilding {
 
     };
 
+  }
+
+  /**
+   * Выделяем сохранялку продукции в отдельный метод
+   * чтобы его было проще переопределить снаружи
+   */
+  saver({ox, scheme, attr, finish}) {
+    return ox.save().then(() => {
+      attr.svg !== false && $p.msg.show_msg([ox.name, 'Спецификация рассчитана']);
+      finish();
+
+      ox.calc_order.characteristic_saved(scheme, attr);
+      scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
+
+      // console.timeEnd("save");
+      // console.profileEnd();
+    })
+      .then(() => {
+        if(!scheme._attr._from_service && !attr._from_service && (scheme._scope || attr.close)) {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => ox.calc_order._modified ?
+              ox.calc_order.save()
+                .then(resolve)
+                .catch(reject)
+              :
+              resolve(ox), 1000)
+          });
+        }
+      });
   }
 
   /**
