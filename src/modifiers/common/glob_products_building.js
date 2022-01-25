@@ -895,28 +895,14 @@ class ProductsBuilding {
    * чтобы его было проще переопределить снаружи
    */
   saver({ox, scheme, attr, finish}) {
-    return ox.save().then(() => {
-      attr.svg !== false && $p.msg.show_msg([ox.name, 'Спецификация рассчитана']);
-      finish();
-
-      ox.calc_order.characteristic_saved(scheme, attr);
-      scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
-
-      // console.timeEnd("save");
-      // console.profileEnd();
-    })
+    const {calc_order} = ox;
+    calc_order.characteristic_saved(scheme, attr);
+    return calc_order.save()
       .then(() => {
-        if(!scheme._attr._from_service && !attr._from_service && (scheme._scope || attr.close)) {
-          return new Promise((resolve, reject) => {
-            setTimeout(() => ox.calc_order._modified ?
-              ox.calc_order.save()
-                .then(resolve)
-                .catch(reject)
-              :
-              resolve(ox), 1000)
-          });
-        }
-      });
+        finish();
+        scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
+      })
+      .then(() => ox);
   }
 
   /**
