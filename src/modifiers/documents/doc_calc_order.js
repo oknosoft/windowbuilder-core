@@ -396,20 +396,42 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     const bulk = () => {
       const _id = `${class_name}|${_obj.ref}`;
-      const rev = (this.is_new() || _obj._rev) ?
-        Promise.resolve() :
-        db.get(_id)
-          .then(({_rev}) => sobjs.some((o) => {
-            if(o._id === _id) {
-              o._rev = _rev;
-              return true;
-            }
-          }))
-          .catch(() => null);
+      // обычные заказы пишем честно - с текущими версиями, версии шаблонов не учитываем
+      const rev = Promise.resolve().then(() => {
+        if(obj_delivery_state == 'Шаблон') {
+          return db.allDocs({keys: sobjs.map(({_id}) => _id)})
+            .then(({rows}) => {
+              for(const doc of rows) {
+                if(doc.value && doc.value.rev) {
+                  sobjs.some((o) => {
+                    if(o._id === doc.id) {
+                      o._rev = doc.value.rev;
+                      return true;
+                    }
+                  });
+                }
+              }
+            });
+        }
+        else {
+          if(!this.is_new() && !_obj._rev) {
+            return db.get(_id)
+              .then(({_rev}) => sobjs.some((o) => {
+                if(o._id === _id) {
+                  o._rev = _rev;
+                  return true;
+                }
+              }));
+          }
+        }
+      })
+        .catch(() => null);
+
       return rev.then(() => db.bulkDocs(sobjs));
     };
 
-    return !sobjs.length ? unused() : bulk().then((bres) => {
+    return !sobjs.length ? unused() : bulk()
+      .then((bres) => {
         // освежаем ревизии, проверяем успешность записи и вызываем after_save
         for(const row of bres) {
           const [cname, ref] = row.id.split('|');
@@ -427,7 +449,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             save_error(row.error === 'conflict' ?
-              'вероятно, объект изменён другим пользователем, обратитесь к администратору' :
+              'вероятно, объект изменён другим пользователем, перечитайте заказ и продукции с сервера' :
               `${row.reason} ${o && o !== this ? o.presentation : ''} повторите попытку записи через минуту`);
           }
         }
@@ -1317,7 +1339,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   recalc(attr = {}, editor) {
 
     // при необходимости, создаём редактор
-    const {EditorInvisible} = $p;
+    const {EditorInvisible, CatInserts} = $p;
     const remove = !editor;
     if(remove) {
       editor = new EditorInvisible();
@@ -1356,7 +1378,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             const {origin} = cx;
-            if(origin instanceof $p.CatInserts && !origin.empty() && !origin.slave) {
+            if(origin instanceof CatInserts && !origin.empty() && !origin.slave) {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
