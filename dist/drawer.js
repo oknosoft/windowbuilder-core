@@ -17601,12 +17601,12 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_range({bookmark, step=1, limit=50, log=null}) {
+  by_range({bookmark, step=1, limit=100, log=null}) {
     const {utils, adapters: {pouch}} = $p;
 
     (log || console.log)(`load prices: page №${step}`);
 
-    return utils.sleep(200)
+    return utils.sleep(100)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
