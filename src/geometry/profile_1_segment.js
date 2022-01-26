@@ -18,7 +18,7 @@ class ProfileSegment extends ProfileItem {
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer.parent instanceof Contour) {
+    if(this.layer && this.layer.parent instanceof Contour) {
       return elm_types.Створка;
     }
 

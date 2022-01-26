@@ -243,7 +243,7 @@ class CnnPoint {
     const {outer} = $p.enm.cnn_sides;
 
     // ищем концы профилей в окрестности нас
-    for(const elm of profile.layer.profiles) {
+    for(const elm of layer.profiles) {
       if(elm === parent || elm === profile) {
         continue;
       }

@@ -1099,6 +1099,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       children[0].remove();
     }
 
+    project._scope.eve.emit('elm_removed', this);
+
     if (_row) {
       if(!project.ox.empty()) {
         if(_ox === _row._owner._owner) {

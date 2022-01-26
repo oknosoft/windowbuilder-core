@@ -2090,6 +2090,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       children[0].remove();
     }
 
+    project._scope.eve.emit('elm_removed', this);
+
     if (_row) {
       if(!project.ox.empty()) {
         if(_ox === _row._owner._owner) {
@@ -6063,7 +6065,7 @@ class BuilderElement extends paper.Group {
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
 
-      if(this.layer.parent){
+      if(this.layer && this.layer.parent){
         _attr.generatrix.guide = true;
       }
     }
@@ -6725,6 +6727,8 @@ class BuilderElement extends paper.Group {
       path.onMouseEnter = null;
       path.onMouseLeave = null;
     }
+
+    project._scope.eve.emit('elm_removed', this);
 
     if (this.observer){
       project._scope.eve.off(consts.move_points, this.observer);
@@ -9740,7 +9744,7 @@ class CnnPoint {
     const {outer} = $p.enm.cnn_sides;
 
     // ищем концы профилей в окрестности нас
-    for(const elm of profile.layer.profiles) {
+    for(const elm of layer.profiles) {
       if(elm === parent || elm === profile) {
         continue;
       }
@@ -12034,7 +12038,7 @@ class ProfileSegment extends ProfileItem {
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer.parent instanceof Contour) {
+    if(this.layer && this.layer.parent instanceof Contour) {
       return elm_types.Створка;
     }
 
@@ -12205,7 +12209,7 @@ class Profile extends ProfileItem {
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer.parent instanceof Contour) {
+    if(this.layer && this.layer.parent instanceof Contour) {
       return elm_types.Створка;
     }
 

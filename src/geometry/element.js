@@ -144,7 +144,7 @@ class BuilderElement extends paper.Group {
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
 
-      if(this.layer.parent){
+      if(this.layer && this.layer.parent){
         _attr.generatrix.guide = true;
       }
     }
@@ -806,6 +806,8 @@ class BuilderElement extends paper.Group {
       path.onMouseEnter = null;
       path.onMouseLeave = null;
     }
+
+    project._scope.eve.emit('elm_removed', this);
 
     if (this.observer){
       project._scope.eve.off(consts.move_points, this.observer);
