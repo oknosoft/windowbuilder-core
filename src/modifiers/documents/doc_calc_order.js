@@ -1277,7 +1277,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   process_add_product_list(dp) {
 
     let res = Promise.resolve();
-    const ax = [];
 
     dp.production.forEach((row_dp) => {
       let row_prod;
@@ -1318,17 +1317,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       // производим дополнительную корректировку спецификации и рассчитываем цены
       res = res.then((row_prod) => {
-        return Promise.all($p.spec_building.specification_adjustment({
-          //scheme: scheme,
+        return $p.spec_building.specification_adjustment({
           calc_order_row: row_prod,
           spec: row_prod.characteristic.specification,
-          save: true,
-        }, true))
-          .then((tx) => [].push.apply(ax, tx));
+        }, true);
       });
     });
 
-    return res.then(() => ax);
+    return res;
   }
 
   /**

@@ -18810,7 +18810,6 @@ class ProductsBuilding {
           scheme: scheme,
           calc_order_row: ox.calc_order_row,
           spec: spec,
-          save: attr.save,
         }, true);
         if(attr.save) {
           ox.calc_order_row.s = ox.s;
@@ -19208,7 +19207,7 @@ class SpecBuilding {
   specification_adjustment (attr, with_price) {
 
     const {cat, pricing, enm: {elm_types}} = $p;
-    const {scheme, calc_order_row, spec, save} = attr;
+    const {scheme, calc_order_row, spec} = attr;
     const calc_order = calc_order_row._owner._owner;
     const order_rows = new Map();
     const adel = [];
@@ -19295,7 +19294,7 @@ class SpecBuilding {
       row.qty = calc_order_row.qty;
       row.quantity = calc_order_row.quantity;
 
-      save && ax.push(cx.save());
+      ax.push(cx);
       order_rows.set(cx, row);
     });
     if(order_rows.size){
@@ -19310,9 +19309,7 @@ class SpecBuilding {
       pricing.calc_amount(attr);
     }
 
-    if(save && !attr.scheme && (ox.is_new() || ox._modified)){
-      ax.push(ox.save());
-    }
+    ax.push(ox);
 
     return ax;
   }
@@ -24334,7 +24331,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   process_add_product_list(dp) {
 
     let res = Promise.resolve();
-    const ax = [];
 
     dp.production.forEach((row_dp) => {
       let row_prod;
@@ -24375,17 +24371,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       // производим дополнительную корректировку спецификации и рассчитываем цены
       res = res.then((row_prod) => {
-        return Promise.all($p.spec_building.specification_adjustment({
-          //scheme: scheme,
+        return $p.spec_building.specification_adjustment({
           calc_order_row: row_prod,
           spec: row_prod.characteristic.specification,
-          save: true,
-        }, true))
-          .then((tx) => [].push.apply(ax, tx));
+        }, true);
       });
     });
 
-    return res.then(() => ax);
+    return res;
   }
 
   /**

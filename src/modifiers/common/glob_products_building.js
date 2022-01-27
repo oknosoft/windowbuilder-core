@@ -830,7 +830,6 @@ class ProductsBuilding {
           scheme: scheme,
           calc_order_row: ox.calc_order_row,
           spec: spec,
-          save: attr.save,
         }, true);
         if(attr.save) {
           ox.calc_order_row.s = ox.s;
