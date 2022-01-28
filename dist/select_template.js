@@ -191,8 +191,8 @@ export default function ({classes, cat: {characteristics, templates, params_link
       else {
         mf.choice_params = [];
       }
-      const {base_block, obj_delivery_state, sys} = ox;
-      if(obj_delivery_state !== Шаблон){
+      const {base_block, obj_delivery_state, calc_order, sys} = ox;
+      if(!(obj_delivery_state === Шаблон || calc_order.obj_delivery_state === Шаблон)){
         if (base_block.obj_delivery_state === Шаблон || base_block.calc_order.obj_delivery_state === Шаблон) {
           this.permitted_sys(base_block.calc_order, mf.choice_params);
         }

@@ -15317,7 +15317,7 @@ class Scheme extends paper.Project {
    * @param from_service {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
    * @async
    */
-  load(id, from_service) {
+  load(id, from_service, order) {
     const {_attr} = this;
     const _scheme = this;
     const {enm: {elm_types}, cat: {templates, characteristics}, doc, utils} = $p;
@@ -15462,10 +15462,16 @@ class Scheme extends paper.Project {
     }
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
-        .then((ox) => doc.calc_order.get(ox.calc_order, true, true)
-            .then((calc_order) => calc_order.load_templates())
-            .then(() => load_object(ox))
-        );
+        .then((ox) => {
+          return doc.calc_order.get((utils.is_guid(order) || utils.is_data_obj(order)) ? order : ox.calc_order, true, true)
+            .then((calc_order) => {
+              if(ox.is_new() || (order && ox.calc_order != order)) {
+                ox.calc_order = order;
+              }
+              return calc_order.load_templates();
+            })
+            .then(() => load_object(ox));
+        });
     }
   }
 
