@@ -20915,13 +20915,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 res.add(sub_row);
               }
               else if(sub_row.quantity) {
-                res.add(sub_row).quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+                row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = res.add(dop_row);
-            row_spec.origin = this;
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);
             row_spec.specify = row_furn.nom;
           }
         });
@@ -20935,7 +20935,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             res.add(sub_row);
           }
           else if(sub_row.quantity) {
-            res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+            row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
@@ -20951,10 +20952,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Добавляет строку в спецификацию с учетом алгоритма
-   * @param {TabularSection} res
-   * @param {CatCharacteristics} ox
-   * @param {Contour} contour
-   * @param {CatFurnsSpecificationRow} row_furn
+   * @param res {TabularSection}
+   * @param ox {CatCharacteristics}
+   * @param contour {Contour}
+   * @param row_furn {CatFurnsSpecificationRow}
+   * @return {DpBuyers_orderSpecificationRow}
    */
   add_with_algorithm(res, ox, contour, row_furn) {
     const {algorithm, formula, elm, dop} = row_furn;
@@ -20983,6 +20985,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     if(!formula.empty() && !formula.condition_formula){
       formula.execute({ox, contour, row_furn, row_spec});
     }
+    return row_spec;
   }
 
   /**
