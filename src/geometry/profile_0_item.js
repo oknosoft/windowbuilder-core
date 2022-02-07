@@ -255,6 +255,11 @@ class CnnPoint {
     }
   }
 
+  /**
+   * Возвращает соединение с обратной стороны конца профиля
+   * @param other
+   * @return {CatCnns}
+   */
   cnno(other) {
     // ищем концы профилей в окрестности e
     if(!other) {
@@ -270,6 +275,21 @@ class CnnPoint {
       if(row) {
         return row.cnn;
       }
+    }
+  }
+
+  set_cnno(v) {
+    const other = this.find_other();
+    if(other) {
+      const {parent, node} = this;
+      const {cnn_elmnts} = parent.ox;
+      const attr = {elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node};
+      let row = cnn_elmnts.find(attr);
+      if(!row) {
+        row = cnn_elmnts.add(attr);
+      }
+      row.cnn = v;
+      parent.project.register_change();
     }
   }
 
@@ -613,7 +633,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   set cnn1o(v) {
-    this.setcnnn(v, 'b');
+    this.rays.b.set_cnno(v);
   }
 
   /**
@@ -643,7 +663,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   set cnn2o(v) {
-    this.setcnnn(v, 'e');
+    this.rays.e.set_cnno(v);
   }
 
   getcnnn(n) {
@@ -1942,7 +1962,7 @@ class ProfileItem extends GeneratrixElement {
       else {
         // если есть соединение с обратной стороны, его надо учитывать при отрисовке узла
         const cnn_other = cnn_point.find_other();
-        const cnno = cnn_other && cnn_point.find_other(cnn_other);
+        const cnno = cnn_other && cnn_point.cnno(cnn_other);
 
         // угловое диагональное
         if(cnn_type == cnn_types.ad) {
