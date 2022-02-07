@@ -4220,7 +4220,7 @@ class CatClrsManager extends CatManager {
     if(!clr.is_composite()) {
       return clr;
     }
-    const {clr_in, clr_out} = this;
+    const {clr_in, clr_out} = clr;
     return this.getter(`${clr_out.valueOf()}${clr_in.valueOf()}`);
   }
 
