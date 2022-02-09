@@ -598,7 +598,7 @@ class Scheme extends paper.Project {
     this.ox = null;
     this.clear();
 
-    if(utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
+    if(utils.is_data_obj(id) && id.calc_order && (order === id.calc_order || !id.calc_order.is_new())) {
       return load_object(id);
     }
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {

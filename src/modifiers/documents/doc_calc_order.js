@@ -1362,7 +1362,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
-              return project.load(cx, true).then(() => {
+              return project.load(cx, true, this).then(() => {
                 // выполняем пересчет
                 cx.apply_props(project, dp).save_coordinates({svg: false});
                 this.characteristic_saved(project);
