@@ -36,10 +36,9 @@ class Pricing {
       return Promise.resolve();
     }
 
-    // сначала, пытаемся из local
+    // читаем цены из документов установки цен
     return this.by_range({})
       .then(() => {
-        const {doc: {calc_order}, wsql} = $p;
         // излучаем событие "можно открывать формы"
         pouch.emit('pouch_complete_loaded');
       });
@@ -62,15 +61,24 @@ class Pricing {
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
-    // чистим старые цены
-    for(const onom of nom) {
-      if (onom._data && onom._data._price) {
-        for(const cx in onom._data._price) {
-          delete onom._data._price[cx];
+
+    // новые цены пишем в кеш, чтобы на время загрузки не портить номенклатуру
+    const cache = new Map();
+    return this.by_range({log, cache})
+      .then(() => {
+        // заменяем старые цены новыми
+        for(const onom of nom) {
+          if (onom._data) {
+            if(onom._data._price) {
+              for(const cx in onom._data._price) {
+                delete onom._data._price[cx];
+              }
+            }
+            onom._data._price = cache.get(onom);
+          }
         }
-      }
-    }
-    this.by_range({log}).then(() => pouch.emit('nom_price'));
+      })
+      .then(() => pouch.emit('nom_price'));
   }
 
   /**
@@ -78,7 +86,7 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_range({bookmark, step=1, limit=100, log=null}) {
+  by_range({bookmark, step=1, limit=100, log=null, cache=null}) {
     const {utils, adapters: {pouch}} = $p;
 
     (log || console.log)(`load prices: page №${step}`);
@@ -96,18 +104,20 @@ class Pricing {
         step++;
         bookmark = res.bookmark;
         for (const doc of res.docs) {
-          this.by_doc(doc);
+          this.by_doc(doc, cache);
         }
-        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log}) : 'done';
+        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache}) : 'done';
       });
   }
 
   /**
-   * Перестраивает кеш цен номенклатуры по массиву ключей
-   * @param startkey
-   * @return {Promise.<TResult>|*}
+   * Перестраивает кеш цен номенклатуры по табчасти текущего документа
+   * @param goods
+   * @param date
+   * @param currency
+   * @param cache {Map}
    */
-  by_doc({goods, date, currency}) {
+  by_doc({goods, date, currency}, cache) {
     const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
     currency = currencies.get(currency);
@@ -119,21 +129,32 @@ class Pricing {
         continue;
       }
 
-      if (!onom._data._price) {
-        onom._data._price = {};
+      let _price;
+      if(cache) {
+        if(!cache.has(onom)) {
+          cache.set(onom, {})
+        }
+        _price = cache.get(onom);
       }
+      else {
+        if (!onom._data._price) {
+          onom._data._price = {};
+        }
+        _price = onom._data._price;
+      }
+
       const key1 = (row.nom_characteristic || utils.blank.guid).valueOf();
-      if (!onom._data._price[key1]) {
-        onom._data._price[key1] = {};
+      if (!_price[key1]) {
+        _price[key1] = {};
       }
       const key2 = row.price_type.valueOf();
-      if (!onom._data._price[key1][key2]) {
-        onom._data._price[key1][key2] = [];
+      if (!_price[key1][key2]) {
+        _price[key1][key2] = [];
       }
-      onom._data._price[key1][key2].push({currency, date, price: row.price});
+      _price[key1][key2].push({currency, date, price: row.price});
 
       // сразу сортируем массив по датам, т.к. порядок используется в других местах
-      onom._data._price[key1][key2].sort((a, b) => b.date - a.date);
+      _price[key1][key2].sort((a, b) => b.date - a.date);
     }
   }
 
