@@ -57,7 +57,7 @@ class Pricing {
       this.prices_timeout = 0;
     }
     if(!force) {
-      const defer = server ? server.defer : 180000;
+      const defer = (server ? server.defer : 180000) + Math.random() * 10000;
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
