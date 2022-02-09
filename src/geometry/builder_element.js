@@ -265,8 +265,10 @@ class BuilderElement extends paper.Group {
         else if(this instanceof Profile) {
           const {Любое} = positions;
           if(this.nearest()) {
-            selection = {pos:{in:[this.pos,Любое]},
-              elm_type: {in: [elm_types.Створка, elm_types.СтворкаБИ, elm_types.Добор]}};
+            selection = {
+              pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.flap, elm_types.flap0, elm_types.Добор]}
+            };
           }
           else {
             selection = {pos:{in:[this.pos,Любое]},
@@ -320,7 +322,7 @@ class BuilderElement extends paper.Group {
           if(cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
-          else if(cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
+          else if(cnn_ii.elm.elm_type == elm_types.flap && this.elm_type != elm_types.flap) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else {
