@@ -227,7 +227,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         msg.show_msg && msg.show_msg({
           type: 'alert-warning',
           title: 'Ошибки в заказе',
-          text: `Пустая цена ${err_prices.nom.toString()}<br/>Рекомендуется перезапустить браузер и повторить расчет`,
+          text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
         });
         if (!must_be_saved) {
           if(obj_delivery_state == Отправлен) {
