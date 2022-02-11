@@ -144,11 +144,9 @@ exports.CchProperties = class CchProperties extends Object {
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
     const ct = prm_row.comparison_type || comparison_types.eq;
 
-    // для алгоритма clr_prm и цветового параметра, фильтр отключаем
-    if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
-      (ct.empty() || ct === comparison_types.eq) &&
-      type.types.includes('cat.clrs') &&
-      (!prm_row.value || prm_row.value.empty())) {
+    // для параметров алгоритма, фильтр отключаем
+    if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
+      (ct.empty() || ct === comparison_types.eq) && type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty()))) {
       return true;
     }
 
@@ -198,7 +196,10 @@ exports.CchProperties = class CchProperties extends Object {
     let prow, cnstr0, elm0;
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
-      const src = prm_row.origin;
+      let src = prm_row.origin;
+      if(src === plan_detailing.algorithm) {
+        src = plan_detailing.get();
+      }
       if(src && !src.empty()) {
         switch (src) {
         case plan_detailing.order:

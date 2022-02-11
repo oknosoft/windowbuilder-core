@@ -1413,10 +1413,10 @@ class Contour extends AbstractFilling(paper.Layer) {
         };
         let sz, imposts;
         row.inset.specification.forEach((rspec) => {
-          if (!sz && rspec.count_calc_method == $p.enm.count_calculating_ways.ПоПериметру && rspec.nom.elm_type == $p.enm.elm_types.Рама) {
+          if (!sz && rspec.count_calc_method == $p.enm.count_calculating_ways.perimeter && rspec.nom.elm_type == $p.enm.elm_types.Рама) {
             sz = rspec.sz;
           }
-          if (!imposts && rspec.count_calc_method == $p.enm.count_calculating_ways.ПоШагам && rspec.nom.elm_type == $p.enm.elm_types.Импост) {
+          if (!imposts && rspec.count_calc_method == $p.enm.count_calculating_ways.step && rspec.nom.elm_type == $p.enm.elm_types.Импост) {
             imposts = rspec;
           }
         });
@@ -1556,7 +1556,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         };
         const bounds = glass.bounds_light();
         inset.specification.forEach(({count_calc_method, sz, offsets}) => {
-          if (count_calc_method == $p.enm.count_calculating_ways.ПоПлощади && sz && offsets) {
+          if (count_calc_method == $p.enm.count_calculating_ways.area && sz && offsets) {
             bounds.height += offsets;
             bounds.width += sz;
             bounds.left -= sz * 0.6;
