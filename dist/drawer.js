@@ -13809,25 +13809,24 @@ class ProfileConnective extends ProfileItem {
    */
   move_points(delta, all_points, start_point) {
 
-    const nearests = this.joined_nearests();
-    const moved = {profiles: []};
-
     super.move_points(delta, all_points, start_point);
 
     // двигаем примыкающие
-    if(all_points !== false && !paper.Key.isDown('control')){
-      nearests.forEach((np) => {
+    if(all_points !== false && !paper.Key.isDown('control')) {
+      const moved = {profiles: []};
+      for (const np of this.joined_nearests()) {
         np.do_bind(this, null, null, moved);
         // двигаем связанные с примыкающими
-        ['b', 'e'].forEach((node) => {
+        for(const node of ['b', 'e']) {
           const cp = np.cnn_point(node);
-          if(cp.profile){
-            cp.profile.do_bind(np, cp.profile.cnn_point("b"), cp.profile.cnn_point("e"), moved);
+          if(cp.profile) {
+            cp.profile.do_bind(np, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
           }
-        });
-      });
+        }
+      }
     }
 
+    this._attr._corns.length = 0;
     this.project.register_change();
   }
 
