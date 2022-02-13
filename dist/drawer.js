@@ -21947,12 +21947,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
       function fake_row(sub_row, row) {
         const fakerow = {};
-        if(sub_row._metadata){
-          for(let fld in sub_row._metadata().fields){
+        if(sub_row._metadata) {
+          for (let fld in sub_row._metadata().fields) {
             fakerow[fld] = sub_row[fld];
           }
         }
-        else{
+        else {
           Object.assign(fakerow, sub_row);
         }
         fakerow._owner = sub_row._owner;
@@ -21969,7 +21969,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(row) {
           fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === prm ? 0 : 1)) * (row.quantity || 1);
           fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
-          if(fakerow.clr.empty()){
+          if(fakerow.clr.empty()) {
             fakerow.clr = row.clr;
           }
           if(fakerow.angle_calc_method === Основной) {
@@ -23184,8 +23184,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .catch((err) => null);
 
-    const save_error = (reason) => {
-      throw new Error(`Ошибка при записи заказа ${this.presentation}, ${reason}`);
+    const save_error = (reason, obj) => {
+      const note = `Ошибка при записи ${this.presentation}, ${reason}`
+      $p.record_log({
+        class: 'save_error',
+        obj,
+        note,
+      });
+      throw new Error(note);
     };
 
     const bulk = () => {
@@ -23242,16 +23248,26 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           }
           else {
-            save_error(row.error === 'conflict' ?
+            const err = new Error(row.error === 'conflict' ?
               'вероятно, объект изменён другим пользователем, перечитайте заказ и продукции с сервера' :
               `${row.reason} ${o && o !== this ? o.presentation : ''} повторите попытку записи через минуту`);
+            err.obj = {
+              docs: sobjs.map(v => ({id: v._id, rev: v._rev, timestamp: v.timestamp})),
+              bres,
+            };
+            throw err;
           }
         }
         // null из before_save, прерывает стандартную обработку
         return unused();
       })
       .catch((err) => {
-        save_error(`${err.message} повторите попытку записи через минуту`);
+        if(err.obj) {
+          save_error(err.message, err.obj);
+        }
+        else {
+          save_error(`${err.message} повторите попытку записи через минуту`);
+        }
       });
   }
 
