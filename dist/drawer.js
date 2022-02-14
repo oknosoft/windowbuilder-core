@@ -2359,7 +2359,12 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   set furn(v) {
-    const {_row, profiles} = this;
+    const {_row, profiles, project: {_dp}, level} = this;
+
+    if(_dp.sys.furn_level > level) {
+      v = _row.furn._manager.get();
+    }
+
     if (_row.furn == v) {
       return;
     }
@@ -2368,7 +2373,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // при необходимости устанавливаем направление открывания
     if (this.direction.empty()) {
-      this.project._dp.sys.furn_params.find_rows({param: $p.job_prm.properties.direction}, ({value}) => {
+      _dp.sys.furn_params.find_rows({param: $p.job_prm.properties.direction}, ({value}) => {
         _row.direction = value;
         return false;
       });
@@ -4295,6 +4300,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
+  /**
+   * Уровень вложенности слоя
+   * @return {number}
+   */
+  get level() {
+    let res = 0, layer = this.layer;
+    while (layer) {
+      res++;
+      layer = layer.layer;
+    }
+    return res;
+  }
 
   /**
    * Кеш используется при расчете спецификации фурнитуры
