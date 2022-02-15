@@ -32,19 +32,38 @@ export default function ({classes, cat: {characteristics, templates, params_link
     }
 
     // начальное значение заказа-шаблона
-    init() {
-      const ref = wsql.get_user_param('template_block_calc_order');
-      let calc_order;
-      return (utils.is_guid(ref) ? doc.calc_order.get(ref, 'promise').then((doc) => calc_order = doc).catch(() => null) : Promise.resolve())
+    init(inset) {
+      return Promise.resolve()
         .then(() => {
-          if(!calc_order || calc_order.empty()) {
-            doc.calc_order.find_rows({obj_delivery_state: 'Шаблон'}, (doc) => {
-              calc_order = doc;
-              return false;
-            });
+          const {templates_nested} = job_prm.builder;
+          if(inset) {
+            if(templates_nested && templates_nested.length) {
+              if(!templates_nested.includes(this.calc_order)) {
+                this.value_change('calc_order', '', templates_nested[0]);
+              }
+            }
+            else {
+              this.value_change('calc_order', '', '');
+            }
           }
-          if(calc_order) {
-            return this.value_change('calc_order', '', calc_order);
+          else {
+            const ref = wsql.get_user_param('template_block_calc_order');
+            let calc_order;
+            return (utils.is_guid(ref) ? doc.calc_order.get(ref, 'promise').then((doc) => calc_order = doc).catch(() => null) : Promise.resolve())
+              .then(() => {
+                if(!calc_order || calc_order.empty() || (templates_nested && templates_nested.includes(calc_order))) {
+                  doc.calc_order.find_rows({obj_delivery_state: 'Шаблон'}, (doc) => {
+                    if(templates_nested && templates_nested.includes(doc)) {
+                      return ;
+                    }
+                    calc_order = doc;
+                    return false;
+                  });
+                }
+                if(calc_order) {
+                  return this.value_change('calc_order', '', calc_order);
+                }
+              });
           }
         });
     }
