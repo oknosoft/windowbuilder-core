@@ -4910,6 +4910,7 @@ class ContourNested extends Contour {
 
           // перезаполняем сырыми данными временного изделия
           _ox.specification.clear();
+          _ox.sys = base_block.sys;
           const map = new Map();
           const {_row} = content;
           const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;
@@ -16286,7 +16287,8 @@ class Scheme extends paper.Project {
 
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
-        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === Шаблон) ? obx : obx.base_block;
+        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === Шаблон ||
+          obx.base_block.calc_order.obj_delivery_state === Шаблон) ? obx : obx.base_block;
         if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
