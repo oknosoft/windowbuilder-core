@@ -344,13 +344,15 @@ exports.CatCnns = class CatCnns extends Object {
    */
   size(elm) {
     let {sz, sizes} = this;
+    const {ox, layer} = elm;
     sizes.forEach((prm_row) => {
       if(prm_row.param.check_condition({
         row_spec: {},
         prm_row,
+        cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
         elm,
-        cnstr: 0,
-        ox: elm.project.ox,
+        layer,
+        ox,
       })) {
         sz = prm_row.elm;
         return false;
