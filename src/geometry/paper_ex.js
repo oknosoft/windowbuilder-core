@@ -163,6 +163,7 @@ Object.defineProperties(paper.Path.prototype, {
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
         let tmp;
+        const {project} = this;
 
         if(!this.length || !point1 || !point2 || (!strict && point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
           tmp = this.clone({insert: false, deep: false});
@@ -181,6 +182,7 @@ Object.defineProperties(paper.Path.prototype, {
           if(this.is_linear()){
             // для прямого формируем новый путь из двух точек
             tmp = new paper.Path({
+              project,
               segments: [loc1.point, loc2.point],
               insert: false
             });
@@ -190,6 +192,7 @@ Object.defineProperties(paper.Path.prototype, {
             const step = (offset2 - offset1) * 0.02;
 
             tmp = new paper.Path({
+              project,
               segments: [loc1.point],
               insert: false
             });
@@ -227,12 +230,13 @@ Object.defineProperties(paper.Path.prototype, {
   equidistant: {
       value: function equidistant(delta, elong) {
 
-        const {firstSegment, lastSegment} = this;
+        const {project, firstSegment, lastSegment} = this;
         let normal = this.getNormalAt(0);
         const res = new paper.Path({
-            segments: [firstSegment.point.add(normal.multiply(delta))],
-            insert: false
-          });
+          project,
+          segments: [firstSegment.point.add(normal.multiply(delta))],
+          insert: false
+        });
 
         if(this.is_linear()) {
           // добавляем последнюю точку
