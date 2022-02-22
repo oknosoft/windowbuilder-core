@@ -1528,7 +1528,165 @@ get predefined_name(){return this._getter('predefined_name')}
 set predefined_name(v){this._setter('predefined_name',v)}
 get sketch_view(){return this._getter_ts('sketch_view')}
 set sketch_view(v){this._setter_ts('sketch_view',v)}
-}
+
+
+  /**
+   * Рисует визуализацию
+   * @param elm {BuilderElement} элемент, к которому привязана визуализация
+   * @param layer {Contour} слой, в котороый помещаем путь
+   * @param offset {Number|[Number,Number]}
+   */
+  draw(elm, layer, offset, offset0) {
+    if(!layer.isInserted()) {
+      return;
+    }
+
+    try {
+      const {project} = layer;
+      const {CompoundPath, PointText, Path, constructor} = project._scope;
+
+      let subpath;
+
+      if(this.svg_path.indexOf('{"method":') == 0){
+
+        const attr = JSON.parse(this.svg_path);
+
+        if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
+          const {rays} = elm;
+          if(!rays) {
+            return;
+          }
+          if(attr.method == 'subpath_outer') {
+            subpath = rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
+          }
+          else if(attr.method == 'subpath_inner') {
+            subpath = rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
+          }
+          else if(attr.method == 'subpath_median') {
+            if(elm.is_linear()) {
+              subpath = new Path({
+                project,
+                segments: [elm.corns(1).add(elm.corns(4)).divide(2), elm.corns(2).add(elm.corns(3)).divide(2)]
+              })
+                .equidistant(attr.offset || 0);
+            }
+            else {
+              const inner = rays.inner.get_subpath(elm.corns(3), elm.corns(4));
+              inner.reverse();
+              const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
+              const li = inner.length / 50;
+              const lo = outer.length / 50;
+              subpath = new Path({project});
+              for(let i = 0; i < 50; i++) {
+                subpath.add(inner.getPointAt(li * i).add(outer.getPointAt(lo * i)).divide(2));
+              }
+              subpath.simplify(0.8);
+              if(attr.offset) {
+                subpath = subpath.equidistant(attr.offset);
+              }
+            }
+          }
+          else {
+            if(this.mode === 3) {
+              const outer = offset0 < 0;
+              attr.offset -= -elm.d1 + elm.width;
+              if(outer) {
+                offset0 = -offset0;
+                attr.offset = -(attr.offset || 0);
+              }
+              const b = elm.generatrix.getPointAt(offset0 || 0);
+              const e = elm.generatrix.getPointAt((offset0 + offset) || elm.generatrix.length);
+              subpath = elm.generatrix.get_subpath(b, e).equidistant(attr.offset || 0);
+            }
+            else {
+              subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            }
+          }
+          subpath.parent = layer._by_spec;
+          subpath.strokeWidth = attr.strokeWidth || 4;
+          subpath.strokeColor = attr.strokeColor || 'red';
+          subpath.strokeCap = attr.strokeCap || 'round';
+          if(attr.dashArray){
+            subpath.dashArray = attr.dashArray
+          }
+        }
+      }
+      else if(this.svg_path){
+
+        if(this.mode === 1) {
+          const attr = JSON.parse(this.attributes || '{}');
+          subpath = new PointText(Object.assign({
+            project,
+            layer,
+            parent: layer._by_spec,
+            fillColor: 'black',
+            fontFamily: $p.job_prm.builder.font_family,
+            fontSize: attr.fontSize || 60,
+            guide: true,
+            content: this.svg_path,
+          }, attr));
+        }
+        else {
+          subpath = new CompoundPath({
+            project,
+            layer,
+            parent: layer._by_spec,
+            pathData: this.svg_path,
+            strokeColor: 'black',
+            fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr, false),
+            strokeScaling: false,
+            guide: true,
+            pivot: [0, 0],
+            opacity: elm.opacity
+          });
+        }
+
+        if(elm instanceof constructor.Filling) {
+          subpath.position = elm.bounds.topLeft.add(offset);
+        }
+        else {
+          const {generatrix, rays: {inner, outer}} = elm;
+          // угол касательной
+          let angle_hor;
+          if(elm.is_linear() || offset < 0)
+            angle_hor = generatrix.getTangentAt(0).angle;
+          else if(offset > generatrix.length)
+            angle_hor = generatrix.getTangentAt(generatrix.length).angle;
+          else
+            angle_hor = generatrix.getTangentAt(offset).angle;
+
+          if((this.rotate != -1 || elm.orientation == $p.enm.orientations.Горизонтальная) && angle_hor != this.angle_hor){
+            subpath.rotation = angle_hor - this.angle_hor;
+          }
+
+          offset += generatrix.getOffsetOf(generatrix.getNearestPoint(elm.corns(1)));
+
+          const p0 = generatrix.getPointAt(offset > generatrix.length ? generatrix.length : offset || 0);
+
+          if(this.elm_side == -1){
+            // в середине элемента
+            const p1 = inner.getNearestPoint(p0);
+            const p2 = outer.getNearestPoint(p0);
+
+            subpath.position = p1.add(p2).divide(2);
+
+          }else if(!this.elm_side){
+            // изнутри
+            subpath.position = inner.getNearestPoint(p0);
+
+          }else{
+            // снаружи
+            subpath.position = outer.getNearestPoint(p0);
+          }
+        }
+
+      }
+    }
+    catch (e) {
+      console.log(e);
+    }
+
+  }}
 $p.CatElm_visualization = CatElm_visualization;
 class CatElm_visualizationSketch_viewRow extends TabularSectionRow{
 get kind(){return this._getter('kind')}

@@ -504,10 +504,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   /**
    * Пересчитывает изделие по тем же правилам, что и визуальная рисовалка
-   * @param attr
-   * @param editor
+   * @param attr {Object} - параметры пересчёта
+   * @param [editor] {EditorInvisible}
+   * @param [restore] {Scheme}
    */
-  recalc(attr = {}, editor) {
+  recalc(attr = {}, editor, restore) {
 
     // сначала, получаем объект заказа и продукции заказа в озу, т.к. пересчет изделия может приводить к пересчету соседних продукций
 
@@ -519,22 +520,21 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const project = editor.create_scheme();
     return project.load(this, true)
       .then(() => {
-
         // выполняем пересчет
-        project.save_coordinates(Object.assign({save: true, svg: false}, attr));
-
+        return project.save_coordinates(Object.assign({save: true, svg: false}, attr));
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.unload();
-        }
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => {
+        restore?.activate();
         return this;
+      })
+      .catch((err) => {
+        restore?.activate();
+        throw err;
       });
-
   }
 
   /**

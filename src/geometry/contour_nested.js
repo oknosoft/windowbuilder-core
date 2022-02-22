@@ -129,7 +129,7 @@ class ContourNested extends Contour {
           while (tproject._ch.length) {
             tproject.redraw();
           }
-          tproject.save_coordinates({svg: false});
+          tproject.save_coordinates({svg: false, no_recalc: true});
 
           // чистим наше
           while (content.children.length) {
@@ -251,30 +251,35 @@ class ContourNested extends Contour {
    */
   save_coordinates(short, save, close) {
 
-    if (!short) {
-      // запись в таблице координат для виртуальных профилей
-      for (const elm of this.profiles) {
-        elm.save_coordinates();
-      }
-    }
+    return Promise.resolve()
+      .then(() => {
+        if (!short) {
+          // запись в таблице координат для виртуальных профилей
+          for (const elm of this.profiles) {
+            elm.save_coordinates();
+          }
+        }
 
-    // ответственность за строку в таблице конструкций лежит на контуре
-    const {bounds, w, h, is_rectangular, content} = this;
-    this._row.x = bounds ? bounds.width.round(4) : 0;
-    this._row.y = bounds ? bounds.height.round(4) : 0;
-    this._row.is_rectangular = is_rectangular;
-    this._row.w = w.round(4);
-    this._row.h = h.round(4);
+        // ответственность за строку в таблице конструкций лежит на контуре
+        const {bounds, w, h, is_rectangular, content, _row, project} = this;
+        _row.x = bounds ? bounds.width.round(4) : 0;
+        _row.y = bounds ? bounds.height.round(4) : 0;
+        _row.is_rectangular = is_rectangular;
+        _row.w = w.round(4);
+        _row.h = h.round(4);
 
-    // пересчитаем вложенное изделие
-    if(content) {
-      content._row._owner._owner.glasses.clear();
-      content.save_coordinates(short);
-
-      save && this._ox
-        .recalc({svg: true, silent: true})
-        .then(() => !close && this.draw_visualization());
-    }
+        // пересчитаем вложенное изделие
+        if(content) {
+          content._row._owner._owner.glasses.clear();
+          return content.save_coordinates(short)
+            .then(() => {
+              return save && this._ox.recalc({save: 'recalc', svg: true, silent: true}, null, project._scope);
+            })
+            .then(() => {
+              return save && !close && content.draw_visualization();
+            });
+        }
+      });
   }
 
   set path(attr) {

@@ -856,7 +856,6 @@ class ProductsBuilding {
           ox.svg = scheme.get_svg();
         }
 
-
         return this.saver({ox, scheme, attr, finish})
           .catch((err) => {
 
@@ -896,7 +895,7 @@ class ProductsBuilding {
   saver({ox, scheme, attr, finish}) {
     const {calc_order} = ox;
     calc_order.characteristic_saved(scheme, attr);
-    return calc_order.save()
+    return (attr.save === 'recalc' ? Promise.resolve() : calc_order.save())
       .then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);

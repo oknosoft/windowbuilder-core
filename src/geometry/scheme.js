@@ -548,16 +548,11 @@ class Scheme extends paper.Project {
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
-                  Promise.resolve().then(() => {
-                    if(from_service){
-                      _scheme.draw_visualization();
-                      _scheme.zoom_fit();
-                      resolve();
-                    }
-                    else {
-                      setTimeout(_scheme.draw_visualization.bind(_scheme), 100);
-                    }
-                  });
+                  _scheme.draw_visualization();
+                  if(from_service){
+                    _scheme.zoom_fit();
+                    return resolve();
+                  }
                 }
                 else {
                   // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
@@ -566,11 +561,9 @@ class Scheme extends paper.Project {
               }
               else {
                 if(from_service){
-                  resolve();
+                  return resolve();
                 }
-                else{
-                  _scope.load_stamp && _scope.load_stamp();
-                }
+                _scope.load_stamp && _scope.load_stamp();
               }
               delete _attr._snapshot;
 
@@ -1111,55 +1104,58 @@ class Scheme extends paper.Project {
    */
   save_coordinates(attr) {
 
-    try {
-      const {_attr, bounds, ox, contours} = this;
+    const {_attr, bounds, ox, contours} = this;
 
-      if(!bounds) {
-        return;
+    if(!bounds) {
+      return;
+    }
+
+    _attr._saving = true;
+    ox._data._loading = true;
+
+    // устанавливаем размеры в характеристике
+    ox.x = bounds.width.round(1);
+    ox.y = bounds.height.round(1);
+    ox.s = this.area;
+
+    // чистим табчасти, которые будут перезаполнены
+    const {cnn_nodes} = ProductsBuilding;
+    const {inserts} = ox;
+    ox.cnn_elmnts.clear(({elm1, node1}) => {
+      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+    });
+    ox.glasses.clear();
+
+    // вызываем метод save_coordinates в дочерних слоях
+    let res = Promise.resolve();
+    const push = (contour) => {
+      res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
+    };
+    contours.forEach((contour) => {
+      if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+        if(this.activeLayer === contour) {
+          const other = contours.find((el) => el !== contour);
+          other && other.activate();
+        }
+        contour.remove();
+        this._scope.eve.emit_async('rows', ox, {constructions: true});
       }
+      else {
+        push(contour);
+      }
+    });
 
-      _attr._saving = true;
-      ox._data._loading = true;
+    // вызываем метод save_coordinates в слое соединителей
+    push(this.l_connective);
 
-      // устанавливаем размеры в характеристике
-      ox.x = bounds.width.round(1);
-      ox.y = bounds.height.round(1);
-      ox.s = this.area;
-
-      // чистим табчасти, которые будут перезаполнены
-      const {cnn_nodes} = ProductsBuilding;
-      const {inserts} = ox;
-      ox.cnn_elmnts.clear(({elm1, node1}) => {
-        return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+    // пересчет спецификации и цен
+    return res
+      .then(() => attr?.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .catch((err) => {
+        const {msg, ui} = $p;
+        ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
+        throw err;
       });
-      ox.glasses.clear();
-
-      // вызываем метод save_coordinates в дочерних слоях
-      contours.forEach((contour) => {
-        if(attr && attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
-          if(this.activeLayer === contour) {
-            const other = contours.find((el) => el !== contour);
-            other && other.activate();
-          }
-          contour.remove();
-          this._scope.eve.emit_async('rows', ox, {constructions: true});
-        }
-        else {
-          contour.save_coordinates(false, attr && attr.save, attr && attr.close);
-        }
-      });
-
-      // вызываем метод save_coordinates в слое соединителей
-      this.l_connective.save_coordinates();
-
-      // пересчет спецификации и цен
-      return attr && attr.no_recalc ? this : $p.products_building.recalc(this, attr);
-    }
-    catch (err) {
-      const {msg, ui} = $p;
-      ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
-      throw err;
-    }
 
   }
 
@@ -1578,6 +1574,7 @@ class Scheme extends paper.Project {
    */
   draw_visualization() {
     if(this.view){
+      this._scope.activate();
       for (let contour of this.contours) {
         contour.draw_visualization();
       }

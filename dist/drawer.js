@@ -4230,7 +4230,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short, save) {
+  save_coordinates(short, save, close) {
+
+    let res = Promise.resolve();
+    const push = (contour) => {
+      res = res.then(() => contour.save_coordinates(short, save, close))
+    };
 
     if (!short) {
       // если контур не скрыт, удаляем скрытые заполнения
@@ -4242,27 +4247,29 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {l_text, l_dimensions} = this;
       for (let elm of this.children) {
         if (elm.save_coordinates) {
-          elm.save_coordinates(short, save);
+          push(elm);
         }
         else if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
+          elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
     }
 
-    // ответственность за строку в таблице конструкций лежит на контуре
-    const {bounds} = this;
-    this._row.x = bounds ? bounds.width.round(4) : 0;
-    this._row.y = bounds ? bounds.height.round(4) : 0;
-    this._row.is_rectangular = this.is_rectangular;
-    if (this.parent) {
-      this._row.w = this.w.round(4);
-      this._row.h = this.h.round(4);
-    }
-    else {
-      this._row.w = 0;
-      this._row.h = 0;
-    }
+    return res.then(() => {
+      // ответственность за строку в таблице конструкций лежит на контуре
+      const {bounds} = this;
+      this._row.x = bounds ? bounds.width.round(4) : 0;
+      this._row.y = bounds ? bounds.height.round(4) : 0;
+      this._row.is_rectangular = this.is_rectangular;
+      if (this.parent) {
+        this._row.w = this.w.round(4);
+        this._row.h = this.h.round(4);
+      }
+      else {
+        this._row.w = 0;
+        this._row.h = 0;
+      }
+    });
   }
 
   /**
@@ -4901,7 +4908,7 @@ class ContourNested extends Contour {
           while (tproject._ch.length) {
             tproject.redraw();
           }
-          tproject.save_coordinates({svg: false});
+          tproject.save_coordinates({svg: false, no_recalc: true});
 
           // чистим наше
           while (content.children.length) {
@@ -5023,30 +5030,35 @@ class ContourNested extends Contour {
    */
   save_coordinates(short, save, close) {
 
-    if (!short) {
-      // запись в таблице координат для виртуальных профилей
-      for (const elm of this.profiles) {
-        elm.save_coordinates();
-      }
-    }
+    return Promise.resolve()
+      .then(() => {
+        if (!short) {
+          // запись в таблице координат для виртуальных профилей
+          for (const elm of this.profiles) {
+            elm.save_coordinates();
+          }
+        }
 
-    // ответственность за строку в таблице конструкций лежит на контуре
-    const {bounds, w, h, is_rectangular, content} = this;
-    this._row.x = bounds ? bounds.width.round(4) : 0;
-    this._row.y = bounds ? bounds.height.round(4) : 0;
-    this._row.is_rectangular = is_rectangular;
-    this._row.w = w.round(4);
-    this._row.h = h.round(4);
+        // ответственность за строку в таблице конструкций лежит на контуре
+        const {bounds, w, h, is_rectangular, content, _row, project} = this;
+        _row.x = bounds ? bounds.width.round(4) : 0;
+        _row.y = bounds ? bounds.height.round(4) : 0;
+        _row.is_rectangular = is_rectangular;
+        _row.w = w.round(4);
+        _row.h = h.round(4);
 
-    // пересчитаем вложенное изделие
-    if(content) {
-      content._row._owner._owner.glasses.clear();
-      content.save_coordinates(short);
-
-      save && this._ox
-        .recalc({svg: true, silent: true})
-        .then(() => !close && this.draw_visualization());
-    }
+        // пересчитаем вложенное изделие
+        if(content) {
+          content._row._owner._owner.glasses.clear();
+          return content.save_coordinates(short)
+            .then(() => {
+              return save && this._ox.recalc({save: 'recalc', svg: true, silent: true}, null, project._scope);
+            })
+            .then(() => {
+              return save && !close && content.draw_visualization();
+            });
+        }
+      });
   }
 
   set path(attr) {
@@ -5152,6 +5164,7 @@ class ContourNestedContent extends Contour {
    */
   load_stamp({contour, delta, map}) {
     const {_ox: ox, project} = this;
+    project._scope.activate();
 
     for(const proto of contour.profiles) {
       const generatrix = proto.generatrix.clone({insert: false});
@@ -5288,22 +5301,8 @@ class ContourVirtual extends Contour {
     return text.replace('Створка', 'Виртуал');
   }
 
-  save_coordinates(short) {
-
-    if (!short) {
-      // запись в таблице координат, каждый элемент пересчитывает самостоятельно
-      const {l_text, l_dimensions} = this;
-      for (let elm of this.children) {
-        if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
-        }
-        else if (elm.save_coordinates && !(elm instanceof ProfileVirtual)) {
-          elm.save_coordinates();
-        }
-      }
-    }
-
-    super.save_coordinates(true);
+  save_coordinates(...args) {
+    return super.save_coordinates(...args);
   }
 
 }
@@ -8968,6 +8967,7 @@ Object.defineProperties(paper.Path.prototype, {
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
         let tmp;
+        const {project} = this;
 
         if(!this.length || !point1 || !point2 || (!strict && point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
           tmp = this.clone({insert: false, deep: false});
@@ -8986,6 +8986,7 @@ Object.defineProperties(paper.Path.prototype, {
           if(this.is_linear()){
             // для прямого формируем новый путь из двух точек
             tmp = new paper.Path({
+              project,
               segments: [loc1.point, loc2.point],
               insert: false
             });
@@ -8995,6 +8996,7 @@ Object.defineProperties(paper.Path.prototype, {
             const step = (offset2 - offset1) * 0.02;
 
             tmp = new paper.Path({
+              project,
               segments: [loc1.point],
               insert: false
             });
@@ -9032,12 +9034,13 @@ Object.defineProperties(paper.Path.prototype, {
   equidistant: {
       value: function equidistant(delta, elong) {
 
-        const {firstSegment, lastSegment} = this;
+        const {project, firstSegment, lastSegment} = this;
         let normal = this.getNormalAt(0);
         const res = new paper.Path({
-            segments: [firstSegment.point.add(normal.multiply(delta))],
-            insert: false
-          });
+          project,
+          segments: [firstSegment.point.add(normal.multiply(delta))],
+          insert: false
+        });
 
         if(this.is_linear()) {
           // добавляем последнюю точку
@@ -14015,7 +14018,9 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   save_coordinates() {
-    this.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
+    return this.children.reduce((accumulator, elm) => {
+      return elm?.save_coordinates ?  accumulator.then(() => elm.save_coordinates()) : accumulator;
+    }, Promise.resolve());
   }
 
   /**
@@ -15534,16 +15539,11 @@ class Scheme extends paper.Project {
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
-                  Promise.resolve().then(() => {
-                    if(from_service){
-                      _scheme.draw_visualization();
-                      _scheme.zoom_fit();
-                      resolve();
-                    }
-                    else {
-                      setTimeout(_scheme.draw_visualization.bind(_scheme), 100);
-                    }
-                  });
+                  _scheme.draw_visualization();
+                  if(from_service){
+                    _scheme.zoom_fit();
+                    return resolve();
+                  }
                 }
                 else {
                   // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
@@ -15552,11 +15552,9 @@ class Scheme extends paper.Project {
               }
               else {
                 if(from_service){
-                  resolve();
+                  return resolve();
                 }
-                else{
-                  _scope.load_stamp && _scope.load_stamp();
-                }
+                _scope.load_stamp && _scope.load_stamp();
               }
               delete _attr._snapshot;
 
@@ -16097,55 +16095,58 @@ class Scheme extends paper.Project {
    */
   save_coordinates(attr) {
 
-    try {
-      const {_attr, bounds, ox, contours} = this;
+    const {_attr, bounds, ox, contours} = this;
 
-      if(!bounds) {
-        return;
+    if(!bounds) {
+      return;
+    }
+
+    _attr._saving = true;
+    ox._data._loading = true;
+
+    // устанавливаем размеры в характеристике
+    ox.x = bounds.width.round(1);
+    ox.y = bounds.height.round(1);
+    ox.s = this.area;
+
+    // чистим табчасти, которые будут перезаполнены
+    const {cnn_nodes} = ProductsBuilding;
+    const {inserts} = ox;
+    ox.cnn_elmnts.clear(({elm1, node1}) => {
+      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+    });
+    ox.glasses.clear();
+
+    // вызываем метод save_coordinates в дочерних слоях
+    let res = Promise.resolve();
+    const push = (contour) => {
+      res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
+    };
+    contours.forEach((contour) => {
+      if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+        if(this.activeLayer === contour) {
+          const other = contours.find((el) => el !== contour);
+          other && other.activate();
+        }
+        contour.remove();
+        this._scope.eve.emit_async('rows', ox, {constructions: true});
       }
+      else {
+        push(contour);
+      }
+    });
 
-      _attr._saving = true;
-      ox._data._loading = true;
+    // вызываем метод save_coordinates в слое соединителей
+    push(this.l_connective);
 
-      // устанавливаем размеры в характеристике
-      ox.x = bounds.width.round(1);
-      ox.y = bounds.height.round(1);
-      ox.s = this.area;
-
-      // чистим табчасти, которые будут перезаполнены
-      const {cnn_nodes} = ProductsBuilding;
-      const {inserts} = ox;
-      ox.cnn_elmnts.clear(({elm1, node1}) => {
-        return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+    // пересчет спецификации и цен
+    return res
+      .then(() => attr?.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .catch((err) => {
+        const {msg, ui} = $p;
+        ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
+        throw err;
       });
-      ox.glasses.clear();
-
-      // вызываем метод save_coordinates в дочерних слоях
-      contours.forEach((contour) => {
-        if(attr && attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
-          if(this.activeLayer === contour) {
-            const other = contours.find((el) => el !== contour);
-            other && other.activate();
-          }
-          contour.remove();
-          this._scope.eve.emit_async('rows', ox, {constructions: true});
-        }
-        else {
-          contour.save_coordinates(false, attr && attr.save, attr && attr.close);
-        }
-      });
-
-      // вызываем метод save_coordinates в слое соединителей
-      this.l_connective.save_coordinates();
-
-      // пересчет спецификации и цен
-      return attr && attr.no_recalc ? this : $p.products_building.recalc(this, attr);
-    }
-    catch (err) {
-      const {msg, ui} = $p;
-      ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
-      throw err;
-    }
 
   }
 
@@ -16564,6 +16565,7 @@ class Scheme extends paper.Project {
    */
   draw_visualization() {
     if(this.view){
+      this._scope.activate();
       for (let contour of this.contours) {
         contour.draw_visualization();
       }
@@ -18991,7 +18993,6 @@ class ProductsBuilding {
           ox.svg = scheme.get_svg();
         }
 
-
         return this.saver({ox, scheme, attr, finish})
           .catch((err) => {
 
@@ -19031,7 +19032,7 @@ class ProductsBuilding {
   saver({ox, scheme, attr, finish}) {
     const {calc_order} = ox;
     calc_order.characteristic_saved(scheme, attr);
-    return calc_order.save()
+    return (attr.save === 'recalc' ? Promise.resolve() : calc_order.save())
       .then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
@@ -20196,10 +20197,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   /**
    * Пересчитывает изделие по тем же правилам, что и визуальная рисовалка
-   * @param attr
-   * @param editor
+   * @param attr {Object} - параметры пересчёта
+   * @param [editor] {EditorInvisible}
+   * @param [restore] {Scheme}
    */
-  recalc(attr = {}, editor) {
+  recalc(attr = {}, editor, restore) {
 
     // сначала, получаем объект заказа и продукции заказа в озу, т.к. пересчет изделия может приводить к пересчету соседних продукций
 
@@ -20211,22 +20213,21 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const project = editor.create_scheme();
     return project.load(this, true)
       .then(() => {
-
         // выполняем пересчет
-        project.save_coordinates(Object.assign({save: true, svg: false}, attr));
-
+        return project.save_coordinates(Object.assign({save: true, svg: false}, attr));
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.unload();
-        }
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => {
+        restore?.activate();
         return this;
+      })
+      .catch((err) => {
+        restore?.activate();
+        throw err;
       });
-
   }
 
   /**
@@ -20540,168 +20541,6 @@ $p.cat.contracts.__define({
 //
 //
 // });
-
-
-/**
- * ### Дополнительные методы справочника Визуализация элементов
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 08.04.2016
- *
- * @module cat_elm_visualization
- */
-
-// публичные методы объекта
-$p.CatElm_visualization.prototype.__define({
-
-  /**
-   *
-   * @param elm {BuilderElement}
-   * @param layer {Contour}
-   * @param offset {Number|[Number,Number]}
-   */
-	draw: {
-		value(elm, layer, offset, offset0) {
-
-      if(!layer.isInserted()) {
-        return;
-      }
-
-		  const {CompoundPath, PointText, Path, constructor} = elm.project._scope;
-
-			let subpath;
-
-			if(this.svg_path.indexOf('{"method":') == 0){
-
-				const attr = JSON.parse(this.svg_path);
-
-        if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
-          const {rays} = elm;
-          if(!rays) {
-            return;
-          }
-          if(attr.method == 'subpath_outer') {
-            subpath = rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
-          }
-          else if(attr.method == 'subpath_inner') {
-            subpath = rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
-          }
-          else if(attr.method == 'subpath_median') {
-            if(elm.is_linear()) {
-              subpath = new Path({segments: [elm.corns(1).add(elm.corns(4)).divide(2), elm.corns(2).add(elm.corns(3)).divide(2)]})
-                .equidistant(attr.offset || 0);
-            }
-            else {
-              const inner = rays.inner.get_subpath(elm.corns(3), elm.corns(4));
-              inner.reverse();
-              const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
-              const li = inner.length / 50;
-              const lo = outer.length / 50;
-              subpath = new Path();
-              for(let i = 0; i < 50; i++) {
-                subpath.add(inner.getPointAt(li * i).add(outer.getPointAt(lo * i)).divide(2));
-              }
-              subpath.simplify(0.8);
-              if(attr.offset) {
-                subpath = subpath.equidistant(attr.offset);
-              }
-            }
-          }
-          else {
-            if(this.mode === 3) {
-              const outer = offset0 < 0;
-              attr.offset -= -elm.d1 + elm.width;
-              if(outer) {
-                offset0 = -offset0;
-                attr.offset = -(attr.offset || 0);
-              }
-              const b = elm.generatrix.getPointAt(offset0 || 0);
-              const e = elm.generatrix.getPointAt((offset0 + offset) || elm.generatrix.length);
-              subpath = elm.generatrix.get_subpath(b, e).equidistant(attr.offset || 0);
-            }
-            else {
-              subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
-            }
-          }
-          subpath.parent = layer._by_spec;
-          subpath.strokeWidth = attr.strokeWidth || 4;
-          subpath.strokeColor = attr.strokeColor || 'red';
-          subpath.strokeCap = attr.strokeCap || 'round';
-          if(attr.dashArray){
-            subpath.dashArray = attr.dashArray
-          }
-        }
-			}
-			else if(this.svg_path){
-
-        if(this.mode === 1) {
-          const attr = JSON.parse(this.attributes || '{}');
-          subpath = new PointText(Object.assign({
-            parent: layer._by_spec,
-            fillColor: 'black',
-            fontFamily: $p.job_prm.builder.font_family,
-            fontSize: attr.fontSize || 60,
-            guide: true,
-            content: this.svg_path,
-          }, attr));
-        }
-        else {
-          subpath = new CompoundPath({
-            pathData: this.svg_path,
-            parent: layer._by_spec,
-            strokeColor: 'black',
-            fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr, false),
-            strokeScaling: false,
-            guide: true,
-            pivot: [0, 0],
-            opacity: elm.opacity
-          });
-        }
-
-				if(elm instanceof constructor.Filling) {
-          subpath.position = elm.bounds.topLeft.add(offset);
-        }
-        else {
-          const {generatrix, rays: {inner, outer}} = elm;
-          // угол касательной
-          let angle_hor;
-          if(elm.is_linear() || offset < 0)
-            angle_hor = generatrix.getTangentAt(0).angle;
-          else if(offset > generatrix.length)
-            angle_hor = generatrix.getTangentAt(generatrix.length).angle;
-          else
-            angle_hor = generatrix.getTangentAt(offset).angle;
-
-          if((this.rotate != -1 || elm.orientation == $p.enm.orientations.Горизонтальная) && angle_hor != this.angle_hor){
-            subpath.rotation = angle_hor - this.angle_hor;
-          }
-
-          offset += generatrix.getOffsetOf(generatrix.getNearestPoint(elm.corns(1)));
-
-          const p0 = generatrix.getPointAt(offset > generatrix.length ? generatrix.length : offset || 0);
-
-          if(this.elm_side == -1){
-            // в середине элемента
-            const p1 = inner.getNearestPoint(p0);
-            const p2 = outer.getNearestPoint(p0);
-
-            subpath.position = p1.add(p2).divide(2);
-
-          }else if(!this.elm_side){
-            // изнутри
-            subpath.position = inner.getNearestPoint(p0);
-
-          }else{
-            // снаружи
-            subpath.position = outer.getNearestPoint(p0);
-          }
-        }
-
-			}
-		}
-	}
-
-});
 
 
 /**
@@ -24158,10 +23997,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Пересчитывает все изделия заказа по тем же правилам, что и визуальная рисовалка
-   * @param attr
-   * @param editor
+   * @param attr {Object} - параметры пересчёта
+   * @param [editor] {EditorInvisible}
+   * @param [restore] {EditorInvisible}
    */
-  recalc(attr = {}, editor) {
+  recalc(attr = {}, editor, restore) {
 
     // при необходимости, создаём редактор
     const {EditorInvisible, CatInserts} = $p;
@@ -24223,15 +24063,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.remove();
-        }
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => {
+        restore?.activate();
         return attr.save ? this.save() : this;
+      })
+      .catch((err) => {
+        restore?.activate();
+        throw err;
       });
-
   }
 
   /**

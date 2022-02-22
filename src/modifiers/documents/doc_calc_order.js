@@ -1345,10 +1345,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Пересчитывает все изделия заказа по тем же правилам, что и визуальная рисовалка
-   * @param attr
-   * @param editor
+   * @param attr {Object} - параметры пересчёта
+   * @param [editor] {EditorInvisible}
+   * @param [restore] {EditorInvisible}
    */
-  recalc(attr = {}, editor) {
+  recalc(attr = {}, editor, restore) {
 
     // при необходимости, создаём редактор
     const {EditorInvisible, CatInserts} = $p;
@@ -1410,15 +1411,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.remove();
-        }
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => {
+        restore?.activate();
         return attr.save ? this.save() : this;
+      })
+      .catch((err) => {
+        restore?.activate();
+        throw err;
       });
-
   }
 
   /**

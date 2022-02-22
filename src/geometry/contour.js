@@ -2321,7 +2321,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
-  save_coordinates(short, save) {
+  save_coordinates(short, save, close) {
+
+    let res = Promise.resolve();
+    const push = (contour) => {
+      res = res.then(() => contour.save_coordinates(short, save, close))
+    };
 
     if (!short) {
       // если контур не скрыт, удаляем скрытые заполнения
@@ -2333,27 +2338,29 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {l_text, l_dimensions} = this;
       for (let elm of this.children) {
         if (elm.save_coordinates) {
-          elm.save_coordinates(short, save);
+          push(elm);
         }
         else if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
+          elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
     }
 
-    // ответственность за строку в таблице конструкций лежит на контуре
-    const {bounds} = this;
-    this._row.x = bounds ? bounds.width.round(4) : 0;
-    this._row.y = bounds ? bounds.height.round(4) : 0;
-    this._row.is_rectangular = this.is_rectangular;
-    if (this.parent) {
-      this._row.w = this.w.round(4);
-      this._row.h = this.h.round(4);
-    }
-    else {
-      this._row.w = 0;
-      this._row.h = 0;
-    }
+    return res.then(() => {
+      // ответственность за строку в таблице конструкций лежит на контуре
+      const {bounds} = this;
+      this._row.x = bounds ? bounds.width.round(4) : 0;
+      this._row.y = bounds ? bounds.height.round(4) : 0;
+      this._row.is_rectangular = this.is_rectangular;
+      if (this.parent) {
+        this._row.w = this.w.round(4);
+        this._row.h = this.h.round(4);
+      }
+      else {
+        this._row.w = 0;
+        this._row.h = 0;
+      }
+    });
   }
 
   /**

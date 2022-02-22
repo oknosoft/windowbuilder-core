@@ -30,6 +30,7 @@ class ContourNestedContent extends Contour {
    */
   load_stamp({contour, delta, map}) {
     const {_ox: ox, project} = this;
+    project._scope.activate();
 
     for(const proto of contour.profiles) {
       const generatrix = proto.generatrix.clone({insert: false});

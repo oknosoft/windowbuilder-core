@@ -247,7 +247,9 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   save_coordinates() {
-    this.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
+    return this.children.reduce((accumulator, elm) => {
+      return elm?.save_coordinates ?  accumulator.then(() => elm.save_coordinates()) : accumulator;
+    }, Promise.resolve());
   }
 
   /**

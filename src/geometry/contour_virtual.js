@@ -23,22 +23,8 @@ class ContourVirtual extends Contour {
     return text.replace('Створка', 'Виртуал');
   }
 
-  save_coordinates(short) {
-
-    if (!short) {
-      // запись в таблице координат, каждый элемент пересчитывает самостоятельно
-      const {l_text, l_dimensions} = this;
-      for (let elm of this.children) {
-        if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
-        }
-        else if (elm.save_coordinates && !(elm instanceof ProfileVirtual)) {
-          elm.save_coordinates();
-        }
-      }
-    }
-
-    super.save_coordinates(true);
+  save_coordinates(...args) {
+    return super.save_coordinates(...args);
   }
 
 }
