@@ -432,8 +432,8 @@ class Profile extends ProfileItem {
    * @param param {CchProperties}
    */
   refresh_inset_depends(param, with_neighbor) {
-    const {inset, _attr: {_rays}} = this;
-    if(_rays && inset.is_depend_of(param)) {
+    const {inset, _attr: {_rays, _nearest_cnn}} = this;
+    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }

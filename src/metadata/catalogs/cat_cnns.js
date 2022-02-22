@@ -362,6 +362,19 @@ exports.CatCnns = class CatCnns extends Object {
   }
 
   /**
+   * Выясняет, зависит ли размер соединения от текущего параметра
+   * @param param {CchProperties}
+   * @return {Boolean}
+   */
+  is_depend_of(param) {
+    for(const row of this.sizes) {
+      if(row.param === param || (row.param.empty() && !row.key.empty())) {
+        return true;
+      }
+    }
+  }
+
+  /**
    * Укорочение для конкретной номенклатуры из спецификации
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
