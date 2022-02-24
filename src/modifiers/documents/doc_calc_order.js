@@ -543,11 +543,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // запрет удаления подчиненной продукции
         const {msg} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
-        if(!leading_product.empty() && leading_product.calc_order_row && leading_product.inserts.find({cnstr: -leading_elm, inset: origin})) {
+        if(!leading_product.empty() && leading_product.calc_order_row && (
+          // если в изделии присутствует порождающая вставка
+          leading_product.inserts.find({cnstr: -leading_elm, inset: origin}) ||
+          // если это виртуальное изделие слоя
+          [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
+        )) {
           msg.show_msg && msg.show_msg({
             type: 'alert-warning',
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
-              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки`,
+              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
           return false;
@@ -1257,7 +1262,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.x = row_spec.len;
           ox.y = row_spec.height;
           ox.z = row_spec.depth;
-          ox.s = row_spec.s || row_spec.len * row_spec.height / 1000000;
+          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(3);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
 
@@ -1575,7 +1580,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
-        characteristic.s = this.s || this.len * this.width / 1000000;
+        characteristic.s = (this.s || this.len * this.width / 1e6).round(3);
         const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
         origin.calculate_spec({elm, len_angl, ox: characteristic});

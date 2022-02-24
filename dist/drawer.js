@@ -2268,12 +2268,85 @@ class Contour extends AbstractFilling(paper.Layer) {
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
 
+  /**
+   * Синоним presentation
+   * @return {String}
+   */
   get info() {
     return this.presentation();
   }
 
+  /**
+   * Ключ слоя - переопределяется для вложение
+   * @return {String}
+   */
   get key() {
     return this.cnstr.toFixed();
+  }
+
+  /**
+   * Тип слоя
+   * @return {Number}
+   */
+  get kind() {
+    let {kind} = this._row;
+    let layer = this;
+    while (kind === 0 && layer) {
+      layer = layer.layer;
+      if(!layer) {
+        break;
+      }
+      if([10, 11].includes(layer._row.kind)) {
+        kind = layer._row.kind;
+      }
+    }
+    return kind;
+  }
+
+  /**
+   * Текущий или слой верхнего уровня для вытягивания в заказ
+   * @return {Contour}
+   */
+  prod_layer() {
+    let {kind} = this._row;
+    let layer = this;
+    while (kind === 0 && layer) {
+      layer = layer.layer;
+      if(!layer) {
+        break;
+      }
+      if([10, 11].includes(layer._row.kind)) {
+        return layer;
+      }
+    }
+    return [10, 11].includes(kind) ? layer : null;
+  }
+
+  /**
+   * ### Возвращает строку svg слоя
+   *    *
+   * @method get_svg
+   * @param [attr] {Object}
+   */
+  get_svg(attr = {}) {
+    for(const item of this.children) {
+      item.selected = false;
+    }
+    const options = attr.export_options || {};
+    if(!options.precision) {
+      options.precision = 1;
+    }
+
+    const svg = this.exportSVG(options);
+    const bounds = this.strokeBounds.unite(this.l_dimensions.strokeBounds);
+
+    svg.setAttribute('x', bounds.x);
+    svg.setAttribute('y', bounds.y);
+    svg.setAttribute('width', bounds.width + 40);
+    svg.setAttribute('height', bounds.height);
+    svg.querySelector('g').removeAttribute('transform');
+
+    return svg.outerHTML;
   }
 
   /**
@@ -18241,10 +18314,10 @@ class ProductsBuilding {
             if(row_base.algorithm === w2 && elm2) {
 
             }
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox});
+            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox, spec});
           }
           else {
-            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox});
+            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox, spec});
           }
         }
         else {
@@ -18463,7 +18536,7 @@ class ProductsBuilding {
     function base_spec_profile(elm, totqty0) {
 
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
-      const {_row, rays} = elm;
+      const {_row, rays, layer} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -18606,7 +18679,7 @@ class ProductsBuilding {
       }
 
       // спецификация вставки
-      elm.inset.calculate_spec({elm, ox});
+      elm.inset.calculate_spec({elm, ox, spec});
 
       // если у профиля есть примыкающий родительский элемент, добавим спецификацию II соединения
       cnn_spec_nearest(elm);
@@ -18616,14 +18689,13 @@ class ProductsBuilding {
 
       // если у профиля есть примыкания, добавляем их спецификации
       elm.adjoinings.forEach((elm) => {
-        elm.inset.calculate_spec({elm, ox});
+        elm.inset.calculate_spec({elm, ox, spec});
         cnn_spec_nearest(elm);
       });
 
+      // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-
-      // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
 
         // если во вставке указано создавать продукцию, создаём
@@ -18669,10 +18741,9 @@ class ProductsBuilding {
       // спецификация вставки
       inset.calculate_spec({elm, ox});
 
+      // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-
-      // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
@@ -18864,6 +18935,31 @@ class ProductsBuilding {
       // сбрасываем структуру обработанных соединений
       added_cnn_spec = {};
 
+      // во время расчетов возможна подмена объекта спецификации
+      const spec_tmp = spec;
+      function prod_row(contour) {
+        // если текущий слой должен формировать виртуальное изделие - создаём
+        const layer = contour.prod_layer();
+        if(layer) {
+          const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
+          spec = cx.specification;
+          if(!spec.count()) {
+            cx.sys = ox.sys;
+            cx.clr = ox.clr;
+            const {bounds} = layer;
+            cx.x = bounds.width;
+            cx.y = bounds.height;
+            cx.s = (bounds.area / 1e6).round(3);
+            cx.calc_order_row.nom = cx.prod_nom;
+            cx.calc_order_row.ordn = ox;
+            cx.prod_name();
+            if(contour === layer) {
+              cx.svg = layer.get_svg();
+            }
+          }
+        }
+      }
+
       // для всех контуров изделия
       const contours = scheme.getItems({class: Contour});
       for (const contour of contours.reverse()) {
@@ -18872,6 +18968,8 @@ class ProductsBuilding {
         if(contour._ox !== ox) {
           continue;
         }
+
+        prod_row(contour);
 
         // для всех профилей контура
         for (const elm of contour.children) {
@@ -18892,11 +18990,16 @@ class ProductsBuilding {
         // спецификация вставок в контур
         inset_contour_spec(contour);
 
+        // восстанавливаем исходную ссылку объекта спецификации
+        spec = spec_tmp;
       }
 
       // фурнитуру обсчитываем в отдельном цикле, т.к. могут потребоваться свойства соседних слоёв
       for (const contour of contours) {
+        prod_row(contour);
         furn_spec(contour);
+        // восстанавливаем исходную ссылку объекта спецификации
+        spec = spec_tmp;
       }
 
       // для всех соединительных профилей
@@ -19978,12 +20081,17 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   /**
    * Ищет характеристику в озу, в indexeddb не лезет, если нет в озу - создаёт
    * @param elm {Number} - номер элемента или контура
-   * @param origin {CatInserts} - порождающая вставка
+   * @param [origin] {CatInserts} - порождающая вставка
    * @param [modify] {Boolean} - если false - не изменяем - только поиск
+   * @param [_order_rows] {Array} - если указано и есть в массиве - не перезаполняем
    * @return {CatCharacteristics}
    */
-  find_create_cx(elm, origin, modify) {
+  find_create_cx(elm, origin, modify, _order_rows) {
     const {_manager, calc_order, params, inserts} = this;
+    const {job_prm, utils, cat} = $p;
+    if(!origin) {
+      origin = cat.inserts.get();
+    }
     let cx;
     _manager.find_rows({leading_product: this, leading_elm: elm, origin}, (obj) => {
       if(!obj._deleted) {
@@ -19992,42 +20100,89 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       }
     });
     if(!cx) {
-      cx = $p.cat.characteristics.create({
+      cx = cat.characteristics.create({
         calc_order,
         leading_product: this,
         leading_elm: elm,
         origin
       }, false, true)._set_loaded();
     }
+    if(_order_rows) {
+      if(_order_rows.includes(cx)) {
+        return cx;
+      }
+      _order_rows.push(cx);
+      cx.specification.clear();
+      if(!cx.calc_order_row) {
+        calc_order.production.add({characteristic: cx});
+      }
+    }
 
     if(modify !== false) {
       // переносим в cx параметры
-      const {length, width} = $p.job_prm.properties;
       cx.params.clear();
-      params.find_rows({cnstr: -elm, inset: origin}, (row) => {
-        if(row.param != length && row.param != width) {
-          cx.params.add({param: row.param, value: row.value});
-        }
-      });
-      // переносим в cx цвет
-      inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
-        cx.clr = row.clr;
-      });
-      cx.name = cx.prod_name();
+      if(elm > 0) {
+        const {length, width} = job_prm.properties;
+        params.find_rows({cnstr: -elm, inset: origin}, (row) => {
+          if(row.param != length && row.param != width) {
+            cx.params.add({param: row.param, value: row.value});
+          }
+        });
+      }
+      else {
+        params.find_rows({cnstr: 0, inset: origin}, (row) => cx.params.add(row));
+      }
+
+      if(elm > 0) {
+        // переносим в cx цвет
+        inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
+          cx.clr = row.clr;
+        });
+        cx.name = cx.prod_name();
+      }
+      else if(utils.is_empty_guid(origin.valueOf())) {
+        // если это продукция слоя, переносим в cx всё, что можно
+        cx.constructions.clear();
+        cx.inserts.clear();
+        cx.coordinates.clear();
+        cx.glasses.clear();
+        cx.cnn_elmnts.clear();
+        cx.cpy_recursive(this, -elm);
+      }
+
     }
     return cx;
+  }
+
+  /**
+   * Копирует табчасти структуры изделия, начиная со слоя cnstr
+   * @param src {CatCharacteristics}
+   * @param cnstr {Number}
+   */
+  cpy_recursive(src, cnstr) {
+    const {params, inserts, coordinates, cnn_elmnts, glasses} = this;
+    this.constructions.add(src.constructions.find({cnstr}));
+    src.params.find_rows({cnstr}, (row) => params.add(row));
+    src.inserts.find_rows({cnstr}, (row) => inserts.add(row));
+    src.coordinates.find_rows({cnstr}, (row) => {
+      coordinates.add(row);
+      for(const srow of src.cnn_elmnts) {
+        if(srow.elm1 === row.elm || srow.elm2 === row.elm) {
+          cnn_elmnts.add(srow);
+        }
+      }
+      const grow = src.glasses.find({elm: row.elm});
+      grow && this.glasses.add(grow);
+    });
+
+    src.constructions.find_rows({parent: cnstr}, (row) => this.cpy_recursive(src, row.cnstr));
   }
 
   /**
    * Возврвщает строку заказа, которой принадлежит продукция
    */
   get calc_order_row() {
-    let _calc_order_row;
-    this.calc_order.production.find_rows({characteristic: this}, (_row) => {
-      _calc_order_row = _row;
-      return false;
-    });
-    return _calc_order_row;
+    return this.calc_order.production.find({characteristic: this});
   }
 
   /**
@@ -21613,7 +21768,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
-          res.s = ((res.x * res.y) / 1000000).round(3);
+          res.s = ((res.x * res.y) / 1e6).round(3);
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
@@ -21631,12 +21786,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             const bounds = contour.bounds_inner(irow.sz);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
-            res.s = ((res.x * res.y) / 1000000).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(3);
           }
           else{
             res.x = contour.w + irow.sz;
             res.y = contour.h + irow.sz;
-            res.s = ((res.x * res.y) / 1000000).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(3);
           }
         }
       }
@@ -23195,11 +23350,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // запрет удаления подчиненной продукции
         const {msg} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
-        if(!leading_product.empty() && leading_product.calc_order_row && leading_product.inserts.find({cnstr: -leading_elm, inset: origin})) {
+        if(!leading_product.empty() && leading_product.calc_order_row && (
+          // если в изделии присутствует порождающая вставка
+          leading_product.inserts.find({cnstr: -leading_elm, inset: origin}) ||
+          // если это виртуальное изделие слоя
+          [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
+        )) {
           msg.show_msg && msg.show_msg({
             type: 'alert-warning',
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
-              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки`,
+              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
           return false;
@@ -23909,7 +24069,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.x = row_spec.len;
           ox.y = row_spec.height;
           ox.z = row_spec.depth;
-          ox.s = row_spec.s || row_spec.len * row_spec.height / 1000000;
+          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(3);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
 
@@ -24227,7 +24387,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
-        characteristic.s = this.s || this.len * this.width / 1000000;
+        characteristic.s = (this.s || this.len * this.width / 1e6).round(3);
         const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
         origin.calculate_spec({elm, len_angl, ox: characteristic});

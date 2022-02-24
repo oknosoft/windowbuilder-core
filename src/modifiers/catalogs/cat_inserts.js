@@ -562,7 +562,7 @@
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
-          res.s = ((res.x * res.y) / 1000000).round(3);
+          res.s = ((res.x * res.y) / 1e6).round(3);
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
@@ -580,12 +580,12 @@
             const bounds = contour.bounds_inner(irow.sz);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
-            res.s = ((res.x * res.y) / 1000000).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(3);
           }
           else{
             res.x = contour.w + irow.sz;
             res.y = contour.h + irow.sz;
-            res.s = ((res.x * res.y) / 1000000).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(3);
           }
         }
       }

@@ -359,12 +359,85 @@ class Contour extends AbstractFilling(paper.Layer) {
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
 
+  /**
+   * Синоним presentation
+   * @return {String}
+   */
   get info() {
     return this.presentation();
   }
 
+  /**
+   * Ключ слоя - переопределяется для вложение
+   * @return {String}
+   */
   get key() {
     return this.cnstr.toFixed();
+  }
+
+  /**
+   * Тип слоя
+   * @return {Number}
+   */
+  get kind() {
+    let {kind} = this._row;
+    let layer = this;
+    while (kind === 0 && layer) {
+      layer = layer.layer;
+      if(!layer) {
+        break;
+      }
+      if([10, 11].includes(layer._row.kind)) {
+        kind = layer._row.kind;
+      }
+    }
+    return kind;
+  }
+
+  /**
+   * Текущий или слой верхнего уровня для вытягивания в заказ
+   * @return {Contour}
+   */
+  prod_layer() {
+    let {kind} = this._row;
+    let layer = this;
+    while (kind === 0 && layer) {
+      layer = layer.layer;
+      if(!layer) {
+        break;
+      }
+      if([10, 11].includes(layer._row.kind)) {
+        return layer;
+      }
+    }
+    return [10, 11].includes(kind) ? layer : null;
+  }
+
+  /**
+   * ### Возвращает строку svg слоя
+   *    *
+   * @method get_svg
+   * @param [attr] {Object}
+   */
+  get_svg(attr = {}) {
+    for(const item of this.children) {
+      item.selected = false;
+    }
+    const options = attr.export_options || {};
+    if(!options.precision) {
+      options.precision = 1;
+    }
+
+    const svg = this.exportSVG(options);
+    const bounds = this.strokeBounds.unite(this.l_dimensions.strokeBounds);
+
+    svg.setAttribute('x', bounds.x);
+    svg.setAttribute('y', bounds.y);
+    svg.setAttribute('width', bounds.width + 40);
+    svg.setAttribute('height', bounds.height);
+    svg.querySelector('g').removeAttribute('transform');
+
+    return svg.outerHTML;
   }
 
   /**

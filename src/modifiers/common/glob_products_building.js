@@ -104,10 +104,10 @@ class ProductsBuilding {
             if(row_base.algorithm === w2 && elm2) {
 
             }
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox});
+            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox, spec});
           }
           else {
-            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox});
+            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox, spec});
           }
         }
         else {
@@ -326,7 +326,7 @@ class ProductsBuilding {
     function base_spec_profile(elm, totqty0) {
 
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
-      const {_row, rays} = elm;
+      const {_row, rays, layer} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -469,7 +469,7 @@ class ProductsBuilding {
       }
 
       // спецификация вставки
-      elm.inset.calculate_spec({elm, ox});
+      elm.inset.calculate_spec({elm, ox, spec});
 
       // если у профиля есть примыкающий родительский элемент, добавим спецификацию II соединения
       cnn_spec_nearest(elm);
@@ -479,14 +479,13 @@ class ProductsBuilding {
 
       // если у профиля есть примыкания, добавляем их спецификации
       elm.adjoinings.forEach((elm) => {
-        elm.inset.calculate_spec({elm, ox});
+        elm.inset.calculate_spec({elm, ox, spec});
         cnn_spec_nearest(elm);
       });
 
+      // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-
-      // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
 
         // если во вставке указано создавать продукцию, создаём
@@ -532,10 +531,9 @@ class ProductsBuilding {
       // спецификация вставки
       inset.calculate_spec({elm, ox});
 
+      // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-
-      // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
@@ -727,6 +725,31 @@ class ProductsBuilding {
       // сбрасываем структуру обработанных соединений
       added_cnn_spec = {};
 
+      // во время расчетов возможна подмена объекта спецификации
+      const spec_tmp = spec;
+      function prod_row(contour) {
+        // если текущий слой должен формировать виртуальное изделие - создаём
+        const layer = contour.prod_layer();
+        if(layer) {
+          const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
+          spec = cx.specification;
+          if(!spec.count()) {
+            cx.sys = ox.sys;
+            cx.clr = ox.clr;
+            const {bounds} = layer;
+            cx.x = bounds.width;
+            cx.y = bounds.height;
+            cx.s = (bounds.area / 1e6).round(3);
+            cx.calc_order_row.nom = cx.prod_nom;
+            cx.calc_order_row.ordn = ox;
+            cx.prod_name();
+            if(contour === layer) {
+              cx.svg = layer.get_svg();
+            }
+          }
+        }
+      }
+
       // для всех контуров изделия
       const contours = scheme.getItems({class: Contour});
       for (const contour of contours.reverse()) {
@@ -735,6 +758,8 @@ class ProductsBuilding {
         if(contour._ox !== ox) {
           continue;
         }
+
+        prod_row(contour);
 
         // для всех профилей контура
         for (const elm of contour.children) {
@@ -755,11 +780,16 @@ class ProductsBuilding {
         // спецификация вставок в контур
         inset_contour_spec(contour);
 
+        // восстанавливаем исходную ссылку объекта спецификации
+        spec = spec_tmp;
       }
 
       // фурнитуру обсчитываем в отдельном цикле, т.к. могут потребоваться свойства соседних слоёв
       for (const contour of contours) {
+        prod_row(contour);
         furn_spec(contour);
+        // восстанавливаем исходную ссылку объекта спецификации
+        spec = spec_tmp;
       }
 
       // для всех соединительных профилей
