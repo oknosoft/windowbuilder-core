@@ -577,6 +577,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return this;
   }
 
+
   // при удалении строки
   after_del_row(name) {
     name === 'production' && this.product_rows();
@@ -606,6 +607,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  /**
+   * Число знаков округления
+   * @return {Number}
+   */
   get rounding() {
     const {pricing} = $p.job_prm;
     if(!pricing.hasOwnProperty('rounding')) {
@@ -616,6 +621,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     return pricing.rounding;
+  }
+
+  /**
+   * Дата прайса с учётом константы valid_days (Счет действителен N дней)
+   * @return {Date}
+   */
+  get price_date() {
+    const {utils, job_prm: {pricing}} = $p;
+    const {date} = this;
+    const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
+    const curr = new Date();
+    return curr > fin ? curr : date;
   }
 
   /**

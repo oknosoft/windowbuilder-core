@@ -17908,14 +17908,14 @@ class Pricing {
    * @param [clr] {CatClrs}
    * @param [formula] {CatFormulas}
    */
-  nom_price(nom, characteristic, price_type, prm, row, clr, formula) {
+  nom_price(nom, characteristic, price_type, prm, row, clr, formula, date) {
 
     if (row && prm) {
       const {_owner} = prm.calc_order_row._owner,
         price_prm = {
           price_type: price_type,
           characteristic: characteristic,
-          date: new Date(), // _owner.date,
+          date: date || new Date(),
           currency: _owner.doc_currency
         };
 
@@ -18034,7 +18034,7 @@ class Pricing {
 
     const {marginality_in_spec, price_grp_in_spec} = $p.job_prm.pricing;
     const fake_row = {};
-    const {calc_order_row, spec} = prm;
+    const {calc_order_row, spec, date} = prm;
     const price_grp = new Map();
 
     if(!spec) {
@@ -18065,16 +18065,17 @@ class Pricing {
             });
           }
           const {marginality, price_type, formula} = price_grp.get(price_group);
-          this.nom_price(nom, characteristic, price_type, prm, _obj, clr, formula);
+          this.nom_price(nom, characteristic, price_type, prm, _obj, clr, formula, date);
           _obj.amount = _obj.price * _obj.totqty1;
           _obj.amount_marged = _obj.amount * marginality;
         }
         else {
-          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj, null, prm.price_type.formula);
+          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj, null, prm.price_type.formula, date);
           _obj.amount = _obj.price * _obj.totqty1;
           if(marginality_in_spec){
             fake_row.nom = nom;
-            const tmp_price = this.nom_price(nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula);
+            const tmp_price = this.nom_price(
+              nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula, date);
             _obj.amount_marged = tmp_price * _obj.totqty1;
           }
         }
@@ -18086,7 +18087,7 @@ class Pricing {
       fake_row.nom = calc_order_row.nom;
       fake_row.characteristic = calc_order_row.characteristic;
       calc_order_row.first_cost = this.nom_price(
-        fake_row.nom, fake_row.characteristic, prm.price_type.price_type_first_cost, prm, fake_row, null, prm.price_type.formula);
+        fake_row.nom, fake_row.characteristic, prm.price_type.price_type_first_cost, prm, fake_row, null, prm.price_type.formula, date);
     }
 
     // себестоимость вытянутых строк спецификации в заказ
@@ -18109,7 +18110,7 @@ class Pricing {
    */
   calc_amount(prm) {
 
-    const {calc_order_row, price_type, first_cost} = prm;
+    const {calc_order_row, price_type, first_cost, date} = prm;
     const {marginality_in_spec, not_update} = $p.job_prm.pricing;
     const {rounding, manager} = calc_order_row._owner._owner;
 
@@ -18120,7 +18121,7 @@ class Pricing {
     else {
       const price_cost = marginality_in_spec && prm.spec.count() ?
         prm.spec.aggregate([], ['amount_marged']) :
-        this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},null, price_type.sale_formula);
+        this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},null, price_type.sale_formula, date);
 
       // цена продажи
       if(price_cost) {
@@ -18128,7 +18129,7 @@ class Pricing {
       }
       else if(marginality_in_spec && !first_cost) {
         calc_order_row.price = this.nom_price(
-          calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},null, price_type.sale_formula);
+          calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},null, price_type.sale_formula, date);
       }
       else {
         calc_order_row.price = (calc_order_row.first_cost * price_type.marginality).round(rounding);
@@ -18157,7 +18158,8 @@ class Pricing {
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
-        calc_order_row: value
+        calc_order_row: value,
+        date,
       };
       this.price_type(fake_prm);
       this.calc_amount(fake_prm);
@@ -19491,6 +19493,9 @@ class SpecBuilding {
 
     // типы цен получаем заранее, т.к. они могут пригодиться при расчете корректировки спецификации
     pricing.price_type(attr);
+
+    // подмешаем в параметры дату цены
+    attr.date = calc_order.price_date;
 
     // удаляем из спецификации строки, добавленные предыдущими корректировками
     spec.find_rows({ch: {in: [-1, -2]}}, (row) => adel.push(row));
@@ -23384,6 +23389,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return this;
   }
 
+
   // при удалении строки
   after_del_row(name) {
     name === 'production' && this.product_rows();
@@ -23413,6 +23419,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  /**
+   * Число знаков округления
+   * @return {Number}
+   */
   get rounding() {
     const {pricing} = $p.job_prm;
     if(!pricing.hasOwnProperty('rounding')) {
@@ -23423,6 +23433,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     return pricing.rounding;
+  }
+
+  /**
+   * Дата прайса с учётом константы valid_days (Счет действителен N дней)
+   * @return {Date}
+   */
+  get price_date() {
+    const {utils, job_prm: {pricing}} = $p;
+    const {date} = this;
+    const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
+    const curr = new Date();
+    return curr > fin ? curr : date;
   }
 
   /**

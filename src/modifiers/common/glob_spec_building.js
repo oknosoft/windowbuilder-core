@@ -45,6 +45,9 @@ class SpecBuilding {
     // типы цен получаем заранее, т.к. они могут пригодиться при расчете корректировки спецификации
     pricing.price_type(attr);
 
+    // подмешаем в параметры дату цены
+    attr.date = calc_order.price_date;
+
     // удаляем из спецификации строки, добавленные предыдущими корректировками
     spec.find_rows({ch: {in: [-1, -2]}}, (row) => adel.push(row));
     adel.forEach((row) => spec.del(row, true));
