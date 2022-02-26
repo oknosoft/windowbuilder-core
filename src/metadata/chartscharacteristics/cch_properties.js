@@ -455,8 +455,8 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
    * @param links {Array}
-   * @param prow {Object}
-   * @param values {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
+   * @param [prow] {Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
+   * @param [values] {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
    * @return {boolean}
    */
   linked_values(links, prow, values = []) {
@@ -464,7 +464,7 @@ exports.CchProperties = class CchProperties extends Object {
     // собираем все доступные значения в одном массиве
     links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
-    if(values.some(({_obj}) => _obj.value == prow.value)) {
+    if(!prow || values.some(({_obj}) => _obj.value == prow.value)) {
       return;
     }
     // если есть явный default - устанавливаем
