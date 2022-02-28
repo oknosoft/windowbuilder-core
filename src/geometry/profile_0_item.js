@@ -1700,17 +1700,22 @@ class ProfileItem extends GeneratrixElement {
 
     if(nearest || all) {
       // импост может оказаться штульпом
-      if(elm_type === elm_types.Импост){
-        if (this.nom.elm_type === elm_types.Штульп || sys.elmnts.find({nom: inset, elm_type: elm_types.Штульп})) {
-          elm_type = elm_types.Штульп;
+      if(elm_type === elm_types.impost){
+        if (this.is_shtulp()) {
+          if(sys.elmnts.find({nom: inset, elm_type: elm_types.impost})) {
+            elm_type = [elm_types.impost, elm_types.shtulp];
+          }
+          else {
+            elm_type = elm_types.shtulp;
+          }
         }
       }
-      let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
+      let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.flap ? nearest.pos : this.pos;
       if(pos == positions.Центр) {
         if(orientation == orientations.vert) {
           pos = [pos, positions.ЦентрВертикаль];
           if(layer.furn.shtulp_kind() === 2) {
-            elm_type = [elm_type, elm_types.СтворкаБИ];
+            elm_type = [elm_type, elm_types.flap0];
           }
         }
         if(orientation == orientations.hor) {
@@ -2300,6 +2305,23 @@ class ProfileItem extends GeneratrixElement {
    */
   joined_nearests() {
     return [];
+  }
+
+  /**
+   * Считаем профиль штульпом, если к нему примыкает хотя бы одна штульповая фурнитура
+   * @return {boolean}
+   */
+  is_shtulp() {
+    const {orientations: {vert}, elm_types: {impost}} = $p.enm;
+    const {elm_type, orientation} = this;
+    if(elm_type !== impost || orientation !== vert) {
+      return false;
+    }
+    for(const {layer} of this.joined_nearests()) {
+      if(layer.furn.shtulp_kind()) {
+        return true;
+      }
+    }
   }
 
   /**

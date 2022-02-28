@@ -107,7 +107,7 @@ class ContourNested extends Contour {
         .then(() => {
           const {project, lbounds, content} = this;
           const contour = tproject.contours[0];
-          if(!contour) {
+          if(!contour || !contour.contours.length) {
             throw 'Нет слоёв в шаблоне';
           }
           //project._attr._silent = true;

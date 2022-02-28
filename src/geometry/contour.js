@@ -2485,6 +2485,15 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Система текущего слоя
+   * пока, повторяет систему проекта, но в будущем, можем переопределить
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this.project._dp.sys;
+  }
+
+  /**
    * Кеш используется при расчете спецификации фурнитуры
    * @return {Object}
    */
@@ -2513,7 +2522,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       cache = this.furn_cache;
     }
     let err = [];
-    const {side_count, direction} = this;
+    const {side_count, direction, sys} = this;
     const {open_types, open_directions, elm_types} = $p.enm;
 
     // проверяем количество сторон
@@ -2566,9 +2575,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       const elm = this.profile_by_furn_side(row.side, cache);
       const nearest = elm && elm.nearest();
       if(nearest) {
-        const {elm_type, nom} = nearest;
-        if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
-          (!row.shtulp_available && nom.elm_type === elm_types.Штульп)) {
+        const {elm_type, inset} = nearest;
+        if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
+          (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
           if(bool) {
             return true;
           }

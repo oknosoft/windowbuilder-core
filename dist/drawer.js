@@ -4394,6 +4394,15 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Система текущего слоя
+   * пока, повторяет систему проекта, но в будущем, можем переопределить
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this.project._dp.sys;
+  }
+
+  /**
    * Кеш используется при расчете спецификации фурнитуры
    * @return {Object}
    */
@@ -4422,7 +4431,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       cache = this.furn_cache;
     }
     let err = [];
-    const {side_count, direction} = this;
+    const {side_count, direction, sys} = this;
     const {open_types, open_directions, elm_types} = $p.enm;
 
     // проверяем количество сторон
@@ -4475,9 +4484,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       const elm = this.profile_by_furn_side(row.side, cache);
       const nearest = elm && elm.nearest();
       if(nearest) {
-        const {elm_type, nom} = nearest;
-        if((row.shtulp_available && (elm_type !== elm_types.Импост || nom.elm_type !== elm_types.Штульп)) ||
-          (!row.shtulp_available && nom.elm_type === elm_types.Штульп)) {
+        const {elm_type, inset} = nearest;
+        if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
+          (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
           if(bool) {
             return true;
           }
@@ -4959,7 +4968,7 @@ class ContourNested extends Contour {
         .then(() => {
           const {project, lbounds, content} = this;
           const contour = tproject.contours[0];
-          if(!contour) {
+          if(!contour || !contour.contours.length) {
             throw 'Нет слоёв в шаблоне';
           }
           //project._attr._silent = true;
@@ -11315,17 +11324,22 @@ class ProfileItem extends GeneratrixElement {
 
     if(nearest || all) {
       // импост может оказаться штульпом
-      if(elm_type === elm_types.Импост){
-        if (this.nom.elm_type === elm_types.Штульп || sys.elmnts.find({nom: inset, elm_type: elm_types.Штульп})) {
-          elm_type = elm_types.Штульп;
+      if(elm_type === elm_types.impost){
+        if (this.is_shtulp()) {
+          if(sys.elmnts.find({nom: inset, elm_type: elm_types.impost})) {
+            elm_type = [elm_types.impost, elm_types.shtulp];
+          }
+          else {
+            elm_type = elm_types.shtulp;
+          }
         }
       }
-      let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.Створка ? nearest.pos : this.pos;
+      let pos = nearest && sys.flap_pos_by_impost && elm_type == elm_types.flap ? nearest.pos : this.pos;
       if(pos == positions.Центр) {
         if(orientation == orientations.vert) {
           pos = [pos, positions.ЦентрВертикаль];
           if(layer.furn.shtulp_kind() === 2) {
-            elm_type = [elm_type, elm_types.СтворкаБИ];
+            elm_type = [elm_type, elm_types.flap0];
           }
         }
         if(orientation == orientations.hor) {
@@ -11915,6 +11929,23 @@ class ProfileItem extends GeneratrixElement {
    */
   joined_nearests() {
     return [];
+  }
+
+  /**
+   * Считаем профиль штульпом, если к нему примыкает хотя бы одна штульповая фурнитура
+   * @return {boolean}
+   */
+  is_shtulp() {
+    const {orientations: {vert}, elm_types: {impost}} = $p.enm;
+    const {elm_type, orientation} = this;
+    if(elm_type !== impost || orientation !== vert) {
+      return false;
+    }
+    for(const {layer} of this.joined_nearests()) {
+      if(layer.furn.shtulp_kind()) {
+        return true;
+      }
+    }
   }
 
   /**
