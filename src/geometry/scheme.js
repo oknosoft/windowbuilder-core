@@ -1106,17 +1106,8 @@ class Scheme extends paper.Project {
 
     const {_attr, bounds, ox, contours} = this;
 
-    if(!bounds) {
-      return;
-    }
-
     _attr._saving = true;
     ox._data._loading = true;
-
-    // устанавливаем размеры в характеристике
-    ox.x = bounds.width.round(1);
-    ox.y = bounds.height.round(1);
-    ox.s = this.area;
 
     // чистим табчасти, которые будут перезаполнены
     const {cnn_nodes} = ProductsBuilding;
@@ -1126,27 +1117,40 @@ class Scheme extends paper.Project {
     });
     ox.glasses.clear();
 
-    // вызываем метод save_coordinates в дочерних слоях
     let res = Promise.resolve();
     const push = (contour) => {
       res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
     };
-    contours.forEach((contour) => {
-      if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
-        if(this.activeLayer === contour) {
-          const other = contours.find((el) => el !== contour);
-          other && other.activate();
-        }
-        contour.remove();
-        this._scope.eve.emit_async('rows', ox, {constructions: true});
-      }
-      else {
-        push(contour);
-      }
-    });
 
-    // вызываем метод save_coordinates в слое соединителей
-    push(this.l_connective);
+    if(bounds) {
+      // устанавливаем размеры в характеристике
+      ox.x = bounds.width.round(1);
+      ox.y = bounds.height.round(1);
+      ox.s = this.area;
+
+      // вызываем метод save_coordinates в дочерних слоях
+      contours.forEach((contour) => {
+        if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+          if(this.activeLayer === contour) {
+            const other = contours.find((el) => el !== contour);
+            other && other.activate();
+          }
+          contour.remove();
+          this._scope.eve.emit_async('rows', ox, {constructions: true});
+        }
+        else {
+          push(contour);
+        }
+      });
+
+      // вызываем метод save_coordinates в слое соединителей
+      push(this.l_connective);
+    }
+    else {
+      ox.x = 0;
+      ox.y = 0;
+      ox.s = 0;
+    }
 
     // пересчет спецификации и цен
     return res

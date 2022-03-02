@@ -105,12 +105,11 @@ class ContourNested extends Contour {
           return tproject.load_stamp(base_block, false, !refill, true);
         })
         .then(() => {
-          const {project, lbounds, content} = this;
+          const {lbounds} = this;
           const contour = tproject.contours[0];
           if(!contour || !contour.contours.length) {
-            throw 'Нет слоёв в шаблоне';
+            throw new Error(`Нет слоёв в шаблоне ${base_block.name}`);
           }
-          //project._attr._silent = true;
 
           // подгоняем размеры под проём
           const {bottom, right} = tproject.l_dimensions;
@@ -129,8 +128,10 @@ class ContourNested extends Contour {
           while (tproject._ch.length) {
             tproject.redraw();
           }
-          tproject.save_coordinates({svg: false, no_recalc: true});
-
+          return tproject.save_coordinates({svg: false, no_recalc: true});
+        })
+        .then(() => {
+          const {lbounds, content} = this;
           // чистим наше
           while (content.children.length) {
             content.children[0].remove();
@@ -202,23 +203,17 @@ class ContourNested extends Contour {
             _ox.inserts.add(proto);
           }
 
+          const contour = tproject.contours[0];
           const {lbounds: tlbounds} = contour;
           content.load_stamp({
             contour: contour.contours[0],
             delta: [lbounds.x - tlbounds.x, lbounds.y - tlbounds.y],
             map,
           });
-
-          // clearTimeout(tproject._attr._vis_timer);
-          // tproject._attr._opened = false;
-          // tproject.ox = '';
-          // teditor.unload();
-          // tx.unload();
-          // project._attr._silent = false;
-
         })
         .catch((err) => {
-          console.log(err);
+          $p.record_log(err);
+          $p.ui.dialogs.alert({title: 'Вставка вложенного изделия', text: err.message});
         })
 
     }
