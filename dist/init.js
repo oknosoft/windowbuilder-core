@@ -6320,8 +6320,8 @@ class DocCalc_orderManager extends DocManager {
       }
     });
 
-    // если сказано перезаполнять параметры - перезаполняем и пересчитываем
-    if(!clone && refill_props) {
+    // пересчитываем
+    if(!clone) {
       await dst.recalc();
     }
 
