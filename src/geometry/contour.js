@@ -2874,7 +2874,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    @param [refill] {Boolean}
    */
   on_sys_changed(refill) {
-    const {enm: {elm_types, cnn_types}, cat: {cnns}} = $p;
+    const {enm: {elm_types, cnn_types}, cat: {cnns, inserts}} = $p;
     this.profiles.forEach((elm) => elm.default_inset(true, refill));
 
     this.glasses().forEach((elm) => {
@@ -2890,7 +2890,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             refill = !thicknesses.includes(thickness);
           }
           else if(glass_thickness === 1) {
-            refill = !project._dp.sys.glasses({elm, layer: this}).includes(elm.insert);
+            refill = !project._dp.sys.glasses({elm, layer: this}).includes(inserts.get(elm.inset));
           }
           else if(glass_thickness === 2) {
             refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];

@@ -4783,7 +4783,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    @param [refill] {Boolean}
    */
   on_sys_changed(refill) {
-    const {enm: {elm_types, cnn_types}, cat: {cnns}} = $p;
+    const {enm: {elm_types, cnn_types}, cat: {cnns, inserts}} = $p;
     this.profiles.forEach((elm) => elm.default_inset(true, refill));
 
     this.glasses().forEach((elm) => {
@@ -4799,7 +4799,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             refill = !thicknesses.includes(thickness);
           }
           else if(glass_thickness === 1) {
-            refill = !project._dp.sys.glasses({elm, layer: this}).includes(elm.insert);
+            refill = !project._dp.sys.glasses({elm, layer: this}).includes(inserts.get(elm.inset));
           }
           else if(glass_thickness === 2) {
             refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];
@@ -19898,7 +19898,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const {prod_nom, calc_order, _data} = this;
 
     // контроль прав на запись характеристики
-    if(calc_order.is_read_only) {
+    if(!attr.force && calc_order.is_read_only) {
       _data._err = {
         title: 'Права доступа',
         type: 'alert-error',
@@ -23011,7 +23011,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   // перед записью надо присвоить номер для нового и рассчитать итоги
-  before_save() {
+  before_save(attr) {
 
     const {msg, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
@@ -23176,7 +23176,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.check_mandatory();
 
     // массив сырых данных изменённых характеристик
-    const sobjs = this.product_rows(true);
+    const sobjs = this.product_rows(true, attr);
 
     // если изменился hash заказа, добавим его в sobjs
     if(this._modified || this.is_new()) {
@@ -23205,7 +23205,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
-    const db = obj_delivery_state == 'Шаблон' ?  pouch.remote.ram : pouch.db(_manager);
+    const db = attr?.db || (obj_delivery_state == 'Шаблон' ?  pouch.remote.ram : pouch.db(_manager));
 
     // пометим на удаление неиспользуемые характеристики
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
@@ -23495,7 +23495,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @param [save] {Boolean} - если указано, выполняет before_save характеристик
    * @return {Array<Object>}
    */
-  product_rows(save) {
+  product_rows(save, attr) {
     let res = [];
     const {production, partner, obj_delivery_state, department} = this;
     const {utils, wsql} = $p;
@@ -23514,7 +23514,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
           if(!characteristic.owner.empty()) {
             if(save) {
-              if(characteristic.before_save() === false) {
+              if(characteristic.before_save(attr) === false) {
                 const {_err} = characteristic._data;
                 throw new Error(_err ? _err.text : `Ошибка при записи продукции ${characteristic.prod_name()}`);
               }
@@ -23989,7 +23989,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * Загружает в RAM данные характеристик продукций заказа
    * @return {Promise}
    */
-  load_production(forse) {
+  load_production(forse, db) {
     const prod = [];
     const {cat: {characteristics}, enm: {obj_delivery_states}} = $p;
     this.production.forEach(({characteristic}) => {
@@ -23997,7 +23997,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         prod.push(characteristic.ref);
       }
     });
-    return characteristics.adapter.load_array(characteristics, prod, false)
+    return characteristics.adapter.load_array(characteristics, prod, false, db)
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
@@ -24277,7 +24277,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .then(() => {
         restore?.activate();
-        return attr.save ? this.save() : this;
+        return attr.save ? this.save(undefined, undefined, undefined, attr) : this;
       })
       .catch((err) => {
         restore?.activate();
