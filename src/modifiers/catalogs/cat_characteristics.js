@@ -67,7 +67,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const {prod_nom, calc_order, _data} = this;
 
     // контроль прав на запись характеристики
-    if(calc_order.is_read_only) {
+    if(!attr.force && calc_order.is_read_only) {
       _data._err = {
         title: 'Права доступа',
         type: 'alert-error',
