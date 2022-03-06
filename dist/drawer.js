@@ -1728,7 +1728,7 @@ class BuilderElement extends paper.Group {
    */
   set_clr(v, ignore_select) {
     const {_row, path, project} = this;
-    const clr = _row.clr._manager.get(v);
+    const clr = _row.clr._manager.getter(v);
     const {clr_group} = _row.inset;
     if(clr_group.contains(clr) && _row.clr != clr) {
       _row.clr = clr;
