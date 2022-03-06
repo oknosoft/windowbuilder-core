@@ -1398,7 +1398,10 @@ class BuilderElement extends paper.Group {
 
   // объект продукции текущего элемеента может отличаться от продукции текущего проекта
   get ox() {
-    const {_row} = this;
+    const {layer, _row} = this;
+    if(layer) {
+      return layer._ox;
+    }
     return _row ? _row._owner._owner : {cnn_elmnts: []};
   }
 
@@ -2389,6 +2392,28 @@ class Contour extends AbstractFilling(paper.Layer) {
   get _ox() {
     const {layer, project} = this;
     return layer ? layer._ox : project.ox;
+  }
+
+  /**
+   * Продукция слоя c учётом вытягивания
+   * @return {CatCharacteristics}
+   */
+  get prod_ox() {
+    const layer = this.prod_layer();
+    if(layer) {
+      const {project: {ox}, cnstr} = layer;
+      let cx;
+      ox.calc_order.production.find_rows({ordn: ox}, ({characteristic}) => {
+        if(characteristic.leading_elm === -cnstr && characteristic.origin.empty()) {
+          cx = characteristic;
+          return false;
+        }
+      });
+      if(cx) {
+        return cx;
+      }
+    }
+    return this._ox;
   }
 
   /**

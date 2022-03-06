@@ -483,6 +483,28 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Продукция слоя c учётом вытягивания
+   * @return {CatCharacteristics}
+   */
+  get prod_ox() {
+    const layer = this.prod_layer();
+    if(layer) {
+      const {project: {ox}, cnstr} = layer;
+      let cx;
+      ox.calc_order.production.find_rows({ordn: ox}, ({characteristic}) => {
+        if(characteristic.leading_elm === -cnstr && characteristic.origin.empty()) {
+          cx = characteristic;
+          return false;
+        }
+      });
+      if(cx) {
+        return cx;
+      }
+    }
+    return this._ox;
+  }
+
+  /**
    * Отдел абрнента текущего слоя получаем из проекта
    * @return {CatBranches}
    */
