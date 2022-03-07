@@ -244,7 +244,7 @@ class CnnPoint {
 
     // ищем концы профилей в окрестности нас
     for(const elm of layer.profiles) {
-      if(elm === parent || elm === profile) {
+      if(elm === parent) {
         continue;
       }
       for(const node of 'be') {
@@ -273,8 +273,16 @@ class CnnPoint {
         row = cnn_elmnts.find({elm1: other.profile.elm, elm2: parent.elm, node1: other.node});
       }
       if(row) {
+        this._cnno = {
+          elm2: other.profile.elm,
+          node2: other.node,
+          cnn: row.cnn,
+        };
         return row.cnn;
       }
+    }
+    else if(this._cnno) {
+      delete this._cnno;
     }
   }
 
@@ -289,6 +297,13 @@ class CnnPoint {
         row = cnn_elmnts.add(attr);
       }
       row.cnn = v;
+
+      this._cnno = {
+        elm2: other.profile.elm,
+        node2: other.node,
+        cnn: row.cnn,
+      };
+
       parent.project.register_change();
     }
   }
@@ -315,7 +330,14 @@ class CnnPoint {
     this._err = [];
 
     // строка в таблице соединений
-    this._row = _parent.ox.cnn_elmnts.find({elm1: _parent.elm, node1: node});
+    _parent.ox.cnn_elmnts.find_rows({elm1: _parent.elm, node1: node}, (row) => {
+      if(!this._row) {
+        this._row = row;
+      }
+      else if(row.node2 !== node) {
+        this._row = row;
+      }
+    });
 
     // примыкающий профиль
     this._profile;
@@ -1286,6 +1308,28 @@ class ProfileItem extends GeneratrixElement {
         else {
           row_e.node2 = 't';
         }
+      }
+
+      // в том числе - о соединениях с другой стороны
+      if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          node1: 'b',
+          elm2: b._cnno.elm2,
+          node2: b._cnno.node2,
+          cnn: b._cnno.cnn,
+          aperture_len: row_b.aperture_len,
+        });
+      }
+      if(e._cnno && row_e.elm2 !== e._cnno.elm2) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          node1: 'e',
+          elm2: e._cnno.elm2,
+          node2: e._cnno.node2,
+          cnn: e._cnno.cnn,
+          aperture_len: row_e.aperture_len,
+        });
       }
 
       // для створочных и доборных профилей добавляем соединения с внешними элементами
