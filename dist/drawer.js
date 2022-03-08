@@ -4509,13 +4509,23 @@ class Contour extends AbstractFilling(paper.Layer) {
       const elm = this.profile_by_furn_side(row.side, cache);
       const nearest = elm && elm.nearest();
       if(nearest) {
-        const {elm_type, inset} = nearest;
-        if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
-          (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
-          if(bool) {
-            return true;
+        if(nearest instanceof ProfileParent) {
+          if(row.shtulp_available) {
+            if(bool) {
+              return true;
+            }
+            !err.includes(elm) && err.push(elm);
           }
-          !err.includes(elm) && err.push(elm);
+        }
+        else {
+          const {elm_type, inset} = nearest;
+          if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
+            (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
+            if(bool) {
+              return true;
+            }
+            !err.includes(elm) && err.push(elm);
+          }
         }
       }
     }
@@ -9924,6 +9934,9 @@ class CnnPoint {
         };
         return row.cnn;
       }
+    }
+    else if(this._cnno) {
+      delete this._cnno;
     }
   }
 
