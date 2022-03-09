@@ -56,13 +56,6 @@ class BaseLine extends ProfileItem {
   }
 
   /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    return BaseLine.oxml;
-  }
-
-  /**
    * Возвращает тип элемента (линия)
    */
   get elm_type() {
@@ -144,14 +137,6 @@ class BaseLine extends ProfileItem {
   }
 
 }
-
-BaseLine.oxml = {
-  ' ': [
-    {id: 'info', path: 'o.info', type: 'ro'},
-  ],
-  'Начало': ['x1', 'y1'],
-  'Конец': ['x2', 'y2']
-};
 
 EditorInvisible.BaseLine = BaseLine;
 

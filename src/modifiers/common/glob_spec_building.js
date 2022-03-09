@@ -34,8 +34,8 @@ class SpecBuilding {
    */
   specification_adjustment (attr, with_price) {
 
-    const {cat, pricing} = $p;
-    const {scheme, calc_order_row, spec, save} = attr;
+    const {cat, pricing, enm: {elm_types}} = $p;
+    const {scheme, calc_order_row, spec} = attr;
     const calc_order = calc_order_row._owner._owner;
     const order_rows = new Map();
     const adel = [];
@@ -44,6 +44,9 @@ class SpecBuilding {
 
     // типы цен получаем заранее, т.к. они могут пригодиться при расчете корректировки спецификации
     pricing.price_type(attr);
+
+    // подмешаем в параметры дату цены
+    attr.date = calc_order.price_date;
 
     // удаляем из спецификации строки, добавленные предыдущими корректировками
     spec.find_rows({ch: {in: [-1, -2]}}, (row) => adel.push(row));
@@ -70,13 +73,20 @@ class SpecBuilding {
       };
 
       // рассчитаем спецификацию вставки
-      if($p.enm.elm_types.stvs.includes(elm_type)) {
+      if(elm_types.Створка === elm_type) {
         for(const {contours} of scheme.contours) {
           for(const contour of contours) {
             elm.layer = contour;
             len_angl.cnstr = contour.cnstr;
             inset.calculate_spec({elm, len_angl, ox, spec});
           }
+        }
+      }
+      else if(elm_types.Рама === elm_type) {
+        for(const contour of scheme.contours) {
+          elm.layer = contour;
+          len_angl.cnstr = contour.cnstr;
+          inset.calculate_spec({elm, len_angl, ox, spec});
         }
       }
       else {
@@ -115,7 +125,7 @@ class SpecBuilding {
       row.qty = calc_order_row.qty;
       row.quantity = calc_order_row.quantity;
 
-      save && ax.push(cx.save());
+      ax.push(cx);
       order_rows.set(cx, row);
     });
     if(order_rows.size){
@@ -130,9 +140,7 @@ class SpecBuilding {
       pricing.calc_amount(attr);
     }
 
-    if(save && !attr.scheme && (ox.is_new() || ox._modified)){
-      ax.push(ox.save());
-    }
+    ax.push(ox);
 
     return ax;
   }

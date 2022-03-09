@@ -95,6 +95,11 @@ class FakeElm {
     return this.len;
   }
 
+  get ox() {
+    const {project, row_spec} = this;
+    return project ? project.ox : row_spec._owner._owner;
+  }
+
 }
 
 // свойства и методы объекта
@@ -128,6 +133,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     const {acl_objs} = current_user;
 
+    //Менеджер
+    this.manager = current_user;
+
     //Организация
     acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
       this.organization = row.acl_obj;
@@ -152,9 +160,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     //Договор
     this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
 
-    //Менеджер
-    this.manager = current_user;
-
     //СостояниеТранспорта
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;
 
@@ -164,16 +169,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   // перед записью надо присвоить номер для нового и рассчитать итоги
-  before_save() {
+  before_save(attr) {
 
-    const {msg, pricing, utils: {blank}, cat, enm: {
+    const {msg, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
 
     //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
     //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
-    const {obj_delivery_state, _obj, category, rounding} = this;
+    const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp} = this;
     const must_be_saved = ![Подтвержден, Отправлен].includes(obj_delivery_state);
 
     // если установлен признак проведения, проверим состояние транспорта
@@ -222,7 +227,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         msg.show_msg && msg.show_msg({
           type: 'alert-warning',
           title: 'Ошибки в заказе',
-          text: `Пустая цена ${err_prices.nom.toString()}<br/>Рекомендуется перезапустить браузер и повторить расчет`,
+          text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
         });
         if (!must_be_saved) {
           if(obj_delivery_state == Отправлен) {
@@ -236,30 +241,32 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
-    this.production.forEach(({amount, amount_internal, characteristic}) => {
-      doc_amount += amount;
-      internal += amount_internal;
-      characteristic.specification.forEach(({nom, elm}) => {
-        if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
-          if(!errors.has(characteristic)){
-            errors.set(characteristic, new Map());
+    if(!job_prm.debug) {
+      this.production.forEach(({amount, amount_internal, characteristic}) => {
+        doc_amount += amount;
+        internal += amount_internal;
+        characteristic.specification.forEach(({nom, elm}) => {
+          if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
+            if(!errors.has(characteristic)){
+              errors.set(characteristic, new Map());
+            }
+            if(!errors.has(nom.elm_type)){
+              errors.set(nom.elm_type, new Set());
+            }
+            // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
+            if(!errors.get(characteristic).has(nom)){
+              errors.get(characteristic).set(nom, new Set());
+            }
+            errors.get(characteristic).get(nom).add(elm);
+            errors.get(nom.elm_type).add(nom);
           }
-          if(!errors.has(nom.elm_type)){
-            errors.set(nom.elm_type, new Set());
-          }
-          // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
-          if(!errors.get(characteristic).has(nom)){
-            errors.get(characteristic).set(nom, new Set());
-          }
-          errors.get(characteristic).get(nom).add(elm);
-          errors.get(nom.elm_type).add(nom);
-        }
+        });
       });
-    });
+    }
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
-    this.amount_operation = pricing.from_currency_to_currency(doc_amount, this.date, this.doc_currency).round(rounding);
+    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.date).round(rounding);
 
     if (errors.size) {
       let critical, text = '';
@@ -275,19 +282,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       });
 
-      msg.show_msg && msg.show_msg({
-        type: 'alert-warning',
-        title: 'Ошибки в заказе',
-        text,
-      });
-
-      console.error(text);
-
       if (critical && !must_be_saved) {
         if(obj_delivery_state == 'Отправлен') {
           this.obj_delivery_state = 'Черновик';
         }
-        return false;
+        throw new Error(text);
+      }
+      else {
+        msg.show_msg && msg.show_msg({
+          type: 'alert-warning',
+          title: 'Ошибки в заказе',
+          text,
+        });
       }
     }
 
@@ -324,35 +330,167 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       _obj.state = 'draft';
     }
 
-    // номера изделий в характеристиках
-    return this.product_rows(true)
+    // проверка заполненности полей теперь вызывает runtime-error
+    this.check_mandatory();
+
+    // массив сырых данных изменённых характеристик
+    const sobjs = this.product_rows(true, attr);
+
+    // если изменился hash заказа, добавим его в sobjs
+    if(this._modified || this.is_new()) {
+      const hash = this._hash();
+      if(timestamp && timestamp.hash === hash) {
+        this._modified = false;
+      }
+      else {
+        const tmp = Object.assign({_id: `${class_name}|${_obj.ref}`, class_name}, _obj);
+        delete tmp.ref;
+        tmp.timestamp = {
+          moment: moment().format('YYYY-MM-DDTHH:mm:ss ZZ'),
+          user: wsql.get_user_param('user_name'),
+          hash,
+        };
+        if (this._attachments) {
+          tmp._attachments = this._attachments;
+        }
+        if(_manager.build_search) {
+          _manager.build_search(tmp, this);
+        }
+        else {
+          tmp.search = ((_obj.number_doc || '') + (_obj.note ? ' ' + _obj.note : '')).toLowerCase();
+        }
+        sobjs.push(tmp);
+      }
+    }
+
+    const db = attr?.db || (obj_delivery_state == 'Шаблон' ?  pouch.remote.ram : pouch.db(_manager));
+
     // пометим на удаление неиспользуемые характеристики
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
-      .then(() => {
-        return this._manager.pouch_db
-          .query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
-          .then(({rows}) => {
-            let res = Promise.resolve();
-            let deleted = 0;
-            for (const {id} of rows) {
-              const ref = id.substr(20);
-              if(this.production.find_rows({characteristic: ref}).length) {
-                continue;
-              }
-              deleted ++;
-              res = res
-                .then(() => cat.characteristics.get(ref, 'promise'))
-                .then((ox) => !ox.is_new() && !ox._deleted && ox.mark_deleted(true));
-            }
-            return res.then(() => deleted);
-          })
-          .then((res) => {
-            res && this._manager.emit_async('svgs', this);
-          })
-          .catch((err) => null);
+    const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
+      .then(({rows}) => {
+        let res = Promise.resolve();
+        let deleted = 0;
+        for (const {id} of rows) {
+          const ref = id.substr(20);
+          if(this.production.find({characteristic: ref})) {
+            continue;
+          }
+          deleted ++;
+          res = res
+            .then(() => cat.characteristics.get(ref, 'promise'))
+            .then((ox) => !ox.is_new() && !ox._deleted && ox.mark_deleted(true));
+        }
+        return res.then(() => deleted);
       })
-      .then(() => this);
+      .then((res) => {
+        res && _manager.emit_async('svgs', this);
+        // null из before_save, прерывает стандартную обработку
+        return null;
+      })
+      .catch((err) => null);
 
+    const save_error = (reason, obj) => {
+      const note = `Ошибка при записи ${this.presentation}, ${reason}`
+      $p.record_log({
+        class: 'save_error',
+        obj,
+        note,
+      });
+      throw new Error(note);
+    };
+
+    const bulk = () => {
+      const _id = `${class_name}|${_obj.ref}`;
+      // обычные заказы пишем честно - с текущими версиями, версии шаблонов не учитываем
+      const rev = Promise.resolve().then(() => {
+        if(obj_delivery_state == 'Шаблон') {
+          return db.allDocs({keys: sobjs.map(({_id}) => _id)})
+            .then(({rows}) => {
+              for(const doc of rows) {
+                if(doc.value && doc.value.rev) {
+                  sobjs.some((o) => {
+                    if(o._id === doc.id) {
+                      o._rev = doc.value.rev;
+                      return true;
+                    }
+                  });
+                }
+              }
+            });
+        }
+        else {
+          if(!this.is_new() && !_obj._rev) {
+            return db.get(_id)
+              .then(({_rev}) => sobjs.some((o) => {
+                if(o._id === _id) {
+                  o._rev = _rev;
+                  return true;
+                }
+              }));
+          }
+        }
+      })
+        .catch(() => null);
+
+      return rev.then(() => db.bulkDocs(sobjs));
+    };
+
+    return !sobjs.length ? unused() : bulk()
+      .then((bres) => {
+        // освежаем ревизии, проверяем успешность записи и вызываем after_save
+        for(const row of bres) {
+          const [cname, ref] = row.id.split('|');
+          const mgr = md.mgr_by_class_name(cname);
+          const o = mgr.get(ref, true);
+          if(row.ok) {
+            if(mgr) {
+              if(o) {
+                o._obj._rev = row.rev;
+                o.after_save();
+                mgr.emit_promise('after_save', o)
+                  .then(() => o._modified = false);
+              }
+            }
+          }
+          else {
+            const err = new Error(row.error === 'conflict' ?
+              'вероятно, объект изменён другим пользователем, перечитайте заказ и продукции с сервера' :
+              `${row.reason} ${o && o !== this ? o.presentation : ''} повторите попытку записи через минуту`);
+            err.obj = {
+              docs: sobjs.map(v => ({id: v._id, rev: v._rev, timestamp: v.timestamp})),
+              bres,
+            };
+            throw err;
+          }
+        }
+        // null из before_save, прерывает стандартную обработку
+        return unused();
+      })
+      .catch((err) => {
+        if(err.obj) {
+          save_error(err.message, err.obj);
+        }
+        else {
+          save_error(`${err.message} повторите попытку записи через минуту`);
+        }
+      });
+  }
+
+  // шаблоны читаем из ram
+  load(attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.load(attr);
+  }
+
+  // шаблоны сохраняем в базу ram
+  save(post, operational, attachments, attr = {}) {
+    if(this.obj_delivery_state == 'Шаблон') {
+      attr.db = this._manager.adapter.db({cachable: 'ram'});
+    }
+    return super.save(post, operational, attachments, attr);
   }
 
   // проверяет заполненность цен
@@ -405,11 +543,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // запрет удаления подчиненной продукции
         const {msg} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
-        if(!leading_product.empty() && leading_product.calc_order_row && leading_product.inserts.find({cnstr: -leading_elm, inset: origin})) {
+        if(!leading_product.empty() && leading_product.calc_order_row && (
+          // если в изделии присутствует порождающая вставка
+          leading_product.inserts.find({cnstr: -leading_elm, inset: origin}) ||
+          // если это виртуальное изделие слоя
+          [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
+        )) {
           msg.show_msg && msg.show_msg({
             type: 'alert-warning',
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
-              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки`,
+              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
           return false;
@@ -433,6 +576,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this;
   }
+
 
   // при удалении строки
   after_del_row(name) {
@@ -463,6 +607,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  /**
+   * Число знаков округления
+   * @return {Number}
+   */
   get rounding() {
     const {pricing} = $p.job_prm;
     if(!pricing.hasOwnProperty('rounding')) {
@@ -473,6 +621,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     return pricing.rounding;
+  }
+
+  /**
+   * Дата прайса с учётом константы valid_days (Счет действителен N дней)
+   * @return {Date}
+   */
+  get price_date() {
+    const {utils, job_prm: {pricing}} = $p;
+    const {date} = this;
+    const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
+    const curr = new Date();
+    return curr > fin ? curr : date;
   }
 
   /**
@@ -490,25 +650,49 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   /**
    * Пересчитывает номера изделий в продукциях,
    * обновляет контрагента, состояние транспорта и подразделение
-   * @param save
+   * @param [save] {Boolean} - если указано, выполняет before_save характеристик
+   * @return {Array<Object>}
    */
-  product_rows(save) {
-    let res = Promise.resolve();
+  product_rows(save, attr) {
+    let res = [];
+    const {production, partner, obj_delivery_state, department} = this;
+    const {utils, wsql} = $p;
+    const user = wsql.get_user_param('user_name');
     this.production.forEach(({row, characteristic}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
         if(characteristic.product !== row || characteristic._modified ||
-          characteristic.partner !== this.partner ||
-          characteristic.obj_delivery_state !== this.obj_delivery_state ||
-          characteristic.department !== this.department) {
+          characteristic.partner !== partner ||
+          characteristic.obj_delivery_state !== obj_delivery_state ||
+          characteristic.department !== department) {
 
           characteristic.product = row;
-          characteristic.obj_delivery_state = this.obj_delivery_state;
-          characteristic.partner = this.partner;
-          characteristic.department = this.department;
+          characteristic.obj_delivery_state = obj_delivery_state;
+          characteristic.partner = partner;
+          characteristic.department = department;
 
           if(!characteristic.owner.empty()) {
             if(save) {
-              res = res.then(() => characteristic.save());
+              if(characteristic.before_save(attr) === false) {
+                const {_err} = characteristic._data;
+                throw new Error(_err ? _err.text : `Ошибка при записи продукции ${characteristic.prod_name()}`);
+              }
+              else {
+                characteristic.check_mandatory();
+                const hash = characteristic._hash();
+                const {ref, class_name, _obj} = characteristic;
+                if(characteristic.timestamp && characteristic.timestamp.hash === hash) {
+                  characteristic._modified = false;
+                }
+                else {
+                  const tmp = Object.assign({_id: `${class_name}|${ref}`, class_name}, _obj);
+                  delete tmp.ref;
+                  tmp.timestamp = {moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'), user, hash};
+                  if (characteristic._attachments) {
+                    tmp._attachments = characteristic._attachments;
+                  }
+                  res.push(tmp);
+                }
+              }
             }
             else {
               characteristic.name = characteristic.prod_name();
@@ -655,6 +839,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       (individual_person.Имя ? ' ' + individual_person.Имя[0].toUpperCase() + '.' : '' ) +
       (individual_person.Отчество ? ' ' + individual_person.Отчество[0].toUpperCase() + '.' : ''),
       СотрудникФИОРП: individual_person.ФамилияРП + ' ' + individual_person.ИмяРП + ' ' + individual_person.ОтчествоРП,
+      СотрудникТелефон: manager.contact_information._obj.reduce((val, row) => {
+        if(row.type == 'Телефон' && row.presentation) {
+          return row.presentation;
+        }}, ''),
+      СотрудникEmail: manager.contact_information._obj.reduce((val, row) => {
+        if(row.type == 'АдресЭлектроннойПочты' && row.presentation) {
+          return row.presentation;
+        }}, ''),
       СуммаДокумента: this.doc_amount.toFixed(2),
       СуммаДокументаПрописью: this.doc_amount.in_words(),
       СуммаДокументаБезСкидки: this.production._obj.reduce((val, row) => val + row.quantity * row.price, 0).toFixed(2),
@@ -667,6 +859,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ВсегоНаименований: this.production.count(),
       ВсегоИзделий: 0,
       ВсегоПлощадьИзделий: 0,
+      ВсегоМасса: 0,
+      ВсегоМассаЗаполнений: 0,
       Продукция: [],
       Аксессуары: [],
       Услуги: [],
@@ -707,10 +901,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.production.forEach((row) => {
         if(!row.characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
 
-          res.Продукция.push(this.row_description(row));
+          const description = this.row_description(row);
+          res.Продукция.push(description);
 
           res.ВсегоИзделий += row.quantity;
-          res.ВсегоПлощадьИзделий += row.quantity * row.s;
+          res.ВсегоПлощадьИзделий += row.quantity * row.characteristic.s;
+          res.ВсегоМасса += row.quantity * description.Масса;
+          res.ВсегоМассаЗаполнений += row.quantity * description.МассаЗаполнений;
 
           // если запросили эскиз без размерных линий или с иными параметрами...
           if(builder_props) {
@@ -742,21 +939,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
       res.ВсегоПлощадьИзделий = res.ВсегоПлощадьИзделий.round(3);
 
-      return imgs.then(() => {
-        editor && editor.unload();
-        return (get_imgs.length ? Promise.all(get_imgs) : Promise.resolve([]))
-          .then(() => {
-            // https://github.com/soldair/node-qrcode
-            if(typeof QRCode === 'object') {
-              const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
-              return QRCode.toString(text, {type: 'svg'}).then((qr) => {
-                res.qrcode = qr;
-                return res;
-              });
-            }
-            return res;
-          });
-      });
+      res.qrcode = () => {
+        // https://github.com/soldair/node-qrcode
+        return Promise.resolve().then(() => {
+          if(typeof QRCode === 'object') {
+            const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
+            return QRCode.toString(text, {type: 'svg'});
+          }
+        });
+      };
+
+      return imgs
+        .then(() => {
+          editor && editor.unload();
+          return Promise.all(get_imgs);
+        })
+        .then(() => res);
 
     });
 
@@ -774,6 +972,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     }
     const {characteristic, nom, s, quantity, note} = row;
+    let m = 0, gm = 0, skip = new Set();
+    characteristic.specification.forEach(({elm, nom, totqty}) => {
+      m += nom.density * totqty;
+      if(elm > 0 && !skip.has(elm)) {
+        if(characteristic.glasses.find({elm})) {
+          gm += nom.density * totqty;
+        }
+        else {
+          skip.add(elm);
+        }
+      }
+    });
+
     const res = {
       ref: characteristic.ref,
       НомерСтроки: row.row,
@@ -786,12 +997,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       Длина: row.len,
       Ширина: row.width,
       ВсегоПлощадь: s * quantity,
+      Масса: m,
+      ВсегоМасса: m * quantity,
+      МассаЗаполнений: gm,
+      ВсегоМассаЗаполнений: gm * quantity,
       Примечание: note,
       Комментарий: note,
       СистемаПрофилей: characteristic.sys.name,
       Номенклатура: nom.name_full || nom.name,
       Характеристика: characteristic.name,
       Заполнения: '',
+      ЗаполненияФормулы: '',
       Фурнитура: '',
       Параметры: [],
       Цена: row.price,
@@ -804,13 +1020,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     };
 
     // формируем описание заполнений
-    characteristic.glasses.forEach((row) => {
-      const {name} = row.nom;
-      if(res.Заполнения.indexOf(name) == -1) {
+    characteristic.glasses.forEach(({nom, formula}) => {
+      const {name} = nom;
+      if(!res.Заполнения.includes(name)) {
         if(res.Заполнения) {
           res.Заполнения += ', ';
         }
         res.Заполнения += name;
+      }
+      if(!res.ЗаполненияФормулы.includes(formula)) {
+        if(res.ЗаполненияФормулы) {
+          res.ЗаполненияФормулы += ', ';
+        }
+        res.ЗаполненияФормулы += formula;
       }
     });
 
@@ -824,6 +1046,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         res.Фурнитура += name;
       }
     });
+
+
 
     // параметры, помеченные к включению в описание
     const params = new Map();
@@ -851,7 +1075,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.planning.clear();
 
     // получаем url сервиса
-    const {wsql, aes, current_user: {suffix}, msg, utils} = $p;
+    const {wsql, aes, adapters: {pouch}, msg, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
 
     // сериализуем документ и характеристики
@@ -867,17 +1091,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       // выполняем запрос к сервису
       .then(() => {
-        const headers = new Headers();
-        headers.append('Authorization', 'Basic ' + btoa(unescape(encodeURIComponent(
-          wsql.get_user_param('user_name') + ':' + aes.Ctr.decrypt(wsql.get_user_param('user_pwd'))))));
-        if(suffix){
-          headers.append('suffix', suffix);
-        }
-        fetch(url, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(post_data)
-        })
+        pouch.fetch(url, {method: 'POST', body: JSON.stringify(post_data)})
           .then(response => response.json())
           // заполняем табчасть
           .then(json => {
@@ -904,21 +1118,27 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
-    const {Черновик, Шаблон, Отозван, Отправлен} = $p.enm.obj_delivery_states;
+    let {current_user, cat: {abonents}, enm} = $p;
+    const {Черновик, Шаблон, Отозван, Отправлен} = enm.obj_delivery_states;
+    if(!current_user) {
+      current_user = this.manager;
+    }
+
     let ro = false;
     // технолог может изменять шаблоны
     if(obj_delivery_state == Шаблон) {
-      ro = !$p.current_user.role_available('ИзменениеТехнологическойНСИ');
+      const {no_mdm} = abonents.current;
+      ro = !no_mdm || !current_user.role_available('ИзменениеТехнологическойНСИ');
     }
     // ведущий менеджер может изменять проведенные
     else if(posted || _data._deleted) {
-      ro = !$p.current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     else if(obj_delivery_state == Отправлен) {
-      ro = !_data._saving_trans && !$p.current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = !_data._saving_trans && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     else if(!obj_delivery_state.empty()) {
-      ro = obj_delivery_state != Черновик && obj_delivery_state != Отозван && !$p.current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = obj_delivery_state != Черновик && obj_delivery_state != Отозван && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     return ro;
   }
@@ -927,7 +1147,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * Загружает в RAM данные характеристик продукций заказа
    * @return {Promise}
    */
-  load_production(forse) {
+  load_production(forse, db) {
     const prod = [];
     const {cat: {characteristics}, enm: {obj_delivery_states}} = $p;
     this.production.forEach(({characteristic}) => {
@@ -935,7 +1155,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         prod.push(characteristic.ref);
       }
     });
-    return characteristics.adapter.load_array(characteristics, prod, false)
+    return characteristics.adapter.load_array(characteristics, prod, false, db)
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
@@ -982,15 +1202,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   /**
    * Создаёт строку заказа с уникальной характеристикой
-   * @param row_spec
-   * @param elm
-   * @param len_angl
-   * @param params
-   * @param create
-   * @param grid
-   * @return {Promise}
+   * @param [row_spec] {DpBuyers_orderProductionRow} - строка - генератор параметрика
+   * @param [elm]
+   * @param [len_angl]
+   * @param [params]
+   * @param [create]
+   * @param [grid]
+   * @param [cx] {Promise.<CatCharacteristics>}
+   * @return {Promise.<DocCalc_orderProductionRow>}
    */
-  create_product_row({row_spec, elm, len_angl, params, create, grid}) {
+  create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
     const row = row_spec instanceof $p.DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
       row_spec.characteristic.calc_order_row :
@@ -1011,7 +1232,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     // ищем объект продукции в RAM или берём из строки заказа
     const mgr = $p.cat.characteristics;
-    let cx;
     function fill_cx(ox) {
       if(ox._deleted){
         return;
@@ -1024,7 +1244,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       cx = Promise.resolve(ox);
       return false;
     }
-    if(!row.characteristic.empty() && !row.characteristic._deleted){
+    if(!cx && !row.characteristic.empty() && !row.characteristic._deleted){
       fill_cx(row.characteristic);
     }
 
@@ -1059,7 +1279,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.x = row_spec.len;
           ox.y = row_spec.height;
           ox.z = row_spec.depth;
-          ox.s = row_spec.s || row_spec.len * row_spec.height / 1000000;
+          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(3);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
 
@@ -1095,7 +1315,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   process_add_product_list(dp) {
 
     let res = Promise.resolve();
-    const ax = [];
 
     dp.production.forEach((row_dp) => {
       let row_prod;
@@ -1136,32 +1355,34 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       // производим дополнительную корректировку спецификации и рассчитываем цены
       res = res.then((row_prod) => {
-        return Promise.all($p.spec_building.specification_adjustment({
-          //scheme: scheme,
+        return $p.spec_building.specification_adjustment({
           calc_order_row: row_prod,
           spec: row_prod.characteristic.specification,
-          save: true,
-        }, true))
-          .then((tx) => [].push.apply(ax, tx));
+        }, true);
       });
     });
 
-    return res.then(() => ax);
+    return res;
   }
 
   /**
    * Пересчитывает все изделия заказа по тем же правилам, что и визуальная рисовалка
-   * @param attr
-   * @param editor
+   * @param attr {Object} - параметры пересчёта
+   * @param [editor] {EditorInvisible}
+   * @param [restore] {EditorInvisible}
    */
-  recalc(attr = {}, editor) {
+  recalc(attr = {}, editor, restore) {
 
     // при необходимости, создаём редактор
+    const {EditorInvisible, CatInserts} = $p;
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
-    const project = editor.create_scheme();
+    let {project} = editor;
+    if(!(project instanceof EditorInvisible.Scheme)) {
+      project = editor.create_scheme();
+    }
     let tmp = Promise.resolve();
 
     // если передали ссылку dp, меняем при пересчете свойства в соответствии с полями обработки
@@ -1180,11 +1401,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
-              return project.load(cx, true).then(() => {
-                // выполняем пересчет
-                cx.apply_props(project, dp).save_coordinates({svg: false});
-                this.characteristic_saved(project);
-              });
+              return project.load(cx, true, this)                                                     // читаем изделие в невизуальную рисовалку
+                .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
+                .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
             });
           }
           else if(cx.leading_product.calc_order === this) {
@@ -1192,7 +1411,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             const {origin} = cx;
-            if(origin && !origin.empty() && !origin.slave) {
+            if(origin instanceof CatInserts && !origin.empty() && !origin.slave) {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
@@ -1212,15 +1431,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.remove();
-        }
-        return attr.save ? this.save() : this;
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => {
+        restore?.activate();
+        return attr.save ? this.save(undefined, undefined, undefined, attr) : this;
+      })
+      .catch((err) => {
+        restore?.activate();
+        throw err;
       });
-
   }
 
   /**
@@ -1231,11 +1451,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   draw(attr = {}, editor) {
 
     // при необходимости, создаём редактор
+    const {EditorInvisible} = $p;
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
-    const project = editor.create_scheme();
+    let {project} = editor;
+    if(!(project instanceof EditorInvisible.Scheme)) {
+      project = editor.create_scheme();
+    }
 
     attr.res = {number_doc: this.number_doc};
 
@@ -1249,7 +1473,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             tmp = tmp.then(() => ox.draw(attr, editor));
           }
         }
-        return tmp;
+        return tmp.then((res) => {
+          project.ox = '';
+          if(remove) {
+            editor.unload();
+          }
+          else {
+            project.remove();
+          }
+          return res;
+        });
       });
 
   }
@@ -1262,26 +1495,32 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(this._data._templates_loaded) {
       return Promise.resolve();
     }
+    if(this._data._templates_loading) {
+      return this._data._templates_loading;
+    }
     else if(this.obj_delivery_state == 'Шаблон') {
-      const {adapters: {pouch}, cat} = $p;
-      return pouch.fetch(`/couchdb/mdm/${pouch.props.zone}/templates/${this.ref}`)
+      const {adapters, job_prm, cat} = $p;
+      this._data._templates_loading = adapters.pouch.fetch(`/couchdb/mdm/${job_prm.session_zone}/templates/${this.ref}`)
         .then((res) => res.json())
         .then(({rows}) => {
           if(rows) {
             cat.characteristics.load_array(rows);
             this._data._templates_loaded = true;
+            delete this._data._templates_loading;
             return this;
           }
           throw null;
         })
         .catch((err) => {
           err && console.log(err);
+          delete this._data._templates_loading;
           return this.load_production()
             .then(() => {
               this._data._templates_loaded = true;
               return this;
             })
         });
+      return this._data._templates_loading;
     }
     return this.load_production();
   }
@@ -1290,13 +1529,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * Устанавливает подразделение по умолчанию
    */
   static set_department() {
-    const department = $p.wsql.get_user_param('current_department');
+    const {wsql, cat} = $p
+    const department = wsql.get_user_param('current_department');
     if(department) {
       this.department = department;
     }
-    const {current_user, cat} = $p;
-    if(current_user && this.department.empty() || this.department.is_new()) {
-      current_user.acl_objs && current_user.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
+    if(this.department.empty() || this.department.is_new()) {
+      let {manager} = this;
+      if(!manager || manager.empty()) {
+        manager = $p.current_user;
+      }
+      manager && manager.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
         if(this.department != row.acl_obj) {
           this.department = row.acl_obj;
         }
@@ -1319,8 +1562,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm, current_user} = $p;
+    const {rounding, _slave_recalc, manager} = _owner._owner;
+    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
     if(rfield) {
@@ -1352,7 +1595,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
-        characteristic.s = this.s || this.len * this.width / 1000000;
+        characteristic.s = (this.s || this.len * this.width / 1e6).round(3);
         const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
         origin.calculate_spec({elm, len_angl, ox: characteristic});
@@ -1386,6 +1629,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
 
       isNaN(_obj.price) && (_obj.price = 0);
+      isNaN(_obj.extra_charge_external) && (_obj.extra_charge_external = 0);
       isNaN(_obj.price_internal) && (_obj.price_internal = 0);
       isNaN(_obj.discount_percent) && (_obj.discount_percent = 0);
       isNaN(_obj.discount_percent_internal) && (_obj.discount_percent_internal = 0);
@@ -1398,11 +1642,14 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         let extra_charge = wsql.get_user_param('surcharge_internal', 'number');
 
         // если пересчет выполняется менеджером, используем наценку по умолчанию
-        if(!current_user || !current_user.partners_uids.length || !extra_charge) {
+        if(!manager.partners_uids.length || !extra_charge) {
           pricing.price_type(prm);
           extra_charge = prm.price_type.extra_charge_external;
         }
-
+        // если есть наценка в строке применим ее
+        if (_obj.extra_charge_external !== 0) {
+          extra_charge = _obj.extra_charge_external;
+        }
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
         }
@@ -1488,4 +1735,4 @@ $p.DocCalc_orderProductionRow.rfields = {
   s: 'n',
 };
 
-$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal';
+$p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal,extra_charge_external';

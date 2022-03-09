@@ -12,9 +12,14 @@
  */
 const consts = {
 
-	tune_paper(settings) {
+	tune_paper({settings, eve}) {
 
-	  const builder = $p.job_prm.builder || {};
+    const {job_prm} = $p;
+    if(job_prm.debug) {
+      eve.setMaxListeners(200);
+    }
+
+	  const builder = job_prm.builder || {};
 
     /* Размер визуализации узла пути */
 		if(builder.handle_size) {
@@ -56,5 +61,13 @@ const consts = {
 	move_points: 'move_points',
 	move_handle: 'move_handle',
 	move_shapes: 'move-shapes',
+
+  get base_offset() {
+	  const {font_size} = this;
+    return font_size < 80 ? 90 : font_size + 12;
+  },
+  get dop_offset() {
+	  return this.base_offset + 40;
+  }
 
 };

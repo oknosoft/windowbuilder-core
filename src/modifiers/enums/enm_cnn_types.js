@@ -11,82 +11,22 @@
 
 (function(_mgr){
 
+  const {ad, av, ah, long, short, t, ii, i, xt, xx} = _mgr;
 
-	/**
-	 * Короткие псевдонимы перечисления "Типы соединений"
-	 * @type Object
-	 */
+  /**
+   * Массивы Типов соединений
+   * @type Array.<EnumObj>
+   */
 	Object.defineProperties(_mgr, {
-	  ad: {
-	    get() {
-        return this.УгловоеДиагональное;
-      }
-    },
-    av: {
-      get() {
-        return this.УгловоеКВертикальной;
-      }
-    },
-    long: {
-      get() {
-        return this.Длинное;
-      }
-    },
-    ah: {
-      get() {
-        return this.УгловоеКГоризонтальной;
-      }
-    },
-    short: {
-      get() {
-        return this.Короткое;
-      }
-    },
-    t: {
-      get() {
-        return this.ТОбразное;
-      }
-    },
-    ii: {
-      get() {
-        return this.Наложение;
-      }
-    },
-    i: {
-      get() {
-        return this.НезамкнутыйКонтур;
-      }
-    },
-    xt: {
-      get() {
-        return this.КрестПересечение;
-      }
-    },
-    xx: {
-      get() {
-        return this.КрестВСтык;
-      }
-    },
-
-    /**
-     * Массивы Типов соединений
-     * @type Object
-     */
     acn: {
       value: {
-        ii: [_mgr.Наложение],
-        i: [_mgr.НезамкнутыйКонтур],
-        a: [
-          _mgr.УгловоеДиагональное,
-          _mgr.УгловоеКВертикальной,
-          _mgr.УгловоеКГоризонтальной,
-          _mgr.ТОбразное,
-          _mgr.КрестВСтык,
-        ],
-        t: [_mgr.ТОбразное, _mgr.КрестВСтык],
+        ii: [ii],
+        i: [i],
+        a: [av, ad, ah, t, xx, long, short],
+        t: [t, xx],
+        xsl: [t, xx, long, short],
       }
     },
-
   });
 
 })($p.enm.cnn_types);

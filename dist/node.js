@@ -3,6 +3,7 @@ module.exports = function ($p, log) {
 
   const paper = require('paper/dist/paper-core');
   global.paper = paper;
+  $p.patchCatUsers && $p.patchCatUsers();
 
 
   /**
@@ -31,9 +32,11 @@ module.exports = function ($p, log) {
       if(!view._countItemEvent) {
         view._countItemEvent = function () {};
       }
+      return this.project;
     }
   }
   $p.Editor = Editor;
+  $p.EditorInvisible = Editor;
 
   log('paper: required, inited & modified');
 

@@ -24,7 +24,7 @@ class EditorInvisible extends paper.PaperScope {
      */
     this.eve = new (Object.getPrototypeOf($p.md.constructor))();
 
-    consts.tune_paper(this.settings);
+    consts.tune_paper(this);
   }
 
   get consts() {
@@ -75,22 +75,24 @@ class EditorInvisible extends paper.PaperScope {
 
   unload() {
     this.eve.removeAllListeners();
-    const arr = this.projects.concat(this.tools);
-    while (arr.length) {
-      const elm = arr[0];
+    const revert = [];
+    for(const elm of this.projects.concat(this.tools)){
       if(elm.unload) {
-        elm.unload();
+        revert.push(elm.unload());
       }
       else if(elm.remove) {
         elm.remove();
       }
-      arr.splice(0, 1);
     }
-    for(let i in EditorInvisible._scopes) {
-      if(EditorInvisible._scopes[i] === this) {
-        delete EditorInvisible._scopes[i];
+
+    const {_scopes} = EditorInvisible;
+    for(let i in _scopes) {
+      if(_scopes[i] === this) {
+        delete _scopes[i];
       }
     }
+
+    return Promise.all(revert);
   }
 
   /**
@@ -294,7 +296,7 @@ class EditorInvisible extends paper.PaperScope {
           }
 
           const gl = glmap.get(profile);
-          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.Снаружи)){
+          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.outer)){
             gl.is_outer = true;
           }
           else{

@@ -49,7 +49,7 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
 
   // создаёт константу
   job_prm(row) {
-    const {job_prm, md, utils} = this._owner.$p;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = this._owner.$p;
     const {parents} = this;
     const parent = job_prm[parents[row.parent.valueOf()]];
     const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
@@ -76,23 +76,53 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
         });
       }
       else if(row.list) {
-        parent.__define(row.synonym, {
-          value: (row.elmnts._obj || row.elmnts).map((row) => {
-            if(_mgr) {
-              const value = _mgr.get(row.value, false, false);
-              if(!utils.is_empty_guid(row.elm)) {
-                value._formula = row.elm;
-              }
-              return value;
+        if(row.synonym === 'glass_chains') {
+          const value = [];
+          const tmp = [];
+          let name;
+          for(const elm of row.elmnts) {
+            if(elm.elm) {
+              name = elm.elm;
+            }
+            if(elm.value) {
+              tmp.push(igt.get(elm.value));
             }
             else {
-              return row.value;
+              if(tmp.length) {
+                const chain = tmp.splice(0);
+                if(name) {
+                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name) ? vh.get(name) : name});
+                  name = '';
+                }
+                value.push(chain);
+              }
             }
-          }),
-          configurable: true,
-          enumerable: true,
-          writable: true,
-        });
+          }
+          parent.__define(row.synonym, {
+            value,
+            configurable: true,
+            enumerable: true,
+          });
+        }
+        else {
+          parent.__define(row.synonym, {
+            value: (row.elmnts._obj || row.elmnts).map((row) => {
+              if(_mgr) {
+                const value = _mgr.get(row.value, false, false);
+                if(!utils.is_empty_guid(row.elm)) {
+                  value._formula = row.elm;
+                }
+                return value;
+              }
+              else {
+                return row.value;
+              }
+            }),
+            configurable: true,
+            enumerable: true,
+            writable: true,
+          });
+        }
       }
       else if(row.predefined_name === 'abonent') {
         const {by_ref} = $p.cch.properties;

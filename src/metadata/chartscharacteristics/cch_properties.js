@@ -76,6 +76,25 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
     return res;
   }
 
+  load_array(aattr, forse) {
+    super.load_array(aattr, forse);
+    const {job_prm} = this._owner.$p;
+    if(!job_prm.properties) {
+      job_prm.__define('properties', {value: {}});
+    }
+    const parent = job_prm.properties;
+    for (const row of aattr) {
+      if(row.predefined_name) {
+        parent.__define(row.predefined_name, {
+          value: this.get(row, false, false),
+          configurable: true,
+          enumerable: true,
+          writable: true,
+        });
+      }
+    }
+  }
+
 }
 
 exports.CchProperties = class CchProperties extends Object {
@@ -119,10 +138,17 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * ### Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
-    const {is_calculated} = this;
-    const {utils, enm: {comparison_types}} = $p;
+    const {is_calculated, type} = this;
+    const {utils, enm: {comparison_types, predefined_formulas}} = $p;
+    const ct = prm_row.comparison_type || comparison_types.eq;
+
+    // для параметров алгоритма, фильтр отключаем
+    if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
+      (ct.empty() || ct === comparison_types.eq) && type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty()))) {
+      return true;
+    }
 
     // значение параметра
     const val = is_calculated ? this.calculated_value({
@@ -131,79 +157,137 @@ exports.CchProperties = class CchProperties extends Object {
       elm,
       elm2,
       ox,
-      calc_order
+      calc_order,
+      prm_row,
+      layer,
+      calc_order_row,
     }) : this.extract_value(prm_row);
 
     let ok = false;
 
     // если сравнение на равенство - решаем в лоб, если вычисляемый параметр типа массив - выясняем вхождение значения в параметр
-    if(ox && !Array.isArray(val) && (prm_row.comparison_type.empty() || prm_row.comparison_type == comparison_types.eq)) {
+    if(ox && !Array.isArray(val) && (ct.empty() || ct === comparison_types.eq)) {
       if(is_calculated) {
         ok = val == prm_row.value;
       }
       else {
-        if(ox.params) {
-          let prow;
-          ox.params.find_rows({
-            param: this,
-            cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
-            inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
-          }, (row) => {
-            if(!prow || row.cnstr) {
-              prow = row;
-            }
-          });
-          ok = prow && prow.value == val;
-        }
-        else if(ox.product_params) {
-          ox.product_params.find_rows({
-            elm: elm.elm || 0,
-            param: this,
-            value: val
-          }, () => {
-            ok = true;
-            return false;
-          });
-        }
+        const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        ok = value == val;
       }
     }
     // вычисляемый параметр - его значение уже рассчитано формулой (val) - сравниваем со значением в строке ограничений
     else if(is_calculated) {
       const value = this.extract_value(prm_row);
-      ok = utils.check_compare(val, value, prm_row.comparison_type, comparison_types);
+      ok = utils.check_compare(val, value, ct, comparison_types);
     }
     // параметр явно указан в табчасти параметров изделия
     else {
-      if(ox.params) {
-        let prow;
-        ox.params.find_rows({
-          param: this,
-          cnstr: cnstr || (elm._row ? {in: [0, -elm._row.row]} : 0),
-          inset: (typeof origin !== 'number' && origin) || utils.blank.guid,
-        }, (row) => {
-          if(!prow || row.cnstr) {
-            prow = row;
-          }
-        });
-        // value - значение из строки параметра текущей продукции, val - знаяение из параметров отбора
-        ok = prow && utils.check_compare(prow.value, val, prm_row.comparison_type, comparison_types);
-      }
-      else if(ox.product_params) {
-        ox.product_params.find_rows({
-          elm: elm.elm || 0,
-          param: this
-        }, ({value}) => {
-          // value - значение из строки параметра текущей продукции, val - знаяение из параметров отбора
-          ok = utils.check_compare(value, val, prm_row.comparison_type, comparison_types);
-          return false;
-        });
-      }
+      const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+      ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
     }
     return ok;
   }
 
   /**
-   * Извлекает значение параметра с учетом вычисляемости
+   * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
+   */
+  extract_pvalue({ox, cnstr, elm = {}, origin, prm_row}) {
+    const {product_params, params} = ox;
+    let prow, cnstr0, elm0;
+    if(params) {
+      const {enm: {plan_detailing}, utils, CatInserts} = $p;
+      let src = prm_row.origin;
+      if(src === plan_detailing.algorithm) {
+        src = plan_detailing.get();
+      }
+      if(src && !src.empty()) {
+        switch (src) {
+        case plan_detailing.order:
+          const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
+          return prow && prow.value;
+        case plan_detailing.nearest:
+          if(cnstr && ox.constructions) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            elm = {};
+            const crow = ox.constructions.find({cnstr});
+            crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+              if(row !== crow) {
+                cnstr = row.cnstr;
+                return false;
+              }
+            });
+          }
+          break;
+        case plan_detailing.parent:
+          if(cnstr && ox.constructions) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            elm = {};
+            const crow = ox.constructions.find({cnstr});
+            const prow = ox.constructions.find({cnstr: crow.parent});
+            if(crow) {
+              cnstr = (prow && prow.parent === 0) ? 0 : crow.parent;
+            }
+          }
+          break;
+        case plan_detailing.product:
+          if(cnstr) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            cnstr = 0;
+            elm = {};
+          }
+          break;
+        case plan_detailing.elm:
+        case plan_detailing.layer:
+          break;
+        default:
+          throw `Источник '${src.name}' не поддержан`;
+        }
+      }
+      const inset = (!src || src.empty()) ? ((origin instanceof CatInserts) ? origin : utils.blank.guid) : utils.blank.guid;
+      const {rnum} = elm;
+      if(rnum) {
+        return elm[this.valueOf()];
+      }
+      else {
+        params.find_rows({
+          param: this,
+          cnstr: cnstr || (elm._row ? {in: [0, -elm._row.elm]} : 0),
+          inset,
+        }, (row) => {
+          if(!prow || row.cnstr) {
+            prow = row;
+          }
+        });
+      }
+      if(!prow && (cnstr0 || elm0)) {
+        params.find_rows({
+          param: this,
+          cnstr: cnstr0 || (elm0._row ? {in: [0, -elm0._row.elm]} : 0),
+          inset,
+        }, (row) => {
+          if(!prow || row.cnstr) {
+            prow = row;
+          }
+        });
+      }
+    }
+    else if(product_params) {
+      product_params.find_rows({
+        elm: elm.elm || 0,
+        param: this
+      }, (row) => {
+        prow = row;
+        return false;
+      });
+    }
+    return prow && prow.value;
+  }
+
+  /**
+   * Извлекает значение из строки условия (то, с чем сравнивать extract_pvalue)
    */
   extract_value({comparison_type, txt_row, value}) {
 
@@ -214,7 +298,10 @@ exports.CchProperties = class CchProperties extends Object {
     case comparison_types.in:
     case comparison_types.nin:
 
-      if(!txt_row) {
+      if(value instanceof CatColor_price_groups) {
+        return value.clrs();
+      }
+      else if(!txt_row) {
         return value;
       }
       try {
@@ -224,8 +311,9 @@ exports.CchProperties = class CchProperties extends Object {
           let mgr;
           for(const type of types) {
             const tmp = md.mgr_by_class_name(types[0]);
-            if(tmp && tmp.by_ref[arr[0]]) {
+            if(tmp && arr.some(ref => tmp.by_ref[ref])) {
               mgr = tmp;
+              break;
             }
           }
           if(!mgr) {
@@ -241,7 +329,7 @@ exports.CchProperties = class CchProperties extends Object {
             }
             return res;
           }
-          return arr.map((ref) => mgr.get(ref, false));
+          return arr.map((ref) => mgr.get(ref, false)).filter(v => v && !v.empty());
         }
         return arr;
       }
@@ -251,6 +339,52 @@ exports.CchProperties = class CchProperties extends Object {
 
     default:
       return value;
+    }
+  }
+
+  /**
+   * Возвращает значение параметра с приведением типов
+   * @param v
+   */
+  fetch_type(v) {
+    const {type, _manager} = this;
+    const {utils} = $p;
+    if(type.is_ref) {
+
+      if(type.digits && typeof v === 'number') {
+        return v;
+      }
+
+      if(type.hasOwnProperty('str_len') && !utils.is_guid(v)) {
+        return v;
+      }
+
+      const mgr = _manager.value_mgr({v}, 'v', type);
+      if(mgr) {
+        if(utils.is_data_mgr(mgr)) {
+          return mgr.get(v, false, false);
+        }
+        else {
+          return utils.fetch_type(v, mgr);
+        }
+      }
+
+      if(v) {
+        return null;
+      }
+
+    }
+    else if(type.date_part) {
+      return utils.fix_date(v, true);
+    }
+    else if(type.digits) {
+      return utils.fix_number(v, !type.hasOwnProperty('str_len'));
+    }
+    else if(type.types[0] == 'boolean') {
+      return utils.fix_boolean(v);
+    }
+    else if(type.types[0] == 'json') {
+      return typeof v === 'object' ? v : {};
     }
   }
 
@@ -269,24 +403,40 @@ exports.CchProperties = class CchProperties extends Object {
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
       //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущиъ для проверки
-      const arr = !use_master ? [{key:link.master}] : link.leadings;
+      const arr = !use_master ? [{key: link.master}] : link.leadings;
 
       arr.forEach((row_key) => {
         let ok_key = true;
-        // для всех записей ключа параметров
-        row_key.key.params.forEach((row) => {
-          // выполнение условия рассчитывает объект CchProperties
-          ok_key = row.property.check_condition({
-            cnstr: attr.grid.selection.cnstr,
-            ox: attr.obj._owner._owner,
-            prm_row: row,
-            elm: attr.obj,
-          });
-          //Если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
-          if (!ok_key) {
-            return false;
+        // для всех записей ключа параметров сначала строим Map ИЛИ
+        const or = new Map();
+        for(const row of row_key.key.params) {
+          if(!or.has(row.area)) {
+            or.set(row.area, []);
           }
-        });
+          or.get(row.area).push(row);
+        }
+        for(const grp of or.values()) {
+          let grp_ok = true;
+          for(const row of grp) {
+            // выполнение условия рассчитывает объект CchProperties
+            grp_ok = row.property.check_condition({
+              cnstr: attr.grid ? attr.grid.selection.cnstr : 0,
+              ox: attr.obj._owner ? attr.obj._owner._owner : attr.obj.ox,
+              prm_row: row,
+              elm: attr.obj,
+              layer: attr.layer,
+            });
+            // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
+            if (!grp_ok) {
+              break;
+            }
+          }
+          ok_key = grp_ok;
+          if(ok_key) {
+            break;
+          }
+        }
+
         //Для проверки через ИЛИ логика накопительная - надо проверить все ключи до единого
         if (use_master == 2){
           ok = ok || ok_key;
@@ -305,8 +455,8 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
    * @param links {Array}
-   * @param prow {Object}
-   * @param values {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
+   * @param [prow] {Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
+   * @param [values] {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
    * @return {boolean}
    */
   linked_values(links, prow, values = []) {
@@ -314,7 +464,7 @@ exports.CchProperties = class CchProperties extends Object {
     // собираем все доступные значения в одном массиве
     links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
-    if(values.some(({_obj}) => _obj.value == prow.value)) {
+    if(!prow || values.some(({_obj}) => _obj.value == prow.value)) {
       return;
     }
     // если есть явный default - устанавливаем
@@ -338,6 +488,22 @@ exports.CchProperties = class CchProperties extends Object {
       prow.value = values[0]._obj.value;
       return true;
     }
+  }
+
+  /**
+   * Значение, уточняемое отделом абонента
+   * @param project {Scheme}
+   * @param [cnstr] {Number}
+   * @param [ox] {CatCharacteristics}
+   */
+  branch_value({project, cnstr = 0, ox}) {
+    const {branch} = project;
+    let brow = branch.extra_fields.find({property: this});
+    if(brow) {
+      return brow.value;
+    }
+    brow = ox && ox.params.find({param: this, cnstr, inset: $p.utils.blank.guid});
+    return brow && brow.value;
   }
 
   /**

@@ -8,45 +8,55 @@
  * @module cat_elm_visualization
  */
 
-// публичные методы объекта
-$p.CatElm_visualization.prototype.__define({
+exports.CatElm_visualization = class CatElm_visualization extends Object {
 
   /**
-   *
-   * @param elm {BuilderElement}
-   * @param layer {Contour}
+   * Рисует визуализацию
+   * @param elm {BuilderElement} элемент, к которому привязана визуализация
+   * @param layer {Contour} слой, в котороый помещаем путь
    * @param offset {Number|[Number,Number]}
    */
-	draw: {
-		value(elm, layer, offset) {
+  draw(elm, layer, offset, offset0) {
+    if(!layer.isInserted()) {
+      return;
+    }
 
-		  const {CompoundPath, PointText, Path, constructor} = elm.project._scope;
+    try {
+      const {project} = layer;
+      const {CompoundPath, PointText, Path, constructor} = project._scope;
 
-			let subpath;
+      let subpath;
 
-			if(this.svg_path.indexOf('{"method":') == 0){
+      if(this.svg_path.indexOf('{"method":') == 0){
 
-				const attr = JSON.parse(this.svg_path);
+        const attr = JSON.parse(this.svg_path);
 
         if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
+          const {rays} = elm;
+          if(!rays) {
+            return;
+          }
           if(attr.method == 'subpath_outer') {
-            subpath = elm.rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
+            subpath = rays.outer.get_subpath(elm.corns(1), elm.corns(2)).equidistant(attr.offset || 10);
           }
           else if(attr.method == 'subpath_inner') {
-            subpath = elm.rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
+            subpath = rays.inner.get_subpath(elm.corns(3), elm.corns(4)).equidistant(attr.offset || 10);
           }
           else if(attr.method == 'subpath_median') {
             if(elm.is_linear()) {
-              subpath = new Path({segments: [elm.corns(1).add(elm.corns(4)).divide(2), elm.corns(2).add(elm.corns(3)).divide(2)]})
+              subpath = new Path({
+                project,
+                segments: [elm.corns(1).add(elm.corns(4)).divide(2), elm.corns(2).add(elm.corns(3)).divide(2)]
+              })
                 .equidistant(attr.offset || 0);
             }
             else {
-              const inner = elm.rays.inner.get_subpath(elm.corns(3), elm.corns(4));
+              const inner = rays.inner.get_subpath(elm.corns(3), elm.corns(4));
               inner.reverse();
-              const outer = elm.rays.outer.get_subpath(elm.corns(1), elm.corns(2));
+              const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
               const li = inner.length / 50;
               const lo = outer.length / 50;
-              subpath = new Path();
+              subpath = new Path({project});
               for(let i = 0; i < 50; i++) {
                 subpath.add(inner.getPointAt(li * i).add(outer.getPointAt(lo * i)).divide(2));
               }
@@ -57,7 +67,20 @@ $p.CatElm_visualization.prototype.__define({
             }
           }
           else {
-            subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            if(this.mode === 3) {
+              const outer = offset0 < 0;
+              attr.offset -= -elm.d1 + elm.width;
+              if(outer) {
+                offset0 = -offset0;
+                attr.offset = -(attr.offset || 0);
+              }
+              const b = elm.generatrix.getPointAt(offset0 || 0);
+              const e = elm.generatrix.getPointAt((offset0 + offset) || elm.generatrix.length);
+              subpath = elm.generatrix.get_subpath(b, e).equidistant(attr.offset || 0);
+            }
+            else {
+              subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
+            }
           }
           subpath.parent = layer._by_spec;
           subpath.strokeWidth = attr.strokeWidth || 4;
@@ -67,12 +90,14 @@ $p.CatElm_visualization.prototype.__define({
             subpath.dashArray = attr.dashArray
           }
         }
-			}
-			else if(this.svg_path){
+      }
+      else if(this.svg_path){
 
         if(this.mode === 1) {
           const attr = JSON.parse(this.attributes || '{}');
           subpath = new PointText(Object.assign({
+            project,
+            layer,
             parent: layer._by_spec,
             fillColor: 'black',
             fontFamily: $p.job_prm.builder.font_family,
@@ -83,8 +108,10 @@ $p.CatElm_visualization.prototype.__define({
         }
         else {
           subpath = new CompoundPath({
-            pathData: this.svg_path,
+            project,
+            layer,
             parent: layer._by_spec,
+            pathData: this.svg_path,
             strokeColor: 'black',
             fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr, false),
             strokeScaling: false,
@@ -94,7 +121,7 @@ $p.CatElm_visualization.prototype.__define({
           });
         }
 
-				if(elm instanceof constructor.Filling) {
+        if(elm instanceof constructor.Filling) {
           subpath.position = elm.bounds.topLeft.add(offset);
         }
         else {
@@ -133,8 +160,11 @@ $p.CatElm_visualization.prototype.__define({
           }
         }
 
-			}
-		}
-	}
+      }
+    }
+    catch (e) {
+      console.log(e);
+    }
 
-});
+  }
+};

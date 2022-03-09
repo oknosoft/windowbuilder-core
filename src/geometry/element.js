@@ -23,9 +23,15 @@ class BuilderElement extends paper.Group {
   constructor(attr) {
 
     super(attr);
+    if(attr.parent){
+      this.parent = attr.parent;
+    }
+    else if(attr.proto && attr.proto.parent){
+      this.parent = attr.proto.parent;
+    }
 
     if(!attr.row){
-      attr.row = this.project.ox.coordinates.add();
+      attr.row = this.layer._ox.coordinates.add();
     }
 
     this._row = attr.row;
@@ -33,7 +39,7 @@ class BuilderElement extends paper.Group {
     this._attr = {};
 
     if(!this._row.elm){
-      this._row.elm = this.project.ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+      this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
 
     if(attr._nearest){
@@ -46,14 +52,7 @@ class BuilderElement extends paper.Group {
     if(attr.proto){
 
       if(attr.proto.inset){
-        this.inset = attr.proto.inset;
-      }
-
-      if(attr.parent){
-        this.parent = attr.parent;
-      }
-      else if(attr.proto.parent){
-        this.parent = attr.proto.parent;
+        this.set_inset(attr.proto.inset, true);
       }
 
       if(attr.proto instanceof Profile){
@@ -62,9 +61,6 @@ class BuilderElement extends paper.Group {
 
       this.clr = attr.proto.clr;
 
-    }
-    else if(attr.parent){
-      this.parent = attr.parent;
     }
 
     if(!this._row.cnstr && this.layer.cnstr){
@@ -148,7 +144,7 @@ class BuilderElement extends paper.Group {
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
 
-      if(this.layer.parent){
+      if(this.layer && this.layer.parent){
         _attr.generatrix.guide = true;
       }
     }
@@ -175,105 +171,136 @@ class BuilderElement extends paper.Group {
   }
 
   // виртуальные метаданные для автоформ
-  get _metadata() {
+  __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
       inset = Object.assign({}, _xfields.inset),
-      arc_h = Object.assign({}, _xfields.r, {synonym: "Высота дуги"}),
-      info = Object.assign({}, fields.note, {synonym: "Элемент"}),
-      cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn),
-      cnn2 = Object.assign({}, cnn1),
-      cnn3 = Object.assign({}, cnn1);
+      arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
+      info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
+      cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
+      cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
+      cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
+      clr = Object.assign(utils._clone(_xfields.clr), {choice_params: []});
 
-    const {iface, utils, cat: {inserts, cnns, clrs}, enm: {elm_types, inserts_glass_types, cnn_types}, cch} = $p;
+    if(iface !== false) {
+      iface = $p.iface;
+    }
 
     function cnn_choice_links(o, cnn_point){
 
-      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types);
+      const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
 
       if(!iface || utils.is_data_obj(o)){
         return nom_cnns.some((cnn) => o.ref == cnn);
       }
       else{
-        let refs = "";
+        let refs = '';
         nom_cnns.forEach((cnn) => {
-          if(refs){
-            refs += ", ";
+          if(refs) {
+            refs += ', ';
           }
-          refs += "'" + cnn.ref + "'";
+          refs += `'${cnn.ref}'`;
         });
-        return "_t_.ref in (" + refs + ")";
+        return `_t_.ref in (${refs})`;
       }
     }
 
 
     // динамические отборы для вставок и соединений
-    const {_inserts_types_filling} = inserts;
-
+    const {_types_filling} = inserts;
 
     inset.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o, f) => {
         const {sys} = this.project._dp;
 
-          let selection;
+        let selection;
 
-          if(this instanceof Filling){
-            // !iface - нет dhtmlx, чистый react
-            if(!iface || utils.is_data_obj(o)){
-              const {thickness, insert_type, insert_glass_type} = inserts.get(o);
-              return _inserts_types_filling.indexOf(insert_type) != -1 &&
-                thickness >= sys.tmin && thickness <= sys.tmax &&
-                (insert_glass_type.empty() || insert_glass_type == inserts_glass_types.Заполнение);
-            }
-            else{
-              let refs = "";
-              inserts.by_thickness(sys.tmin, sys.tmax).forEach((o) => {
-                if(o.insert_glass_type.empty() || o.insert_glass_type == inserts_glass_types.Заполнение){
-                  if(refs){
-                    refs += ", ";
-                  }
-                  refs += "'" + o.ref + "'";
-                }
-              });
-              return "_t_.ref in (" + refs + ")";
-            }
-          }
-          else if(this instanceof Profile){
-            if(this.nearest()){
-              selection = {elm_type: {in: [elm_types.Створка, elm_types.Добор]}};
-            }
-            else{
-              selection = {elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
-            }
-          }
-          else{
-            selection = {elm_type: this.nom.elm_type};
-          }
+        if(this instanceof Filling) {
+          const {glass_thickness, thicknesses} = sys;
 
           // !iface - нет dhtmlx, чистый react
-          if(!iface || utils.is_data_obj(o)){
-            let ok = false;
-            selection.nom = inserts.get(o);
-            sys.elmnts.find_rows(selection, (row) => {
-              ok = true;
-              return false;
-            });
-            return ok;
-          }
-          else{
-            let refs = "";
-            sys.elmnts.find_rows(selection, (row) => {
-              if(refs){
-                refs += ", ";
+          if(!iface || utils.is_data_obj(o)) {
+            const insert = inserts.get(o);
+            const {insert_type, insert_glass_type} = insert;
+            if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+              /*разбор параметра glass_thickness*/
+              if(glass_thickness === 0) {
+                return thicknesses.includes(insert.thickness(this));
               }
-              refs += "'" + row.nom.ref + "'";
-            });
-            return "_t_.ref in (" + refs + ")";
+              else if(glass_thickness === 1) {
+                return sys.glasses({elm: this}).includes(insert);
+              }
+              else if(glass_thickness === 2) {
+                const thickness = insert.thickness(this);
+                return thickness >= thicknesses[0] && thickness <= thicknesses[thicknesses.length - 1];
+              }
+              else if(glass_thickness === 3) {
+                return true;
+              }
+            }
+            return false;
           }
-        }]}
-    ];
+          else {
+            let refs = '';
+            inserts.by_thickness(sys).forEach((o) => {
+              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение) {
+                if(refs) {
+                  refs += ', ';
+                }
+                refs += `'${o.ref}'`;
+              }
+            });
+            return `_t_.ref in (${refs})`;
+          }
+        }
+        else if(this instanceof ProfileConnective) {
+          selection = {elm_type: elm_types.Соединитель};
+        }
+        else if(this instanceof ProfileAddl) {
+          selection = {elm_type: elm_types.Добор};
+        }
+        else if(this instanceof Profile) {
+          const {Любое} = positions;
+          if(this.nearest()) {
+            selection = {
+              pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.flap, elm_types.flap0, elm_types.Добор]}
+            };
+          }
+          else {
+            selection = {pos:{in:[this.pos,Любое]},
+              elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+          }
+        }
+        else {
+          selection = {elm_type: this.nom.elm_type};
+        }
+
+        // !iface - нет dhtmlx, чистый react
+        if(!iface || utils.is_data_obj(o)) {
+          let ok = false;
+          selection.nom = inserts.get(o);
+          sys.elmnts.find_rows(selection, (row) => {
+            ok = true;
+            return false;
+          });
+          return ok;
+        }
+        else {
+          let refs = '';
+          sys.elmnts.find_rows(selection, (row) => {
+            if(refs) {
+              refs += ', ';
+            }
+            refs += `'${row.nom.ref}'`;
+          });
+          return `_t_.ref in (${refs})`;
+        }
+      }]
+    }];
 
     cnn1.choice_links = [{
       name: ['selection', 'ref'],
@@ -291,11 +318,11 @@ class BuilderElement extends paper.Group {
         const cnn_ii = this.selected_cnn_ii();
         let nom_cnns = [utils.blank.guid];
 
-        if(cnn_ii){
-          if (cnn_ii.elm instanceof Filling) {
+        if(cnn_ii) {
+          if(cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
-          else if (cnn_ii.elm.elm_type == elm_types.Створка && this.elm_type != elm_types.Створка) {
+          else if(cnn_ii.elm.elm_type == elm_types.flap && this.elm_type != elm_types.flap) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
           }
           else {
@@ -303,43 +330,46 @@ class BuilderElement extends paper.Group {
           }
         }
 
-        if (!iface || utils.is_data_obj(o)) {
+        if(!iface || utils.is_data_obj(o)) {
           return nom_cnns.some((cnn) => o.ref == cnn);
         }
         else {
-          let refs = "";
+          let refs = '';
           nom_cnns.forEach((cnn) => {
-            if (refs) {
-              refs += ", ";
+            if(refs) {
+              refs += ', ';
             }
-            refs += "'" + cnn.ref + "'";
+            refs += `'${cnn.ref}'`;
           });
-          return "_t_.ref in (" + refs + ")";
+          return `_t_.ref in (${refs})`;
         }
       }]
     }];
 
     // дополняем свойства поля цвет отбором по служебным цветам
-    clrs.selection_exclude_service(_xfields.clr, this);
+    clrs.selection_exclude_service(clr, this);
 
     const mfields = {
-      info: info,
-      inset: inset,
-      clr: _xfields.clr,
+      info,
+      inset,
+      clr,
       x1: _xfields.x1,
       x2: _xfields.x2,
       y1: _xfields.y1,
       y2: _xfields.y2,
-      cnn1: cnn1,
-      cnn2: cnn2,
-      cnn3: cnn3,
-      arc_h: arc_h,
+      cnn1,
+      cnn2,
+      cnn3,
+      arc_h,
       r: _xfields.r,
       arc_ccw: _xfields.arc_ccw,
-      a1: Object.assign({}, _xfields.x1, {synonym: "Угол1"}),
-      a2: Object.assign({}, _xfields.x1, {synonym: "Угол2"}),
-      offset: Object.assign({}, _xfields.x1, {synonym: "Смещение"}),
+      a1: Object.assign({}, _xfields.x1, {synonym: 'Угол 1'}),
+      a2: Object.assign({}, _xfields.x1, {synonym: 'Угол 2'}),
+      offset: Object.assign({}, _xfields.x1, {synonym: 'Смещение'}),
       region: _xfields.region,
+      note: fields.note,
+      price: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Цена продажи'}),
+      first_cost: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Себестоимость план'}),
     };
 
     return {
@@ -366,10 +396,22 @@ class BuilderElement extends paper.Group {
       }),
     };
   }
+  get _metadata() {
+    return this.__metadata();
+  }
 
   // виртуальный датаменеджер для автоформ
   get _manager() {
     return this.project._dp._manager;
+  }
+
+  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  get ox() {
+    const {layer, _row} = this;
+    if(layer) {
+      return layer._ox;
+    }
+    return _row ? _row._owner._owner : {cnn_elmnts: []};
   }
 
   /**
@@ -378,7 +420,11 @@ class BuilderElement extends paper.Group {
    * @type CatNom
    */
   get nom() {
-    return this.inset.nom(this);
+    const {_attr} = this;
+    if(!_attr.nom) {
+      _attr.nom = this.inset.nom(this);
+    }
+    return _attr.nom;
   }
 
   // номер элемента - свойство только для чтения
@@ -399,22 +445,40 @@ class BuilderElement extends paper.Group {
 
   // ширина
   get width() {
-    return this.inset.width(this);
+    return this.nom.width || 80;
   }
 
   // толщина (для заполнений и, возможно, профилей в 3D)
   get thickness() {
-    return this.inset.thickness;
+    return this.inset.thickness(this);
   }
 
   // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
   get sizeb() {
-    return this.inset.sizeb || 0;
+    const {sizeb} = this.inset;
+    if(sizeb === -1100) {
+      const {nom} = this;
+      return nom ? nom.sizeb : 0;
+    }
+    else if(sizeb === -1200) {
+      return this.width / 2;
+    }
+    return sizeb || 0;
   }
 
   // размер до фурнитурного паза
   get sizefurn() {
     return this.nom.sizefurn || 20;
+  }
+
+  // масса элемента
+  get weight() {
+    let {ox, elm, inset, layer} = this;
+    // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
+    if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
+      ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
+    }
+    return ox.elm_weight(elm);
   }
 
   /**
@@ -454,6 +518,200 @@ class BuilderElement extends paper.Group {
     this.set_clr(v);
   }
 
+  get clr_in() {
+    return this.clr.clr_in;
+  }
+  set clr_in(v) {
+    const {clr} = this;
+    this.clr = $p.cat.clrs.composite_ref('clr_in', clr.clr_out.empty() ? clr : clr.clr_out, v);
+  }
+
+  get clr_out() {
+    return this.clr.clr_out;
+  }
+  set clr_out(v) {
+    const {clr} = this;
+    this.clr = $p.cat.clrs.composite_ref('clr_out', clr.clr_in.empty() ? clr : clr.clr_in, v);
+  }
+
+  /**
+   * Дополнительные свойства json
+   * @return {Object}
+   */
+  get dop() {
+    return this._row.dop;
+  }
+  set dop(v) {
+    this._row.dop = v;
+  }
+
+  /**
+   * Произвольный комментарий
+   * @return {String}
+   */
+  get note() {
+    return this.dop.note || '';
+  }
+  set note(v) {
+    this.dop = {note: v};
+  }
+
+  /**
+   * Плановая себестоимость единицы хранения в валюте упр. учёта
+   * @return {Number}
+   */
+  get first_cost() {
+    return this.dop.first_cost || 0;
+  }
+  set first_cost(v) {
+    this.dop = {first_cost: v};
+  }
+
+  /**
+   * Плановая цена продажи единицы хранения в валюте упр. учёта
+   * @return {Number}
+   */
+  get price() {
+    return this.dop.price || 0;
+  }
+  set price(v) {
+    this.dop = {price: v};
+  }
+
+  /**
+   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * [inset] {CatInserts} - указываем для дополнительных вставок
+   * @return {Array}
+   */
+  elm_props(inset) {
+    const {_attr, _row, project: {_dp}, ox: {params}, rnum} = this;
+    const {utils, md, enm: {positions}} = $p;
+    const concat = inset || rnum;
+    if(!inset) {
+      inset = this.inset;
+    }
+
+    // свойства, нужные вставке текущего элемента
+    const inset_params = inset.used_params();
+
+    // получаем список свойств
+    const props = [];
+    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : _dp.sys.product_params;
+    for(const {param, elm} of product_params) {
+      if (!inset_params.includes(param)) {
+        continue;
+      }
+      // если переопределение явно указано в системе
+      if(elm) {
+        props.push(param);
+      }
+      // если переопределение указано в самом параметре
+      else if([1, 2].includes(param.inheritance)) {
+        // дополнительно учтём тип и положение элемента
+        const {elm_type, pos, orientation} = this;
+        if(!param.applying.count()) {
+          props.push(param);
+        }
+        else {
+          for(const arow of param.applying) {
+            if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+              (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
+              props.push(param);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if(!rnum) {
+      // удаляем возможные паразитные свойства
+      _attr.props && _attr.props.forEach((prop) => {
+        if(!props.includes(prop)) {
+          delete this[concat ? concat.ref + prop.ref : prop.ref];
+        }
+      });
+      _attr.props = props;
+      // создаём свойства
+      props.forEach((prop) => {
+        const key = concat ? concat.ref + prop.ref : prop.ref;
+        if(!this.hasOwnProperty(key)) {
+          Object.defineProperty(this, key, {
+            get() {
+              let prow;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: concat || utils.blank.guid,
+                region: 0,
+              }, (row) => {
+                if(!prow || row.cnstr) {
+                  prow = row;
+                }
+              });
+
+              if(prow) {
+                return prow.value;
+              }
+              const type = prop.type.types[0];
+              if(type.includes('.')) {
+                const mgr = md.mgr_by_class_name(type);
+                if(mgr) {
+                  return mgr.get();
+                }
+              }
+            },
+            set(v) {
+              let prow, prow0;
+              params.find_rows({
+                param: prop,
+                cnstr: {in: [0, -_row.row]},
+                inset: concat || utils.blank.guid,
+                region: 0,
+              }, (row) => {
+                if(row.cnstr) {
+                  prow = row;
+                }
+                else {
+                  prow0 = row;
+                }
+              });
+              // если устанавливаемое значение совпадает со значением изделия - удаляем
+              if(prow0 && prow0.value == v) {
+                prow && prow._owner.del(prow);
+              }
+              else if(prow) {
+                prow.value = v;
+              }
+              else {
+                params.add({
+                  param: prop,
+                  cnstr: -_row.row,
+                  region: 0,
+                  inset: concat || utils.blank.guid,
+                  value: v,
+                });
+              }
+              this.refresh_inset_depends(prop, true);
+              return true;
+            },
+            configurable: true,
+          });
+        }
+      });
+    }
+
+    return props;
+  }
+
+  /**
+   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param, with_neighbor) {
+
+  }
+
   /**
    * Сеттер вставки с учетом выделенных элементов
    * @param v {CatInserts}
@@ -462,11 +720,13 @@ class BuilderElement extends paper.Group {
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
+      delete _attr.nom;
       _row.inset = v;
       if(_attr && _attr._rays){
         _attr._rays.clear(true);
       }
       project.register_change();
+      project._scope.eve.emit('set_inset', this);
     }
   }
 
@@ -476,13 +736,16 @@ class BuilderElement extends paper.Group {
    * @param [ignore_select] {Boolean}
    */
   set_clr(v, ignore_select) {
-    if(this._row.clr != v) {
-      this._row.clr = v;
-      this.project.register_change();
+    const {_row, path, project} = this;
+    const clr = _row.clr._manager.getter(v);
+    const {clr_group} = _row.inset;
+    if(clr_group.contains(clr) && _row.clr != clr) {
+      _row.clr = clr;
+      project.register_change();
     }
     // цвет элементу присваиваем только если он уже нарисован
-    if(this.path instanceof paper.Path){
-      this.path.fillColor = BuilderElement.clr_by_clr.call(this, this._row.clr, false);
+    if(path instanceof paper.Path){
+      path.fillColor = BuilderElement.clr_by_clr.call(this, _row.clr, false);
     }
   }
 
@@ -498,9 +761,8 @@ class BuilderElement extends paper.Group {
    * Возвращает примыкающий элемент и строку табчасти соединений
    */
   selected_cnn_ii() {
-    const {project, elm} = this;
+    const {project, elm, ox} = this;
     const sel = project.getSelectedItems();
-    const {cnns} = project;
     const items = [];
     let res;
 
@@ -515,7 +777,7 @@ class BuilderElement extends paper.Group {
       items.some((item) => item == this) &&
       items.some((item) => {
         if(item != this){
-          cnns.forEach((row) => {
+          ox.cnn_elmnts.forEach((row) => {
             if(!row.node1 && !row.node2 &&
               ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
               res = {elm: item, row: row};
@@ -539,11 +801,22 @@ class BuilderElement extends paper.Group {
   remove() {
     this.detache_wnd && this.detache_wnd();
 
-    const {parent, project, _row} = this;
+    const {parent, project, _row, ox, elm, path} = this;
 
-    parent && parent.on_remove_elm && parent.on_remove_elm(this);
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
 
-    if(_row && _row._owner && project.ox === _row._owner._owner){
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
+
+    project._scope.eve.emit('elm_removed', this);
+
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
       _row._owner.del(_row);
     }
 
@@ -557,17 +830,18 @@ class BuilderElement extends paper.Group {
    * @param critical {Boolean}
    * @param text {String}
    */
-  err_spec_row(nom, text) {
+  err_spec_row(nom, text, origin) {
     if(!nom){
       nom = $p.job_prm.nom.info_error;
     }
-    const {ox} = this.project;
-    if(!ox.specification.find_rows({elm: this.elm, nom}).length){
+    const {_ox} = this.layer;
+    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
       $p.ProductsBuilding.new_spec_row({
         elm: this,
         row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: ox.specification,
-        ox,
+        spec: _ox.specification,
+        ox: _ox,
+        origin,
       });
     }
     if(text){

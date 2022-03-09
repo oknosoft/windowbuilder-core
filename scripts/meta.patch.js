@@ -8,11 +8,10 @@
 
 const include = ['*'];
 const exclude = [
-  'cat.abonents',
   'cat.servers',
   'cch.mdm_groups',
-  //'cat.property_values_hierarchy',
   'doc.registers_correction',
+  'ireg.i18n',
   'ireg.delivery_schedules',
   'ireg.delivery_scheme',
 ];
@@ -47,7 +46,24 @@ module.exports = function(meta) {
         delete mgrs[name].has_owners;
       }
 
+      if(name === 'abonents' && cls === 'cat') {
+        for(const fld in mgrs[name].fields) {
+          if(!['name', 'id', 'no_mdm'].includes(fld)) {
+            delete mgrs[name].fields[fld];
+          }
+        }
+        for(const fld in mgrs[name].tabular_sections) {
+          if(fld !== 'servers') {
+            delete mgrs[name].tabular_sections[fld];
+          }
+        }
+      }
+
       if(name === 'http_apis' && cls === 'cat') {
+        delete mgrs[name].fields.server;
+      }
+
+      if(name === 'lead_src' && cls === 'cat') {
         delete mgrs[name].fields.server;
       }
 

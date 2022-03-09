@@ -1,3 +1,4 @@
+
 /**
  * ### Вспомогательные классы для формирования размерных линий
  *
@@ -24,6 +25,16 @@ class DimensionGroup {
         return true;
       }
     }
+  }
+
+  sizes() {
+    const res = [];
+    for (let key in this) {
+      if(this[key].visible) {
+        res.push(this[key]);
+      }
+    }
+    return res;
   }
 
 }
@@ -237,7 +248,6 @@ class DimensionDrawer extends paper.Group {
           dx2 = dxi - nom.sizefaltz;
         }
 
-
         this.ihor[`i${++index}`] = new DimensionLineImpost({
           elm1: elm,
           elm2: elm,
@@ -249,7 +259,6 @@ class DimensionDrawer extends paper.Group {
           offset: invert ? -150 : 150,
           outer: outer.includes(impost),
         });
-
       }
     }
 
@@ -324,7 +333,8 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
-    const offset = (pos == 'right' || pos == 'bottom') ? -130 : 90;
+    const {base_offset, dop_offset} = consts;
+    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
@@ -349,7 +359,8 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии от габарита
    */
   by_base(arr, collection, pos) {
-    let offset = (pos == 'right' || pos == 'bottom') ? -130 : 90;
+    const {base_offset, dop_offset} = consts;
+    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
         collection[i - 1] = new DimensionLine({
@@ -362,7 +373,7 @@ class DimensionDrawer extends paper.Group {
           offset: offset,
           impost: true
         });
-        offset += 90;
+        offset += base_offset;
       }
     }
   }
@@ -374,7 +385,7 @@ class DimensionDrawer extends paper.Group {
 
     const {project, parent} = this;
     const {bounds} = parent;
-
+    const {base_offset, dop_offset} = consts;
 
     if(project.contours.length > 1 || forse) {
 
@@ -384,12 +395,12 @@ class DimensionDrawer extends paper.Group {
             this.left = new DimensionLine({
               pos: 'left',
               parent: this,
-              offset: ihor.length > 2 ? 220 : 90,
+              offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
               contour: true
             });
           }
           else {
-            this.left.offset = ihor.length > 2 ? 220 : 90;
+            this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
           }
         }
       }
@@ -406,12 +417,12 @@ class DimensionDrawer extends paper.Group {
             this.right = new DimensionLine({
               pos: 'right',
               parent: this,
-              offset: ihor.length > 2 ? -260 : -130,
+              offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
               contour: true
             });
           }
           else {
-            this.right.offset = ihor.length > 2 ? -260 : -130;
+            this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
           }
         }
       }
@@ -428,12 +439,12 @@ class DimensionDrawer extends paper.Group {
             this.top = new DimensionLine({
               pos: 'top',
               parent: this,
-              offset: ivert.length > 2 ? 220 : 90,
+              offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
               contour: true
             });
           }
           else {
-            this.top.offset = ivert.length > 2 ? 220 : 90;
+            this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
           }
         }
       }
@@ -450,12 +461,12 @@ class DimensionDrawer extends paper.Group {
             this.bottom = new DimensionLine({
               pos: 'bottom',
               parent: this,
-              offset: ivert.length > 2 ? -260 : -130,
+              offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
               contour: true
             });
           }
           else {
-            this.bottom.offset = ivert.length > 2 ? -260 : -130;
+            this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
           }
         }
       }
@@ -477,11 +488,12 @@ class DimensionDrawer extends paper.Group {
    * ### Формирует размерные линии контура по фальцу
    */
   by_faltz(ihor, ivert, by_side) {
+    const {base_offset} = consts;
     if (!this.left) {
       this.left = new DimensionLine({
         pos: 'left',
         parent: this,
-        offset: 90,
+        offset: base_offset,
         contour: true,
         faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
       });
@@ -490,7 +502,7 @@ class DimensionDrawer extends paper.Group {
       this.top = new DimensionLine({
         pos: 'top',
         parent: this,
-        offset: 90,
+        offset: base_offset,
         contour: true,
         faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
       });

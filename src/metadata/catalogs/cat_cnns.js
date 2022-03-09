@@ -10,7 +10,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
   sort_cnns(elm1, elm2) {
 
     const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
-    const sides = [cnn_sides.Изнутри, cnn_sides.Снаружи];
+    const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
     const sys = elm1 instanceof BuilderElement ? elm1.project._dp.sys : (elm2 instanceof BuilderElement && elm2.project._dp.sys);
     const priority = (cnn) => {
@@ -97,7 +97,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       cat: {nom}, utils} = this._owner.$p;
 
     // если оба элемента - профили, определяем сторону
-    const side = is_outer ? cnn_sides.Снаружи :
+    const side = is_outer ? cnn_sides.outer :
       (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
 
     let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
@@ -148,8 +148,12 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
           if(is_nom1 && is_nom2){
             return false;
           }
-          is_nom1 = is_nom1 || (row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2));
-          is_nom2 = is_nom2 || (row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1));
+          if(!is_nom1) {
+            is_nom1 = row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2);
+          }
+          if(!is_nom2) {
+            is_nom2 = row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1);
+          }
         });
         if(is_nom1 && is_nom2){
           a2.push(cnn);
@@ -178,14 +182,17 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
                 }
               }
             }
+            if(cnn_point && cnn.stop_applying(cnn_point)) {
+              return false;
+            }
             if(!side){
-              return true
+              return true;
             }
-            if(cnn.sd1 == cnn_sides.Изнутри){
-              return side == cnn_sides.Изнутри;
+            if(cnn.sd1 == cnn_sides.inner){
+              return side == cnn_sides.inner;
             }
-            else if(cnn.sd1 == cnn_sides.Снаружи){
-              return side == cnn_sides.Снаружи;
+            else if(cnn.sd1 == cnn_sides.outer){
+              return side == cnn_sides.outer;
             }
             else{
               return true;
@@ -217,31 +224,32 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
-    const {cnn_types: {acn}, cnn_sides} = this._owner.$p.enm;
+    const {cnn_types: {acn, t, xx}, cnn_sides} = this._owner.$p.enm;
 
     // если установленное ранее соединение проходит по типу и стороне, нового не ищем
-    if(curr_cnn && cnn_types && (cnn_types.indexOf(curr_cnn.cnn_type) != -1) && (cnn_types != acn.ii)){
+    if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
 
       // TODO: проверить геометрию
-
-      if(!ign_side && curr_cnn.sd1 == cnn_sides.Изнутри){
-        if(typeof is_outer == 'boolean'){
-          if(!is_outer){
-            return curr_cnn;
+      if(!curr_cnn.stop_applying(cnn_point) && ign_side !== 0) {
+        if(!ign_side && curr_cnn.sd1 == cnn_sides.inner){
+          if(typeof is_outer == 'boolean'){
+            if(!is_outer){
+              return curr_cnn;
+            }
           }
+          else{
+            if(elm2.cnn_side(elm1) == cnn_sides.inner){
+              return curr_cnn;
+            }
+          }
+        }
+        else if(!ign_side && curr_cnn.sd1 == cnn_sides.outer){
+          if(is_outer || elm2.cnn_side(elm1) == cnn_sides.outer)
+            return curr_cnn;
         }
         else{
-          if(elm2.cnn_side(elm1) == cnn_sides.Изнутри){
-            return curr_cnn;
-          }
-        }
-      }
-      else if(!ign_side && curr_cnn.sd1 == cnn_sides.Снаружи){
-        if(is_outer || elm2.cnn_side(elm1) == cnn_sides.Снаружи)
           return curr_cnn;
-      }
-      else{
-        return curr_cnn;
+        }
       }
     }
 
@@ -249,7 +257,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
 
     // сортируем по непустой стороне и приоритету
     if(cnns.length){
-      return cnns[0];
+      return curr_cnn && cnns.includes(curr_cnn) ? curr_cnn : cnns[0];
     }
     // TODO: возможно, надо вернуть соединение с пустотой
     else{
@@ -284,13 +292,13 @@ exports.CatCnns = class CatCnns extends Object {
     if(this.cnn_elmnts.find_rows({nom1: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art1});
     }
-    if(!ares.length && this.cnn_elmnts.find_rows({nom2: nom}).length){
+    if((!ares || !ares.length) && this.cnn_elmnts.find_rows({nom2: nom}).length){
       ares = this.specification.find_rows({nom: job_prm.nom.art2});
     }
-    if(!ares.length) {
+    if((!ares || !ares.length)) {
       ares = this.specification.find_rows({nom: nom});
     }
-    if(ares.length) {
+    if(ares && ares.length) {
       return ares[0]._row;
     }
 
@@ -305,12 +313,45 @@ exports.CatCnns = class CatCnns extends Object {
   }
 
   /**
+   * Проверяет применимость для xx и t
+   */
+  stop_applying(cnn_point) {
+    const {applying, cnn_type, _manager} = this;
+    const {cnn_types} = _manager._owner.$p.enm;
+    let stop = applying && (cnn_type === cnn_types.t || cnn_type === cnn_types.xx);
+    if(stop) {
+      // 0 - Везде
+      // 1 - Только стык
+      // 2 - Только T
+      // 3 - Только угол
+      if(applying === 1 && !cnn_point.is_ll) {
+        ;
+      }
+      else if(applying === 2 && cnn_point.is_ll) {
+        ;
+      }
+      else {
+        stop = false;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Параметрический размер соединения
    */
   size(elm) {
     let {sz, sizes} = this;
+    const {ox, layer} = elm;
     sizes.forEach((prm_row) => {
-      if(prm_row.param.check_condition({row_spec: {}, prm_row, elm, cnstr: 0, ox: elm.project.ox})) {
+      if(prm_row.param.check_condition({
+        row_spec: {},
+        prm_row,
+        cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+        elm,
+        layer,
+        ox,
+      })) {
         sz = prm_row.elm;
         return false;
       }
@@ -319,11 +360,23 @@ exports.CatCnns = class CatCnns extends Object {
   }
 
   /**
+   * Выясняет, зависит ли размер соединения от текущего параметра
+   * @param param {CchProperties}
+   * @return {Boolean}
+   */
+  is_depend_of(param) {
+    for(const row of this.sizes) {
+      if(row.param === param || (row.param.empty() && !row.key.empty())) {
+        return true;
+      }
+    }
+  }
+
+  /**
    * Укорочение для конкретной номенклатуры из спецификации
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
-    const {CatInserts} = this._manager._owner.$p;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom) {
@@ -403,7 +456,7 @@ exports.CatCnns = class CatCnns extends Object {
         return;
       }
       // для угловых, разрешаем art2 только явно для art2
-      if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && set_specification != САртикулом2 && cnn_type != xx && cnn_type != t) {
+      if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && !acn.xsl.includes(cnn_type) && set_specification != САртикулом2) {
         return;
       }
 

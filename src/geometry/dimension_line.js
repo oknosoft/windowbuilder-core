@@ -74,6 +74,7 @@ class DimensionLine extends paper.Group {
 
     !this.project._attr._from_service && this.on({
       mouseenter: this._mouseenter,
+      mouseleave: this._mouseleave,
       click: this._click
     });
 
@@ -96,12 +97,69 @@ class DimensionLine extends paper.Group {
     return $p.dp.builder_size;
   }
 
+  /**
+   *
+   * @return {boolean}
+   */
+  is_disabled() {
+    const {project, layer, _attr: {elm1, elm2}} = this;
+    if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
+      return true;
+    }
+    if(elm1 instanceof ProfileParent && elm2 instanceof ProfileParent) {
+      return true;
+    }
+    return false;
+  }
+
   _mouseenter() {
-    this.project._scope.canvas_cursor('cursor-arrow-ruler');
+    const {children: {text}, project: {_scope}} = this;
+    const dis = this.is_disabled();
+    _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
+    if(!dis) {
+      text.fontWeight = 'bold';
+      text.shadowBlur = 10;
+      text.shadowOffset = 10;
+    }
+  }
+
+  _mouseleave() {
+    const {text} = this.children;
+    text.fontWeight = 'normal';
+    text.shadowBlur = 0;
+    text.shadowOffset = 0;
   }
 
   _click(event) {
     event.stop();
+  }
+
+  correct_move_name({event, p1, p2}) {
+    const {pos, _attr: {elm1, elm2}} = this;
+    const e1 = elm1 instanceof ProfileParent;
+    const e2 = elm2 instanceof ProfileParent;
+    if(!e1 && !e2) {
+      return;
+    }
+
+    if(pos == 'top' || pos == 'bottom') {
+      const dir = p1.x < p2.x;
+      if(event.name == 'left' && dir && e1) {
+        event.name = 'right';
+      }
+      if(event.name == 'right' && dir && e2) {
+        event.name = 'left';
+      }
+    }
+    else {
+      const dir = p1.y > p2.y;
+      if(event.name == 'bottom' && dir && e1) {
+        event.name = 'top';
+      }
+      if(event.name == 'top' && dir && e2) {
+        event.name = 'bottom';
+      }
+    }
   }
 
   _move_points(event, xy) {

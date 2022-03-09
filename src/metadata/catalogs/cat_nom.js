@@ -61,12 +61,39 @@ exports.CatNom = class CatNom extends Object {
    */
   get grouping() {
     if(!this.hasOwnProperty('_grouping')){
-      const {extra_fields, _manager: {_owner}} = this;
-      extra_fields.find_rows({property: _owner.$p.job_prm.properties.grouping}, (row) => {
-        this._grouping = row.value.name;
-      });
+      const {extra_fields, _manager} = this;
+      if(!_manager.hasOwnProperty('_grouping')) {
+        _manager._grouping = _manager._owner.$p.cch.properties.predefined('grouping');
+      }
+      if(_manager._grouping) {
+        const row = extra_fields.find({property: _manager._grouping});
+        this._grouping = row ? row.value.name : '';
+      }
+      else {
+        this._grouping = '';
+      }
     }
-    return this._grouping || '';
+    return this._grouping;
+  }
+
+  /**
+   * Возвращает значение допреквизита минимальный объём
+   */
+  get min_volume() {
+    if(!this.hasOwnProperty('_min_volume')){
+      const {extra_fields, _manager} = this;
+      if(!_manager.hasOwnProperty('_min_volume')) {
+        _manager._min_volume = _manager._owner.$p.cch.properties.predefined('min_volume');
+      }
+      if(_manager._min_volume) {
+        const row = extra_fields.find({property: _manager._min_volume});
+        this._min_volume = row ? row.value : 0;
+      }
+      else {
+        this._min_volume = 0;
+      }
+    }
+    return this._min_volume;
   }
 
   /**
@@ -138,10 +165,14 @@ exports.CatNom = class CatNom extends Object {
    * @private
    */
   _price(attr) {
-    const {job_prm, utils, cat, pricing} = this._manager._owner.$p;
+    const {
+      job_prm: {pricing},
+      cat: {characteristics: {by_ref: characteristics}, color_price_groups: {by_ref: color_price_groups}},
+      utils,
+    } = this._manager._owner.$p;
 
     let price = 0,
-      currency = job_prm.pricing.main_currency,
+      currency = pricing.main_currency,
       start_date = utils.blank.date;
 
     if(!attr){
@@ -165,16 +196,15 @@ exports.CatNom = class CatNom extends Object {
         attr.characteristic = ref;
         if(!calc_order.empty()){
           const tmp = [];
-          const {by_ref} = cat.characteristics;
           for(let clrx in _price) {
-            const cx = by_ref[clrx];
-            if(cx && cx.clr == clr){
+            const cx = characteristics[clrx];
+            if(cx && cx.clr == clr) {
               // если на подходящую характеристику есть цена по нашему типу цен - запоминаем
-              if(_price[clrx][attr.price_type]){
-                if(cx.x && x && cx.x - x < -10){
+              if(_price[clrx][attr.price_type]) {
+                if(cx.x && x && cx.x - x < -10) {
                   continue;
                 }
-                if(cx.y && y && cx.y - y < -10){
+                if(cx.y && y && cx.y - y < -10) {
                   continue;
                 }
                 tmp.push({
@@ -184,41 +214,59 @@ exports.CatNom = class CatNom extends Object {
               }
             }
           }
-          if(tmp.length){
+          if(tmp.length) {
             tmp.sort((a, b) => a.rate - b.rate);
             attr.characteristic = tmp[0].cx.ref;
           }
         }
       }
+
       if(!attr.date){
         attr.date = new Date();
       }
 
       // если для номенклатуры существует структура цен, ищем подходящую
       if(_price){
-        if(_price[attr.characteristic]){
+        if(attr.clr && attr.characteristic == utils.blank.guid) {
+          for(let clrx in _price){
+            const cpg = color_price_groups[clrx];
+            if(cpg && cpg.clrs().includes(attr.clr)){
+              if(_price[clrx][attr.price_type]){
+                _price[clrx][attr.price_type].some((row) => {
+                  if(row.date > start_date && row.date <= attr.date){
+                    price = row.price;
+                    currency = row.currency;
+                    return true;
+                  }
+                });
+                break;
+              }
+            }
+          }
+        }
+        if(!price && _price[attr.characteristic]){
           if(_price[attr.characteristic][attr.price_type]){
-            _price[attr.characteristic][attr.price_type].forEach((row) => {
+            _price[attr.characteristic][attr.price_type].some((row) => {
               if(row.date > start_date && row.date <= attr.date){
                 price = row.price;
                 currency = row.currency;
-                start_date = row.date;
+                return true;
               }
             });
           }
         }
         // если нет цены на характеристику, ищем по цвету
-        else if(attr.clr){
-          const {by_ref} = cat.characteristics;
+        if(!price && attr.clr){
           for(let clrx in _price){
-            const cx = by_ref[clrx];
-            if(cx && cx.clr == attr.clr){
+            const cx = characteristics[clrx];
+            const cpg = color_price_groups[clrx];
+            if((cx && cx.clr == attr.clr) || (cpg && cpg.clrs().includes(attr.clr))){
               if(_price[clrx][attr.price_type]){
-                _price[clrx][attr.price_type].forEach((row) => {
+                _price[clrx][attr.price_type].some((row) => {
                   if(row.date > start_date && row.date <= attr.date){
                     price = row.price;
                     currency = row.currency;
-                    start_date = row.date;
+                    return true;
                   }
                 });
                 break;
@@ -229,18 +277,17 @@ exports.CatNom = class CatNom extends Object {
       }
     }
 
-
     // если есть формула - выполняем вне зависимости от установленной цены
     if(attr.formula){
 
       // если нет цены на характеристику, ищем цену без характеристики
       if(!price && _price && _price[utils.blank.guid]){
         if(_price[utils.blank.guid][attr.price_type]){
-          _price[utils.blank.guid][attr.price_type].forEach((row) => {
+          _price[utils.blank.guid][attr.price_type].some((row) => {
             if(row.date > start_date && row.date <= attr.date){
               price = row.price;
               currency = row.currency;
-              start_date = row.date;
+              return true;
             }
           });
         }
@@ -248,14 +295,15 @@ exports.CatNom = class CatNom extends Object {
       // формулу выполняем в любом случае - она может и не опираться на цены из регистра
       price = attr.formula.execute({
         nom: this,
-        characteristic: cat.characteristics.get(attr.characteristic, false),
+        characteristic: characteristics[attr.characteristic.valueOf()],
         date: attr.date,
+        prm: attr.prm,
         price, currency, x, y, z, clr, calc_order,
       });
     }
 
     // Пересчитать из валюты в валюту
-    return pricing.from_currency_to_currency(price, attr.date, currency, attr.currency);
+    return currency.to_currency(price, attr.date, attr.currency);
   }
 
   /**
