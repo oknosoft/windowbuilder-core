@@ -152,7 +152,7 @@ class CchPredefined_elmnts extends CatObj{
   get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
   set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}
   get elmnts(){return this._getter_ts('elmnts')}
-  set elmnts(v){this._setter_ts('elmnts',v)}}
+  set elmnts(v){this._setter_ts('elmnts',v)}}
 $p.CchPredefined_elmnts = CchPredefined_elmnts;
 class CchPredefined_elmntsElmntsRow extends TabularSectionRow{
 get value(){return this._getter('value')}
@@ -825,7 +825,7 @@ set use(v){this._setter_ts('use',v)}
         });
       }
     });
-  }}
+  }}
 $p.CchProperties = CchProperties;
 class CchPropertiesApplyingRow extends TabularSectionRow{
 get elm_type(){return this._getter('elm_type')}
@@ -991,7 +991,7 @@ set values(v){this._setter_ts('values',v)}
       }
     });
     return values;
-  }}
+  }}
 $p.CatParams_links = CatParams_links;
 class CatParams_linksLeadingsRow extends TabularSectionRow{
 get key(){return this._getter('key')}
@@ -1405,7 +1405,7 @@ set params(v){this._setter_ts('params',v)}
     }
     return _data._template;
   }
-}
+}
 $p.CatFormulas = CatFormulas;
 class CatFormulasManager extends CatManager {
 
@@ -1686,7 +1686,7 @@ set sketch_view(v){this._setter_ts('sketch_view',v)}
       console.log(e);
     }
 
-  }}
+  }}
 $p.CatElm_visualization = CatElm_visualization;
 class CatElm_visualizationSketch_viewRow extends TabularSectionRow{
 get kind(){return this._getter('kind')}
@@ -1914,7 +1914,7 @@ set parameters_russian_recipe(v){this._setter('parameters_russian_recipe',v)}
     }
 
     return (amount * cfrom.course / cfrom.multiplicity) * cto.multiplicity / cto.course;
-  }}
+  }}
 $p.CatCurrencies = CatCurrencies;
 $p.cat.create('currencies');
 
@@ -2554,7 +2554,7 @@ set demand(v){this._setter_ts('demand',v)}
   get type() {
     return {is_ref: true, types: ["cat.characteristics"]};
   }
-}
+}
 $p.CatNom = CatNom;
 class CatNomDemandRow extends TabularSectionRow{
 get kind(){return this._getter('kind')}
@@ -2899,7 +2899,7 @@ set params(v){this._setter_ts('params',v)}
 
     return true;
   }
-}
+}
 $p.CatParameters_keys = CatParameters_keys;
 class CatParameters_keysParamsRow extends TabularSectionRow{
 get property(){return this._getter('property')}
@@ -3693,7 +3693,7 @@ set priorities(v){this._setter_ts('priorities',v)}
 
     return res;
   }
-}
+}
 $p.CatCnns = CatCnns;
 class CatCnnsSpecificationRow extends TabularSectionRow{
 get elm(){return this._getter('elm')}
@@ -4260,7 +4260,7 @@ set parent(v){this._setter('parent',v)}
     }
     return res;
   }
-}
+}
 $p.CatClrs = CatClrs;
 class CatClrsManager extends CatManager {
 
@@ -4649,7 +4649,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       return true;
     }
     return clr.is_composite() ? clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out) : clrs.includes(clr);
-  }}
+  }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{
 get price_group(){return this._getter('price_group')}
@@ -7081,7 +7081,7 @@ set sys_profile(v){this._setter_ts('sys_profile',v)}
   set clr_out(v) {
     const {clr} = this;
     this.clr = $p.cat.clrs.composite_ref('clr_out', clr.clr_in.empty() ? clr : clr.clr_in, v);
-  }}
+  }}
 $p.DpBuyers_order = DpBuyers_order;
 class DpBuyers_orderProductionRow extends TabularSectionRow{
 get inset(){return this._getter('inset')}

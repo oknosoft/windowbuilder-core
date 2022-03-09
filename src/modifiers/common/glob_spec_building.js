@@ -73,7 +73,8 @@ class SpecBuilding {
       };
 
       // рассчитаем спецификацию вставки
-      if(elm_types.Створка === elm_type) {
+      switch (elm_type) {
+      case elm_types.flap:
         for(const {contours} of scheme.contours) {
           for(const contour of contours) {
             elm.layer = contour;
@@ -81,15 +82,20 @@ class SpecBuilding {
             inset.calculate_spec({elm, len_angl, ox, spec});
           }
         }
-      }
-      else if(elm_types.Рама === elm_type) {
+        break;
+      case elm_types.rama:
         for(const contour of scheme.contours) {
           elm.layer = contour;
           len_angl.cnstr = contour.cnstr;
           inset.calculate_spec({elm, len_angl, ox, spec});
         }
-      }
-      else {
+        break;
+      case elm_types.glass:
+        for(const elm of scheme.glasses) {
+          inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+        }
+        break;
+      default:
         inset.calculate_spec({elm, len_angl, ox, spec});
       }
 
