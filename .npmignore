@@ -1,14 +1,9 @@
 .DS_Store
 .idea
-build
 config
-data
-doc
-localstorage
 node_modules
-public
 scripts
-zarchive
+gulpfile.js
 
-/package-lock.json
 *.log
+*.lock

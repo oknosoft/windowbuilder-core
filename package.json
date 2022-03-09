@@ -44,6 +44,7 @@
     "LICENSE",
     "LICENSE.ru.md"
   ],
+  "main": "dist",
   "scripts": {
     "meta:prebuild": "node scripts/meta.prebuild.js",
     "meta:link": "node scripts/meta.link.js"

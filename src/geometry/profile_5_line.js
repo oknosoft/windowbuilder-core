@@ -1,3 +1,4 @@
+
 /**
  * ### Опорная линия
  * Вспомогательная линия для привязки узлов и уравнивания
@@ -18,7 +19,9 @@ class BaseLine extends ProfileItem {
 
   constructor(attr) {
     super(attr);
-    this.parent = this.project.l_connective;
+    if(!attr.preserv_parent) {
+      this.parent = this.project.l_connective;
+    }
     Object.assign(this.generatrix, {
       strokeColor: 'brown',
       fillColor: new paper.Color(1, 0.1),
@@ -26,7 +29,7 @@ class BaseLine extends ProfileItem {
       strokeWidth: 2,
       dashOffset: 4,
       dashArray: [4, 4],
-    })
+    });
   }
 
   get d0() {
@@ -103,8 +106,6 @@ class BaseLine extends ProfileItem {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for Onlay
    */
   save_coordinates() {
 
@@ -119,10 +120,11 @@ class BaseLine extends ProfileItem {
     _row.x2 = this.x2;
     _row.y2 = this.y2;
     _row.path_data = this.generatrix.pathData;
-    _row.parent = this.parent.elm;
+    _row.parent = 0;
     _row.len = this.length;
     _row.angle_hor = this.angle_hor;
     _row.elm_type = this.elm_type;
+    _row.orientation = this.orientation;
   }
 
   cnn_point(node) {

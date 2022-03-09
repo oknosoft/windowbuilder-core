@@ -1,3 +1,4 @@
+
 /**
  * ### Соединительный профиль
  * Класс описывает поведение соединительного профиля
@@ -54,13 +55,14 @@ class ProfileConnective extends ProfileItem {
    * @for ProfileItem
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
+   * @param [start_point] {paper.Point} - откуда началось движение
    */
-  move_points(delta, all_points) {
+  move_points(delta, all_points, start_point) {
 
     const nearests = this.joined_nearests();
     const moved = {profiles: []};
 
-    super.move_points(delta, all_points);
+    super.move_points(delta, all_points, start_point);
 
     // двигаем примыкающие
     if(all_points !== false && !paper.Key.isDown('control')){
@@ -137,7 +139,7 @@ class ProfileConnective extends ProfileItem {
     _row.parent = 0;
 
     // добавляем припуски соединений
-    _row.len = this.length;
+    _row.len = this.length.round(1);
 
     // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
@@ -201,21 +203,83 @@ class ProfileConnective extends ProfileItem {
  */
 class ConnectiveLayer extends paper.Layer {
 
+  constructor(attr) {
+    super(attr);
+    this._errors = new paper.Group({parent: this});
+  }
+
+  presentation() {
+    return 'Соединители';
+  }
+
+  get info() {
+    return this.presentation;
+  }
+
   get skeleton() {
     return this.project._skeleton;
   }
 
+  get cnstr() {
+    return null;
+  }
+
+  get flipped() {
+    return false;
+  }
+  set flipped(v) {
+    return false;
+  }
+
+  /**
+   * Продукция слоя соединителей
+   * Совпадает с продукцией проекта
+   * @return {CatCharacteristics}
+   */
+  get _ox() {
+    return this.project.ox;
+  }
+
   redraw() {
-    this.children.forEach((elm) => elm.redraw());
+    const {_errors, children} = this;
+    children.forEach((elm) => elm !== _errors && elm.redraw());
+    _errors.removeChildren();
+    _errors.bringToFront();
   }
 
   save_coordinates() {
     this.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
   }
 
+  /**
+   * Заглушка
+   */
   glasses() {
     return [];
   }
+
+  /**
+   * Заглушка
+   */
+  get contours() {
+    return [];
+  }
+
+  /**
+   * Заглушка
+   */
+  refresh_prm_links() {
+
+  }
+
+  get _manager() {
+    return this.project._dp._manager;
+  }
+
+  _metadata(fld) {
+    return Contour.prototype._metadata.call(this, fld);
+  }
+
 
   /**
    * Возвращает массив профилей текущего слоя

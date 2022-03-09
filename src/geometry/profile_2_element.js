@@ -1,8 +1,6 @@
 
 /**
- * Created 24.07.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author  Evgeniy Malyarov
+ * Created 24.07.2015
  *
  * @module geometry
  * @submodule profile
@@ -39,23 +37,33 @@ class Profile extends ProfileItem {
 
   constructor(attr) {
 
-    const fromCoordinates = !!attr.row;
+    const fromCoordinates = attr.row && attr.row.elm;
 
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope, ox}} = this;
+      const {_scope} = this.project;
 
       // Информируем контур о том, что у него появился новый ребёнок
       this.layer.on_insert_elm(this);
 
       // ищем и добавляем доборные профили
       if(fromCoordinates){
-        const {cnstr, elm} = attr.row;
-        ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+        const {cnstr, elm, _owner} = attr.row;
+        const {elm_types} = $p.enm;
+        _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
+          if(row.elm_type === elm_types.Добор) {
+            new ProfileAddl({row, parent: this});
+          }
+          else if(row.elm_type === elm_types.Примыкание) {
+            new ProfileAdjoining({row, parent: this});
+          }
+          else if(elm_types.profiles.includes(row.elm_type)) {
+            new ProfileSegment({row, parent: this});
+          }
+        });
       }
     }
-
   }
 
   /**
@@ -101,20 +109,21 @@ class Profile extends ProfileItem {
    */
   get pos() {
     const by_side = this.layer.profiles_by_side();
+    const {positions} = $p.enm;
     if(by_side.top == this) {
-      return $p.enm.positions.Верх;
+      return positions.Верх;
     }
     if(by_side.bottom == this) {
-      return $p.enm.positions.Низ;
+      return positions.Низ;
     }
     if(by_side.left == this) {
-      return $p.enm.positions.Лев;
+      return positions.Лев;
     }
     if(by_side.right == this) {
-      return $p.enm.positions.Прав;
+      return positions.Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return $p.enm.positions.Центр;
+    return positions.Центр;
   }
 
   /**
@@ -260,7 +269,7 @@ class Profile extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(this.cnn_side(null, ip, rays) === Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) === Снаружи) {
             //this.cnn_point(node).is_cut = true;
             this.rays[node].is_cut = true;
             return true;
@@ -332,20 +341,19 @@ class Profile extends ProfileItem {
       point = this[node];
     }
 
-    let ok;
-
     // Если привязка не нарушена, возвращаем предыдущее значение
+    let ok;
     if(profile && profile.children.length) {
       if(!project.has_changes()) {
         ok = true;
       }
-      if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
+      else if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
         ok = true;
       }
     }
 
+    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     if(!ok) {
-      // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
       res.clear();
       if(parent) {
         const {allow_open_cnn} = project._dp.sys;
@@ -384,15 +392,6 @@ class Profile extends ProfileItem {
       }
     }
 
-    if(!res.cnn) {
-      res.cnn = $p.cat.cnns.elm_cnn(this, res.profile, res.cnn_types);
-    }
-
-    if(!res.point) {
-      res.point = point;
-    }
-
-
     return res;
   }
 
@@ -412,6 +411,142 @@ class Profile extends ProfileItem {
       return _rays && _rays.e.profile;
     }
     return _rays && (_rays.b.profile || _rays.e.profile);
+  }
+
+  /**
+   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
+   * @param param {CchProperties}
+   */
+  refresh_inset_depends(param, with_neighbor) {
+    const {inset, _attr: {_rays}} = this;
+    if(_rays && inset.is_depend_of(param)) {
+      _rays.clear(with_neighbor ? 'with_neighbor' : true);
+    }
+  }
+
+  /**
+   * Возвращает виртуальный профиль ряда, вставка и соединения которого, заданы в отдельных свойствах
+   * DataObj, транслирующий свойства допвставки через свойства элемента
+   * @param num {Number}
+   * @return {Profile}
+   */
+  region(num) {
+    const {_attr, rays, layer: {_ox}, elm} = this;
+    const {cat: {cnns, inserts}, utils} = $p;
+
+    // параметры выбора для ряда
+    function cnn_choice_links(elm1, o, cnn_point) {
+      const nom_cnns = cnns.nom_cnn(elm1, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
+      return nom_cnns.some((cnn) => {
+        return o.ref == cnn;
+      });
+    }
+
+    // возаращает строку соединяемых элементов для ряда
+    function cn_row(prop, add) {
+      let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
+      const cnn_point = rays[node1] || {};
+      const {profile, profile_point} = cnn_point;
+      node1 += num;
+      const node2 = profile_point ? (profile_point + num) : `t${num}`;
+      const elm2 = profile ? profile.elm : 0;
+      let row = _ox.cnn_elmnts.find({elm1: elm, elm2, node1, node2});
+      if(!row && add) {
+        row = _ox.cnn_elmnts.add({elm1: elm, elm2, node1, node2});
+      }
+      return add === 0 ? {row, cnn_point} : row;
+    }
+
+    if(!_attr._ranges) {
+      _attr._ranges = new Map();
+    }
+    if(!_attr._ranges.get(num)) {
+      _attr._ranges.set(num, new Proxy(this, {
+        get(target, prop, receiver) {
+          switch (prop){
+          case 'cnn1':
+          case 'cnn2':
+          case 'cnn3':
+            if(!_attr._ranges.get(`cnns${num}`)) {
+              _attr._ranges.set(`cnns${num}`, {});
+            }
+            const cn = _attr._ranges.get(`cnns${num}`);
+            if(!cn[prop]) {
+              const row = cn_row(prop);
+              cn[prop] = row ? row.cnn : cnns.get();
+            }
+            return cn[prop];
+
+          case 'cnn1_row':
+          case 'cnn2_row':
+          case 'cnn3_row':
+            return cn_row(prop.substr(0, 4), 0);
+
+          case 'rnum':
+            return num;
+
+          case 'irow':
+            return _ox.inserts.find({cnstr: -elm, region: num});
+
+          case 'inset':
+            const {irow} = receiver;
+            return irow ? irow.inset : inserts.get();
+
+          case 'nom':
+            return receiver.inset.nom(receiver);
+
+          case 'ref':
+            const {nom} = receiver;
+            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
+
+          case '_metadata':
+            const meta = target.__metadata(false);
+            const {fields} = meta;
+            const {cnn1, cnn2} = fields;
+            const {b, e} = rays;
+            delete cnn1.choice_links;
+            delete cnn2.choice_links;
+            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+            return meta;
+
+          default:
+            let prow;
+            if(utils.is_guid(prop)) {
+              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+            }
+            return prow ? prow.value : target[prop];
+          }
+        },
+
+        set(target, prop, val, receiver) {
+          switch (prop){
+          case 'cnn1':
+          case 'cnn2':
+          case 'cnn3':
+            const cn = _attr._ranges.get(`cnns${num}`);
+            cn[prop] = cnns.get(val);
+            const row = cn_row(prop, true);
+            if(row.cnn !== cn[prop]) {
+              row.cnn = cn[prop];
+            }
+            break;
+
+          default:
+            if(utils.is_guid(prop)) {
+              const prow = _ox.params.find({param: prop, cnstr: -elm, region: num}) || _ox.params.add({param: prop, cnstr: -elm, region: num});
+              prow.value = val;
+            }
+            else {
+              target[prop] = val;
+            }
+          }
+          target.project.register_change(true, ({_scope}) => _scope.eve.emit_async('region_change', receiver, prop));
+          return true;
+        },
+      }));
+    }
+    return _attr._ranges.get(num);
   }
 }
 

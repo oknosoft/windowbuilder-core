@@ -32,7 +32,7 @@ class Graph {
    * @returns {Graph}
    */
   addVertex(newVertex) {
-    this.vertices[newVertex.getKey()] = newVertex;
+    this.vertices[newVertex.key] = newVertex;
     return this;
   }
 
@@ -64,7 +64,7 @@ class Graph {
    * @return {Graph}
    */
   deleteVertex(vertex) {
-    delete this.vertices[vertex.getKey()];
+    delete this.vertices[vertex.key];
     return this;
   }
 
@@ -81,26 +81,26 @@ class Graph {
    */
   addEdge(edge) {
     // Try to find and end start vertices.
-    let startVertex = this.getVertexByKey(edge.startVertex.getKey());
-    let endVertex = this.getVertexByKey(edge.endVertex.getKey());
+    let startVertex = this.getVertexByKey(edge.startVertex.key);
+    let endVertex = this.getVertexByKey(edge.endVertex.key);
 
     // Insert start vertex if it wasn't inserted.
     if (!startVertex) {
       this.addVertex(edge.startVertex);
-      startVertex = this.getVertexByKey(edge.startVertex.getKey());
+      startVertex = this.getVertexByKey(edge.startVertex.key);
     }
 
     // Insert end vertex if it wasn't inserted.
     if (!endVertex) {
       this.addVertex(edge.endVertex);
-      endVertex = this.getVertexByKey(edge.endVertex.getKey());
+      endVertex = this.getVertexByKey(edge.endVertex.key);
     }
 
     // Check if edge has been already added.
-    if (this.edges[edge.getKey()]) {
+    if (this.edges[edge.key]) {
       throw new Error('Edge has already been added before');
     } else {
-      this.edges[edge.getKey()] = edge;
+      this.edges[edge.key] = edge;
     }
 
     // Add edge to the vertices.
@@ -126,11 +126,11 @@ class Graph {
    */
   deleteEdge(edge) {
     // Delete edge from the list of edges.
-    delete this.edges[edge.getKey()];
+    delete this.edges[edge.key];
 
     // Try to find and end start vertices and delete edge from them.
-    const startVertex = this.getVertexByKey(edge.startVertex.getKey());
-    const endVertex = this.getVertexByKey(edge.endVertex.getKey());
+    const startVertex = this.getVertexByKey(edge.startVertex.key);
+    const endVertex = this.getVertexByKey(edge.endVertex.key);
 
     startVertex.deleteEdge(edge);
     endVertex.deleteEdge(edge);
@@ -144,7 +144,7 @@ class Graph {
    * @return {(GraphEdge|null)}
    */
   findEdge(startVertex, endVertex) {
-    const vertex = this.getVertexByKey(startVertex.getKey());
+    const vertex = this.getVertexByKey(startVertex.key);
 
     if (!vertex) {
       return null;
@@ -163,12 +163,57 @@ class Graph {
   }
 
   /**
+   * @return {Map}
+   */
+  getLengths(vertex, delta) {
+    const res = new Map();
+    const pt = vertex.point.add(delta);
+    const all = this.getAllVertices().filter((v) => v !== vertex);
+    let cmin = Infinity, cmax = -Infinity;
+    if(Math.abs(delta.x) > 1) {
+      for(const curr of all) {
+        const x = curr.point.x.round();
+        if(cmin > x) {
+          cmin = x;
+        }
+        if(cmax < x) {
+          cmax = x;
+        }
+        if(Math.abs(vertex.point.x - x) > 1 && !res.has(x)) {
+          const line = new paper.Line(new paper.Point(x, -100000), new paper.Point(x, 100000));
+          const lold = line.getDistance(vertex.point);
+          let lnew = line.getDistance(pt);
+          if(line.getSide(vertex.point) !== line.getSide(pt)) {
+            lnew *= -1;
+          }
+          res.set(x, [lold, lnew]);
+        }
+      }
+    }
+    if(Math.abs(delta.y) > 1) {
+      for(const curr of all) {
+        const y = curr.point.y.round();
+        if(Math.abs(vertex.point.y - y) > 1 && !res.has(y)) {
+          const line = new paper.Line(new paper.Point(-100000, y), new paper.Point(100000, y));
+          const lold = line.getDistance(vertex.point);
+          let lnew = line.getDistance(pt);
+          if(line.getSide(vertex.point) !== line.getSide(pt)) {
+            lnew *= -1;
+          }
+          res.set(y, [lold, lnew]);
+        }
+      }
+    }
+    return Array.from(res).sort(([f1, [a]], [f2, [b]]) => b - a);
+  }
+
+  /**
    * @return {object}
    */
   getVerticesIndices() {
     const verticesIndices = {};
     this.getAllVertices().forEach((vertex, index) => {
-      verticesIndices[vertex.getKey()] = index;
+      verticesIndices[vertex.key] = index;
     });
 
     return verticesIndices;
@@ -190,7 +235,7 @@ class Graph {
     // Fill the columns.
     vertices.forEach((vertex, vertexIndex) => {
       vertex.getNeighbors().forEach((neighbor) => {
-        const neighborIndex = verticesIndices[neighbor.getKey()];
+        const neighborIndex = verticesIndices[neighbor.key];
         adjacencyMatrix[vertexIndex][neighborIndex] = this.findEdge(vertex, neighbor).weight;
       });
     });
