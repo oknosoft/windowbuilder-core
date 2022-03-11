@@ -34,7 +34,7 @@ class SpecBuilding {
    */
   specification_adjustment (attr, with_price) {
 
-    const {cat, pricing, enm: {elm_types}} = $p;
+    const {cat, pricing} = $p;
     const {scheme, calc_order_row, spec} = attr;
     const calc_order = calc_order_row._owner._owner;
     const order_rows = new Map();
@@ -54,52 +54,7 @@ class SpecBuilding {
 
     // находим привязанные к продукции вставки и выполняем
     // здесь может быть как расчет допспецификации, так и доппроверки корректности параметров и геометрии
-    cat.insert_bind.insets(ox).forEach(({inset, elm_type}) => {
-
-      const elm = {
-        _row: {},
-        elm: 0,
-        get perimeter() {return scheme ? scheme.perimeter : []},
-        clr: ox.clr,
-        project: scheme,
-      };
-      const len_angl = {
-        angle: 0,
-        alp1: 0,
-        alp2: 0,
-        len: 0,
-        cnstr: 0,
-        origin: inset,
-      };
-
-      // рассчитаем спецификацию вставки
-      switch (elm_type) {
-      case elm_types.flap:
-        for(const {contours} of scheme.contours) {
-          for(const contour of contours) {
-            elm.layer = contour;
-            len_angl.cnstr = contour.cnstr;
-            inset.calculate_spec({elm, len_angl, ox, spec});
-          }
-        }
-        break;
-      case elm_types.rama:
-        for(const contour of scheme.contours) {
-          elm.layer = contour;
-          len_angl.cnstr = contour.cnstr;
-          inset.calculate_spec({elm, len_angl, ox, spec});
-        }
-        break;
-      case elm_types.glass:
-        for(const elm of scheme.glasses) {
-          inset.calculate_spec({elm, layer: elm.layer, ox, spec});
-        }
-        break;
-      default:
-        inset.calculate_spec({elm, len_angl, ox, spec});
-      }
-
-    });
+    cat.insert_bind.deposit({ox, scheme, spec});
 
     // синхронизируем состав строк - сначала удаляем лишние
     if(!ox.empty()){
