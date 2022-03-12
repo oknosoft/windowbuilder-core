@@ -5497,7 +5497,7 @@ class CatInsert_bindManager extends CatManager {
    */
   deposit({ox, scheme, spec}) {
 
-    const {utils, enm: {elm_types}} = $p;
+    const {elm_types} = $p.enm;
 
     for(const {inset, elm_type} of this.insets(ox)) {
 

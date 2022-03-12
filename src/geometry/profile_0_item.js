@@ -208,9 +208,9 @@ class CnnPoint {
    * @type Profile
    */
   get profile() {
-    if(this._profile === undefined && this._row && this._row.elm2) {
-      this._profile = this.parent.layer.getItem({elm: this._row.elm2});
-      delete this._row;
+    const {_profile, _row} = this;
+    if(!_profile && _row && _row.elm2) {
+      this._profile = this.parent.layer.getItem({class: ProfileItem, elm: _row.elm2});
     }
     return this._profile;
   }
@@ -256,6 +256,37 @@ class CnnPoint {
   }
 
   /**
+   * При наличии соединения с другой стороны, исправляет ссылки на основной профиль и profile_point
+   * @param other
+   */
+  correct_profile({profile}, cnn) {
+    const {parent, point}  = this;
+    const {rays, layer} = parent;
+    const {outer} = $p.enm.cnn_sides;
+
+    // ищем концы профилей в окрестности нас
+    for(const elm of layer.profiles) {
+      if(elm === parent || elm === profile) {
+        continue;
+      }
+      for(const node of 'be') {
+        if(elm[node].is_nearest(point, true) && parent.cnn_side(elm, null, rays) !== outer) {
+          this._profile = elm;
+          this.profile_point = node;
+          this._row = parent.ox.cnn_elmnts.add({
+            elm1: parent.elm,
+            node1: this.node,
+            elm2: elm.elm,
+            node2: node,
+            cnn,
+          });
+          return;
+        }
+      }
+    }
+  }
+
+  /**
    * Возвращает соединение с обратной стороны конца профиля
    * @param other
    * @return {CatCnns}
@@ -271,6 +302,9 @@ class CnnPoint {
       let row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
       if(!row) {
         row = cnn_elmnts.find({elm1: other.profile.elm, elm2: parent.elm, node1: other.node});
+      }
+      else if(row === this._row) {
+        this.correct_profile(other, row.cnn);
       }
       if(row) {
         this._cnno = {
@@ -295,6 +329,9 @@ class CnnPoint {
       let row = cnn_elmnts.find(attr);
       if(!row) {
         row = cnn_elmnts.add(attr);
+      }
+      else if(row === this._row) {
+        this.correct_profile(other, row.cnn);
       }
       row.cnn = v;
 
@@ -331,10 +368,17 @@ class CnnPoint {
 
     // строка в таблице соединений
     _parent.ox.cnn_elmnts.find_rows({elm1: _parent.elm, node1: node}, (row) => {
-      if(!this._row) {
-        this._row = row;
+      if(this._row) {
+        // строк больше одной - проверим, не other ли предыдущая с если что - поменяем
+        const elm = _parent.layer.getItem({class: ProfileItem, elm: row.elm2});
+        if(elm) {
+
+        }
+        else if(row.node2 !== node) {
+          this._row = row;
+        }
       }
-      else if(row.node2 !== node) {
+      else {
         this._row = row;
       }
     });
