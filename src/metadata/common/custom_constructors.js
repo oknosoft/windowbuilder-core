@@ -6,10 +6,13 @@
 
 class ParamsRow extends TabularSectionRow{
   get param(){
-    return this._getter('param') || this._manager._owner.$p.cch.properties.get();
+    return this._getter('param') || $p.cch.properties.get();
   }
   set param(v){this._setter('param',v)}
-  get value(){return this._getter('value')}
+  get value(){
+    const {param} = this;
+    return param?.fetch_type ? param.fetch_type(this._obj.value) : this._getter('value');
+  }
   set value(v){this._setter('value',v)}
 }
 
@@ -42,10 +45,22 @@ class SelectionParamsRow extends ElmParamsRow{
 class Extra_fieldsRow extends TabularSectionRow{
   get property(){return this._getter('property')}
   set property(v){this._setter('property',v)}
-  get value(){return this._getter('value')}
+  get value(){
+    const {property} = this;
+    return property?.fetch_type ? property.fetch_type(this._obj.value) : this._getter('value');
+  }
   set value(v){this._setter('value',v)}
   get txt_row(){return this._getter('txt_row')}
   set txt_row(v){this._setter('txt_row',v)}
+}
+
+class CatParameters_keysParamsRow extends Extra_fieldsRow{
+  get area(){return this._getter('area')}
+  set area(v){this._setter('area',v)}
+  get origin(){return this._getter('origin')}
+  set origin(v){this._setter('origin',v)}
+  get comparison_type(){return this._getter('comparison_type')}
+  set comparison_type(v){this._setter('comparison_type',v)}
 }
 
 class Payment_detailsRow extends TabularSectionRow{
@@ -172,5 +187,6 @@ Object.assign($p, {
   CatDivisionsExtra_fieldsRow,
   CatUsersExtra_fieldsRow,
   CatProduction_paramsExtra_fieldsRow,
+  CatParameters_keysParamsRow,
 });
 

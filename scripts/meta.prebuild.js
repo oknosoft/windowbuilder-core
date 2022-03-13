@@ -62,6 +62,7 @@ const custom_constructor = [
   'CatDivisionsExtra_fieldsRow',
   'CatUsersExtra_fieldsRow',
   'CatProduction_paramsExtra_fieldsRow',
+  'CatParameters_keysParamsRow',
 ];
 
 // конструктор metadata-core и плагин metadata-pouchdb
