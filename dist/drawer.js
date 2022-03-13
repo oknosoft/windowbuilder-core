@@ -22837,7 +22837,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function (obj) {
           const {elm} = obj;
         };
@@ -22862,7 +22864,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
         prm.calculated._data._formula = function (obj) {};
       }
       // проверка условия
@@ -22882,7 +22884,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function (obj) {
           const {elm} = obj || {};
           return elm ? elm.weight : 0;
@@ -22897,7 +22901,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function ({elm, elm2}) {
           return elm?.orientation || elm2?.orientation || orientations.get();
         };
@@ -22911,7 +22917,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function ({elm}) {
           return elm?.pos || positions.get();
         };
@@ -22925,7 +22933,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function ({elm}) {
           const {is_rectangular} = elm;
           return typeof is_rectangular === 'boolean' ? is_rectangular : true;
@@ -22940,7 +22950,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function (obj) {
           console.log(name);
         };
