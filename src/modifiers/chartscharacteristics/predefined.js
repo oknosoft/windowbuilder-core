@@ -6,7 +6,7 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas}, enm: {orientations, positions}, EditorInvisible, utils} = $p;
 
   // угол к следующему
   ((name) => {
@@ -67,5 +67,70 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('elm_weight');
+
+  // ориентация элемента
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function ({elm, elm2}) {
+          return elm?.orientation || elm2?.orientation || orientations.get();
+        };
+      }
+    }
+  })('elm_orientation');
+
+  // положение элемента
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function ({elm}) {
+          return elm?.pos || positions.get();
+        };
+      }
+    }
+  })('elm_pos');
+
+  // прямоугольность элемента
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function ({elm}) {
+          const {is_rectangular} = elm;
+          return typeof is_rectangular === 'boolean' ? is_rectangular : true;
+        };
+      }
+    }
+  })('elm_rectangular');
+
+  // вхождение элемента в габариты
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({name}, false, true);
+        prm.calculated._data._formula = function (obj) {
+          console.log(name);
+        };
+      }
+      // проверка условия
+      prm.check_condition = function ({elm, prm_row}) {
+        if(elm) {
+          const {bounds} = elm;
+          //return utils.check_compare(level, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
+        }
+        return true;
+      }
+    }
+  })('bounds_contains');
 
 });

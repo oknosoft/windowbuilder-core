@@ -2867,7 +2867,7 @@ get params(){return this._getter_ts('params')}
 set params(v){this._setter_ts('params',v)}
 
 
-  check_condition({elm, ox, cnstr, layer, calc_order_row}) {
+  check_condition({elm, elm2, ox, cnstr, layer, calc_order_row}) {
 
     if(this.empty()) {
       return true;
@@ -2891,7 +2891,7 @@ set params(v){this._setter_ts('params',v)}
         }
       }
       else {
-        if(!property.check_condition({prm_row, elm, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
+        if(!property.check_condition({prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
           return false;
         }
       }
@@ -2899,7 +2899,7 @@ set params(v){this._setter_ts('params',v)}
 
     return true;
   }
-}
+}
 $p.CatParameters_keys = CatParameters_keys;
 class CatParameters_keysParamsRow extends TabularSectionRow{
 get property(){return this._getter('property')}
@@ -3564,22 +3564,30 @@ set priorities(v){this._setter_ts('priorities',v)}
   /**
    * Параметрический размер соединения
    */
-  size(elm) {
+  size(elm, elm2) {
     let {sz, sizes} = this;
     const {ox, layer} = elm;
-    sizes.forEach((prm_row) => {
+    for(const prm_row of sizes) {
       if(prm_row.param.check_condition({
-        row_spec: {},
-        prm_row,
-        cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
-        elm,
-        layer,
-        ox,
-      })) {
+          row_spec: {},
+          prm_row,
+          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          elm,
+          elm2,
+          layer,
+          ox,
+        }) &&
+        prm_row.key.check_condition({
+          elm,
+          elm2,
+          ox,
+          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          layer,
+        })) {
         sz = prm_row.elm;
-        return false;
+        break;
       }
-    });
+    }
     return sz;
   }
 
@@ -3693,7 +3701,7 @@ set priorities(v){this._setter_ts('priorities',v)}
 
     return res;
   }
-}
+}
 $p.CatCnns = CatCnns;
 class CatCnnsSpecificationRow extends TabularSectionRow{
 get elm(){return this._getter('elm')}
@@ -7744,7 +7752,10 @@ class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
   set list(v){this._setter('list',v)}
 }
 
-class CatCnnsSizesRow extends SelectionParamsRow{}
+class CatCnnsSizesRow extends SelectionParamsRow{
+  get key(){return this._getter('key')}
+  set key(v){this._setter('key',v)}
+}
 
 class CatInsertsSelection_paramsRow extends SelectionParamsRow{}
 
