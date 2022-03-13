@@ -4574,7 +4574,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     const available = this.clrs();
 
     // бежим по строкам ограничения цветов
-    if(!available.includes(obj.clr) && available.length) {
+    if(available.length && !this.contains(obj.clr, available)) {
       // подставляем первый разрешенный
       obj.clr = available[0];
     }
@@ -4649,7 +4649,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       return true;
     }
     return clr.is_composite() ? clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out) : clrs.includes(clr);
-  }}
+  }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{
 get price_group(){return this._getter('price_group')}
