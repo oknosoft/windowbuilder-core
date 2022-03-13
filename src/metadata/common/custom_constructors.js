@@ -78,7 +78,10 @@ class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
   set list(v){this._setter('list',v)}
 }
 
-class CatCnnsSizesRow extends SelectionParamsRow{}
+class CatCnnsSizesRow extends SelectionParamsRow{
+  get key(){return this._getter('key')}
+  set key(v){this._setter('key',v)}
+}
 
 class CatInsertsSelection_paramsRow extends SelectionParamsRow{}
 
