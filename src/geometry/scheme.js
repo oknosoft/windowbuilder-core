@@ -1190,8 +1190,10 @@ class Scheme extends paper.Project {
       }
       width += space;
       height += space;
-      const {view} = this;
-      view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      const {view, _attr} = this;
+      if(!_attr._reflected && !_attr._reflecting) {
+        view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      }
       const dx = view.viewSize.width - width * view.zoom;
       if(isNode) {
         const dy = view.viewSize.height - height * view.zoom;
@@ -2096,6 +2098,27 @@ class Scheme extends paper.Project {
   set skeleton(v) {
     const {_skeleton} = this;
     _skeleton.skeleton = !!v;
+  }
+
+  /**
+   * Зеркалирует эскиз
+   * @param v
+   * @return {boolean}
+   */
+  mirror(v) {
+    const {_attr, view: {scaling}} = this;
+    const {_from_service, _reflected} = _attr;
+    if(typeof v === 'undefined') {
+      return _reflected;
+    }
+    if(Boolean(v) !== Boolean(_reflected)) {
+      scaling.x = -scaling.x;
+      for(const txt of this.getItems({class: paper.PointText})) {
+        txt.scaling.x = -txt.scaling.x;
+      }
+      _attr._reflected = Boolean(v);
+    }
+    return _attr._reflected;
   }
 
 }
