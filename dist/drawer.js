@@ -17313,6 +17313,11 @@ class Scheme extends paper.Project {
     _skeleton.skeleton = !!v;
   }
 
+  /**
+   * Зеркалирует эскиз
+   * @param v
+   * @return {boolean}
+   */
   mirror(v) {
     const {_attr, view: {scaling}} = this;
     const {_from_service, _reflected} = _attr;
@@ -21779,11 +21784,20 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      */
     is_order_row_prod({ox, elm, contour}) {
       const {Продукция} = enm.specification_order_row_types;
-      const param = cch.properties.predefined('glass_separately');
-
+      const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
-      if(param && _types_filling.includes(insert_type)) {
-        ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
+
+      // заполнения в продукцию не выносим, если бит "без заполнений"
+      if(_types_filling.includes(insert_type)) {
+        const param = cch.properties.predefined('without_glasses');
+        if(param && params?.find({cnstr: 0, param})?.value) {
+          return false;
+        }
+      }
+
+      if(_types_filling.includes(insert_type)) {
+        const param = cch.properties.predefined('glass_separately');
+        param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
             is_order_row = value ? Продукция : '';
             return false;
@@ -21793,6 +21807,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         });
       }
+
       if(is_order_row instanceof CatFormulas) {
         is_order_row = is_order_row.execute({ox, elm, contour});
       }
