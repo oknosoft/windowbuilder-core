@@ -26,6 +26,9 @@ const consts = {
       settings.handleSize = builder.handle_size;
     }
 
+    /* Деформации применяем к самим элементам, а не к их matrix */
+    settings.applyMatrix = false;
+
     /* Прилипание. На этом расстоянии узел пытается прилепиться к другому узлу или элементу */
 		this.sticking = builder.sticking || 90;
 		this.sticking_l = builder.sticking_l || 9;
@@ -3813,13 +3816,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     l_visualization._by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    if(!rows){
+    if(!rows) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
     }
 
-    function draw (elm) {
-      if (this.elm === elm.elm && elm.visible) {
+    function draw(elm) {
+      if(this.elm === elm.elm && elm.visible) {
         this.nom.visualization.draw(elm, l_visualization, this.len * 1000, this.width * 1000 * (this.alp1 || 1));
         return true;
       }
@@ -3835,18 +3838,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     glasses.forEach(this.draw_jalousie.bind(this));
 
     // бежим по строкам спецификации с визуализацией
-    for(const row of rows){
+    for (const row of rows) {
       // визуализация для текущего профиля
-      if(!profiles.some(draw.bind(row))){
+      if(!profiles.some(draw.bind(row))) {
         // визуализация для текущего заполнения
         glasses.some((elm) => {
-          if (row.elm === elm.elm) {
+          if(row.elm === elm.elm) {
             row.nom.visualization.draw(elm, l_visualization, [row.len * 1000, row.width * 1000]);
             return true;
           }
           // визуализация для текущей раскладки
           return elm.imposts.some(draw.bind(row));
-        })
+        });
       }
     }
 
@@ -4770,7 +4773,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   get opacity() {
     return this.children.length ? this.children[0].opacity : 1;
   }
-
   set opacity(v) {
     this.children.forEach((elm) => {
       if (elm instanceof BuilderElement)
@@ -4855,6 +4857,21 @@ class Contour extends AbstractFilling(paper.Layer) {
         });
       }
     });
+  }
+
+  apply_mirror(reflected) {
+    if(reflected) {
+      this.l_visualization._by_spec.removeChildren();
+    }
+    for(const layer of this.contours) {
+      layer.apply_mirror(reflected);
+      if(reflected) {
+        layer.sendToBack();
+      }
+      else {
+        layer.bringToFront();
+      }
+    }
   }
 
 }
@@ -17318,18 +17335,33 @@ class Scheme extends paper.Project {
    * @param v
    * @return {boolean}
    */
-  mirror(v) {
+  async mirror(v) {
     const {_attr, view: {scaling}} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
-    if(Boolean(v) !== Boolean(_reflected)) {
-      scaling.x = -scaling.x;
-      for(const txt of this.getItems({class: paper.PointText})) {
-        txt.scaling.x = -txt.scaling.x;
+    v = Boolean(v);
+    if(v !== Boolean(_reflected)) {
+      const {utils} = $p;
+      const {x} = scaling;
+      for(let i=0.8; i>0; i-=0.3) {
+        scaling.x = x * i;
+        await utils.sleep(30);
       }
-      _attr._reflected = Boolean(v);
+      scaling.x = -x;
+      for(const txt of this.getItems({class: paper.PointText})) {
+        if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
+          txt.scaling.x = -txt.scaling.x;
+        }
+      }
+      _attr._reflected = v;
+      for(const layer of this.contours) {
+        layer.apply_mirror(v);
+      }
+      if(!v) {
+        this.register_change(true);
+      }
     }
     return _attr._reflected;
   }

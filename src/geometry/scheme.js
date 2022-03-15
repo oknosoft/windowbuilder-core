@@ -2105,18 +2105,33 @@ class Scheme extends paper.Project {
    * @param v
    * @return {boolean}
    */
-  mirror(v) {
+  async mirror(v) {
     const {_attr, view: {scaling}} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
-    if(Boolean(v) !== Boolean(_reflected)) {
-      scaling.x = -scaling.x;
-      for(const txt of this.getItems({class: paper.PointText})) {
-        txt.scaling.x = -txt.scaling.x;
+    v = Boolean(v);
+    if(v !== Boolean(_reflected)) {
+      const {utils} = $p;
+      const {x} = scaling;
+      for(let i=0.8; i>0; i-=0.3) {
+        scaling.x = x * i;
+        await utils.sleep(30);
       }
-      _attr._reflected = Boolean(v);
+      scaling.x = -x;
+      for(const txt of this.getItems({class: paper.PointText})) {
+        if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
+          txt.scaling.x = -txt.scaling.x;
+        }
+      }
+      _attr._reflected = v;
+      for(const layer of this.contours) {
+        layer.apply_mirror(v);
+      }
+      if(!v) {
+        this.register_change(true);
+      }
     }
     return _attr._reflected;
   }
