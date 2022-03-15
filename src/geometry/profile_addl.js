@@ -87,7 +87,7 @@ class ProfileAddl extends ProfileItem {
   }
 
   /**
-   * Примыкающий внешний элемент - имеет смысл для сегментов створок
+   * Примыкающий внешний элемент
    * @property nearest
    * @type Profile
    */

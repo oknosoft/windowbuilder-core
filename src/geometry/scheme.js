@@ -1,3 +1,4 @@
+
 /**
  * ### Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
@@ -1134,8 +1135,10 @@ class Scheme extends paper.Project {
       }
       width += space;
       height += space;
-      const {view} = this;
-      view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      const {view, _attr} = this;
+      if(!_attr._reflected) {
+        view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      }
       const dx = view.viewSize.width - width * view.zoom;
       if(isNode) {
         const dy = view.viewSize.height - height * view.zoom;
@@ -1398,12 +1401,11 @@ class Scheme extends paper.Project {
    * ### Цвет текущего изделия
    *
    * @property clr
-   * @type _cat.clrs
+   * @type CatClrs
    */
   get clr() {
     return this.ox.clr;
   }
-
   set clr(v) {
     this.ox.clr = v;
   }
@@ -1523,6 +1525,7 @@ class Scheme extends paper.Project {
    */
   draw_visualization() {
     if(this.view){
+      this._scope.activate();
       for (let contour of this.contours) {
         contour.draw_visualization();
       }
@@ -1536,8 +1539,9 @@ class Scheme extends paper.Project {
    *
    * @method default_inset
    * @param [attr] {Object}
-   * @param [attr.pos] {_enm.positions} - положение элемента
-   * @param [attr.elm_type] {_enm.elm_types} - тип элемента
+   * @param [attr.elm] {BuilderElement}
+   * @param [attr.pos] {EnmPositions} - положение элемента
+   * @param [attr.elm_type] {EnmElm_types} - тип элемента
    * @returns {Array.<ProfileItem>}
    */
   default_inset(attr) {
@@ -1545,7 +1549,7 @@ class Scheme extends paper.Project {
     let rows;
 
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true);
+      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -1553,7 +1557,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows');
+    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
@@ -1570,7 +1574,12 @@ class Scheme extends paper.Project {
     }
 
     // если подходит текущая, возвращаем текущую
-    if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+      if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
+        return attr.inset;
+      }
+    }
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
       return attr.inset;
     }
 
@@ -1658,9 +1667,8 @@ class Scheme extends paper.Project {
    * @returns {Boolean|undefined}
    */
   check_distance(element, profile, res, point, check_only) {
-    //const {allow_open_cnn} = this._dp.sys;
-    const {elm_types, cnn_types: {acn, av, ah, long}, orientations} = $p.enm;
 
+    const {elm_types, cnn_types: {acn, av, ah, long}, orientations} = $p.enm;
 
     let distance, cnns, addls,
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
@@ -1670,7 +1678,6 @@ class Scheme extends paper.Project {
     // Проверяет дистанцию в окрестности начала или конца соседнего элемента
     function check_node_distance(node) {
       distance = element[node].getDistance(point)
-      // allow_open_cnn ? parseFloat(consts.sticking_l) : consts.sticking)
       if(distance < parseFloat(consts.sticking_l)) {
 
         if(typeof res.distance == 'number' && res.distance < distance) {
@@ -1774,7 +1781,7 @@ class Scheme extends paper.Project {
     // если к доборам не привязались - проверяем профиль
     //const gp = element.generatrix.getNearestPoint(point);
     const gp = element._attr._nearest && (!profile || !profile._attr._nearest) ?
-      element.rays.outer.getNearestPoint(point) :
+      (element.rays.outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
 
@@ -1885,19 +1892,7 @@ class Scheme extends paper.Project {
    * @returns {Array.<Filling>}
    */
   selected_glasses() {
-    const res = [];
-
-    this.selectedItems.forEach((item) => {
-
-      if(item instanceof Filling && res.indexOf(item) == -1) {
-        res.push(item);
-      }
-      else if(item.parent instanceof Filling && res.indexOf(item.parent) == -1) {
-        res.push(item.parent);
-      }
-    });
-
-    return res;
+    return this.selected_elements.filter((item) => item instanceof Filling);
   }
 
   /**
@@ -1908,17 +1903,28 @@ class Scheme extends paper.Project {
    * @returns {BuilderElement}
    */
   get selected_elm() {
-    let res;
-    this.selectedItems.some((item) => {
-      if(item instanceof BuilderElement) {
-        return res = item;
+    const {selected_elements} = this;
+    return selected_elements.length && selected_elements[0];
+  }
 
+  /**
+   * ### Выделенные элементы
+   * Возвращает массив выделенных элементов
+   *
+   * @property selected_elements
+   * @returns {Array.<BuilderElement>}
+   */
+  get selected_elements() {
+    const res = new Set();
+    for(const item of this.selectedItems) {
+      if(item instanceof BuilderElement) {
+        res.add(item);
       }
       else if(item.parent instanceof BuilderElement) {
-        return res = item.parent;
+        res.add(item.parent);
       }
-    });
-    return res;
+    }
+    return Array.from(res);
   }
 
   /**
@@ -2037,6 +2043,42 @@ class Scheme extends paper.Project {
   set skeleton(v) {
     const {_skeleton} = this;
     _skeleton.skeleton = !!v;
+  }
+
+  /**
+   * Зеркалирует эскиз
+   * @param v
+   * @return {boolean}
+   */
+  async mirror(v) {
+    const {_attr, view: {scaling}} = this;
+    const {_from_service, _reflected} = _attr;
+    if(typeof v === 'undefined') {
+      return _reflected;
+    }
+    v = Boolean(v);
+    if(v !== Boolean(_reflected)) {
+      const {utils} = $p;
+      const {x} = scaling;
+      for(let i=0.8; i>0; i-=0.3) {
+        scaling.x = x * i;
+        await utils.sleep(30);
+      }
+      scaling.x = -x;
+      for(const txt of this.getItems({class: paper.PointText})) {
+        if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
+          txt.scaling.x = -txt.scaling.x;
+        }
+      }
+      _attr._reflected = v;
+      for(const layer of this.contours) {
+        layer.apply_mirror(v);
+      }
+      if(!v) {
+        this.register_change(true);
+      }
+    }
+    return _attr._reflected;
   }
 
 }

@@ -357,7 +357,7 @@ class Profile extends ProfileItem {
 
     // Если привязка не нарушена, возвращаем предыдущее значение
     let ok;
-    if(profile && profile.children.length) {
+    if(profile?.children.length) {
       if(!project.has_changes()) {
         ok = true;
       }
