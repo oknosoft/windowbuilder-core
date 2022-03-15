@@ -698,7 +698,7 @@ class Scheme extends paper.Project {
   redraw(attr = {}) {
 
     const {with_links} = attr;
-    const {_attr, _ch} = this;
+    const {_attr, _ch, _deffer} = this;
     const {length} = _ch;
 
     if(_attr._saving || !length) {
@@ -975,11 +975,48 @@ class Scheme extends paper.Project {
 
     const other = [];
     const layers = [];
-    const profiles = new Set;
-
+    const profiles = new Set();
+    const selected = new Set();
+    const nearests = new Map();
     const {auto_align, _dp} = this;
 
+    // добавляем в selected вложенные створки, совпадающие по узлам с рамами
     for (const item of this.selectedItems) {
+      const {parent} = item;
+      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !(parent instanceof Sectional)) {
+        selected.add(item);
+        if(all_points === false) {
+          continue;
+        }
+        if(!nearests.has(parent)) {
+          nearests.set(parent, parent.joined_nearests());
+        }
+        for (const {generatrix} of nearests.get(parent)) {
+          let check_selected;
+          item.segments.forEach((segm) => {
+            if(segm.selected) {
+              check_selected = true;
+              generatrix.segments.forEach((gs) => {
+                if(gs.point.is_nearest(segm.point)) {
+                  gs.selected = true;
+                  selected.add(generatrix);
+                }
+              });
+            }
+          });
+          if(!check_selected) {
+            //  item.parent.generatrix
+            selected.add(generatrix);
+          }
+        }
+      }
+      else if(parent instanceof Sectional) {
+        selected.add(parent.generatrix);
+      }
+    }
+
+    const {Импост} = $p.enm.elm_types;
+    for (const item of selected) {
       const {parent, layer} = item;
 
       if(item instanceof paper.Path && parent instanceof GeneratrixElement && !profiles.has(parent)) {
@@ -998,7 +1035,7 @@ class Scheme extends paper.Project {
         else if(!parent.nearest || !parent.nearest()) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
-          if(auto_align && parent.elm_type === $p.enm.elm_types.Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
+          if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
             continue;
           }
 

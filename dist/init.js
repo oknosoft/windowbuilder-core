@@ -152,7 +152,7 @@ class CchPredefined_elmnts extends CatObj{
   get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
   set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}
   get elmnts(){return this._getter_ts('elmnts')}
-  set elmnts(v){this._setter_ts('elmnts',v)}}
+  set elmnts(v){this._setter_ts('elmnts',v)}}
 $p.CchPredefined_elmnts = CchPredefined_elmnts;
 class CchPredefined_elmntsElmntsRow extends TabularSectionRow{
 get value(){return this._getter('value')}
@@ -991,7 +991,7 @@ set values(v){this._setter_ts('values',v)}
       }
     });
     return values;
-  }}
+  }}
 $p.CatParams_links = CatParams_links;
 class CatParams_linksLeadingsRow extends TabularSectionRow{
 get key(){return this._getter('key')}
@@ -1914,7 +1914,7 @@ set parameters_russian_recipe(v){this._setter('parameters_russian_recipe',v)}
     }
 
     return (amount * cfrom.course / cfrom.multiplicity) * cto.multiplicity / cto.course;
-  }}
+  }}
 $p.CatCurrencies = CatCurrencies;
 $p.cat.create('currencies');
 
@@ -2899,7 +2899,7 @@ set params(v){this._setter_ts('params',v)}
 
     return true;
   }
-}
+}
 $p.CatParameters_keys = CatParameters_keys;
 $p.cat.create('parameters_keys');
 
@@ -3306,7 +3306,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     }
     return checks;
   }
-}
+}
 $p.CatProduction_params = CatProduction_params;
 class CatProduction_paramsElmntsRow extends TabularSectionRow{
 get by_default(){return this._getter('by_default')}
@@ -4640,7 +4640,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       return true;
     }
     return clr.is_composite() ? clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out) : clrs.includes(clr);
-  }}
+  }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{
 get price_group(){return this._getter('price_group')}
@@ -5716,7 +5716,7 @@ set params(v){this._setter_ts('params',v)}
       }
     }
     return _data[key];
-  }}
+  }}
 $p.CatHttp_apis = CatHttp_apis;
 class CatHttp_apisNomRow extends TabularSectionRow{
 get identifier(){return this._getter('identifier')}

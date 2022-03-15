@@ -171,7 +171,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save(attr) {
 
-    const {msg, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
+    const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -184,8 +184,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // если установлен признак проведения, проверим состояние транспорта
     if(this.posted) {
       if([Отклонен, Отозван, Шаблон].includes(obj_delivery_state)) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs.alert({
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
           title: this.presentation
         });
@@ -206,7 +205,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     else {
       if(this.department.empty()) {
-        msg.show_msg && msg.show_msg({
+        ui?.dialogs.alert({
           type: 'alert-warning',
           text: 'Не заполнен реквизит "офис продаж" (подразделение)',
           title: this.presentation
@@ -214,7 +213,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return false || must_be_saved;
       }
       if(this.partner.empty()) {
-        msg.show_msg && msg.show_msg({
+        ui?.dialogs.alert({
           type: 'alert-warning',
           text: 'Не указан контрагент (дилер)',
           title: this.presentation
@@ -224,7 +223,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       const err_prices = this.check_prices();
       if(err_prices) {
-        msg.show_msg && msg.show_msg({
+        ui?.dialogs.alert({
           type: 'alert-warning',
           title: 'Ошибки в заказе',
           text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
@@ -289,7 +288,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         throw new Error(text);
       }
       else {
-        msg.show_msg && msg.show_msg({
+        ui?.dialogs.alert({
           type: 'alert-warning',
           title: 'Ошибки в заказе',
           text,
@@ -541,7 +540,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         const {production, orders, presentation, _data} = this;
 
         // запрет удаления подчиненной продукции
-        const {msg} = $p;
+        const {ui} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
         if(!leading_product.empty() && leading_product.calc_order_row && (
           // если в изделии присутствует порождающая вставка
@@ -549,7 +548,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           // если это виртуальное изделие слоя
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
-          msg.show_msg && msg.show_msg({
+          ui?.dialogs.alert({
             type: 'alert-warning',
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
@@ -1075,7 +1074,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.planning.clear();
 
     // получаем url сервиса
-    const {wsql, aes, adapters: {pouch}, msg, utils} = $p;
+    const {wsql, aes, adapters: {pouch}, ui, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
 
     // сериализуем документ и характеристики
@@ -1103,7 +1102,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           })
           .catch(err => {
-            msg.show_msg({
+            ui?.dialogs.alert({
               type: "alert-warning",
               text: err.message,
               title: "Сервис планирования"
