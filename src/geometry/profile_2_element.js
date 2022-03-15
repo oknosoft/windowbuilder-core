@@ -97,15 +97,15 @@ class Profile extends ProfileItem {
 
     // если начало или конец элемента соединены с соседями по Т, значит это импост
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
-      return elm_types.Импост;
+      return elm_types.impost;
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer && this.layer.parent instanceof Contour) {
-      return elm_types.Створка;
+    if(this.layer?.parent instanceof Contour) {
+      return elm_types.flap;
     }
 
-    return elm_types.Рама;
+    return elm_types.rama;
   }
 
   /**
@@ -360,49 +360,52 @@ class Profile extends ProfileItem {
     }
 
     // Если привязка не нарушена, возвращаем предыдущее значение
-    if(profile && profile.children.length) {
+    let ok;
+    if(profile?.children.length) {
       if(!project.has_changes()) {
-        return res;
+        ok = true;
       }
-      if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
-        return res;
+      else if(this.check_distance(profile, res, point, true) === false || res.distance < consts.epsilon) {
+        ok = true;
       }
     }
 
     // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
-    res.clear();
-    if(parent) {
-      const ares = [];
+    if(!ok) {
+      res.clear();
+      if(parent) {
+        const ares = [];
 
-      for(const profile of parent.profiles) {
-        if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
-          ares.push({
-            profile_point: res.profile_point,
-            profile: profile,
-            cnn_types: res.cnn_types,
-            point: res.point
-          });
-          res.clear();
-        }
-      }
-
-      if(ares.length === 1) {
-        res._mixin(ares[0]);
-      }
-      // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
-      else if(ares.length >= 2) {
-        if(this.max_right_angle(ares)) {
-          res._mixin(ares[0]);
-          // если установленное ранее соединение проходит по типу, нового не ищем
-          if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
-            res.cnn = cnn;
+        for(const profile of parent.profiles) {
+          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
+            ares.push({
+              profile_point: res.profile_point,
+              profile: profile,
+              cnn_types: res.cnn_types,
+              point: res.point
+            });
+            res.clear();
           }
         }
-        // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
-        else {
-          res.clear();
+
+        if(ares.length === 1) {
+          res._mixin(ares[0]);
         }
-        res.is_cut = true;
+        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
+        else if(ares.length >= 2) {
+          if(this.max_right_angle(ares)) {
+            res._mixin(ares[0]);
+            // если установленное ранее соединение проходит по типу, нового не ищем
+            if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
+              res.cnn = cnn;
+            }
+          }
+          // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
+          else {
+            res.clear();
+          }
+          res.is_cut = true;
+        }
       }
     }
 

@@ -281,19 +281,28 @@ class DimensionLine extends paper.Group {
         break;
 
       case 'auto':
-        const {impost, pos, elm1, elm2} = this._attr;
+        const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
         const {positions} = $p.enm;
         if(pos == 'top' || pos == 'bottom') {
           event.name = 'right';
-          if(impost && pos == 'bottom' && elm2.pos === positions.right) {
+          if(impost && elm2.pos === positions.right) {
+            event.name = 'left';
+          }
+          else if(project.contours.length > 1 && layer.is_pos && layer.is_pos('left')) {
             event.name = 'left';
           }
           this._move_points(event, 'x');
         }
         if(pos == 'left' || pos == 'right') {
           event.name = 'top';
-          if(impost && pos == 'right' && elm2.pos === positions.top) {
+          if(impost && elm2.pos === positions.top) {
             event.name = 'bottom';
+          }
+          else if(project.contours.length > 1) {
+            const other = project.contours.find((v) => v !== layer);
+            if(layer.bounds.top === other.bounds.top || layer.bounds.height < other.bounds.height) {
+              event.name = 'bottom';
+            }
           }
           this._move_points(event, 'y');
         }

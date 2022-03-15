@@ -497,11 +497,9 @@ class ProfileRays {
       }
 
       // для соединительных профилей и элементов со створками, пересчитываем соседей
-      for (const nearest of parent.joined_nearests()) {
-        const {_attr, elm} = nearest;
+      for (const {_attr, elm} of parent.joined_nearests()) {
         _attr._rays && _attr._rays.clear(with_cnn);
         _attr._nearest_cnn = null;
-        //cnn_elmnts.clear({elm1: elm, node1: cnn_nodes, elm2});
       }
 
       // так же, пересчитываем соединения с примыкающими заполнениями

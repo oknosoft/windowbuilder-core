@@ -343,7 +343,6 @@ class Scheme extends paper.Project {
       }
     }
 
-
     // устанавливаем в _dp систему профилей
     if(_dp.sys.empty()) {
       if(ox.owner.empty()) {
@@ -904,7 +903,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope && this._scope.eve.emit_async(type, obj, fields);
+    this?._scope?.eve.emit_async(type, obj, fields);
   }
 
   /**
