@@ -14,12 +14,12 @@ class ProfileSegment extends ProfileItem {
 
     // если начало или конец элемента соединены с соседями по Т, значит это импост
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
-      return elm_types.Импост;
+      return elm_types.impost;
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer.parent instanceof Contour) {
-      return elm_types.Створка;
+    if(this.layer?.parent instanceof Contour) {
+      return elm_types.flap;
     }
 
     return elm_types.Рама;
@@ -71,7 +71,7 @@ class ProfileSegment extends ProfileItem {
   }
 
   cnn_side () {
-    return $p.enm.cnn_sides.Изнутри;
+    return $p.enm.cnn_sides.inner;
   }
 
   observer() {

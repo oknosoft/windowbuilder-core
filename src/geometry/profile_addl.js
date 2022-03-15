@@ -41,11 +41,11 @@ class ProfileAddl extends ProfileItem {
 
     _attr.generatrix.strokeWidth = 0;
 
-    if(!attr.side && _row.parent < 0){
-      attr.side = "outer";
+    if(!attr.side && _row.parent < 0) {
+      attr.side = 'outer';
     }
 
-    _attr.side = attr.side || "inner";
+    _attr.side = attr.side || 'inner';
 
     if(!_row.parent){
       _row.parent = this.parent.elm;
@@ -68,15 +68,15 @@ class ProfileAddl extends ProfileItem {
    * @type Number
    */
   get d0() {
-    this.nearest();
-    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this) : 0;
+    const nearest = this.nearest();
+    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
   }
 
   /**
    * Возвращает истина, если соединение с наружной стороны
    */
   get outer() {
-    return this._attr.side == "outer";
+    return this._attr.side == 'outer';
   }
 
   /**
@@ -216,24 +216,24 @@ class ProfileAddl extends ProfileItem {
         profile.redraw();
       }
 
-      if(profile_point == "b"){
+      if(profile_point == 'b') {
         // в зависимости от стороны соединения
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.Снаружи){
+        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer) {
           intersect_point(prays.outer, rays.outer, 1);
           intersect_point(prays.outer, rays.inner, 4);
         }
-        else{
+        else {
           intersect_point(prays.inner, rays.outer, 1);
           intersect_point(prays.inner, rays.inner, 4);
         }
       }
-      else if(profile_point == "e"){
+      else if(profile_point == 'e') {
         // в зависимости от стороны соединения
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.Снаружи){
+        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer) {
           intersect_point(prays.outer, rays.outer, 2);
           intersect_point(prays.outer, rays.inner, 3);
         }
-        else{
+        else {
           intersect_point(prays.inner, rays.outer, 2);
           intersect_point(prays.inner, rays.inner, 3);
         }
@@ -241,19 +241,19 @@ class ProfileAddl extends ProfileItem {
     }
 
     // если точка не рассчиталась - рассчитываем по умолчанию - как с пустотой
-    if(profile_point == "b"){
-      if(!_corns[1]){
+    if(profile_point == 'b') {
+      if(!_corns[1]) {
         _corns[1] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
       }
-      if(!_corns[4]){
+      if(!_corns[4]) {
         _corns[4] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
       }
     }
-    else if(profile_point == "e"){
-      if(!_corns[2]){
+    else if(profile_point == 'e') {
+      if(!_corns[2]) {
         _corns[2] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
       }
-      if(!_corns[3]){
+      if(!_corns[3]) {
         _corns[3] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
       }
     }
@@ -269,34 +269,30 @@ class ProfileAddl extends ProfileItem {
 
     const bind_node = (node, cnn) => {
 
-        if(!cnn.profile){
-          return;
-        }
+      if(!cnn.profile) {
+        return;
+      }
 
-        const gen = this.outer ? this.parent.rays.outer : this.parent.rays.inner;
-        const mpoint = cnn.profile.generatrix.intersect_point(gen, cnn.point, "nearest");
-        if(!mpoint.is_nearest(this[node])){
-          this[node] = mpoint;
-          moved_fact = true;
-        }
+      const gen = this.outer ? this.parent.rays.outer : this.parent.rays.inner;
+      const mpoint = cnn.profile.generatrix.intersect_point(gen, cnn.point, 'nearest');
+      if(!mpoint.is_nearest(this[node], 0)) {
+        this[node] = mpoint;
+        moved_fact = true;
+      }
 
-      };
+    };
 
     // при смещениях родителя, даигаем образующую
-    if(this.parent == p){
-      bind_node("b", bcnn);
-      bind_node("e", ecnn);
+    if(this.parent == p) {
+      bind_node('b', bcnn);
+      bind_node('e', ecnn);
     }
 
-    if(bcnn.cnn && bcnn.profile == p){
-
-      bind_node("b", bcnn);
-
+    if(bcnn.cnn && bcnn.profile == p) {
+      bind_node('b', bcnn);
     }
-    if(ecnn.cnn && ecnn.profile == p){
-
-      bind_node("e", ecnn);
-
+    if(ecnn.cnn && ecnn.profile == p) {
+      bind_node('e', ecnn);
     }
 
   }

@@ -93,7 +93,7 @@ class Onlay extends ProfileItem {
 
     const add_impost = (ip, curr, point) => {
       const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.Снаружи) {
+      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.outer) {
         touter.push(res);
       }
       else {
@@ -127,7 +127,7 @@ class Onlay extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.outer) {
             this.cnn_point(node).is_cut = true;
             return true;
           }
@@ -155,14 +155,14 @@ class Onlay extends ProfileItem {
     const {b, e} = rays;
     const row_b = cnns.add({
       elm1: _row.elm,
-      node1: "b",
-      cnn: b.cnn ? b.cnn.ref : "",
+      node1: 'b',
+      cnn: b.cnn ? b.cnn.ref : '',
       aperture_len: this.corns(1).getDistance(this.corns(4))
     });
     const row_e = cnns.add({
       elm1: _row.elm,
-      node1: "e",
-      cnn: e.cnn ? e.cnn.ref : "",
+      node1: 'e',
+      cnn: e.cnn ? e.cnn.ref : '',
       aperture_len: this.corns(2).getDistance(this.corns(3))
     });
 
@@ -179,27 +179,35 @@ class Onlay extends ProfileItem {
     _row.len = this.length;
 
     // сохраняем информацию о соединениях
-    if(b.profile){
+    if(b.profile) {
       row_b.elm2 = b.profile.elm;
-      if(b.profile instanceof Filling)
-        row_b.node2 = "t";
-      else if(b.profile.e.is_nearest(b.point))
-        row_b.node2 = "e";
-      else if(b.profile.b.is_nearest(b.point))
-        row_b.node2 = "b";
-      else
-        row_b.node2 = "t";
+      if(b.profile instanceof Filling) {
+        row_b.node2 = 't';
+      }
+      else if(b.profile.e.is_nearest(b.point)) {
+        row_b.node2 = 'e';
+      }
+      else if(b.profile.b.is_nearest(b.point)) {
+        row_b.node2 = 'b';
+      }
+      else {
+        row_b.node2 = 't';
+      }
     }
-    if(e.profile){
+    if(e.profile) {
       row_e.elm2 = e.profile.elm;
-      if(e.profile instanceof Filling)
-        row_e.node2 = "t";
-      else if(e.profile.b.is_nearest(e.point))
-        row_e.node2 = "b";
-      else if(e.profile.e.is_nearest(e.point))
-        row_e.node2 = "b";
-      else
-        row_e.node2 = "t";
+      if(e.profile instanceof Filling) {
+        row_e.node2 = 't';
+      }
+      else if(e.profile.b.is_nearest(e.point)) {
+        row_e.node2 = 'b';
+      }
+      else if(e.profile.e.is_nearest(e.point)) {
+        row_e.node2 = 'e';
+      }
+      else {
+        row_e.node2 = 't';
+      }
     }
 
     // получаем углы между элементами и к горизонту

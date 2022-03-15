@@ -36,6 +36,11 @@ class ProfileParent extends Profile {
 
   }
 
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.ox.leading_product;
+  }
+
   cnn_point(node, point) {
     const {project, parent, rays} = this;
     const res = rays[node];

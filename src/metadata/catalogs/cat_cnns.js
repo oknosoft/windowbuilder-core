@@ -340,22 +340,30 @@ exports.CatCnns = class CatCnns extends Object {
   /**
    * Параметрический размер соединения
    */
-  size(elm) {
+  size(elm, elm2) {
     let {sz, sizes} = this;
     const {ox, layer} = elm;
-    sizes.forEach((prm_row) => {
+    for(const prm_row of sizes) {
       if(prm_row.param.check_condition({
-        row_spec: {},
-        prm_row,
-        cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
-        elm,
-        layer,
-        ox,
-      })) {
+          row_spec: {},
+          prm_row,
+          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          elm,
+          elm2,
+          layer,
+          ox,
+        }) &&
+        prm_row.key.check_condition({
+          elm,
+          elm2,
+          ox,
+          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          layer,
+        })) {
         sz = prm_row.elm;
-        return false;
+        break;
       }
-    });
+    }
     return sz;
   }
 

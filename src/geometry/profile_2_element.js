@@ -78,7 +78,7 @@ class Profile extends ProfileItem {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 -= nearest.d2 + (_attr._nearest_cnn ? _attr._nearest_cnn.size(this) : 20);
+        _attr.d0 -= nearest.d2 + (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 20);
       }
     }
     return _attr.d0;
@@ -93,37 +93,51 @@ class Profile extends ProfileItem {
 
     // если начало или конец элемента соединены с соседями по Т, значит это импост
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
-      return elm_types.Импост;
+      return elm_types.impost;
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer.parent instanceof Contour) {
-      return elm_types.Створка;
+    if(this.layer?.parent instanceof Contour) {
+      return elm_types.flap;
     }
 
-    return elm_types.Рама;
+    return elm_types.rama;
   }
 
   /**
    * Положение элемента в контуре
    */
   get pos() {
-    const by_side = this.layer.profiles_by_side();
-    const {positions} = $p.enm;
-    if(by_side.top == this) {
-      return positions.Верх;
+    const {top, bottom, left, right} = this.layer.profiles_by_side();
+    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
+    if(top === this) {
+      return Верх;
     }
-    if(by_side.bottom == this) {
-      return positions.Низ;
+    if(bottom === this) {
+      return Низ;
     }
-    if(by_side.left == this) {
-      return positions.Лев;
+    if(left === this) {
+      return Лев;
     }
-    if(by_side.right == this) {
-      return positions.Прав;
+    if(right === this) {
+      return Прав;
+    }
+    const {x1, x2, y1, y2} = this;
+    const delta = 60;
+    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+      return Верх;
+    }
+    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+      return Низ;
+    }
+    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+      return Лев;
+    }
+    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+      return Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return positions.Центр;
+    return Центр;
   }
 
   /**
@@ -356,7 +370,6 @@ class Profile extends ProfileItem {
     if(!ok) {
       res.clear();
       if(parent) {
-        const {allow_open_cnn} = project._dp.sys;
         const ares = [];
 
         for(const profile of parent.profiles) {
@@ -418,8 +431,8 @@ class Profile extends ProfileItem {
    * @param param {CchProperties}
    */
   refresh_inset_depends(param, with_neighbor) {
-    const {inset, _attr: {_rays}} = this;
-    if(_rays && inset.is_depend_of(param)) {
+    const {inset, _attr: {_rays, _nearest_cnn}} = this;
+    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
