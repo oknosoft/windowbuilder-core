@@ -231,6 +231,11 @@ class CnnPoint {
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
 
+  get vertex() {
+    const {parent, node} = this;
+    return parent.skeleton.vertexByPoint(parent[node]);
+  }
+
   /**
    * Возвращает профиль и узел, если есть соединение с outer-стороны профиля
    *
@@ -238,12 +243,12 @@ class CnnPoint {
    */
   find_other() {
 
-    const {parent, profile, point}  = this;
-    const {rays, layer} = parent;
+    const {parent, vertex, point}  = this;
+    const {rays} = parent;
     const {outer} = $p.enm.cnn_sides;
 
     // ищем концы профилей в окрестности нас
-    for(const elm of layer.profiles) {
+    for(const elm of vertex.profiles) {
       if(elm === parent) {
         continue;
       }
@@ -261,11 +266,11 @@ class CnnPoint {
    */
   correct_profile({profile}, cnn) {
     const {parent, point}  = this;
-    const {rays, layer} = parent;
+    const {rays, vertex} = parent;
     const {outer} = $p.enm.cnn_sides;
 
     // ищем концы профилей в окрестности нас
-    for(const elm of layer.profiles) {
+    for(const elm of vertex.profiles) {
       if(elm === parent || elm === profile) {
         continue;
       }

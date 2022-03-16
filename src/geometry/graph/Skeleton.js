@@ -138,7 +138,7 @@ class Skeleton extends Graph {
   }
 
   /**
-   * Вспомогательный метод дл addImpostEdges
+   * Вспомогательный метод для addImpostEdges
    * @param startVertex
    * @param endVertex
    * @param vertex
