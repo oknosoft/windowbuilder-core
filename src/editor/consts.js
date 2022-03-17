@@ -27,7 +27,7 @@ const consts = {
     }
 
     /* Деформации применяем к самим элементам, а не к их matrix */
-    settings.applyMatrix = false;
+    //settings.applyMatrix = false;
 
     /* Прилипание. На этом расстоянии узел пытается прилепиться к другому узлу или элементу */
 		this.sticking = builder.sticking || 90;

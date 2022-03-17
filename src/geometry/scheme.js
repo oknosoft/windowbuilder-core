@@ -1189,17 +1189,18 @@ class Scheme extends paper.Project {
       }
       width += space;
       height += space;
-      const {view, _attr} = this;
-      if(!_attr._reflected && !_attr._reflecting) {
-        view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
-      }
-      const dx = view.viewSize.width - width * view.zoom;
+      const {view} = this;
+      const zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      const {scaling} = view._decompose();
+      view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
+
+      const dx = view.viewSize.width - width * zoom;
       if(isNode) {
-        const dy = view.viewSize.height - height * view.zoom;
-        view.center = center.add([dx, -dy]);
+        const dy = view.viewSize.height - height * zoom;
+        view.center = center.add([Math.sign(scaling.y) * dx, -Math.sign(scaling.y) * dy]);
       }
       else {
-        view.center = center.add([dx / 2, 50]);
+        view.center = center.add([Math.sign(scaling.y) * dx / 2, 50]);
       }
     }
   }
@@ -2104,31 +2105,39 @@ class Scheme extends paper.Project {
    * @param v
    * @return {boolean}
    */
-  async mirror(v) {
-    const {_attr, view: {scaling}} = this;
+  async mirror(v, animate) {
+    const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
+    if(_from_service) {
+      animate = false;
+    }
     v = Boolean(v);
     if(v !== Boolean(_reflected)) {
       const {utils} = $p;
-      const {x} = scaling;
-      for(let i=0.8; i>0; i-=0.3) {
-        scaling.x = x * i;
-        await utils.sleep(30);
+      const {scaling} = view._decompose();
+      if(animate) {
+        for(let i=0.8; i>0; i-=0.3) {
+          view.scaling = [scaling.x * i, scaling.y];
+          await utils.sleep(30);
+        }
       }
-      scaling.x = -x;
+      view.scaling = [-scaling.x, scaling.y];
       for(const txt of this.getItems({class: paper.PointText})) {
         if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
-          txt.scaling.x = -txt.scaling.x;
+          txt.scaling = [v ? -1 : 1, 1];
         }
       }
       _attr._reflected = v;
       for(const layer of this.contours) {
         layer.apply_mirror(v);
       }
-      if(!v) {
+      if(v) {
+        this._scope?.select_tool('pan');
+      }
+      else {
         this.register_change(true);
       }
     }
