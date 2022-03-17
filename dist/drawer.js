@@ -17378,7 +17378,8 @@ class Scheme extends paper.Project {
       }
       view.scaling = [-scaling.x, scaling.y];
       for(const txt of this.getItems({class: paper.PointText})) {
-        if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
+        const {x} = txt.scaling;
+        if((v && x > 0) || (!v && x < 0)) {
           txt.scaling = [v ? -1 : 1, 1];
         }
       }
@@ -23053,12 +23054,29 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         };
       }
       // проверка условия
-      prm.check_condition = function ({elm, prm_row}) {
-        if(elm) {
-          const {bounds} = elm;
-          //return utils.check_compare(level, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
+      const {comparison_types: ct} = $p.enm;
+      const ne = [ct.ne, ct.nin, ct.ninh, ct.nfilled];
+
+      prm.check_condition = function ({elm, layer, prm_row}) {
+        if(!prm_row._bounds) {
+          try {
+            prm_row._bounds = JSON.parse(prm_row.txt_row);
+          }
+          catch (e) {
+            return true;
+          }
         }
-        return true;
+        const bounds = elm ? elm.bounds : layer?.bounds;
+        if(!bounds) {
+          return true;
+        }
+        let ok = bounds.width >= prm_row._bounds.xmin && bounds.width <= prm_row._bounds.xmax &&
+          bounds.height >= prm_row._bounds.ymin && bounds.height <= prm_row._bounds.ymax;
+        if(!ok && prm_row._bounds.rotate) {
+          ok = bounds.height >= prm_row._bounds.xmin && bounds.height <= prm_row._bounds.xmax &&
+            bounds.width >= prm_row._bounds.ymin && bounds.width <= prm_row._bounds.ymax;
+        }
+        return ne.includes(prm_row.comparison_type) ? !ok : ok;
       }
     }
   })('bounds_contains');
