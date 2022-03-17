@@ -745,7 +745,7 @@ class BuilderElement extends paper.Group {
     }
     // цвет элементу присваиваем только если он уже нарисован
     if(path instanceof paper.Path){
-      path.fillColor = BuilderElement.clr_by_clr.call(this, _row.clr, false);
+      path.fillColor = BuilderElement.clr_by_clr.call(this, _row.clr);
     }
   }
 
@@ -858,19 +858,23 @@ class BuilderElement extends paper.Group {
     this.project._scope.eve.emit('elm_dblclick', this, event);
   }
 
-  static clr_by_clr(clr, view_out) {
+  static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
+    const {_reflected} = this.project._attr;
 
-    if(!view_out){
-      if(!clr_in.empty() && clr_in.clr_str)
-        clr_str = clr_in.clr_str;
-    }else{
-      if(!clr_out.empty() && clr_out.clr_str)
+    if(_reflected){
+      if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
+      }
+    }
+    else{
+      if(!clr_in.empty() && clr_in.clr_str) {
+        clr_str = clr_in.clr_str;
+      }
     }
 
-    if(!clr_str){
-      clr_str = this.default_clr_str ? this.default_clr_str : "fff";
+    if(!clr_str) {
+      clr_str = this.default_clr_str ? this.default_clr_str : 'fff';
     }
 
     if(clr_str){

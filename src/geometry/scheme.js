@@ -2126,7 +2126,8 @@ class Scheme extends paper.Project {
       }
       view.scaling = [-scaling.x, scaling.y];
       for(const txt of this.getItems({class: paper.PointText})) {
-        if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
+        const {x} = txt.scaling;
+        if((v && x > 0) || (!v && x < 0)) {
           txt.scaling = [v ? -1 : 1, 1];
         }
       }

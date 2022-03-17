@@ -1455,7 +1455,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.fill_error();
       }
       else {
-        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr, false);
+        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr);
       }
 
       // Ошибки соединений Onlay в этом заполнении
@@ -1645,7 +1645,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         const props = {
           parent: new paper.Group({parent: l_visualization._by_insets}),
-          fillColor: BuilderElement.clr_by_clr(clr),
+          fillColor: BuilderElement.clr_by_clr.call(this, clr),
           shadowColor: 'lightgray',
           shadowBlur: 20,
           shadowOffset: [13, 13],
@@ -1785,7 +1785,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         new paper.Path({
           parent: new paper.Group({parent: l_visualization._by_insets}),
           strokeColor: 'grey',
-          fillColor: BuilderElement.clr_by_clr(row.clr),
+          fillColor: BuilderElement.clr_by_clr.call(this, row.clr),
           shadowColor: 'grey',
           shadowBlur: 20,
           shadowOffset: [10, 20],
@@ -2945,8 +2945,16 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   apply_mirror(reflected) {
+    // прячем визуализацию
     if(reflected) {
       this.l_visualization._by_spec.removeChildren();
+    }
+    // обновляем отображение состаных цветов
+    for(const profile of this.profiles) {
+      const {clr} = profile;
+      if(clr.is_composite()) {
+        profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+      }
     }
     for(const layer of this.contours) {
       layer.apply_mirror(reflected);
