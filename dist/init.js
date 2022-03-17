@@ -1405,7 +1405,7 @@ set params(v){this._setter_ts('params',v)}
     }
     return _data._template;
   }
-}
+}
 $p.CatFormulas = CatFormulas;
 class CatFormulasManager extends CatManager {
 
@@ -1428,15 +1428,7 @@ class CatFormulasManager extends CatManager {
       }
     });
 
-    const compare = (a, b) => {
-      if (a.name < b.name) {
-        return -1;
-      }
-      if (a.name > b.name) {
-        return 1;
-      }
-      return 0;
-    };
+    const compare = utils.sort('name');
 
     filtered.sort(utils.sort('sorting_field')).forEach((formula) => {
       // формируем списки печатных форм и внешних обработок
