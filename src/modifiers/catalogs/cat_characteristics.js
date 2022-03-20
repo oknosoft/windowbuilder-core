@@ -753,6 +753,8 @@ $p.CatCharacteristics.builder_props_defaults = {
   jalousie: true,
   grid: 50,
   carcass: false,
+  mirror: false,
+  articles: 0,
 };
 
 // при изменении реквизита табчасти вставок

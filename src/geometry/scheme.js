@@ -2126,17 +2126,15 @@ class Scheme extends paper.Project {
       }
       view.scaling = [-scaling.x, scaling.y];
       for(const txt of this.getItems({class: paper.PointText})) {
-        const {x} = txt.scaling;
-        if((v && x > 0) || (!v && x < 0)) {
-          txt.scaling = [v ? -1 : 1, 1];
-        }
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
       }
       _attr._reflected = v;
       for(const layer of this.contours) {
-        layer.apply_mirror(v);
+        layer.apply_mirror();
       }
       if(v) {
-        this._scope?.select_tool('pan');
+        this._scope.select_tool?.('pan');
       }
       else {
         this.register_change(true);
