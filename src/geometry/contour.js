@@ -1942,6 +1942,50 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
+    // подписи профилей
+    if(builder_props.articles) {
+      for(const profile of profiles) {
+        const {rays: {outer}, sizeb, inset, nom} = profile;
+        const p0 = outer.getNearestPoint(profile.corns(1));
+        const offset = outer.getOffsetOf(p0) + 80;
+        const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
+        const tangent = outer.getTangentAt(offset);
+
+        let content = '→ ';
+        switch (builder_props.articles) {
+        case 1:
+          content += profile.elm.toFixed();
+          break;
+        case 2:
+          content += inset.article || inset.name;
+          break;
+        case 3:
+          content += nom.article || nom.name;
+          break;
+        case 4:
+          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;
+          break;
+        case 5:
+          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
+          break;
+        }
+
+        const text = new paper.PointText({
+          parent: l_visualization._by_spec,
+          guide: true,
+          //justification: 'left',
+          fillColor: 'darkblue',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size,
+          content,
+          position,
+        });
+        const {width} = text.bounds;
+        text.rotate(tangent.angle);
+        text.translate(tangent.multiply(width / 2));
+      }
+    }
+
     // перерисовываем вложенные контуры
     for(const contour of contours){
       contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
