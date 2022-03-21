@@ -11,7 +11,7 @@ class ParamsRow extends TabularSectionRow{
   set param(v){this._setter('param',v)}
   get value(){
     const {param} = this;
-    return param?.fetch_type ? param.fetch_type(this._obj.value) : this._getter('value');
+    return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
   set value(v){this._setter('value',v)}
 }
@@ -46,8 +46,8 @@ class Extra_fieldsRow extends TabularSectionRow{
   get property(){return this._getter('property')}
   set property(v){this._setter('property',v)}
   get value(){
-    const {property} = this;
-    return property?.fetch_type ? property.fetch_type(this._obj.value) : this._getter('value');
+    const {property: param} = this;
+    return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
   set value(v){this._setter('value',v)}
   get txt_row(){return this._getter('txt_row')}
