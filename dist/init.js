@@ -759,8 +759,17 @@ set use(v){this._setter_ts('use',v)}
     // собираем все доступные значения в одном массиве
     links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
-    if(!prow || values.some(({_obj}) => _obj.value == prow.value)) {
-      return;
+    const value = prow?.value;
+    if(value instanceof CatClrs && value.is_composite()) {
+      const {clr_in, clr_out} = value;
+      if(!prow || (values.some(({_obj}) => _obj.value == clr_in) && values.some(({_obj}) => _obj.value == clr_out))) {
+        return;
+      }
+    }
+    else {
+      if(!prow || values.some(({_obj}) => _obj.value == value)) {
+        return;
+      }
     }
     // если есть явный default - устанавливаем
     if(values.some((row) => {
@@ -768,7 +777,7 @@ set use(v){this._setter_ts('use',v)}
         prow.value = row._obj.value;
         return true;
       }
-      if(row.by_default && (!prow.value || prow.value.empty && prow.value.empty())) {
+      if(row.by_default && (!value || value.empty?.())) {
         prow.value = row._obj.value;
         changed = true;
       }
@@ -825,7 +834,7 @@ set use(v){this._setter_ts('use',v)}
         });
       }
     });
-  }}
+  }}
 $p.CchProperties = CchProperties;
 class CchPropertiesApplyingRow extends TabularSectionRow{
 get elm_type(){return this._getter('elm_type')}
@@ -7673,7 +7682,12 @@ class ParamsRow extends TabularSectionRow{
     const {param} = this;
     return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
-  set value(v){this._setter('value',v)}
+  set value(v){
+    if(typeof v === 'string' && v.length === 72 && this.param.type?.types?.includes('cat.clrs')) {
+      v = $p.cat.clrs.getter(v);
+    }
+    this._setter('value',v);
+  }
 }
 
 class ElmParamsRow extends ParamsRow{
@@ -7709,7 +7723,12 @@ class Extra_fieldsRow extends TabularSectionRow{
     const {property: param} = this;
     return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
-  set value(v){this._setter('value',v)}
+  set value(v) {
+    if(typeof v === 'string' && v.length === 72 && this.property?.type?.types?.includes('cat.clrs')) {
+      v = $p.cat.clrs.getter(v);
+    }
+    this._setter('value', v);
+  }
   get txt_row(){return this._getter('txt_row')}
   set txt_row(v){this._setter('txt_row',v)}
 }
