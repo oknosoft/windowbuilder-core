@@ -13,7 +13,12 @@ class ParamsRow extends TabularSectionRow{
     const {param} = this;
     return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
-  set value(v){this._setter('value',v)}
+  set value(v){
+    if(typeof v === 'string' && v.length === 72 && this.param.type?.types?.includes('cat.clrs')) {
+      v = $p.cat.clrs.getter(v);
+    }
+    this._setter('value',v);
+  }
 }
 
 class ElmParamsRow extends ParamsRow{
@@ -49,7 +54,12 @@ class Extra_fieldsRow extends TabularSectionRow{
     const {property: param} = this;
     return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
-  set value(v){this._setter('value',v)}
+  set value(v) {
+    if(typeof v === 'string' && v.length === 72 && this.property?.type?.types?.includes('cat.clrs')) {
+      v = $p.cat.clrs.getter(v);
+    }
+    this._setter('value', v);
+  }
   get txt_row(){return this._getter('txt_row')}
   set txt_row(v){this._setter('txt_row',v)}
 }
