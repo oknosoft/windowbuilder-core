@@ -20097,7 +20097,7 @@ $p.spec_building = new SpecBuilding($p);
           current_user.role_available('РедактированиеЦен')
         )) {
         return;
-      };
+      }
       const {form} = _mgr.metadata();
       if(form && form.obj && form.obj.tabular_sections) {
         form.obj.tabular_sections.specification.widths = "50,*,70,*,50,70,70,80,70,70,70,0,0,0";
@@ -20720,14 +20720,9 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.unload();
-        }
-        return attr.res;
-      });
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => attr.res);
   }
 
   /**
@@ -20786,6 +20781,28 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       });
     }
     return weight;
+  }
+
+  /**
+   * Выясняет, есть ли в спецификации номенклатура из константы cname
+   * @param cname {String}
+   * @return {boolean}
+   */
+  has_nom(cname) {
+    let noms = $p.job_prm.nom[cname];
+    let res = false;
+    if(noms) {
+      if(!Array.isArray(noms)) {
+        noms = [noms];
+      }
+      for(const {nom} of this.specification) {
+        if(noms.some((curr) => curr === nom || curr.is_folder && nom._hierarchy(curr))) {
+          res = true;
+          break;
+        }
+      }
+    }
+    return res;
   }
 
 };
