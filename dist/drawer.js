@@ -14311,6 +14311,14 @@ class ConnectiveLayer extends paper.Layer {
     return false;
   }
 
+  get hidden() {
+    return !this.visible;
+  }
+  set hidden(v) {
+    this.visible = !v;
+  }
+
+
   /**
    * Продукция слоя соединителей
    * Совпадает с продукцией проекта
@@ -17433,6 +17441,12 @@ class Scheme extends paper.Project {
       _attr._reflected = v;
       for(const layer of this.contours) {
         layer.apply_mirror();
+      }
+      for(const profile of this.l_connective.profiles) {
+        const {clr} = profile;
+        if(clr.is_composite()) {
+          profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+        }
       }
       if(v) {
         this._scope.select_tool?.('pan');

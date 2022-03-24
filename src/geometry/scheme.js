@@ -2133,6 +2133,12 @@ class Scheme extends paper.Project {
       for(const layer of this.contours) {
         layer.apply_mirror();
       }
+      for(const profile of this.l_connective.profiles) {
+        const {clr} = profile;
+        if(clr.is_composite()) {
+          profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+        }
+      }
       if(v) {
         this._scope.select_tool?.('pan');
       }
