@@ -1257,15 +1257,15 @@ class BuilderElement extends paper.Group {
           selection = {elm_type: elm_types.Добор};
         }
         else if(this instanceof Profile) {
-          const {Любое} = positions;
+          const {any} = positions;
           if(this.nearest()) {
             selection = {
-              pos:{in:[this.pos,Любое]},
+              pos:{in:[this.pos,any]},
               elm_type: {in: [elm_types.flap, elm_types.flap0, elm_types.Добор]}
             };
           }
           else {
-            selection = {pos:{in:[this.pos,Любое]},
+            selection = {pos:{in:[this.pos,any]},
               elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
           }
         }
@@ -1456,6 +1456,19 @@ class BuilderElement extends paper.Group {
     }
     else if(sizeb === -1200) {
       return this.width / 2;
+    }
+    else if(sizeb > 1000) {
+      const parts = sizeb.toFixed(); //[для импоста]/[для рамы]
+      const p1 = parts.substring(0, 3);
+      const {b, e} = this.rays;
+      if(b.is_cut() || b.is_t() || b.is_i() || e.is_cut() || e.is_t() || e.is_i()) {
+        return parseFloat(p1);
+      }
+      let p2 = parts.substring(3, 3);
+      while (p2.length < 3) {
+        p2 += '0';
+      }
+      return parseFloat(p2);
     }
     return sizeb || 0;
   }
@@ -1701,6 +1714,7 @@ class BuilderElement extends paper.Group {
   /**
    * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
    * @param param {CchProperties}
+   * @param with_neighbor {Boolean} - с учетом примыкающих
    */
   refresh_inset_depends(param, with_neighbor) {
 
@@ -1826,8 +1840,9 @@ class BuilderElement extends paper.Group {
 
   /**
    * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
-   * @param critical {Boolean}
+   * @param nom {CatNom}
    * @param text {String}
+   * @param origin {DataObj} - происхождение
    */
   err_spec_row(nom, text, origin) {
     if(!nom){
@@ -1871,26 +1886,29 @@ class BuilderElement extends paper.Group {
       clr_str = this.default_clr_str ? this.default_clr_str : 'fff';
     }
 
-    if(clr_str){
-      clr = clr_str.split(",");
-      if(clr.length == 1){
-        if(clr_str[0] != "#")
-          clr_str = "#" + clr_str;
+    if(clr_str) {
+      clr = clr_str.split(',');
+      if(clr.length == 1) {
+        if(clr_str[0] != '#') {
+          clr_str = '#' + clr_str;
+        }
         clr = new paper.Color(clr_str);
         clr.alpha = 0.96;
       }
-      else if(clr.length == 4){
+      else if(clr.length == 4) {
         clr = new paper.Color(clr[0], clr[1], clr[2], clr[3]);
       }
-      else if(clr.length == 3){
-        if(this.path && this.path.bounds)
+      else if(clr.length == 3) {
+        if(this.path && this.path.bounds) {
           clr = new paper.Color({
             stops: [clr[0], clr[1], clr[2]],
             origin: this.path.bounds.bottomLeft,
             destination: this.path.bounds.topRight
           });
-        else
+        }
+        else {
           clr = new paper.Color(clr[0]);
+        }
       }
       return clr;
     }
