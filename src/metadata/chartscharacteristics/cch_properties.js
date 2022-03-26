@@ -386,6 +386,7 @@ exports.CchProperties = class CchProperties extends Object {
     else if(type.types[0] == 'json') {
       return typeof v === 'object' ? v : {};
     }
+    return v;
   }
 
   /**
