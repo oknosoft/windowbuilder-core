@@ -681,6 +681,7 @@ set use(v){this._setter_ts('use',v)}
     else if(type.types[0] == 'json') {
       return typeof v === 'object' ? v : {};
     }
+    return v;
   }
 
   /**
@@ -2334,20 +2335,17 @@ set demand(v){this._setter_ts('demand',v)}
     }
 
     // получаем ссылку на ключ цветового аналога
-    const {$p: {job_prm: {properties}, cat}} = this._manager._owner;
-    const clr_key = properties.clr_key && properties.clr_key.ref;
-    let clr_value;
-    this.extra_fields.find_rows({property: properties.clr_key}, (row) => clr_value = row.value);
+    const {job_prm: {properties: {clr_key}}, cat} = $p;
+    const clr_value = this._extra(clr_key);
     if(!clr_value){
       return this;
     }
 
     // находим все номенклатуры с подходящим ключем цветового аналога
+    const {ref} = clr_key;
     this._manager.alatable.forEach((nom) => {
-      nom.extra_fields && nom.extra_fields.some((row) => {
-        row.property === clr_key && row.value === clr_value &&
-        _clr_keys.set(cat.clrs.get(nom.clr), cat.nom.get(nom.ref));
-      });
+      nom.extra_fields && nom.extra_fields.some((row) =>
+        row.property === ref && row.value === clr_value && _clr_keys.set(cat.clrs.get(nom.clr), cat.nom.get(nom.ref)));
     });
 
     // возарвщаем подходящую или себя
@@ -2555,7 +2553,7 @@ set demand(v){this._setter_ts('demand',v)}
   get type() {
     return {is_ref: true, types: ["cat.characteristics"]};
   }
-}
+}
 $p.CatNom = CatNom;
 class CatNomDemandRow extends TabularSectionRow{
 get kind(){return this._getter('kind')}
