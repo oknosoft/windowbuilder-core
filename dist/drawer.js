@@ -1362,8 +1362,8 @@ class BuilderElement extends paper.Group {
       offset: Object.assign({}, _xfields.x1, {synonym: 'Смещение'}),
       region: _xfields.region,
       note: fields.note,
-      price: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Цена продажи'}),
-      first_cost: Object.assign({}, tabular_sections.coordinates.fields.price, {synonym: 'Себестоимость план'}),
+      price: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Цена продажи'}),
+      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость план'}),
     };
 
     return {
