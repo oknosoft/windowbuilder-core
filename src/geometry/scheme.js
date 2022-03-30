@@ -708,6 +708,10 @@ class Scheme extends paper.Project {
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
 
+    if(_attr._lock) {
+      return;
+    }
+
     if(!_attr._opened || _attr._saving || !length) {
       _deffer.length = 0;
       return;
