@@ -25,7 +25,7 @@ class DimensionLine extends paper.Group {
 
   constructor(attr) {
 
-    super({parent: attr.parent});
+    super({parent: attr.parent, project: attr.project});
 
     const _attr = this._attr = {};
 

@@ -89,7 +89,7 @@ class ContourNested extends Contour {
   load_stamp() {
 
     const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;
-    const {base_block, refill} = templates._select_template;
+    const {base_block} = templates._select_template;
 
     if(base_block.calc_order === templates._select_template.calc_order) {
 
@@ -100,9 +100,9 @@ class ContourNested extends Contour {
       // заполняем его из шаблона устанавливаем систему и параметры
       const teditor = new EditorInvisible();
       const tproject = teditor.create_scheme();
-      tproject.load(tx, true)
+      tproject.load(tx, true, _ox.calc_order)
         .then(() => {
-          return tproject.load_stamp(base_block, false, !refill, true);
+          return tproject.load_stamp(base_block, false, true, true);
         })
         .then(() => {
           const {lbounds} = this;

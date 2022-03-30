@@ -500,10 +500,10 @@ class Scheme extends paper.Project {
       _scheme.load_contour(null);
 
       // перерисовываем каркас
-      _scheme.redraw(from_service);
+      _scheme.redraw({from_service});
 
       // ограничиваем список систем в интерфейсе
-      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
       _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию

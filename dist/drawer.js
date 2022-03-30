@@ -2179,7 +2179,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   constructor(attr) {
 
-    super({parent: attr.parent});
+    super({parent: attr.parent, project: attr.project});
 
     this._attr = {};
 
@@ -5081,7 +5081,7 @@ class ContourNested extends Contour {
   load_stamp() {
 
     const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;
-    const {base_block, refill} = templates._select_template;
+    const {base_block} = templates._select_template;
 
     if(base_block.calc_order === templates._select_template.calc_order) {
 
@@ -5092,9 +5092,9 @@ class ContourNested extends Contour {
       // заполняем его из шаблона устанавливаем систему и параметры
       const teditor = new EditorInvisible();
       const tproject = teditor.create_scheme();
-      tproject.load(tx, true)
+      tproject.load(tx, true, _ox.calc_order)
         .then(() => {
-          return tproject.load_stamp(base_block, false, !refill, true);
+          return tproject.load_stamp(base_block, false, true, true);
         })
         .then(() => {
           const {lbounds} = this;
@@ -6113,7 +6113,7 @@ class DimensionLine extends paper.Group {
 
   constructor(attr) {
 
-    super({parent: attr.parent});
+    super({parent: attr.parent, project: attr.project});
 
     const _attr = this._attr = {};
 
@@ -8791,7 +8791,7 @@ EditorInvisible.GeneratrixElement = GeneratrixElement;
 class GridCoordinates extends paper.Group {
 
   constructor(attr) {
-    super();
+    super(attr);
     this.parent = this.project.l_dimensions;
 
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
@@ -14559,9 +14559,9 @@ EditorInvisible.ProfileCut = ProfileCut;
  */
 class ProfileAdjoining extends BaseLine {
 
-  constructor({row, parent, proto, b, e, side}) {
+  constructor({row, parent, proto, b, e, side, project}) {
     const generatrix = b && e && parent.rays[side].get_subpath(e.elm[e.point], b.elm[b.point]);
-    super({row, generatrix, parent, proto, preserv_parent: true});
+    super({row, generatrix, parent, proto, preserv_parent: true, project});
     Object.assign(this.generatrix, {
       strokeColor: 'black',
       strokeOpacity: 0.7,
@@ -15827,10 +15827,10 @@ class Scheme extends paper.Project {
       _scheme.load_contour(null);
 
       // перерисовываем каркас
-      _scheme.redraw(from_service);
+      _scheme.redraw({from_service});
 
       // ограничиваем список систем в интерфейсе
-      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
       _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию

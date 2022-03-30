@@ -242,7 +242,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   constructor(attr) {
 
-    super({parent: attr.parent});
+    super({parent: attr.parent, project: attr.project});
 
     this._attr = {};
 
