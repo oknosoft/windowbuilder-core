@@ -230,6 +230,14 @@ class ConnectiveLayer extends paper.Layer {
     return false;
   }
 
+  get hidden() {
+    return !this.visible;
+  }
+  set hidden(v) {
+    this.visible = !v;
+  }
+
+
   /**
    * Продукция слоя соединителей
    * Совпадает с продукцией проекта

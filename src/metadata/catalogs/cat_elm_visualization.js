@@ -113,7 +113,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             parent: layer._by_spec,
             pathData: this.svg_path,
             strokeColor: 'black',
-            fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr, false),
+            fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr),
             strokeScaling: false,
             guide: true,
             pivot: [0, 0],

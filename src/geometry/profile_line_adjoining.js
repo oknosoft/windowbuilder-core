@@ -26,9 +26,9 @@
  */
 class ProfileAdjoining extends BaseLine {
 
-  constructor({row, parent, proto, b, e, side}) {
+  constructor({row, parent, proto, b, e, side, project}) {
     const generatrix = b && e && parent.rays[side].get_subpath(e.elm[e.point], b.elm[b.point]);
-    super({row, generatrix, parent, proto, preserv_parent: true});
+    super({row, generatrix, parent, proto, preserv_parent: true, project});
     Object.assign(this.generatrix, {
       strokeColor: 'black',
       strokeOpacity: 0.7,

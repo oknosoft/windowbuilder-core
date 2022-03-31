@@ -11,9 +11,14 @@ class ParamsRow extends TabularSectionRow{
   set param(v){this._setter('param',v)}
   get value(){
     const {param} = this;
-    return param?.fetch_type ? param.fetch_type(this._obj.value) : this._getter('value');
+    return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
-  set value(v){this._setter('value',v)}
+  set value(v){
+    if(typeof v === 'string' && v.length === 72 && this.param.type?.types?.includes('cat.clrs')) {
+      v = $p.cat.clrs.getter(v);
+    }
+    this._setter('value',v);
+  }
 }
 
 class ElmParamsRow extends ParamsRow{
@@ -46,10 +51,15 @@ class Extra_fieldsRow extends TabularSectionRow{
   get property(){return this._getter('property')}
   set property(v){this._setter('property',v)}
   get value(){
-    const {property} = this;
-    return property?.fetch_type ? property.fetch_type(this._obj.value) : this._getter('value');
+    const {property: param} = this;
+    return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
-  set value(v){this._setter('value',v)}
+  set value(v) {
+    if(typeof v === 'string' && v.length === 72 && this.property?.type?.types?.includes('cat.clrs')) {
+      v = $p.cat.clrs.getter(v);
+    }
+    this._setter('value', v);
+  }
   get txt_row(){return this._getter('txt_row')}
   set txt_row(v){this._setter('txt_row',v)}
 }

@@ -494,10 +494,10 @@ class Scheme extends paper.Project {
       _scheme.load_contour(null);
 
       // перерисовываем каркас
-      _scheme.redraw(from_service);
+      _scheme.redraw({from_service});
 
       // ограничиваем список систем в интерфейсе
-      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
       _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
@@ -701,7 +701,7 @@ class Scheme extends paper.Project {
     const {_attr, _ch, _deffer} = this;
     const {length} = _ch;
 
-    if(_attr._saving || !length) {
+    if(!length || _attr._saving || _attr._lock) {
       return;
     }
 
@@ -1017,6 +1017,9 @@ class Scheme extends paper.Project {
 
     const {Импост} = $p.enm.elm_types;
     for (const item of selected) {
+      if(!item) {
+        continue;
+      }
       const {parent, layer} = item;
 
       if(item instanceof paper.Path && parent instanceof GeneratrixElement && !profiles.has(parent)) {
@@ -1172,17 +1175,18 @@ class Scheme extends paper.Project {
       }
       width += space;
       height += space;
-      const {view, _attr} = this;
-      if(!_attr._reflected) {
-        view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
-      }
-      const dx = view.viewSize.width - width * view.zoom;
+      const {view} = this;
+      const zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      const {scaling} = view._decompose();
+      view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
+
+      const dx = view.viewSize.width - width * zoom;
       if(isNode) {
-        const dy = view.viewSize.height - height * view.zoom;
-        view.center = center.add([dx, -dy]);
+        const dy = view.viewSize.height - height * zoom;
+        view.center = center.add([Math.sign(scaling.y) * dx, -Math.sign(scaling.y) * dy]);
       }
       else {
-        view.center = center.add([dx / 2, 50]);
+        view.center = center.add([Math.sign(scaling.y) * dx / 2, 50]);
       }
     }
   }
@@ -2087,31 +2091,44 @@ class Scheme extends paper.Project {
    * @param v
    * @return {boolean}
    */
-  async mirror(v) {
-    const {_attr, view: {scaling}} = this;
+  async mirror(v, animate) {
+    const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
+    if(_from_service) {
+      animate = false;
+    }
     v = Boolean(v);
     if(v !== Boolean(_reflected)) {
       const {utils} = $p;
-      const {x} = scaling;
-      for(let i=0.8; i>0; i-=0.3) {
-        scaling.x = x * i;
-        await utils.sleep(30);
-      }
-      scaling.x = -x;
-      for(const txt of this.getItems({class: paper.PointText})) {
-        if((v && txt.scaling.x > 0) || (!v && txt.scaling.x < 0)) {
-          txt.scaling.x = -txt.scaling.x;
+      const {scaling} = view._decompose();
+      if(animate) {
+        for(let i=0.8; i>0; i-=0.3) {
+          view.scaling = [scaling.x * i, scaling.y];
+          await utils.sleep(30);
         }
+      }
+      view.scaling = [-scaling.x, scaling.y];
+      for(const txt of this.getItems({class: paper.PointText})) {
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
       }
       _attr._reflected = v;
       for(const layer of this.contours) {
-        layer.apply_mirror(v);
+        layer.apply_mirror();
       }
-      if(!v) {
+      for(const profile of this.l_connective.profiles) {
+        const {clr} = profile;
+        if(clr.is_composite()) {
+          profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+        }
+      }
+      if(v) {
+        this._scope.select_tool?.('pan');
+      }
+      else {
         this.register_change(true);
       }
     }

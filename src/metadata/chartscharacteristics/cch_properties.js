@@ -386,6 +386,7 @@ exports.CchProperties = class CchProperties extends Object {
     else if(type.types[0] == 'json') {
       return typeof v === 'object' ? v : {};
     }
+    return v;
   }
 
   /**
@@ -464,8 +465,17 @@ exports.CchProperties = class CchProperties extends Object {
     // собираем все доступные значения в одном массиве
     links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
-    if(!prow || values.some(({_obj}) => _obj.value == prow.value)) {
-      return;
+    const value = prow?.value;
+    if(value instanceof CatClrs && value.is_composite()) {
+      const {clr_in, clr_out} = value;
+      if(!prow || (values.some(({_obj}) => _obj.value == clr_in) && values.some(({_obj}) => _obj.value == clr_out))) {
+        return;
+      }
+    }
+    else {
+      if(!prow || values.some(({_obj}) => _obj.value == value)) {
+        return;
+      }
     }
     // если есть явный default - устанавливаем
     if(values.some((row) => {
@@ -473,7 +483,7 @@ exports.CchProperties = class CchProperties extends Object {
         prow.value = row._obj.value;
         return true;
       }
-      if(row.by_default && (!prow.value || prow.value.empty && prow.value.empty())) {
+      if(row.by_default && (!value || value.empty?.())) {
         prow.value = row._obj.value;
         changed = true;
       }

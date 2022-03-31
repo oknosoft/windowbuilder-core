@@ -29,15 +29,7 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
       }
     });
 
-    const compare = (a, b) => {
-      if (a.name < b.name) {
-        return -1;
-      }
-      if (a.name > b.name) {
-        return 1;
-      }
-      return 0;
-    };
+    const compare = utils.sort('name');
 
     filtered.sort(utils.sort('sorting_field')).forEach((formula) => {
       // формируем списки печатных форм и внешних обработок

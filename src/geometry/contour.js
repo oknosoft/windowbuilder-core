@@ -242,7 +242,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   constructor(attr) {
 
-    super({parent: attr.parent});
+    super({parent: attr.parent, project: attr.project});
 
     this._attr = {};
 
@@ -1333,7 +1333,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.fill_error();
       }
       else {
-        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr, false);
+        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr);
       }
 
       // Ошибки соединений Onlay в этом заполнении
@@ -1523,7 +1523,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         const props = {
           parent: new paper.Group({parent: l_visualization._by_insets}),
-          fillColor: BuilderElement.clr_by_clr(clr),
+          fillColor: BuilderElement.clr_by_clr.call(this, clr),
           shadowColor: 'lightgray',
           shadowBlur: 20,
           shadowOffset: [13, 13],
@@ -1663,7 +1663,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         new paper.Path({
           parent: new paper.Group({parent: l_visualization._by_insets}),
           strokeColor: 'grey',
-          fillColor: BuilderElement.clr_by_clr(row.clr),
+          fillColor: BuilderElement.clr_by_clr.call(this, row.clr),
           shadowColor: 'grey',
           shadowBlur: 20,
           shadowOffset: [10, 20],
@@ -1774,12 +1774,14 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_visualization(rows) {
 
-    const {profiles, l_visualization, contours} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
+
     l_visualization._by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    if(!rows) {
+    const hide_by_spec = _attr._reflected || !builder_props.visualization;
+    if(!rows && !hide_by_spec) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
     }
@@ -1801,18 +1803,64 @@ class Contour extends AbstractFilling(paper.Layer) {
     glasses.forEach(this.draw_jalousie.bind(this));
 
     // бежим по строкам спецификации с визуализацией
-    for (const row of rows) {
-      // визуализация для текущего профиля
-      if(!profiles.some(draw.bind(row))) {
-        // визуализация для текущего заполнения
-        glasses.some((elm) => {
-          if(row.elm === elm.elm) {
-            row.nom.visualization.draw(elm, l_visualization, [row.len * 1000, row.width * 1000]);
-            return true;
-          }
-          // визуализация для текущей раскладки
-          return elm.imposts.some(draw.bind(row));
+    if(!hide_by_spec) {
+      for (const row of rows) {
+        // визуализация для текущего профиля
+        if(!profiles.some(draw.bind(row))) {
+          // визуализация для текущего заполнения
+          glasses.some((elm) => {
+            if(row.elm === elm.elm) {
+              row.nom.visualization.draw(elm, l_visualization, [row.len * 1000, row.width * 1000]);
+              return true;
+            }
+            // визуализация для текущей раскладки
+            return elm.imposts.some(draw.bind(row));
+          });
+        }
+      }
+    }
+
+    // подписи профилей
+    if(builder_props.articles) {
+      for(const profile of profiles) {
+        const {rays: {outer}, sizeb, inset, nom} = profile;
+        const p0 = outer.getNearestPoint(profile.corns(1));
+        const offset = outer.getOffsetOf(p0) + 80;
+        const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
+        const tangent = outer.getTangentAt(offset);
+
+        let content = '→ ';
+        switch (builder_props.articles) {
+        case 1:
+          content += profile.elm.toFixed();
+          break;
+        case 2:
+          content += inset.article || inset.name;
+          break;
+        case 3:
+          content += nom.article || nom.name;
+          break;
+        case 4:
+          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;
+          break;
+        case 5:
+          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
+          break;
+        }
+
+        const text = new paper.PointText({
+          parent: l_visualization._by_spec,
+          guide: true,
+          //justification: 'left',
+          fillColor: 'darkblue',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size,
+          content,
+          position,
         });
+        const {width} = text.bounds;
+        text.rotate(tangent.angle);
+        text.translate(tangent.multiply(width / 2));
       }
     }
 
@@ -2842,13 +2890,22 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
 
-  apply_mirror(reflected) {
-    if(reflected) {
-      this.l_visualization._by_spec.removeChildren();
+  apply_mirror() {
+    // прячем визуализацию
+    const {l_visualization, profiles, contours, project: {_attr}} = this;
+    if(_attr._reflected) {
+      l_visualization._by_spec.removeChildren();
+    }
+    // обновляем отображение состаных цветов
+    for(const profile of this.profiles) {
+      const {clr} = profile;
+      if(clr.is_composite()) {
+        profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+      }
     }
     for(const layer of this.contours) {
-      layer.apply_mirror(reflected);
-      if(reflected) {
+      layer.apply_mirror();
+      if(_attr._reflected) {
         layer.sendToBack();
       }
       else {
