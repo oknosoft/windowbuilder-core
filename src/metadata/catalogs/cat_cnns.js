@@ -212,8 +212,6 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     return a1[ref2];
   }
 
-
-
   /**
    * Возвращает соединение между элементами
    * @param elm1 {BuilderElement}

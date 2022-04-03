@@ -1402,8 +1402,9 @@ class BuilderElement extends paper.Group {
   // объект продукции текущего элемеента может отличаться от продукции текущего проекта
   get ox() {
     const {layer, _row} = this;
-    if(layer) {
-      return layer._ox;
+    const _ox = layer?._ox;
+    if(_ox) {
+      return _ox;
     }
     return _row ? _row._owner._owner : {cnn_elmnts: []};
   }

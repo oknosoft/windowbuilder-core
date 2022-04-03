@@ -3687,7 +3687,7 @@ set priorities(v){this._setter_ts('priorities',v)}
 
     return res;
   }
-}
+}
 $p.CatCnns = CatCnns;
 class CatCnnsSpecificationRow extends TabularSectionRow{
 get elm(){return this._getter('elm')}
@@ -3964,8 +3964,6 @@ class CatCnnsManager extends CatManager {
 
     return a1[ref2];
   }
-
-
 
   /**
    * Возвращает соединение между элементами
