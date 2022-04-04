@@ -22,6 +22,10 @@ class ContourNestedContent extends Contour {
 
   }
 
+  get ProfileConstructor() {
+    return ProfileNestedContent;
+  }
+
   /**
    * Загружает слои из прототипа
    * @param contour {Contour} - слой внешнего изделия (из другой рисовалки)

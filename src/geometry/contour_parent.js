@@ -10,6 +10,10 @@
 
 class ContourParent extends Contour {
 
+  get ProfileConstructor() {
+    return ProfileParent;
+  }
+
   /**
    * Объект характеристики родительского изделия
    * @return {CatCharacteristics}

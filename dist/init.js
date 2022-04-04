@@ -3765,7 +3765,7 @@ class CatCnnsManager extends CatManager {
     const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
-    const sys = elm1 instanceof BuilderElement ? elm1.project._dp.sys : (elm2 instanceof BuilderElement && elm2.project._dp.sys);
+    const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
     const priority = (cnn) => {
       let finded;
       if(sys && orientation) {

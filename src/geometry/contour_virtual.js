@@ -18,6 +18,30 @@ class ContourVirtual extends Contour {
     }
   }
 
+  get ProfileConstructor() {
+    return ProfileVirtual;
+  }
+
+  /**
+   * Система виртуального слоя - можем переопределить
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    const {_row: {dop}, layer: {sys}} = this;
+    return dop.sys ? sys._manager.get(dop.sys) : sys;
+  }
+  set sys(v) {
+    const {_row, layer: {sys}} = this;
+    if((!v || v == sys) {
+      if(_row.dop.sys) {
+        _row.dop = {sys: null};
+      }
+    }
+    else {
+      _row.dop = {sys: v.valueOf()};
+    }
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');

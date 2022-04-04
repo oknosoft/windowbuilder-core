@@ -57,7 +57,7 @@ class ProfileNested extends Profile {
    * Возвращает тип элемента (Вложение)
    */
   get elm_type() {
-    return $p.enm.elm_types.Вложение;
+    return $p.enm.elm_types.attachment;
   }
 
   // вставка - внешний профиль

@@ -1780,7 +1780,7 @@ class ProfileItem extends GeneratrixElement {
    */
   default_inset(all, refill) {
     let {orientation, project, layer, _attr, elm_type, inset} = this;
-    const {sys} = project._dp;
+    const {sys} = layer;
     const nearest = this.nearest(true);
     const {cat: {cnns}, enm: {positions, orientations, elm_types, cnn_types}} = $p;
 

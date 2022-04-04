@@ -20,6 +20,10 @@ class ContourNested extends Contour {
     Contour.create({project, row, parent: this, ox: _ox});
   }
 
+  get ProfileConstructor() {
+    return ProfileNested;
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Вложение');

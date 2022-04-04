@@ -175,7 +175,7 @@ class BuilderElement extends paper.Group {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
       {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
-      _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
+      _xfields = tabular_sections.coordinates.fields,
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
@@ -214,7 +214,7 @@ class BuilderElement extends paper.Group {
     inset.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o, f) => {
-        const {sys} = this.project._dp;
+        const {sys} = this.layer;
 
         let selection;
 
@@ -598,7 +598,7 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props(inset) {
-    const {_attr, _row, project: {_dp}, ox: {params}, rnum} = this;
+    const {_attr, _row, layer, ox: {params}, rnum} = this;
     const {utils, md, enm: {positions}} = $p;
     const concat = inset || rnum;
     if(!inset) {
@@ -610,7 +610,7 @@ class BuilderElement extends paper.Group {
 
     // получаем список свойств
     const props = [];
-    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : _dp.sys.product_params;
+    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
     for(const {param, elm} of product_params) {
       if (!inset_params.includes(param)) {
         continue;

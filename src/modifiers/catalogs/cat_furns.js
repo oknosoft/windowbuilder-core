@@ -31,9 +31,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    */
   refill_prm(layer, force=false) {
 
-    const {project, furn, cnstr} = layer;
+    const {project, furn, cnstr, sys} = layer;
     const fprms = project.ox.params;
-    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
@@ -374,7 +373,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    */
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr, project} = contour;
+    const {direction, h_ruch, cnstr} = contour;
 
     // проверка по высоте ручки
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
@@ -389,7 +388,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     // по моменту на петлях (в текущей реализации - просто по массе)
     if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {
-        if(project._dp.sys.flap_weight_max) {
+        if(contour.sys.flap_weight_max) {
           const weights = [];
           for(const cnt of contour.layer.contours) {
             weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
