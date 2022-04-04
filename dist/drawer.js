@@ -5569,7 +5569,7 @@ class ContourVirtual extends Contour {
   }
   set sys(v) {
     const {_row, layer: {sys}} = this;
-    if((!v || v == sys) {
+    if(!v || v == sys) {
       if(_row.dop.sys) {
         _row.dop = {sys: null};
       }
