@@ -20586,7 +20586,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     if(modify !== false) {
       // переносим в cx параметры
       cx.params.clear();
-      if(elm > 0) {
+      if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
         const {length, width} = job_prm.properties;
         params.find_rows({cnstr: -elm, inset: origin}, (row) => {
           if(row.param != length && row.param != width) {
@@ -20598,7 +20598,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         params.find_rows({cnstr: 0, inset: origin}, (row) => cx.params.add(row));
       }
 
-      if(elm > 0) {
+      if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
         // переносим в cx цвет
         inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
           cx.clr = row.clr;
