@@ -58,6 +58,18 @@ class ProfileVirtual extends Profile {
     return 0;
   }
 
+  /**
+   * Запрещаем редактировать элемент из интерфейса
+   * @return {boolean}
+   */
+  get locked() {
+    return true;
+  }
+
+  get info() {
+    return `вирт ${super.info}`;
+  }
+
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
   }

@@ -42,6 +42,14 @@ class ContourVirtual extends Contour {
     }
   }
 
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');

@@ -3178,8 +3178,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   _metadata(fld) {
 
-    const {tabular_sections} = this._ox._metadata();
+    const {tabular_sections, fields: {sys}} = this._ox._metadata();
     const {fields} = tabular_sections.constructions;
+
+    if(fld === 'sys') {
+      return sys;
+    }
 
     return fld ? (fields[fld] || tabular_sections[fld]) : {
       fields: {
@@ -3187,6 +3191,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         direction: fields.direction,
         h_ruch: fields.h_ruch,
         flipped: fields.flipped,
+        sys,
       },
       tabular_sections: {
         params: tabular_sections.params,
@@ -4519,6 +4524,14 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return !this.layer;
+  }
+
+  /**
    * Кеш используется при расчете спецификации фурнитуры
    * @return {Object}
    */
@@ -5577,6 +5590,14 @@ class ContourVirtual extends Contour {
     else {
       _row.dop = {sys: v.valueOf()};
     }
+  }
+
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
   }
 
   presentation(bounds) {
@@ -13409,6 +13430,18 @@ class ProfileNested extends Profile {
     return 0;
   }
 
+  /**
+   * Запрещаем редактировать элемент из интерфейса
+   * @return {boolean}
+   */
+  get locked() {
+    return true;
+  }
+
+  get info() {
+    return `влож ${super.info}`;
+  }
+
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
   }
@@ -13624,6 +13657,18 @@ class ProfileVirtual extends Profile {
 
   get sizeb() {
     return 0;
+  }
+
+  /**
+   * Запрещаем редактировать элемент из интерфейса
+   * @return {boolean}
+   */
+  get locked() {
+    return true;
+  }
+
+  get info() {
+    return `вирт ${super.info}`;
   }
 
   cnn_point(node, point) {
@@ -15301,6 +15346,14 @@ class ProfileParent extends Profile {
   // цвет внешнего элемента
   set_clr(v) {
 
+  }
+
+  /**
+   * Запрещаем редактировать элемент из интерфейса
+   * @return {boolean}
+   */
+  get locked() {
+    return true;
   }
 
   // характеристика, из которой брать значения параметров

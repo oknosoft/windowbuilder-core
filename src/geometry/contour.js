@@ -1236,8 +1236,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   _metadata(fld) {
 
-    const {tabular_sections} = this._ox._metadata();
+    const {tabular_sections, fields: {sys}} = this._ox._metadata();
     const {fields} = tabular_sections.constructions;
+
+    if(fld === 'sys') {
+      return sys;
+    }
 
     return fld ? (fields[fld] || tabular_sections[fld]) : {
       fields: {
@@ -1245,6 +1249,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         direction: fields.direction,
         h_ruch: fields.h_ruch,
         flipped: fields.flipped,
+        sys,
       },
       tabular_sections: {
         params: tabular_sections.params,
@@ -2574,6 +2579,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     else {
       project._dp.sys = v;
     }
+  }
+
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return !this.layer;
   }
 
   /**
