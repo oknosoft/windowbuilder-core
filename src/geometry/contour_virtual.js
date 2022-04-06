@@ -18,27 +18,45 @@ class ContourVirtual extends Contour {
     }
   }
 
+  get ProfileConstructor() {
+    return ProfileVirtual;
+  }
+
+  /**
+   * Система виртуального слоя - можем переопределить
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    const {_row: {dop}, layer: {sys}} = this;
+    return dop.sys ? sys._manager.get(dop.sys) : sys;
+  }
+  set sys(v) {
+    const {_row, layer: {sys}} = this;
+    if(!v || v == sys) {
+      if(_row.dop.sys) {
+        _row.dop = {sys: null};
+      }
+    }
+    else {
+      _row.dop = {sys: v.valueOf()};
+    }
+  }
+
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');
   }
 
-  save_coordinates(short) {
-
-    if (!short) {
-      // запись в таблице координат, каждый элемент пересчитывает самостоятельно
-      const {l_text, l_dimensions} = this;
-      for (let elm of this.children) {
-        if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && elm.save_coordinates());
-        }
-        else if (elm.save_coordinates && !(elm instanceof ProfileVirtual)) {
-          elm.save_coordinates();
-        }
-      }
-    }
-
-    super.save_coordinates(true);
+  save_coordinates(...args) {
+    return super.save_coordinates(...args);
   }
 
 }

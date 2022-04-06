@@ -31,9 +31,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    */
   refill_prm(layer, force=false) {
 
-    const {project, furn, cnstr} = layer;
+    const {project, furn, cnstr, sys} = layer;
     const fprms = project.ox.params;
-    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
@@ -269,13 +268,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 res.add(sub_row);
               }
               else if(sub_row.quantity) {
-                res.add(sub_row).quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+                row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = res.add(dop_row);
-            row_spec.origin = this;
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);
             row_spec.specify = row_furn.nom;
           }
         });
@@ -289,7 +288,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             res.add(sub_row);
           }
           else if(sub_row.quantity) {
-            res.add(sub_row).quantity = (row_furn.quantity || 1) * sub_row.quantity;
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+            row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
@@ -305,10 +305,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Добавляет строку в спецификацию с учетом алгоритма
-   * @param {TabularSection} res
-   * @param {CatCharacteristics} ox
-   * @param {Contour} contour
-   * @param {CatFurnsSpecificationRow} row_furn
+   * @param res {TabularSection}
+   * @param ox {CatCharacteristics}
+   * @param contour {Contour}
+   * @param row_furn {CatFurnsSpecificationRow}
+   * @return {DpBuyers_orderSpecificationRow}
    */
   add_with_algorithm(res, ox, contour, row_furn) {
     const {algorithm, formula, elm, dop} = row_furn;
@@ -337,6 +338,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     if(!formula.empty() && !formula.condition_formula){
       formula.execute({ox, contour, row_furn, row_spec});
     }
+    return row_spec;
   }
 
   /**
@@ -371,7 +373,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    */
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr, project} = contour;
+    const {direction, h_ruch, cnstr} = contour;
 
     // проверка по высоте ручки
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
@@ -386,7 +388,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     // по моменту на петлях (в текущей реализации - просто по массе)
     if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {
-        if(project._dp.sys.flap_weight_max) {
+        if(contour.sys.flap_weight_max) {
           const weights = [];
           for(const cnt of contour.layer.contours) {
             weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));

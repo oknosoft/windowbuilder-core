@@ -22,6 +22,10 @@ class ContourNestedContent extends Contour {
 
   }
 
+  get ProfileConstructor() {
+    return ProfileNestedContent;
+  }
+
   /**
    * Загружает слои из прототипа
    * @param contour {Contour} - слой внешнего изделия (из другой рисовалки)
@@ -30,6 +34,7 @@ class ContourNestedContent extends Contour {
    */
   load_stamp({contour, delta, map}) {
     const {_ox: ox, project} = this;
+    project._scope.activate();
 
     for(const proto of contour.profiles) {
       const generatrix = proto.generatrix.clone({insert: false});

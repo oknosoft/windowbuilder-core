@@ -343,7 +343,6 @@ class Scheme extends paper.Project {
       }
     }
 
-
     // устанавливаем в _dp систему профилей
     if(_dp.sys.empty()) {
       if(ox.owner.empty()) {
@@ -501,10 +500,10 @@ class Scheme extends paper.Project {
       _scheme.load_contour(null);
 
       // перерисовываем каркас
-      _scheme.redraw(from_service);
+      _scheme.redraw({from_service});
 
       // ограничиваем список систем в интерфейсе
-      templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
       _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
@@ -548,16 +547,11 @@ class Scheme extends paper.Project {
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
-                  Promise.resolve().then(() => {
-                    if(from_service){
-                      _scheme.draw_visualization();
-                      _scheme.zoom_fit();
-                      resolve();
-                    }
-                    else {
-                      setTimeout(_scheme.draw_visualization.bind(_scheme), 100);
-                    }
-                  });
+                  _scheme.draw_visualization();
+                  if(from_service){
+                    _scheme.zoom_fit();
+                    return resolve();
+                  }
                 }
                 else {
                   // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
@@ -566,11 +560,9 @@ class Scheme extends paper.Project {
               }
               else {
                 if(from_service){
-                  resolve();
+                  return resolve();
                 }
-                else{
-                  _scope.load_stamp && _scope.load_stamp();
-                }
+                _scope.load_stamp && _scope.load_stamp();
               }
               delete _attr._snapshot;
 
@@ -598,7 +590,7 @@ class Scheme extends paper.Project {
     this.ox = null;
     this.clear();
 
-    if(utils.is_data_obj(id) && id.calc_order && !id.calc_order.is_new()) {
+    if(utils.is_data_obj(id) && id.calc_order && (order === id.calc_order || !id.calc_order.is_new())) {
       return load_object(id);
     }
     else if(utils.is_guid(id) || utils.is_data_obj(id)) {
@@ -715,6 +707,10 @@ class Scheme extends paper.Project {
     const {length} = _ch;
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
+
+    if(_attr._lock) {
+      return;
+    }
 
     if(!_attr._opened || _attr._saving || !length) {
       _deffer.length = 0;
@@ -911,7 +907,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this._scope && this._scope.eve.emit_async(type, obj, fields);
+    this?._scope?.eve.emit_async(type, obj, fields);
   }
 
   /**
@@ -1111,32 +1107,33 @@ class Scheme extends paper.Project {
    */
   save_coordinates(attr) {
 
-    try {
-      const {_attr, bounds, ox, contours} = this;
+    const {_attr, bounds, ox, contours} = this;
 
-      if(!bounds) {
-        return;
-      }
+    _attr._saving = true;
+    ox._data._loading = true;
 
-      _attr._saving = true;
-      ox._data._loading = true;
+    // чистим табчасти, которые будут перезаполнены
+    const {cnn_nodes} = ProductsBuilding;
+    const {inserts} = ox;
+    ox.cnn_elmnts.clear(({elm1, node1}) => {
+      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+    });
+    ox.glasses.clear();
 
+    let res = Promise.resolve();
+    const push = (contour) => {
+      res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
+    };
+
+    if(bounds) {
       // устанавливаем размеры в характеристике
       ox.x = bounds.width.round(1);
       ox.y = bounds.height.round(1);
       ox.s = this.area;
 
-      // чистим табчасти, которые будут перезаполнены
-      const {cnn_nodes} = ProductsBuilding;
-      const {inserts} = ox;
-      ox.cnn_elmnts.clear(({elm1, node1}) => {
-        return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
-      });
-      ox.glasses.clear();
-
       // вызываем метод save_coordinates в дочерних слоях
       contours.forEach((contour) => {
-        if(attr && attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+        if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
           if(this.activeLayer === contour) {
             const other = contours.find((el) => el !== contour);
             other && other.activate();
@@ -1145,21 +1142,27 @@ class Scheme extends paper.Project {
           this._scope.eve.emit_async('rows', ox, {constructions: true});
         }
         else {
-          contour.save_coordinates(false, attr && attr.save, attr && attr.close);
+          push(contour);
         }
       });
 
       // вызываем метод save_coordinates в слое соединителей
-      this.l_connective.save_coordinates();
+      push(this.l_connective);
+    }
+    else {
+      ox.x = 0;
+      ox.y = 0;
+      ox.s = 0;
+    }
 
-      // пересчет спецификации и цен
-      return attr && attr.no_recalc ? this : $p.products_building.recalc(this, attr);
-    }
-    catch (err) {
-      const {msg, ui} = $p;
-      ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
-      throw err;
-    }
+    // пересчет спецификации и цен
+    return res
+      .then(() => attr?.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .catch((err) => {
+        const {msg, ui} = $p;
+        ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
+        throw err;
+      });
 
   }
 
@@ -1191,14 +1194,17 @@ class Scheme extends paper.Project {
       width += space;
       height += space;
       const {view} = this;
-      view.zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
-      const dx = view.viewSize.width - width * view.zoom;
+      const zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+      const {scaling} = view._decompose();
+      view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
+
+      const dx = view.viewSize.width - width * zoom;
       if(isNode) {
-        const dy = view.viewSize.height - height * view.zoom;
-        view.center = center.add([dx, -dy]);
+        const dy = view.viewSize.height - height * zoom;
+        view.center = center.add([Math.sign(scaling.y) * dx, -Math.sign(scaling.y) * dy]);
       }
       else {
-        view.center = center.add([dx / 2, 50]);
+        view.center = center.add([Math.sign(scaling.y) * dx / 2, 50]);
       }
     }
   }
@@ -1301,7 +1307,8 @@ class Scheme extends paper.Project {
 
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
-        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === Шаблон) ? obx : obx.base_block;
+        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === Шаблон ||
+          obx.base_block.calc_order.obj_delivery_state === Шаблон) ? obx : obx.base_block;
         if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
@@ -1577,6 +1584,7 @@ class Scheme extends paper.Project {
    */
   draw_visualization() {
     if(this.view){
+      this._scope.activate();
       for (let contour of this.contours) {
         contour.draw_visualization();
       }
@@ -2094,6 +2102,55 @@ class Scheme extends paper.Project {
   set skeleton(v) {
     const {_skeleton} = this;
     _skeleton.skeleton = !!v;
+  }
+
+  /**
+   * Зеркалирует эскиз
+   * @param v
+   * @return {boolean}
+   */
+  async mirror(v, animate) {
+    const {_attr, view} = this;
+    const {_from_service, _reflected} = _attr;
+    if(typeof v === 'undefined') {
+      return _reflected;
+    }
+    if(_from_service) {
+      animate = false;
+    }
+    v = Boolean(v);
+    if(v !== Boolean(_reflected)) {
+      const {utils} = $p;
+      const {scaling} = view._decompose();
+      if(animate) {
+        for(let i=0.8; i>0; i-=0.3) {
+          view.scaling = [scaling.x * i, scaling.y];
+          await utils.sleep(30);
+        }
+      }
+      view.scaling = [-scaling.x, scaling.y];
+      for(const txt of this.getItems({class: paper.PointText})) {
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
+      }
+      _attr._reflected = v;
+      for(const layer of this.contours) {
+        layer.apply_mirror();
+      }
+      for(const profile of this.l_connective.profiles) {
+        const {clr} = profile;
+        if(clr.is_composite()) {
+          profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+        }
+      }
+      if(v) {
+        this._scope.select_tool?.('pan');
+      }
+      else {
+        this.register_change(true);
+      }
+    }
+    return _attr._reflected;
   }
 
 }

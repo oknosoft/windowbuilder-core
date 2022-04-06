@@ -13,7 +13,7 @@ class ProfileVirtual extends Profile {
     super(attr);
     Object.defineProperty(this._attr, '_nearest_cnn', {
       get() {
-        return ProfileVirtual.nearest_cnn;
+        return ProfileNested.nearest_cnn;
       },
       set(v) {
 
@@ -23,19 +23,28 @@ class ProfileVirtual extends Profile {
     this.path.dashArray = [8, 4, 2, 4];
   }
 
-  // ведущий элемент получаем в лоб
-  nearest() {
-    return this._attr._nearest;
-  }
-
   // пересчет вставок и соединений не делаем
   default_inset(all) {
 
   }
 
+  refresh_inset_depends(param, with_neighbor) {
+    const {inset, _attr: {_rays}} = this;
+    if(_rays && inset.is_depend_of(param)) {
+      _rays.clear(with_neighbor ? 'with_neighbor' : true);
+    }
+  }
+
+  /**
+   * Возвращает тип элемента (Створка, виртуальнвя)
+   */
+  get elm_type() {
+    return $p.enm.elm_types.flap;
+  }
+
   // вставка - внешний профиль
   get inset() {
-    return this.nearest().inset;
+    return this.nearest(true).inset;
   }
   set inset(v) {}
 
@@ -47,6 +56,22 @@ class ProfileVirtual extends Profile {
 
   get sizeb() {
     return 0;
+  }
+
+  /**
+   * Запрещаем редактировать элемент из интерфейса
+   * @return {boolean}
+   */
+  get locked() {
+    return true;
+  }
+
+  get info() {
+    return `вирт ${super.info}`;
+  }
+
+  cnn_point(node, point) {
+    return ProfileParent.prototype.cnn_point.call(this, node, point);
   }
 
   path_points(cnn_point, profile_point) {
@@ -91,10 +116,10 @@ class ProfileVirtual extends Profile {
     }
 
     const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.outer : prays.inner;
+      prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.inner : prays.outer;
 
     const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
-    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.outer : rays.inner;
+    rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.inner : rays.outer;
 
     const offset = -2;
     if(profile_point == 'b') {
@@ -169,20 +194,6 @@ class ProfileVirtual extends Profile {
 
     return this;
   }
-}
-
-ProfileVirtual.nearest_cnn = {
-  size(profile) {
-    return profile.nearest().width;
-  },
-  empty() {
-    return false;
-  },
-  get cnn_type() {
-    return $p.enm.cnn_types.ii;
-  },
-  specification: [],
-  selection_params: [],
 }
 
 EditorInvisible.ProfileVirtual = ProfileVirtual;

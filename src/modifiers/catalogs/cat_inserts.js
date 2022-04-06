@@ -11,7 +11,7 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, EditorInvisible} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
 
   const {inserts_types} = enm;
 
@@ -436,11 +436,20 @@
      */
     is_order_row_prod({ox, elm, contour}) {
       const {Продукция} = enm.specification_order_row_types;
-      const param = cch.properties.predefined('glass_separately');
-
+      const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
-      if(param && _types_filling.includes(insert_type)) {
-        ox.params && ox.params.find_rows({param}, ({cnstr, value}) => {
+
+      // заполнения в продукцию не выносим, если бит "без заполнений"
+      if(_types_filling.includes(insert_type)) {
+        const param = cch.properties.predefined('without_glasses');
+        if(param && params?.find({cnstr: 0, param})?.value) {
+          return false;
+        }
+      }
+
+      if(_types_filling.includes(insert_type)) {
+        const param = cch.properties.predefined('glass_separately');
+        param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
             is_order_row = value ? Продукция : '';
             return false;
@@ -450,6 +459,7 @@
           }
         });
       }
+
       if(is_order_row instanceof CatFormulas) {
         is_order_row = is_order_row.execute({ox, elm, contour});
       }
@@ -562,11 +572,11 @@
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
-          res.s = ((res.x * res.y) / 1000000).round(3);
+          res.s = ((res.x * res.y) / 1e6).round(3);
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
-          if(irow.count_calc_method == enm.count_calculating_ways.ПоФормуле && !irow.formula.empty()){
+          if(irow.count_calc_method == enm.count_calculating_ways.formula && !irow.formula.empty()){
             irow.formula.execute({
               ox: contour.project.ox,
               contour: contour,
@@ -575,17 +585,17 @@
               res: res
             });
           }
-          if(irow.count_calc_method == enm.count_calculating_ways.ПоПлощади && this.insert_type == inserts_types.МоскитнаяСетка){
+          if(irow.count_calc_method == enm.count_calculating_ways.area && this.insert_type == inserts_types.МоскитнаяСетка){
             // получаем габариты смещенного периметра
             const bounds = contour.bounds_inner(irow.sz);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
-            res.s = ((res.x * res.y) / 1000000).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(3);
           }
           else{
             res.x = contour.w + irow.sz;
             res.y = contour.h + irow.sz;
-            res.s = ((res.x * res.y) / 1000000).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(3);
           }
         }
       }
@@ -661,7 +671,7 @@
         return false;
       }
 
-      if (by_perimetr || row.count_calc_method !== enm.count_calculating_ways.ПоПериметру) {
+      if (by_perimetr || row.count_calc_method !== enm.count_calculating_ways.perimeter) {
         if(!(elm instanceof EditorInvisible.Filling)) {
           const len = len_angl ? len_angl.len : _row.len;
           if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
@@ -748,22 +758,47 @@
         return res;
       }
 
-      function fake_row(row) {
-        if(row._metadata){
-          const res = {};
-          for(let fld in row._metadata().fields){
-            res[fld] = row[fld];
-          }
-          return res;
-        }
-        else{
-          return Object.assign({}, row);
-        }
-      }
-
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {Профиль}, angle_calculating_ways: {Основной}} = enm;
+      const {inserts_types: {Профиль}, angle_calculating_ways: {Основной}, count_calculating_ways: {prm}} = enm;
       const {check_params} = ProductsBuilding;
+
+      function fake_row(sub_row, row) {
+        const fakerow = {};
+        if(sub_row._metadata) {
+          for (let fld in sub_row._metadata().fields) {
+            fakerow[fld] = sub_row[fld];
+          }
+        }
+        else {
+          Object.assign(fakerow, sub_row);
+        }
+        fakerow._owner = sub_row._owner;
+
+        // количество по параметру
+        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === prm) {
+          fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
+            const {rnum} = elm;
+            fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
+            return false;
+          });
+        }
+
+        if(row) {
+          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === prm ? 0 : 1)) * (row.quantity || 1);
+          fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
+          if(fakerow.clr.empty()) {
+            fakerow.clr = row.clr;
+          }
+          if(fakerow.angle_calc_method === Основной) {
+            fakerow.angle_calc_method = row.angle_calc_method;
+          }
+          if(!fakerow.sz) {
+            fakerow.sz = row.sz;
+          }
+        }
+
+        return fakerow;
+      }
 
       // для заполнений, можно переопределить состав верхнего уровня
       if(is_high_level_call && _types_filling.includes(insert_type)){
@@ -778,7 +813,7 @@
           glass_rows.forEach((row) => {
             const relm = elm.region(row);
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
-              const frow = fake_row(srow);
+              const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               frow.origin = row.inset;
               res.push(frow);
@@ -815,19 +850,8 @@
         // Добавляем или разузловываем дальше
         if(row.nom instanceof CatInserts){
           row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
-            const fakerow = fake_row(subrow);
-            fakerow.quantity = (subrow.quantity || 1) * (row.quantity || 1);
-            fakerow.coefficient = (subrow.coefficient || row.coefficient) ? subrow.coefficient * (row.coefficient || 1) : 0;
+            const fakerow = fake_row(subrow, row);
             fakerow._origin = row.nom;
-            if(fakerow.clr.empty()){
-              fakerow.clr = row.clr;
-            }
-            if(fakerow.angle_calc_method === Основной) {
-              fakerow.angle_calc_method = row.angle_calc_method;
-            }
-            if(!fakerow.sz) {
-              fakerow.sz = row.sz;
-            }
             res.push(fakerow);
           });
         }
@@ -865,6 +889,7 @@
         ПоШагам,
         ПоФормуле,
         ДляЭлемента,
+        ПоПарам,
         ПоПлощади,
         ДлинаПоПарам,
         ГабаритыПоПарам,
@@ -890,6 +915,9 @@
 
         // добавляем строку спецификации, если профиль или не про шагам
         if(![ПоПериметру, ПоШагам, ПоЗаполнениям].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
+          if(!row_ins_spec.quantity) {
+            return;
+          }
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
 
@@ -898,7 +926,7 @@
           row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
         // для вставок в профиль способ расчета количества не учитывается
-        else if(profile_items.includes(_row.elm_type) || count_calc_method == ДляЭлемента){
+        else if(profile_items.includes(_row.elm_type) || [ДляЭлемента, ПоПарам].includes(count_calc_method)){
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
           // размер может уточняться по соединениям
           if(count_calc_method == ПоСоединениям){
@@ -1105,7 +1133,7 @@
             });
           }
           else{
-            throw new Error("count_calc_method: " + row_ins_spec.count_calc_method);
+            throw new Error(`count_calc_method: ${count_calc_method}`);
           }
         }
 

@@ -68,8 +68,8 @@ class ProfileAddl extends ProfileItem {
    * @type Number
    */
   get d0() {
-    this.nearest();
-    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this) : 0;
+    const nearest = this.nearest();
+    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
   }
 
   /**

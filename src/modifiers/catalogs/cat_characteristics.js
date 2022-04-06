@@ -49,7 +49,7 @@
           current_user.role_available('РедактированиеЦен')
         )) {
         return;
-      };
+      }
       const {form} = _mgr.metadata();
       if(form && form.obj && form.obj.tabular_sections) {
         form.obj.tabular_sections.specification.widths = "50,*,70,*,50,70,70,80,70,70,70,0,0,0";
@@ -67,7 +67,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const {prod_nom, calc_order, _data} = this;
 
     // контроль прав на запись характеристики
-    if(calc_order.is_read_only) {
+    if(!attr.force && calc_order.is_read_only) {
       _data._err = {
         title: 'Права доступа',
         type: 'alert-error',
@@ -285,12 +285,17 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
   /**
    * Ищет характеристику в озу, в indexeddb не лезет, если нет в озу - создаёт
    * @param elm {Number} - номер элемента или контура
-   * @param origin {CatInserts} - порождающая вставка
+   * @param [origin] {CatInserts} - порождающая вставка
    * @param [modify] {Boolean} - если false - не изменяем - только поиск
+   * @param [_order_rows] {Array} - если указано и есть в массиве - не перезаполняем
    * @return {CatCharacteristics}
    */
-  find_create_cx(elm, origin, modify) {
+  find_create_cx(elm, origin, modify, _order_rows) {
     const {_manager, calc_order, params, inserts} = this;
+    const {job_prm, utils, cat} = $p;
+    if(!origin) {
+      origin = cat.inserts.get();
+    }
     let cx;
     _manager.find_rows({leading_product: this, leading_elm: elm, origin}, (obj) => {
       if(!obj._deleted) {
@@ -299,42 +304,89 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       }
     });
     if(!cx) {
-      cx = $p.cat.characteristics.create({
+      cx = cat.characteristics.create({
         calc_order,
         leading_product: this,
         leading_elm: elm,
         origin
       }, false, true)._set_loaded();
     }
+    if(_order_rows) {
+      if(_order_rows.includes(cx)) {
+        return cx;
+      }
+      _order_rows.push(cx);
+      cx.specification.clear();
+      if(!cx.calc_order_row) {
+        calc_order.production.add({characteristic: cx});
+      }
+    }
 
     if(modify !== false) {
       // переносим в cx параметры
-      const {length, width} = $p.job_prm.properties;
       cx.params.clear();
-      params.find_rows({cnstr: -elm, inset: origin}, (row) => {
-        if(row.param != length && row.param != width) {
-          cx.params.add({param: row.param, value: row.value});
-        }
-      });
-      // переносим в cx цвет
-      inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
-        cx.clr = row.clr;
-      });
-      cx.name = cx.prod_name();
+      if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
+        const {length, width} = job_prm.properties;
+        params.find_rows({cnstr: -elm, inset: origin}, (row) => {
+          if(row.param != length && row.param != width) {
+            cx.params.add({param: row.param, value: row.value});
+          }
+        });
+      }
+      else {
+        params.find_rows({cnstr: 0, inset: origin}, (row) => cx.params.add(row));
+      }
+
+      if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
+        // переносим в cx цвет
+        inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
+          cx.clr = row.clr;
+        });
+        cx.name = cx.prod_name();
+      }
+      else if(utils.is_empty_guid(origin.valueOf())) {
+        // если это продукция слоя, переносим в cx всё, что можно
+        cx.constructions.clear();
+        cx.inserts.clear();
+        cx.coordinates.clear();
+        cx.glasses.clear();
+        cx.cnn_elmnts.clear();
+        cx.cpy_recursive(this, -elm);
+      }
+
     }
     return cx;
+  }
+
+  /**
+   * Копирует табчасти структуры изделия, начиная со слоя cnstr
+   * @param src {CatCharacteristics}
+   * @param cnstr {Number}
+   */
+  cpy_recursive(src, cnstr) {
+    const {params, inserts, coordinates, cnn_elmnts, glasses} = this;
+    this.constructions.add(src.constructions.find({cnstr}));
+    src.params.find_rows({cnstr}, (row) => params.add(row));
+    src.inserts.find_rows({cnstr}, (row) => inserts.add(row));
+    src.coordinates.find_rows({cnstr}, (row) => {
+      coordinates.add(row);
+      for(const srow of src.cnn_elmnts) {
+        if(srow.elm1 === row.elm || srow.elm2 === row.elm) {
+          cnn_elmnts.add(srow);
+        }
+      }
+      const grow = src.glasses.find({elm: row.elm});
+      grow && this.glasses.add(grow);
+    });
+
+    src.constructions.find_rows({parent: cnstr}, (row) => this.cpy_recursive(src, row.cnstr));
   }
 
   /**
    * Возврвщает строку заказа, которой принадлежит продукция
    */
   get calc_order_row() {
-    let _calc_order_row;
-    this.calc_order.production.find_rows({characteristic: this}, (_row) => {
-      _calc_order_row = _row;
-      return false;
-    });
-    return _calc_order_row;
+    return this.calc_order.production.find({characteristic: this});
   }
 
   /**
@@ -504,10 +556,11 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
   /**
    * Пересчитывает изделие по тем же правилам, что и визуальная рисовалка
-   * @param attr
-   * @param editor
+   * @param attr {Object} - параметры пересчёта
+   * @param [editor] {EditorInvisible}
+   * @param [restore] {Scheme}
    */
-  recalc(attr = {}, editor) {
+  recalc(attr = {}, editor, restore) {
 
     // сначала, получаем объект заказа и продукции заказа в озу, т.к. пересчет изделия может приводить к пересчету соседних продукций
 
@@ -519,22 +572,21 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     const project = editor.create_scheme();
     return project.load(this, true)
       .then(() => {
-
         // выполняем пересчет
-        project.save_coordinates(Object.assign({save: true, svg: false}, attr));
-
+        return project.save_coordinates(Object.assign({save: true, svg: false}, attr));
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.unload();
-        }
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => {
+        restore?.activate();
         return this;
+      })
+      .catch((err) => {
+        restore?.activate();
+        throw err;
       });
-
   }
 
   /**
@@ -620,14 +672,9 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.unload();
-        }
-        return attr.res;
-      });
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => attr.res);
   }
 
   /**
@@ -688,6 +735,28 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     return weight;
   }
 
+  /**
+   * Выясняет, есть ли в спецификации номенклатура из константы cname
+   * @param cname {String}
+   * @return {boolean}
+   */
+  has_nom(cname) {
+    let noms = $p.job_prm.nom[cname];
+    let res = false;
+    if(noms) {
+      if(!Array.isArray(noms)) {
+        noms = [noms];
+      }
+      for(const {nom} of this.specification) {
+        if(noms.some((curr) => curr === nom || curr.is_folder && nom._hierarchy(curr))) {
+          res = true;
+          break;
+        }
+      }
+    }
+    return res;
+  }
+
 };
 
 $p.CatCharacteristics.builder_props_defaults = {
@@ -701,6 +770,8 @@ $p.CatCharacteristics.builder_props_defaults = {
   jalousie: true,
   grid: 50,
   carcass: false,
+  mirror: false,
+  articles: 0,
 };
 
 // при изменении реквизита табчасти вставок

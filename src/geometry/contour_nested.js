@@ -20,6 +20,10 @@ class ContourNested extends Contour {
     Contour.create({project, row, parent: this, ox: _ox});
   }
 
+  get ProfileConstructor() {
+    return ProfileNested;
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Вложение');
@@ -89,139 +93,156 @@ class ContourNested extends Contour {
   load_stamp() {
 
     const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;
-    const {base_block, refill} = templates._select_template;
 
-    if(base_block.calc_order === templates._select_template.calc_order) {
+    return Promise.resolve().then(() => {
+      const {base_block} = templates._select_template;
+      if(base_block.calc_order === templates._select_template.calc_order) {
 
-      const {_ox} = this;
+        const {_ox, project: {_attr}} = this;
 
-      // создаём новое пустое изделие
-      const tx = characteristics.create({calc_order: _ox.calc_order}, false, true);
-      // заполняем его из шаблона устанавливаем систему и параметры
-      const teditor = new EditorInvisible();
-      const tproject = teditor.create_scheme();
-      tproject.load(tx, true)
-        .then(() => {
-          return tproject.load_stamp(base_block, false, !refill, true);
-        })
-        .then(() => {
-          const {project, lbounds, content} = this;
-          const contour = tproject.contours[0];
-          if(!contour) {
-            throw 'Нет слоёв в шаблоне';
-          }
-          //project._attr._silent = true;
+        // останавливаем перерисовку
+        _attr._lock = true;
 
-          // подгоняем размеры под проём
-          const {bottom, right} = tproject.l_dimensions;
-          const dx = lbounds.width - bottom.size;
-          const dy = lbounds.height - right.size;
+        // создаём новое пустое изделие
+        const tx = characteristics.create({calc_order: _ox.calc_order}, false, true);
+        // заполняем его из шаблона устанавливаем систему и параметры
+        const teditor = new EditorInvisible();
+        const tproject = teditor.create_scheme();
 
-          dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
-          dy && right._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');
-          contour.redraw();
-          dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
-          dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+        const fin = () => {
+          // возобновляем перерисовку
+          _attr._lock = false;
 
-          // пересчитываем, не записываем
-          contour.refresh_prm_links(true);
-          tproject.zoom_fit();
-          while (tproject._ch.length) {
-            tproject.redraw();
-          }
-          tproject.save_coordinates({svg: false});
+          // выгружаем временный проект
+          const {calc_order_row} = tx;
+          calc_order_row && tx.calc_order.production.del(calc_order_row);
+          teditor.unload();
+          tx.unload();
+        };
 
-          // чистим наше
-          while (content.children.length) {
-            content.children[0].remove();
-          }
+        return tproject.load(tx, true, _ox.calc_order)
+          .then(() => {
+            return tproject.load_stamp(base_block, false, true, true);
+          })
+          .then(() => {
+            const {lbounds} = this;
+            const contour = tproject.contours[0];
+            if(!contour || !contour.contours.length) {
+              throw new Error(`Нет слоёв в шаблоне ${base_block.name}`);
+            }
 
-          // перезаполняем сырыми данными временного изделия
-          _ox.specification.clear();
-          const map = new Map();
-          const {_row} = content;
-          const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;
-          let elm = elm0;
-          for(const trow of tx.constructions) {
-            if(trow.parent === 1) {
-              for(const fld in trow._obj) {
-                if(fld !== 'row' && !fld.startsWith('_')) {
-                  _row[fld] = trow._obj[fld];
+            // подгоняем размеры под проём
+            const {bottom, right} = tproject.l_dimensions;
+            const dx = lbounds.width - bottom.size;
+            const dy = lbounds.height - right.size;
+
+            dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
+            dy && right._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');
+            contour.redraw();
+            dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
+            dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+
+            // пересчитываем, не записываем
+            contour.refresh_prm_links(true);
+            tproject.zoom_fit();
+            while (tproject._ch.length) {
+              tproject.redraw();
+            }
+            return tproject.save_coordinates({svg: false, no_recalc: true});
+          })
+          .then(() => {
+            const {lbounds, content} = this;
+            // чистим наше
+            while (content.children.length) {
+              content.children[0].remove();
+            }
+            for (const elm of this.profiles) {
+              elm.save_coordinates();
+            }
+
+            // перезаполняем сырыми данными временного изделия
+            _ox.specification.clear();
+            _ox.sys = base_block.sys;
+            const map = new Map();
+            const {_row} = content;
+            const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;
+            let elm = elm0;
+            for(const trow of tx.constructions) {
+              if(trow.parent === 1) {
+                for(const fld in trow._obj) {
+                  if(fld !== 'row' && !fld.startsWith('_')) {
+                    _row[fld] = trow._obj[fld];
+                  }
                 }
               }
+              else if(trow.parent > 1) {
+                _ox.constructions.add(Object.assign({}, trow._obj));
+              }
             }
-            else if(trow.parent > 1) {
-              _ox.constructions.add(Object.assign({}, trow._obj));
+            // заполняем соответствие номенов элементов
+            for(const trow of tx.coordinates) {
+              if(trow.cnstr > 1) {
+                elm += 1;
+                map.set(trow.elm, elm);
+              }
             }
-          }
-          // заполняем соответствие номенов элементов
-          for(const trow of tx.coordinates) {
-            if(trow.cnstr > 1) {
-              elm += 1;
-              map.set(trow.elm, elm);
-            }
-          }
 
-          // грузим cnn_elmnts;
-          const adel = [];
-          for(const trow of _ox.cnn_elmnts) {
-            if(trow.elm1 > elm0 || trow.elm2 > elm0) {
-              adel.push(trow);
+            // грузим cnn_elmnts;
+            const adel = [];
+            for(const trow of _ox.cnn_elmnts) {
+              if(trow.elm1 > elm0 || trow.elm2 > elm0) {
+                adel.push(trow);
+              }
             }
-          }
-          for(const trow of adel) {
-            _ox.cnn_elmnts.del(trow);
-          }
-          for(const trow of tx.cnn_elmnts) {
-            const row1 = tx.coordinates.find({elm: trow.elm1});
-            const row2 = tx.coordinates.find({elm: trow.elm2});
-            if(row1.cnstr > 1 && row2.cnstr > 1) {
+            for(const trow of adel) {
+              _ox.cnn_elmnts.del(trow);
+            }
+            for(const trow of tx.cnn_elmnts) {
+              const row1 = tx.coordinates.find({elm: trow.elm1});
+              const row2 = tx.coordinates.find({elm: trow.elm2});
+              if(row1.cnstr > 1 && row2.cnstr > 1) {
+                const proto = Object.assign({}, trow._obj);
+                proto.elm1 = map.get(proto.elm1);
+                proto.elm2 = map.get(proto.elm2);
+                _ox.cnn_elmnts.add(proto);
+              }
+            }
+            // грузим params;
+            _ox.params.clear();
+            for(const trow of tx.params) {
               const proto = Object.assign({}, trow._obj);
-              proto.elm1 = map.get(proto.elm1);
-              proto.elm2 = map.get(proto.elm2);
-              _ox.cnn_elmnts.add(proto);
+              if(proto.cnstr < 0) {
+                proto.cnstr = -map.get(-proto.cnstr);
+              }
+              _ox.params.add(proto);
             }
-          }
-          // грузим params;
-          _ox.params.clear();
-          for(const trow of tx.params) {
-            const proto = Object.assign({}, trow._obj);
-            if(proto.cnstr < 0) {
-              proto.cnstr = -map.get(-proto.cnstr);
+            // грузим inserts;
+            _ox.inserts.clear();
+            for(const trow of tx.inserts) {
+              const proto = Object.assign({}, trow._obj);
+              if(proto.cnstr < 0) {
+                proto.cnstr = -map.get(-proto.cnstr);
+              }
+              _ox.inserts.add(proto);
             }
-            _ox.params.add(proto);
-          }
-          // грузим inserts;
-          _ox.inserts.clear();
-          for(const trow of tx.inserts) {
-            const proto = Object.assign({}, trow._obj);
-            if(proto.cnstr < 0) {
-              proto.cnstr = -map.get(-proto.cnstr);
-            }
-            _ox.inserts.add(proto);
-          }
 
-          const {lbounds: tlbounds} = contour;
-          content.load_stamp({
-            contour: contour.contours[0],
-            delta: [lbounds.x - tlbounds.x, lbounds.y - tlbounds.y],
-            map,
+            const contour = tproject.contours[0];
+            const {lbounds: tlbounds} = contour;
+            content.load_stamp({
+              contour: contour.contours[0],
+              delta: [lbounds.x - tlbounds.x, lbounds.y - tlbounds.y],
+              map,
+            });
+            fin();
+          })
+          .catch((err) => {
+            fin();
+            $p.record_log(err);
+            $p.ui.dialogs.alert({title: 'Вставка вложенного изделия', text: err.message});
           });
+      }
 
-          // clearTimeout(tproject._attr._vis_timer);
-          // tproject._attr._opened = false;
-          // tproject.ox = '';
-          // teditor.unload();
-          // tx.unload();
-          // project._attr._silent = false;
-
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-
-    }
-
+    });
   }
 
   /**
@@ -231,15 +252,15 @@ class ContourNested extends Contour {
     const {cat: {templates}, job_prm} = $p;
     const {templates_nested} = job_prm.builder;
     if(templates_nested && templates_nested.includes(templates._select_template.calc_order)) {
-      const {project} = this;
+      const {eve} = this.project._scope;
       const fin = (tx, fields) => {
         if(tx === _ox && fields.constructions) {
           templates._select_template.refill = false;
-          project._scope.eve.off('rows', fin);
+          eve.off('rows', fin);
           this.load_stamp();
         }
       }
-      project._scope.eve.on('rows', fin);
+      eve.on('rows', fin);
     }
   }
 
@@ -250,30 +271,35 @@ class ContourNested extends Contour {
    */
   save_coordinates(short, save, close) {
 
-    if (!short) {
-      // запись в таблице координат для виртуальных профилей
-      for (const elm of this.profiles) {
-        elm.save_coordinates();
-      }
-    }
+    return Promise.resolve()
+      .then(() => {
+        if (!short) {
+          // запись в таблице координат для виртуальных профилей
+          for (const elm of this.profiles) {
+            elm.save_coordinates();
+          }
+        }
 
-    // ответственность за строку в таблице конструкций лежит на контуре
-    const {bounds, w, h, is_rectangular, content} = this;
-    this._row.x = bounds ? bounds.width.round(4) : 0;
-    this._row.y = bounds ? bounds.height.round(4) : 0;
-    this._row.is_rectangular = is_rectangular;
-    this._row.w = w.round(4);
-    this._row.h = h.round(4);
+        // ответственность за строку в таблице конструкций лежит на контуре
+        const {bounds, w, h, is_rectangular, content, _row, project} = this;
+        _row.x = bounds ? bounds.width.round(4) : 0;
+        _row.y = bounds ? bounds.height.round(4) : 0;
+        _row.is_rectangular = is_rectangular;
+        _row.w = w.round(4);
+        _row.h = h.round(4);
 
-    // пересчитаем вложенное изделие
-    if(content) {
-      content._row._owner._owner.glasses.clear();
-      content.save_coordinates(short);
-
-      save && this._ox
-        .recalc({svg: true, silent: true})
-        .then(() => !close && this.draw_visualization());
-    }
+        // пересчитаем вложенное изделие
+        if(content) {
+          content._row._owner._owner.glasses.clear();
+          return content.save_coordinates(short)
+            .then(() => {
+              return save && this._ox.recalc({save: 'recalc', svg: true, silent: true}, null, project._scope);
+            })
+            .then(() => {
+              return save && !close && content.draw_visualization();
+            });
+        }
+      });
   }
 
   set path(attr) {

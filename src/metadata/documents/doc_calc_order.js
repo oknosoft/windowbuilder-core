@@ -108,8 +108,8 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
       }
     });
 
-    // если сказано перезаполнять параметры - перезаполняем и пересчитываем
-    if(!clone && refill_props) {
+    // пересчитываем
+    if(!clone) {
       await dst.recalc();
     }
 

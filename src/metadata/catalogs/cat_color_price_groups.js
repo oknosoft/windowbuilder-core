@@ -17,7 +17,7 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
     const available = this.clrs();
 
     // бежим по строкам ограничения цветов
-    if(!available.includes(obj.clr) && available.length) {
+    if(available.length && !this.contains(obj.clr, available)) {
       // подставляем первый разрешенный
       obj.clr = available[0];
     }

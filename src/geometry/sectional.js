@@ -388,7 +388,7 @@ class Sectional extends GeneratrixElement {
    * Возвращает тип элемента (Водоотлив)
    */
   get elm_type() {
-    return $p.enm.elm_types.Водоотлив;
+    return $p.enm.elm_types.drainage;
   }
 
   /**

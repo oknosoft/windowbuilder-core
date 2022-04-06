@@ -144,11 +144,9 @@ exports.CchProperties = class CchProperties extends Object {
     const {utils, enm: {comparison_types, predefined_formulas}} = $p;
     const ct = prm_row.comparison_type || comparison_types.eq;
 
-    // для алгоритма clr_prm и цветового параметра, фильтр отключаем
-    if(row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
-      (ct.empty() || ct === comparison_types.eq) &&
-      type.types.includes('cat.clrs') &&
-      (!prm_row.value || prm_row.value.empty())) {
+    // для параметров алгоритма, фильтр отключаем
+    if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
+      (ct.empty() || ct === comparison_types.eq) && type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty()))) {
       return true;
     }
 
@@ -198,7 +196,10 @@ exports.CchProperties = class CchProperties extends Object {
     let prow, cnstr0, elm0;
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
-      const src = prm_row.origin;
+      let src = prm_row.origin;
+      if(src === plan_detailing.algorithm) {
+        src = plan_detailing.get();
+      }
       if(src && !src.empty()) {
         switch (src) {
         case plan_detailing.order:
@@ -385,6 +386,7 @@ exports.CchProperties = class CchProperties extends Object {
     else if(type.types[0] == 'json') {
       return typeof v === 'object' ? v : {};
     }
+    return v;
   }
 
   /**
@@ -454,8 +456,8 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
    * @param links {Array}
-   * @param prow {Object}
-   * @param values {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
+   * @param [prow] {Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
+   * @param [values] {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
    * @return {boolean}
    */
   linked_values(links, prow, values = []) {
@@ -463,8 +465,17 @@ exports.CchProperties = class CchProperties extends Object {
     // собираем все доступные значения в одном массиве
     links.forEach((link) => link.append_values(values));
     // если значение доступно в списке - спокойно уходим
-    if(values.some(({_obj}) => _obj.value == prow.value)) {
-      return;
+    const value = prow?.value;
+    if(value instanceof CatClrs && value.is_composite()) {
+      const {clr_in, clr_out} = value;
+      if(!prow || (values.some(({_obj}) => _obj.value == clr_in) && values.some(({_obj}) => _obj.value == clr_out))) {
+        return;
+      }
+    }
+    else {
+      if(!prow || values.some(({_obj}) => _obj.value == value)) {
+        return;
+      }
     }
     // если есть явный default - устанавливаем
     if(values.some((row) => {
@@ -472,7 +483,7 @@ exports.CchProperties = class CchProperties extends Object {
         prow.value = row._obj.value;
         return true;
       }
-      if(row.by_default && (!prow.value || prow.value.empty && prow.value.empty())) {
+      if(row.by_default && (!value || value.empty?.())) {
         prow.value = row._obj.value;
         changed = true;
       }

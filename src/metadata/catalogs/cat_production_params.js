@@ -77,6 +77,26 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
   /**
+   * Доступна ли вставка в данной системе в качестве elm_type
+   * @param nom {CatInserts}
+   * @param elm_type {EnmElmTypes}
+   * @return {boolean}
+   */
+  is_elm_type(nom, elm_type) {
+    let res = false;
+    if(Array.isArray(elm_type)) {
+      this.elmnts.find_rows({nom, elm_type: {in: elm_type}}, () => {
+        res = true;
+        return false;
+      });
+    }
+    else {
+      res = Boolean(this.elmnts.find({nom, elm_type}));
+    }
+    return res;
+  }
+
+  /**
    * возвращает доступные в данной системе элементы (вставки)
    * @property inserts
    * @for Production_params

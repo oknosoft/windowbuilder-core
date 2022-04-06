@@ -8,7 +8,7 @@
 
 exports.CatParameters_keys = class CatParameters_keys extends Object {
 
-  check_condition({elm, ox, cnstr, layer, calc_order_row}) {
+  check_condition({elm, elm2, ox, cnstr, layer, calc_order_row}) {
 
     if(this.empty()) {
       return true;
@@ -32,7 +32,7 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
         }
       }
       else {
-        if(!property.check_condition({prm_row, elm, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
+        if(!property.check_condition({prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
           return false;
         }
       }

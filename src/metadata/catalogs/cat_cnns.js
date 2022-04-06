@@ -12,7 +12,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
-    const sys = elm1 instanceof BuilderElement ? elm1.project._dp.sys : (elm2 instanceof BuilderElement && elm2.project._dp.sys);
+    const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
     const priority = (cnn) => {
       let finded;
       if(sys && orientation) {
@@ -212,8 +212,6 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     return a1[ref2];
   }
 
-
-
   /**
    * Возвращает соединение между элементами
    * @param elm1 {BuilderElement}
@@ -342,21 +340,44 @@ exports.CatCnns = class CatCnns extends Object {
   /**
    * Параметрический размер соединения
    */
-  size(elm) {
+  size(elm, elm2) {
     let {sz, sizes} = this;
-    sizes.forEach((prm_row) => {
+    const {ox, layer} = elm;
+    for(const prm_row of sizes) {
       if(prm_row.param.check_condition({
-        row_spec: {},
-        prm_row,
-        elm,
-        cnstr: 0,
-        ox: elm.project.ox,
-      })) {
+          row_spec: {},
+          prm_row,
+          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          elm,
+          elm2,
+          layer,
+          ox,
+        }) &&
+        prm_row.key.check_condition({
+          elm,
+          elm2,
+          ox,
+          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          layer,
+        })) {
         sz = prm_row.elm;
-        return false;
+        break;
       }
-    });
+    }
     return sz;
+  }
+
+  /**
+   * Выясняет, зависит ли размер соединения от текущего параметра
+   * @param param {CchProperties}
+   * @return {Boolean}
+   */
+  is_depend_of(param) {
+    for(const row of this.sizes) {
+      if(row.param === param || (row.param.empty() && !row.key.empty())) {
+        return true;
+      }
+    }
   }
 
   /**
