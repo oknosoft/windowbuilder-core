@@ -8695,7 +8695,7 @@ class GeneratrixElement extends BuilderElement {
     const nearests = this.joined_nearests();
 
     // угловые соединения b, e
-    const {generatrix, rays} = this;
+    const {generatrix, rays, project} = this;
     generatrix.translate(delta);
     for(const {profile, profile_point, point} of [rays.b, rays.e]) {
       if(profile && profile_point) {
@@ -8719,7 +8719,7 @@ class GeneratrixElement extends BuilderElement {
     }
 
     rays.clear();
-
+    project.register_change();
   }
 
   /**
