@@ -1606,9 +1606,9 @@ class Scheme extends paper.Project {
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
-
+    const sys = attr.elm ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
+      rows = sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -1616,7 +1616,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
+    rows = sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
@@ -1883,37 +1883,6 @@ class Scheme extends paper.Project {
    */
   default_clr(attr) {
     return this.ox.clr;
-  }
-
-  /**
-   * ### Фурнитура по умолчанию
-   * Возвращает фурнитуру текущего изделия по умолчанию с учетом свойств системы и контура
-   *
-   * @property default_furn
-   * @final
-   */
-  get default_furn() {
-    // ищем ранее выбранную фурнитуру для системы
-    let {sys} = this._dp;
-    let res;
-    const {job_prm: {builder}, cat} = $p;
-    while (true) {
-      res = builder.base_furn[sys.ref];
-      if(res || sys.empty()) {
-        break;
-      }
-      sys = sys.parent;
-    }
-    if(!res) {
-      res = builder.base_furn.null;
-    }
-    if(!res) {
-      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
-        res = row;
-        return false;
-      });
-    }
-    return res;
   }
 
   /**

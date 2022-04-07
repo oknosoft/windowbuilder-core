@@ -2200,7 +2200,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.direction = attr.direction;
     }
     if(attr.furn && typeof attr.furn !== 'string') {
-      this.furn = attr.furn || project.default_furn;
+      this.furn = attr.furn || this.default_furn;
     }
 
     // добавляем элементы контура
@@ -2213,6 +2213,37 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   get ProfileConstructor() {
     return Profile;
+  }
+
+  /**
+   * ### Фурнитура по умолчанию
+   * Возвращает фурнитуру текущего слоя по умолчанию
+   *
+   * @property default_furn
+   * @final
+   */
+  get default_furn() {
+    // ищем ранее выбранную фурнитуру для системы
+    let {sys} = this;
+    let res;
+    const {job_prm: {builder}, cat} = $p;
+    while (true) {
+      res = builder.base_furn[sys.ref];
+      if(res || sys.empty()) {
+        break;
+      }
+      sys = sys.parent;
+    }
+    if(!res) {
+      res = builder.base_furn.null;
+    }
+    if(!res) {
+      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
+        res = row;
+        return false;
+      });
+    }
+    return res;
   }
 
   /**
@@ -4613,7 +4644,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const elm = this.profile_by_furn_side(row.side, cache);
       const nearest = elm && elm.nearest();
       if(nearest) {
-        if(nearest instanceof ProfileParent) {
+        if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {
           if(row.shtulp_available) {
             if(bool) {
               return true;
@@ -5607,6 +5638,34 @@ class ContourVirtual extends Contour {
 
   save_coordinates(...args) {
     return super.save_coordinates(...args);
+  }
+
+  /**
+   * Перерисовывает элементы контура
+   * @method redraw
+   * @for Contour
+   */
+  redraw() {
+
+    if(!this.visible || this.hidden) {
+      return;
+    }
+
+    // сбрасываем кеш габаритов
+    this._attr._bounds = null;
+
+    // сначала перерисовываем все профили контура
+    for(const elm of this.profiles) {
+      elm.redraw();
+    }
+
+    // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
+    this.glass_recalc();
+
+    // затем - вложенное изделие
+    for(const elm of this.contours) {
+      elm.redraw();
+    }
   }
 
 }
@@ -7249,13 +7308,13 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     // для нового устанавливаем цвет по умолчанию
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({nom: _row.inset}, (row) => {
+      layer.sys.elmnts.find_rows({nom: _row.inset}, (row) => {
         _row.clr = row.clr;
         return false;
       });
     }
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({elm_type: {in: elm_types.glasses}}, (row) => {
+      layer.sys.elmnts.find_rows({elm_type: {in: elm_types.glasses}}, (row) => {
         _row.clr = row.clr;
         return false;
       });
@@ -7408,7 +7467,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   create_leaf(furn, direction) {
 
-    const {project, _row, ox, elm: elm1} = this;
+    const {project, layer, _row, ox, elm: elm1} = this;
 
     // прибиваем соединения текущего заполнения
     ox.cnn_elmnts.clear({elm1});
@@ -7434,7 +7493,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         cattr.furn = furn;
       }
       else {
-        cattr.furn = project.default_furn;
+        cattr.furn = layer.default_furn;
       }
     }
     const contour = Contour.create(cattr);
@@ -12937,8 +12996,8 @@ class Profile extends ProfileItem {
     });
 
     if(layer && !check_nearest(_attr._nearest)) {
-      if(layer.parent) {
-        find_nearest(layer.parent.profiles);
+      if(layer.layer) {
+        find_nearest(layer.layer.profiles);
       }
       else {
         find_nearest(project.l_connective.children);
@@ -13374,23 +13433,15 @@ class ProfileNested extends Profile {
       const {coordinates} = this.layer._ox;
       const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
     }
-    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
+    const nearest = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
     Object.defineProperties(this._attr, {
       _nearest: {
-        get() {
-          return nearest_elm;
-        },
-        set(v) {
-
-        }
+        get() {return nearest;},
+        set(v) {}
       },
       _nearest_cnn: {
-        get() {
-          return ProfileNested.nearest_cnn;
-        },
-        set(v) {
-
-        }
+        get() {return ProfileNested.nearest_cnn;},
+        set(v) {}
       }
     });
     this.path.strokeColor = 'darkgreen';
@@ -13612,16 +13663,24 @@ class ProfileVirtual extends Profile {
 
   constructor(attr) {
     super(attr);
-    Object.defineProperty(this._attr, '_nearest_cnn', {
-      get() {
-        return ProfileNested.nearest_cnn;
+    const nearest = super.nearest(true);
+    Object.defineProperties(this._attr, {
+      _nearest: {
+        get() {return nearest;},
+        set(v) {}
       },
-      set(v) {
-
+      _nearest_cnn: {
+        get() {return ProfileNested.nearest_cnn;},
+        set(v) {}
       }
     });
     this.path.strokeColor = 'darkgreen';
     this.path.dashArray = [8, 4, 2, 4];
+  }
+
+  // ведущий элемент получаем в лоб
+  nearest() {
+    return this._attr._nearest;
   }
 
   // пересчет вставок и соединений не делаем
@@ -13645,13 +13704,13 @@ class ProfileVirtual extends Profile {
 
   // вставка - внешний профиль
   get inset() {
-    return this.nearest(true).inset;
+    return this.nearest().inset;
   }
   set inset(v) {}
 
   // цвет внешнего элемента
   get clr() {
-    return this.nearest(true).clr;
+    return this.nearest().clr;
   }
   set clr(v) {}
 
@@ -17110,9 +17169,9 @@ class Scheme extends paper.Project {
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
-
+    const sys = attr.elm ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
+      rows = sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -17120,7 +17179,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
+    rows = sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
@@ -17387,37 +17446,6 @@ class Scheme extends paper.Project {
    */
   default_clr(attr) {
     return this.ox.clr;
-  }
-
-  /**
-   * ### Фурнитура по умолчанию
-   * Возвращает фурнитуру текущего изделия по умолчанию с учетом свойств системы и контура
-   *
-   * @property default_furn
-   * @final
-   */
-  get default_furn() {
-    // ищем ранее выбранную фурнитуру для системы
-    let {sys} = this._dp;
-    let res;
-    const {job_prm: {builder}, cat} = $p;
-    while (true) {
-      res = builder.base_furn[sys.ref];
-      if(res || sys.empty()) {
-        break;
-      }
-      sys = sys.parent;
-    }
-    if(!res) {
-      res = builder.base_furn.null;
-    }
-    if(!res) {
-      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
-        res = row;
-        return false;
-      });
-    }
-    return res;
   }
 
   /**

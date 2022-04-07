@@ -228,8 +228,8 @@ class Profile extends ProfileItem {
     });
 
     if(layer && !check_nearest(_attr._nearest)) {
-      if(layer.parent) {
-        find_nearest(layer.parent.profiles);
+      if(layer.layer) {
+        find_nearest(layer.layer.profiles);
       }
       else {
         find_nearest(project.l_connective.children);
