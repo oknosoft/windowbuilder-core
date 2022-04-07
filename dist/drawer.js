@@ -17110,9 +17110,9 @@ class Scheme extends paper.Project {
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
-
+    const sys = attr.elm ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
+      rows = sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -17120,7 +17120,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
+    rows = sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
