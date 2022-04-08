@@ -13295,6 +13295,9 @@ class Profile extends ProfileItem {
             cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
             return meta;
 
+          case 'parent_elm':
+            return target;
+
           default:
             let prow;
             if(utils.is_guid(prop)) {
