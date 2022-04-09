@@ -248,7 +248,7 @@ class CnnPoint {
         continue;
       }
       for(const node of 'be') {
-        if(elm[node].is_nearest(point, true) && parent.cnn_side(elm, null, rays) === outer) {
+        if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) === outer) {
           return {profile: elm, node};
         }
       }
@@ -270,7 +270,7 @@ class CnnPoint {
         continue;
       }
       for(const node of 'be') {
-        if(elm[node].is_nearest(point, true) && parent.cnn_side(elm, null, rays) !== outer) {
+        if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) !== outer) {
           this._profile = elm;
           this.profile_point = node;
           this._row = parent.ox.cnn_elmnts.add({
@@ -383,15 +383,12 @@ class CnnPoint {
       }
     });
 
-    // примыкающий профиль
-    this._profile;
-
     const {acn} = $p.enm.cnn_types;
     if(this._row) {
 
       /**
        * Текущее соединение - объект справочника соединения
-       * @type CcatCnns
+       * @type CatCnns
        */
       this.cnn = this._row.cnn;
 
