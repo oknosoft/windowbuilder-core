@@ -275,30 +275,37 @@ exports.CatCnns = class CatCnns extends Object {
   main_row(elm) {
 
     let ares, nom = elm.nom;
-    const {enm, job_prm} = this._manager._owner.$p;
+    const {enm, job_prm, ProductsBuilding: {check_params}} = $p;
+    const {specification, cnn_elmnts, selection_params, cnn_type} = this;
 
     // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
-    if(enm.cnn_types.acn.a.indexOf(this.cnn_type) != -1){
-
+    if(enm.cnn_types.acn.a.includes(cnn_type)){
       let art12 = elm.orientation == enm.orientations.vert ? job_prm.nom.art1 : job_prm.nom.art2;
-
-      ares = this.specification.find_rows({nom: art12});
-      if(ares.length) {
-        return ares[0]._row;
-      }
+      ares = specification.find_rows({nom: art12});
     }
-
     // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
-    if(this.cnn_elmnts.find_rows({nom1: nom}).length){
-      ares = this.specification.find_rows({nom: job_prm.nom.art1});
+    if((!ares || !ares.length) && cnn_elmnts.find_rows({nom1: nom}).length){
+      ares = specification.find_rows({nom: job_prm.nom.art1});
     }
-    if((!ares || !ares.length) && this.cnn_elmnts.find_rows({nom2: nom}).length){
-      ares = this.specification.find_rows({nom: job_prm.nom.art2});
+    if((!ares || !ares.length) && cnn_elmnts.find_rows({nom2: nom}).length){
+      ares = specification.find_rows({nom: job_prm.nom.art2});
     }
     if((!ares || !ares.length)) {
-      ares = this.specification.find_rows({nom: nom});
+      ares = specification.find_rows({nom});
     }
+
     if(ares && ares.length) {
+      const ox = elm.prm_ox || elm.ox;
+      for(const {_row} of ares) {
+        if(check_params({
+          params: selection_params,
+          ox,
+          elm,
+          row_spec: _row,
+        })) {
+          return _row;
+        }
+      }
       return ares[0]._row;
     }
 
@@ -414,7 +421,8 @@ exports.CatCnns = class CatCnns extends Object {
     const {
       job_prm: {nom: {art1, art2}},
       enm: {specification_installation_methods, cnn_types},
-      ProductsBuilding: {check_params}} = this._manager._owner.$p;
+      ProductsBuilding: {check_params},
+    } = $p;
 
     const {САртикулом1, САртикулом2} = specification_installation_methods;
     const {ii, xx, acn, t} = cnn_types;

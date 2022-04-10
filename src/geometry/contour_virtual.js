@@ -59,6 +59,34 @@ class ContourVirtual extends Contour {
     return super.save_coordinates(...args);
   }
 
+  /**
+   * Перерисовывает элементы контура
+   * @method redraw
+   * @for Contour
+   */
+  redraw() {
+
+    if(!this.visible || this.hidden) {
+      return;
+    }
+
+    // сбрасываем кеш габаритов
+    this._attr._bounds = null;
+
+    // сначала перерисовываем все профили контура
+    for(const elm of this.profiles) {
+      elm.redraw();
+    }
+
+    // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
+    this.glass_recalc();
+
+    // затем - вложенное изделие
+    for(const elm of this.contours) {
+      elm.redraw();
+    }
+  }
+
 }
 
 EditorInvisible.ContourVirtual = ContourVirtual;

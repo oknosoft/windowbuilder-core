@@ -258,7 +258,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.direction = attr.direction;
     }
     if(attr.furn && typeof attr.furn !== 'string') {
-      this.furn = attr.furn || project.default_furn;
+      this.furn = attr.furn || this.default_furn;
     }
 
     // добавляем элементы контура
@@ -271,6 +271,37 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   get ProfileConstructor() {
     return Profile;
+  }
+
+  /**
+   * ### Фурнитура по умолчанию
+   * Возвращает фурнитуру текущего слоя по умолчанию
+   *
+   * @property default_furn
+   * @final
+   */
+  get default_furn() {
+    // ищем ранее выбранную фурнитуру для системы
+    let {sys} = this;
+    let res;
+    const {job_prm: {builder}, cat} = $p;
+    while (true) {
+      res = builder.base_furn[sys.ref];
+      if(res || sys.empty()) {
+        break;
+      }
+      sys = sys.parent;
+    }
+    if(!res) {
+      res = builder.base_furn.null;
+    }
+    if(!res) {
+      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
+        res = row;
+        return false;
+      });
+    }
+    return res;
   }
 
   /**
@@ -2671,7 +2702,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const elm = this.profile_by_furn_side(row.side, cache);
       const nearest = elm && elm.nearest();
       if(nearest) {
-        if(nearest instanceof ProfileParent) {
+        if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {
           if(row.shtulp_available) {
             if(bool) {
               return true;

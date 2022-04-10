@@ -1886,37 +1886,6 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Фурнитура по умолчанию
-   * Возвращает фурнитуру текущего изделия по умолчанию с учетом свойств системы и контура
-   *
-   * @property default_furn
-   * @final
-   */
-  get default_furn() {
-    // ищем ранее выбранную фурнитуру для системы
-    let {sys} = this._dp;
-    let res;
-    const {job_prm: {builder}, cat} = $p;
-    while (true) {
-      res = builder.base_furn[sys.ref];
-      if(res || sys.empty()) {
-        break;
-      }
-      sys = sys.parent;
-    }
-    if(!res) {
-      res = builder.base_furn.null;
-    }
-    if(!res) {
-      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
-        res = row;
-        return false;
-      });
-    }
-    return res;
-  }
-
-  /**
    * ### Выделенные профили
    * Возвращает массив выделенных профилей. Выделенным считаем профиль, у которого выделены `b` и `e` или выделен сам профиль при невыделенных узлах
    *

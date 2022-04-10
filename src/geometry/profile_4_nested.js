@@ -20,23 +20,15 @@ class ProfileNested extends Profile {
       const {coordinates} = this.layer._ox;
       const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
     }
-    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
+    const nearest = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
     Object.defineProperties(this._attr, {
       _nearest: {
-        get() {
-          return nearest_elm;
-        },
-        set(v) {
-
-        }
+        get() {return nearest;},
+        set(v) {}
       },
       _nearest_cnn: {
-        get() {
-          return ProfileNested.nearest_cnn;
-        },
-        set(v) {
-
-        }
+        get() {return ProfileNested.nearest_cnn;},
+        set(v) {}
       }
     });
     this.path.strokeColor = 'darkgreen';

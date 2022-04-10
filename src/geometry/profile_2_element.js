@@ -228,8 +228,8 @@ class Profile extends ProfileItem {
     });
 
     if(layer && !check_nearest(_attr._nearest)) {
-      if(layer.parent) {
-        find_nearest(layer.parent.profiles);
+      if(layer.layer) {
+        find_nearest(layer.layer.profiles);
       }
       else {
         find_nearest(project.l_connective.children);
@@ -526,6 +526,9 @@ class Profile extends ProfileItem {
             cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
             cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
             return meta;
+
+          case 'parent_elm':
+            return target;
 
           default:
             let prow;

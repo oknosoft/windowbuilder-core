@@ -11,16 +11,24 @@ class ProfileVirtual extends Profile {
 
   constructor(attr) {
     super(attr);
-    Object.defineProperty(this._attr, '_nearest_cnn', {
-      get() {
-        return ProfileNested.nearest_cnn;
+    const nearest = super.nearest(true);
+    Object.defineProperties(this._attr, {
+      _nearest: {
+        get() {return nearest;},
+        set(v) {}
       },
-      set(v) {
-
+      _nearest_cnn: {
+        get() {return ProfileNested.nearest_cnn;},
+        set(v) {}
       }
     });
     this.path.strokeColor = 'darkgreen';
     this.path.dashArray = [8, 4, 2, 4];
+  }
+
+  // ведущий элемент получаем в лоб
+  nearest() {
+    return this._attr._nearest;
   }
 
   // пересчет вставок и соединений не делаем
@@ -44,13 +52,13 @@ class ProfileVirtual extends Profile {
 
   // вставка - внешний профиль
   get inset() {
-    return this.nearest(true).inset;
+    return this.nearest().inset;
   }
   set inset(v) {}
 
   // цвет внешнего элемента
   get clr() {
-    return this.nearest(true).clr;
+    return this.nearest().clr;
   }
   set clr(v) {}
 
