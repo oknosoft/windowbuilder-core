@@ -436,8 +436,17 @@ set use(v){this._setter_ts('use',v)}
   check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
     const {is_calculated, type} = this;
-    const {utils, enm: {comparison_types, predefined_formulas}} = $p;
+    const {utils, enm: {comparison_types, predefined_formulas}, EditorInvisible: {BuilderElement}} = $p;
     const ct = prm_row.comparison_type || comparison_types.eq;
+
+    if(!layer) {
+      if(elm instanceof BuilderElement) {
+        layer = elm.layer;
+      }
+      else if(elm2 instanceof BuilderElement) {
+        layer = elm2.layer;
+      }
+    }
 
     // для параметров алгоритма, фильтр отключаем
     if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
@@ -466,7 +475,7 @@ set use(v){this._setter_ts('use',v)}
         ok = val == prm_row.value;
       }
       else {
-        const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
         ok = value == val;
       }
     }
@@ -477,7 +486,7 @@ set use(v){this._setter_ts('use',v)}
     }
     // параметр явно указан в табчасти параметров изделия
     else {
-      const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+      const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
       ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
     }
     return ok;
@@ -3016,16 +3025,16 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
    * @param [layer] {Contour}
    * @return {*[]}
    */
-  furns(ox, layer){
+  furns(ox, layer) {
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
-    if(properties.furn){
+    if(properties.furn) {
       const links = properties.furn.params_links({
         grid: {selection: {cnstr: layer ? layer.cnstr : 0}},
         obj: {_owner: {_owner: ox}},
         layer
       });
-      if(links.length){
+      if(links.length) {
         // собираем все доступные значения в одном массиве
         links.forEach((link) => link.values._obj.forEach(({value, by_default, forcibly}) => {
           const v = furns.get(value);

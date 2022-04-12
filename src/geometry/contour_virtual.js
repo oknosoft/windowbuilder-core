@@ -81,6 +81,59 @@ class ContourVirtual extends Contour {
     return true;
   }
 
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    const {enm, utils: {blank}} = $p;
+    const {eq_produnt} = enm.plan_detailing
+    const {_ox} = this;
+    const {rnum} = elm;
+    if(rnum) {
+      return elm[param.valueOf()];
+    }
+    if(eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      let prow;
+      _ox.params.find_rows({
+        param,
+        cnstr: {in: [0, this.cnstr]},
+        inset: blank.guid,
+      }, (row) => {
+        if(!prow || row.cnstr) {
+          prow = row;
+        }
+      });
+      if(prow) {
+        return prow.value;
+      }
+      else {
+        console.error(`Не задано значений параметра ${param.toString()}`);
+      }
+    }
+    else {
+      return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row})
+    }
+  }
+
+  get hidden() {
+    return !!this._hidden;
+  }
+  set hidden(v) {
+    if (this.hidden != v) {
+      this._hidden = v;
+      this.children.forEach((elm) => {
+        if (elm instanceof BuilderElement) {
+          elm.opacity = v ? 0.2 : 1;
+        }
+      });
+    }
+  }
+
+  /**
+   * Виртуальный слой не добавляет вложенности
+   * @return {number}
+   */
+  get level() {
+    return this.layer.level;
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');

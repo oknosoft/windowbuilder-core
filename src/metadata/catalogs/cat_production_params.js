@@ -56,16 +56,16 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * @param [layer] {Contour}
    * @return {*[]}
    */
-  furns(ox, layer){
+  furns(ox, layer) {
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
-    if(properties.furn){
+    if(properties.furn) {
       const links = properties.furn.params_links({
         grid: {selection: {cnstr: layer ? layer.cnstr : 0}},
         obj: {_owner: {_owner: ox}},
         layer
       });
-      if(links.length){
+      if(links.length) {
         // собираем все доступные значения в одном массиве
         links.forEach((link) => link.values._obj.forEach(({value, by_default, forcibly}) => {
           const v = furns.get(value);

@@ -2324,6 +2324,23 @@ class Contour extends AbstractFilling(paper.Layer) {
       res = builder.base_furn.null;
     }
     if(!res) {
+      const furns = this.sys.furns(this._ox, this);
+      if(furns.length) {
+        const {cache, cnstr, _ox} = this;
+        for(const {furn} of furns) {
+          if(furn.is_folder || this.open_restrictions_err({furn, cache, bool: true})) {
+            continue;
+          }
+          const weight_max = furn.furn_set.flap_weight_max;
+          if(weight_max && weight_max < _ox.elm_weight(-cnstr)) {
+            continue;
+          }
+          res = furn;
+          break;
+        }
+      }
+    }
+    if(!res) {
       cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
         res = row;
         return false;
@@ -4067,7 +4084,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   get hidden() {
     return !!this._hidden;
   }
-
   set hidden(v) {
     if (this.hidden != v) {
       this._hidden = v;
@@ -4613,12 +4629,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {number}
    */
   get level() {
-    let res = 0, layer = this.layer;
-    while (layer) {
-      res++;
-      layer = layer.layer;
-    }
-    return res;
+    const {layer} = this;
+    return layer ? layer.level + 1 : 0;
   }
 
   /**
@@ -4646,6 +4658,13 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get own_sys() {
     return !this.layer;
+  }
+
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    const {layer} = this;
+    return layer ?
+      layer.extract_pvalue({param, cnstr, elm, origin, prm_row}) :
+      param.extract_pvalue({ox: this._ox, cnstr: cnstr, elm, origin, prm_row});
   }
 
   /**
@@ -4695,7 +4714,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           const elm = this.profile_by_furn_side(row.side, cache);
           const prev = this.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
           const next = this.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
-          const len = elm._row.len - prev.nom.sizefurn - next.nom.sizefurn;
+          const len = elm.length - prev.nom.sizefurn - next.nom.sizefurn;
 
           const angle = direction == open_directions.Правое ?
             elm.generatrix.angle_between(prev.generatrix, elm.e) :
@@ -5746,6 +5765,59 @@ class ContourVirtual extends Contour {
    */
   get own_sys() {
     return true;
+  }
+
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    const {enm, utils: {blank}} = $p;
+    const {eq_produnt} = enm.plan_detailing
+    const {_ox} = this;
+    const {rnum} = elm;
+    if(rnum) {
+      return elm[param.valueOf()];
+    }
+    if(eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      let prow;
+      _ox.params.find_rows({
+        param,
+        cnstr: {in: [0, this.cnstr]},
+        inset: blank.guid,
+      }, (row) => {
+        if(!prow || row.cnstr) {
+          prow = row;
+        }
+      });
+      if(prow) {
+        return prow.value;
+      }
+      else {
+        console.error(`Не задано значений параметра ${param.toString()}`);
+      }
+    }
+    else {
+      return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row})
+    }
+  }
+
+  get hidden() {
+    return !!this._hidden;
+  }
+  set hidden(v) {
+    if (this.hidden != v) {
+      this._hidden = v;
+      this.children.forEach((elm) => {
+        if (elm instanceof BuilderElement) {
+          elm.opacity = v ? 0.2 : 1;
+        }
+      });
+    }
+  }
+
+  /**
+   * Виртуальный слой не добавляет вложенности
+   * @return {number}
+   */
+  get level() {
+    return this.layer.level;
   }
 
   presentation(bounds) {
@@ -20397,7 +20469,6 @@ $p.spec_building = new SpecBuilding($p);
 	 * Дополнительные методы перечисления Типы открывания
 	 */
 	enm.open_types.__define({
-
     is_opening: {
       value(v) {
         if(!v || v.empty() || v == this.Глухое || v == this.Неподвижное) {
@@ -20408,6 +20479,12 @@ $p.spec_building = new SpecBuilding($p);
     }
 
   });
+
+  enm.plan_detailing.__define({
+    eq_produnt: {
+      value: [enm.plan_detailing.get(), enm.plan_detailing.product, enm.plan_detailing.algorithm]
+    }
+  })
 
 
 })($p);
