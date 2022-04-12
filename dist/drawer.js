@@ -1922,6 +1922,91 @@ class BuilderElement extends paper.Group {
 
 EditorInvisible.BuilderElement = BuilderElement;
 
+
+/**
+ * Обёртка строки табчасти параметра
+ */
+class BuilderPrmRow {
+
+  constructor(_owner, _row) {
+    this._owner = _owner;
+    this._row = _row;
+  }
+
+  get row() {
+    return this._row.row;
+  }
+
+  get param() {
+    return this._row.param;
+  }
+
+  get inset() {
+    return this._row.inset;
+  }
+
+  get sorting_field() {
+    return this.param.sorting_field;
+  }
+
+  get value() {
+    return this._row.value;
+  }
+  set value(v) {
+
+  }
+}
+
+/**
+ * Свойства слоя или элемента
+ *
+ * Created by Evgeniy Malyarov on 11.04.2022.
+ */
+class BuilderPrms {
+
+  constructor({elm, layer}) {
+    this.elm = elm;
+    this.layer = layer;
+    this.cnstr = layer ? layer.cnstr : elm.elm;
+  }
+
+  get _name() {
+    return 'params';
+  }
+
+  get _owner() {
+    return this.elm ? (elm.prm_ox || elm.ox) : this.layer._ox;
+  }
+
+  get params() {
+    return this._owner.params;
+  }
+
+  find_rows({inset}, cb) {
+    const {cnstr, params} = this;
+    const map = new Map();
+    const cnstrs = [0, cnstr];
+    for(const row of params) {
+      if(cnstrs.includes(row.cnstr) && row.inset == inset && !row.hide) {
+        if(!map.has(row.param) || row.cnstr) {
+          map.set(row.param, row);
+        }
+      }
+    }
+    const res = [];
+    for(const [param, row] of map) {
+      res.push(new BuilderPrmRow(this, row));
+    }
+
+    res.sort($p.utils.sort('sorting_field'));
+    for(const row of res) {
+      cb(row);
+    }
+    return res;
+  }
+
+}
+
 /**
  * Элемент составного пути (например, подоконник с закруглением и вырезом)
  *
@@ -2205,6 +2290,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // добавляем элементы контура
     const ox = attr.ox || project.ox;
+    this.prms = new BuilderPrms({layer: this});
     this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
 
     project.l_connective.bringToFront();
@@ -5612,14 +5698,45 @@ class ContourVirtual extends Contour {
     return dop.sys ? sys._manager.get(dop.sys) : sys;
   }
   set sys(v) {
-    const {_row, layer: {sys}} = this;
+    const {_row, layer: {sys}, _ox: {params}, cnstr} = this;
+    const inset = $p.utils.blank.guid;
     if(!v || v == sys) {
       if(_row.dop.sys) {
         _row.dop = {sys: null};
+        params.clear({cnstr, inset});
       }
     }
     else {
       _row.dop = {sys: v.valueOf()};
+      const {product_params} = sys._manager.get(v);
+      // чистим
+      const rm = [];
+      params.find_rows({cnstr, inset}, (row) => {
+        if(!product_params.find({patam: row.param})) {
+          rm.push(row);
+        }
+      });
+      for(const row of rm) {
+        params.del(row);
+      }
+      // добавляем
+      for(const row of product_params) {
+        let has;
+        params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
+          has = true;
+          return false;
+        });
+        if(!has) {
+          params.add({
+            cnstr,
+            inset,
+            region: 0,
+            param: row.param,
+            hide: row.hide,
+            value: row.value,
+          });
+        }
+      }
     }
   }
 
@@ -14572,6 +14689,14 @@ class ConnectiveLayer extends paper.Layer {
    */
   get _ox() {
     return this.project.ox;
+  }
+
+  /**
+   * Система слоя соединителей
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this.project._dp.sys;
   }
 
   redraw() {

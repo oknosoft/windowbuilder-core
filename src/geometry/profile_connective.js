@@ -247,6 +247,14 @@ class ConnectiveLayer extends paper.Layer {
     return this.project.ox;
   }
 
+  /**
+   * Система слоя соединителей
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this.project._dp.sys;
+  }
+
   redraw() {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());

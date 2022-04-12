@@ -31,14 +31,45 @@ class ContourVirtual extends Contour {
     return dop.sys ? sys._manager.get(dop.sys) : sys;
   }
   set sys(v) {
-    const {_row, layer: {sys}} = this;
+    const {_row, layer: {sys}, _ox: {params}, cnstr} = this;
+    const inset = $p.utils.blank.guid;
     if(!v || v == sys) {
       if(_row.dop.sys) {
         _row.dop = {sys: null};
+        params.clear({cnstr, inset});
       }
     }
     else {
       _row.dop = {sys: v.valueOf()};
+      const {product_params} = sys._manager.get(v);
+      // чистим
+      const rm = [];
+      params.find_rows({cnstr, inset}, (row) => {
+        if(!product_params.find({patam: row.param})) {
+          rm.push(row);
+        }
+      });
+      for(const row of rm) {
+        params.del(row);
+      }
+      // добавляем
+      for(const row of product_params) {
+        let has;
+        params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
+          has = true;
+          return false;
+        });
+        if(!has) {
+          params.add({
+            cnstr,
+            inset,
+            region: 0,
+            param: row.param,
+            hide: row.hide,
+            value: row.value,
+          });
+        }
+      }
     }
   }
 
