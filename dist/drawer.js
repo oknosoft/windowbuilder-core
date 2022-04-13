@@ -5727,35 +5727,7 @@ class ContourVirtual extends Contour {
     }
     else {
       _row.dop = {sys: v.valueOf()};
-      const {product_params} = sys._manager.get(v);
-      // чистим
-      const rm = [];
-      params.find_rows({cnstr, inset}, (row) => {
-        if(!product_params.find({patam: row.param})) {
-          rm.push(row);
-        }
-      });
-      for(const row of rm) {
-        params.del(row);
-      }
-      // добавляем
-      for(const row of product_params) {
-        let has;
-        params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
-          has = true;
-          return false;
-        });
-        if(!has) {
-          params.add({
-            cnstr,
-            inset,
-            region: 0,
-            param: row.param,
-            hide: row.hide,
-            value: row.value,
-          });
-        }
-      }
+      this.refill_prm();
     }
   }
 
@@ -5767,6 +5739,48 @@ class ContourVirtual extends Contour {
     return true;
   }
 
+  refill_prm() {
+    const {_ox: {params}, cnstr, sys: {product_params}} = this;
+    const inset = $p.utils.blank.guid;
+    // чистим
+    const rm = [];
+    params.find_rows({cnstr, inset}, (row) => {
+      if(!product_params.find({param: row.param})) {
+        rm.push(row);
+      }
+    });
+    for(const row of rm) {
+      params.del(row);
+    }
+    // добавляем
+    for(const row of product_params) {
+      let has;
+      params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
+        has = true;
+        return false;
+      });
+      if(!has) {
+        params.add({
+          cnstr,
+          inset,
+          region: 0,
+          param: row.param,
+          hide: row.hide,
+          value: row.value,
+        });
+      }
+    }
+  }
+
+  /**
+   * Возвращает значение параметра с учётом наследования
+   * @param param
+   * @param cnstr
+   * @param elm
+   * @param origin
+   * @param prm_row
+   * @returns {*}
+   */
   extract_pvalue({param, cnstr, elm, origin, prm_row}) {
     const {enm, utils: {blank}} = $p;
     const {eq_produnt} = enm.plan_detailing
