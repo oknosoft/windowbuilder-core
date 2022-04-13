@@ -14,7 +14,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function (obj) {
@@ -41,7 +41,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
         prm.calculated._data._formula = function (obj) {};
       }
       // проверка условия
@@ -61,7 +61,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function (obj) {
@@ -78,7 +78,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function ({elm, elm2}) {
@@ -94,7 +94,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function ({elm}) {
@@ -110,7 +110,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function ({elm}) {
@@ -127,7 +127,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     if(prm) {
       // fake-формула
       if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name}, false, true);
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
         prm.calculated._data._formula = function (obj) {
@@ -161,5 +161,32 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('bounds_contains');
+
+  // отдел абонента текущего контекста
+  ((name) => {
+    const param = properties.predefined(name);
+    if(param) {
+      // fake-формула
+      if(param.calculated.empty()) {
+        param.calculated = formulas.create({ref: param.ref, name: `predefined-${name}`}, false, true);
+      }
+      if(!param.calculated._data._formula) {
+        param.calculated._data._formula = function ({elm, layer, ox, calc_order}) {
+          if(!calc_order && ox) {
+            calc_order = ox.calc_order;
+          }
+          else if(!calc_order && layer) {
+            calc_order = layer._ox.calc_order;
+          }
+          else if(!calc_order && elm) {
+            calc_order = elm.ox.calc_order;
+          }
+
+          const prow = (ox || layer?._ox || elm?.ox).params.find({param});
+          return prow && !prow.value.empty() ? prow.value : calc_order.manager.branch;
+        };
+      }
+    }
+  })('branch');
 
 });
