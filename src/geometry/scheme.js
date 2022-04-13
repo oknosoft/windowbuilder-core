@@ -708,7 +708,7 @@ class Scheme extends paper.Project {
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
 
-    if(_attr._lock) {
+    if(_attr._lock || (isBrowser && _scope.eve._async?.move_points?.timer)) {
       return;
     }
 
@@ -888,13 +888,7 @@ class Scheme extends paper.Project {
   get branch() {
     const {ox} = this;
     const param = $p.job_prm.properties.branch;
-    if(param) {
-      const prow = ox.params.find({param});
-      if(prow && !prow.value.empty()) {
-        return prow.value;
-      }
-    }
-    return ox.calc_order.manager.branch;
+    return param ? param.calculated._data._formula({ox}, $p) : ox.calc_order.manager.branch;
   }
 
   /**
