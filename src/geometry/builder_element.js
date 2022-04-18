@@ -777,34 +777,37 @@ class BuilderElement extends paper.Group {
    */
   selected_cnn_ii() {
     const {project, elm, ox} = this;
-    const sel = project.getSelectedItems();
     const items = [];
-    let res;
 
-    sel.forEach((item) => {
-      if(item.parent instanceof ProfileItem || item.parent instanceof Filling)
+    for(const item of project.getSelectedItems()) {
+      if(item.parent instanceof ProfileItem || item.parent instanceof Filling) {
         items.push(item.parent);
-      else if(item instanceof Filling)
+      }
+      else if(item instanceof Filling) {
         items.push(item);
-    });
+      }
+    }
 
-    if(items.length > 1 &&
-      items.some((item) => item == this) &&
-      items.some((item) => {
-        if(item != this){
-          ox.cnn_elmnts.forEach((row) => {
-            if(!row.node1 && !row.node2 &&
-              ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
-              res = {elm: item, row: row};
-              return false;
-            }
-          });
-          if(res){
-            return true;
+    if(items.length > 1 && items.includes(this)) {
+      const nelm = this.nearest();
+      const shift = nelm instanceof ProfileVirtual && nelm.nearest();
+
+      for(const item of items) {
+        if(item === this) {
+          continue;
+        }
+        for(const row of ox.cnn_elmnts) {
+          if(row.node1 || row.node2) {
+            continue;
+          }
+          if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
+            return {elm: item, row};
+          }
+          if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
+            return {elm: nelm, row};
           }
         }
-      })){
-      return res;
+      }
     }
   }
 
