@@ -2396,15 +2396,17 @@ class ProfileItem extends GeneratrixElement {
    */
   is_shtulp() {
     const {orientations: {vert}, elm_types: {impost}} = $p.enm;
-    const {elm_type, orientation} = this;
-    if(elm_type !== impost || orientation !== vert) {
-      return false;
-    }
-    for(const {layer} of this.joined_nearests()) {
-      if(layer.furn.shtulp_kind()) {
-        return true;
+    if(this.elm_type === impost && this.orientation === vert) {
+      for(const profile of this.joined_nearests()) {
+        const {layer} = profile;
+        for(const {shtulp_available, shtulp_fix_here, side} of layer.furn.open_tunes) {
+          if((shtulp_available || shtulp_fix_here) && layer.profile_by_furn_side(side) === profile) {
+            return true;
+          }
+        }
       }
     }
+    return false;
   }
 
   /**
