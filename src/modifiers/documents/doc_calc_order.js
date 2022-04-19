@@ -1398,6 +1398,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             // это материал
             row.value_change('quantity', '', row.quantity);
           }
+          else if(cx.leading_product.calc_order === this) {
+            // это виртуальное изделие TODO: некоторые из таких, надо пересчитывать
+            return;
+          }
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
@@ -1405,9 +1409,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
                 .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
                 .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
             });
-          }
-          else if(cx.leading_product.calc_order === this) {
-            return;
           }
           else {
             const {origin} = cx;
