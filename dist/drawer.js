@@ -2017,7 +2017,6 @@ class BuilderPrms {
  *
  * Created by Evgeniy Malyarov on 09.02.2022.
  */
-
 class Compound extends BuilderElement {
 
   /**
@@ -2027,6 +2026,8 @@ class Compound extends BuilderElement {
     return $p.enm.elm_types.compound;
   }
 }
+
+EditorInvisible.Compound = Compound;
 
 
 /**
@@ -13701,6 +13702,14 @@ class ProfileNested extends Profile {
     return true;
   }
 
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
+    return true;
+  }
+
   get info() {
     return `влож ${super.info}`;
   }
@@ -13935,6 +13944,14 @@ class ProfileVirtual extends Profile {
    * @return {boolean}
    */
   get locked() {
+    return true;
+  }
+
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
     return true;
   }
 
@@ -15632,6 +15649,14 @@ class ProfileParent extends Profile {
    * @return {boolean}
    */
   get locked() {
+    return true;
+  }
+
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
     return true;
   }
 
@@ -19715,8 +19740,8 @@ class ProductsBuilding {
         prod_row(contour);
 
         // для всех профилей контура
-        for (const elm of contour.children) {
-          elm instanceof Profile && !(elm instanceof ProfileParent) && base_spec_profile(elm);
+        for (const elm of contour.profiles) {
+          !elm.virtual && base_spec_profile(elm);
         }
 
         for (const elm of contour.children) {
@@ -19727,6 +19752,10 @@ class ProductsBuilding {
           else if(elm instanceof Sectional) {
             // для всех разрезов (водоотливов)
             base_spec_sectional(elm);
+          }
+          else if(elm instanceof Compound) {
+            // для всех поверхностей (составных путей)
+            //base_spec_glass(elm);
           }
         }
 

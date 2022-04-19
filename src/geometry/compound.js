@@ -5,7 +5,6 @@
  *
  * Created by Evgeniy Malyarov on 09.02.2022.
  */
-
 class Compound extends BuilderElement {
 
   /**
@@ -15,3 +14,5 @@ class Compound extends BuilderElement {
     return $p.enm.elm_types.compound;
   }
 }
+
+EditorInvisible.Compound = Compound;

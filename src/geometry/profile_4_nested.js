@@ -76,6 +76,14 @@ class ProfileNested extends Profile {
     return true;
   }
 
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
+    return true;
+  }
+
   get info() {
     return `влож ${super.info}`;
   }

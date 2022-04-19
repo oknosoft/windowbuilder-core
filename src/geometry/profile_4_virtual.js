@@ -74,6 +74,14 @@ class ProfileVirtual extends Profile {
     return true;
   }
 
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
+    return true;
+  }
+
   get info() {
     return `вирт ${super.info}`;
   }

@@ -44,6 +44,14 @@ class ProfileParent extends Profile {
     return true;
   }
 
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
+    return true;
+  }
+
   // характеристика, из которой брать значения параметров
   get prm_ox() {
     return this.ox.leading_product;
