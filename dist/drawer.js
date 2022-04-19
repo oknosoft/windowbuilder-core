@@ -3509,13 +3509,17 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_cnn_errors() {
 
-    const {l_visualization} = this;
+    const {l_visualization, project: {_scope: {eve}}} = this;
 
     if (l_visualization._cnn) {
       l_visualization._cnn.removeChildren();
     }
     else {
       l_visualization._cnn = new paper.Group({parent: l_visualization});
+    }
+
+    if(eve._async?.move_points?.timer) {
+      return;
     }
 
     const err_attrs = {
