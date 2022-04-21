@@ -16516,7 +16516,7 @@ class Scheme extends paper.Project {
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
 
-    if(_attr._lock || (isBrowser && _scope.eve._async?.move_points?.timer)) {
+    if(_attr._lock || !_scope?.eve || (isBrowser && _scope.eve._async?.move_points?.timer)) {
       return;
     }
 
