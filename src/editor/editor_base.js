@@ -379,7 +379,14 @@ class EditorInvisible extends paper.PaperScope {
       }
 
       if(delta.length > consts.epsilon){
-        impost.move_gen(delta);
+        const {b, e} = impost.rays;
+        if(b.profile && impost.is_orthogonal(b.profile, b.point, 0.1) && e.profile && impost.is_orthogonal(e.profile, e.point, 0.1)) {
+          impost.move_gen(delta);
+        }
+        else {
+          impost.move_points(delta, true);
+          impost.layer.redraw();
+        }
         res.push(delta);
       }
     });

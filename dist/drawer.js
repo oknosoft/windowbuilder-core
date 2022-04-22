@@ -456,7 +456,14 @@ class EditorInvisible extends paper.PaperScope {
       }
 
       if(delta.length > consts.epsilon){
-        impost.move_gen(delta);
+        const {b, e} = impost.rays;
+        if(b.profile && impost.is_orthogonal(b.profile, b.point, 0.1) && e.profile && impost.is_orthogonal(e.profile, e.point, 0.1)) {
+          impost.move_gen(delta);
+        }
+        else {
+          impost.move_points(delta, true);
+          impost.layer.redraw();
+        }
         res.push(delta);
       }
     });
@@ -12532,7 +12539,6 @@ class ProfileItem extends GeneratrixElement {
    * ### Выясняет, примыкает ли указанный профиль к текущему
    * Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
    *
-   * @method is_nearest
    * @param p {ProfileItem}
    * @return Boolean
    */
@@ -12545,12 +12551,29 @@ class ProfileItem extends GeneratrixElement {
    * ### Выясняет, параллельны ли профили
    * в пределах `consts.orientation_delta`
    *
-   * @method is_collinear
-   * @param p {ProfileItem}
+   * @param profile {ProfileItem}
    * @return Boolean
    */
-  is_collinear(p, delta = 0) {
-    let angl = p.e.subtract(p.b).getDirectedAngle(this.e.subtract(this.b));
+  is_collinear(profile, delta = 0) {
+    let angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
+    if(angl < -180) {
+      angl += 180;
+    }
+    return Math.abs(angl) < (delta || consts.orientation_delta);
+  }
+
+  /**
+   * ### Выясняет, перпендикулярны ли профили
+   * @param profile {ProfileItem}
+   * @param point {paper.Point}
+   * @param delta {Number}
+   */
+  is_orthogonal(profile, point, delta) {
+    const offset1 = this.generatrix.getOffsetOf(this.generatrix.getNearestPoint(point));
+    const offset2 = profile.generatrix.getOffsetOf(profile.generatrix.getNearestPoint(point));
+    const v1 = this.generatrix.getNormalAt(offset1);
+    const v2 = profile.generatrix.getTangentAt(offset2);
+    let angl = v1.getDirectedAngle(v2);
     if(angl < -180) {
       angl += 180;
     }
