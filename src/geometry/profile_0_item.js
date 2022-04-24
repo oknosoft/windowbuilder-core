@@ -391,6 +391,10 @@ class CnnPoint {
        * @type CatCnns
        */
       this.cnn = this._row.cnn;
+      this.profile_point = this._row.node2;
+      if(['b', 'e', 't'].includes(this.profile_point)) {
+        this.distance = 0;
+      }
 
       /**
        * Массив допустимых типов соединений
@@ -410,17 +414,17 @@ class CnnPoint {
     else {
       this.cnn = null;
       this.cnn_types = acn.i;
+      this.profile_point = '';
     }
 
     /**
      * Расстояние до ближайшего профиля
      * @type Number
      */
-    this.distance = Infinity;
-
+    if(!this.hasOwnProperty('distance')) {
+      this.distance = Infinity;
+    }
     this.point = null;
-
-    this.profile_point = '';
 
   }
 }

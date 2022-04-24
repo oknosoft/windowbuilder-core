@@ -183,6 +183,9 @@ class ContourVirtual extends Contour {
     for(const elm of this.contours) {
       elm.redraw();
     }
+
+    // информируем мир о новых размерах нашего контура
+    this.notify(this, 'contour_redrawed', this._attr._bounds);
   }
 
 }
