@@ -28,8 +28,25 @@ class BuilderPrmRow {
   get value() {
     return this._row.value;
   }
-  set value(v) {
-
+  set value(value) {
+    if(this.value == value) {
+      return;
+    }
+    const {inset, param, _owner, _row} = this;
+    const {params, cnstr} = _owner;
+    if(_row.cnstr) {
+      const prow = params.find({cnstr: 0, param, inset});
+      if(prow?.value == value) {
+        params.del(_row);
+        this._row = prow;
+      }
+      else {
+        _row.value = value;
+      }
+    }
+    else {
+      this._row = params.add({cnstr, param, inset, value});
+    }
   }
 }
 
