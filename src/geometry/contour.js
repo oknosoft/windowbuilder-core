@@ -3079,7 +3079,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(_attr._reflected) {
       l_visualization._by_spec.removeChildren();
     }
-    // обновляем отображение состаных цветов
+    // обновляем отображение составных цветов
     for(const profile of this.profiles) {
       const {clr} = profile;
       if(clr.is_composite()) {
@@ -3087,12 +3087,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-     // обновляем отображение состаных цветов заполнений
+     // обновляем отображение составных цветов заполнений
 
      for (const fill of this.fillings) {
 
       fill.path.fillColor = BuilderElement.clr_by_clr.call(fill,fill.clr)
-	     // обновляем отображение состаных цветов раскладок
+	     // обновляем отображение составных цветов раскладок
       for (const onlay of fill.imposts) {
         onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay,onlay.clr)
 
