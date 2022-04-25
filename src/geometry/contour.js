@@ -3086,6 +3086,22 @@ class Contour extends AbstractFilling(paper.Layer) {
         profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
       }
     }
+
+     // обновляем отображение состаных цветов заполнений
+
+     for (const fill of this.fillings) {
+
+      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill,fill.clr)
+	     // обновляем отображение состаных цветов раскладок
+      for (const onlay of fill.imposts) {
+        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay,onlay.clr)
+
+      }
+  }
+  
+  
+
+
     for(const layer of this.contours) {
       layer.apply_mirror();
       if(_attr._reflected) {
