@@ -315,6 +315,13 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   /**
+   * Возвращает значение параметра с учётом наследования
+   */
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    return param.extract_pvalue({ox: this._ox, cnstr, elm, origin, prm_row});
+  }
+
+  /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
    */

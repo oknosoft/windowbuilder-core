@@ -86,46 +86,6 @@ class ContourVirtual extends Contour {
     }
   }
 
-  /**
-   * Возвращает значение параметра с учётом наследования
-   * @param param
-   * @param cnstr
-   * @param elm
-   * @param origin
-   * @param prm_row
-   * @returns {*}
-   */
-  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
-    const {enm, utils: {blank}} = $p;
-    const {eq_produnt} = enm.plan_detailing
-    const {_ox} = this;
-    const {rnum} = elm;
-    if(rnum) {
-      return elm[param.valueOf()];
-    }
-    if(eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
-      let prow;
-      _ox.params.find_rows({
-        param,
-        cnstr: {in: [0, this.cnstr]},
-        inset: blank.guid,
-      }, (row) => {
-        if(!prow || row.cnstr) {
-          prow = row;
-        }
-      });
-      if(prow) {
-        return prow.value;
-      }
-      else {
-        console.error(`Не задано значений параметра ${param.toString()}`);
-      }
-    }
-    else {
-      return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row})
-    }
-  }
-
   get hidden() {
     return !!this._hidden;
   }

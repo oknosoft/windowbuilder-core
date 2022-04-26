@@ -2634,14 +2634,46 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {boolean}
    */
   get own_sys() {
-    return !this.layer;
+    return this.layer ? false : [10, 11].includes(this.kind);
   }
 
+  /**
+   * Возвращает значение параметра с учётом наследования
+   * @param param {CchProperties}
+   * @param cnstr {Number}
+   * @param elm {BuilderElement}
+   * @param origin {CatInserts|undefined}
+   * @param prm_row
+   * @returns {*}
+   */
   extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    if(elm?.rnum) {
+      return elm[param.valueOf()];
+    }
     const {layer} = this;
-    return layer ?
-      layer.extract_pvalue({param, cnstr, elm, origin, prm_row}) :
-      param.extract_pvalue({ox: this._ox, cnstr: cnstr, elm, origin, prm_row});
+    if(layer) {
+      return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+    }
+    const {enm: {plan_detailing}, utils, CatInserts} = $p;
+    const {_ox} = this;
+    if(plan_detailing.eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      let prow;
+      _ox.params.find_rows({
+        param,
+        cnstr: {in: [0, this.cnstr]},
+        inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
+      }, (row) => {
+        if(!prow || row.cnstr) {
+          prow = row;
+        }
+      });
+      if(prow) {
+        return prow.value;
+      }
+      console.error(`Не задано значений параметра ${param.toString()}`);
+      return param.fetch_type();
+    }
+    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});
   }
 
   /**
@@ -3088,19 +3120,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
      // обновляем отображение составных цветов заполнений
-
-     for (const fill of this.fillings) {
-
-      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill,fill.clr)
-	     // обновляем отображение составных цветов раскладок
+    for (const fill of this.fillings) {
+      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);
+      // обновляем отображение составных цветов раскладок
       for (const onlay of fill.imposts) {
-        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay,onlay.clr)
-
+        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay, onlay.clr);
       }
-  }
-  
-  
-
+    }
 
     for(const layer of this.contours) {
       layer.apply_mirror();

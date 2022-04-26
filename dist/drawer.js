@@ -4689,14 +4689,46 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {boolean}
    */
   get own_sys() {
-    return !this.layer;
+    return this.layer ? false : [10, 11].includes(this.kind);
   }
 
+  /**
+   * Возвращает значение параметра с учётом наследования
+   * @param param {CchProperties}
+   * @param cnstr {Number}
+   * @param elm {BuilderElement}
+   * @param origin {CatInserts|undefined}
+   * @param prm_row
+   * @returns {*}
+   */
   extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    if(elm?.rnum) {
+      return elm[param.valueOf()];
+    }
     const {layer} = this;
-    return layer ?
-      layer.extract_pvalue({param, cnstr, elm, origin, prm_row}) :
-      param.extract_pvalue({ox: this._ox, cnstr: cnstr, elm, origin, prm_row});
+    if(layer) {
+      return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+    }
+    const {enm: {plan_detailing}, utils, CatInserts} = $p;
+    const {_ox} = this;
+    if(plan_detailing.eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      let prow;
+      _ox.params.find_rows({
+        param,
+        cnstr: {in: [0, this.cnstr]},
+        inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
+      }, (row) => {
+        if(!prow || row.cnstr) {
+          prow = row;
+        }
+      });
+      if(prow) {
+        return prow.value;
+      }
+      console.error(`Не задано значений параметра ${param.toString()}`);
+      return param.fetch_type();
+    }
+    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});
   }
 
   /**
@@ -5134,13 +5166,23 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(_attr._reflected) {
       l_visualization._by_spec.removeChildren();
     }
-    // обновляем отображение состаных цветов
+    // обновляем отображение составных цветов
     for(const profile of this.profiles) {
       const {clr} = profile;
       if(clr.is_composite()) {
         profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
       }
     }
+
+     // обновляем отображение составных цветов заполнений
+    for (const fill of this.fillings) {
+      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);
+      // обновляем отображение составных цветов раскладок
+      for (const onlay of fill.imposts) {
+        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay, onlay.clr);
+      }
+    }
+
     for(const layer of this.contours) {
       layer.apply_mirror();
       if(_attr._reflected) {
@@ -5801,46 +5843,6 @@ class ContourVirtual extends Contour {
           value: row.value,
         });
       }
-    }
-  }
-
-  /**
-   * Возвращает значение параметра с учётом наследования
-   * @param param
-   * @param cnstr
-   * @param elm
-   * @param origin
-   * @param prm_row
-   * @returns {*}
-   */
-  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
-    const {enm, utils: {blank}} = $p;
-    const {eq_produnt} = enm.plan_detailing
-    const {_ox} = this;
-    const {rnum} = elm;
-    if(rnum) {
-      return elm[param.valueOf()];
-    }
-    if(eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
-      let prow;
-      _ox.params.find_rows({
-        param,
-        cnstr: {in: [0, this.cnstr]},
-        inset: blank.guid,
-      }, (row) => {
-        if(!prow || row.cnstr) {
-          prow = row;
-        }
-      });
-      if(prow) {
-        return prow.value;
-      }
-      else {
-        console.error(`Не задано значений параметра ${param.toString()}`);
-      }
-    }
-    else {
-      return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row})
     }
   }
 
@@ -14918,6 +14920,13 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   /**
+   * Возвращает значение параметра с учётом наследования
+   */
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    return param.extract_pvalue({ox: this._ox, cnstr, elm, origin, prm_row});
+  }
+
+  /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
    */
@@ -18635,12 +18644,12 @@ class Pricing {
    * @param startkey
    * @return {Promise.<TResult>|*}
    */
-  by_range({bookmark, step=1, limit=100, log=null, cache=null}) {
+  by_range({bookmark, step=1, limit=60, log=null, cache=null}) {
     const {utils, adapters: {pouch}} = $p;
 
     (log || console.log)(`load prices: page №${step}`);
 
-    return utils.sleep(100)
+    return utils.sleep(40)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
