@@ -201,7 +201,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
       // для подчиненных, номер строки родителя
       if(!leading_product.empty() && !leading_product.calc_order.empty()) {
-        name += ':' + leading_product.calc_order_row.row.pad();
+        const {calc_order_row} = leading_product;
+        name += ':' + (calc_order_row ? calc_order_row.row.pad() : '0');
       }
 
       // добавляем название системы или вставки

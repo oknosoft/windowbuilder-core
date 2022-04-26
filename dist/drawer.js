@@ -13463,7 +13463,7 @@ class Profile extends ProfileItem {
    */
   refresh_inset_depends(param, with_neighbor) {
     const {inset, _attr: {_rays, _nearest_cnn}} = this;
-    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of(param))) {
+    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of?.(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
@@ -20794,7 +20794,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
       // для подчиненных, номер строки родителя
       if(!leading_product.empty() && !leading_product.calc_order.empty()) {
-        name += ':' + leading_product.calc_order_row.row.pad();
+        const {calc_order_row} = leading_product;
+        name += ':' + (calc_order_row ? calc_order_row.row.pad() : '0');
       }
 
       // добавляем название системы или вставки
