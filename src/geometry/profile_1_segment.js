@@ -22,7 +22,7 @@ class ProfileSegment extends ProfileItem {
       return elm_types.flap;
     }
 
-    return elm_types.Рама;
+    return elm_types.rama;
   }
 
   cnn_point(node, point) {

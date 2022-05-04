@@ -43,7 +43,7 @@
   });
 
   enm.plan_detailing.__define({
-    eq_produnt: {
+    eq_product: {
       value: [enm.plan_detailing.get(), enm.plan_detailing.product, enm.plan_detailing.algorithm]
     }
   })

@@ -1564,11 +1564,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_mosquito() {
     const {l_visualization, project, _ox} = this;
+    const {inserts_types, elm_types, count_calculating_ways} = $p.enm;
     if(project.builder_props.mosquito === false) {
       return;
     }
     _ox.inserts.find_rows({cnstr: this.cnstr}, (row) => {
-      if (row.inset.insert_type == $p.enm.inserts_types.МоскитнаяСетка) {
+      if (row.inset.insert_type == inserts_types.МоскитнаяСетка) {
         const props = {
           parent: new paper.Group({parent: l_visualization._by_insets}),
           strokeColor: 'grey',
@@ -1578,10 +1579,10 @@ class Contour extends AbstractFilling(paper.Layer) {
         };
         let sz, imposts;
         row.inset.specification.forEach((rspec) => {
-          if (!sz && rspec.count_calc_method == $p.enm.count_calculating_ways.perimeter && rspec.nom.elm_type == $p.enm.elm_types.Рама) {
+          if (!sz && rspec.count_calc_method == count_calculating_ways.perim && rspec.nom.elm_type == elm_types.rama) {
             sz = rspec.sz;
           }
-          if (!imposts && rspec.count_calc_method == $p.enm.count_calculating_ways.step && rspec.nom.elm_type == $p.enm.elm_types.Импост) {
+          if (!imposts && rspec.count_calc_method == count_calculating_ways.steps && rspec.nom.elm_type == elm_types.Импост) {
             imposts = rspec;
           }
         });
@@ -2656,7 +2657,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
     const {_ox} = this;
-    if(plan_detailing.eq_produnt.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+    if(plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
         param,
