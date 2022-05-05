@@ -20455,14 +20455,25 @@ $p.spec_building = new SpecBuilding($p);
  * Created 01.05.2022.
  */
 
-(function({enm}){
+(function({enm, cat: {clrs}, cch}){
 
   const {coloring, len_prm, area} = enm.count_calculating_ways;
+  const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
   // {inset, elm, row_spec, row_ins_spec, origin, spec, ox, len_angl}
 
-  coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, origin, spec, ox, len_angl}) {
-    return row_spec;
+  coloring.calculate = function ({inset, elm, row_ins_spec, origin, spec, ox, len_angl}) {
+    const {clr: {clr_in, clr_out}, nom} = elm;
+    let row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+    if(clr_in === clr_out || row_ins_spec.clr === clrs.predefined('БезЦвета')) {
+      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec);
+    }
+    else {
+      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_in, ox.clr, elm, spec);
+
+      row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_out, ox.clr, elm, spec);
+    }
   };
 
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
@@ -23575,7 +23586,7 @@ $p.CatPartners.prototype.__define({
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas}, enm: {orientations, positions}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions}, EditorInvisible, utils} = $p;
 
   // угол к следующему
   ((name) => {
@@ -23689,6 +23700,29 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('elm_rectangular');
+
+  // нужна ли покраска-ламинация
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
+        prm.calculated._data._formula = function ({elm}) {
+          const {layer: {sys}, clr} = elm;
+          if(clr === clrs.predefined('БезЦвета')) {
+            return false;
+          }
+          if(sys.colors.count()) {
+            return !sys.colors.find({clr});
+          }
+          return clr !== clrs.predefined('Белый');
+        };
+      }
+    }
+  })('need_coloring');
 
   // вхождение элемента в габариты
   ((name) => {

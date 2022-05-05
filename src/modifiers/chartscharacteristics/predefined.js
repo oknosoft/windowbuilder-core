@@ -6,7 +6,7 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas}, enm: {orientations, positions}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions}, EditorInvisible, utils} = $p;
 
   // угол к следующему
   ((name) => {
@@ -120,6 +120,29 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('elm_rectangular');
+
+  // нужна ли покраска-ламинация
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
+      }
+      if(!prm.calculated._data._formula) {
+        prm.calculated._data._formula = function ({elm}) {
+          const {layer: {sys}, clr} = elm;
+          if(clr === clrs.predefined('БезЦвета')) {
+            return false;
+          }
+          if(sys.colors.count()) {
+            return !sys.colors.find({clr});
+          }
+          return clr !== clrs.predefined('Белый');
+        };
+      }
+    }
+  })('need_coloring');
 
   // вхождение элемента в габариты
   ((name) => {
