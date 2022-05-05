@@ -338,10 +338,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     coordinates.find_rows({cnstr, region: 0}, (row) => {
       const attr = {row, parent: this};
       // профили и доборы
-      if(row.elm_type === elm_types.bundle) {
-        new ProfileBundle(attr);
-      }
-      else if(row.elm_type === elm_types.attachment) {
+      if(row.elm_type === elm_types.attachment) {
         new this.ProfileConstructor(attr);
       }
       else if(elm_types.profiles.includes(row.elm_type)) {

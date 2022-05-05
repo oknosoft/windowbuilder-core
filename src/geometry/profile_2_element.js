@@ -56,13 +56,16 @@ class Profile extends ProfileItem {
         const {cnstr, elm, _owner} = attr.row;
         const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          if(row.elm_type === elm_types.Добор) {
+          // добор
+          if(row.elm_type === elm_types.addition) {
             new ProfileAddl({row, parent: this});
           }
-          else if(row.elm_type === elm_types.Примыкание) {
+          // примыкание
+          else if(row.elm_type === elm_types.adjoining) {
             new ProfileAdjoining({row, parent: this});
           }
-          else if(elm_types.profiles.includes(row.elm_type)) {
+          // связка (чулок)
+          else if(row.elm_type === elm_types.bundle) {
             new ProfileSegment({row, parent: this});
           }
         });
@@ -106,6 +109,14 @@ class Profile extends ProfileItem {
     }
 
     return elm_types.rama;
+  }
+
+  /**
+   * Является ли текущий элемент связкой
+   * @returns {boolean}
+   */
+  get is_bundle() {
+    return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
   }
 
   /**
@@ -237,6 +248,28 @@ class Profile extends ProfileItem {
     }
 
     return _attr._nearest;
+  }
+
+  /**
+   * Сегменты текущей связки
+   * @return {Array.<ProfileSegment>}
+   */
+  get segms() {
+    return this.children.filter((elm) => elm instanceof ProfileSegment);
+  }
+
+  /**
+   * Добавляет сегменты
+   * @param [count] {Number} - на сколько сегментов резать
+   */
+  split_at(count) {
+    const {generatrix, segms, inset, clr} = this;
+    const len = generatrix.length / 2;
+    const first = generatrix.clone({insert: false});
+    const loc = first.getLocationAt(len);
+    const second = first.splitAt(loc);
+    new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
+    new ProfileSegment({generatrix: second, proto: {inset, clr}, parent: this});
   }
 
   /**

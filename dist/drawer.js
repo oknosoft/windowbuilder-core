@@ -2393,10 +2393,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     coordinates.find_rows({cnstr, region: 0}, (row) => {
       const attr = {row, parent: this};
       // профили и доборы
-      if(row.elm_type === elm_types.bundle) {
-        new ProfileBundle(attr);
-      }
-      else if(row.elm_type === elm_types.attachment) {
+      if(row.elm_type === elm_types.attachment) {
         new this.ProfileConstructor(attr);
       }
       else if(elm_types.profiles.includes(row.elm_type)) {
@@ -12949,20 +12946,22 @@ class ProfileSegment extends ProfileItem {
 
   // elm_type такой же, как у обычного профиля
   get elm_type() {
-    const {_rays, _nearest} = this.parent._attr;
-    const {elm_types} = $p.enm;
+    return this.parent.elm_type;
+  }
 
-    // если начало или конец элемента соединены с соседями по Т, значит это импост
-    if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
-      return elm_types.impost;
-    }
+  // Расстояние от узла до опорной линии
+  get d0() {
+    return this.parent.d0;
+  }
 
-    // Если вложенный контур, значит это створка
-    if(this.layer?.parent instanceof Contour) {
-      return elm_types.flap;
-    }
+  // Расстояние от узла до внешнего ребра элемента
+  get d1() {
+    return this.parent.d1;
+  }
 
-    return elm_types.rama;
+  // Расстояние от узла до внутреннего ребра элемента
+  get d2() {
+    return this.parent.d2;
   }
 
   cnn_point(node, point) {
@@ -13010,17 +13009,60 @@ class ProfileSegment extends ProfileItem {
 
   }
 
-  cnn_side () {
-    return $p.enm.cnn_sides.inner;
+  cnn_side(profile, interior, rays) {
+    return profile instanceof ProfileSegment ? $p.enm.cnn_sides.inner : this.parent.cnn_side(profile, interior, rays);
+  }
+
+  save_coordinates() {
+    super.save_coordinates();
+    this._row.elm_type = $p.enm.elm_types.bundle;
+  }
+
+  path_points(cnn_point, profile_point) {
+    const {_attr: {_corns}, parent} = this;
+    if(parent.b.is_nearest(cnn_point.point)) {
+      _corns[1] = parent.corns(1);
+      _corns[4] = parent.corns(4);
+      _corns[5] = parent.corns(5);
+      _corns[7] = parent.corns(7);
+    }
+    else if(parent.e.is_nearest(cnn_point.point)) {
+      _corns[2] = parent.corns(2);
+      _corns[3] = parent.corns(3);
+      _corns[6] = parent.corns(6);
+      _corns[8] = parent.corns(8);
+    }
+    else {
+      const {rays} = parent;
+      const inner = rays.inner.getNearestPoint(cnn_point.point);
+      const outer = rays.outer.getNearestPoint(cnn_point.point);
+      if(profile_point === 'b') {
+        _corns[1] = outer;
+        _corns[4] = inner;
+      }
+      else {
+        _corns[2] = outer;
+        _corns[3] = inner;
+      }
+    }
+    return cnn_point;
+  }
+
+  nearest() {
+
+  }
+
+  move_points() {
+
   }
 
   observer() {
 
   }
 
-  redraw() {
-
-  }
+  // redraw() {
+  //
+  // }
 
 }
 
@@ -13084,13 +13126,16 @@ class Profile extends ProfileItem {
         const {cnstr, elm, _owner} = attr.row;
         const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          if(row.elm_type === elm_types.Добор) {
+          // добор
+          if(row.elm_type === elm_types.addition) {
             new ProfileAddl({row, parent: this});
           }
-          else if(row.elm_type === elm_types.Примыкание) {
+          // примыкание
+          else if(row.elm_type === elm_types.adjoining) {
             new ProfileAdjoining({row, parent: this});
           }
-          else if(elm_types.profiles.includes(row.elm_type)) {
+          // связка (чулок)
+          else if(row.elm_type === elm_types.bundle) {
             new ProfileSegment({row, parent: this});
           }
         });
@@ -13134,6 +13179,14 @@ class Profile extends ProfileItem {
     }
 
     return elm_types.rama;
+  }
+
+  /**
+   * Является ли текущий элемент связкой
+   * @returns {boolean}
+   */
+  get is_bundle() {
+    return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
   }
 
   /**
@@ -13265,6 +13318,28 @@ class Profile extends ProfileItem {
     }
 
     return _attr._nearest;
+  }
+
+  /**
+   * Сегменты текущей связки
+   * @return {Array.<ProfileSegment>}
+   */
+  get segms() {
+    return this.children.filter((elm) => elm instanceof ProfileSegment);
+  }
+
+  /**
+   * Добавляет сегменты
+   * @param [count] {Number} - на сколько сегментов резать
+   */
+  split_at(count) {
+    const {generatrix, segms, inset, clr} = this;
+    const len = generatrix.length / 2;
+    const first = generatrix.clone({insert: false});
+    const loc = first.getLocationAt(len);
+    const second = first.splitAt(loc);
+    new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
+    new ProfileSegment({generatrix: second, proto: {inset, clr}, parent: this});
   }
 
   /**
@@ -13599,80 +13674,6 @@ class Profile extends ProfileItem {
 }
 
 EditorInvisible.Profile = Profile;
-
-
-/**
- * Связка профилей
- *
- * Created 14.10.2020.
- */
-
-class ProfileBundle extends Profile {
-
-  constructor(attr) {
-    super(attr);
-
-    if(!this.segms.length) {
-      this.split_at();
-    }
-  }
-
-  /**
-   * Возвращает тип элемента (Связка)
-   */
-  get elm_type() {
-    return $p.enm.elm_types.Связка;
-  }
-
-  /**
-   * Сегменты текущей связки
-   * @return {Array.<ProfileSegment>}
-   */
-  get segms() {
-    return this.children.filter((elm) => elm instanceof ProfileSegment);
-  }
-
-  cnn_side(profile, interior, rays) {
-    if(profile instanceof ProfileSegment) {
-      return profile.cnn_side();
-    }
-    return super.cnn_side(profile, interior, rays);
-  }
-
-  /**
-   * Добавляет сегменты
-   * @param [len] {Number} - координата, на которой резать
-   */
-  split_at(len) {
-    const {generatrix, segms, inset, clr} = this;
-    if(!len) {
-      len = generatrix.length / 2;
-    }
-    const first = generatrix.clone({insert: false});
-    const loc = first.getLocationAt(len);
-    const second = first.splitAt(loc);
-    new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
-    new ProfileSegment({generatrix: second, proto: {inset, clr}, parent: this});
-  }
-
-  /**
-   * Объединяет сегменты
-   * @param segm1 {ProfileSegment}
-   * @param segm2 {ProfileSegment}
-   */
-  merge(segm1, segm2) {
-
-  }
-
-
-}
-
-class BundleRange extends paper.Group {
-
-}
-
-EditorInvisible.ProfileBundle = ProfileBundle;
-EditorInvisible.BundleRange = ProfileBundle;
 
 
 /**
@@ -20535,7 +20536,7 @@ $p.spec_building = new SpecBuilding($p);
 
 		profiles: {
 			get(){
-				return cache.profiles || (cache.profiles = [_mgr.Рама, _mgr.Створка, _mgr.Импост, _mgr.Штульп, _mgr.Связка]);
+				return cache.profiles || (cache.profiles = [_mgr.rama, _mgr.flap, _mgr.impost, _mgr.shtulp]);
 			}
 		},
 
@@ -20557,7 +20558,7 @@ $p.spec_building = new SpecBuilding($p);
 
 		rama_impost: {
 			get(){
-				return cache.rama_impost || (cache.rama_impost = [_mgr.Рама, _mgr.Импост, _mgr.Штульп, _mgr.Связка]);
+				return cache.rama_impost || (cache.rama_impost = [_mgr.rama, _mgr.impost, _mgr.shtulp]);
 			}
 		},
 
