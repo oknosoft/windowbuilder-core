@@ -1360,37 +1360,41 @@ class ProfileItem extends GeneratrixElement {
         }
       }
 
-      // в том числе - о соединениях с другой стороны
-      if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
-        cnn_elmnts.add({
-          elm1: _row.elm,
-          node1: 'b',
-          elm2: b._cnno.elm2,
-          node2: b._cnno.node2,
-          cnn: b._cnno.cnn,
-          aperture_len: row_b.aperture_len,
-        });
-      }
-      if(e._cnno && row_e.elm2 !== e._cnno.elm2) {
-        cnn_elmnts.add({
-          elm1: _row.elm,
-          node1: 'e',
-          elm2: e._cnno.elm2,
-          node2: e._cnno.node2,
-          cnn: e._cnno.cnn,
-          aperture_len: row_e.aperture_len,
-        });
-      }
 
-      // для створочных и доборных профилей добавляем соединения с внешними элементами
-      const nrst = this.nearest();
-      if(nrst) {
-        cnn_elmnts.add({
-          elm1: _row.elm,
-          elm2: nrst.elm,
-          cnn: _attr._nearest_cnn,
-          aperture_len: _row.len
-        });
+      if(!(this instanceof ProfileSegment)) {
+
+        // в том числе - о соединениях с другой стороны
+        if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
+          cnn_elmnts.add({
+            elm1: _row.elm,
+            node1: 'b',
+            elm2: b._cnno.elm2,
+            node2: b._cnno.node2,
+            cnn: b._cnno.cnn,
+            aperture_len: row_b.aperture_len,
+          });
+        }
+        if(e._cnno && row_e.elm2 !== e._cnno.elm2) {
+          cnn_elmnts.add({
+            elm1: _row.elm,
+            node1: 'e',
+            elm2: e._cnno.elm2,
+            node2: e._cnno.node2,
+            cnn: e._cnno.cnn,
+            aperture_len: row_e.aperture_len,
+          });
+        }
+
+        // для створочных и доборных профилей добавляем соединения с внешними элементами
+        const nrst = this.nearest();
+        if(nrst) {
+          cnn_elmnts.add({
+            elm1: _row.elm,
+            elm2: nrst.elm,
+            cnn: _attr._nearest_cnn,
+            aperture_len: _row.len
+          });
+        }
       }
 
       _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;

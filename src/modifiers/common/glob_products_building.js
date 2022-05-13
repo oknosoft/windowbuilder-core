@@ -325,151 +325,156 @@ class ProductsBuilding {
      */
     function base_spec_profile(elm, totqty0) {
 
+      const {_row, rays, layer, segms} = elm;
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
-      const {_row, rays, layer} = elm;
-
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
       }
 
-      const {b, e} = rays;
-
-      if(!b.cnn || !e.cnn) {
-        return;
+      if(segms?.length) {
+        // если профиль разбит на связки, добавляем их спецификации, вместо спецификации самого профиля
+        segms.forEach(base_spec_profile);
       }
-      b.check_err();
-      e.check_err();
+      else {
+        const {b, e} = rays;
 
-      const prev = b.profile;
-      const next = e.profile;
-      const row_cnn_prev = b.cnn && b.cnn.main_row(elm);
-      const row_cnn_next = e.cnn && e.cnn.main_row(elm);
-      const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
-
-      let row_spec;
-
-      // добавляем строку спецификации
-      const row_cnn = row_cnn_prev || row_cnn_next;
-      if(row_cnn) {
-
-        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
-        row_spec.qty = row_cnn.quantity;
-
-        // уточняем размер
-        const seam = angle_calculating_ways.СварнойШов;
-        const d45 = Math.sin(Math.PI / 4);
-        const dprev = row_cnn_prev ? (
-          row_cnn_prev.angle_calc_method == seam && _row.alp1 > 0 ? row_cnn_prev.sz * d45 / Math.sin(_row.alp1 / 180 * Math.PI) : row_cnn_prev.sz
-        ) : 0;
-        const dnext = row_cnn_next ? (
-          row_cnn_next.angle_calc_method == seam && _row.alp2 > 0 ? row_cnn_next.sz * d45 / Math.sin(_row.alp2 / 180 * Math.PI) : row_cnn_next.sz
-        ) : 0;
-
-        const k001 = 0.001;
-        row_spec.len = (_row.len - dprev - dnext)
-          * ((row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
-        if(row_cnn_prev && row_cnn_prev.algorithm === w2) {
-          row_spec.len += prev.width * k001;
+        if(!b.cnn || !e.cnn) {
+          return;
         }
-        if(row_cnn_next && row_cnn_next.algorithm === w2) {
-          row_spec.len += next.width * k001;
+        b.check_err();
+        e.check_err();
+
+        const prev = b.profile;
+        const next = e.profile;
+        const row_cnn_prev = b.cnn && b.cnn.main_row(elm);
+        const row_cnn_next = e.cnn && e.cnn.main_row(elm);
+        const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
+
+        let row_spec;
+
+        // добавляем строку спецификации
+        const row_cnn = row_cnn_prev || row_cnn_next;
+        if(row_cnn) {
+
+          row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
+          row_spec.qty = row_cnn.quantity;
+
+          // уточняем размер
+          const seam = angle_calculating_ways.СварнойШов;
+          const d45 = Math.sin(Math.PI / 4);
+          const dprev = row_cnn_prev ? (
+            row_cnn_prev.angle_calc_method == seam && _row.alp1 > 0 ? row_cnn_prev.sz * d45 / Math.sin(_row.alp1 / 180 * Math.PI) : row_cnn_prev.sz
+          ) : 0;
+          const dnext = row_cnn_next ? (
+            row_cnn_next.angle_calc_method == seam && _row.alp2 > 0 ? row_cnn_next.sz * d45 / Math.sin(_row.alp2 / 180 * Math.PI) : row_cnn_next.sz
+          ) : 0;
+
+          const k001 = 0.001;
+          row_spec.len = (_row.len - dprev - dnext)
+            * ((row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
+          if(row_cnn_prev && row_cnn_prev.algorithm === w2) {
+            row_spec.len += prev.width * k001;
+          }
+          if(row_cnn_next && row_cnn_next.algorithm === w2) {
+            row_spec.len += next.width * k001;
+          }
+
+          // profile._len - то, что получится после обработки
+          // row_spec.len - сколько взять (отрезать)
+          elm._attr._len = _row.len;
+          _row.len = (_row.len
+              - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
+              - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
+            * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
+
+          // припуск для гнутых элементов
+          if(!elm.is_linear()) {
+            row_spec.len = row_spec.len + _row.nom.arc_elongation * k001;
+          }
+
+          // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
+          if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
+            row_cnn_prev.formula.execute({
+              ox: ox,
+              elm: elm,
+              cnstr: 0,
+              inset: blank.guid,
+              row_cnn: row_cnn_prev,
+              row_spec: row_spec
+            });
+          }
+          else if(row_cnn_next && !row_cnn_next.formula.empty()) {
+            row_cnn_next.formula.execute({
+              ox: ox,
+              elm: elm,
+              cnstr: 0,
+              inset: blank.guid,
+              row_cnn: row_cnn_next,
+              row_spec: row_spec
+            });
+          }
+
+          // РассчитатьКоличествоПлощадьМассу
+          const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
+          const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
+          const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
+          calc_count_area_mass(
+            row_spec,
+            spec,
+            _row,
+            angle_calc_method_prev,
+            angle_calc_method_next,
+            angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
+            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
+            totqty0,
+          );
         }
 
-        // profile._len - то, что получится после обработки
-        // row_spec.len - сколько взять (отрезать)
-        elm._attr._len = _row.len;
-        _row.len = (_row.len
-          - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
-          - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
-          * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
+        // добавляем спецификации соединений
+        const len_angl = {
+          angle: 0,
+          alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+          alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90,
+          len: row_spec ? row_spec.len * 1000 : _row.len,
+          art1: false,
+          art2: true,
+          node: 'e',
+        };
+        const sl_types = [cnn_types.long, cnn_types.short];
+        const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, ...sl_types];
+        if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
 
-        // припуск для гнутых элементов
-        if(!elm.is_linear()) {
-          row_spec.len = row_spec.len + _row.nom.arc_elongation * k001;
-        }
+          len_angl.angle = len_angl.alp2;
 
-        // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
-        if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
-          row_cnn_prev.formula.execute({
-            ox: ox,
-            elm: elm,
-            cnstr: 0,
-            inset: blank.guid,
-            row_cnn: row_cnn_prev,
-            row_spec: row_spec
-          });
-        }
-        else if(row_cnn_next && !row_cnn_next.formula.empty()) {
-          row_cnn_next.formula.execute({
-            ox: ox,
-            elm: elm,
-            cnstr: 0,
-            inset: blank.guid,
-            row_cnn: row_cnn_next,
-            row_spec: row_spec
-          });
-        }
-
-        // РассчитатьКоличествоПлощадьМассу
-        const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
-        const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
-        const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
-        calc_count_area_mass(
-          row_spec,
-          spec,
-          _row,
-          angle_calc_method_prev,
-          angle_calc_method_next,
-          angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
-          angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
-          totqty0,
-        );
-      }
-
-      // добавляем спецификации соединений
-      const len_angl = {
-        angle: 0,
-        alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90,
-        alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90,
-        len: row_spec ? row_spec.len * 1000 : _row.len,
-        art1: false,
-        art2: true,
-        node: 'e',
-      };
-      const sl_types = [cnn_types.long, cnn_types.short];
-      const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, ...sl_types];
-      if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
-
-        len_angl.angle = len_angl.alp2;
-
-        // для ТОбразного, Незамкнутого контура и short-long, надо рассчитать еще и с другой стороны
-        if(e.cnn && sl_types.includes(e.cnn.cnn_type)) {
-          cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
-        }
-        else if(other_side_types.includes(b.cnn.cnn_type)) {
-          if(!other_side_types.includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
+          // для ТОбразного, Незамкнутого контура и short-long, надо рассчитать еще и с другой стороны
+          if(e.cnn && sl_types.includes(e.cnn.cnn_type)) {
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
-        }
-        else {
-          // для угловых, добавляем из e.cnn строки с {art2: true}, а для внешних с {art2: false}
-          if(!e.profile_point || (next.rays[e.profile_point] && next.rays[e.profile_point].profile !== elm)) {
-            len_angl.art2 = false;
-            len_angl.art1 = true;
+          else if(other_side_types.includes(b.cnn.cnn_type)) {
+            if(!other_side_types.includes(e.cnn.cnn_type) || cnn_need_add_spec(e.cnn, next ? next.elm : 0, _row.elm, e.point)) {
+              cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
+            }
           }
-          cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
+          else {
+            // для угловых, добавляем из e.cnn строки с {art2: true}, а для внешних с {art2: false}
+            if(!e.profile_point || (next.rays[e.profile_point] && next.rays[e.profile_point].profile !== elm)) {
+              len_angl.art2 = false;
+              len_angl.art1 = true;
+            }
+            cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
+          }
+
+          // спецификацию с предыдущей стороны рассчитваем всегда
+          len_angl.angle = len_angl.alp1;
+          len_angl.art2 = false;
+          len_angl.art1 = true;
+          len_angl.node = 'b';
+          cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
         }
 
-        // спецификацию с предыдущей стороны рассчитваем всегда
-        len_angl.angle = len_angl.alp1;
-        len_angl.art2 = false;
-        len_angl.art1 = true;
-        len_angl.node = 'b';
-        cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
+        // спецификация вставки
+        elm.inset.calculate_spec({elm, ox, spec});
       }
-
-      // спецификация вставки
-      elm.inset.calculate_spec({elm, ox, spec});
 
       // если у профиля есть примыкающий родительский элемент, добавим спецификацию II соединения
       cnn_spec_nearest(elm);

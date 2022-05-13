@@ -56,10 +56,11 @@ class ProfileSegment extends ProfileItem {
   cnn_point(node, point) {
 
     const res = this.rays[node];
+    const {parent} = this;
 
     const check_distance = (elm) => {
 
-      if(elm == this || elm == this.parent){
+      if(elm == this || elm == parent){
         return;
       }
 
@@ -71,6 +72,13 @@ class ProfileSegment extends ProfileItem {
           res.point = gp;
           res.distance = distance;
           res.profile = elm;
+
+          if(elm.generatrix.firstSegment.point.is_nearest(gp)) {
+            res.profile_point = 'b';
+          }
+          else if(elm.generatrix.lastSegment.point.is_nearest(gp)) {
+            res.profile_point = 'e';
+          }
         }
       }
 
@@ -89,7 +97,19 @@ class ProfileSegment extends ProfileItem {
     res.clear();
     res.cnn_types = [$p.enm.cnn_types.ad];
 
-    this.parent.segms.forEach((segm) => check_distance(segm, true));
+    parent.segms.forEach((segm) => check_distance(segm, true));
+
+    if(!res.profile || !res.profile_point) {
+      const {rays, generatrix} = parent;
+      if(generatrix.firstSegment.point.is_nearest(res.point)) {
+        res.profile = rays.b.profile;
+        res.profile_point = rays.b.profile_point;
+      }
+      else if(generatrix.lastSegment.point.is_nearest(res.point)) {
+        res.profile = rays.e.profile;
+        res.profile_point = rays.e.profile_point;
+      }
+    }
 
     return res;
   }
@@ -100,7 +120,9 @@ class ProfileSegment extends ProfileItem {
 
   save_coordinates() {
     super.save_coordinates();
-    this._row.elm_type = $p.enm.elm_types.bundle;
+    const {_row, parent} = this;
+    _row.elm_type = $p.enm.elm_types.bundle;
+    _row.parent = parent.elm;
   }
 
   path_points(cnn_point, profile_point) {
