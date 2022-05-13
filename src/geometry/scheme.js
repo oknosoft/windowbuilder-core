@@ -1851,6 +1851,13 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
+        // if(element.generatrix.firstSegment.point.is_nearest(gp)) {
+        //   res.profile_point = 'b';
+        // }
+        // else if(element.generatrix.lastSegment.point.is_nearest(gp)) {
+        //   res.profile_point = 'e';
+        // }
+
         if(res.cnn && (
           res.cnn.cnn_type === long ||
           res.cnn.cnn_type === av && res.parent.orientation === orientations.vert ||

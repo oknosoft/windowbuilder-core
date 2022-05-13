@@ -2127,7 +2127,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (!curr[n].is_nearest(elm[n], 0)) {
         elm.rays.clear(true);
         elm[n] = curr[n];
-        if (noti.profiles.indexOf(elm) == -1) {
+        if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
         if (!noti.points.some((point) => point.is_nearest(elm[n], 0))) {

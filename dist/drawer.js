@@ -4185,7 +4185,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (!curr[n].is_nearest(elm[n], 0)) {
         elm.rays.clear(true);
         elm[n] = curr[n];
-        if (noti.profiles.indexOf(elm) == -1) {
+        if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
         if (!noti.points.some((point) => point.is_nearest(elm[n], 0))) {
@@ -10268,7 +10268,14 @@ class CnnPoint {
    */
   get is_tt() {
     // если это угол, то точно не T
-    return !(this.is_i || this.profile_point == 'b' || this.profile_point == 'e' || this.profile == this.parent);
+    const {profile_point, profile, point} = this;
+    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
+      return false;
+    }
+    if(!profile_point && profile && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -17811,6 +17818,13 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
+        // if(element.generatrix.firstSegment.point.is_nearest(gp)) {
+        //   res.profile_point = 'b';
+        // }
+        // else if(element.generatrix.lastSegment.point.is_nearest(gp)) {
+        //   res.profile_point = 'e';
+        // }
+
         if(res.cnn && (
           res.cnn.cnn_type === long ||
           res.cnn.cnn_type === av && res.parent.orientation === orientations.vert ||
