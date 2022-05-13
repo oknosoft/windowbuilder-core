@@ -791,6 +791,7 @@ class BuilderElement extends paper.Group {
     if(items.length > 1 && items.includes(this)) {
       const nelm = this.nearest();
       const shift = nelm instanceof ProfileVirtual && nelm.nearest();
+      const {cat: {cnns}, enm: {cnn_types}} = $p;
 
       for(const item of items) {
         if(item === this) {
@@ -801,9 +802,11 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
+            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: item, row};
           }
           if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
+            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: nelm, row};
           }
         }

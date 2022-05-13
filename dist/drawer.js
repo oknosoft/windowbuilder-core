@@ -1796,6 +1796,7 @@ class BuilderElement extends paper.Group {
     if(items.length > 1 && items.includes(this)) {
       const nelm = this.nearest();
       const shift = nelm instanceof ProfileVirtual && nelm.nearest();
+      const {cat: {cnns}, enm: {cnn_types}} = $p;
 
       for(const item of items) {
         if(item === this) {
@@ -1806,9 +1807,11 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
+            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: item, row};
           }
           if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
+            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: nelm, row};
           }
         }
@@ -12964,6 +12967,32 @@ class ProfileSegment extends ProfileItem {
     return this.parent.d2;
   }
 
+  /**
+   * ### Координаты начала элемента
+   * @property b
+   * @type paper.Point
+   */
+  get b() {
+    return super.b;
+  }
+  set b(v) {
+    super.b = v;
+    this._attr._rays.b.point = this.b;
+  }
+
+  /**
+   * Координаты конца элемента
+   * @property e
+   * @type Point
+   */
+  get e() {
+    return super.e;
+  }
+  set e(v) {
+    super.e = v;
+    this._attr._rays.e.point = this.e;
+  }
+
   cnn_point(node, point) {
 
     const res = this.rays[node];
@@ -13003,10 +13032,6 @@ class ProfileSegment extends ProfileItem {
     this.parent.segms.forEach((segm) => check_distance(segm, true));
 
     return res;
-  }
-
-  do_bind() {
-
   }
 
   cnn_side(profile, interior, rays) {
@@ -13049,15 +13074,74 @@ class ProfileSegment extends ProfileItem {
   }
 
   nearest() {
-
+    return this.parent;
   }
 
-  move_points() {
+  move_points(delta) {
+    const {b, e, rays, parent: {generatrix}} = this;
 
+    for(const segm of this.generatrix.segments) {
+      if (segm.selected){
+        const free_point = generatrix.getNearestPoint(segm.point.add(delta));
+        if(segm.point === b){
+          if(b.is_nearest(generatrix.firstSegment.point)) {
+            continue;
+          }
+          rays.b.point = free_point;
+        }
+        else if(segm.point === e){
+          if(e.is_nearest(generatrix.lastSegment.point)) {
+            continue;
+          }
+          rays.e.point = free_point;
+        }
+
+        // собственно, сдвиг узлов
+        segm.point = generatrix.getNearestPoint(segm.point.add(delta));
+      }
+    }
   }
 
-  observer() {
+  do_bind() {
+    const {b, e, rays, parent: {generatrix}} = this;
+    if(generatrix.is_linear()) {
+      if(!generatrix.is_nearest(b, 0)) {
+        let pb = generatrix.getNearestPoint(b);
+        if(pb.is_nearest(generatrix.firstSegment.point, this.widht) && !pb.equals(generatrix.firstSegment.point)) {
+          pb = generatrix.firstSegment.point;
+        }
+        if(!b.is_nearest(pb, 0)) {
+          this.b = pb;
+        }
+        if(pb !== generatrix.firstSegment.point) {
+          const cp = this.cnn_point('b');
+          if(cp.profile instanceof ProfileSegment && cp.profile_point) {
+            cp.profile[cp.profile_point] = pb;
+          }
+        }
+      }
+      if(!generatrix.is_nearest(e, 0)) {
+        let pe = generatrix.getNearestPoint(e);
+        if(pe.is_nearest(generatrix.lastSegment.point, this.widht) && !pe.equals(generatrix.lastSegment.point)) {
+          pe = generatrix.lastSegment.point;
+        }
+        if(!e.is_nearest(pe, 0)) {
+          this.e = pe;
+        }
+        if(pe !== generatrix.lastSegment.point) {
+          const cp = this.cnn_point('e');
+          if(cp.profile instanceof ProfileSegment && cp.profile_point) {
+            cp.profile[cp.profile_point] = pe;
+          }
+        }
+      }
+    }
+  }
 
+  observer(p) {
+    if(p === this.parent) {
+      this.do_bind();
+    }
   }
 
   // redraw() {
@@ -13332,14 +13416,20 @@ class Profile extends ProfileItem {
    * Добавляет сегменты
    * @param [count] {Number} - на сколько сегментов резать
    */
-  split_at(count) {
+  split_by(count) {
     const {generatrix, segms, inset, clr} = this;
-    const len = generatrix.length / 2;
-    const first = generatrix.clone({insert: false});
-    const loc = first.getLocationAt(len);
-    const second = first.splitAt(loc);
+    if(!count || typeof count !== 'number' || count < 2) {
+      count = 2;
+    }
+    const len = generatrix.length / count;
+    let first = generatrix.clone({insert: false});
+    for(let i=1; i<count; i++) {
+      const loc = first.getLocationAt(len);
+      const second = first.splitAt(loc);
+      new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
+      first = second;
+    }
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
-    new ProfileSegment({generatrix: second, proto: {inset, clr}, parent: this});
   }
 
   /**
@@ -13979,6 +14069,10 @@ class ProfileVirtual extends Profile {
     return this.nearest().inset;
   }
   set inset(v) {}
+
+  get nom() {
+    return this.nearest().nom;
+  }
 
   // цвет внешнего элемента
   get clr() {
@@ -16914,7 +17008,7 @@ class Scheme extends paper.Project {
           // двигаем и накапливаем связанные
           other.push.apply(other, parent.move_points(delta, all_points));
         }
-        else if(!parent.nearest || !parent.nearest()) {
+        else if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
           if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
@@ -20467,12 +20561,32 @@ $p.spec_building = new SpecBuilding($p);
     let row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
     if(clr_in === clr_out || row_ins_spec.clr === clrs.predefined('БезЦвета')) {
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec);
+      const prefix = clr_in.area_src;
+      if(prefix) {
+        const areas = [nom._extra(prefix), nom._extra(prefix + '_in'), nom._extra(prefix + '_out')]
+      }
     }
     else {
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_in, ox.clr, elm, spec);
+      let prefix = clr_in.area_src;
+      if(prefix) {
+        row_spec.width = nom._extra(prefix + '_in');
+        if(row_spec.width) {
+          row_spec.qty = row_ins_spec.quantity;
+          row_spec.len = (elm.length/1000).round(3);
+        }
+      }
 
       row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_out, ox.clr, elm, spec);
+      prefix = clr_out.area_src;
+      if(prefix) {
+        row_spec.width = nom._extra(prefix + '_out');
+        if(row_spec.width) {
+          row_spec.qty = row_ins_spec.quantity;
+          row_spec.len = (elm.length/1000).round(3)
+        }
+      }
     }
   };
 
