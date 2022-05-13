@@ -27,6 +27,32 @@ class ProfileSegment extends ProfileItem {
     return this.parent.d2;
   }
 
+  /**
+   * ### Координаты начала элемента
+   * @property b
+   * @type paper.Point
+   */
+  get b() {
+    return super.b;
+  }
+  set b(v) {
+    super.b = v;
+    this._attr._rays.b.point = this.b;
+  }
+
+  /**
+   * Координаты конца элемента
+   * @property e
+   * @type Point
+   */
+  get e() {
+    return super.e;
+  }
+  set e(v) {
+    super.e = v;
+    this._attr._rays.e.point = this.e;
+  }
+
   cnn_point(node, point) {
 
     const res = this.rays[node];
@@ -66,10 +92,6 @@ class ProfileSegment extends ProfileItem {
     this.parent.segms.forEach((segm) => check_distance(segm, true));
 
     return res;
-  }
-
-  do_bind() {
-
   }
 
   cnn_side(profile, interior, rays) {
@@ -112,15 +134,74 @@ class ProfileSegment extends ProfileItem {
   }
 
   nearest() {
-
+    return this.parent;
   }
 
-  move_points() {
+  move_points(delta) {
+    const {b, e, rays, parent: {generatrix}} = this;
 
+    for(const segm of this.generatrix.segments) {
+      if (segm.selected){
+        const free_point = generatrix.getNearestPoint(segm.point.add(delta));
+        if(segm.point === b){
+          if(b.is_nearest(generatrix.firstSegment.point)) {
+            continue;
+          }
+          rays.b.point = free_point;
+        }
+        else if(segm.point === e){
+          if(e.is_nearest(generatrix.lastSegment.point)) {
+            continue;
+          }
+          rays.e.point = free_point;
+        }
+
+        // собственно, сдвиг узлов
+        segm.point = generatrix.getNearestPoint(segm.point.add(delta));
+      }
+    }
   }
 
-  observer() {
+  do_bind() {
+    const {b, e, rays, parent: {generatrix}} = this;
+    if(generatrix.is_linear()) {
+      if(!generatrix.is_nearest(b, 0)) {
+        let pb = generatrix.getNearestPoint(b);
+        if(pb.is_nearest(generatrix.firstSegment.point, this.widht) && !pb.equals(generatrix.firstSegment.point)) {
+          pb = generatrix.firstSegment.point;
+        }
+        if(!b.is_nearest(pb, 0)) {
+          this.b = pb;
+        }
+        if(pb !== generatrix.firstSegment.point) {
+          const cp = this.cnn_point('b');
+          if(cp.profile instanceof ProfileSegment && cp.profile_point) {
+            cp.profile[cp.profile_point] = pb;
+          }
+        }
+      }
+      if(!generatrix.is_nearest(e, 0)) {
+        let pe = generatrix.getNearestPoint(e);
+        if(pe.is_nearest(generatrix.lastSegment.point, this.widht) && !pe.equals(generatrix.lastSegment.point)) {
+          pe = generatrix.lastSegment.point;
+        }
+        if(!e.is_nearest(pe, 0)) {
+          this.e = pe;
+        }
+        if(pe !== generatrix.lastSegment.point) {
+          const cp = this.cnn_point('e');
+          if(cp.profile instanceof ProfileSegment && cp.profile_point) {
+            cp.profile[cp.profile_point] = pe;
+          }
+        }
+      }
+    }
+  }
 
+  observer(p) {
+    if(p === this.parent) {
+      this.do_bind();
+    }
   }
 
   // redraw() {

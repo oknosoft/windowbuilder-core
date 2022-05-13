@@ -262,14 +262,20 @@ class Profile extends ProfileItem {
    * Добавляет сегменты
    * @param [count] {Number} - на сколько сегментов резать
    */
-  split_at(count) {
+  split_by(count) {
     const {generatrix, segms, inset, clr} = this;
-    const len = generatrix.length / 2;
-    const first = generatrix.clone({insert: false});
-    const loc = first.getLocationAt(len);
-    const second = first.splitAt(loc);
+    if(!count || typeof count !== 'number' || count < 2) {
+      count = 2;
+    }
+    const len = generatrix.length / count;
+    let first = generatrix.clone({insert: false});
+    for(let i=1; i<count; i++) {
+      const loc = first.getLocationAt(len);
+      const second = first.splitAt(loc);
+      new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
+      first = second;
+    }
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this});
-    new ProfileSegment({generatrix: second, proto: {inset, clr}, parent: this});
   }
 
   /**

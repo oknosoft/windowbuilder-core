@@ -1048,7 +1048,7 @@ class Scheme extends paper.Project {
           // двигаем и накапливаем связанные
           other.push.apply(other, parent.move_points(delta, all_points));
         }
-        else if(!parent.nearest || !parent.nearest()) {
+        else if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
           if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
