@@ -20657,6 +20657,20 @@ $p.spec_building = new SpecBuilding($p);
       }
       row_spec.s = (row_spec.len * row_spec.width).round(4);
     }
+    else if(inset.insert_type == enm.inserts_types.product) {
+      const {project} = elm;
+      const {width, height} = project.bounds;
+      row_spec.len = width / 1000;
+      row_spec.width = height / 1000;
+      row_spec.s = (project.form_area - sz) * coefficient;
+    }
+    else if(inset.insert_type == enm.inserts_types.layer) {
+      const {layer} = elm;
+      const {width, height} = layer.bounds;
+      row_spec.len = width / 1000;
+      row_spec.width = height / 1000;
+      row_spec.s = (layer.form_area - sz) * coefficient;
+    }
     else {
       row_spec.len = (_row.y2 - _row.y1 - sz) * coefficient;
       row_spec.width = (_row.x2 - _row.x1 - sz) * coefficient;
