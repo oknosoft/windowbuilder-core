@@ -18,12 +18,32 @@
     let row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
     if(clr_in === clr_out || row_ins_spec.clr === clrs.predefined('БезЦвета')) {
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec);
+      const prefix = clr_in.area_src;
+      if(prefix) {
+        const areas = [nom._extra(prefix), nom._extra(prefix + '_in'), nom._extra(prefix + '_out')]
+      }
     }
     else {
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_in, ox.clr, elm, spec);
+      let prefix = clr_in.area_src;
+      if(prefix) {
+        row_spec.width = nom._extra(prefix + '_in');
+        if(row_spec.width) {
+          row_spec.qty = row_ins_spec.quantity;
+          row_spec.len = (elm.length/1000).round(3);
+        }
+      }
 
       row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_out, ox.clr, elm, spec);
+      prefix = clr_out.area_src;
+      if(prefix) {
+        row_spec.width = nom._extra(prefix + '_out');
+        if(row_spec.width) {
+          row_spec.qty = row_ins_spec.quantity;
+          row_spec.len = (elm.length/1000).round(3)
+        }
+      }
     }
   };
 
