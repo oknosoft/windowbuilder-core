@@ -56,6 +56,10 @@ class ProfileVirtual extends Profile {
   }
   set inset(v) {}
 
+  get nom() {
+    return this.nearest().nom;
+  }
+
   // цвет внешнего элемента
   get clr() {
     return this.nearest().clr;
