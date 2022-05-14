@@ -5577,6 +5577,7 @@ class CatInsert_bindManager extends CatManager {
         break;
 
       case elm_types.glass:
+        // только для составных пакетов
         if(scheme) {
           for (const elm of scheme.glasses) {
             ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
@@ -5589,6 +5590,7 @@ class CatInsert_bindManager extends CatManager {
         break;
 
       case elm_types.sandwich:
+        // в данном случае, sandwich - любое заполнение, не только непрозрачное
         if(scheme) {
           for (const elm of scheme.glasses) {
             inset.calculate_spec({elm, layer: elm.layer, ox, spec});

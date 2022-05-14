@@ -779,11 +779,11 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу
-   * @param p {string}
+   * @param node {string}
    * @return {number}
    */
-  angle_at(p) {
-    const {profile, point} = this.cnn_point(p);
+  angle_at(node) {
+    const {profile, point} = this.rays[node] || this.cnn_point(node);
     if(!profile || !point) {
       return 90;
     }

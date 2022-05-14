@@ -90,6 +90,9 @@ class ProfileSegment extends ProfileItem {
 
     // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile && res.profile.children.length){
+      if(!res.cnn) {
+        res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
+      }
       return res;
     }
 
@@ -104,10 +107,12 @@ class ProfileSegment extends ProfileItem {
       if(generatrix.firstSegment.point.is_nearest(res.point)) {
         res.profile = rays.b.profile;
         res.profile_point = rays.b.profile_point;
+        res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
       }
       else if(generatrix.lastSegment.point.is_nearest(res.point)) {
         res.profile = rays.e.profile;
         res.profile_point = rays.e.profile_point;
+        res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
       }
     }
 
@@ -170,16 +175,22 @@ class ProfileSegment extends ProfileItem {
             continue;
           }
           rays.b.point = free_point;
+          if(rays.b.profile_point && rays.b.profile) {
+            rays.b.profile[rays.b.profile_point] = free_point;
+          }
         }
         else if(segm.point === e){
           if(e.is_nearest(generatrix.lastSegment.point)) {
             continue;
           }
           rays.e.point = free_point;
+          if(rays.e.profile_point && rays.e.profile) {
+            rays.e.profile[rays.e.profile_point] = free_point;
+          }
         }
 
         // собственно, сдвиг узлов
-        segm.point = generatrix.getNearestPoint(segm.point.add(delta));
+        segm.point = free_point;
       }
     }
   }
@@ -226,9 +237,29 @@ class ProfileSegment extends ProfileItem {
     }
   }
 
-  // redraw() {
-  //
-  // }
+  remove(force) {
+    if(force !== true) {
+      const {parent: {segms, e}, rays} = this;
+      // если сегментов 2 - просто чистим
+      if(segms.length <= 2) {
+        for(const segm of segms) {
+          segm.remove(true);
+        }
+        return;
+      }
+      // последний сегмент удаляем иначе
+      if(this.e.is_nearest(e)) {
+        const {profile} = rays.b;
+        const pe = profile.cnn_point('e');
+        pe.profile = rays.e.profile;
+        pe.profile_point = rays.e.profile_point;
+        pe.cnn = rays.e.cnn;
+        profile.e = rays.e.point;
+      }
+    }
+    this.selected = false;
+    super.remove();
+  }
 
 }
 
