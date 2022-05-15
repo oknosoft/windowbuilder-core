@@ -956,15 +956,20 @@ class ProductsBuilding {
     let ok = true;
 
     // режем параметры по элементу сначала строим Map ИЛИ
-    const or = new Map();
-    params.find_rows({elm: row_spec.elm}, (row) => {
-      if(!or.has(row.area)) {
-        or.set(row.area, []);
+    let {_or} = row_spec;
+    if(!_or) {
+      _or = new Map();
+      const relm = row_spec.elm;
+      for(const {_row} of params._obj.filter((row) => row.elm === relm)) {
+        if(!_or.has(_row.area)) {
+          _or.set(_row.area, []);
+        }
+        _or.get(_row.area).push(_row);
       }
-      or.get(row.area).push(row);
-    });
+      row_spec._or = _or;
+    }
 
-    for(const grp of or.values()) {
+    for(const grp of _or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
 

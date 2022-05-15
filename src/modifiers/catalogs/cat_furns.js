@@ -14,7 +14,6 @@
 (({md}) => {
   const {selection_params, specification} = md.get('cat.furns').tabular_sections;
   // индексы
-  selection_params.index = 'elm';
   specification.index = 'elm';
   // устаревшее поле nom_set для совместимости
   const {fields} = specification;

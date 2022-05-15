@@ -4,7 +4,6 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
   constructor(owner, class_name) {
     super(owner, class_name);
     this._nomcache = {};
-    this.metadata('selection_params').index = 'elm';
   }
 
   sort_cnns(elm1, elm2) {
