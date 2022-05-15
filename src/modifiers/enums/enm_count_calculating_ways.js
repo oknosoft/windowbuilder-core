@@ -11,40 +11,32 @@
   const {coloring, len_prm, area} = enm.count_calculating_ways;
   const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
-  // {inset, elm, row_spec, row_ins_spec, origin, spec, ox, len_angl}
+  const is_side = (side) => ['_in', '_out'].includes(side);
 
-  coloring.calculate = function ({inset, elm, row_ins_spec, origin, spec, ox, len_angl}) {
-    const {clr: {clr_in, clr_out}, nom} = elm;
-    let row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
-    if(clr_in === clr_out || row_ins_spec.clr === clrs.predefined('БезЦвета')) {
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec);
-      const prefix = clr_in.area_src;
-      if(prefix) {
-        const areas = [nom._extra(prefix), nom._extra(prefix + '_in'), nom._extra(prefix + '_out')]
+  coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {
+    let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula} = row_ins_spec;
+    if(!_clr) {
+      _clr = elm.clr;
+    }
+    const prefix = _clr.area_src.valueOf();
+    if(prefix) {
+      const {nom, _row} = elm;
+      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
+
+      if(is_side(_clr_side)) {
+        row_spec.width = nom._extra(prefix + _clr_side);
+      }
+      else {
+        const areas = [nom._extra(prefix) || 0, nom._extra(prefix + '_in') || 0, nom._extra(prefix + '_out') || 0];
+        row_spec.width = areas[0] || (areas[1] + areas[2]);
+      }
+      if(row_spec.width) {
+        row_spec.qty = quantity;
+        row_spec.len = (elm.length / 1000).round(3);
+        row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);
       }
     }
-    else {
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_in, ox.clr, elm, spec);
-      let prefix = clr_in.area_src;
-      if(prefix) {
-        row_spec.width = nom._extra(prefix + '_in');
-        if(row_spec.width) {
-          row_spec.qty = row_ins_spec.quantity;
-          row_spec.len = (elm.length/1000).round(3);
-        }
-      }
-
-      row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_out, ox.clr, elm, spec);
-      prefix = clr_out.area_src;
-      if(prefix) {
-        row_spec.width = nom._extra(prefix + '_out');
-        if(row_spec.width) {
-          row_spec.qty = row_ins_spec.quantity;
-          row_spec.len = (elm.length/1000).round(3)
-        }
-      }
-    }
+    return row_spec;
   };
 
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {

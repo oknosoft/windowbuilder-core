@@ -121,29 +121,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('elm_rectangular');
 
-  // нужна ли покраска-ламинация
-  ((name) => {
-    const prm = properties.predefined(name);
-    if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function ({elm}) {
-          const {layer: {sys}, clr} = elm;
-          if(clr === clrs.predefined('БезЦвета')) {
-            return false;
-          }
-          if(sys.colors.count()) {
-            return !sys.colors.find({clr});
-          }
-          return clr !== clrs.predefined('Белый');
-        };
-      }
-    }
-  })('need_coloring');
-
   // вхождение элемента в габариты
   ((name) => {
     const prm = properties.predefined(name);
@@ -211,5 +188,53 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('branch');
+
+  // способ придания цвета
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
+        prm.calculated._data._formula = function (obj) {};
+      }
+      // проверка условия
+      prm.check_condition = function ({elm, eclr, row_spec, prm_row}) {
+        const ct = prm_row.comparison_type || comparison_types.eq;
+        const {utils, enm: {comparison_types}, cat} = $p;
+
+        // если не задан eclr, используем цвет элемента
+        const no_eclr = !eclr;
+        if(no_eclr) {
+          eclr = elm.clr;
+        }
+
+        const value = this.extract_value(prm_row);
+        if(eclr.is_composite()) {
+          const {clr_in, clr_out} = eclr;
+          return utils.check_compare(clr_in.area_src, value, ct, comparison_types) ||
+              utils.check_compare(clr_out.area_src, value, ct, comparison_types);
+        }
+
+        // если в "системе" задан список цветов, не требующих покраски, смотрим на него, иначе - не белый
+        if(eclr.area_src.empty()) {
+          return false;
+        }
+        if(no_eclr) {
+          const {colors} = elm.layer.sys;
+          if(colors.count()) {
+            if(colors.find({clr: eclr})) {
+              return false;
+            }
+          }
+          else if(eclr === cat.clrs.predefined('Белый')) {
+            return false;
+          }
+        }
+
+        return utils.check_compare(eclr.area_src, value, ct, comparison_types);
+      }
+    }
+  })('coloring_kind');
 
 });

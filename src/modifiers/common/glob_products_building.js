@@ -946,12 +946,12 @@ class ProductsBuilding {
    * Проверяет соответствие параметров отбора параметрам изделия
    * @param params {TabularSection} - табчасть параметров вставки или соединения
    * @param row_spec {TabularSectionRow}
+   * @param [count_calc_method] {EnumObj.<count_calculating_ways>} - способ расчёта количества
    * @param elm {BuilderElement}
    * @param [cnstr] {Number} - номер конструкции или элемента
-   * @param [count_calc_method] {EnumObj.<count_calculating_ways>} - способ расчёта количества
    * @return {boolean}
    */
-  static check_params({params, row_spec, elm, elm2, cnstr, origin, ox, count_calc_method}) {
+  static check_params({params, row_spec, count_calc_method, ...other}) {
 
     let ok = true;
 
@@ -983,7 +983,7 @@ class ProductsBuilding {
         }
 
         // выполнение условия рассчитывает объект CchProperties
-        grp_ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+        grp_ok = prm_row.param.check_condition({row_spec, prm_row, ...other});
         // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
         if (!grp_ok) {
           break;

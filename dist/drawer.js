@@ -20147,25 +20147,30 @@ class ProductsBuilding {
    * Проверяет соответствие параметров отбора параметрам изделия
    * @param params {TabularSection} - табчасть параметров вставки или соединения
    * @param row_spec {TabularSectionRow}
+   * @param [count_calc_method] {EnumObj.<count_calculating_ways>} - способ расчёта количества
    * @param elm {BuilderElement}
    * @param [cnstr] {Number} - номер конструкции или элемента
-   * @param [count_calc_method] {EnumObj.<count_calculating_ways>} - способ расчёта количества
    * @return {boolean}
    */
-  static check_params({params, row_spec, elm, elm2, cnstr, origin, ox, count_calc_method}) {
+  static check_params({params, row_spec, count_calc_method, ...other}) {
 
     let ok = true;
 
     // режем параметры по элементу сначала строим Map ИЛИ
-    const or = new Map();
-    params.find_rows({elm: row_spec.elm}, (row) => {
-      if(!or.has(row.area)) {
-        or.set(row.area, []);
+    let {_or} = row_spec;
+    if(!_or) {
+      _or = new Map();
+      const relm = row_spec.elm;
+      for(const {_row} of params._obj.filter((row) => row.elm === relm)) {
+        if(!_or.has(_row.area)) {
+          _or.set(_row.area, []);
+        }
+        _or.get(_row.area).push(_row);
       }
-      or.get(row.area).push(row);
-    });
+      row_spec._or = _or;
+    }
 
-    for(const grp of or.values()) {
+    for(const grp of _or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
 
@@ -20179,7 +20184,7 @@ class ProductsBuilding {
         }
 
         // выполнение условия рассчитывает объект CchProperties
-        grp_ok = prm_row.param.check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox});
+        grp_ok = prm_row.param.check_condition({row_spec, prm_row, ...other});
         // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
         if (!grp_ok) {
           break;
@@ -20630,40 +20635,32 @@ $p.spec_building = new SpecBuilding($p);
   const {coloring, len_prm, area} = enm.count_calculating_ways;
   const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
-  // {inset, elm, row_spec, row_ins_spec, origin, spec, ox, len_angl}
+  const is_side = (side) => ['_in', '_out'].includes(side);
 
-  coloring.calculate = function ({inset, elm, row_ins_spec, origin, spec, ox, len_angl}) {
-    const {clr: {clr_in, clr_out}, nom} = elm;
-    let row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
-    if(clr_in === clr_out || row_ins_spec.clr === clrs.predefined('БезЦвета')) {
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec);
-      const prefix = clr_in.area_src;
-      if(prefix) {
-        const areas = [nom._extra(prefix), nom._extra(prefix + '_in'), nom._extra(prefix + '_out')]
+  coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {
+    let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula} = row_ins_spec;
+    if(!_clr) {
+      _clr = elm.clr;
+    }
+    const prefix = _clr.area_src.valueOf();
+    if(prefix) {
+      const {nom, _row} = elm;
+      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
+
+      if(is_side(_clr_side)) {
+        row_spec.width = nom._extra(prefix + _clr_side);
+      }
+      else {
+        const areas = [nom._extra(prefix) || 0, nom._extra(prefix + '_in') || 0, nom._extra(prefix + '_out') || 0];
+        row_spec.width = areas[0] || (areas[1] + areas[2]);
+      }
+      if(row_spec.width) {
+        row_spec.qty = quantity;
+        row_spec.len = (elm.length / 1000).round(3);
+        row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);
       }
     }
-    else {
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_in, ox.clr, elm, spec);
-      let prefix = clr_in.area_src;
-      if(prefix) {
-        row_spec.width = nom._extra(prefix + '_in');
-        if(row_spec.width) {
-          row_spec.qty = row_ins_spec.quantity;
-          row_spec.len = (elm.length/1000).round(3);
-        }
-      }
-
-      row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, clr_out, ox.clr, elm, spec);
-      prefix = clr_out.area_src;
-      if(prefix) {
-        row_spec.width = nom._extra(prefix + '_out');
-        if(row_spec.width) {
-          row_spec.qty = row_ins_spec.quantity;
-          row_spec.len = (elm.length/1000).round(3)
-        }
-      }
-    }
+    return row_spec;
   };
 
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
@@ -21815,7 +21812,6 @@ $p.cat.contracts.__define({
 (({md}) => {
   const {selection_params, specification} = md.get('cat.furns').tabular_sections;
   // индексы
-  selection_params.index = 'elm';
   specification.index = 'elm';
   // устаревшее поле nom_set для совместимости
   const {fields} = specification;
@@ -22657,7 +22653,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
   });
 
-  cat.inserts.metadata('selection_params').index = 'elm';
   cat.inserts.metadata('specification').index = 'is_main_elm';
 
   // переопределяем прототип
@@ -23057,7 +23052,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
-    filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
+    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {
 
       const res = [];
 
@@ -23066,7 +23061,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {Профиль}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
+      const {inserts_types: {profile, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
@@ -23133,7 +23128,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       this.specification.forEach((row) => {
 
         // Проверяем ограничения строки вставки
-        if(!this.check_restrictions(row, elm, insert_type == Профиль, len_angl)){
+        if(!this.check_restrictions(row, elm, insert_type === profile, len_angl)){
           return;
         }
 
@@ -23156,11 +23151,60 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
         // Добавляем или разузловываем дальше
         if(row.nom instanceof CatInserts){
-          row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
-            const fakerow = fake_row(subrow, row);
-            fakerow._origin = row.nom;
-            res.push(fakerow);
-          });
+          if(row.nom.insert_type === coloring) {
+            // добавляем одну или две строки
+            if(!eclr) {
+              eclr = elm.clr;
+            }
+            const selector = {
+              params: this.selection_params,
+              ox,
+              elm,
+              elm2,
+              row_spec: row,
+              cnstr: len_angl && len_angl.cnstr,
+              origin: len_angl && len_angl.origin,
+              eclr,
+            };
+            if(eclr.is_composite()) {
+              const {clr_in, clr_out} = eclr;
+              selector.eclr = clr_in;
+              if(check_params(selector)) {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                  const fakerow = fake_row(subrow, row);
+                  fakerow._origin = row.nom;
+                  fakerow._clr_side = '_in';
+                  fakerow._clr = clr_in;
+                  res.push(fakerow);
+                });
+              }
+              selector.eclr = clr_out;
+              if(check_params(selector)) {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                  const fakerow = fake_row(subrow, row);
+                  fakerow._origin = row.nom;
+                  fakerow._clr_side = '_out';
+                  fakerow._clr = clr_out;
+                  res.push(fakerow);
+                });
+              }
+            }
+            else {
+              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                const fakerow = fake_row(subrow, row);
+                fakerow._origin = row.nom;
+                fakerow._clr = eclr;
+                res.push(fakerow);
+              });
+            }
+          }
+          else {
+            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+              const fakerow = fake_row(subrow, row);
+              fakerow._origin = row.nom;
+              res.push(fakerow);
+            });
+          }
         }
         else{
           res.push(row);
@@ -23169,7 +23213,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       });
 
       // контроль массы, размеров основной вставки
-      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == profile, len_angl)){
         elm.err_spec_row(job_prm.nom.critical_error, this);
       }
 
@@ -23214,16 +23258,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
-        let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
+        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
         if(!coefficient) {
           coefficient = 0.001;
         }
 
         let row_spec;
-
-        if(count_calc_method == coloring) {
-          return count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin, spec, ox, len_angl});
-        }
 
         // добавляем строку спецификации, если профиль или не про шагам
         if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
@@ -23233,9 +23273,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
 
-        if(count_calc_method == formulas && !formula.empty()){
+        if(count_calc_method === formulas && !formula.empty()){
           // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
           row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+        }
+        else if(count_calc_method === coloring) {
+          count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
         }
         // для вставок в профиль способ расчета количества не учитывается
         else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
@@ -23253,10 +23296,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
         else{
 
-          if(count_calc_method == area) {
+          if(count_calc_method === area) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
           }
-          else if(count_calc_method == perim){
+          else if(count_calc_method === perim){
             const perimeter = elm.perimeter ? elm.perimeter : (
               this.insert_type == enm.inserts_types.МоскитнаяСетка ? elm.layer.perimeter_inner(sz) : elm.layer.perimeter
             )
@@ -23296,13 +23339,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             });
 
           }
-          else if(count_calc_method == steps){
+          else if(count_calc_method === steps){
 
             const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
               elm.layer.bounds_inner(sz) : {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
@@ -23354,15 +23397,15 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             }
           }
-          else if(count_calc_method == len_prm) {
+          else if(count_calc_method === len_prm) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
-          else if(count_calc_method == dimensions){
+          else if(count_calc_method === dimensions){
             let len = 0, width = 0;
             this.selection_params.find_rows({elm: row_ins_spec.elm}, ({param}) => {
               if(param.type.digits) {
@@ -23383,7 +23426,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             row_spec.width = (width - sz) * coefficient;
             row_spec.s = (row_spec.len * row_spec.width).round(3);
           }
-          else if(count_calc_method == fillings){
+          else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
               row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
@@ -23435,7 +23478,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
-            row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
+            angle_calc_method, angle_calc_method, 0, 0, totqty0);
         }
       });
 
@@ -23905,29 +23948,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('elm_rectangular');
 
-  // нужна ли покраска-ламинация
-  ((name) => {
-    const prm = properties.predefined(name);
-    if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function ({elm}) {
-          const {layer: {sys}, clr} = elm;
-          if(clr === clrs.predefined('БезЦвета')) {
-            return false;
-          }
-          if(sys.colors.count()) {
-            return !sys.colors.find({clr});
-          }
-          return clr !== clrs.predefined('Белый');
-        };
-      }
-    }
-  })('need_coloring');
-
   // вхождение элемента в габариты
   ((name) => {
     const prm = properties.predefined(name);
@@ -23995,6 +24015,54 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('branch');
+
+  // способ придания цвета
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // fake-формула
+      if(prm.calculated.empty()) {
+        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
+        prm.calculated._data._formula = function (obj) {};
+      }
+      // проверка условия
+      prm.check_condition = function ({elm, eclr, row_spec, prm_row}) {
+        const ct = prm_row.comparison_type || comparison_types.eq;
+        const {utils, enm: {comparison_types}, cat} = $p;
+
+        // если не задан eclr, используем цвет элемента
+        const no_eclr = !eclr;
+        if(no_eclr) {
+          eclr = elm.clr;
+        }
+
+        const value = this.extract_value(prm_row);
+        if(eclr.is_composite()) {
+          const {clr_in, clr_out} = eclr;
+          return utils.check_compare(clr_in.area_src, value, ct, comparison_types) ||
+              utils.check_compare(clr_out.area_src, value, ct, comparison_types);
+        }
+
+        // если в "системе" задан список цветов, не требующих покраски, смотрим на него, иначе - не белый
+        if(eclr.area_src.empty()) {
+          return false;
+        }
+        if(no_eclr) {
+          const {colors} = elm.layer.sys;
+          if(colors.count()) {
+            if(colors.find({clr: eclr})) {
+              return false;
+            }
+          }
+          else if(eclr === cat.clrs.predefined('Белый')) {
+            return false;
+          }
+        }
+
+        return utils.check_compare(eclr.area_src, value, ct, comparison_types);
+      }
+    }
+  })('coloring_kind');
 
 });
 
