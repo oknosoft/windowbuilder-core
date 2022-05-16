@@ -1610,114 +1610,115 @@ class BuilderElement extends paper.Group {
       inset = this.inset;
     }
 
-    // свойства, нужные вставке текущего элемента
-    const inset_params = inset.used_params();
-
     // получаем список свойств
     const props = [];
-    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
-    for(const {param, elm} of product_params) {
-      if (!inset_params.includes(param)) {
-        continue;
-      }
-      // если переопределение явно указано в системе
-      if(elm) {
-        props.push(param);
-      }
-      // если переопределение указано в самом параметре
-      else if([1, 2].includes(param.inheritance)) {
-        // дополнительно учтём тип и положение элемента
-        const {elm_type, pos, orientation} = this;
-        if(!param.applying.count()) {
+    if(this.isInserted()) {
+      // свойства, нужные вставке текущего элемента
+      const inset_params = inset.used_params();
+      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      for(const {param, elm} of product_params) {
+        if (!inset_params.includes(param)) {
+          continue;
+        }
+        // если переопределение явно указано в системе
+        if(elm) {
           props.push(param);
         }
-        else {
-          for(const arow of param.applying) {
-            if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
-              (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
-              props.push(param);
-              break;
+        // если переопределение указано в самом параметре
+        else if([1, 2].includes(param.inheritance)) {
+          // дополнительно учтём тип и положение элемента
+          const {elm_type, pos, orientation} = this;
+          if(!param.applying.count()) {
+            props.push(param);
+          }
+          else {
+            for(const arow of param.applying) {
+              if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+                (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
+                props.push(param);
+                break;
+              }
             }
           }
         }
       }
-    }
 
-    if(!rnum) {
-      // удаляем возможные паразитные свойства
-      _attr.props && _attr.props.forEach((prop) => {
-        if(!props.includes(prop)) {
-          delete this[concat ? concat.ref + prop.ref : prop.ref];
-        }
-      });
-      _attr.props = props;
-      // создаём свойства
-      props.forEach((prop) => {
-        const key = concat ? concat.ref + prop.ref : prop.ref;
-        if(!this.hasOwnProperty(key)) {
-          Object.defineProperty(this, key, {
-            get() {
-              let prow;
-              params.find_rows({
-                param: prop,
-                cnstr: {in: [0, -_row.row]},
-                inset: concat || utils.blank.guid,
-                region: 0,
-              }, (row) => {
-                if(!prow || row.cnstr) {
-                  prow = row;
-                }
-              });
+      if(!rnum) {
+        // удаляем возможные паразитные свойства
+        _attr.props && _attr.props.forEach((prop) => {
+          if(!props.includes(prop)) {
+            delete this[concat ? concat.ref + prop.ref : prop.ref];
+          }
+        });
+        _attr.props = props;
+        // создаём свойства
+        props.forEach((prop) => {
+          const key = concat ? concat.ref + prop.ref : prop.ref;
+          if(!this.hasOwnProperty(key)) {
+            Object.defineProperty(this, key, {
+              get() {
+                let prow;
+                params.find_rows({
+                  param: prop,
+                  cnstr: {in: [0, -_row.row]},
+                  inset: concat || utils.blank.guid,
+                  region: 0,
+                }, (row) => {
+                  if(!prow || row.cnstr) {
+                    prow = row;
+                  }
+                });
 
-              if(prow) {
-                return prow.value;
-              }
-              const type = prop.type.types[0];
-              if(type.includes('.')) {
-                const mgr = md.mgr_by_class_name(type);
-                if(mgr) {
-                  return mgr.get();
+                if(prow) {
+                  return prow.value;
                 }
-              }
-            },
-            set(v) {
-              let prow, prow0;
-              params.find_rows({
-                param: prop,
-                cnstr: {in: [0, -_row.row]},
-                inset: concat || utils.blank.guid,
-                region: 0,
-              }, (row) => {
-                if(row.cnstr) {
-                  prow = row;
+                const type = prop.type.types[0];
+                if(type.includes('.')) {
+                  const mgr = md.mgr_by_class_name(type);
+                  if(mgr) {
+                    return mgr.get();
+                  }
+                }
+              },
+              set(v) {
+                let prow, prow0;
+                params.find_rows({
+                  param: prop,
+                  cnstr: {in: [0, -_row.row]},
+                  inset: concat || utils.blank.guid,
+                  region: 0,
+                }, (row) => {
+                  if(row.cnstr) {
+                    prow = row;
+                  }
+                  else {
+                    prow0 = row;
+                  }
+                });
+                // если устанавливаемое значение совпадает со значением изделия - удаляем
+                if(prow0 && prow0.value == v) {
+                  prow && prow._owner.del(prow);
+                }
+                else if(prow) {
+                  prow.value = v;
                 }
                 else {
-                  prow0 = row;
+                  params.add({
+                    param: prop,
+                    cnstr: -_row.row,
+                    region: 0,
+                    inset: concat || utils.blank.guid,
+                    value: v,
+                  });
                 }
-              });
-              // если устанавливаемое значение совпадает со значением изделия - удаляем
-              if(prow0 && prow0.value == v) {
-                prow && prow._owner.del(prow);
-              }
-              else if(prow) {
-                prow.value = v;
-              }
-              else {
-                params.add({
-                  param: prop,
-                  cnstr: -_row.row,
-                  region: 0,
-                  inset: concat || utils.blank.guid,
-                  value: v,
-                });
-              }
-              this.refresh_inset_depends(prop, true);
-              return true;
-            },
-            configurable: true,
-          });
-        }
-      });
+                this.refresh_inset_depends(prop, true);
+                return true;
+              },
+              configurable: true,
+            });
+          }
+        });
+      }
     }
 
     return props;
