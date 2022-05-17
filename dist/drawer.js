@@ -13189,6 +13189,16 @@ class ProfileSegment extends ProfileItem {
     }
   }
 
+  joined_imposts() {
+    const {b, e, parent, generatrix} = this;
+    const tmp = parent.joined_imposts();
+    const filter = ({point}) => {
+      const pt = generatrix.getNearestPoint(point);
+      return !(b.is_nearest(pt) || e.is_nearest(pt));
+    };
+    return {inner: tmp.inner.filter(filter), outer: tmp.outer.filter(filter)};
+  }
+
   remove(force) {
     if(force !== true) {
       const {parent: {segms, e}, rays} = this;
