@@ -5795,7 +5795,7 @@ class ContourVirtual extends Contour {
     return dop.sys ? sys._manager.get(dop.sys) : sys;
   }
   set sys(v) {
-    const {_row, layer: {sys}, _ox: {params}, cnstr} = this;
+    const {_row, layer: {sys}, _ox: {params}, cnstr, project} = this;
     const inset = $p.utils.blank.guid;
     if(!v || v == sys) {
       if(_row.dop.sys) {
@@ -5807,6 +5807,7 @@ class ContourVirtual extends Contour {
       _row.dop = {sys: v.valueOf()};
       this.refill_prm();
     }
+    project.register_change(true);
   }
 
   /**
