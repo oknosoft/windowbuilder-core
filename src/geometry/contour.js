@@ -2648,9 +2648,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(elm?.rnum) {
       return elm[param.valueOf()];
     }
-    const {layer} = this;
-    if(layer) {
-      return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+    if(!cnstr) {
+      const {layer, own_sys} = this;
+      if(layer && !own_sys) {
+        return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+      }
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
     const {_ox} = this;
