@@ -803,11 +803,13 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
-            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            row.cnn = item instanceof Filling ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: item, row};
           }
           if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
-            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            row.cnn = item instanceof Filling ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: nelm, row};
           }
         }
