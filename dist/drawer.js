@@ -1808,11 +1808,13 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
-            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            row.cnn = item instanceof Filling ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: item, row};
           }
           if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
-            row.cnn = cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            row.cnn = item instanceof Filling ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             return {elm: nelm, row};
           }
         }
@@ -20658,7 +20660,8 @@ $p.spec_building = new SpecBuilding($p);
     }
     const prefix = _clr.area_src.valueOf();
     if(prefix) {
-      const {nom, _row} = elm;
+      const {_row} = elm;
+      const nom = elm.inset === inset ? elm.nom : inset.nom(elm);
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
 
       if(is_side(_clr_side)) {
@@ -20673,6 +20676,9 @@ $p.spec_building = new SpecBuilding($p);
         row_spec.len = (elm.length / 1000).round(3);
         row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);
       }
+    }
+    if(!row_spec.width) {
+      row_spec.qty = 0;
     }
     return row_spec;
   };

@@ -20,7 +20,8 @@
     }
     const prefix = _clr.area_src.valueOf();
     if(prefix) {
-      const {nom, _row} = elm;
+      const {_row} = elm;
+      const nom = elm.inset === inset ? elm.nom : inset.nom(elm);
       row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
 
       if(is_side(_clr_side)) {
@@ -35,6 +36,9 @@
         row_spec.len = (elm.length / 1000).round(3);
         row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);
       }
+    }
+    if(!row_spec.width) {
+      row_spec.qty = 0;
     }
     return row_spec;
   };
