@@ -11773,7 +11773,7 @@ class ProfileItem extends GeneratrixElement {
     else {
       if(bcnn.cnn && bcnn.profile == profile) {
         // обрабатываем угол
-        if(bcnn.profile_point && !bcnn.is_x) {
+        if(bcnn.profile_point && bcnn.profile_point !== 't' && !bcnn.is_x) {
           const pp = profile[bcnn.profile_point];
           if(!this.b.is_nearest(pp, 0)) {
             if(bcnn.is_t || bcnn.cnn.cnn_type == ad) {
@@ -11802,7 +11802,7 @@ class ProfileItem extends GeneratrixElement {
 
       if(ecnn.cnn && ecnn.profile == profile) {
         // обрабатываем угол
-        if(ecnn.profile_point && !ecnn.is_x) {
+        if(ecnn.profile_point && bcnn.profile_point !== 't' && !ecnn.is_x) {
           const pp = profile[ecnn.profile_point];
           if(!this.e.is_nearest(pp, 0)) {
             if(ecnn.is_t || ecnn.cnn.cnn_type == ad) {
