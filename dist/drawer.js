@@ -11257,6 +11257,17 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Сегменты текущей связки
+   *
+   * @property segms
+   * @type Array.<ProfileSegment>
+   * @final
+   */
+  get segms() {
+    return this.children.filter((elm) => elm instanceof ProfileSegment);
+  }
+
+  /**
    * ### Примыкания текущего профиля
    *
    * @property adjoinings
@@ -11393,6 +11404,12 @@ class ProfileItem extends GeneratrixElement {
       }
 
       path.setSelection(0);
+      for(const item of this.segms) {
+        item.setSelection(0);
+      }
+      for(const item of this.addls) {
+        item.setSelection(0);
+      }
 
       for (let t = 0; t < inner.length; t += 50) {
         const ip = inner.getPointAt(t);
@@ -13010,6 +13027,38 @@ class ProfileSegment extends ProfileItem {
     this._attr._rays.e.point = this.e;
   }
 
+  // вставка - внешний профиль
+  get inset() {
+    return this.parent.inset;
+  }
+  set inset(v) {}
+
+  set_inset(v) {
+
+  }
+
+  get nom() {
+    return this.parent.nom;
+  }
+
+  get pos() {
+    return this.parent.pos;
+  }
+
+  /**
+   * информация для диалога свойств
+   *
+   * @property info
+   * @type String
+   * @final
+   * @private
+   */
+  get info() {
+    const {elm, angle_hor, length, layer} = this;
+    return `№${layer instanceof ContourNestedContent ? `${
+      layer.layer.cnstr}-${elm}` : elm} сегм. α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
+  }
+
   cnn_point(node, point) {
 
     const res = this.rays[node];
@@ -13202,6 +13251,20 @@ class ProfileSegment extends ProfileItem {
       return !(b.is_nearest(pt) || e.is_nearest(pt));
     };
     return {inner: tmp.inner.filter(filter), outer: tmp.outer.filter(filter)};
+  }
+
+  /**
+   * ### У сегмента нет доборов
+   */
+  get addls() {
+    return [];
+  }
+
+  /**
+   * ### У сегмента нет сегментов
+   */
+  get segms() {
+    return [];
   }
 
   remove(force) {
@@ -13482,14 +13545,6 @@ class Profile extends ProfileItem {
     }
 
     return _attr._nearest;
-  }
-
-  /**
-   * Сегменты текущей связки
-   * @return {Array.<ProfileSegment>}
-   */
-  get segms() {
-    return this.children.filter((elm) => elm instanceof ProfileSegment);
   }
 
   /**

@@ -1047,6 +1047,17 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * ### Сегменты текущей связки
+   *
+   * @property segms
+   * @type Array.<ProfileSegment>
+   * @final
+   */
+  get segms() {
+    return this.children.filter((elm) => elm instanceof ProfileSegment);
+  }
+
+  /**
    * ### Примыкания текущего профиля
    *
    * @property adjoinings
@@ -1183,6 +1194,12 @@ class ProfileItem extends GeneratrixElement {
       }
 
       path.setSelection(0);
+      for(const item of this.segms) {
+        item.setSelection(0);
+      }
+      for(const item of this.addls) {
+        item.setSelection(0);
+      }
 
       for (let t = 0; t < inner.length; t += 50) {
         const ip = inner.getPointAt(t);

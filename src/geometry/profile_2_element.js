@@ -251,14 +251,6 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * Сегменты текущей связки
-   * @return {Array.<ProfileSegment>}
-   */
-  get segms() {
-    return this.children.filter((elm) => elm instanceof ProfileSegment);
-  }
-
-  /**
    * Добавляет сегменты
    * @param [count] {Number} - на сколько сегментов резать
    */

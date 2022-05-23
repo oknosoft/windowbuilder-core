@@ -53,6 +53,38 @@ class ProfileSegment extends ProfileItem {
     this._attr._rays.e.point = this.e;
   }
 
+  // вставка - внешний профиль
+  get inset() {
+    return this.parent.inset;
+  }
+  set inset(v) {}
+
+  set_inset(v) {
+
+  }
+
+  get nom() {
+    return this.parent.nom;
+  }
+
+  get pos() {
+    return this.parent.pos;
+  }
+
+  /**
+   * информация для диалога свойств
+   *
+   * @property info
+   * @type String
+   * @final
+   * @private
+   */
+  get info() {
+    const {elm, angle_hor, length, layer} = this;
+    return `№${layer instanceof ContourNestedContent ? `${
+      layer.layer.cnstr}-${elm}` : elm} сегм. α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
+  }
+
   cnn_point(node, point) {
 
     const res = this.rays[node];
@@ -245,6 +277,20 @@ class ProfileSegment extends ProfileItem {
       return !(b.is_nearest(pt) || e.is_nearest(pt));
     };
     return {inner: tmp.inner.filter(filter), outer: tmp.outer.filter(filter)};
+  }
+
+  /**
+   * ### У сегмента нет доборов
+   */
+  get addls() {
+    return [];
+  }
+
+  /**
+   * ### У сегмента нет сегментов
+   */
+  get segms() {
+    return [];
   }
 
   remove(force) {
