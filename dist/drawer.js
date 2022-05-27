@@ -21344,7 +21344,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Возвращает номенклатуру продукции по системе
    */
   get prod_nom() {
-    const {sys, params, calc_order} = this;
+    const {sys, params, calc_order, calc_order_row} = this;
     if(!sys.empty()) {
 
       let setted;
@@ -21353,27 +21353,23 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         this.owner = sys.production.get(0).nom;
       }
       else {
-        sys.production.forEach((row) => {
-
-          if(setted) {
-            return false;
-          }
-
+        for(const row of sys.production) {
           if(row.param && !row.param.empty()) {
             if(row.param.check_condition({prm_row: row, ox: this, calc_order})) {
               setted = true;
               this.owner = row.nom;
-              return false;
+              break;
             }
           }
-
-        });
+        }
         if(!setted) {
-          sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
-            setted = true;
-            this.owner = row.nom;
-            return false;
-          });
+          for(const row of sys.production) {
+            if(!row.param || row.param.empty()) {
+              setted = true;
+              this.owner = row.nom;
+              break;
+            }
+          }
         }
         if(!setted) {
           const prow = sys.production.get(0);
@@ -21382,6 +21378,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           }
         }
       }
+    }
+
+    if(calc_order_row && !this.owner.empty() && calc_order_row.nom !== this.owner) {
+      calc_order_row.nom = this.owner;
     }
 
     return this.owner;
