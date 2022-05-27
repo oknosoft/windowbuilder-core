@@ -11802,7 +11802,7 @@ class ProfileItem extends GeneratrixElement {
 
       if(ecnn.cnn && ecnn.profile == profile) {
         // обрабатываем угол
-        if(ecnn.profile_point && bcnn.profile_point !== 't' && !ecnn.is_x) {
+        if(ecnn.profile_point && ecnn.profile_point !== 't' && !ecnn.is_x) {
           const pp = profile[ecnn.profile_point];
           if(!this.e.is_nearest(pp, 0)) {
             if(ecnn.is_t || ecnn.cnn.cnn_type == ad) {
