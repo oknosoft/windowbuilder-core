@@ -4511,7 +4511,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
-    const {project, sys} = this;
+    const {project, sys, own_sys, prod_ox} = this;
     const {_dp} = project;
     let notify;
 
@@ -4527,7 +4527,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       // сокрытие по умолчаниям или связям
       let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);
       if(!hide) {
-        const drow = sys.prm_defaults(param, cnstr);
+        const drow = sys.prm_defaults(param, own_sys ? 0 : cnstr);
         if(drow && drow.hide) {
           hide = true;
         }
@@ -4538,7 +4538,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
       else if(param.inheritance === 3) {
-        const bvalue = param.branch_value({project, cnstr, ox: project.ox});
+        const bvalue = param.branch_value({project, cnstr, ox: prod_ox});
         if(prow.value !== bvalue) {
           prow.value = bvalue;
           notify = true;
