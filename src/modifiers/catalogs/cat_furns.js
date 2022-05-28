@@ -12,9 +12,10 @@
  * корректируем метаданные табчастей фурнитуры
  */
 (({md}) => {
-  const {selection_params, specification} = md.get('cat.furns').tabular_sections;
+  const {specification_restrictions, specification} = md.get('cat.furns').tabular_sections;
   // индексы
   specification.index = 'elm';
+  specification_restrictions.index = 'elm';
   // устаревшее поле nom_set для совместимости
   const {fields} = specification;
   fields.nom_set = fields.nom;
@@ -133,7 +134,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     // тихий режим для спецификации
     const res = $p.dp.buyers_order.create({specification: []}, true).specification;
-    const {ox} = contour.project;
+    const {_ox: ox} = contour;
     const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},
       open_directions, offset_options} = $p.enm;
 
@@ -409,20 +410,21 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
 
     // по таблице параметров сначала строим Map ИЛИ
-    let profile;
-    const or = new Map();
-    selection_params.find_rows({elm, dop}, (row) => {
-      if(!profile) {
-        profile = contour.profile_by_furn_side(side, cache);
+    let {_or} = this;
+    if(!_or) {
+      _or = new Map();
+      for(const {_row} of selection_params._obj.filter((row) => row.elm === elm && row.dop === dop)) {
+        if(!_or.has(_row.area)) {
+          _or.set(_row.area, []);
+        }
+        _or.get(_row.area).push(_row);
       }
-      if(!or.has(row.area)) {
-        or.set(row.area, []);
-      }
-      or.get(row.area).push(row);
-    });
+      this._or = _or;
+    }
 
     let res = true;
-    for(const grp of or.values()) {
+    const profile = contour.profile_by_furn_side(side, cache);
+    for(const grp of _or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
         // выполнение условия рассчитывает объект CchProperties

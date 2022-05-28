@@ -2648,8 +2648,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(elm?.rnum) {
       return elm[param.valueOf()];
     }
+    const {layer, own_sys} = this;
     if(!cnstr) {
-      const {layer, own_sys} = this;
       if(layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
       }
@@ -2665,10 +2665,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       }, (row) => {
         if(!prow || row.cnstr) {
           prow = row;
+          return false;
         }
       });
       if(prow) {
         return prow.value;
+      }
+      else if(cnstr && layer && !own_sys) {
+        return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
       }
       console.error(`Не задано значений параметра ${param.toString()}`);
       return param.fetch_type();
