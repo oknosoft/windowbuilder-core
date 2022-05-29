@@ -5021,11 +5021,22 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.dop = {angle3d: v};
   }
 
+  /**
+   * Перевёрнутость слоя (штапик наружу)
+   * (0) - авто, (1) - перевёрнут, (-1) - не перевёрнут
+   * @returns {boolean}
+   */
   get flipped() {
-    return this._row.flipped;
+    const {flipped} = this._row;
+    if(!flipped) {
+      // TODO: алгоритм расчёта перевёртутости по вставкам и уровню
+      return false;
+    }
+    return flipped > 0;
   }
   set flipped(v) {
-    return this._row.flipped = v;
+    this._row.flipped = v;
+    this.project.register_change(true);
   }
 
   /**
