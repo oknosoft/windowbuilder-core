@@ -23217,6 +23217,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
 
+      const {flipped} = elm.layer || {};
       this.specification.forEach((row) => {
 
         // Проверяем ограничения строки вставки
@@ -23259,7 +23260,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               eclr,
             };
             if(eclr.is_composite()) {
-              const {clr_in, clr_out} = eclr;
+              let {clr_in, clr_out} = eclr;
+              if(flipped) {
+                [clr_in, clr_out] = [clr_out, clr_in];
+              }
               selector.eclr = clr_in;
               if(check_params(selector)) {
                 row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
