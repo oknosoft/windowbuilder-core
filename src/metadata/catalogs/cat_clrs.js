@@ -128,6 +128,18 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         return clr_elm;
       }
     }
+    else if (clr instanceof $p.CatColor_price_groups) {
+      const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row);
+      for(const row of clr.clr_conformity) {
+        if(row.clr1.contains(tmp)) {
+          return row.clr2;
+        }
+      }
+      return tmp;
+    }
+    else if (clr instanceof $p.CatFormulas) {
+
+    }
     return clr.empty() ? clr_elm : clr;
   }
 
@@ -330,6 +342,10 @@ exports.CatClrs = class CatClrs extends Object {
       }
     }
     return res;
+  }
+
+  contains(clr) {
+    return clr === this;
   }
 
 }
