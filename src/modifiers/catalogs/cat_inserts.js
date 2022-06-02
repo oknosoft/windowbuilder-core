@@ -586,7 +586,7 @@
           }
           if(irow.count_calc_method == enm.count_calculating_ways.area && this.insert_type == inserts_types.МоскитнаяСетка){
             // получаем габариты смещенного периметра
-            const bounds = contour.bounds_inner(irow.sz);
+            const bounds = contour.bounds_inner(irow.sz, this);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
             res.s = ((res.x * res.y) / 1e6).round(3);
@@ -1001,9 +1001,16 @@
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
           }
           else if(count_calc_method === perim){
-            const perimeter = elm.perimeter ? elm.perimeter : (
-              this.insert_type == enm.inserts_types.МоскитнаяСетка ? elm.layer.perimeter_inner(sz) : elm.layer.perimeter
-            )
+            let {perimeter} = elm;
+            if(!perimeter) {
+              if(this.insert_type === enm.inserts_types.mosquito) {
+                perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom);
+                Object.defineProperty(elm, 'perimeter', {value: perimeter});
+              }
+              else {
+                perimeter = elm.layer.perimeter;
+              }
+            }
             const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
             const {check_params} = ProductsBuilding;
             perimeter.forEach((rib) => {
