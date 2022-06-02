@@ -1574,43 +1574,27 @@ class Contour extends AbstractFilling(paper.Layer) {
           dashArray: [6, 4],
           strokeScaling: false,
         };
-        let sz, imposts;
+        let sz, nom, imposts;
+
         row.inset.specification.forEach((rspec) => {
           if (!sz && rspec.count_calc_method == count_calculating_ways.perim && rspec.nom.elm_type == elm_types.rama) {
             sz = rspec.sz;
+            nom = rspec.nom;
           }
           if (!imposts && rspec.count_calc_method == count_calculating_ways.steps && rspec.nom.elm_type == elm_types.Импост) {
             imposts = rspec;
           }
         });
 
-        // рисуем контур
-        const perimetr = [];
-        if (typeof sz != 'number') {
-          sz = 20;
+        if(!nom) {
+          return false;
         }
-        this.outer_profiles.forEach((curr) => {
-          // получаем внешнюю палку, на которую будет повешена москитка
-          const profile = curr.profile || curr.elm;
-          const is_outer = Math.abs(profile.angle_hor - curr.elm.angle_hor) > 60;
-          const ray = is_outer ? profile.rays.outer : profile.rays.inner;
-          const segm = ray.get_subpath(curr.b, curr.e).equidistant(sz);
-          perimetr.push(Object.assign(segm, props));
-        });
 
-        const count = perimetr.length - 1;
-        perimetr.forEach((curr, index) => {
-          const prev = index == 0 ? perimetr[count] : perimetr[index - 1];
-          const next = index == count ? perimetr[0] : perimetr[index + 1];
-          const b = curr.getIntersections(prev);
-          const e = curr.getIntersections(next);
-          if (b.length) {
-            curr.firstSegment.point = b[0].point;
-          }
-          if (e.length) {
-            curr.lastSegment.point = e[0].point;
-          }
-        });
+        // рисуем контур
+        const perimetr = this.perimeter_inner(sz, nom);
+        for(const {sub_path} of perimetr) {
+          Object.assign(sub_path, props)
+        }
 
         // добавляем текст
         const {elm_font_size} = consts;
@@ -2285,11 +2269,25 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Массив с рёбрами периметра по внутренней стороне профилей
+   * @param [size] {Number}
+   * @param [nom] {CatNom}
    * @return {Array}
    */
-  perimeter_inner(size) {
+  perimeter_inner(size, nom) {
     // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
+    const {cat: {cnns}, enm: {cnn_types, elm_types, count_calculating_ways}, CatInserts} = $p;
+
+    // если передали вставку, ищем первую подходящую строку рамки профиля
+    if(nom instanceof CatInserts) {
+      for(const row of nom.specification) {
+        if(row.count_calc_method === count_calculating_ways.perim && row.nom.elm_type === elm_types.rama) {
+          nom = row.nom;
+          size = row.sz;
+        }
+      }
+    }
+
     const res = this.outer_profiles.map((curr) => {
       const profile = curr.profile || curr.elm;
       const {inner, outer} = profile.rays;
@@ -2297,21 +2295,28 @@ class Contour extends AbstractFilling(paper.Layer) {
         inner.get_subpath(inner.getNearestPoint(curr.b), inner.getNearestPoint(curr.e)) : outer.get_subpath(outer.getNearestPoint(curr.b), outer.getNearestPoint(curr.e));
       let angle = curr.e.subtract(curr.b).angle.round(1);
       if(angle < 0) angle += 360;
+
+      // поправка на размер соединения
+      const cnn = nom && cnns.nom_cnn(nom, profile, cnn_types.ii, true)[0];
+      const sz = cnn ? cnn.size(profile, profile) : 0;
+
       return {
         profile,
         sub_path,
         angle,
         b: curr.b,
         e: curr.e,
+        size: size + sz,
       };
     });
     const ubound = res.length - 1;
     return res.map((curr, index) => {
-      let sub_path = curr.sub_path.equidistant(size);
+      const elong = Math.abs(curr.size) * 2;
+      let sub_path = curr.sub_path.equidistant(curr.size, elong);
       const prev = !index ? res[ubound] : res[index - 1];
       const next = (index == ubound) ? res[0] : res[index + 1];
-      const b = sub_path.intersect_point(prev.sub_path.equidistant(size), curr.b, true);
-      const e = sub_path.intersect_point(next.sub_path.equidistant(size), curr.e, true);
+      const b = sub_path.intersect_point(prev.sub_path.equidistant(curr.size, elong), curr.b, true);
+      const e = sub_path.intersect_point(next.sub_path.equidistant(curr.size, elong), curr.e, true);
       if (b && e) {
         sub_path = sub_path.get_subpath(b, e);
       }
@@ -2326,12 +2331,13 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Габариты по рёбрам периметра внутренней стороны профилей
-   * @param size
+   * @param [size] {Number}
+   * @param [nom] {CatNom}
    * @return {Rectangle}
    */
-  bounds_inner(size) {
+  bounds_inner(size, nom) {
     const path = new paper.Path({insert: false});
-    for (let curr of this.perimeter_inner(size)) {
+    for (let curr of this.perimeter_inner(size, nom)) {
       path.addSegments(curr.sub_path.segments);
     }
     if (path.segments.length && !path.closed) {
