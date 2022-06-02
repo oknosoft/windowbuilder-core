@@ -6,10 +6,10 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, EditorInvisible, utils} = $p;
 
-  // угол к следующему
-  ((name) => {
+  // стандартная часть создания fake-формулы
+  function formulate(name) {
     const prm = properties.predefined(name);
     if(prm) {
       // fake-формула
@@ -17,10 +17,121 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function (obj) {
-          const {elm} = obj;
-        };
+        switch (name) {
+
+        case 'clr_product':
+          prm.calculated._data._formula = function (obj) {
+            return obj?.ox?.clr || clrs.get();
+          };
+          break;
+
+        case 'clr_inset':
+          prm.calculated._data._formula = function ({elm, cnstr, ox}) {
+            let clr;
+            if(elm instanceof $p.DpBuyers_orderProductionRow || elm instanceof $p.DocCalc_order.FakeElm) {
+              clr = elm.clr;
+            }
+            else {
+              ox.inserts.find_rows({cnstr}, row => (clr = row.clr));
+            }
+            return clr;
+          };
+          break;
+
+        case 'width':
+          prm.calculated._data._formula = function (obj) {
+            return obj?.ox?.y || 0;
+          };
+          break;
+
+        case 'inset':
+          prm.calculated._data._formula = function ({elm, prm_row, ox, row}) {
+
+            // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
+            if(prm_row && prm_row.origin === prm_row.origin._manager.nearest && elm instanceof EditorInvisible.Filling){
+              const res = new Set();
+              ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+                if(row && row._owner && inset !== row._owner._owner) {
+                  res.add(inset);
+                }
+              });
+              return Array.from(res);
+            }
+
+            return elm?.inset;
+          };
+          break;
+
+        case 'elm_weight':
+          prm.calculated._data._formula = function (obj) {
+            const {elm} = obj || {};
+            return elm ? elm.weight : 0;
+          };
+          break;
+
+        case 'elm_orientation':
+          prm.calculated._data._formula = function ({elm, elm2}) {
+            return elm?.orientation || elm2?.orientation || orientations.get();
+          };
+          break;
+
+        case 'elm_pos':
+          prm.calculated._data._formula = function ({elm}) {
+            return elm?.pos || positions.get();
+          };
+          break;
+
+        case 'elm_rectangular':
+          prm.calculated._data._formula = function ({elm}) {
+            const {is_rectangular} = elm;
+            return typeof is_rectangular === 'boolean' ? is_rectangular : true;
+          };
+          break;
+
+        case 'branch':
+          param.calculated._data._formula = function ({elm, layer, ox, calc_order}) {
+            if(!calc_order && ox) {
+              calc_order = ox.calc_order;
+            }
+            else if(!calc_order && layer) {
+              calc_order = layer._ox.calc_order;
+            }
+            else if(!calc_order && elm) {
+              calc_order = elm.ox.calc_order;
+            }
+
+            const prow = (ox || layer?._ox || elm?.ox).params.find({param});
+            return prow && !prow.value.empty() ? prow.value : calc_order.manager.branch;
+          };
+          break;
+
+        default:
+          prm.calculated._data._formula = function () {};
+        }
       }
+    }
+    return prm;
+  }
+
+  // создаём те, где нужна только формула со стандартным check_condition
+  for(const name of [
+    'clr_product',      // цвет изделия
+    'elm_weight',       // масса элемента
+    'elm_orientation',  // ориентация элемента
+    'elm_pos',          // положение элемента
+    'elm_rectangular',  // прямоугольность элемента
+    'branch',           // отдел абонента текущего контекста
+    'width',            // ширина из параметра
+    'inset',            // вставка текущего элемента
+    'clr_inset',        // цвет вставки в элемент
+  ]) {
+    formulate(name);
+  }
+
+  // угол к следующему
+  ((name) => {
+    const prm = formulate(name);
+    if(prm) {
       // fake-признак использования
       if(!prm.use.count()) {
         prm.use.add({count_calc_method: 'ПоПериметру'});
@@ -37,13 +148,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
   // уровень слоя
   ((name) => {
-    const prm = properties.predefined(name);
+    const prm = formulate(name);
     if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-        prm.calculated._data._formula = function (obj) {};
-      }
       // проверка условия
       prm.check_condition = function ({layer, prm_row}) {
         if(layer) {
@@ -55,88 +161,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('layer_level');
 
-  // масса элемента
-  ((name) => {
-    const prm = properties.predefined(name);
-    if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function (obj) {
-          const {elm} = obj || {};
-          return elm ? elm.weight : 0;
-        };
-      }
-    }
-  })('elm_weight');
-
-  // ориентация элемента
-  ((name) => {
-    const prm = properties.predefined(name);
-    if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function ({elm, elm2}) {
-          return elm?.orientation || elm2?.orientation || orientations.get();
-        };
-      }
-    }
-  })('elm_orientation');
-
-  // положение элемента
-  ((name) => {
-    const prm = properties.predefined(name);
-    if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function ({elm}) {
-          return elm?.pos || positions.get();
-        };
-      }
-    }
-  })('elm_pos');
-
-  // прямоугольность элемента
-  ((name) => {
-    const prm = properties.predefined(name);
-    if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function ({elm}) {
-          const {is_rectangular} = elm;
-          return typeof is_rectangular === 'boolean' ? is_rectangular : true;
-        };
-      }
-    }
-  })('elm_rectangular');
-
   // вхождение элемента в габариты
   ((name) => {
-    const prm = properties.predefined(name);
+    const prm = formulate(name);
     if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!prm.calculated._data._formula) {
-        prm.calculated._data._formula = function (obj) {
-          console.log(name);
-        };
-      }
       // проверка условия
-      const {comparison_types: ct} = $p.enm;
-      const ne = [ct.ne, ct.nin, ct.ninh, ct.nfilled];
+      const ne = [ect.ne, ect.nin, ect.ninh, ect.nfilled];
 
       prm.check_condition = function ({elm, layer, prm_row}) {
         if(!prm_row._bounds) {
@@ -162,46 +192,13 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('bounds_contains');
 
-  // отдел абонента текущего контекста
-  ((name) => {
-    const param = properties.predefined(name);
-    if(param) {
-      // fake-формула
-      if(param.calculated.empty()) {
-        param.calculated = formulas.create({ref: param.ref, name: `predefined-${name}`}, false, true);
-      }
-      if(!param.calculated._data._formula) {
-        param.calculated._data._formula = function ({elm, layer, ox, calc_order}) {
-          if(!calc_order && ox) {
-            calc_order = ox.calc_order;
-          }
-          else if(!calc_order && layer) {
-            calc_order = layer._ox.calc_order;
-          }
-          else if(!calc_order && elm) {
-            calc_order = elm.ox.calc_order;
-          }
-
-          const prow = (ox || layer?._ox || elm?.ox).params.find({param});
-          return prow && !prow.value.empty() ? prow.value : calc_order.manager.branch;
-        };
-      }
-    }
-  })('branch');
-
   // способ придания цвета
   ((name) => {
-    const prm = properties.predefined(name);
+    const prm = formulate(name);
     if(prm) {
-      // fake-формула
-      if(prm.calculated.empty()) {
-        prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
-        prm.calculated._data._formula = function (obj) {};
-      }
       // проверка условия
       prm.check_condition = function ({elm, eclr, row_spec, prm_row}) {
-        const ct = prm_row.comparison_type || comparison_types.eq;
-        const {utils, enm: {comparison_types}, cat} = $p;
+        const ct = prm_row.comparison_type || ect.eq;
 
         // если не задан eclr, используем цвет элемента
         const no_eclr = !eclr;
@@ -212,8 +209,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         const value = this.extract_value(prm_row);
         if(eclr.is_composite()) {
           const {clr_in, clr_out} = eclr;
-          return utils.check_compare(clr_in.area_src, value, ct, comparison_types) ||
-              utils.check_compare(clr_out.area_src, value, ct, comparison_types);
+          return utils.check_compare(clr_in.area_src, value, ct, ect) ||
+              utils.check_compare(clr_out.area_src, value, ct, ect);
         }
 
         // если в "системе" задан список цветов, не требующих покраски, смотрим на него, иначе - не белый
@@ -227,12 +224,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return false;
             }
           }
-          else if(eclr === cat.clrs.predefined('Белый')) {
+          else if(eclr === clrs.predefined('Белый')) {
             return false;
           }
         }
 
-        return utils.check_compare(eclr.area_src, value, ct, comparison_types);
+        return utils.check_compare(eclr.area_src, value, ct, ect);
       }
     }
   })('coloring_kind');
