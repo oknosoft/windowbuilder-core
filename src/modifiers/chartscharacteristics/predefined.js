@@ -89,7 +89,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
 
         case 'branch':
-          param.calculated._data._formula = function ({elm, layer, ox, calc_order}) {
+          prm.calculated._data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
               calc_order = ox.calc_order;
             }
