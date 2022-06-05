@@ -328,10 +328,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     else if(algorithm === clr_prm) {
       this.selection_params.find_rows({elm, dop}, (prm_row) => {
-        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&
           prm_row.param.type.types.includes('cat.clrs') &&
-          (!prm_row.value || prm_row.value.empty())) {
-          row_spec.clr = ox.extract_value({cnstr: contour.cnstr, param: prm_row.param});
+          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
+          row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
         }
       });
     }

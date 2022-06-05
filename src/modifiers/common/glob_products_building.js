@@ -331,6 +331,14 @@ class ProductsBuilding {
         return;
       }
 
+      const len_angl = {
+        angle: 0,
+        len: _row.len,
+        art1: false,
+        art2: true,
+        node: 'e',
+      };
+
       if(segms?.length) {
         // если профиль разбит на связки, добавляем их спецификации, вместо спецификации самого профиля
         segms.forEach(base_spec_profile);
@@ -431,15 +439,9 @@ class ProductsBuilding {
         }
 
         // добавляем спецификации соединений
-        const len_angl = {
-          angle: 0,
-          alp1: prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90,
-          alp2: next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90,
-          len: row_spec ? row_spec.len * 1000 : _row.len,
-          art1: false,
-          art2: true,
-          node: 'e',
-        };
+        len_angl.len = row_spec.len * 1000;
+        len_angl.alp1 = prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90;
+        len_angl.alp2 = next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90;
         const sl_types = [cnn_types.long, cnn_types.short];
         const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, ...sl_types];
         if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
@@ -1058,13 +1060,32 @@ class ProductsBuilding {
       }
 
       // цвет по параметру
-      if(row_base.algorithm === clr_prm && origin && elm.elm > 0) {
-        const ctypes = [ct.get(), ct.eq];
-        origin.selection_params.find_rows({elm: row_base.elm}, (prm_row) => {
-          if(ctypes.includes(prm_row.comparison_type) && prm_row.param.type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty())) {
-            row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param});
+      if(row_base.algorithm === clr_prm && elm.elm > 0) {
+        let param;
+        if(row_base._or) {
+          for(const grp of row_base._or.values()) {
+            for(const prow of grp) {
+              if(prow.origin == "algorithm") {
+                param = prow.param;
+                break;
+              }
+              if(param) {
+                break;
+              }
+            }
           }
-        });
+        }
+        if(!param && origin) {
+          const ctypes = [ct.get(), ct.eq];
+          origin.selection_params.find_rows({elm: row_base.elm}, (prow) => {
+            if(ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
+              param = prow.param;
+            }
+          });
+        }
+        if(param) {
+          row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param});
+        }
       }
       else if(row_base.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);

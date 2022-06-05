@@ -100,7 +100,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               calc_order = elm.ox.calc_order;
             }
 
-            const prow = (ox || layer?._ox || elm?.ox).params.find({param});
+            const prow = (ox || layer?._ox || elm?.ox).params.find({param: prm});
             return prow && !prow.value.empty() ? prow.value : calc_order.manager.branch;
           };
           break;
