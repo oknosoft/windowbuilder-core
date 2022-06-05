@@ -5332,6 +5332,14 @@ class ContourNested extends Contour {
     return _attr._ox;
   }
 
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
+  }
+
   get hidden() {
     return !this.visible;
   }
@@ -5401,10 +5409,15 @@ class ContourNested extends Contour {
             contour.redraw();
             dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
             dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+            contour.redraw();
 
             // пересчитываем, не записываем
             contour.refresh_prm_links(true);
             tproject.zoom_fit();
+            if(tproject._scope.eve._async?.move_points?.timer) {
+              clearTimeout(tproject._scope.eve._async.move_points.timer);
+              delete tproject._scope.eve._async.move_points.timer;
+            }
             while (tproject._ch.length) {
               tproject.redraw();
             }
@@ -5761,6 +5774,7 @@ class ContourParent extends Contour {
     }
     return _attr._ox;
   }
+
 
   /**
    * Ошибки соединений в виртуальном слое не нужны
@@ -15541,6 +15555,25 @@ class ProfileNestedContent extends Profile {
     _row.x2 = (e.x).round(1);
     _row.y2 = (lbounds.height - e.y).round(1);
     _row.path_data = path.pathData;
+  }
+
+  selected_cnn_ii() {
+    const {elm, ox} = this;
+    const nelm = this.nearest();
+    const {parent} = nelm._row;
+
+    for(const row of ox.cnn_elmnts) {
+      if(row.node1 || row.node2) {
+        continue;
+      }
+      if((row.elm1 == elm && row.elm2 == parent) || (row.elm1 == parent && row.elm2 == elm)) {
+        if(row.cnn.empty()) {
+          const {enm: {cnn_types}, cat: {cnns}} = $p;
+          row.cnn = cnns.elm_cnn(this, nelm, cnn_types.acn.ii, null, true);
+        }
+        return {elm: nelm, row};
+      }
+    }
   }
 
 }

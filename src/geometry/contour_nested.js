@@ -72,6 +72,14 @@ class ContourNested extends Contour {
     return _attr._ox;
   }
 
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
+  }
+
   get hidden() {
     return !this.visible;
   }
@@ -141,10 +149,15 @@ class ContourNested extends Contour {
             contour.redraw();
             dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
             dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+            contour.redraw();
 
             // пересчитываем, не записываем
             contour.refresh_prm_links(true);
             tproject.zoom_fit();
+            if(tproject._scope.eve._async?.move_points?.timer) {
+              clearTimeout(tproject._scope.eve._async.move_points.timer);
+              delete tproject._scope.eve._async.move_points.timer;
+            }
             while (tproject._ch.length) {
               tproject.redraw();
             }

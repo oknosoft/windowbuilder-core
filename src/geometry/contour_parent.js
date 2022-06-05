@@ -30,6 +30,7 @@ class ContourParent extends Contour {
     return _attr._ox;
   }
 
+
   /**
    * Ошибки соединений в виртуальном слое не нужны
    */
