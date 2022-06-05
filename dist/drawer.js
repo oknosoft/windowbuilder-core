@@ -5340,6 +5340,16 @@ class ContourNested extends Contour {
     return true;
   }
 
+  /**
+   * Система текущего слоя совпадает с системой вложенного изделия
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this._ox.sys;
+  }
+  set sys(v) {
+  }
+
   get hidden() {
     return !this.visible;
   }
