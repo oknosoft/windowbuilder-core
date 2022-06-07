@@ -19698,81 +19698,78 @@ class ProductsBuilding {
 
         // добавляем строку спецификации
         const row_cnn = row_cnn_prev || row_cnn_next;
-        if(row_cnn) {
+        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
+        row_spec.qty = row_cnn ? row_cnn.quantity : 1;
 
-          row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
-          row_spec.qty = row_cnn.quantity;
+        // уточняем размер
+        const seam = angle_calculating_ways.СварнойШов;
+        const d45 = Math.sin(Math.PI / 4);
+        const dprev = row_cnn_prev ? (
+          row_cnn_prev.angle_calc_method == seam && _row.alp1 > 0 ? row_cnn_prev.sz * d45 / Math.sin(_row.alp1 / 180 * Math.PI) : row_cnn_prev.sz
+        ) : 0;
+        const dnext = row_cnn_next ? (
+          row_cnn_next.angle_calc_method == seam && _row.alp2 > 0 ? row_cnn_next.sz * d45 / Math.sin(_row.alp2 / 180 * Math.PI) : row_cnn_next.sz
+        ) : 0;
 
-          // уточняем размер
-          const seam = angle_calculating_ways.СварнойШов;
-          const d45 = Math.sin(Math.PI / 4);
-          const dprev = row_cnn_prev ? (
-            row_cnn_prev.angle_calc_method == seam && _row.alp1 > 0 ? row_cnn_prev.sz * d45 / Math.sin(_row.alp1 / 180 * Math.PI) : row_cnn_prev.sz
-          ) : 0;
-          const dnext = row_cnn_next ? (
-            row_cnn_next.angle_calc_method == seam && _row.alp2 > 0 ? row_cnn_next.sz * d45 / Math.sin(_row.alp2 / 180 * Math.PI) : row_cnn_next.sz
-          ) : 0;
-
-          const k001 = 0.001;
-          row_spec.len = (_row.len - dprev - dnext)
-            * ((row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
-          if(row_cnn_prev && row_cnn_prev.algorithm === w2) {
-            row_spec.len += prev.width * k001;
-          }
-          if(row_cnn_next && row_cnn_next.algorithm === w2) {
-            row_spec.len += next.width * k001;
-          }
-
-          // profile._len - то, что получится после обработки
-          // row_spec.len - сколько взять (отрезать)
-          elm._attr._len = _row.len;
-          _row.len = (_row.len
-              - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
-              - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
-            * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
-
-          // припуск для гнутых элементов
-          if(!elm.is_linear()) {
-            row_spec.len = row_spec.len + _row.nom.arc_elongation * k001;
-          }
-
-          // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
-          if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
-            row_cnn_prev.formula.execute({
-              ox: ox,
-              elm: elm,
-              cnstr: 0,
-              inset: blank.guid,
-              row_cnn: row_cnn_prev,
-              row_spec: row_spec
-            });
-          }
-          else if(row_cnn_next && !row_cnn_next.formula.empty()) {
-            row_cnn_next.formula.execute({
-              ox: ox,
-              elm: elm,
-              cnstr: 0,
-              inset: blank.guid,
-              row_cnn: row_cnn_next,
-              row_spec: row_spec
-            });
-          }
-
-          // РассчитатьКоличествоПлощадьМассу
-          const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
-          const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
-          const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
-          calc_count_area_mass(
-            row_spec,
-            spec,
-            _row,
-            angle_calc_method_prev,
-            angle_calc_method_next,
-            angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
-            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
-            totqty0,
-          );
+        const k001 = 0.001;
+        row_spec.len = (_row.len - dprev - dnext)
+          * ((row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
+        if(row_cnn_prev && row_cnn_prev.algorithm === w2) {
+          row_spec.len += prev.width * k001;
         }
+        if(row_cnn_next && row_cnn_next.algorithm === w2) {
+          row_spec.len += next.width * k001;
+        }
+
+        // profile._len - то, что получится после обработки
+        // row_spec.len - сколько взять (отрезать)
+        elm._attr._len = _row.len;
+        _row.len = (_row.len
+            - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
+            - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
+          * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
+
+        // припуск для гнутых элементов
+        if(!elm.is_linear()) {
+          row_spec.len = row_spec.len + _row.nom.arc_elongation * k001;
+        }
+
+        // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
+          if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
+          row_cnn_prev.formula.execute({
+            ox: ox,
+            elm: elm,
+            cnstr: 0,
+            inset: blank.guid,
+            row_cnn: row_cnn_prev,
+            row_spec: row_spec
+          });
+        }
+          else if(row_cnn_next && !row_cnn_next.formula.empty()) {
+          row_cnn_next.formula.execute({
+            ox: ox,
+            elm: elm,
+            cnstr: 0,
+            inset: blank.guid,
+            row_cnn: row_cnn_next,
+            row_spec: row_spec
+          });
+        }
+
+        // РассчитатьКоличествоПлощадьМассу
+        const acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
+        const acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
+        const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
+        calc_count_area_mass(
+          row_spec,
+          spec,
+          _row,
+          acmethod_prev,
+          acmethod_next,
+          acmethod_prev == s2 || acmethod_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
+          acmethod_next == s2 || acmethod_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
+          totqty0,
+        );
 
         // добавляем спецификации соединений
         len_angl.len = row_spec.len * 1000;
@@ -20352,7 +20349,7 @@ class ProductsBuilding {
       row_spec = spec.add();
     }
     row_spec.nom = nom || row_base.nom;
-    if(row_base.relm) {
+    if(row_base?.relm) {
       elm = row_base.relm;
     }
 
@@ -20380,7 +20377,7 @@ class ProductsBuilding {
     }
 
     // если алгоритм = характеристика по цвету
-    if(row_base.algorithm === cx_clr) {
+    if(row_base?.algorithm === cx_clr) {
       const {ref} = properties.predefined('clr_elm');
       const clr = row_spec.clr.ref;
       // перебираем характеристики текущей номенклатуры
@@ -20390,13 +20387,15 @@ class ProductsBuilding {
       });
     }
     else {
-      row_spec.characteristic = row_base.nom_characteristic;
+      if(row_base) {
+        row_spec.characteristic = row_base.nom_characteristic;
+      }
       if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
         row_spec.characteristic = blank.guid;
       }
 
       // цвет по параметру
-      if(row_base.algorithm === clr_prm && elm.elm > 0) {
+      if(row_base?.algorithm === clr_prm && elm.elm > 0) {
         let param;
         if(row_base._or) {
           for(const grp of row_base._or.values()) {
@@ -20423,7 +20422,7 @@ class ProductsBuilding {
           row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param});
         }
       }
-      else if(row_base.algorithm === clr_in) {
+      else if(row_base?.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
           row_spec.clr = row_base.clr;
@@ -20435,7 +20434,7 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
-      else if(row_base.algorithm === clr_out) {
+      else if(row_base?.algorithm === clr_out) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
           row_spec.clr = row_base.clr;
@@ -20448,7 +20447,7 @@ class ProductsBuilding {
         }
       }
       // длина штапика
-      else if([gb_short, gb_long].includes(row_base.algorithm) && len_angl) {
+      else if([gb_short, gb_long].includes(row_base?.algorithm) && len_angl) {
         const {curr, next, prev} = len_angl;
         if(curr && next && prev) {
           // строим эквидистанты от рёбер заполнения
