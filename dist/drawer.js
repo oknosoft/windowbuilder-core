@@ -3679,8 +3679,8 @@ class Contour extends AbstractFilling(paper.Layer) {
               segments: [[bounds.left, y], [bounds.right, y]],
             }), props);
             const {length} = impost;
-            perimetr.forEach((curr) => {
-              const aloc = curr.getIntersections(impost);
+            for(const {sub_path} of perimetr) {
+              const aloc = sub_path.getIntersections(impost);
               if (aloc.length) {
                 const l1 = impost.firstSegment.point.getDistance(aloc[0].point);
                 const l2 = impost.lastSegment.point.getDistance(aloc[0].point);
@@ -3691,14 +3691,14 @@ class Contour extends AbstractFilling(paper.Layer) {
                   impost.lastSegment.point = aloc[0].point;
                 }
               }
-            });
+            }
           }
 
           if(step) {
             const height = bounds.height - offsets;
             if(height >= step) {
+              const {top, centerY} = bounds;
               if(do_center) {
-                const {top, centerY} = bounds;
                 const stp = Math.trunc((-top - (-centerY)) / step); //stp - количество повторений рёбер от центра
                 const mv = (top - centerY) / (stp + 1); // размер одного смещения от центра
 
@@ -3711,8 +3711,8 @@ class Contour extends AbstractFilling(paper.Layer) {
                 }
               }
               else {
-                for (let y = step; y < height; y += step) {
-                  add_impost(y);
+                for (let y = (offsets || step); y < height; y += step) {
+                  add_impost(top + offsets + y);
                 }
               }
             }
