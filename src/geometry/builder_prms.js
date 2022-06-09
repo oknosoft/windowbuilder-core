@@ -76,11 +76,14 @@ class BuilderPrms {
   }
 
   find_rows({inset}, cb) {
-    const {cnstr, params} = this;
+    const {cnstr, params, layer: {sys, own_sys}} = this;
     const map = new Map();
     const cnstrs = [0, cnstr];
     for(const row of params) {
       if(cnstrs.includes(row.cnstr) && row.inset == inset && !row.hide) {
+        if(own_sys && !sys.product_params.find({param: row.param})) {
+          continue;
+        }
         if(!map.has(row.param) || row.cnstr) {
           map.set(row.param, row);
         }
