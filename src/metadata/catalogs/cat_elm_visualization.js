@@ -102,12 +102,11 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             fillColor: 'black',
             fontFamily: $p.job_prm.builder.font_family,
             fontSize: attr.fontSize || 60,
-            guide: true,
             content: this.svg_path,
-          }, attr));
+          }, attr, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
-          subpath = new CompoundPath({
+          subpath = new CompoundPath(Object.assign({
             project,
             layer,
             parent: layer._by_spec,
@@ -115,10 +114,9 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             strokeColor: 'black',
             fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr),
             strokeScaling: false,
-            guide: true,
             pivot: [0, 0],
             opacity: elm.opacity
-          });
+          }, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
 
         if(elm instanceof constructor.Filling) {
@@ -159,7 +157,24 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             subpath.position = outer.getNearestPoint(p0);
           }
         }
-
+      }
+      if(!this.origin.empty()) {
+        subpath.on({
+          mouseenter(event) {
+            this.strokeWidth = 1.4;
+            project._scope.canvas_cursor(`cursor-text-select`);
+          },
+          mouseleave(event) {
+            this.strokeWidth = 1;
+            project._scope.canvas_cursor('cursor-arrow-white');
+          },
+          mousedown(event) {
+            event.stop();
+          },
+          click(event) {
+            event.stop();
+          },
+        });
       }
     }
     catch (e) {
