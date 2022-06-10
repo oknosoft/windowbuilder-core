@@ -795,10 +795,11 @@ class BuilderElement extends paper.Group {
     const items = [];
 
     for(const item of project.getSelectedItems()) {
-      if(item.parent instanceof ProfileItem || item.parent instanceof Filling) {
-        items.push(item.parent);
+      const {parent} = item;
+      if(!items.includes(parent) && (parent instanceof ProfileItem || parent instanceof Filling)) {
+        items.push(parent);
       }
-      else if(item instanceof Filling) {
+      else if(item instanceof Filling && !items.includes(item)) {
         items.push(item);
       }
     }
@@ -817,8 +818,11 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
-            row.cnn = item instanceof Filling ?
+            const cnn = (item instanceof Filling || (item.layer.level > this.layer.level)) ?
               cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            if(cnn !== row.cnn) {
+              row.cnn = cnn;
+            }
             return {elm: item, row};
           }
           if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {

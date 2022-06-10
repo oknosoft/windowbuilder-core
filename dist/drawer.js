@@ -1800,10 +1800,11 @@ class BuilderElement extends paper.Group {
     const items = [];
 
     for(const item of project.getSelectedItems()) {
-      if(item.parent instanceof ProfileItem || item.parent instanceof Filling) {
-        items.push(item.parent);
+      const {parent} = item;
+      if(!items.includes(parent) && (parent instanceof ProfileItem || parent instanceof Filling)) {
+        items.push(parent);
       }
-      else if(item instanceof Filling) {
+      else if(item instanceof Filling && !items.includes(item)) {
         items.push(item);
       }
     }
@@ -1822,8 +1823,11 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
-            row.cnn = item instanceof Filling ?
+            const cnn = (item instanceof Filling || (item.layer.level > this.layer.level)) ?
               cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            if(cnn !== row.cnn) {
+              row.cnn = cnn;
+            }
             return {elm: item, row};
           }
           if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
@@ -4734,12 +4738,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     const {layer, own_sys} = this;
     if(!cnstr) {
-      if(layer && !own_sys) {
+      if(layer && !own_sys && !(layer instanceof ContourParent)) {
         return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
       }
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
-    const {_ox} = this;
+    let {_ox, prm_ox} = this;
+    if(prm_ox) {
+      _ox = prm_ox;
+    }
     if(plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
@@ -5349,6 +5356,11 @@ class ContourNested extends Contour {
     return _attr._ox;
   }
 
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.layer.ox;
+  }
+
   /**
    * Бит, может ли данный слой иметь собственную систему
    * @return {boolean}
@@ -5775,7 +5787,7 @@ EditorInvisible.ContourNestedContent = ContourNestedContent;
  * ### Родительский слой вложенного изделия
  * https://github.com/oknosoft/windowbuilder/issues/564
  *
- * @module contour_nested
+ * @module contour_parent
  *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
@@ -5793,15 +5805,15 @@ class ContourParent extends Contour {
   get leading_product() {
     const {_attr, project: {ox}} = this;
     if(!_attr._ox) {
-      for(const {characteristic} of ox.calc_order.production) {
-        if(ox.leading_product === characteristic) {
-          _attr._ox = characteristic;
-        }
-      }
+      _attr._ox = ox.leading_product;
     }
     return _attr._ox;
   }
 
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.leading_product;
+  }
 
   /**
    * Ошибки соединений в виртуальном слое не нужны
@@ -14022,9 +14034,15 @@ class ProfileNested extends Profile {
   }
   set inset(v) {}
 
+  // номенклатура внешнего элемента
+  get nom() {
+    return this.nearest().nom;
+  }
+  set nom(v) {}
+
   // цвет внешнего элемента
   get clr() {
-    return this.nearest(true).clr;
+    return this.nearest().clr;
   }
   set clr(v) {}
 

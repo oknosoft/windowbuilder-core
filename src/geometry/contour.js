@@ -2656,12 +2656,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     const {layer, own_sys} = this;
     if(!cnstr) {
-      if(layer && !own_sys) {
+      if(layer && !own_sys && !(layer instanceof ContourParent)) {
         return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
       }
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
-    const {_ox} = this;
+    let {_ox, prm_ox} = this;
+    if(prm_ox) {
+      _ox = prm_ox;
+    }
     if(plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({

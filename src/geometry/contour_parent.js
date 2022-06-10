@@ -3,7 +3,7 @@
  * ### Родительский слой вложенного изделия
  * https://github.com/oknosoft/windowbuilder/issues/564
  *
- * @module contour_nested
+ * @module contour_parent
  *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
@@ -21,15 +21,15 @@ class ContourParent extends Contour {
   get leading_product() {
     const {_attr, project: {ox}} = this;
     if(!_attr._ox) {
-      for(const {characteristic} of ox.calc_order.production) {
-        if(ox.leading_product === characteristic) {
-          _attr._ox = characteristic;
-        }
-      }
+      _attr._ox = ox.leading_product;
     }
     return _attr._ox;
   }
 
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.leading_product;
+  }
 
   /**
    * Ошибки соединений в виртуальном слое не нужны

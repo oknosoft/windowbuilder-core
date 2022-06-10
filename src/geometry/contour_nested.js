@@ -72,6 +72,11 @@ class ContourNested extends Contour {
     return _attr._ox;
   }
 
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.layer.ox;
+  }
+
   /**
    * Бит, может ли данный слой иметь собственную систему
    * @return {boolean}

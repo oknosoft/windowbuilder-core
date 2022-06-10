@@ -58,9 +58,15 @@ class ProfileNested extends Profile {
   }
   set inset(v) {}
 
+  // номенклатура внешнего элемента
+  get nom() {
+    return this.nearest().nom;
+  }
+  set nom(v) {}
+
   // цвет внешнего элемента
   get clr() {
-    return this.nearest(true).clr;
+    return this.nearest().clr;
   }
   set clr(v) {}
 
