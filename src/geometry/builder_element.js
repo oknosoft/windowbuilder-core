@@ -753,8 +753,22 @@ class BuilderElement extends paper.Group {
    */
   set_clr(v, ignore_select) {
     const {_row, path, project} = this;
-    const clr = _row.clr._manager.getter(v);
     const {clr_group} = _row.inset;
+    let clr = _row.clr._manager.getter(v);
+
+    if(clr.empty()) {
+      const {sys} = this.layer;
+      const group = clr_group.empty() ? sys.clr_group : clr_group;
+      let {default_clr} = sys;
+      if(default_clr.empty() || !group.contains(default_clr)) {
+        const clrs = group.clrs();
+        if(clrs.length) {
+          default_clr = clrs[0];
+        }
+      }
+      clr = default_clr;
+    }
+
     if(clr_group.contains(clr) && _row.clr != clr) {
       _row.clr = clr;
       project.register_change();

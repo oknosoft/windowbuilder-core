@@ -83,6 +83,9 @@ class Scheme extends paper.Project {
   set_clr(clr) {
     const {ox, _dp} = this;
     ox._obj.clr = _dp._obj.clr = clr.valueOf();
+    if(ox.clr.empty()) {
+      return this.check_clr();
+    }
     this.getItems({class: ProfileItem}).forEach((elm) => {
       if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
         elm.clr = clr;
@@ -111,9 +114,12 @@ class Scheme extends paper.Project {
         }
       }
     }
-    if (!clr_group.contains(ox.clr, clrs)){
+    if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      this.set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
+      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr;
+      if(clr && !clr.empty()) {
+        this.set_clr(clr);
+      }
     }
   }
 
