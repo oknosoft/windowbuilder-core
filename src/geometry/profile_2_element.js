@@ -52,13 +52,16 @@ class Profile extends ProfileItem {
         const {cnstr, elm, _owner} = attr.row;
         const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          if(row.elm_type === elm_types.Добор) {
+          // добор
+          if(row.elm_type === elm_types.addition) {
             new ProfileAddl({row, parent: this});
           }
-          else if(row.elm_type === elm_types.Примыкание) {
+          // примыкание
+          else if(row.elm_type === elm_types.adjoining) {
             new ProfileAdjoining({row, parent: this});
           }
-          else if(elm_types.profiles.includes(row.elm_type)) {
+          // связка (чулок)
+          else if(row.elm_type === elm_types.bundle) {
             new ProfileSegment({row, parent: this});
           }
         });
@@ -102,6 +105,14 @@ class Profile extends ProfileItem {
     }
 
     return elm_types.rama;
+  }
+
+  /**
+   * Является ли текущий элемент связкой
+   * @returns {boolean}
+   */
+  get is_bundle() {
+    return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
   }
 
   /**
@@ -224,8 +235,8 @@ class Profile extends ProfileItem {
     });
 
     if(layer && !check_nearest(_attr._nearest)) {
-      if(layer.parent) {
-        find_nearest(layer.parent.profiles);
+      if(layer.layer) {
+        find_nearest(layer.layer.profiles);
       }
       else {
         find_nearest(project.l_connective.children);
@@ -233,6 +244,26 @@ class Profile extends ProfileItem {
     }
 
     return _attr._nearest;
+  }
+
+  /**
+   * Добавляет сегменты
+   * @param [count] {Number} - на сколько сегментов резать
+   */
+  split_by(count) {
+    const {generatrix, segms, inset, clr, project} = this;
+    if(!count || typeof count !== 'number' || count < 2) {
+      count = 2;
+    }
+    const len = generatrix.length / count;
+    let first = generatrix.clone({insert: false});
+    for(let i=1; i<count; i++) {
+      const loc = first.getLocationAt(len);
+      const second = first.splitAt(loc);
+      new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
+      first = second;
+    }
+    new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
   }
 
   /**
@@ -432,7 +463,7 @@ class Profile extends ProfileItem {
    */
   refresh_inset_depends(param, with_neighbor) {
     const {inset, _attr: {_rays, _nearest_cnn}} = this;
-    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of(param))) {
+    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of?.(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
@@ -522,6 +553,9 @@ class Profile extends ProfileItem {
             cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
             cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
             return meta;
+
+          case 'parent_elm':
+            return target;
 
           default:
             let prow;

@@ -2,7 +2,7 @@
 /**
  * Дополнительные методы перечисления Типы вставок
  *
- * Created by Evgeniy Malyarov on 22.02.2018.
+ * Created 22.02.2018.
  *
  * @module enm_inserts_types
  */

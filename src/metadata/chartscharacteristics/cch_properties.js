@@ -141,8 +141,17 @@ exports.CchProperties = class CchProperties extends Object {
   check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
     const {is_calculated, type} = this;
-    const {utils, enm: {comparison_types, predefined_formulas}} = $p;
+    const {utils, enm: {comparison_types, predefined_formulas}, EditorInvisible: {BuilderElement}} = $p;
     const ct = prm_row.comparison_type || comparison_types.eq;
+
+    if(!layer) {
+      if(elm instanceof BuilderElement) {
+        layer = elm.layer;
+      }
+      else if(elm2 instanceof BuilderElement) {
+        layer = elm2.layer;
+      }
+    }
 
     // для параметров алгоритма, фильтр отключаем
     if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
@@ -171,7 +180,7 @@ exports.CchProperties = class CchProperties extends Object {
         ok = val == prm_row.value;
       }
       else {
-        const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
         ok = value == val;
       }
     }
@@ -182,7 +191,7 @@ exports.CchProperties = class CchProperties extends Object {
     }
     // параметр явно указан в табчасти параметров изделия
     else {
-      const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+      const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
       ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
     }
     return ok;
@@ -512,7 +521,13 @@ exports.CchProperties = class CchProperties extends Object {
     if(brow) {
       return brow.value;
     }
-    brow = ox && ox.params.find({param: this, cnstr, inset: $p.utils.blank.guid});
+    if(ox) {
+      const {blank} = $p.utils;
+      brow = ox.params.find({param: this, cnstr, inset: blank.guid});
+      if(!brow && cnstr) {
+        brow = ox.params.find({param: this, cnstr: 0, inset: blank.guid});
+      }
+    }
     return brow && brow.value;
   }
 

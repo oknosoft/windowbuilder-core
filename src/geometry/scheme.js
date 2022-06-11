@@ -77,6 +77,9 @@ class Scheme extends paper.Project {
   set_clr(clr) {
     const {ox, _dp} = this;
     ox._obj.clr = _dp._obj.clr = clr.valueOf();
+    if(ox.clr.empty()) {
+      return this.check_clr();
+    }
     this.getItems({class: ProfileItem}).forEach((elm) => {
       if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
         elm.clr = clr;
@@ -105,9 +108,12 @@ class Scheme extends paper.Project {
         }
       }
     }
-    if (!clr_group.contains(ox.clr, clrs)){
+    if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      this.set_clr((default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr);
+      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr;
+      if(clr && !clr.empty()) {
+        this.set_clr(clr);
+      }
     }
   }
 
@@ -869,13 +875,7 @@ class Scheme extends paper.Project {
   get branch() {
     const {ox} = this;
     const param = $p.job_prm.properties.branch;
-    if(param) {
-      const prow = ox.params.find({param});
-      if(prow && !prow.value.empty()) {
-        return prow.value;
-      }
-    }
-    return ox.calc_order.manager.branch;
+    return param ? param.calculated._data._formula({ox}, $p) : ox.calc_order.manager.branch;
   }
 
   /**
@@ -1035,7 +1035,7 @@ class Scheme extends paper.Project {
           // двигаем и накапливаем связанные
           other.push.apply(other, parent.move_points(delta, all_points));
         }
-        else if(!parent.nearest || !parent.nearest()) {
+        else if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
           if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
@@ -1588,9 +1588,9 @@ class Scheme extends paper.Project {
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
-
+    const sys = attr.elm ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
-      rows = this._dp.sys.inserts(attr.elm_type, true, attr.elm);
+      rows = sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
       if(attr.inset && rows.some((row) => attr.inset == row)) {
         return attr.inset;
@@ -1598,7 +1598,7 @@ class Scheme extends paper.Project {
       return rows[0];
     }
 
-    rows = this._dp.sys.inserts(attr.elm_type, 'rows', attr.elm);
+    rows = sys.inserts(attr.elm_type, 'rows', attr.elm);
 
     // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
@@ -1865,37 +1865,6 @@ class Scheme extends paper.Project {
    */
   default_clr(attr) {
     return this.ox.clr;
-  }
-
-  /**
-   * ### Фурнитура по умолчанию
-   * Возвращает фурнитуру текущего изделия по умолчанию с учетом свойств системы и контура
-   *
-   * @property default_furn
-   * @final
-   */
-  get default_furn() {
-    // ищем ранее выбранную фурнитуру для системы
-    let {sys} = this._dp;
-    let res;
-    const {job_prm: {builder}, cat} = $p;
-    while (true) {
-      res = builder.base_furn[sys.ref];
-      if(res || sys.empty()) {
-        break;
-      }
-      sys = sys.parent;
-    }
-    if(!res) {
-      res = builder.base_furn.null;
-    }
-    if(!res) {
-      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
-        res = row;
-        return false;
-      });
-    }
-    return res;
   }
 
   /**

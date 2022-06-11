@@ -20,6 +20,10 @@ class ContourNested extends Contour {
     Contour.create({project, row, parent: this, ox: _ox});
   }
 
+  get ProfileConstructor() {
+    return ProfileNested;
+  }
+
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Вложение');
@@ -66,6 +70,29 @@ class ContourNested extends Contour {
       }
     }
     return _attr._ox;
+  }
+
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.layer.ox;
+  }
+
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
+  }
+
+  /**
+   * Система текущего слоя совпадает с системой вложенного изделия
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this._ox.sys;
+  }
+  set sys(v) {
   }
 
   get hidden() {
@@ -137,10 +164,15 @@ class ContourNested extends Contour {
             contour.redraw();
             dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
             dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+            contour.redraw();
 
             // пересчитываем, не записываем
             contour.refresh_prm_links(true);
             tproject.zoom_fit();
+            if(tproject._scope.eve._async?.move_points?.timer) {
+              clearTimeout(tproject._scope.eve._async.move_points.timer);
+              delete tproject._scope.eve._async.move_points.timer;
+            }
             while (tproject._ch.length) {
               tproject.redraw();
             }

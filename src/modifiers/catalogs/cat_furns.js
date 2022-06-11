@@ -12,10 +12,10 @@
  * корректируем метаданные табчастей фурнитуры
  */
 (({md}) => {
-  const {selection_params, specification} = md.get('cat.furns').tabular_sections;
+  const {specification_restrictions, specification} = md.get('cat.furns').tabular_sections;
   // индексы
-  selection_params.index = 'elm';
   specification.index = 'elm';
+  specification_restrictions.index = 'elm';
   // устаревшее поле nom_set для совместимости
   const {fields} = specification;
   fields.nom_set = fields.nom;
@@ -31,9 +31,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    */
   refill_prm(layer, force=false) {
 
-    const {project, furn, cnstr} = layer;
+    const {project, furn, cnstr, sys} = layer;
     const fprms = project.ox.params;
-    const {sys} = project._dp;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
@@ -135,7 +134,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     // тихий режим для спецификации
     const res = $p.dp.buyers_order.create({specification: []}, true).specification;
-    const {ox} = contour.project;
+    const {_ox: ox} = contour;
     const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},
       open_directions, offset_options} = $p.enm;
 
@@ -329,10 +328,10 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     else if(algorithm === clr_prm) {
       this.selection_params.find_rows({elm, dop}, (prm_row) => {
-        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&
           prm_row.param.type.types.includes('cat.clrs') &&
-          (!prm_row.value || prm_row.value.empty())) {
-          row_spec.clr = ox.extract_value({cnstr: contour.cnstr, param: prm_row.param});
+          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
+          row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
         }
       });
     }
@@ -374,7 +373,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    */
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr, project} = contour;
+    const {direction, h_ruch, cnstr} = contour;
 
     // проверка по высоте ручки
     if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
@@ -389,7 +388,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     // по моменту на петлях (в текущей реализации - просто по массе)
     if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {
-        if(project._dp.sys.flap_weight_max) {
+        if(contour.sys.flap_weight_max) {
           const weights = [];
           for(const cnt of contour.layer.contours) {
             weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
@@ -411,20 +410,21 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
 
     // по таблице параметров сначала строим Map ИЛИ
-    let profile;
-    const or = new Map();
-    selection_params.find_rows({elm, dop}, (row) => {
-      if(!profile) {
-        profile = contour.profile_by_furn_side(side, cache);
+    let {_or} = this;
+    if(!_or) {
+      _or = new Map();
+      for(const {_row} of selection_params._obj.filter((row) => row.elm === elm && row.dop === dop)) {
+        if(!_or.has(_row.area)) {
+          _or.set(_row.area, []);
+        }
+        _or.get(_row.area).push(_row);
       }
-      if(!or.has(row.area)) {
-        or.set(row.area, []);
-      }
-      or.get(row.area).push(row);
-    });
+      this._or = _or;
+    }
 
     let res = true;
-    for(const grp of or.values()) {
+    const profile = contour.profile_by_furn_side(side, cache);
+    for(const grp of _or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
         // выполнение условия рассчитывает объект CchProperties

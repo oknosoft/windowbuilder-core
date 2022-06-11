@@ -206,7 +206,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else {
       if(this.department.empty()) {
         ui?.dialogs.alert({
-          type: 'alert-warning',
           text: 'Не заполнен реквизит "офис продаж" (подразделение)',
           title: this.presentation
         });
@@ -214,7 +213,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
       if(this.partner.empty()) {
         ui?.dialogs.alert({
-          type: 'alert-warning',
           text: 'Не указан контрагент (дилер)',
           title: this.presentation
         });
@@ -224,7 +222,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const err_prices = this.check_prices();
       if(err_prices) {
         ui?.dialogs.alert({
-          type: 'alert-warning',
           title: 'Ошибки в заказе',
           text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
         });
@@ -289,7 +286,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
       else {
         ui?.dialogs.alert({
-          type: 'alert-warning',
           title: 'Ошибки в заказе',
           text,
         });
@@ -549,7 +545,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
           ui?.dialogs.alert({
-            type: 'alert-warning',
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
@@ -1103,7 +1098,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           })
           .catch(err => {
             ui?.dialogs.alert({
-              type: "alert-warning",
               text: err.message,
               title: "Сервис планирования"
             });
@@ -1397,6 +1391,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             // это материал
             row.value_change('quantity', '', row.quantity);
           }
+          else if(cx.leading_product.calc_order === this) {
+            // это виртуальное изделие TODO: некоторые из таких, надо пересчитывать
+            return;
+          }
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
@@ -1404,9 +1402,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
                 .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
                 .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
             });
-          }
-          else if(cx.leading_product.calc_order === this) {
-            return;
           }
           else {
             const {origin} = cx;

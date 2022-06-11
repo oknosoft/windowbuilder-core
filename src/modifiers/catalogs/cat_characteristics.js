@@ -49,7 +49,7 @@
           current_user.role_available('РедактированиеЦен')
         )) {
         return;
-      };
+      }
       const {form} = _mgr.metadata();
       if(form && form.obj && form.obj.tabular_sections) {
         form.obj.tabular_sections.specification.widths = "50,*,70,*,50,70,70,80,70,70,70,0,0,0";
@@ -201,7 +201,8 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
 
       // для подчиненных, номер строки родителя
       if(!leading_product.empty() && !leading_product.calc_order.empty()) {
-        name += ':' + leading_product.calc_order_row.row.pad();
+        const {calc_order_row} = leading_product;
+        name += ':' + (calc_order_row ? calc_order_row.row.pad() : '0');
       }
 
       // добавляем название системы или вставки
@@ -325,7 +326,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     if(modify !== false) {
       // переносим в cx параметры
       cx.params.clear();
-      if(elm > 0) {
+      if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
         const {length, width} = job_prm.properties;
         params.find_rows({cnstr: -elm, inset: origin}, (row) => {
           if(row.param != length && row.param != width) {
@@ -337,7 +338,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         params.find_rows({cnstr: 0, inset: origin}, (row) => cx.params.add(row));
       }
 
-      if(elm > 0) {
+      if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
         // переносим в cx цвет
         inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
           cx.clr = row.clr;
@@ -393,7 +394,7 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
    * Возвращает номенклатуру продукции по системе
    */
   get prod_nom() {
-    const {sys, params, calc_order} = this;
+    const {sys, params, calc_order, calc_order_row} = this;
     if(!sys.empty()) {
 
       let setted;
@@ -402,27 +403,23 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
         this.owner = sys.production.get(0).nom;
       }
       else {
-        sys.production.forEach((row) => {
-
-          if(setted) {
-            return false;
-          }
-
+        for(const row of sys.production) {
           if(row.param && !row.param.empty()) {
             if(row.param.check_condition({prm_row: row, ox: this, calc_order})) {
               setted = true;
               this.owner = row.nom;
-              return false;
+              break;
             }
           }
-
-        });
+        }
         if(!setted) {
-          sys.production.find_rows({param: $p.utils.blank.guid}, (row) => {
-            setted = true;
-            this.owner = row.nom;
-            return false;
-          });
+          for(const row of sys.production) {
+            if(!row.param || row.param.empty()) {
+              setted = true;
+              this.owner = row.nom;
+              break;
+            }
+          }
         }
         if(!setted) {
           const prow = sys.production.get(0);
@@ -431,6 +428,10 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
           }
         }
       }
+    }
+
+    if(calc_order_row && !this.owner.empty() && calc_order_row.nom !== this.owner) {
+      calc_order_row.nom = this.owner;
     }
 
     return this.owner;
@@ -672,14 +673,9 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
       })
       .then(() => {
         project.ox = '';
-        if(remove) {
-          editor.unload();
-        }
-        else {
-          project.unload();
-        }
-        return attr.res;
-      });
+        return remove ? editor.unload() : project.unload();
+      })
+      .then(() => attr.res);
   }
 
   /**
@@ -740,6 +736,28 @@ $p.CatCharacteristics = class CatCharacteristics extends $p.CatCharacteristics {
     return weight;
   }
 
+  /**
+   * Выясняет, есть ли в спецификации номенклатура из константы cname
+   * @param cname {String}
+   * @return {boolean}
+   */
+  has_nom(cname) {
+    let noms = $p.job_prm.nom[cname];
+    let res = false;
+    if(noms) {
+      if(!Array.isArray(noms)) {
+        noms = [noms];
+      }
+      for(const {nom} of this.specification) {
+        if(noms.some((curr) => curr === nom || curr.is_folder && nom._hierarchy(curr))) {
+          res = true;
+          break;
+        }
+      }
+    }
+    return res;
+  }
+
 };
 
 $p.CatCharacteristics.builder_props_defaults = {
@@ -753,6 +771,8 @@ $p.CatCharacteristics.builder_props_defaults = {
   jalousie: true,
   grid: 50,
   carcass: false,
+  mirror: false,
+  articles: 0,
 };
 
 // при изменении реквизита табчасти вставок

@@ -379,7 +379,14 @@ class EditorInvisible extends paper.PaperScope {
       }
 
       if(delta.length > consts.epsilon){
-        impost.move_points(delta, true);
+        const {b, e} = impost.rays;
+        if(b.profile && impost.is_orthogonal(b.profile, b.point, 0.1) && e.profile && impost.is_orthogonal(e.profile, e.point, 0.1)) {
+          impost.move_gen(delta);
+        }
+        else {
+          impost.move_points(delta, true);
+          impost.layer.redraw();
+        }
         res.push(delta);
       }
     });
@@ -407,14 +414,18 @@ class EditorInvisible extends paper.PaperScope {
       return;
     }
 
-    if(shift.some((delta) => delta.length > 0.3)){
+    if(shift.some((delta) => delta.length > 0.3)) {
       _attr._align_counter++;
-      contours.forEach((l) => l.redraw());
+      for (const layer of contours) {
+        layer.redraw();
+      }
       return this.glass_align(name, glasses);
     }
-    else{
+    else {
       _attr._align_counter = 0;
-      contours.forEach((l) => l.redraw());
+      for (const layer of contours) {
+        layer.redraw();
+      }
       return true;
     }
   }

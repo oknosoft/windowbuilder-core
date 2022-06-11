@@ -247,6 +247,14 @@ class ConnectiveLayer extends paper.Layer {
     return this.project.ox;
   }
 
+  /**
+   * Система слоя соединителей
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this.project._dp.sys;
+  }
+
   redraw() {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());
@@ -304,6 +312,13 @@ class ConnectiveLayer extends paper.Layer {
    */
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
+  }
+
+  /**
+   * Возвращает значение параметра с учётом наследования
+   */
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    return param.extract_pvalue({ox: this._ox, cnstr, elm, origin, prm_row});
   }
 
   /**

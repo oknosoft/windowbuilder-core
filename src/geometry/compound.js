@@ -15,3 +15,5 @@ class Compound extends BuilderElement {
     return $p.enm.elm_types.compound;
   }
 }
+
+EditorInvisible.Compound = Compound;

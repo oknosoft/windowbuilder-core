@@ -76,6 +76,25 @@ class ProfileNestedContent extends Profile {
     _row.path_data = path.pathData;
   }
 
+  selected_cnn_ii() {
+    const {elm, ox} = this;
+    const nelm = this.nearest();
+    const {parent} = nelm._row;
+
+    for(const row of ox.cnn_elmnts) {
+      if(row.node1 || row.node2) {
+        continue;
+      }
+      if((row.elm1 == elm && row.elm2 == parent) || (row.elm1 == parent && row.elm2 == elm)) {
+        if(row.cnn.empty()) {
+          const {enm: {cnn_types}, cat: {cnns}} = $p;
+          row.cnn = cnns.elm_cnn(this, nelm, cnn_types.acn.ii, null, true);
+        }
+        return {elm: nelm, row};
+      }
+    }
+  }
+
 }
 
 EditorInvisible.ProfileNestedContent = ProfileNestedContent;

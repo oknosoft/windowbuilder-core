@@ -175,7 +175,7 @@ class BuilderElement extends paper.Group {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
       {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
-      _xfields = tabular_sections.coordinates.fields, //_dgfields = t.project._dp._metadata.fields
+      _xfields = tabular_sections.coordinates.fields,
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
@@ -214,7 +214,7 @@ class BuilderElement extends paper.Group {
     inset.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o, f) => {
-        const {sys} = this.project._dp;
+        const {sys} = this.layer;
 
         let selection;
 
@@ -408,8 +408,9 @@ class BuilderElement extends paper.Group {
   // объект продукции текущего элемеента может отличаться от продукции текущего проекта
   get ox() {
     const {layer, _row} = this;
-    if(layer) {
-      return layer._ox;
+    const _ox = layer?._ox;
+    if(_ox) {
+      return _ox;
     }
     return _row ? _row._owner._owner : {cnn_elmnts: []};
   }
@@ -597,121 +598,122 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props(inset) {
-    const {_attr, _row, project: {_dp}, ox: {params}, rnum} = this;
+    const {_attr, _row, layer, ox: {params}, rnum} = this;
     const {utils, md, enm: {positions}} = $p;
     const concat = inset || rnum;
     if(!inset) {
       inset = this.inset;
     }
 
-    // свойства, нужные вставке текущего элемента
-    const inset_params = inset.used_params();
-
     // получаем список свойств
     const props = [];
-    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : _dp.sys.product_params;
-    for(const {param, elm} of product_params) {
-      if (!inset_params.includes(param)) {
-        continue;
-      }
-      // если переопределение явно указано в системе
-      if(elm) {
-        props.push(param);
-      }
-      // если переопределение указано в самом параметре
-      else if([1, 2].includes(param.inheritance)) {
-        // дополнительно учтём тип и положение элемента
-        const {elm_type, pos, orientation} = this;
-        if(!param.applying.count()) {
+    if(this.isInserted()) {
+      // свойства, нужные вставке текущего элемента
+      const inset_params = inset.used_params();
+      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      for(const {param, elm} of product_params) {
+        if (!inset_params.includes(param)) {
+          continue;
+        }
+        // если переопределение явно указано в системе
+        if(elm) {
           props.push(param);
         }
-        else {
-          for(const arow of param.applying) {
-            if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
-              (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
-              props.push(param);
-              break;
+        // если переопределение указано в самом параметре
+        else if([1, 2].includes(param.inheritance)) {
+          // дополнительно учтём тип и положение элемента
+          const {elm_type, pos, orientation} = this;
+          if(!param.applying.count()) {
+            props.push(param);
+          }
+          else {
+            for(const arow of param.applying) {
+              if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+                (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
+                props.push(param);
+                break;
+              }
             }
           }
         }
       }
-    }
 
-    if(!rnum) {
-      // удаляем возможные паразитные свойства
-      _attr.props && _attr.props.forEach((prop) => {
-        if(!props.includes(prop)) {
-          delete this[concat ? concat.ref + prop.ref : prop.ref];
-        }
-      });
-      _attr.props = props;
-      // создаём свойства
-      props.forEach((prop) => {
-        const key = concat ? concat.ref + prop.ref : prop.ref;
-        if(!this.hasOwnProperty(key)) {
-          Object.defineProperty(this, key, {
-            get() {
-              let prow;
-              params.find_rows({
-                param: prop,
-                cnstr: {in: [0, -_row.row]},
-                inset: concat || utils.blank.guid,
-                region: 0,
-              }, (row) => {
-                if(!prow || row.cnstr) {
-                  prow = row;
-                }
-              });
+      if(!rnum) {
+        // удаляем возможные паразитные свойства
+        _attr.props && _attr.props.forEach((prop) => {
+          if(!props.includes(prop)) {
+            delete this[concat ? concat.ref + prop.ref : prop.ref];
+          }
+        });
+        _attr.props = props;
+        // создаём свойства
+        props.forEach((prop) => {
+          const key = concat ? concat.ref + prop.ref : prop.ref;
+          if(!this.hasOwnProperty(key)) {
+            Object.defineProperty(this, key, {
+              get() {
+                let prow;
+                params.find_rows({
+                  param: prop,
+                  cnstr: {in: [0, -_row.row]},
+                  inset: concat || utils.blank.guid,
+                  region: 0,
+                }, (row) => {
+                  if(!prow || row.cnstr) {
+                    prow = row;
+                  }
+                });
 
-              if(prow) {
-                return prow.value;
-              }
-              const type = prop.type.types[0];
-              if(type.includes('.')) {
-                const mgr = md.mgr_by_class_name(type);
-                if(mgr) {
-                  return mgr.get();
+                if(prow) {
+                  return prow.value;
                 }
-              }
-            },
-            set(v) {
-              let prow, prow0;
-              params.find_rows({
-                param: prop,
-                cnstr: {in: [0, -_row.row]},
-                inset: concat || utils.blank.guid,
-                region: 0,
-              }, (row) => {
-                if(row.cnstr) {
-                  prow = row;
+                const type = prop.type.types[0];
+                if(type.includes('.')) {
+                  const mgr = md.mgr_by_class_name(type);
+                  if(mgr) {
+                    return mgr.get();
+                  }
+                }
+              },
+              set(v) {
+                let prow, prow0;
+                params.find_rows({
+                  param: prop,
+                  cnstr: {in: [0, -_row.row]},
+                  inset: concat || utils.blank.guid,
+                  region: 0,
+                }, (row) => {
+                  if(row.cnstr) {
+                    prow = row;
+                  }
+                  else {
+                    prow0 = row;
+                  }
+                });
+                // если устанавливаемое значение совпадает со значением изделия - удаляем
+                if(prow0 && prow0.value == v) {
+                  prow && prow._owner.del(prow);
+                }
+                else if(prow) {
+                  prow.value = v;
                 }
                 else {
-                  prow0 = row;
+                  params.add({
+                    param: prop,
+                    cnstr: -_row.row,
+                    region: 0,
+                    inset: concat || utils.blank.guid,
+                    value: v,
+                  });
                 }
-              });
-              // если устанавливаемое значение совпадает со значением изделия - удаляем
-              if(prow0 && prow0.value == v) {
-                prow && prow._owner.del(prow);
-              }
-              else if(prow) {
-                prow.value = v;
-              }
-              else {
-                params.add({
-                  param: prop,
-                  cnstr: -_row.row,
-                  region: 0,
-                  inset: concat || utils.blank.guid,
-                  value: v,
-                });
-              }
-              this.refresh_inset_depends(prop, true);
-              return true;
-            },
-            configurable: true,
-          });
-        }
-      });
+                this.refresh_inset_depends(prop, true);
+                return true;
+              },
+              configurable: true,
+            });
+          }
+        });
+      }
     }
 
     return props;
@@ -751,8 +753,22 @@ class BuilderElement extends paper.Group {
    */
   set_clr(v, ignore_select) {
     const {_row, path, project} = this;
-    const clr = _row.clr._manager.getter(v);
     const {clr_group} = _row.inset;
+    let clr = _row.clr._manager.getter(v);
+
+    if(clr.empty()) {
+      const {sys} = this.layer;
+      const group = clr_group.empty() ? sys.clr_group : clr_group;
+      let {default_clr} = sys;
+      if(default_clr.empty() || !group.contains(default_clr)) {
+        const clrs = group.clrs();
+        if(clrs.length) {
+          default_clr = clrs[0];
+        }
+      }
+      clr = default_clr;
+    }
+
     if(clr_group.contains(clr) && _row.clr != clr) {
       _row.clr = clr;
       project.register_change();
@@ -776,67 +792,47 @@ class BuilderElement extends paper.Group {
    */
   selected_cnn_ii() {
     const {project, elm, ox} = this;
-    const sel = project.getSelectedItems();
     const items = [];
-    let res;
 
-    sel.forEach((item) => {
-      if(item.parent instanceof ProfileItem || item.parent instanceof Filling)
-        items.push(item.parent);
-      else if(item instanceof Filling)
+    for(const item of project.getSelectedItems()) {
+      const {parent} = item;
+      if(!items.includes(parent) && (parent instanceof ProfileItem || parent instanceof Filling)) {
+        items.push(parent);
+      }
+      else if(item instanceof Filling && !items.includes(item)) {
         items.push(item);
-    });
+      }
+    }
 
-    if(items.length > 1 &&
-      items.some((item) => item == this) &&
-      items.some((item) => {
-        if(item != this){
-          ox.cnn_elmnts.forEach((row) => {
-            if(!row.node1 && !row.node2 &&
-              ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
-              res = {elm: item, row: row};
-              return false;
+    if(items.length > 1 && items.includes(this)) {
+      const nelm = this.nearest();
+      const shift = nelm instanceof ProfileVirtual && nelm.nearest();
+      const {cat: {cnns}, enm: {cnn_types}} = $p;
+
+      for(const item of items) {
+        if(item === this) {
+          continue;
+        }
+        for(const row of ox.cnn_elmnts) {
+          if(row.node1 || row.node2) {
+            continue;
+          }
+          if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
+            const cnn = (item instanceof Filling || (item.layer.level > this.layer.level)) ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            if(cnn !== row.cnn) {
+              row.cnn = cnn;
             }
-          });
-          if(res){
-            return true;
+            return {elm: item, row};
+          }
+          if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
+            row.cnn = item instanceof Filling ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            return {elm: nelm, row};
           }
         }
-      })){
-      return res;
+      }
     }
-  }
-
-  /**
-   * ### Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
-   * @method remove
-   */
-  remove() {
-    this.detache_wnd && this.detache_wnd();
-
-    const {parent, project, _row, ox, elm, path} = this;
-
-    if(parent && parent.on_remove_elm) {
-      parent.on_remove_elm(this);
-    }
-
-    if(path && path.onMouseLeave) {
-      path.onMouseEnter = null;
-      path.onMouseLeave = null;
-    }
-
-    project._scope.eve.emit('elm_removed', this);
-
-    if(_row && _row._owner._owner === ox && !project.ox.empty()){
-      ox.params.clear({cnstr: -elm});
-      ox.inserts.clear({cnstr: -elm});
-      _row._owner.del(_row);
-    }
-
-    project.register_change();
-
-    super.remove();
   }
 
   /**
@@ -913,6 +909,38 @@ class BuilderElement extends paper.Group {
       }
       return clr;
     }
+  }
+
+  /**
+   * ### Удаляет элемент из контура и иерархии проекта
+   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
+   * @method remove
+   */
+  remove() {
+    this.detache_wnd && this.detache_wnd();
+
+    const {parent, project, _row, ox, elm, path} = this;
+
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
+
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
+
+    project._scope.eve.emit('elm_removed', this);
+
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
+      _row._owner.del(_row);
+    }
+
+    project.register_change();
+
+    super.remove();
   }
 }
 

@@ -20,23 +20,15 @@ class ProfileNested extends Profile {
       const {coordinates} = this.layer._ox;
       const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
     }
-    const nearest_elm = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
+    const nearest = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
     Object.defineProperties(this._attr, {
       _nearest: {
-        get() {
-          return nearest_elm;
-        },
-        set(v) {
-
-        }
+        get() {return nearest;},
+        set(v) {}
       },
       _nearest_cnn: {
-        get() {
-          return ProfileNested.nearest_cnn;
-        },
-        set(v) {
-
-        }
+        get() {return ProfileNested.nearest_cnn;},
+        set(v) {}
       }
     });
     this.path.strokeColor = 'darkgreen';
@@ -57,7 +49,7 @@ class ProfileNested extends Profile {
    * Возвращает тип элемента (Вложение)
    */
   get elm_type() {
-    return $p.enm.elm_types.Вложение;
+    return $p.enm.elm_types.attachment;
   }
 
   // вставка - внешний профиль
@@ -66,14 +58,40 @@ class ProfileNested extends Profile {
   }
   set inset(v) {}
 
+  // номенклатура внешнего элемента
+  get nom() {
+    return this.nearest().nom;
+  }
+  set nom(v) {}
+
   // цвет внешнего элемента
   get clr() {
-    return this.nearest(true).clr;
+    return this.nearest().clr;
   }
   set clr(v) {}
 
   get sizeb() {
     return 0;
+  }
+
+  /**
+   * Запрещаем редактировать элемент из интерфейса
+   * @return {boolean}
+   */
+  get locked() {
+    return true;
+  }
+
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
+    return true;
+  }
+
+  get info() {
+    return `влож ${super.info}`;
   }
 
   cnn_point(node, point) {

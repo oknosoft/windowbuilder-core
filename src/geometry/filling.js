@@ -80,13 +80,13 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     // для нового устанавливаем цвет по умолчанию
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({nom: _row.inset}, (row) => {
+      layer.sys.elmnts.find_rows({nom: _row.inset}, (row) => {
         _row.clr = row.clr;
         return false;
       });
     }
     if(_row.clr.empty()){
-      project._dp.sys.elmnts.find_rows({elm_type: {in: elm_types.glasses}}, (row) => {
+      layer.sys.elmnts.find_rows({elm_type: {in: elm_types.glasses}}, (row) => {
         _row.clr = row.clr;
         return false;
       });
@@ -239,7 +239,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   create_leaf(furn, direction) {
 
-    const {project, _row, ox, elm: elm1} = this;
+    const {project, layer, _row, ox, elm: elm1} = this;
 
     // прибиваем соединения текущего заполнения
     ox.cnn_elmnts.clear({elm1});
@@ -265,7 +265,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         cattr.furn = furn;
       }
       else {
-        cattr.furn = project.default_furn;
+        cattr.furn = layer.default_furn;
       }
     }
     const contour = Contour.create(cattr);
@@ -978,7 +978,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     return `№${layer instanceof ContourNestedContent ?
       `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
-
 
   get default_clr_str() {
     return "#def,#d0ddff,#eff";
