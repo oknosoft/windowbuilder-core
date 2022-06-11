@@ -18051,7 +18051,8 @@ class Scheme extends paper.Project {
         }
         res.profile = element;
 
-        const {cnn, parent: {orientation}} = res;
+        const {cnn, parent} = res;
+        const {orientation} = parent || {};
         if(cnn && (
           cnn.cnn_type === long ||
           cnn.cnn_type === av && orientation === orientations.vert ||
