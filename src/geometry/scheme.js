@@ -1076,7 +1076,7 @@ class Scheme extends paper.Project {
           // двигаем и накапливаем связанные
           other.push.apply(other, parent.move_points(delta, all_points));
 
-          if(layers.indexOf(layer) == -1) {
+          if(!layers.includes(layer)) {
             layers.push(layer);
             layer.l_dimensions.clear();
           }
@@ -1857,17 +1857,12 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
-        // if(element.generatrix.firstSegment.point.is_nearest(gp)) {
-        //   res.profile_point = 'b';
-        // }
-        // else if(element.generatrix.lastSegment.point.is_nearest(gp)) {
-        //   res.profile_point = 'e';
-        // }
 
-        if(res.cnn && (
-          res.cnn.cnn_type === long ||
-          res.cnn.cnn_type === av && res.parent.orientation === orientations.vert ||
-          res.cnn.cnn_type === ah && res.parent.orientation === orientations.hor
+        const {cnn, parent: {orientation}} = res;
+        if(cnn && (
+          cnn.cnn_type === long ||
+          cnn.cnn_type === av && orientation === orientations.vert ||
+          cnn.cnn_type === ah && orientation === orientations.hor
         )) {
           ;
         }

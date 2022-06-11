@@ -979,35 +979,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
 
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr'
-      ],
-      Начало: [
-        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
-        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
-      ],
-      Конец: [
-        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
-        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
-      ]
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
-  }
-
   get default_clr_str() {
     return "#def,#d0ddff,#eff";
   }
@@ -1111,6 +1082,34 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
   }
 
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    const oxml = {
+      ' ': [
+        {id: 'info', path: 'o.info', type: 'ro'},
+        'inset',
+        'clr'
+      ],
+      Начало: [
+        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
+        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
+      ],
+      Конец: [
+        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
+        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
+      ]
+    };
+    if(this.selected_cnn_ii()) {
+      oxml.Примыкание = ['cnn3'];
+    }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
+    }
+    return oxml;
+  }
 }
 
 EditorInvisible.Filling = Filling;

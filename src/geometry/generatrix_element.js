@@ -275,7 +275,7 @@ class GeneratrixElement extends BuilderElement {
               // режем вертикальным лучом
               const ray = new paper.Path({
                 insert: false,
-                segments: [[free_point.x, bounds.top], [free_point.x, bounds.bottom]]
+                segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
               });
               segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
             }
@@ -283,7 +283,7 @@ class GeneratrixElement extends BuilderElement {
               // режем горизонтальным лучом
               const ray = new paper.Path({
                 insert: false,
-                segments: [[bounds.left, free_point.y], [bounds.right, free_point.y]]
+                segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
               });
               segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
             }
@@ -348,15 +348,17 @@ class GeneratrixElement extends BuilderElement {
 
       // ранняя привязка импостов
       _rays.clear();
-      isegments.forEach(({profile, node}) => {
-        profile.do_sub_bind(this, node);
-        profile.rays.clear();
-        other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
-        !noti.profiles.includes(profile) && noti.profiles.push(profile);
-      });
-      _rays.clear();
+      if(isegments.length) {
+        isegments.forEach(({profile, node}) => {
+          profile.do_sub_bind(this, node);
+          profile.rays.clear();
+          other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
+          !noti.profiles.includes(profile) && noti.profiles.push(profile);
+        });
+        _rays.clear();
+      }
 
-      layer && layer.notify && layer.notify(noti);
+      layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
 

@@ -5,6 +5,7 @@
  *
  * Created by Evgeniy Malyarov on 09.02.2022.
  */
+
 class Compound extends BuilderElement {
 
   /**

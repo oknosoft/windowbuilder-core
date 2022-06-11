@@ -1841,43 +1841,6 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
-   * @method remove
-   */
-  remove() {
-    this.detache_wnd && this.detache_wnd();
-
-    const {parent, project, _row, ox, elm, path} = this;
-
-    if(parent && parent.on_remove_elm) {
-      parent.on_remove_elm(this);
-    }
-
-    if(path && path.onMouseLeave) {
-      path.onMouseEnter = null;
-      path.onMouseLeave = null;
-    }
-
-    project._scope.eve.emit('elm_removed', this);
-
-    if (this.observer){
-      project._scope.eve.off(consts.move_points, this.observer);
-      delete this.observer;
-    }
-
-    if(_row && _row._owner._owner === ox && !project.ox.empty()){
-      ox.params.clear({cnstr: -elm});
-      ox.inserts.clear({cnstr: -elm});
-      _row._owner.del(_row);
-    }
-
-    project.register_change();
-
-    super.remove();
-  }
-
-  /**
    * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
    * @param nom {CatNom}
    * @param text {String}
@@ -1951,6 +1914,43 @@ class BuilderElement extends paper.Group {
       }
       return clr;
     }
+  }
+
+  /**
+   * ### Удаляет элемент из контура и иерархии проекта
+   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
+   * @method remove
+   */
+  remove() {
+    this.detache_wnd && this.detache_wnd();
+
+    const {parent, project, _row, ox, elm, path} = this;
+
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
+
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
+
+    project._scope.eve.emit('elm_removed', this);
+
+    if (this.observer){
+      project._scope.eve.off(consts.move_points, this.observer);
+      delete this.observer;
+    }
+
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
+      _row._owner.del(_row);
+    }
+
+    project.register_change();
+
+    super.remove();
   }
 }
 
@@ -2068,6 +2068,7 @@ class BuilderPrms {
  *
  * Created by Evgeniy Malyarov on 09.02.2022.
  */
+
 class Compound extends BuilderElement {
 
   /**
@@ -8528,35 +8529,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
 
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr'
-      ],
-      Начало: [
-        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
-        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
-      ],
-      Конец: [
-        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
-        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
-      ]
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
-  }
-
   get default_clr_str() {
     return "#def,#d0ddff,#eff";
   }
@@ -8660,6 +8632,34 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
   }
 
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    const oxml = {
+      ' ': [
+        {id: 'info', path: 'o.info', type: 'ro'},
+        'inset',
+        'clr'
+      ],
+      Начало: [
+        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
+        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
+      ],
+      Конец: [
+        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
+        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
+      ]
+    };
+    if(this.selected_cnn_ii()) {
+      oxml.Примыкание = ['cnn3'];
+    }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
+    }
+    return oxml;
+  }
 }
 
 EditorInvisible.Filling = Filling;
@@ -9181,7 +9181,7 @@ class GeneratrixElement extends BuilderElement {
               // режем вертикальным лучом
               const ray = new paper.Path({
                 insert: false,
-                segments: [[free_point.x, bounds.top], [free_point.x, bounds.bottom]]
+                segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
               });
               segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
             }
@@ -9189,7 +9189,7 @@ class GeneratrixElement extends BuilderElement {
               // режем горизонтальным лучом
               const ray = new paper.Path({
                 insert: false,
-                segments: [[bounds.left, free_point.y], [bounds.right, free_point.y]]
+                segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
               });
               segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
             }
@@ -9254,15 +9254,17 @@ class GeneratrixElement extends BuilderElement {
 
       // ранняя привязка импостов
       _rays.clear();
-      isegments.forEach(({profile, node}) => {
-        profile.do_sub_bind(this, node);
-        profile.rays.clear();
-        other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
-        !noti.profiles.includes(profile) && noti.profiles.push(profile);
-      });
-      _rays.clear();
+      if(isegments.length) {
+        isegments.forEach(({profile, node}) => {
+          profile.do_sub_bind(this, node);
+          profile.rays.clear();
+          other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
+          !noti.profiles.includes(profile) && noti.profiles.push(profile);
+        });
+        _rays.clear();
+      }
 
-      layer && layer.notify && layer.notify(noti);
+      layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
 
@@ -10352,7 +10354,7 @@ class CnnPoint {
     if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
       return false;
     }
-    if(!profile_point && profile && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+    if(profile && !profile_point && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
       return false;
     }
     return true;
@@ -11350,30 +11352,6 @@ class ProfileItem extends GeneratrixElement {
    */
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
-  }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr',
-        this instanceof Onlay ? 'region' : 'offset',
-      ],
-      'Начало': ['x1','y1','a1','cnn1'],
-      'Конец': ['x2','y2','a2','cnn2']
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
   }
 
   /**
@@ -12625,7 +12603,6 @@ class ProfileItem extends GeneratrixElement {
     return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
   }
 
-
   /**
    * ### Выделяет сегмент пути профиля, ближайший к точке
    *
@@ -13012,6 +12989,29 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    const oxml = {
+      ' ': [
+        {id: 'info', path: 'o.info', type: 'ro'},
+        'inset',
+        'clr',
+        this instanceof Onlay ? 'region' : 'offset',
+      ],
+      'Начало': ['x1','y1','a1','cnn1'],
+      'Конец': ['x2','y2','a2','cnn2']
+    };
+    if(this.selected_cnn_ii()) {
+      oxml.Примыкание = ['cnn3'];
+    }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
+    }
+    return oxml;
+  }
 }
 
 ProfileItem.path_attr = {
@@ -14508,13 +14508,6 @@ class BaseLine extends ProfileItem {
   }
 
   /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    return BaseLine.oxml;
-  }
-
-  /**
    * Возвращает тип элемента (линия)
    */
   get elm_type() {
@@ -14594,6 +14587,12 @@ class BaseLine extends ProfileItem {
 
   }
 
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    return BaseLine.oxml;
+  }
 }
 
 BaseLine.oxml = {
@@ -17270,7 +17269,7 @@ class Scheme extends paper.Project {
           // двигаем и накапливаем связанные
           other.push.apply(other, parent.move_points(delta, all_points));
 
-          if(layers.indexOf(layer) == -1) {
+          if(!layers.includes(layer)) {
             layers.push(layer);
             layer.l_dimensions.clear();
           }
@@ -18051,17 +18050,12 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
-        // if(element.generatrix.firstSegment.point.is_nearest(gp)) {
-        //   res.profile_point = 'b';
-        // }
-        // else if(element.generatrix.lastSegment.point.is_nearest(gp)) {
-        //   res.profile_point = 'e';
-        // }
 
-        if(res.cnn && (
-          res.cnn.cnn_type === long ||
-          res.cnn.cnn_type === av && res.parent.orientation === orientations.vert ||
-          res.cnn.cnn_type === ah && res.parent.orientation === orientations.hor
+        const {cnn, parent: {orientation}} = res;
+        if(cnn && (
+          cnn.cnn_type === long ||
+          cnn.cnn_type === av && orientation === orientations.vert ||
+          cnn.cnn_type === ah && orientation === orientations.hor
         )) {
           ;
         }
@@ -24449,7 +24443,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save(attr) {
 
-    const {msg, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
+    const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -24462,8 +24456,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // если установлен признак проведения, проверим состояние транспорта
     if(this.posted) {
       if([Отклонен, Отозван, Шаблон].includes(obj_delivery_state)) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
           title: this.presentation
         });
@@ -24484,16 +24477,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     else {
       if(this.department.empty()) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           text: 'Не заполнен реквизит "офис продаж" (подразделение)',
           title: this.presentation
         });
         return false || must_be_saved;
       }
       if(this.partner.empty()) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           text: 'Не указан контрагент (дилер)',
           title: this.presentation
         });
@@ -24502,8 +24493,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       const err_prices = this.check_prices();
       if(err_prices) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           title: 'Ошибки в заказе',
           text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
         });
@@ -24567,8 +24557,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         throw new Error(text);
       }
       else {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           title: 'Ошибки в заказе',
           text,
         });
@@ -24819,7 +24808,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         const {production, orders, presentation, _data} = this;
 
         // запрет удаления подчиненной продукции
-        const {msg} = $p;
+        const {ui} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
         if(!leading_product.empty() && leading_product.calc_order_row && (
           // если в изделии присутствует порождающая вставка
@@ -24827,8 +24816,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           // если это виртуальное изделие слоя
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
-          msg.show_msg && msg.show_msg({
-            type: 'alert-warning',
+          ui?.dialogs?.alert({
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
@@ -25353,7 +25341,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.planning.clear();
 
     // получаем url сервиса
-    const {wsql, aes, adapters: {pouch}, msg, utils} = $p;
+    const {wsql, aes, adapters: {pouch}, ui, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
 
     // сериализуем документ и характеристики
@@ -25381,8 +25369,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           })
           .catch(err => {
-            msg.show_msg({
-              type: "alert-warning",
+            ui?.dialogs?.alert({
               text: err.message,
               title: "Сервис планирования"
             });

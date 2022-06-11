@@ -68,7 +68,7 @@ class CnnPoint {
     if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
       return false;
     }
-    if(!profile_point && profile && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+    if(profile && !profile_point && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
       return false;
     }
     return true;
@@ -1066,30 +1066,6 @@ class ProfileItem extends GeneratrixElement {
    */
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
-  }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr',
-        this instanceof Onlay ? 'region' : 'offset',
-      ],
-      'Начало': ['x1','y1','a1','cnn1'],
-      'Конец': ['x2','y2','a2','cnn2']
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
   }
 
   /**
@@ -2341,7 +2317,6 @@ class ProfileItem extends GeneratrixElement {
     return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
   }
 
-
   /**
    * ### Выделяет сегмент пути профиля, ближайший к точке
    *
@@ -2728,6 +2703,29 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    const oxml = {
+      ' ': [
+        {id: 'info', path: 'o.info', type: 'ro'},
+        'inset',
+        'clr',
+        this instanceof Onlay ? 'region' : 'offset',
+      ],
+      'Начало': ['x1','y1','a1','cnn1'],
+      'Конец': ['x2','y2','a2','cnn2']
+    };
+    if(this.selected_cnn_ii()) {
+      oxml.Примыкание = ['cnn3'];
+    }
+    const props = this.elm_props();
+    if(props.length) {
+      oxml.Свойства = props.map(({ref}) => ref);
+    }
+    return oxml;
+  }
 }
 
 ProfileItem.path_attr = {

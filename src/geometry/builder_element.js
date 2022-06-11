@@ -836,43 +836,6 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
-   * @method remove
-   */
-  remove() {
-    this.detache_wnd && this.detache_wnd();
-
-    const {parent, project, _row, ox, elm, path} = this;
-
-    if(parent && parent.on_remove_elm) {
-      parent.on_remove_elm(this);
-    }
-
-    if(path && path.onMouseLeave) {
-      path.onMouseEnter = null;
-      path.onMouseLeave = null;
-    }
-
-    project._scope.eve.emit('elm_removed', this);
-
-    if (this.observer){
-      project._scope.eve.off(consts.move_points, this.observer);
-      delete this.observer;
-    }
-
-    if(_row && _row._owner._owner === ox && !project.ox.empty()){
-      ox.params.clear({cnstr: -elm});
-      ox.inserts.clear({cnstr: -elm});
-      _row._owner.del(_row);
-    }
-
-    project.register_change();
-
-    super.remove();
-  }
-
-  /**
    * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
    * @param nom {CatNom}
    * @param text {String}
@@ -946,6 +909,43 @@ class BuilderElement extends paper.Group {
       }
       return clr;
     }
+  }
+
+  /**
+   * ### Удаляет элемент из контура и иерархии проекта
+   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
+   * @method remove
+   */
+  remove() {
+    this.detache_wnd && this.detache_wnd();
+
+    const {parent, project, _row, ox, elm, path} = this;
+
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
+
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
+
+    project._scope.eve.emit('elm_removed', this);
+
+    if (this.observer){
+      project._scope.eve.off(consts.move_points, this.observer);
+      delete this.observer;
+    }
+
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
+      _row._owner.del(_row);
+    }
+
+    project.register_change();
+
+    super.remove();
   }
 }
 
