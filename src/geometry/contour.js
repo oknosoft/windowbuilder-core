@@ -2322,9 +2322,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       return {
         profile: curr.profile,
-        angle: curr.angle,
+        angle: curr.angle.round(1),
         len: sub_path.length,
         sub_path,
+        angle_next: curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
       };
     });
   }

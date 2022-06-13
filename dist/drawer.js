@@ -4405,9 +4405,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       return {
         profile: curr.profile,
-        angle: curr.angle,
+        angle: curr.angle.round(1),
         len: sub_path.length,
         sub_path,
+        angle_next: curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
       };
     });
   }
@@ -8415,10 +8416,10 @@ class Filling extends AbstractFilling(BuilderElement) {
         b: curr.b,
         e: curr.e,
         len: curr.sub_path.length,
-        angle: curr.e.subtract(curr.b).angle,
+        angle: curr.e.subtract(curr.b).angle.round(1),
         profile: curr.profile,
         next: next.profile,
-        angle_next: curr.profile.generatrix.angle_to(next.profile.generatrix, curr.e, true, 0),
+        angle_next: curr.profile.generatrix.angle_to(next.profile.generatrix, curr.e, true, 0).round(1),
       }
       res.push(tmp);
       if(tmp.angle < 0){
@@ -24174,7 +24175,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       // проверка условия
       prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
         if(elm && elm._row && elm._row.hasOwnProperty(name)) {
-          return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager)
+          return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
         }
         return Object.getPrototypeOf(this).check_condition.call(this, {row_spec, prm_row, elm, elm2, cnstr, origin, ox});
       }
