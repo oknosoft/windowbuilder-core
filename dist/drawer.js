@@ -19404,17 +19404,14 @@ class ProductsBuilding {
      * @param elm2
      * @return {Number|DataObj}
      */
-    function cnn_row(elm1, elm2) {
+    function cnn_row(elm1, elm2, cnn) {
       const {cnn_nodes} = ProductsBuilding;
       let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: cnn_nodes, node2: cnn_nodes});
-      if(res.length) {
-        return res[0].row;
-      }
-      return 0;
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: {in: cnn_nodes}, node2: {in: cnn_nodes}});
+      return res.length ? res[0].row : (cnn || 0);
     }
 
     /**
@@ -19687,7 +19684,7 @@ class ProductsBuilding {
           alp1: 0,
           alp2: 0,
           len: elm._attr._len || elm.length,
-          origin: cnn_row(elm.elm, nearest.elm)
+          origin: cnn_row(elm.elm, nearest.elm, elm._attr._nearest_cnn)
         }, null, nearest);
       }
     }
@@ -19735,7 +19732,7 @@ class ProductsBuilding {
 
         // добавляем строку спецификации
         const row_cnn = row_cnn_prev || row_cnn_next;
-        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
+        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0, b.cnn || e.cnn), spec, ox});
         row_spec.qty = row_cnn ? row_cnn.quantity : 1;
 
         // уточняем размер
