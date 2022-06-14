@@ -4405,11 +4405,11 @@ class CatClrsManager extends CatManager {
    */
   by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
     const {predefined_name} = clr;
+    const flipped = elm?.layer?.flipped;
     if(predefined_name) {
-      const flipped = elm && elm.layer && elm.layer.flipped;
       switch (predefined_name) {
       case 'КакЭлемент':
-        return clr_elm;
+        return flipped ? this.inverted(clr_elm) :  clr_elm;
       case 'КакИзделие':
         return clr_sch;
       case 'КакЭлементСнаружи':
@@ -4426,7 +4426,7 @@ class CatClrsManager extends CatManager {
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch) :
           clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
       case 'КакЭлементИнверсный':
-        return this.inverted(clr_elm);
+        return flipped ? clr_elm : this.inverted(clr_elm);
       case 'КакИзделиеИнверсный':
         return this.inverted(clr_sch);
       case 'БезЦвета':
@@ -4476,7 +4476,7 @@ class CatClrsManager extends CatManager {
     else if (clr instanceof $p.CatFormulas) {
 
     }
-    return clr.empty() ? clr_elm : clr;
+    return clr.empty() ? (flipped ? this.inverted(clr_elm) :  clr_elm) : clr;
   }
 
   /**
