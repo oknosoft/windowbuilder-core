@@ -124,7 +124,7 @@ $p.wsql.init((prm) => {
       delete _m._rev;
 
       // фильтруем и корректируем метаданные
-      patch(_m);
+      patch(_m, $p);
 
       return $p.md.init(_m);
     })

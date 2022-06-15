@@ -6,6 +6,10 @@
  * Created by Evgeniy Malyarov on 18.05.2019.
  */
 
+const path = require('path');
+const fs = require('fs');
+const local_meta = path.resolve(__dirname, '../src/metadata');
+
 const include = ['*'];
 const exclude = [
   'cat.servers',
@@ -19,7 +23,9 @@ const minimal = [];
 const writable = ['*'];
 const read_only = ['cat.countries'];
 
-module.exports = function(meta) {
+const cls_map = {cat: 'catalogs', doc: 'documents', enm: 'enums', rep: 'reports', cch: 'chartscharacteristics'};
+
+module.exports = function(meta, $p) {
   for(const cls in meta) {
     const mgrs = meta[cls];
     for(const name in mgrs) {
@@ -39,6 +45,7 @@ module.exports = function(meta) {
           delete mgrs[name].tabular_sections[fld];
         }
       }
+
 
       if(name === 'branches' && cls === 'cat') {
         'back_server,repl_server,owner,mode,server'.split(',').forEach((fld) => delete mgrs[name].fields[fld]);
@@ -72,6 +79,13 @@ module.exports = function(meta) {
       }
       else if(read_only.includes(`${cls}.${name}`)) {
         mgrs[name].read_only = true;
+      }
+
+      // возможность скорректировать метаданные из файлов
+      const filename = path.join(local_meta, cls_map[cls] || cls, `${cls}_${name}.json`);
+      if(fs.existsSync(filename)) {
+        const mp = require(filename);
+        $p.utils._patch(meta, mp);
       }
     }
   }
