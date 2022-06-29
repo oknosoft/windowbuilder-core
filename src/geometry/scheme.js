@@ -2130,6 +2130,23 @@ class Scheme extends paper.Project {
     return _attr._reflected;
   }
 
+  get sketch_view() {
+    let {sketch_view} = this._dp.sys;
+    const {hinge, inner, outer} = sketch_view._manager;
+    if(sketch_view === hinge) {
+      sketch_view = inner;
+    }
+    if(this._attr._reflected) {
+      if(sketch_view === inner) {
+        sketch_view = outer;
+      }
+      else {
+        sketch_view = inner;
+      }
+    }
+    return sketch_view;
+  }
+
 }
 
 EditorInvisible.Scheme = Scheme;
