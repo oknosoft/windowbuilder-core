@@ -2684,7 +2684,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
       }
-      console.error(`Не задано значений параметра ${param.toString()}`);
+      console.info(`Не задано значений параметра ${param.toString()}`);
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});

@@ -261,6 +261,7 @@ class Scheme extends paper.Project {
       return;
     }
     const is_row = obj._owner === ox.params;
+    // запоминаем значения базовых параметров в обработке шаблонов
     if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
@@ -277,6 +278,10 @@ class Scheme extends paper.Project {
       for(const contour of this.contours) {
         contour.refresh_inset_depends(obj.param);
       }
+    }
+    // при смене цвета основы, уточняем цвет изделия
+    if(is_row && ox.sys.base_clr === obj.param) {
+      this.check_clr();
     }
   }
 

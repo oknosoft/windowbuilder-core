@@ -82,7 +82,7 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    * @returns {boolean}
    */
   contains(clr, clrs) {
-    if(this.empty()) {
+    if(this.empty() && !clrs) {
       return true;
     }
     if(!clrs) {

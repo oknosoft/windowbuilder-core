@@ -153,7 +153,7 @@ class CchPredefined_elmnts extends CatObj{
   get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
   set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}
   get elmnts(){return this._getter_ts('elmnts')}
-  set elmnts(v){this._setter_ts('elmnts',v)}}
+  set elmnts(v){this._setter_ts('elmnts',v)}}
 $p.CchPredefined_elmnts = CchPredefined_elmnts;
 class CchPredefined_elmntsElmntsRow extends TabularSectionRow{
 get value(){return this._getter('value')}
@@ -1017,7 +1017,7 @@ set values(v){this._setter_ts('values',v)}
       }
     });
     return values;
-  }}
+  }}
 $p.CatParams_links = CatParams_links;
 class CatParams_linksLeadingsRow extends TabularSectionRow{
 get key(){return this._getter('key')}
@@ -1956,7 +1956,7 @@ set parameters_russian_recipe(v){this._setter('parameters_russian_recipe',v)}
     }
 
     return (amount * cfrom.course / cfrom.multiplicity) * cto.multiplicity / cto.course;
-  }}
+  }}
 $p.CatCurrencies = CatCurrencies;
 $p.cat.create('currencies');
 
@@ -4726,7 +4726,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
    * @returns {boolean}
    */
   contains(clr, clrs) {
-    if(this.empty()) {
+    if(this.empty() && !clrs) {
       return true;
     }
     if(!clrs) {
@@ -7281,7 +7281,7 @@ set sys_profile(v){this._setter_ts('sys_profile',v)}
   set clr_out(v) {
     const {clr} = this;
     this.clr = $p.cat.clrs.composite_ref('clr_out', clr.clr_in.empty() ? clr : clr.clr_in, v);
-  }}
+  }}
 $p.DpBuyers_order = DpBuyers_order;
 class DpBuyers_orderProductionRow extends TabularSectionRow{
 get inset(){return this._getter('inset')}

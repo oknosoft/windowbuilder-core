@@ -4767,7 +4767,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
       }
-      console.error(`Не задано значений параметра ${param.toString()}`);
+      console.info(`Не задано значений параметра ${param.toString()}`);
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});
@@ -16455,6 +16455,7 @@ class Scheme extends paper.Project {
       return;
     }
     const is_row = obj._owner === ox.params;
+    // запоминаем значения базовых параметров в обработке шаблонов
     if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
@@ -16471,6 +16472,10 @@ class Scheme extends paper.Project {
       for(const contour of this.contours) {
         contour.refresh_inset_depends(obj.param);
       }
+    }
+    // при смене цвета основы, уточняем цвет изделия
+    if(is_row && ox.sys.base_clr === obj.param) {
+      this.check_clr();
     }
   }
 

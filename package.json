@@ -34,7 +34,6 @@
   "devDependencies": {
     "gulp": "^4.0",
     "gulp-concat": "^2.6",
-    "gulp-csso": "^4.0",
     "gulp-replace": "^1.0",
     "gulp-umd": "^2.0",
     "md5-file": "^5.0"
