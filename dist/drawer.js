@@ -18277,7 +18277,8 @@ class Scheme extends paper.Project {
 
   /**
    * Зеркалирует эскиз
-   * @param v
+   * @param v {undefined|boolean} признак чтения или установки значения
+   * @param animate {boolean} признак выполнять ли анимацию зеркалирования
    * @return {boolean}
    */
   async mirror(v, animate) {
@@ -18326,16 +18327,17 @@ class Scheme extends paper.Project {
 
   get sketch_view() {
     let {sketch_view} = this._dp.sys;
-    const {hinge, inner, outer} = sketch_view._manager;
-    if(sketch_view === hinge) {
-      sketch_view = inner;
-    }
+    const {hinge, out_hinge, inner, outer} = sketch_view._manager;
     if(this._attr._reflected) {
-      if(sketch_view === inner) {
-        sketch_view = outer;
-      }
-      else {
-        sketch_view = inner;
+      switch (sketch_view) {
+        case hinge:
+          return out_hinge;
+        case out_hinge:
+          return hinge;
+        case inner:
+          return outer;
+        case outer:
+          return inner;
       }
     }
     return sketch_view;
