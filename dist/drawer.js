@@ -10653,6 +10653,22 @@ class CnnPoint {
     };
   }
 
+  /**
+   * Поправка на размер соединения с учётом угла к соседнему профилю
+   * @returns {number}
+   */
+  get size() {
+    const {parent, cnn, node} = this;
+    let size = cnn ? cnn.size(parent) : 0;
+    if(size) {
+      const angle = Math.abs(parent.angle_at(node) - 90);
+      if(angle > 1 && angle < 90) {
+        size = size / Math.abs(Math.cos(angle * Math.PI / 180));
+      }
+    }
+    return size;
+  }
+
   initialize() {
 
     const {_parent, node} = this;
@@ -11275,7 +11291,7 @@ class ProfileItem extends GeneratrixElement {
 
     // получаем фрагмент образующей
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + (b.cnn ? b.cnn.size(this) : 0) + (e.cnn ? e.cnn.size(this) : 0);
+    const res = sub_gen.length + b.size + e.size;
     sub_gen.remove();
 
     return res;
