@@ -23899,7 +23899,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
      * @return {Array}
      */
     used_params() {
-      const {_data} = this;
+      const {_data, specification} = this;
       // если параметры этого набора уже обработаны - пропускаем
       if(_data.used_params) {
         return _data.used_params;
@@ -23907,12 +23907,24 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
       const sprms = [];
       const {order, product, nearest} = enm.plan_detailing;
+      const use = cch.properties.predefined('use');
 
-      this.selection_params.forEach(({param, origin}) => {
+      this.selection_params.forEach(({param, origin, elm}) => {
         if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
-        if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+        if(param === use) {
+          const {nom} = specification.find({elm}) || {};
+          if(nom) {
+            const prm = cch.properties.get(nom.ref);
+            if(!prm.name) {
+              prm.name = prm.caption = nom.name;
+              prm.type = {types: ['boolean']};
+            }
+            sprms.push(prm);
+          }
+        }
+        else if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
           sprms.push(param);
         }
       });
@@ -23924,7 +23936,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       });
 
       const {cx_prm} = enm.predefined_formulas;
-      this.specification.forEach(({nom, algorithm}) => {
+      specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
           for(const param of nom.used_params()) {
             !sprms.includes(param) && sprms.push(param);
@@ -23935,7 +23947,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       });
 
-      return _data.used_params = sprms;
+      return _data.used_params = Object.freeze(sprms);
     }
 
     get split_type(){
@@ -24306,6 +24318,18 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('coloring_kind');
+
+  // признак использования строки спецификации
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
+        const value = elm[row_spec.nom.ref];
+        return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('use');
 
 });
 

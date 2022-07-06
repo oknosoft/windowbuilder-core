@@ -234,4 +234,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('coloring_kind');
 
+  // признак использования строки спецификации
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
+        const value = elm[row_spec.nom.ref];
+        return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('use');
+
 });

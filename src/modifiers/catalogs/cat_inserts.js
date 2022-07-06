@@ -1361,7 +1361,7 @@
      * @return {Array}
      */
     used_params() {
-      const {_data} = this;
+      const {_data, specification} = this;
       // если параметры этого набора уже обработаны - пропускаем
       if(_data.used_params) {
         return _data.used_params;
@@ -1369,12 +1369,24 @@
 
       const sprms = [];
       const {order, product, nearest} = enm.plan_detailing;
+      const use = cch.properties.predefined('use');
 
-      this.selection_params.forEach(({param, origin}) => {
+      this.selection_params.forEach(({param, origin, elm}) => {
         if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
-        if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+        if(param === use) {
+          const {nom} = specification.find({elm}) || {};
+          if(nom) {
+            const prm = cch.properties.get(nom.ref);
+            if(!prm.name) {
+              prm.name = prm.caption = nom.name;
+              prm.type = {types: ['boolean']};
+            }
+            sprms.push(prm);
+          }
+        }
+        else if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
           sprms.push(param);
         }
       });
@@ -1386,7 +1398,7 @@
       });
 
       const {cx_prm} = enm.predefined_formulas;
-      this.specification.forEach(({nom, algorithm}) => {
+      specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
           for(const param of nom.used_params()) {
             !sprms.includes(param) && sprms.push(param);
@@ -1397,7 +1409,7 @@
         }
       });
 
-      return _data.used_params = sprms;
+      return _data.used_params = Object.freeze(sprms);
     }
 
     get split_type(){
