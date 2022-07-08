@@ -211,11 +211,11 @@ exports.CatClrsManager = class CatClrsManager extends Object {
 
       // связи параметров для цвета изделия
       const {clr_product} = job_prm.properties;
+      const filter = {}
       if(clr_product && sys instanceof DpBuyers_order) {
         const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
         // проверим вхождение значения в доступные и при необходимости изменим
         if(links.length) {
-          const filter = {}
           clr_product.filter_params_links(filter, null, links);
           filter.ref && mf.choice_params.push({
             name: 'ref',
@@ -248,6 +248,9 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       // если разрешен единственный цвет, установим ro
       if(!clr_group.empty() && clr_group.clrs().length === 1) {
         mf.single_value = clr_group.clrs()[0];
+      }
+      else if(filter.ref?.in && filter.ref.in?.length === 1) {
+        mf.single_value = filter.ref.in[0];
       }
       else if(mf.single_value) {
         delete mf.single_value;

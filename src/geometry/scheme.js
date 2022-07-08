@@ -104,11 +104,17 @@ class Scheme extends paper.Project {
     const clrs = [...clr_group.clrs()];
 
     cat.clrs.selection_exclude_service(cmeta, _dp);
+    let first;
     if(cmeta.choice_params.length > 2) {
       const all = clrs.length ? clrs.splice(0) : cat.clrs;
       for (const clr of all) {
         if(cmeta.choice_params.every(({name, path}) => {
-          return utils._selection(clr, {[name]: path});
+          if(utils._selection(clr, {[name]: path})) {
+            if(!first && Array.isArray(path.in)) {
+              first = cat.clrs.get(path.in[0]);
+            }
+            return true;
+          }
         })) {
           clrs.push(clr);
         }
@@ -116,7 +122,7 @@ class Scheme extends paper.Project {
     }
     if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr;
+      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? (first || clrs[0]) : default_clr;
       if(clr && !clr.empty()) {
         this.set_clr(clr);
       }
