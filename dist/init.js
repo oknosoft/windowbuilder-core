@@ -1359,8 +1359,9 @@ set params(v){this._setter_ts('params',v)}
 
   execute(obj, attr) {
 
-    const {_manager, _data} = this;
+    const {_manager, _data, ref} = this;
     const {$p} = _manager._owner;
+    const {ireg, msg, ui} = $p;
 
     // создаём функцию из текста формулы
     if(!_data._formula && this.formula){
@@ -1389,8 +1390,8 @@ set params(v){this._setter_ts('params',v)}
     if(this.parent == _manager.predefined('printing_plates')) {
 
       if(!_formula) {
-        $p.msg.show_msg({
-          title: $p.msg.bld_title,
+        msg.show_msg({
+          title: msg.bld_title,
           type: 'alert-error',
           text: `Ошибка в формуле<br /><b>${this.name}</b>`
         });
@@ -1399,7 +1400,7 @@ set params(v){this._setter_ts('params',v)}
 
       // рендерим jsx в новое окно
       if(this.jsx) {
-        return $p.ui.dialogs.window({
+        return ui.dialogs.window({
           Component: _formula,
           title: this.name,
           //print: true,
@@ -1409,16 +1410,26 @@ set params(v){this._setter_ts('params',v)}
       }
 
       // получаем HTMLDivElement с отчетом
+      ireg.log?.timeStart?.(ref);
       return _formula(obj, $p, attr)
 
       // показываем отчет в отдельном окне
-        .then((doc) => $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print());
+        .then((doc) => {
+          ireg.log?.timeEnd?.(ref);
+          $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print();
+        })
+        .catch(err => {
+          ireg.log?.timeEnd?.(ref, err);
+          throw err;
+        });
 
     }
     else {
-      return _formula && _formula(obj, $p, attr);
+      ireg.log?.timeStart?.(ref);
+      const res = _formula && _formula(obj, $p, attr);
+      ireg.log?.timeEnd?.(ref);
+      return res;
     }
-
   }
 
   get _template() {
@@ -4547,11 +4558,11 @@ class CatClrsManager extends CatManager {
 
       // связи параметров для цвета изделия
       const {clr_product} = job_prm.properties;
+      const filter = {}
       if(clr_product && sys instanceof DpBuyers_order) {
         const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
         // проверим вхождение значения в доступные и при необходимости изменим
         if(links.length) {
-          const filter = {}
           clr_product.filter_params_links(filter, null, links);
           filter.ref && mf.choice_params.push({
             name: 'ref',
@@ -4584,6 +4595,9 @@ class CatClrsManager extends CatManager {
       // если разрешен единственный цвет, установим ro
       if(!clr_group.empty() && clr_group.clrs().length === 1) {
         mf.single_value = clr_group.clrs()[0];
+      }
+      else if(filter.ref?.in && filter.ref.in?.length === 1) {
+        mf.single_value = filter.ref.in[0];
       }
       else if(mf.single_value) {
         delete mf.single_value;
