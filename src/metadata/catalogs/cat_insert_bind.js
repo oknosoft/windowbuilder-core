@@ -15,18 +15,28 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
   insets(ox, order = false) {
     const {sys, owner} = ox;
     const res = [];
-    const {Заказ} = $p.enm.inserts_types;
+    const {enm, cat} = $p;
+    const {inserts_types: {Заказ}, elm_types: {flap}} = enm;
     for (const {production, inserts} of this) {
       for (const {nom} of production) {
         if(!nom || nom.empty() || (sys && sys._hierarchy(nom)) || (owner && owner._hierarchy(nom))) {
           for (const {inset, elm_type} of inserts) {
             if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
-              if(!order && inset.insert_type !== Заказ) {
+              if((!order && inset.insert_type !== Заказ) || (order && inset.insert_type === Заказ)) {
                 res.push({inset, elm_type});
               }
-              else if(order && inset.insert_type === Заказ) {
-                res.push({inset, elm_type});
-              }
+            }
+          }
+        }
+        // створки виртуальных слоёв
+        else {
+          for(const {dop} of ox.constructions) {
+            if(dop.sys && cat.production_params.get(dop.sys)._hierarchy(nom)) {
+              inserts.find_rows({elm_type: flap}, ({inset, elm_type}) => {
+                if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
+                  res.push({inset, elm_type});
+                }
+              });
             }
           }
         }
@@ -43,7 +53,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
    */
   deposit({ox, scheme, spec}) {
 
-    const {elm_types} = $p.enm;
+    const {enm: {elm_types}, EditorInvisible: {ContourVirtual}} = $p;
 
     for (const {inset, elm_type} of this.insets(ox)) {
 
@@ -65,16 +75,23 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
         origin: inset,
       };
 
+      const deposit_flap = (layer) => {
+        if(!(layer instanceof ContourVirtual)) {
+          elm.layer = layer;
+          len_angl.cnstr = layer.cnstr;
+          inset.calculate_spec({elm, len_angl, ox, spec});
+        }
+        for (const contour of layer.contours) {
+          deposit_flap(contour);
+        }
+      };
+
       // рассчитаем спецификацию вставки
       switch (elm_type) {
       case elm_types.flap:
         if(scheme) {
           for (const {contours} of scheme.contours) {
-            for (const contour of contours) {
-              elm.layer = contour;
-              len_angl.cnstr = contour.cnstr;
-              inset.calculate_spec({elm, len_angl, ox, spec});
-            }
+            contours.forEach(deposit_flap);
           }
         }
         break;
