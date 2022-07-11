@@ -213,7 +213,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
             }
 
-            const proc_row = res.add(dop_row);
+            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row);
             proc_row.origin = this;
             proc_row.specify = row_furn.nom;
             proc_row.handle_height_max = contour.cnstr;
