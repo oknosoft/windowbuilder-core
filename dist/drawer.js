@@ -20445,7 +20445,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
+      enm: {predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
       cch: {properties},
     } = $p;
 
@@ -20484,34 +20484,9 @@ class ProductsBuilding {
       }
 
       // цвет по параметру
-      if(row_base?.algorithm === clr_prm && elm.elm > 0) {
-        let param;
-        if(row_base._or) {
-          for(const grp of row_base._or.values()) {
-            for(const prow of grp) {
-              if(prow.origin == "algorithm") {
-                param = prow.param;
-                break;
-              }
-              if(param) {
-                break;
-              }
-            }
-          }
-        }
-        if(!param && origin) {
-          const ctypes = [ct.get(), ct.eq];
-          origin.selection_params.find_rows({elm: row_base.elm}, (prow) => {
-            if(ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
-              param = prow.param;
-            }
-          });
-        }
-        if(param) {
-          row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param});
-        }
-      }
-      else if(row_base?.algorithm === clr_in) {
+      clrs.clr_prm({row_base, row_spec, elm, origin, ox});
+
+      if(row_base?.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
           row_spec.clr = row_base.clr;
@@ -20523,6 +20498,7 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
+
       else if(row_base?.algorithm === clr_out) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
@@ -20535,6 +20511,7 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
+
       // длина штапика
       else if([gb_short, gb_long].includes(row_base?.algorithm) && len_angl) {
         const {curr, next, prev} = len_angl;

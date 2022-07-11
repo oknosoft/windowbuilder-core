@@ -4407,6 +4407,38 @@ class CatClrsManager extends CatManager {
     return this.get(ares[0]);
   }
 
+  clr_prm({row_base, row_spec, elm, origin, ox}) {
+    const {enm: {predefined_formulas: {clr_prm}, comparison_types: ct}} = $p;
+    if(row_base?.algorithm === clr_prm && elm?.elm > 0) {
+      let param;
+      if(row_base._or) {
+        for(const grp of row_base._or.values()) {
+          for(const prow of grp) {
+            if(prow.origin == "algorithm") {
+              param = prow.param;
+              break;
+            }
+            if(param) {
+              break;
+            }
+          }
+        }
+      }
+      if(!param && origin) {
+        const ctypes = [ct.get(), ct.eq];
+        origin.selection_params.find_rows({elm: row_base.elm}, (prow) => {
+          if(ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
+            param = prow.param;
+          }
+        });
+      }
+      if(param) {
+        row_spec.clr = (ox || elm.ox).extract_value({cnstr: [0, -elm.elm], param});
+      }
+    }
+    return row_spec.clr;
+  }
+
   /**
    * ПолучитьЦветПоПредопределенномуЦвету
    * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
@@ -4451,7 +4483,13 @@ class CatClrsManager extends CatManager {
         }
         const {inset} = elm;
         const main_rows = inset.main_rows(elm);
-        return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
+        if(main_rows.length) {
+          const row_base = main_rows[0];
+          const row_spec = {clr: this.by_predefined(row_base.clr, clr_elm, clr_sch, elm, spec)};
+          this.clr_prm({row_base, row_spec, elm, origin: inset});
+          return row_spec.clr;
+        }
+        return clr_elm;
       case 'КакНом':
         const nom = row ? row.nom : (elm && elm.nom);
         return nom ? nom.clr : (clr.empty() ? clr_elm : clr);
