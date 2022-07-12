@@ -15,8 +15,10 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
    * @param elm {BuilderElement} элемент, к которому привязана визуализация
    * @param layer {Contour} слой, в котороый помещаем путь
    * @param offset {Number|[Number,Number]}
+   * @param [offset0] {Number}
+   * @param clr {CatClrs}
    */
-  draw(elm, layer, offset, offset0) {
+  draw({elm, layer, offset, offset0, clr}) {
     if(!layer.isInserted()) {
       return;
     }
@@ -112,7 +114,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             parent: layer._by_spec,
             pathData: this.svg_path,
             strokeColor: 'black',
-            fillColor: elm.constructor.clr_by_clr.call(elm, elm._row.clr),
+            fillColor: elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr),
             strokeScaling: false,
             pivot: [0, 0],
             opacity: elm.opacity
