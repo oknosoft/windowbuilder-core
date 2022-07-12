@@ -70,10 +70,14 @@ class Scheme extends paper.Project {
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    contour.save_coordinates(true);
-    isBrowser && layer && contour.refresh_prm_links();
-    !layer && l_dimensions.redraw();
-    contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
+    return contour.save_coordinates(true)
+      .then(() => {
+        isBrowser && layer && contour.refresh_prm_links();
+        !layer && l_dimensions.redraw();
+        return contours.reduce((sum, curr) => {
+          return sum.then(() => this.refresh_recursive(curr, isBrowser));
+        }, Promise.resolve());
+      });
   }
 
   /**
@@ -242,7 +246,8 @@ class Scheme extends paper.Project {
 
   /**
    * Устанавливает фурнитуру в створках изделия
-   * @param furn
+   * @param furn {CatFur}
+   * @param fprops {Object}
    */
   set_furn(furn, fprops) {
     for (const rama of this.contours) {
@@ -471,7 +476,8 @@ class Scheme extends paper.Project {
    *
    * @method load
    * @param id {String|CatObj} - идентификатор или объект продукции
-   * @param from_service {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
+   * @param [from_service] {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
+   * @param [order] {DocCalc_order}
    * @async
    */
   load(id, from_service, order) {
@@ -918,7 +924,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this?._scope?.eve.emit_async(type, obj, fields);
+    this._scope?.eve?.emit_async?.(type, obj, fields);
   }
 
   /**
@@ -1972,6 +1978,9 @@ class Scheme extends paper.Project {
   /**
    * Ищет точки в выделенных элементах. Если не находит, то во всём проекте
    * @param point {paper.Point}
+   * @param [tolerance] {Number}
+   * @param [selected_first] {Boolean}
+   * @param [with_onlays] {Boolean}
    * @returns {*}
    */
   hitPoints(point, tolerance, selected_first, with_onlays) {
