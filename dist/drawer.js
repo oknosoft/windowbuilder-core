@@ -11284,29 +11284,40 @@ class ProfileItem extends GeneratrixElement {
     let gen = this.elm_type == elm_types.Импост ? this.generatrix : outer;
 
     // находим проекции четырёх вершин на образующую
-    for (let i = 1; i <= 4; i++) {
-      ppoints[i] = gen.getNearestPoint(this.corns(i));
+    let elongated;
+    for (let i = 1; i <= 8; i++) {
+      const pt = this.corns(i);
+      if(pt) {
+        if(i > 4 && !elongated) {
+          gen = gen.clone({insert: false}).elongation(this.width * 2);
+          elongated = true;
+        }
+        ppoints[i] = gen.getNearestPoint(pt);
+      }
     }
 
     // находим точки, расположенные ближе к концам
-    let pt = this.corns(7);
-    if(pt) {
-      gen = gen.clone({insert: false}).elongation(this.width * 2);
-      ppoints.b = gen.getNearestPoint(pt);
-    }
-    else {
-      ppoints.b = gen.getOffsetOf(ppoints[1]) < gen.getOffsetOf(ppoints[4]) ? ppoints[1] : ppoints[4];
-    }
-
-    pt = this.corns(8);
-    if(pt) {
-      if(gen.isInserted()) {
-        gen = gen.clone({insert: false}).elongation(this.width * 2);
+    let distanse = Infinity;
+    for(const i of [1, 4, 5, 7]) {
+      const pt = ppoints[i];
+      if(pt) {
+        const curr = gen.getOffsetOf(pt);
+        if(curr < distanse) {
+          distanse = curr;
+          ppoints.b = pt;
+        }
       }
-      ppoints.e = gen.getNearestPoint(pt);
     }
-    else {
-      ppoints.e = gen.getOffsetOf(ppoints[2]) > gen.getOffsetOf(ppoints[3]) ? ppoints[2] : ppoints[3];
+    distanse = 0;
+    for(const i of [2, 3, 6, 8]) {
+      const pt = ppoints[i];
+      if(pt) {
+        const curr = gen.getOffsetOf(pt);
+        if(curr > distanse) {
+          distanse = curr;
+          ppoints.e = pt;
+        }
+      }
     }
 
     // получаем фрагмент образующей
