@@ -20591,6 +20591,9 @@ class ProductsBuilding {
     else {
       row_spec.qty = row_base.quantity;
       row_spec.len = (len - row_base.sz) * (row_base.coefficient || 0.001);
+      if(row_base.offsets && row_spec.len > (row_base.offsets * (row_base.coefficient || 0.001))) {
+        row_spec.len = row_base.offsets * (row_base.coefficient || 0.001);
+      }
     }
   }
 
