@@ -3941,7 +3941,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_opening() {
 
     const {l_visualization, furn, opening} = this;
-    const {open_types, open_directions, opening: {out}} = $p.enm;
+    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
 
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization._opening && l_visualization._opening.visible)
@@ -3974,7 +3974,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
 
-      if(opening === out) {
+      if(opening === out && ![hinge, out_hinge].includes(this.project.sketch_view)) {
         _opening.dashArray = [70, 50];
       }
       else if(_opening.dashArray.length) {
