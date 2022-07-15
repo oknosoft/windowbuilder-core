@@ -31,17 +31,14 @@ class ProductsBuilding {
      * @param elm2
      * @return {Number|DataObj}
      */
-    function cnn_row(elm1, elm2) {
+    function cnn_row(elm1, elm2, cnn) {
       const {cnn_nodes} = ProductsBuilding;
       let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: cnn_nodes, node2: cnn_nodes});
       if(res.length) {
         return res[0].row;
       }
-      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: cnn_nodes, node2: cnn_nodes});
-      if(res.length) {
-        return res[0].row;
-      }
-      return 0;
+      res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: {in: cnn_nodes}, node2: {in: cnn_nodes}});
+      return res.length ? res[0].row : (cnn || 0);
     }
 
     /**
@@ -314,7 +311,7 @@ class ProductsBuilding {
           alp1: 0,
           alp2: 0,
           len: elm._attr._len || elm.length,
-          origin: cnn_row(elm.elm, nearest.elm)
+          origin: cnn_row(elm.elm, nearest.elm, elm._attr._nearest_cnn)
         }, null, nearest);
       }
     }
@@ -362,7 +359,7 @@ class ProductsBuilding {
 
         // добавляем строку спецификации
         const row_cnn = row_cnn_prev || row_cnn_next;
-        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0), spec, ox});
+        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0, b.cnn || e.cnn), spec, ox});
         row_spec.qty = row_cnn ? row_cnn.quantity : 1;
 
         // уточняем размер
@@ -1020,7 +1017,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, clr_prm, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
+      enm: {predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
       cch: {properties},
     } = $p;
 
@@ -1059,34 +1056,9 @@ class ProductsBuilding {
       }
 
       // цвет по параметру
-      if(row_base?.algorithm === clr_prm && elm.elm > 0) {
-        let param;
-        if(row_base._or) {
-          for(const grp of row_base._or.values()) {
-            for(const prow of grp) {
-              if(prow.origin == "algorithm") {
-                param = prow.param;
-                break;
-              }
-              if(param) {
-                break;
-              }
-            }
-          }
-        }
-        if(!param && origin) {
-          const ctypes = [ct.get(), ct.eq];
-          origin.selection_params.find_rows({elm: row_base.elm}, (prow) => {
-            if(ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
-              param = prow.param;
-            }
-          });
-        }
-        if(param) {
-          row_spec.clr = ox.extract_value({cnstr: [0, -elm.elm], param});
-        }
-      }
-      else if(row_base?.algorithm === clr_in) {
+      clrs.clr_prm({row_base, row_spec, elm, origin, ox});
+
+      if(row_base?.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
           row_spec.clr = row_base.clr;
@@ -1098,6 +1070,7 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
+
       else if(row_base?.algorithm === clr_out) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
@@ -1110,6 +1083,7 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
+
       // длина штапика
       else if([gb_short, gb_long].includes(row_base?.algorithm) && len_angl) {
         const {curr, next, prev} = len_angl;
@@ -1169,6 +1143,9 @@ class ProductsBuilding {
     else {
       row_spec.qty = row_base.quantity;
       row_spec.len = (len - row_base.sz) * (row_base.coefficient || 0.001);
+      if(row_base.offsets && row_spec.len > (row_base.offsets * (row_base.coefficient || 0.001))) {
+        row_spec.len = row_base.offsets * (row_base.coefficient || 0.001);
+      }
     }
   }
 

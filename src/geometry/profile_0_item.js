@@ -68,7 +68,7 @@ class CnnPoint {
     if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
       return false;
     }
-    if(!profile_point && profile && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+    if(profile && !profile_point && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
       return false;
     }
     return true;
@@ -369,6 +369,22 @@ class CnnPoint {
       art1: invert ? !is_t : is_t,
       art2: invert ? is_t : !is_t,
     };
+  }
+
+  /**
+   * Поправка на размер соединения с учётом угла к соседнему профилю
+   * @returns {number}
+   */
+  get size() {
+    const {parent, cnn, node} = this;
+    let size = cnn ? cnn.size(parent) : 0;
+    if(size) {
+      const angle = Math.abs(parent.angle_at(node) - 90);
+      if(angle > 1 && angle < 90) {
+        size = size / Math.abs(Math.cos(angle * Math.PI / 180));
+      }
+    }
+    return size;
   }
 
   initialize() {
@@ -993,7 +1009,7 @@ class ProfileItem extends GeneratrixElement {
 
     // получаем фрагмент образующей
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + (b.cnn ? b.cnn.size(this) : 0) + (e.cnn ? e.cnn.size(this) : 0);
+    const res = sub_gen.length + b.size + e.size;
     sub_gen.remove();
 
     return res;

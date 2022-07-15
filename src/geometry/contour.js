@@ -1736,7 +1736,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_opening() {
 
     const {l_visualization, furn, opening} = this;
-    const {open_types, open_directions, opening: {out}} = $p.enm;
+    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
 
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization._opening && l_visualization._opening.visible)
@@ -1754,7 +1754,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const rotary_folding = () => {
 
       const {_opening} = l_visualization;
-      const {side_count} = this;
+      const {side_count, project: {sketch_view}} = this;
 
       furn.open_tunes.forEach((row) => {
         if (row.rotation_axis) {
@@ -1769,7 +1769,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
 
-      if(opening === out) {
+      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
         _opening.dashArray = [70, 50];
       }
       else if(_opening.dashArray.length) {
@@ -1835,7 +1835,13 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
-        this.nom.visualization.draw(elm, l_visualization, this.len * 1000, this.width * 1000 * (this.alp1 || 1));
+        this.nom.visualization.draw({
+          elm,
+          layer: l_visualization,
+          offset: this.len * 1000,
+          offset0: this.width * 1000 * (this.alp1 || 1),
+          clr: this.clr,
+        });
         return true;
       }
     };
@@ -1857,7 +1863,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           // визуализация для текущего заполнения
           glasses.some((elm) => {
             if(row.elm === elm.elm) {
-              row.nom.visualization.draw(elm, l_visualization, [row.len * 1000, row.width * 1000]);
+              row.nom.visualization.draw({
+                elm,
+                layer: l_visualization,
+                offset: [row.len * 1000, row.width * 1000],
+                clr: row.clr,
+              });
               return true;
             }
             // визуализация для текущей раскладки
@@ -1869,15 +1880,31 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // подписи профилей
     if(builder_props.articles) {
-      for(const profile of profiles) {
-        const {rays: {outer}, sizeb, inset, nom} = profile;
-        const p0 = outer.getNearestPoint(profile.corns(1));
-        const offset = outer.getOffsetOf(p0) + 80;
-        const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
-        const tangent = outer.getTangentAt(offset);
+      this.draw_articles(profiles, builder_props.articles);
+    }
 
-        let content = '→ ';
-        switch (builder_props.articles) {
+    // перерисовываем вложенные контуры
+    for(const contour of contours){
+      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
+    }
+
+  }
+
+  /**
+   * Подписи профилей в отдельном методе
+   * @param profiles {Array.<Profile>}
+   * @param articles {Number}
+   */
+  draw_articles(profiles, articles = 3) {
+    for(const profile of profiles) {
+      const {rays: {outer}, sizeb, inset, nom} = profile;
+      const p0 = outer.getNearestPoint(profile.corns(1));
+      const offset = outer.getOffsetOf(p0) + 80;
+      const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
+      const tangent = outer.getTangentAt(offset);
+
+      let content = '→ ';
+      switch (articles) {
         case 1:
           content += profile.elm.toFixed();
           break;
@@ -1893,29 +1920,22 @@ class Contour extends AbstractFilling(paper.Layer) {
         case 5:
           content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
           break;
-        }
-
-        const text = new paper.PointText({
-          parent: l_visualization._by_spec,
-          guide: true,
-          //justification: 'left',
-          fillColor: 'darkblue',
-          fontFamily: consts.font_family,
-          fontSize: consts.font_size,
-          content,
-          position,
-        });
-        const {width} = text.bounds;
-        text.rotate(tangent.angle);
-        text.translate(tangent.multiply(width / 2));
       }
-    }
 
-    // перерисовываем вложенные контуры
-    for(const contour of contours){
-      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
+      const text = new paper.PointText({
+        parent: this.l_visualization._by_spec,
+        guide: true,
+        //justification: 'left',
+        fillColor: 'darkblue',
+        fontFamily: consts.font_family,
+        fontSize: consts.font_size,
+        content,
+        position,
+      });
+      const {width} = text.bounds;
+      text.rotate(tangent.angle);
+      text.translate(tangent.multiply(width / 2));
     }
-
   }
 
   get hidden() {
@@ -2200,9 +2220,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       return {
         profile: curr.profile,
-        angle: curr.angle,
+        angle: curr.angle.round(1),
         len: sub_path.length,
         sub_path,
+        angle_next: curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
       };
     });
   }
@@ -2581,7 +2602,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
       }
-      console.error(`Не задано значений параметра ${param.toString()}`);
+      console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});

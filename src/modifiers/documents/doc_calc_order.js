@@ -184,7 +184,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // если установлен признак проведения, проверим состояние транспорта
     if(this.posted) {
       if([Отклонен, Отозван, Шаблон].includes(obj_delivery_state)) {
-        ui?.dialogs.alert({
+        ui?.dialogs?.alert({
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
           title: this.presentation
         });
@@ -205,14 +205,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     else {
       if(this.department.empty()) {
-        ui?.dialogs.alert({
+        ui?.dialogs?.alert({
           text: 'Не заполнен реквизит "офис продаж" (подразделение)',
           title: this.presentation
         });
         return false || must_be_saved;
       }
       if(this.partner.empty()) {
-        ui?.dialogs.alert({
+        ui?.dialogs?.alert({
           text: 'Не указан контрагент (дилер)',
           title: this.presentation
         });
@@ -221,7 +221,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       const err_prices = this.check_prices();
       if(err_prices) {
-        ui?.dialogs.alert({
+        ui?.dialogs?.alert({
           title: 'Ошибки в заказе',
           text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
         });
@@ -285,7 +285,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         throw new Error(text);
       }
       else {
-        ui?.dialogs.alert({
+        ui?.dialogs?.alert({
           title: 'Ошибки в заказе',
           text,
         });
@@ -544,7 +544,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           // если это виртуальное изделие слоя
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
-          ui?.dialogs.alert({
+          ui?.dialogs?.alert({
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
@@ -1097,7 +1097,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           })
           .catch(err => {
-            ui?.dialogs.alert({
+            ui?.dialogs?.alert({
               text: err.message,
               title: "Сервис планирования"
             });

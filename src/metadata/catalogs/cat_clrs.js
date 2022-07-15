@@ -60,6 +60,38 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     return this.get(ares[0]);
   }
 
+  clr_prm({row_base, row_spec, elm, origin, ox}) {
+    const {enm: {predefined_formulas: {clr_prm}, comparison_types: ct}} = $p;
+    if(row_base?.algorithm === clr_prm && elm?.elm > 0) {
+      let param;
+      if(row_base._or) {
+        for(const grp of row_base._or.values()) {
+          for(const prow of grp) {
+            if(prow.origin == "algorithm") {
+              param = prow.param;
+              break;
+            }
+            if(param) {
+              break;
+            }
+          }
+        }
+      }
+      if(!param && origin) {
+        const ctypes = [ct.get(), ct.eq];
+        origin.selection_params.find_rows({elm: row_base.elm}, (prow) => {
+          if(ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
+            param = prow.param;
+          }
+        });
+      }
+      if(param) {
+        row_spec.clr = (ox || elm.ox).extract_value({cnstr: [0, -elm.elm], param});
+      }
+    }
+    return row_spec.clr;
+  }
+
   /**
    * ПолучитьЦветПоПредопределенномуЦвету
    * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
@@ -69,11 +101,11 @@ exports.CatClrsManager = class CatClrsManager extends Object {
    */
   by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
     const {predefined_name} = clr;
+    const flipped = elm?.layer?.flipped;
     if(predefined_name) {
-      const flipped = elm && elm.layer && elm.layer.flipped;
       switch (predefined_name) {
       case 'КакЭлемент':
-        return clr_elm;
+        return flipped ? this.inverted(clr_elm) :  clr_elm;
       case 'КакИзделие':
         return clr_sch;
       case 'КакЭлементСнаружи':
@@ -90,7 +122,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch) :
           clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
       case 'КакЭлементИнверсный':
-        return this.inverted(clr_elm);
+        return flipped ? clr_elm : this.inverted(clr_elm);
       case 'КакИзделиеИнверсный':
         return this.inverted(clr_sch);
       case 'БезЦвета':
@@ -104,7 +136,13 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         }
         const {inset} = elm;
         const main_rows = inset.main_rows(elm);
-        return main_rows.length ? this.by_predefined(main_rows[0].clr, clr_elm, clr_sch, elm, spec) : clr_elm;
+        if(main_rows.length) {
+          const row_base = main_rows[0];
+          const row_spec = {clr: this.by_predefined(row_base.clr, clr_elm, clr_sch, elm, spec)};
+          this.clr_prm({row_base, row_spec, elm, origin: inset});
+          return row_spec.clr;
+        }
+        return clr_elm;
       case 'КакНом':
         const nom = row ? row.nom : (elm && elm.nom);
         return nom ? nom.clr : (clr.empty() ? clr_elm : clr);
@@ -140,7 +178,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     else if (clr instanceof $p.CatFormulas) {
 
     }
-    return clr.empty() ? clr_elm : clr;
+    return clr.empty() ? (flipped ? this.inverted(clr_elm) :  clr_elm) : clr;
   }
 
   /**
@@ -211,11 +249,11 @@ exports.CatClrsManager = class CatClrsManager extends Object {
 
       // связи параметров для цвета изделия
       const {clr_product} = job_prm.properties;
+      const filter = {}
       if(clr_product && sys instanceof DpBuyers_order) {
         const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
         // проверим вхождение значения в доступные и при необходимости изменим
         if(links.length) {
-          const filter = {}
           clr_product.filter_params_links(filter, null, links);
           filter.ref && mf.choice_params.push({
             name: 'ref',
@@ -248,6 +286,9 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       // если разрешен единственный цвет, установим ro
       if(!clr_group.empty() && clr_group.clrs().length === 1) {
         mf.single_value = clr_group.clrs()[0];
+      }
+      else if(filter.ref?.in && filter.ref.in?.length === 1) {
+        mf.single_value = filter.ref.in[0];
       }
       else if(mf.single_value) {
         delete mf.single_value;

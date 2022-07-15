@@ -64,10 +64,14 @@ class Scheme extends paper.Project {
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    contour.save_coordinates(true);
-    isBrowser && layer && contour.refresh_prm_links();
-    !layer && l_dimensions.redraw();
-    contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
+    return contour.save_coordinates(true)
+      .then(() => {
+        isBrowser && layer && contour.refresh_prm_links();
+        !layer && l_dimensions.redraw();
+        return contours.reduce((sum, curr) => {
+          return sum.then(() => this.refresh_recursive(curr, isBrowser));
+        }, Promise.resolve());
+      });
   }
 
   /**
@@ -98,11 +102,17 @@ class Scheme extends paper.Project {
     const clrs = [...clr_group.clrs()];
 
     cat.clrs.selection_exclude_service(cmeta, _dp);
+    let first;
     if(cmeta.choice_params.length > 2) {
       const all = clrs.length ? clrs.splice(0) : cat.clrs;
       for (const clr of all) {
         if(cmeta.choice_params.every(({name, path}) => {
-          return utils._selection(clr, {[name]: path});
+          if(utils._selection(clr, {[name]: path})) {
+            if(!first && Array.isArray(path.in)) {
+              first = cat.clrs.get(path.in[0]);
+            }
+            return true;
+          }
         })) {
           clrs.push(clr);
         }
@@ -110,7 +120,7 @@ class Scheme extends paper.Project {
     }
     if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? clrs[0] : default_clr;
+      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? (first || clrs[0]) : default_clr;
       if(clr && !clr.empty()) {
         this.set_clr(clr);
       }
@@ -230,7 +240,8 @@ class Scheme extends paper.Project {
 
   /**
    * Устанавливает фурнитуру в створках изделия
-   * @param furn
+   * @param furn {CatFur}
+   * @param fprops {Object}
    */
   set_furn(furn, fprops) {
     for (const rama of this.contours) {
@@ -255,6 +266,7 @@ class Scheme extends paper.Project {
       return;
     }
     const is_row = obj._owner === ox.params;
+    // запоминаем значения базовых параметров в обработке шаблонов
     if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
@@ -271,6 +283,10 @@ class Scheme extends paper.Project {
       for(const contour of this.contours) {
         contour.refresh_inset_depends(obj.param);
       }
+    }
+    // при смене цвета основы, уточняем цвет изделия
+    if(is_row && ox.sys.base_clr === obj.param) {
+      this.check_clr();
     }
   }
 
@@ -454,7 +470,8 @@ class Scheme extends paper.Project {
    *
    * @method load
    * @param id {String|CatObj} - идентификатор или объект продукции
-   * @param from_service {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
+   * @param [from_service] {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
+   * @param [order] {DocCalc_order}
    * @async
    */
   load(id, from_service, order) {
@@ -888,7 +905,7 @@ class Scheme extends paper.Project {
     if(obj.type) {
       type = obj.type;
     }
-    this?._scope?.eve.emit_async(type, obj, fields);
+    this._scope?.eve?.emit_async?.(type, obj, fields);
   }
 
   /**
@@ -1057,7 +1074,7 @@ class Scheme extends paper.Project {
           // двигаем и накапливаем связанные
           other.push.apply(other, parent.move_points(delta, all_points));
 
-          if(layers.indexOf(layer) == -1) {
+          if(!layers.includes(layer)) {
             layers.push(layer);
             layer.l_dimensions.clear();
           }
@@ -1839,10 +1856,13 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
-        if(res.cnn && (
-          res.cnn.cnn_type === long ||
-          res.cnn.cnn_type === av && res.parent.orientation === orientations.vert ||
-          res.cnn.cnn_type === ah && res.parent.orientation === orientations.hor
+
+        const {cnn, parent} = res;
+        const {orientation} = parent || {};
+        if(cnn && (
+          cnn.cnn_type === long ||
+          cnn.cnn_type === av && orientation === orientations.vert ||
+          cnn.cnn_type === ah && orientation === orientations.hor
         )) {
           ;
         }
@@ -1940,6 +1960,9 @@ class Scheme extends paper.Project {
   /**
    * Ищет точки в выделенных элементах. Если не находит, то во всём проекте
    * @param point {paper.Point}
+   * @param [tolerance] {Number}
+   * @param [selected_first] {Boolean}
+   * @param [with_onlays] {Boolean}
    * @returns {*}
    */
   hitPoints(point, tolerance, selected_first, with_onlays) {
@@ -2057,7 +2080,8 @@ class Scheme extends paper.Project {
 
   /**
    * Зеркалирует эскиз
-   * @param v
+   * @param v {undefined|boolean} признак чтения или установки значения
+   * @param animate {boolean} признак выполнять ли анимацию зеркалирования
    * @return {boolean}
    */
   async mirror(v, animate) {
@@ -2102,6 +2126,24 @@ class Scheme extends paper.Project {
       }
     }
     return _attr._reflected;
+  }
+
+  get sketch_view() {
+    let {sketch_view} = this._dp.sys;
+    const {hinge, out_hinge, inner, outer} = sketch_view._manager;
+    if(this._attr._reflected) {
+      switch (sketch_view) {
+        case hinge:
+          return out_hinge;
+        case out_hinge:
+          return hinge;
+        case inner:
+          return outer;
+        case outer:
+          return inner;
+      }
+    }
+    return sketch_view;
   }
 
 }
