@@ -1876,7 +1876,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const rotary_folding = () => {
 
       const {_opening} = l_visualization;
-      const {side_count} = this;
+      const {side_count, project: {sketch_view}} = this;
 
       furn.open_tunes.forEach((row) => {
         if (row.rotation_axis) {
@@ -1891,7 +1891,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
 
-      if(opening === out && ![hinge, out_hinge].includes(this.project.sketch_view)) {
+      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
         _opening.dashArray = [70, 50];
       }
       else if(_opening.dashArray.length) {
@@ -2704,7 +2704,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
       }
-      console.info(`Не задано значений параметра ${param.toString()}`);
+      console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});

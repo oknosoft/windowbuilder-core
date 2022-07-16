@@ -3959,7 +3959,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const rotary_folding = () => {
 
       const {_opening} = l_visualization;
-      const {side_count} = this;
+      const {side_count, project: {sketch_view}} = this;
 
       furn.open_tunes.forEach((row) => {
         if (row.rotation_axis) {
@@ -3974,7 +3974,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
 
-      if(opening === out && ![hinge, out_hinge].includes(this.project.sketch_view)) {
+      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
         _opening.dashArray = [70, 50];
       }
       else if(_opening.dashArray.length) {
@@ -4787,7 +4787,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
       }
-      console.info(`Не задано значений параметра ${param.toString()}`);
+      console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, prm_row});
@@ -11279,13 +11279,12 @@ class ProfileItem extends GeneratrixElement {
    */
   get length() {
     const {b, e, outer} = this.rays;
-    const {cnn_types, elm_types, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const ppoints = {};
-    let gen = this.elm_type == elm_types.Импост ? this.generatrix : outer;
+    let gen = this.elm_type == $p.enm.elm_types.impost ? this.generatrix : outer;
 
-    // находим проекции четырёх вершин на образующую
+    // находим проекции четырёх (шести) вершин на образующую
     let elongated;
-    for (let i = 1; i <= 8; i++) {
+    for (const i of [1, 2, 3, 4, 7, 8]) {
       const pt = this.corns(i);
       if(pt) {
         if(i > 4 && !elongated) {
@@ -11298,7 +11297,7 @@ class ProfileItem extends GeneratrixElement {
 
     // находим точки, расположенные ближе к концам
     let distanse = Infinity;
-    for(const i of [1, 4, 5, 7]) {
+    for(const i of [7, 1, 4]) {
       const pt = ppoints[i];
       if(pt) {
         const curr = gen.getOffsetOf(pt);
@@ -11306,16 +11305,22 @@ class ProfileItem extends GeneratrixElement {
           distanse = curr;
           ppoints.b = pt;
         }
+        if(i === 7) {
+          break;
+        }
       }
     }
     distanse = 0;
-    for(const i of [2, 3, 6, 8]) {
+    for(const i of [8, 2, 3]) {
       const pt = ppoints[i];
       if(pt) {
         const curr = gen.getOffsetOf(pt);
         if(curr > distanse) {
           distanse = curr;
           ppoints.e = pt;
+        }
+        if(i === 8) {
+          break;
         }
       }
     }
@@ -12288,6 +12293,19 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(prays2[side2], oinner, 5);
             if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
               delete _corns[5];
+            }
+            else {
+              // ищем удлинение
+              const {width} = this;
+              const l1 = new paper.Path({insert: false, segments: [_corns[1], _corns[5]]}).elongation(width * 4);
+              const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 4);
+              const pts = [
+                [intersect_point(l1, rays.outer, 0, interior), l1, rays.outer],
+                [intersect_point(l1, rays.inner, 0, interior), l1, rays.inner],
+                [intersect_point(l4, rays.outer, 0, interior), l4, rays.outer],
+                [intersect_point(l4, rays.inner, 0, interior), l4, rays.inner],
+              ].sort((a, b) => b[0] - a[0]);
+              intersect_point(pts[0][1], pts[0][2], 7, interior);
             }
           }
           else if(is_e) {
