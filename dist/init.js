@@ -4451,16 +4451,26 @@ class CatClrsManager extends CatManager {
   by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
     const {predefined_name} = clr;
     const flipped = elm?.layer?.flipped;
+    const {clr_by_main_row} = $p.job_prm.builder;
     if(predefined_name) {
       switch (predefined_name) {
       case 'КакЭлемент':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
         return flipped ? this.inverted(clr_elm) :  clr_elm;
       case 'КакИзделие':
         return clr_sch;
       case 'КакЭлементСнаружи':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
         return flipped ? this.by_predefined({predefined_name: 'КакЭлементИзнутри'}, clr_elm) :
           clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
       case 'КакЭлементИзнутри':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
         return flipped ?
           this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm) :
           clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
@@ -4471,6 +4481,9 @@ class CatClrsManager extends CatManager {
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch) :
           clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
       case 'КакЭлементИнверсный':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
         return flipped ? clr_elm : this.inverted(clr_elm);
       case 'КакИзделиеИнверсный':
         return this.inverted(clr_sch);

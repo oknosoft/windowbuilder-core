@@ -12315,6 +12315,19 @@ class ProfileItem extends GeneratrixElement {
             if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
               delete _corns[6];
             }
+            else {
+              // ищем удлинение
+              const {width} = this;
+              const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 4);
+              const l3 = new paper.Path({insert: false, segments: [_corns[3], _corns[6]]}).elongation(width * 4);
+              const pts = [
+                [intersect_point(l2, rays.outer, 0, interior), l2, rays.outer],
+                [intersect_point(l2, rays.inner, 0, interior), l2, rays.inner],
+                [intersect_point(l3, rays.outer, 0, interior), l3, rays.outer],
+                [intersect_point(l3, rays.inner, 0, interior), l3, rays.inner],
+              ].sort((a, b) => b[0] - a[0]);
+              intersect_point(pts[0][1], pts[0][2], 8, interior);
+            }
           }
         }
         else {
@@ -19799,7 +19812,7 @@ class ProductsBuilding {
      */
     function base_spec_profile(elm, totqty0) {
 
-      const {_row, rays, layer, segms} = elm;
+      const {_row, _attr, rays, layer, segms} = elm;
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -19832,11 +19845,18 @@ class ProductsBuilding {
         const row_cnn_next = e.cnn && e.cnn.main_row(elm);
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
-        let row_spec;
-
         // добавляем строку спецификации
         const row_cnn = row_cnn_prev || row_cnn_next;
-        row_spec = new_spec_row({elm, row_base: row_cnn, nom: _row.nom, origin: cnn_row(_row.elm, prev ? prev.elm : 0, b.cnn || e.cnn), spec, ox});
+        _attr.row_spec = null;
+        const row_spec = new_spec_row({
+          elm,
+          row_base: row_cnn,
+          nom: _row.nom,
+          origin: cnn_row(_row.elm, prev ? prev.elm : 0, b.cnn || e.cnn),
+          spec,
+          ox,
+        });
+        _attr.row_spec = row_spec;
         row_spec.qty = row_cnn ? row_cnn.quantity : 1;
 
         // уточняем размер
@@ -19873,7 +19893,7 @@ class ProductsBuilding {
         }
 
         // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
-          if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
+        if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
           row_cnn_prev.formula.execute({
             ox: ox,
             elm: elm,
