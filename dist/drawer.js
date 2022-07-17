@@ -13179,8 +13179,6 @@ class ProfileSegment extends ProfileItem {
     }
   }
 
-  }
-
   joined_imposts() {
     const {b, e, parent, generatrix} = this;
     const tmp = parent.joined_imposts();
