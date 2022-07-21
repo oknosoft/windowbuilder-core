@@ -1506,7 +1506,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           throw null;
         })
         .catch((err) => {
-          err && console.log(err);
+          err && console.error(err);
           delete this._data._templates_loading;
           return this.load_production()
             .then(() => {
