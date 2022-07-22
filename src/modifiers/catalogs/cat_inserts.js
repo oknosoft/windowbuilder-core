@@ -224,6 +224,11 @@
             }
             const mf = meta.fields[param.ref];
 
+            // специальный редактор поля
+            if(param.Editor) {
+              mf.Editor = param.Editor;
+            }
+
             // отбор по владельцу
             if(param.type.types.some(type => type === 'cat.property_values')) {
               mf.choice_params = [{name: 'owner', path: param}];
