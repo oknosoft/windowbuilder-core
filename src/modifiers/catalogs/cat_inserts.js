@@ -224,6 +224,11 @@
             }
             const mf = meta.fields[param.ref];
 
+            // специальный редактор поля
+            if(param.Editor) {
+              mf.Editor = param.Editor;
+            }
+
             // отбор по владельцу
             if(param.type.types.some(type => type === 'cat.property_values')) {
               mf.choice_params = [{name: 'owner', path: param}];
@@ -247,10 +252,17 @@
             if(!prototype.hasOwnProperty(param.ref)){
               Object.defineProperty(prototype, param.ref, {
                 get() {
-                  return this.get_row(param).value;
+                  const prow = this.get_row(param);
+                  return param.hasOwnProperty('extract_pvalue') ? param.extract_pvalue({prow}) : prow.value;
                 },
-                set(v) {
-                  this.get_row(param).value = v;
+                set(value) {
+                  const prow = this.get_row(param);
+                  if(param.hasOwnProperty('set_pvalue')) {
+                    param.set_pvalue({prow, value});
+                  }
+                  else {
+                    prow.value = value;
+                  }
                 },
                 configurable: true,
                 enumerable: true,
