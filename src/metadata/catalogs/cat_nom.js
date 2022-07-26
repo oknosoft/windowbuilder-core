@@ -305,18 +305,40 @@ exports.CatNom = class CatNom extends Object {
 
   /**
    * Выясняет, назначена ли данной номенклатуре хотя бы одна цена
-   * @return {boolean}
+   * @param [cx] {String} если указано, проверяет наличие цены для конкретной характеристики
+   * @param [type] {String} если указано, проверяет наличие цены по этому типу
+   * @return {Boolean}
    */
-  has_price() {
+  has_price(cx, type) {
     const {_price} = this._data;
+    const has = (prices) => Array.isArray(prices) && prices.find(({price}) => price >= 0.01);
     if(!_price) {
       return false;
     }
-    for(const cx in _price) {
-      for(const pt in _price[cx]) {
-        const prices = _price[cx][pt];
-        if(Array.isArray(prices) && prices.find(({price}) => price >= 0.01)) {
+    if(type) {
+      if(cx) {
+        return Boolean(_price[cx] && has(_price[cx][type]));
+      }
+      for(const cx in _price) {
+        if(has(_price[cx][type])) {
           return true;
+        }
+      }
+      return false;
+    }
+    else {
+      if(cx) {
+        for(const pt in _price[cx]) {
+          if(has(_price[cx][pt])) {
+            return true;
+          }
+        }
+      }
+      for(const cx in _price) {
+        for(const pt in _price[cx]) {
+          if(has(_price[cx][pt])) {
+            return true;
+          }
         }
       }
     }

@@ -166,7 +166,7 @@ class Pricing {
    * @method nom_price
    * @param nom {CatNom}
    * @param characteristic {CatCharacteristics}
-   * @param price_type {CatNom_prices_types}
+   * @param price_type {CatNom_prices_types|CatBranches}
    * @param prm {Object}
    * @param row {Object}
    * @param [clr] {CatClrs}
