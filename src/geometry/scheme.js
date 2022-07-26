@@ -1623,7 +1623,7 @@ class Scheme extends paper.Project {
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
-    const sys = attr.elm ? attr.elm.layer.sys : this._dp.sys;
+    const sys = attr?.elm?.layer ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
       rows = sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
