@@ -216,25 +216,40 @@ exports.CatClrsManager = class CatClrsManager extends Object {
 
   /**
    * Скрывает составные цвета в отборе
-   * @param mf
+   * @param mf {Object} метаданные поля
+   * @param [clr_group] {CatColor_price_groups} цветогруппа
+   * @param [side] {EmnCnnSides} сторона цвета
    */
-  hide_composite(mf) {
+  hide_composite(mf, clr_group, side) {
     const choice_param = mf.choice_params && mf.choice_params.find(({name}) => name === 'parent');
     const {composite_clr_folder: ccf} = $p.job_prm.builder;
+    if(typeof side === 'string') {
+      side = $p.enm.cnn_sides[side];
+    }
     if(choice_param && choice_param.path.not) {
       choice_param.path = {nin: [choice_param.path.not, ccf]};
     }
     else if(choice_param && choice_param.path.nin && !choice_param.path.nin.find(v => v === ccf)) {
-      choice_param.path.nin.push();
+      choice_param.path.nin.push(ccf);
     }
     else {
       if(!mf.choice_params) {
-        mf.choice_params = [];
+        mf.choice_params = [{
+          name: 'parent',
+          path: {not: ccf},
+        }];
       }
-      mf.choice_params.push({
-        name: 'parent',
-        path: {not: ccf},
-      });
+    }
+    if(clr_group && side) {
+      const srows = clr_group.exclude.find_rows({side}).map(({_row}) => _row.clr);
+      const choice_param = srows.length && mf.choice_params.find(({name}) => name === 'ref');
+      if(choice_param) {
+        const {path} = choice_param;
+        if(path.in) {
+          delete choice_param.path;
+          choice_param.path = {in: path.in.filter((o) => !srows.includes(o))};
+        }
+      }
     }
   }
 
@@ -306,6 +321,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       else if(mf.single_value) {
         delete mf.single_value;
       }
+      return clr_group;
     }
   }
 
