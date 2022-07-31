@@ -311,8 +311,6 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * Находит координату пересечения путей в окрестности точки
-     * @method intersect_point
-     * @for Path
      * @param path {paper.Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
      * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения

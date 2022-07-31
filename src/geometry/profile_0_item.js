@@ -354,7 +354,7 @@ class CnnPoint {
 
   /**
    * fake-структура для расчета спецификации
-   * @return {{art2: boolean, art1: boolean, angle: number}}
+   * @return {Object}
    */
   len_angl() {
     const {is_t, cnn} = this;
@@ -1301,8 +1301,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Вычисляемые поля в таблице координат
-   * @method save_coordinates
+   * Вычисляемые поля в таблице координат
    */
   save_coordinates() {
 
@@ -1446,7 +1445,6 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Вызывается из конструктора - создаёт пути и лучи
-   * @method initialize
    * @private
    */
   initialize(attr) {
@@ -1511,7 +1509,6 @@ class ProfileItem extends GeneratrixElement {
    * ### Обсервер
    * Наблюдает за изменениями контура и пересчитывает путь элемента при изменении соседних элементов
    *
-   * @method observer
    * @private
    */
   observer(an) {
@@ -1779,9 +1776,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Дополняет cnn_point свойствами соединения
+   * Дополняет cnn_point свойствами соединения
    *
-   * @method postcalc_cnn
    * @param node {String} b, e - начало или конец элемента
    * @return CnnPoint
    */
@@ -1795,10 +1791,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Пересчитывает вставку после пересчета соединений
+   * Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
    *
-   * @method postcalc_inset
    * @chainable
    */
   postcalc_inset() {
@@ -1808,10 +1803,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Пересчитывает вставку при смене системы или добавлении створки
+   * Пересчитывает вставку при смене системы или добавлении створки
    * Контроль пока только по типу элемента
    *
-   * @method default_inset
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
    * @param [refill] {Boolean} - принудительно устанавливать вставку из системы
    */
@@ -1853,10 +1847,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Рассчитывает точки пути
+   * Рассчитывает точки пути
    * на пересечении текущего и указанного профилей
    *
-   * @method path_points
    * @param cnn_point {CnnPoint}
    * @param [profile_point] {String}
    */
@@ -2376,9 +2369,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выделяет сегмент пути профиля, ближайший к точке
+   * Выделяет сегмент пути профиля, ближайший к точке
    *
-   * @method select_corn
    * @param point {paper.Point}
    */
   select_corn(point) {
@@ -2408,10 +2400,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Признак прямолинейности
+   * Признак прямолинейности
    * Вычисляется, как `is_linear()` {{#crossLink "BuilderElement/generatrix:property"}}образующей{{/crossLink}}
    *
-   * @method is_linear
    * @return Boolean
    */
   is_linear() {
@@ -2491,7 +2482,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Формирует путь сегмента профиля
+   * Формирует путь сегмента профиля
    * Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
    * - Сначала, вызывает {{#crossLink "ProfileItem/postcalc_cnn:method"}}postcalc_cnn(){{/crossLink}} для узлов `b` и `e`
    * - Внутри `postcalc_cnn`, выполняется {{#crossLink "ProfileItem/cnn_point:method"}}cnn_point(){{/crossLink}} для пересчета соединений на концах профиля
@@ -2501,7 +2492,6 @@ class ProfileItem extends GeneratrixElement {
    * - {{#crossLink "ProfileItem/postcalc_inset:method"}}postcalc_inset(){{/crossLink}} - проверяет корректность вставки, заменяет при необходимости
    * - {{#crossLink "ProfileItem/path_points:method"}}path_points(){{/crossLink}} - рассчитывает координаты вершин пути профиля
    *
-   * @method redraw
    * @chainable
    */
   redraw() {
@@ -2598,9 +2588,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Координаты вершин (cornx1...corny4)
+   * Координаты вершин (cornx1...corny4)
    *
-   * @method corns
    * @param corn {String|Number} - имя или номер вершины
    * @return {Point|Number} - координата или точка
    */

@@ -84,7 +84,7 @@ class Pricing {
   /**
    * Перестраивает кеш цен номенклатуры по длинному ключу
    * @param startkey
-   * @return {Promise.<TResult>|*}
+   * @return {Promise}
    */
   by_range({bookmark, step=1, limit=60, log=null, cache=null}) {
     const {utils, adapters: {pouch}} = $p;

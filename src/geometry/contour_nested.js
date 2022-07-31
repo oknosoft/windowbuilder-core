@@ -294,7 +294,6 @@ class ContourNested extends Contour {
 
   /**
    * Вычисляемые поля в таблицах конструкций и координат
-   * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
   save_coordinates(short, save, close) {
@@ -349,8 +348,6 @@ class ContourNested extends Contour {
 
   /**
    * Перерисовывает элементы контура
-   * @method redraw
-   * @for Contour
    */
   redraw() {
 
@@ -375,7 +372,6 @@ class ContourNested extends Contour {
   /**
    * Удаляет контур из иерархии проекта
    * Одновлеменно, удаляет вложенное изделие из заказа
-   * @method remove
    */
   remove() {
     const {_ox} = this;

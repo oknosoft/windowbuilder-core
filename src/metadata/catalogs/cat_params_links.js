@@ -10,7 +10,7 @@ exports.CatParams_links = class CatParams_links extends Object {
    * Дополеняет массив разрешенными в текущей связи значениями
    * @param values {Array}
    * @param with_clr_grp {Boolean} - с учетом цветоценовых групп
-   * @return {*[]}
+   * @return {Array}
    */
   append_values(values = []) {
     this.values.forEach((row) => {

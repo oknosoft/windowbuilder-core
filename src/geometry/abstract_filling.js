@@ -1,14 +1,14 @@
 
 /**
- * ### Абстрактное заполнение
+ * @classdesc ### Абстрактное заполнение
  * Общие свойства заполнения и контура
  *
- * @module geometry
- * @submodule abstract_filling
  *
  * Created by Evgeniy Malyarov on 12.05.2017.
+ *
+ * @class
+ *
  */
-
 const AbstractFilling = (superclass) => class extends superclass {
 
   /**

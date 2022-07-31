@@ -174,7 +174,7 @@ function create_modules(_m) {
   const categoties = {
       cch: {mgr: 'ChartOfCharacteristicManager', proto: 'CatObj', dir: 'chartscharacteristics'},
       cacc: {mgr: 'ChartOfAccountManager', proto: 'CatObj'},
-      cat: {mgr: 'CatManager', proto: 'CatObj', dir: 'catalogs'},
+      cat: {mgr: 'CatManager', proto: 'CatObj', dir: 'catalogs', namespace: 'Catalogs'},
       bp: {mgr: 'BusinessProcessManager', proto: 'BusinessProcessObj'},
       tsk: {mgr: 'TaskManager', proto: 'TaskObj'},
       doc: {mgr: 'DocManager', proto: 'DocObj', dir: 'documents'},
@@ -215,13 +215,16 @@ function create_modules(_m) {
 
 function obj_constructor_text(_m, category, name, categoties) {
 
-  const {mgr, proto, dir} = categoties[category];
+  const {mgr, proto, dir, namespace} = categoties[category];
 
   const {DataManager} = MetaEngine.classes;
   let meta = _m[category][name],
     fn_name = DataManager.prototype.obj_constructor.call({class_name: category + '.' + name, constructor_names: {}}),
-    text = '\n/**\n* ### ' + $p.msg.meta[category] + ' ' + meta.name,
+    text = `\n/**\n* ${$p.msg.meta[category]} **${meta.name}**`,
     f, props = '';
+  if(meta.illustration) {
+    text += `<br/>\n* ${meta.illustration}`;
+  }
 
   const filename = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}.js`);
   let extModule;
@@ -241,11 +244,11 @@ function obj_constructor_text(_m, category, name, categoties) {
   const managerName = `${fn_name}Manager`;
   const managerText = extModule && extModule[managerName] && extModule[managerName].toString();
 
-
-  text += '\n* ' + (meta.illustration || meta.synonym);
-  text += '\n* @class ' + fn_name;
-  text += '\n* @extends ' + proto;
-  text += '\n* @constructor \n*/\n';
+  text += '\n* @class\n* @extends ' + proto;
+  if(namespace) {
+    text += '\n* @memberof ' + namespace;
+  }
+  text += '\n*/\n';
   text += `class ${fn_name} extends ${proto}{\n`;
 
   // если описан конструктор объекта, используем его
@@ -332,6 +335,9 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
 
   // если описан расширитель менеджера, дополняем
   if(managerText){
+    text += `\n/**\n* ${$p.msg.meta_mgrs[category]} **${meta.name}**`;
+    text += '\n* @class\n* @extends ' + mgr;
+    text += '\n*/\n';
     text += managerText.replace('extends Object', `extends ${mgr}`);
     text += `\n$p.${category}.create('${name}', ${managerName}, ${extModule[managerName]._freeze ? 'true' : 'false'});\n`;
   }

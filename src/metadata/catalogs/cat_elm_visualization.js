@@ -14,7 +14,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
    * Рисует визуализацию
    * @param elm {BuilderElement} элемент, к которому привязана визуализация
    * @param layer {Contour} слой, в котороый помещаем путь
-   * @param offset {Number|[Number,Number]}
+   * @param offset {Number|Array.<Number>}
    * @param [offset0] {Number}
    * @param clr {CatClrs}
    */

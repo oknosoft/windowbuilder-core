@@ -1,0 +1,22 @@
+/**
+* The Layer item represents a layer in a Paper.js project.
+* @external Layer
+* @see http://paperjs.org/reference/layer/
+*/
+
+/**
+* Менеджер данных в metadata.js
+* @external DataManager
+* @see http://paperjs.org/reference/layer/
+*/
+
+/**
+* Справочники
+* @namespace Catalogs
+* @desc про справочники
+*/
+
+/**
+* Менеджеры справочников
+* @namespace CatManagers
+*/

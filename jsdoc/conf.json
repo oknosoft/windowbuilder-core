@@ -1,0 +1,69 @@
+{
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "source": {
+    "include": [
+      "src/geometry/paper.jsdoc",
+      "dist/init.js",
+      "src/geometry/contour.js",
+      "src/geometry/contour_virtual.js"
+    ],
+    "exclude": [
+      "./src/geometry/contour_nested.js"
+    ],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "templates": {
+    "referenceTitle": "",
+    "disableSort": false,
+    "collapse": true,
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "resources": {
+      "metadata.js<br/>": "https://github.com/oknosoft/metadata.js/tree/develop/packages",
+      "paper.js": "http://paperjs.org/reference/"
+    }
+  },
+  "docdash": {
+    "meta": {
+      "title": "Ядро 'Заказа дилера'",
+      "description": "Ядро 'Заказа дилера'",
+      "keyword": "metadata, order dealer, cad, crm, window builder, windows calculator"
+    },
+    "search": true,
+    "collapse": true,
+    "menu": {                       // Adding additional menu items after Home
+      "Project Website": {        // Menu item name
+        "href":"https://myproject.com", //the rest of HTML properties to add to manu item
+        "target":"_blank",
+        "class":"menu-item",
+        "id":"website_link"
+      },
+      "Forum": {
+        "href":"https://myproject.com.forum",
+        "target":"_blank",
+        "class":"menu-item",
+        "id":"forum_link"
+      }
+    },
+    "sectionOrder": [
+      "Tutorials",
+      "Externals",
+      "Namespaces",
+      "Classes",
+      "Modules",
+      "Events",
+      "Mixins",
+      "Interfaces"
+    ]
+  },
+  "opts": {
+    "destination": "./jsdoc/out/",
+    "encoding": "utf8",
+    "private": true,
+    "recurse": true,
+    "template": "./node_modules/docdash"
+  }
+}

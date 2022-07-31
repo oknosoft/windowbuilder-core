@@ -132,8 +132,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for Filling
    */
   save_coordinates() {
 
@@ -632,7 +630,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * При удалении заполнения, не забываем про вложенные раскладки
-   * @method remove
    */
   remove() {
     //удаляем детей

@@ -81,9 +81,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Стирает размерные линии
-   *
-   * @method clear
+   * Стирает размерные линии
    */
   clear() {
 

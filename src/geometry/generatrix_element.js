@@ -127,9 +127,8 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Выделяет начало или конец профиля
+   * Выделяет начало или конец профиля
    *
-   * @method select_node
    * @param node {String} b, e - начало или конец элемента
    */
   select_node(node) {
@@ -197,10 +196,9 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Двигает узлы
+   * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @method move_points
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
    * @param [start_point] {paper.Point} - откуда началось движение

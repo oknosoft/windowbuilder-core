@@ -8,9 +8,8 @@
 exports.CchPropertiesManager = class CchPropertiesManager extends Object {
 
   /**
-   * ### Проверяет заполненность обязательных полей
+   * Проверяет заполненность обязательных полей
    *
-   * @method check_mandatory
    * @override
    * @param prms {Array}
    * @param title {String}
@@ -35,9 +34,8 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
   }
 
   /**
-   * ### Возвращает массив доступных для данного свойства значений
+   * Возвращает массив доступных для данного свойства значений
    *
-   * @method slist
    * @override
    * @param prop {CatObj} - планвидовхарактеристик ссылка или объект
    * @param ret_mgr {Object} - установить в этом объекте указатель на менеджера объекта
@@ -100,7 +98,7 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
 exports.CchProperties = class CchProperties extends Object {
 
   /**
-   * ### Является ли значение параметра вычисляемым
+   * Является ли значение параметра вычисляемым
    *
    * @property is_calculated
    * @type Boolean
@@ -114,7 +112,7 @@ exports.CchProperties = class CchProperties extends Object {
   }
 
   /**
-   * ### Рассчитывает значение вычисляемого параметра
+   * Рассчитывает значение вычисляемого параметра
    * @param obj {Object}
    * @param [obj.row]
    * @param [obj.elm]
@@ -136,7 +134,7 @@ exports.CchProperties = class CchProperties extends Object {
   }
 
   /**
-   * ### Проверяет условие в строке отбора
+   * Проверяет условие в строке отбора
    */
   check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
@@ -532,8 +530,8 @@ exports.CchProperties = class CchProperties extends Object {
   }
 
   /**
-   * ### Дополняет отбор фильтром по параметрам выбора
-   * Используется в полях ввода экранных форм
+   * Дополняет отбор фильтром по параметрам выбора,
+   * используется в полях ввода экранных форм
    * @param filter {Object} - дополняемый фильтр
    * @param attr {Object} - атрибуты OCombo
    */

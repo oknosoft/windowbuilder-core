@@ -83,7 +83,6 @@ class FreeText extends paper.PointText {
   /**
    * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
-   * @method remove
    */
   remove() {
     if(this._row) {
@@ -95,7 +94,6 @@ class FreeText extends paper.PointText {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
    */
   save_coordinates() {
     const {_row} = this;
@@ -120,8 +118,7 @@ class FreeText extends paper.PointText {
   }
 
   /**
-   * ### Перемещает элемент и информирует об этом наблюдателя
-   * @method move_points
+   * Перемещает элемент и информирует об этом наблюдателя
    */
   move_points(point) {
     this.point = point;

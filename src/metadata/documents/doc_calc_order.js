@@ -44,7 +44,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
    * Копирует заказ, возвращает промис с новым заказом
    * @param src {Object}
    * @param src.clone {Boolean} - если указано, создаётся копия объекта, иначе - новый объект с аналогичными свойствами
-   * @return {Promise<DocCalc_order>}
+   * @return {Promise.<DocCalc_order>}
    */
   async clone(src) {
     const {utils, cat} = this._owner.$p;
