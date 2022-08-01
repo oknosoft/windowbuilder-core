@@ -5,7 +5,8 @@
 .vscode
 
 # Exclude compiled files
-jsdoc/out/
+jsdoc/wbcore/
+jsdoc/upzp/
 
 # npm files
 node_modules
