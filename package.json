@@ -46,6 +46,7 @@
   ],
   "scripts": {
     "meta:prebuild": "node scripts/meta.prebuild.js",
-    "meta:link": "node scripts/meta.link.js"
+    "meta:link": "node scripts/meta.link.js",
+    "jsdoc": "jsdoc -c jsdoc/conf.json"
   }
 }

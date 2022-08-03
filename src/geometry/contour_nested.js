@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Вложенное изделие в родительском
  * https://github.com/oknosoft/windowbuilder/issues/564
  *

@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Родительский слой вложенного изделия
  * https://github.com/oknosoft/windowbuilder/issues/564
  *

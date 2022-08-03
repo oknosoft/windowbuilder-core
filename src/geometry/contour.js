@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Контур (слой) изделия
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -10,7 +10,8 @@
 
 
 /**
- * ### Сегмент заполнения
+ * Сегмент заполнения
+ *
  * содержит информацию о примыкающем профиле и координатах начала и конца
  * @class GlassSegment
  * @constructor
@@ -227,11 +228,11 @@ class PointMap extends Map {
 }
 
 /**
- * @class Contour
+ * Контур (слой) изделия
+ *
+ * Новые элементы попадают в активный слой-контур и не могут его покинуть
+ * @class
  * @extends external:Layer
- * @desc #### Контур (слой) изделия
- * новые элементы попадают в активный слой-контур и не могут его покинуть
- * @tooltip Контур (слой) изделия
  */
 class Contour extends AbstractFilling(paper.Layer) {
 
@@ -265,16 +266,23 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  /**
+   * Возвращает класс-конструктор профилей текущего слоя
+   *
+   * Актуально для вложенных и виртуальных слоёв
+   * $type {Function}
+   */
   get ProfileConstructor() {
     return Profile;
   }
 
   /**
-   * ### Фурнитура по умолчанию
+   * Фурнитура по умолчанию
+   *
    * Возвращает фурнитуру текущего слоя по умолчанию
    *
    * @property default_furn
-   * @final
+   * $type {CatFurns}
    */
   get default_furn() {
     // ищем ранее выбранную фурнитуру для системы
@@ -716,7 +724,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Ищет и привязывает узлы профилей к пути заполнения
-   * @param path {paper.Path} - массив ограничивается узлами, примыкающими к пути
+   * @param path {external:Path} - массив ограничивается узлами, примыкающими к пути
    * @param [nodes] {Array} - если указано, позволяет не вычислять исходный массив узлов контура, а использовать переданный
    * @param [bind] {Boolean} - если указано, сохраняет пары узлов в path._attr.curve_nodes
    * @returns {Array}
@@ -1203,9 +1211,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает ребро текущего контура по узлам
-   * @param n1 {paper.Point} - первый узел
-   * @param n2 {paper.Point} - второй узел
-   * @param [point] {paper.Point} - дополнительная проверочная точка
+   * @param n1 {external:Point} - первый узел
+   * @param n2 {external:Point} - второй узел
+   * @param [point] {external:Point} - дополнительная проверочная точка
    * @returns {Profile}
    */
   profile_by_nodes(n1, n2, point) {

@@ -240,7 +240,7 @@ class Onlay extends ProfileItem {
    * @method cnn_point
    * @for Onlay
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {
@@ -284,7 +284,7 @@ class Onlay extends ProfileItem {
 
   /**
    * Пытается привязать точку к рёбрам и раскладкам
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param glasses {Array.<Filling>}
    * @return {Object}
    */

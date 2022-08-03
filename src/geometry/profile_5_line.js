@@ -46,7 +46,7 @@ class BaseLine extends ProfileItem {
 
   /**
    * Путь линии равен образующей
-   * @return {paper.Path}
+   * @return {external:Path}
    */
   get path() {
     return this.generatrix;

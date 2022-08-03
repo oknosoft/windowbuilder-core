@@ -1,5 +1,5 @@
 
-/**
+/*
  * Рендер содержимого вложенного изделия
  *
  * @module contour_nested_content

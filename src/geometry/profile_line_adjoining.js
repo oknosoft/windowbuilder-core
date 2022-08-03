@@ -1,5 +1,5 @@
 
-/**
+/*
  *
  *
  * @module profile_connective_adjoining

@@ -847,19 +847,21 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
 
 
 /**
- * @classdesc ### Абстрактное заполнение
+ * Абстрактное заполнение
+ *
  * Общие свойства заполнения и контура
  *
  *
- * Created by Evgeniy Malyarov on 12.05.2017.
- *
  * @class
+ * @extends BuilderElement
  *
  */
 const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Тест положения контура в изделии
+   * @param pos {EnmElm_positions}
+   * @return {Boolean}
    */
   is_pos(pos) {
     // если в изделии один контур или если контур является створкой, он занимает одновременно все положения
@@ -1001,11 +1003,11 @@ EditorInvisible.AbstractFilling = AbstractFilling;
  *
  * @class BuilderElement
  * @param attr {Object} - объект со свойствами создаваемого элемента
- *  @param attr.b {paper.Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
- *  @param attr.e {paper.Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
+ *  @param attr.b {external:Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
+ *  @param attr.e {external:Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
  *  @param attr.contour {Contour} - контур, которому принадлежит элемент
- *  @param attr.type_el {_enm.elm_types}  может измениться при конструировании. например, импост -> рама
- *  @param [attr.inset] {_cat.inserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
+ *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
+ *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
  *  @param [attr.path] (r && arc_ccw && more_180)
  * @constructor
  * @extends paper.Group
@@ -1087,11 +1089,11 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Образующая
+   * Образующая
+   *
    * прочитать - установить путь образующей. здесь может быть линия, простая дуга или безье
    * по ней будут пересчитаны pathData и прочие свойства
-   * @property generatrix
-   * @type paper.Path
+   * @type external:Path
    */
   get generatrix() {
     return this._attr.generatrix;
@@ -1147,8 +1149,7 @@ class BuilderElement extends paper.Group {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * для профиля, вершин всегда 4, для заполнений может быть <> 4
-   * @property path
-   * @type paper.Path
+   * @type external:Path
    */
   get path() {
     return this._attr.path;
@@ -2049,7 +2050,7 @@ class BuilderPrms {
 
 }
 
-/**
+/*
  * Элемент составного пути (например, подоконник с закруглением и вырезом)
  *
  * @module compound
@@ -2070,7 +2071,7 @@ class Compound extends BuilderElement {
 EditorInvisible.Compound = Compound;
 
 
-/**
+/*
  * ### Контур (слой) изделия
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -2081,7 +2082,8 @@ EditorInvisible.Compound = Compound;
 
 
 /**
- * ### Сегмент заполнения
+ * Сегмент заполнения
+ *
  * содержит информацию о примыкающем профиле и координатах начала и конца
  * @class GlassSegment
  * @constructor
@@ -2298,11 +2300,11 @@ class PointMap extends Map {
 }
 
 /**
- * @class Contour
+ * Контур (слой) изделия
+ *
+ * Новые элементы попадают в активный слой-контур и не могут его покинуть
+ * @class
  * @extends external:Layer
- * @desc #### Контур (слой) изделия
- * новые элементы попадают в активный слой-контур и не могут его покинуть
- * @tooltip Контур (слой) изделия
  */
 class Contour extends AbstractFilling(paper.Layer) {
 
@@ -2336,16 +2338,23 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  /**
+   * Возвращает класс-конструктор профилей текущего слоя
+   *
+   * Актуально для вложенных и виртуальных слоёв
+   * $type {Function}
+   */
   get ProfileConstructor() {
     return Profile;
   }
 
   /**
-   * ### Фурнитура по умолчанию
+   * Фурнитура по умолчанию
+   *
    * Возвращает фурнитуру текущего слоя по умолчанию
    *
    * @property default_furn
-   * @final
+   * $type {CatFurns}
    */
   get default_furn() {
     // ищем ранее выбранную фурнитуру для системы
@@ -2787,7 +2796,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Ищет и привязывает узлы профилей к пути заполнения
-   * @param path {paper.Path} - массив ограничивается узлами, примыкающими к пути
+   * @param path {external:Path} - массив ограничивается узлами, примыкающими к пути
    * @param [nodes] {Array} - если указано, позволяет не вычислять исходный массив узлов контура, а использовать переданный
    * @param [bind] {Boolean} - если указано, сохраняет пары узлов в path._attr.curve_nodes
    * @returns {Array}
@@ -3274,9 +3283,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает ребро текущего контура по узлам
-   * @param n1 {paper.Point} - первый узел
-   * @param n2 {paper.Point} - второй узел
-   * @param [point] {paper.Point} - дополнительная проверочная точка
+   * @param n1 {external:Point} - первый узел
+   * @param n2 {external:Point} - второй узел
+   * @param [point] {external:Point} - дополнительная проверочная точка
    * @returns {Profile}
    */
   profile_by_nodes(n1, n2, point) {
@@ -5279,7 +5288,7 @@ EditorInvisible.Contour = Contour;
 EditorInvisible.GlassSegment = GlassSegment;
 
 
-/**
+/*
  * ### Вложенное изделие в родительском
  * https://github.com/oknosoft/windowbuilder/issues/564
  *
@@ -5678,7 +5687,7 @@ ContourNested._dimlns = {
 EditorInvisible.ContourNested = ContourNested;
 
 
-/**
+/*
  * Рендер содержимого вложенного изделия
  *
  * @module contour_nested_content
@@ -5775,7 +5784,7 @@ class ContourNestedContent extends Contour {
 EditorInvisible.ContourNestedContent = ContourNestedContent;
 
 
-/**
+/*
  * ### Родительский слой вложенного изделия
  * https://github.com/oknosoft/windowbuilder/issues/564
  *
@@ -5989,7 +5998,7 @@ class ContourVirtual extends Contour {
 EditorInvisible.ContourVirtual = ContourVirtual;
 
 
-/**
+/*
  * ### Вспомогательные классы для формирования размерных линий
  *
  * Created by Evgeniy Malyarov on 12.05.2017.
@@ -6556,7 +6565,7 @@ EditorInvisible.DimensionDrawer = DimensionDrawer;
 EditorInvisible.DimensionLayer = DimensionLayer;
 
 
-/**
+/*
  * ### Размерные линии на эскизе
  *
  * Created 21.08.2015
@@ -7280,7 +7289,7 @@ EditorInvisible.DimensionLine = DimensionLine;
 EditorInvisible.DimensionLineCustom = DimensionLineCustom;
 
 
-/**
+/*
  *
  *
  * @module dimension_line_impost
@@ -7437,7 +7446,7 @@ class DimensionLineImpost extends DimensionLineCustom {
 EditorInvisible.DimensionLineImpost = DimensionLineImpost;
 
 
-/**
+/*
  * ### Размерная линия радиуса
  *
  * @module dimension_radius
@@ -7540,21 +7549,19 @@ EditorInvisible.DimensionRadius = DimensionRadius;
 
 
 /**
- * ### Заполнение
+ * Заполнение
  * - Инкапсулирует поведение элемента заполнения
  * - У заполнения есть коллекция рёбер, образующая путь контура
  * - Путь всегда замкнутый, образует простой многоугольник без внутренних пересечений, рёбра могут быть гнутыми
  *
- * @class Filling
- * @param attr {Object} - объект со свойствами создаваемого элемента
- * @constructor
- * @extends BuilderElement
- * @menuorder 45
- * @tooltip Заполнение
+ * @extends AbstractFilling
  */
-
 class Filling extends AbstractFilling(BuilderElement) {
 
+  /**
+   *
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   */
   constructor(attr) {
 
     const {path} = attr;
@@ -8182,26 +8189,25 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * Габаритная площадь заполнения
-   * @return {number}
+   * @type {Number}
    */
   get area() {
     return (this.bounds.area / 1e6).round(5);
   }
 
   /**
-   * площадь заполнения с учетом наклонов-изгибов сегментов
-   * @return {number}
+   * Площадь заполнения с учетом наклонов-изгибов сегментов
+   * @type {Number}
    */
   get form_area() {
     return (this.path.area/1e6).round(5);
   }
 
   /**
-   * ### Точка внутри пути
+   * Точка внутри пути
    * Возвращает точку, расположенную гарантированно внутри заполнения
    *
-   * @property interiorPoint
-   * @type paper.Point
+   * @type {external:Point}
    */
   interiorPoint() {
     return this.path.interiorPoint;
@@ -8209,6 +8215,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * Признак прямоугольности
+   * @type {Boolean}
    */
   get is_rectangular() {
     const {profiles, path} = this;
@@ -8222,7 +8229,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * @property path
-   * @type paper.Path
+   * @type external:Path
    */
   get path() {
     return this._attr.path;
@@ -8652,7 +8659,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 EditorInvisible.Filling = Filling;
 
 
-/**
+/*
  *
  * Created 21.08.2015<br />
  * &copy; http://www.oknosoft.ru 2014-2018
@@ -9089,9 +9096,9 @@ class GeneratrixElement extends BuilderElement {
    * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @param delta {paper.Point} - куда и насколько смещать
+   * @param delta {external:Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
+   * @param [start_point] {external:Point} - откуда началось движение
    */
   move_points(delta, all_points, start_point) {
 
@@ -9289,7 +9296,7 @@ class GeneratrixElement extends BuilderElement {
 EditorInvisible.GeneratrixElement = GeneratrixElement;
 
 
-/**
+/*
  * ### Визкализация таблицы координат
  *
  * @module grid_coordinates
@@ -9529,7 +9536,7 @@ class GridCoordinates extends paper.Group {
 EditorInvisible.GridCoordinates = GridCoordinates;
 
 
-/**
+/*
  * Расширения объектов paper.js
  *
  * &copy; http://www.oknosoft.ru 2014-2018
@@ -9673,7 +9680,7 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
    * Выясняет, расположена ли точка в окрестности пути
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param [sticking] {Boolean|Number}
    * @return {Boolean}
    */
@@ -9685,10 +9692,10 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * возвращает фрагмент пути между точками
-     * @param point1 {paper.Point}
-     * @param point2 {paper.Point}
+     * @param point1 {external:Point}
+     * @param point2 {external:Point}
      * @param [strict] {Boolean}
-     * @return {paper.Path}
+     * @return {external:Path}
      */
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
@@ -9755,7 +9762,7 @@ Object.defineProperties(paper.Path.prototype, {
      * возвращает путь, равноотстоящий от текущего пути
      * @param delta {number} - расстояние, на которое будет смещен новый путь
      * @param elong {number} - удлинение нового пути с каждого конца
-     * @return {paper.Path}
+     * @return {external:Path}
      */
   equidistant: {
       value: function equidistant(delta, elong) {
@@ -9841,10 +9848,10 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * Находит координату пересечения путей в окрестности точки
-     * @param path {paper.Path}
+     * @param path {external:Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
      * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения
-     * @return [other_point] {paper.Point} - если указано, контролируем вектор пересечения
+     * @return [other_point] {external:Point} - если указано, контролируем вектор пересечения
      * @return [clone] {Boolean} - если указано, не удлиняем текущие пути
      */
   intersect_point: {
@@ -10046,7 +10053,7 @@ Object.defineProperties(paper.Point.prototype, {
 
 	/**
 	 * Выясняет, расположена ли точка в окрестности точки
-	 * @param point {paper.Point}
+	 * @param point {external:Point}
 	 * @param [sticking] {Boolean|Number}
 	 * @return {Boolean}
 	 */
@@ -11319,9 +11326,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Опорные точки и лучи
+   * Опорные точки и лучи
    *
-   * @property rays
    * @type ProfileRays
    * @final
    */
@@ -11334,9 +11340,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Доборы текущего профиля
+   * Доборы текущего профиля
    *
-   * @property addls
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -11345,9 +11350,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Сегменты текущей связки
+   * Сегменты текущей связки
    *
-   * @property segms
    * @type Array.<ProfileSegment>
    * @final
    */
@@ -11356,9 +11360,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Примыкания текущего профиля
+   * Примыкания текущего профиля
    *
-   * @property adjoinings
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -11368,14 +11371,17 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Строка цвета по умолчанию для эскиза
+   * @type {String}
    */
   get default_clr_str() {
     return 'FEFEFE';
   }
 
   /**
-   * ### Непрозрачность профиля
+   * Непрозрачность профиля
+   *
    * В отличии от прототипа `opacity`, не изменяет прозрачость образующей
+   * @type {Number}
    */
   get opacity() {
     return this.path ? this.path.opacity : 1;
@@ -11386,6 +11392,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Припуск для соединения "сварной шов"
+   * @type {Number}
    */
   get dx0() {
     const {cnn} = this.rays.b;
@@ -11395,7 +11402,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Структура примыкающих заполнений
-   * @return {Object}
+   * @type {Object}
    */
   get nearest_glasses() {
     const res = {
@@ -12637,7 +12644,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Выделяет сегмент пути профиля, ближайший к точке
    *
-   * @param point {paper.Point}
+   * @param point {external:Point}
    */
   select_corn(point) {
 
@@ -12706,7 +12713,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * ### Выясняет, перпендикулярны ли профили
    * @param profile {ProfileItem}
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param delta {Number}
    */
   is_orthogonal(profile, point, delta) {
@@ -13397,7 +13404,7 @@ class ProfileSegment extends ProfileItem {
 EditorInvisible.ProfileSegment = ProfileSegment;
 
 
-/**
+/*
  * Created 24.07.2015
  *
  * @module geometry
@@ -13405,34 +13412,30 @@ EditorInvisible.ProfileSegment = ProfileSegment;
  */
 
 /**
- * ### Профиль
- * Класс описывает поведение сегмента профиля (створка, рама, импост)<br />
+ * _Профиль_<br/>
+ * Класс описывает поведение сегмента профиля (створка, рама, импост).
  * У профиля есть координаты конца и начала, есть путь образующей - прямая или кривая линия
  *
- * @class Profile
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
+ * @class
  * @extends ProfileItem
- * @menuorder 42
- * @tooltip Профиль
  *
  * @example
  *
- *     // Создаём элемент профиля на основании пути образующей
- *     // одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет
- *     new Profile({
- *       generatrix: new paper.Path({
- *         segments: [[1000,100], [0, 100]]
- *       }),
- *       proto: {
- *         parent: _contour,
- *         inset: _inset
- *         clr: _clr
- *       }
- *     });
+ * // Создаём элемент профиля на основании пути образующей
+ * // одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет
+ * new Profile({
+ *   generatrix: new paper.Path({
+ *     segments: [[1000,100], [0, 100]]
+ *   }),
+ *   proto: {parent, inset, clr}
+ * });
  */
 class Profile extends ProfileItem {
 
+  /**
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   * см. {@link BuilderElement|параметр конструктора BuilderElement}
+   */
   constructor(attr) {
 
     const fromCoordinates = attr.row && attr.row.elm;
@@ -13474,8 +13477,7 @@ class Profile extends ProfileItem {
   /**
    * Расстояние от узла до опорной линии
    * для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений
-   * @property d0
-   * @type Number
+   * @type {Number}
    */
   get d0() {
     const {_attr} = this;
@@ -13491,6 +13493,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает тип элемента (рама, створка, импост)
+   * @type {EnmElm_types}
    */
   get elm_type() {
     const {_rays, _nearest} = this._attr;
@@ -13510,8 +13513,8 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * Является ли текущий элемент связкой
-   * @returns {boolean}
+   * Является ли текущий элемент _связкой_
+   * @type {Boolean}
    */
   get is_bundle() {
     return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
@@ -13519,6 +13522,7 @@ class Profile extends ProfileItem {
 
   /**
    * Положение элемента в контуре
+   * @type {EnmElm_positions}
    */
   get pos() {
     const {top, bottom, left, right} = this.layer.profiles_by_side();
@@ -13555,8 +13559,7 @@ class Profile extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
-   * @property nearest
-   * @type Profile
+   * @return {Profile}
    */
   nearest(ign_cnn) {
 
@@ -13650,7 +13653,7 @@ class Profile extends ProfileItem {
 
   /**
    * Добавляет сегменты
-   * @param [count] {Number} - на сколько сегментов резать
+   * @param [count=2] {Number} - на сколько сегментов резать
    */
   split_by(count) {
     const {generatrix, segms, inset, clr, project} = this;
@@ -13670,6 +13673,8 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих ипостов
+   * @param [check_only] {Boolean} - не формировать подробный ответ, только проверить наличие примыкающих импостов
+   * @returns {Object|Boolean}
    */
   joined_imposts(check_only) {
 
@@ -13731,6 +13736,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих створочных элементов
+   * @returns {Array.<Profile>}
    */
   joined_nearests() {
     const res = [];
@@ -13775,7 +13781,7 @@ class Profile extends ProfileItem {
    * - Не делает подмену вставки, хотя могла бы
    *
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {
@@ -14001,7 +14007,7 @@ class Profile extends ProfileItem {
 EditorInvisible.Profile = Profile;
 
 
-/**
+/*
  * Виртуальный профиль для вложенных изделий (не путать с виртуальными слоями)
  *
  * @module profile_nested
@@ -14254,7 +14260,7 @@ ProfileNested.nearest_cnn = {
 EditorInvisible.ProfileNested = ProfileNested;
 
 
-/**
+/*
  * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
  *
  * @module profile_virtual
@@ -14521,7 +14527,7 @@ class BaseLine extends ProfileItem {
 
   /**
    * Путь линии равен образующей
-   * @return {paper.Path}
+   * @return {external:Path}
    */
   get path() {
     return this.generatrix;
@@ -14633,7 +14639,7 @@ EditorInvisible.BaseLine = BaseLine;
 
 
 
-/**
+/*
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -14740,7 +14746,7 @@ class ProfileAddl extends ProfileItem {
    * - Не делает подмену вставки, хотя могла бы
    *
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {
@@ -14988,9 +14994,9 @@ class ProfileConnective extends ProfileItem {
    * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @param delta {paper.Point} - куда и насколько смещать
+   * @param delta {external:Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
+   * @param [start_point] {external:Point} - откуда началось движение
    */
   move_points(delta, all_points, start_point) {
 
@@ -15269,10 +15275,11 @@ EditorInvisible.ConnectiveLayer = ConnectiveLayer;
 /**
  * Сечение фрагмена изделия
  *
- * Created by Evgeniy Malyarov on 28.08.2021.
+ * Сечение - полноценный BuilderElement. Его можно разместить в произвольном месте изделия.
+ * Сечение не оставляет следов в спецификации, но умеет генерировать эскиз разреза
+ * @extends BaseLine
+ *
  */
-
-
 class ProfileCut extends BaseLine {
 
   constructor(attr) {
@@ -15316,6 +15323,7 @@ class ProfileCut extends BaseLine {
 
   /**
    * Возвращает тип элемента (сечение)
+   * @type {EnmElm_types}
    */
   get elm_type() {
     return $p.enm.elm_types.Сечение;
@@ -15341,6 +15349,9 @@ class ProfileCut extends BaseLine {
     return (index + 1) >= letters.length ? `X${elm}` : letters[index];
   }
 
+  /**
+   * Перерисовывает элемент на эскизе
+   */
   redraw() {
     const {children: {thick1, thick2, callout1, callout2, text1, text2}, generatrix, length} = this;
     const tlength = length > 200 ? 90 : (length/2 - 10);
@@ -15380,7 +15391,7 @@ class ProfileCut extends BaseLine {
 EditorInvisible.ProfileCut = ProfileCut;
 
 
-/**
+/*
  *
  *
  * @module profile_connective_adjoining
@@ -15541,7 +15552,7 @@ ProfileAdjoining.oxml = {
 EditorInvisible.ProfileAdjoining = ProfileAdjoining;
 
 
-/**
+/*
  *
  *
  * @module profile_nested_content
@@ -15883,7 +15894,7 @@ class Onlay extends ProfileItem {
    * @method cnn_point
    * @for Onlay
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {
@@ -15927,7 +15938,7 @@ class Onlay extends ProfileItem {
 
   /**
    * Пытается привязать точку к рёбрам и раскладкам
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param glasses {Array.<Filling>}
    * @return {Object}
    */
@@ -16009,7 +16020,7 @@ EditorInvisible.Onlay = Onlay;
 
 
 
-/**
+/*
  * Виртуальный родительский профиль для вложенных слоёв
  *
  * @module profile_parent
@@ -17214,7 +17225,7 @@ class Scheme extends paper.Project {
   /**
    * Двигает выделенные точки путей либо все точки выделенных элементов
    * @method move_points
-   * @param delta {paper.Point}
+   * @param delta {external:Point}
    * @param [all_points] {Boolean}
    */
   move_points(delta, all_points) {
@@ -17948,7 +17959,7 @@ class Scheme extends paper.Project {
    * @param profile {Profile|null} - текущий профиль - используется, чтобы не искать соединения с самим собой
    * TODO: возможно, имеет смысл разрешить змее кусать себя за хвост
    * @param res {CnnPoint} - описание соединения на конце текущего профиля
-   * @param point {paper.Point} - точка, окрестность которой анализируем
+   * @param point {external:Point} - точка, окрестность которой анализируем
    * @param check_only {Boolean|String} - указывает, выполнять только проверку или привязывать точку к узлам или профилю или к узлам и профилю
    * @returns {Boolean|undefined}
    */
@@ -18187,7 +18198,7 @@ class Scheme extends paper.Project {
 
   /**
    * Ищет точки в выделенных элементах. Если не находит, то во всём проекте
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param [tolerance] {Number}
    * @param [selected_first] {Boolean}
    * @param [with_onlays] {Boolean}
@@ -18526,7 +18537,7 @@ FakePrmElm.region = function region(row, target) {
 Scheme.FakePrmElm = FakePrmElm;
 
 
-/**
+/*
  * ### Разрез
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -18937,7 +18948,7 @@ EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
 
 
-/**
+/*
  * Болванка пустого класса, чтобы файлы двух веток меньше отличались
  *
  * @module Skeleton

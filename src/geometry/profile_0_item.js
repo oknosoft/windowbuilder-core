@@ -1053,9 +1053,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Опорные точки и лучи
+   * Опорные точки и лучи
    *
-   * @property rays
    * @type ProfileRays
    * @final
    */
@@ -1068,9 +1067,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Доборы текущего профиля
+   * Доборы текущего профиля
    *
-   * @property addls
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -1079,9 +1077,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Сегменты текущей связки
+   * Сегменты текущей связки
    *
-   * @property segms
    * @type Array.<ProfileSegment>
    * @final
    */
@@ -1090,9 +1087,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Примыкания текущего профиля
+   * Примыкания текущего профиля
    *
-   * @property adjoinings
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -1102,14 +1098,17 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Строка цвета по умолчанию для эскиза
+   * @type {String}
    */
   get default_clr_str() {
     return 'FEFEFE';
   }
 
   /**
-   * ### Непрозрачность профиля
+   * Непрозрачность профиля
+   *
    * В отличии от прототипа `opacity`, не изменяет прозрачость образующей
+   * @type {Number}
    */
   get opacity() {
     return this.path ? this.path.opacity : 1;
@@ -1120,6 +1119,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Припуск для соединения "сварной шов"
+   * @type {Number}
    */
   get dx0() {
     const {cnn} = this.rays.b;
@@ -1129,7 +1129,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Структура примыкающих заполнений
-   * @return {Object}
+   * @type {Object}
    */
   get nearest_glasses() {
     const res = {
@@ -2371,7 +2371,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Выделяет сегмент пути профиля, ближайший к точке
    *
-   * @param point {paper.Point}
+   * @param point {external:Point}
    */
   select_corn(point) {
 
@@ -2440,7 +2440,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * ### Выясняет, перпендикулярны ли профили
    * @param profile {ProfileItem}
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param delta {Number}
    */
   is_orthogonal(profile, point, delta) {

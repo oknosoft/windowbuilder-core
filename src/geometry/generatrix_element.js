@@ -199,9 +199,9 @@ class GeneratrixElement extends BuilderElement {
    * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @param delta {paper.Point} - куда и насколько смещать
+   * @param delta {external:Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
+   * @param [start_point] {external:Point} - откуда началось движение
    */
   move_points(delta, all_points, start_point) {
 

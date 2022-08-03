@@ -1,0 +1,7 @@
+/**
+* The Layer item represents a layer in a Paper.js project.
+* @external Layer
+* @see http://paperjs.org/reference/layer/
+*/
+
+

@@ -1,5 +1,5 @@
 
-/**
+/*
  *
  * Created 21.08.2015<br />
  * &copy; http://www.oknosoft.ru 2014-2018

@@ -4,10 +4,11 @@
   ],
   "source": {
     "include": [
-      "src/geometry/paper.jsdoc",
+      "jsdoc/metadata.jsdoc",
+      "jsdoc/paper.jsdoc",
+      "jsdoc/enums.js",
       "dist/init.js",
-      "src/geometry/contour.js",
-      "src/geometry/contour_virtual.js"
+      "src/geometry/"
     ],
     "exclude": [
       "./src/geometry/contour_nested.js"
@@ -33,26 +34,21 @@
       "keyword": "metadata, order dealer, cad, crm, window builder, windows calculator"
     },
     "search": true,
+    "sort": true,
     "collapse": true,
-    "menu": {                       // Adding additional menu items after Home
-      "Project Website": {        // Menu item name
-        "href":"https://myproject.com", //the rest of HTML properties to add to manu item
+    "menu": {
+      "Заказ дилера": {
+        "href":"https://github.com/oknosoft/windowbuilder/wiki",
         "target":"_blank",
         "class":"menu-item",
         "id":"website_link"
-      },
-      "Forum": {
-        "href":"https://myproject.com.forum",
-        "target":"_blank",
-        "class":"menu-item",
-        "id":"forum_link"
       }
     },
     "sectionOrder": [
       "Tutorials",
-      "Externals",
       "Namespaces",
       "Classes",
+      "Externals",
       "Modules",
       "Events",
       "Mixins",
@@ -60,10 +56,12 @@
     ]
   },
   "opts": {
-    "destination": "./jsdoc/out/",
+    "destination": "./jsdoc/wbcore/",
     "encoding": "utf8",
     "private": true,
     "recurse": true,
-    "template": "./node_modules/docdash"
+    "template": "./node_modules/docdash",
+    "tutorials": "./jsdoc/tutorials/",
+    "readme": "./README.md"
   }
 }

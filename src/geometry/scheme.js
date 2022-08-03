@@ -1004,7 +1004,7 @@ class Scheme extends paper.Project {
   /**
    * Двигает выделенные точки путей либо все точки выделенных элементов
    * @method move_points
-   * @param delta {paper.Point}
+   * @param delta {external:Point}
    * @param [all_points] {Boolean}
    */
   move_points(delta, all_points) {
@@ -1738,7 +1738,7 @@ class Scheme extends paper.Project {
    * @param profile {Profile|null} - текущий профиль - используется, чтобы не искать соединения с самим собой
    * TODO: возможно, имеет смысл разрешить змее кусать себя за хвост
    * @param res {CnnPoint} - описание соединения на конце текущего профиля
-   * @param point {paper.Point} - точка, окрестность которой анализируем
+   * @param point {external:Point} - точка, окрестность которой анализируем
    * @param check_only {Boolean|String} - указывает, выполнять только проверку или привязывать точку к узлам или профилю или к узлам и профилю
    * @returns {Boolean|undefined}
    */
@@ -1977,7 +1977,7 @@ class Scheme extends paper.Project {
 
   /**
    * Ищет точки в выделенных элементах. Если не находит, то во всём проекте
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param [tolerance] {Number}
    * @param [selected_first] {Boolean}
    * @param [with_onlays] {Boolean}

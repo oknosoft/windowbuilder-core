@@ -1,18 +1,20 @@
 
 /**
- * @classdesc ### Абстрактное заполнение
+ * Абстрактное заполнение
+ *
  * Общие свойства заполнения и контура
  *
  *
- * Created by Evgeniy Malyarov on 12.05.2017.
- *
  * @class
+ * @extends BuilderElement
  *
  */
 const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Тест положения контура в изделии
+   * @param pos {EnmElm_positions}
+   * @return {Boolean}
    */
   is_pos(pos) {
     // если в изделии один контур или если контур является створкой, он занимает одновременно все положения
