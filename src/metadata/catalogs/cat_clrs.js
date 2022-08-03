@@ -93,10 +93,13 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   }
 
   /**
-   * ПолучитьЦветПоПредопределенномуЦвету
+   * Возвращает цвет по предопределенному цвету при формировании спецификации
    * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
    * @param clr_elm {CatClrs} - цвет элемента
    * @param clr_sch {CatClrs} - цвет изделия
+   * @param [elm] {BuilderElement} - элемент рисовалки
+   * @param [spec] {TabularSection} - табчасть спецификации для поиска ведущих
+   * @param [row] {TabularSectionRow} - строка спецификации, где есть `nom`
    * @return {CatClrs}
    */
   by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
@@ -110,14 +113,17 @@ exports.CatClrsManager = class CatClrsManager extends Object {
           clr_elm = elm?._attr?.row_spec.clr;
         }
         return flipped ? this.inverted(clr_elm) :  clr_elm;
+
       case 'КакИзделие':
         return clr_sch;
+
       case 'КакЭлементСнаружи':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
         }
         return flipped ? this.by_predefined({predefined_name: 'КакЭлементИзнутри'}, clr_elm) :
           clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
+
       case 'КакЭлементИзнутри':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
@@ -125,19 +131,40 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         return flipped ?
           this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm) :
           clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
+
+      case 'БезЦветаИзнутри':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = this.getter(`${this.predefined('БезЦвета').ref}${
+          (clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out).ref}`);
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+
+      case 'БезЦветаСнаружи':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = this.getter(`${
+          (clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in).ref}${this.predefined('БезЦвета').ref}`);
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+
       case 'КакИзделиеСнаружи':
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеИзнутри'}, clr_elm, clr_sch) :
           clr_sch.clr_out.empty() ? clr_sch : clr_sch.clr_out;
+
       case 'КакИзделиеИзнутри':
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch) :
           clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
+
       case 'КакЭлементИнверсный':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
         }
         return flipped ? clr_elm : this.inverted(clr_elm);
+
       case 'КакИзделиеИнверсный':
         return this.inverted(clr_sch);
+
       case 'БезЦвета':
         return this.get();
       case 'Белый':
