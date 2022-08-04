@@ -25194,7 +25194,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     if(rfield) {
 
-      _obj[field] = rfield === 'n' ? parseFloat(value) : '' + value;
+      _obj[field] = rfield === 'n' ? parseFloat(value || 0) : '' + value;
 
       nom = this.nom;
       characteristic = this.characteristic;
@@ -25251,7 +25251,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     if(DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
 
       if(!recalc) {
-        _obj[field] = parseFloat(value);
+        _obj[field] = parseFloat(value || 0);
       }
 
       isNaN(_obj.price) && (_obj.price = 0);
