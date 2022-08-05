@@ -1,9 +1,13 @@
 
-/**
+/*
  * Подмешивается в конец init-файла
  *
  */
 
+/**
+ * Абстрактная строка табчасти параметров
+ * @class
+ */
 class ParamsRow extends TabularSectionRow{
   get param(){
     return this._getter('param') || $p.cch.properties.get();
@@ -21,21 +25,37 @@ class ParamsRow extends TabularSectionRow{
   }
 }
 
+/**
+ * Строка табчасти параметров с уточнением до элемента
+ * @class
+ */
 class ElmParamsRow extends ParamsRow{
   get elm(){return this._getter('elm')}
   set elm(v){this._setter('elm',v)}
 }
 
+/**
+ * Строка табчасти параметров с признаком сокрытия
+ * @class
+ */
 class HideParamsRow extends ParamsRow{
   get hide(){return this._getter('hide')}
   set hide(v){this._setter('hide',v)}
 }
 
+/**
+ * Строка табчасти параметров с признаками сокрытия и принудительной установки
+ * @class
+ */
 class HideForciblyParamsRow extends HideParamsRow{
   get forcibly(){return this._getter('forcibly')}
   set forcibly(v){this._setter('forcibly',v)}
 }
 
+/**
+ * Строка табчасти отбора технологических справочников
+ * @class
+ */
 class SelectionParamsRow extends ElmParamsRow{
   get area(){return this._getter('area')}
   set area(v){this._setter('area',v)}
@@ -47,6 +67,10 @@ class SelectionParamsRow extends ElmParamsRow{
   set origin(v){this._setter('origin',v)}
 }
 
+/**
+ * Строка табчасти допреквизитов
+ * @class
+ */
 class Extra_fieldsRow extends TabularSectionRow{
   get property(){return this._getter('property')}
   set property(v){this._setter('property',v)}
@@ -64,6 +88,10 @@ class Extra_fieldsRow extends TabularSectionRow{
   set txt_row(v){this._setter('txt_row',v)}
 }
 
+/**
+ * Строка допреквизитов ключей параметров
+ * @class
+ */
 class CatParameters_keysParamsRow extends Extra_fieldsRow{
   get area(){return this._getter('area')}
   set area(v){this._setter('area',v)}
@@ -73,6 +101,10 @@ class CatParameters_keysParamsRow extends Extra_fieldsRow{
   set comparison_type(v){this._setter('comparison_type',v)}
 }
 
+/**
+ * Строка табчасти назначения платежа
+ * @class
+ */
 class Payment_detailsRow extends TabularSectionRow{
   get cash_flow_article(){return this._getter('cash_flow_article')}
   set cash_flow_article(v){this._setter('cash_flow_article',v)}
@@ -82,6 +114,10 @@ class Payment_detailsRow extends TabularSectionRow{
   set amount(v){this._setter('amount',v)}
 }
 
+/**
+ * Строка табчасти параметров формул
+ * @class
+ */
 class CatFormulasParamsRow extends ParamsRow{}
 
 class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{

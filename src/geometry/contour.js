@@ -2549,10 +2549,12 @@ class Contour extends AbstractFilling(paper.Layer) {
   save_coordinates(short, save, close) {
 
     let res = Promise.resolve();
-
-    if (!short) {
+    if(short) {
+      this._row.by_contour(this);
+    }
+    else {
       const push = (contour) => {
-        res = res.then(() => contour.save_coordinates(short, save, close))
+        res = res.then(() => contour.save_coordinates(short, save, close));
       };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
@@ -2569,23 +2571,10 @@ class Contour extends AbstractFilling(paper.Layer) {
           elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
+      res = res.then(() => this._row.by_contour(this));
     }
 
-    return res.then(() => {
-      // ответственность за строку в таблице конструкций лежит на контуре
-      const {bounds} = this;
-      this._row.x = bounds ? bounds.width.round(4) : 0;
-      this._row.y = bounds ? bounds.height.round(4) : 0;
-      this._row.is_rectangular = this.is_rectangular;
-      if (this.parent) {
-        this._row.w = this.w.round(4);
-        this._row.h = this.h.round(4);
-      }
-      else {
-        this._row.w = 0;
-        this._row.h = 0;
-      }
-    });
+    return res;
   }
 
   /**

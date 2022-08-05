@@ -4621,10 +4621,12 @@ class Contour extends AbstractFilling(paper.Layer) {
   save_coordinates(short, save, close) {
 
     let res = Promise.resolve();
-
-    if (!short) {
+    if(short) {
+      this._row.by_contour(this);
+    }
+    else {
       const push = (contour) => {
-        res = res.then(() => contour.save_coordinates(short, save, close))
+        res = res.then(() => contour.save_coordinates(short, save, close));
       };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
@@ -4641,23 +4643,10 @@ class Contour extends AbstractFilling(paper.Layer) {
           elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
+      res = res.then(() => this._row.by_contour(this));
     }
 
-    return res.then(() => {
-      // ответственность за строку в таблице конструкций лежит на контуре
-      const {bounds} = this;
-      this._row.x = bounds ? bounds.width.round(4) : 0;
-      this._row.y = bounds ? bounds.height.round(4) : 0;
-      this._row.is_rectangular = this.is_rectangular;
-      if (this.parent) {
-        this._row.w = this.w.round(4);
-        this._row.h = this.h.round(4);
-      }
-      else {
-        this._row.w = 0;
-        this._row.h = 0;
-      }
-    });
+    return res;
   }
 
   /**
@@ -16294,14 +16283,12 @@ class Scheme extends paper.Project {
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    return contour.save_coordinates(true)
-      .then(() => {
-        isBrowser && layer && contour.refresh_prm_links();
-        !layer && l_dimensions.redraw();
-        return contours.reduce((sum, curr) => {
-          return sum.then(() => this.refresh_recursive(curr, isBrowser));
-        }, Promise.resolve());
-      });
+    contour.save_coordinates(true);
+    isBrowser && layer && contour.refresh_prm_links();
+    !layer && l_dimensions.redraw();
+    for(const curr of contours) {
+      this.refresh_recursive(curr, isBrowser);
+    }
   }
 
   /**
@@ -16544,13 +16531,11 @@ class Scheme extends paper.Project {
 
   /**
    * ХарактеристикаОбъект текущего изделия
-   * @property ox
    * @type CatCharacteristics
    */
   get ox() {
     return this._dp.characteristic;
   }
-
   set ox(v) {
     const {_dp, _attr, _scope} = this;
     let setted;
@@ -16635,8 +16620,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Допсвойства, например, скрыть размерные линии
+   * Допсвойства, например, скрыть размерные линии
    * при рендеринге может переопределяться или объединяться с параметрами рендеринга
+   * @type Object
    */
   get builder_props() {
     const {ox, _attr} = this;
@@ -16645,12 +16631,16 @@ class Scheme extends paper.Project {
 
   /**
    * Методы сдвига узлов и элементов
-   * @return {*}
+   * @type Mover
    */
   get mover() {
     return this._scope._mover;
   }
 
+  /**
+   * Задаёт режим отрисовки: каркас или полноценный эскиз
+   * @param [v] {Boolean}
+   */
   set_carcass(v) {
     const contours = this.getItems({class: Contour});
     contours.forEach(({skeleton}) => skeleton.carcass = v);
@@ -16658,7 +16648,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * Загружает пользовательские размерные линии
+   * Загружает пользовательские размерные линии  
    * Этот код нельзя выполнить внутри load_contour, т.к. линия может ссылаться на элементы разных контуров
    */
   load_dimension_lines() {
@@ -16746,77 +16736,76 @@ class Scheme extends paper.Project {
       _scheme.load_contour(null);
 
       // перерисовываем каркас
-      return _scheme.redraw({from_service})
-        .then(() => {
-          // ограничиваем список систем в интерфейсе
-          !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
-          _scheme.check_clr();
+      _scheme.redraw({from_service});
 
-          // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
-          return new Promise((resolve) => {
+      // ограничиваем список систем в интерфейсе
+      !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+      _scheme.check_clr();
 
-            _attr._bounds = null;
+      // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
+      return new Promise((resolve) => {
 
-            // згружаем пользовательские размерные линии
-            _scheme.load_dimension_lines();
+        _attr._bounds = null;
 
-            setTimeout(() => {
+        // згружаем пользовательские размерные линии
+        _scheme.load_dimension_lines();
 
-              _attr._bounds = null;
-              _scheme.zoom_fit();
+        setTimeout(() => {
 
-              const {_scope} = _scheme;
+          _attr._bounds = null;
+          _scheme.zoom_fit();
 
-              // заставляем UndoRedo сделать начальный снапшот, одновременно, обновляем заголовок
-              if(!_attr._snapshot) {
-                _scope._undo.clear();
-                _scope._undo.save_snapshot(_scheme);
-                _scope.set_text();
-              }
+          const {_scope} = _scheme;
 
-              // регистрируем изменение, чтобы отрисовались размерные линии
-              _scheme.register_change(true);
+          // заставляем UndoRedo сделать начальный снапшот, одновременно, обновляем заголовок
+          if(!_attr._snapshot) {
+            _scope._undo.clear();
+            _scope._undo.save_snapshot(_scheme);
+            _scope.set_text();
+          }
 
-              // виртуальное событие, чтобы активировать слой в дереве слоёв
-              if(_scheme.contours.length) {
-                _scheme.notify(_scheme.contours[0], 'layer_activated', true);
-              }
+          // регистрируем изменение, чтобы отрисовались размерные линии
+          _scheme.register_change(true);
 
-              delete _attr._loading;
+          // виртуальное событие, чтобы активировать слой в дереве слоёв
+          if(_scheme.contours.length) {
+            _scheme.notify(_scheme.contours[0], 'layer_activated', true);
+          }
 
-              // при необходимости загружаем типовой блок
-              ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
-                ?
-                Promise.resolve()
-                :
-                _scheme.ox.base_block.load().catch(() => null))
-                .then(() => {
-                  if(_scheme.ox.coordinates.count()) {
-                    if(_scheme.ox.specification.count() || from_service) {
-                      _scheme.draw_visualization();
-                      if(from_service){
-                        _scheme.zoom_fit();
-                        return resolve();
-                      }
-                    }
-                    else {
-                      // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
-                      $p.products_building.recalc(_scheme, {});
-                    }
+          delete _attr._loading;
+
+          // при необходимости загружаем типовой блок
+          ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
+            ?
+            Promise.resolve()
+            :
+            _scheme.ox.base_block.load().catch(() => null))
+            .then(() => {
+              if(_scheme.ox.coordinates.count()) {
+                if(_scheme.ox.specification.count() || from_service) {
+                  _scheme.draw_visualization();
+                  if(from_service){
+                    _scheme.zoom_fit();
+                    return resolve();
                   }
-                  else {
-                    if(from_service){
-                      return resolve();
-                    }
-                    _scope.load_stamp && _scope.load_stamp();
-                  }
-                  delete _attr._snapshot;
+                }
+                else {
+                  // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
+                  $p.products_building.recalc(_scheme, {});
+                }
+              }
+              else {
+                if(from_service){
+                  return resolve();
+                }
+                _scope.load_stamp && _scope.load_stamp();
+              }
+              delete _attr._snapshot;
 
-                  (!from_service || !_scheme.ox.specification.count()) && resolve();
-                });
+              (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
-          });
-        })
+        });
+      })
         .then(() => {
           // при необходимости, перезаполним параметры изделия и фурнитуры
           if(_scheme.ox._data.refill_props) {
@@ -16856,12 +16845,12 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Рисует фрагмент загруженного изделия
+   * Рисует фрагмент загруженного изделия
    * @param attr {Object}
    * @param [attr.elm] {Number} - Элемент или Контур
-   *        = 0, формируется эскиз изделия,
-   *        > 0, эскиз элемента (заполнения или палки)
-   *        < 0, эскиз контура (рамы или створки)
+   * - = 0, формируется эскиз изделия,
+   * - > 0, эскиз элемента (заполнения или палки)
+   * - < 0, эскиз контура (рамы или створки)
    * @param [attr.width] {Number} - если указано, эскиз будет вписан в данную ширину (по умолчению - 600px)
    * @param [attr.height] {Number} - если указано, эскиз будет вписан в данную высоту (по умолчению - 600px)
    * @param [attr.sz_lines] {enm.ТипыРазмерныхЛиний} - правила формирования размерных линий (по умолчению - Обычные)
@@ -16945,33 +16934,32 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * Перерисовывает все контуры изделия. Не занимается биндингом.
+   * Перерисовывает все контуры изделия. Не занимается биндингом.  
    * Предполагается, что взаимное перемещение профилей уже обработано
+   * @param [attr] {Object} - параметры, уточняющие, как перерисовывать
    */
   redraw(attr = {}) {
 
     const {_attr, _ch, contours, isBrowser, _scope, _deffer} = this;
     const {length} = _ch;
-    let queue = Promise.resolve();
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
 
     if(_attr._lock || !_scope?.eve || (isBrowser && _scope.eve._async?.move_points?.timer)) {
-      return queue;
+      return;
     }
 
     if(!_attr._opened || _attr._saving || !length) {
       _deffer.length = 0;
-      return queue;
+      return;
     }
 
     if(contours.length) {
 
-      if(_attr.elm_fragment > 0) {
+      if (_attr.elm_fragment > 0) {
         const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
         elm && elm.draw_fragment && elm.draw_fragment(true);
-      }
-      else {
+      } else {
         // перерисовываем соединительные профили
         this.l_connective.redraw();
 
@@ -16981,42 +16969,35 @@ class Scheme extends paper.Project {
         // перерисовываем все контуры
         for (let contour of contours) {
           contour.redraw();
-          if(_ch.length > length) {
+          if (_ch.length > length) {
             return;
           }
         }
       }
 
       // если перерисованы все контуры, перерисовываем их размерные линии
-      contours.forEach((contour) => {
-        queue = queue.then(() => this.refresh_recursive(contour, isBrowser));
-      });
-
+      _attr._bounds = null;
+      contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
     }
+    
+    // перерисовываем габаритные размерные линии изделия
+    this.draw_sizes();
 
-    return queue.catch(() => null)
-      .then(() => {
-        _attr._bounds = null;
-        // перерисовываем габаритные размерные линии изделия
-        this.draw_sizes();
+    // обновляем изображение на экране
+    this.view.update();
 
-        // обновляем изображение на экране
-        this.view.update();
+    // сбрасываем счетчик изменений
+    _ch.length = 0;
 
-        // сбрасываем счетчик изменений
-        _ch.length = 0;
-
-        // выполняем отложенные подписки
-        for(const deffer of _deffer) {
-          deffer(this);
-        }
-        _deffer.length = 0;
-        return this;
-      });
+    // выполняем отложенные подписки
+    for(const deffer of _deffer) {
+      deffer(this);
+    }
+    _deffer.length = 0;
   }
 
   /**
-   * информирует о наличии изменений
+   * Выясняет, есть ли необработанные изменения
    */
   has_changes() {
     return this._ch.length > 0;
@@ -17068,7 +17049,6 @@ class Scheme extends paper.Project {
 
   /**
    * Габариты изделия. Рассчитываются, как объединение габаритов всех слоёв типа Contour
-   * @property bounds
    * @type Rectangle
    */
   get bounds() {
@@ -17109,10 +17089,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Габариты эскиза со всеми видимыми дополнениями
+   * Габариты эскиза со всеми видимыми дополнениями  
    * В свойстве `strokeBounds` учтены все видимые дополнения - размерные линии, визуализация и т.д.
    *
-   * @property strokeBounds
    */
   get strokeBounds() {
     let bounds = this.l_dimensions.strokeBounds;
@@ -17670,18 +17649,16 @@ class Scheme extends paper.Project {
 
   /**
    * Возвращает массив РАМНЫХ контуров текущего изделия
-   * @property contours
-   * @type Array
+   * @type Array.<Contour>
    */
   get contours() {
     return this.layers.filter((l) => l instanceof Contour);
   }
 
   /**
-   * ### Габаритная площадь изделия
+   * Габаритная площадь изделия  
    * Сумма габаритных площадей рамных контуров
    *
-   * @property area
    * @type Number
    * @final
    */
@@ -17690,10 +17667,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Площадь изделия с учетом наклонов-изгибов профиля
+   * Площадь изделия с учетом наклонов-изгибов профиля  
    * Сумма площадей рамных контуров
    *
-   * @property area
    * @type Number
    * @final
    */
@@ -17702,9 +17678,8 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Цвет текущего изделия
-   *
-   * @property clr
+   * Цвет текущего изделия  
+   * По сути, это не свойство, а макрос. При установке, пробегает по всем профилям изделия и присваивает им цвет 
    * @type CatClrs
    */
   get clr() {
@@ -17715,9 +17690,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Служебный слой размерных линий
-   *
-   * @property l_dimensions
+   * Служебный слой размерных линий
    * @type DimensionLayer
    * @final
    */
@@ -17738,9 +17711,8 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Служебный слой соединительных профилей
+   * Служебный слой соединительных профилей
    *
-   * @property l_connective
    * @type ConnectiveLayer
    * @final
    */
@@ -18123,21 +18095,20 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Цвет по умолчанию
+   * Цвет по умолчанию  
    * Возвращает цвет по умолчанию с учетом свойств системы и элемента
    *
-   * @property default_clr
-   * @final
+   * @param [attr] {Object}
+   * @return {CatClrs}
    */
   default_clr(attr) {
     return this.ox.clr;
   }
 
   /**
-   * ### Выделенные профили
+   * Выделенные профили  
    * Возвращает массив выделенных профилей. Выделенным считаем профиль, у которого выделены `b` и `e` или выделен сам профиль при невыделенных узлах
    *
-   * @method selected_profiles
    * @param [all] {Boolean} - если true, возвращает все выделенные профили. Иначе, только те, которе можно двигать
    * @returns {Array.<ProfileItem>}
    */
@@ -18172,10 +18143,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выделенный элемент
+   * Выделенный элемент  
    * Возвращает первый из найденных выделенных элементов
    *
-   * @property selected_elm
    * @returns {BuilderElement}
    */
   get selected_elm() {
@@ -18184,10 +18154,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выделенные элементы
+   * Выделенные элементы  
    * Возвращает массив выделенных элементов
    *
-   * @property selected_elements
    * @returns {Array.<BuilderElement>}
    */
   get selected_elements() {
@@ -21244,6 +21213,29 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
       _obj.clr = clrs[0].valueOf();
     }
     this.dop = Object.assign(dop, {params});
+  }
+};
+
+/**
+ * Заполняет себя данными слоя
+ * @memberof CatCharacteristicsConstructionsRow
+ * @param [bounds] {external:Bounds}
+ * @param is_rectangular {Boolean}
+ * @param w {Number}
+ * @param h {Number}
+ * @param layer {external:Layer}
+ */
+$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {
+  this.x = bounds ? bounds.width.round(4) : 0;
+  this.y = bounds ? bounds.height.round(4) : 0;
+  this.is_rectangular = is_rectangular;
+  if (layer) {
+    this.w = w.round(4);
+    this.h = h.round(4);
+  }
+  else {
+    this.w = 0;
+    this.h = 0;
   }
 };
 
@@ -24840,8 +24832,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @param [params]
    * @param [create]
    * @param [grid]
-   * @param [cx] {Promise.<CatCharacteristics>}
-   * @return {Promise.<DocCalc_orderProductionRow>}
+   * @param [cx] {CatCharacteristics}
+   * @return {Promise<DocCalc_orderProductionRow>}
    */
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
@@ -25037,10 +25029,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
-              return project.load(cx, true, this)                         // читаем изделие в невизуальную рисовалку
-                .then(() => cx.apply_props(project, dp))                  // выполняем пересчет спецификации
-                .then(() => project.save_coordinates({svg: false, save: false}))
-                .then(() => this.characteristic_saved(project));          // выполняем пересчет строки заказа
+              return project.load(cx, true, this)                                                     // читаем изделие в невизуальную рисовалку
+                .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
+                .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
             });
           }
           else {
@@ -25049,13 +25040,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
-              tmp = tmp.then(() => cx.apply_props(origin, dp))
-                .then(() => origin.calculate_spec({
-                  elm: new FakeElm(row),
-                  len_angl: new FakeLenAngl({len: row.len, inset: origin}),
-                  ox: cx
-                }))
-                .then(() => row.value_change('quantity', '', row.quantity));
+              cx.apply_props(origin, dp).calculate_spec({
+                elm: new FakeElm(row),
+                len_angl: new FakeLenAngl({len: row.len, inset: origin}),
+                ox: cx
+              });
+              row.value_change('quantity', '', row.quantity);
             }
             else {
               row.value_change('quantity', '', row.quantity);

@@ -454,13 +454,11 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * если текущее изделие помечено в обработке
    * @param engine {Scheme|CatInserts} - экземпляр рисовалки или вставки (соответственно, для изделий построителя и параметрика)
    * @param dp {DpBuyers_order} - экземпляр обработки в реквизитах и табчастях которой, правила перезаполнения
-   * @return {Promise.<Scheme|CatInserts>}
+   * @return {Scheme|CatInserts}
    */
   apply_props(engine, dp) {
-    let res;
-    const apply = dp && dp.production.find({use: true, characteristic: this});
     // если в dp взведён флаг, выполняем подмену
-    if(apply) {
+    if(dp && dp.production.find({use: true, characteristic: this})) {
       const {Scheme, Filling, Contour} = $p.EditorInvisible;
       if(engine instanceof Scheme) {
         const {length} = engine._ch;
@@ -489,22 +487,17 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           }
         }
         if(engine._ch.length > length) {
-          res = engine.redraw();
+          engine.redraw();
         }
       }
-    }
-    return (res || Promise.resolve())
-      .then(() => {
-        if(apply) {
-          // подмена параметров - одинаково для рисовалки и параметрика
-          dp.product_params.forEach(({param, value, _ch}) => {
-            _ch && this.params.find_rows({param}, (row) => {
-              row.value = value;
-            });
-          });
-        }
-        return engine;
+      // подмена параметров - одинаково для рисовалки и параметрика
+      dp.product_params.forEach(({param, value, _ch}) => {
+        _ch && this.params.find_rows({param}, (row) => {
+          row.value = value;
+        });
       });
+    }
+    return engine;
   }
 
   /**

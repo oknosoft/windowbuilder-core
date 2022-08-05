@@ -119,3 +119,26 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
   }
 };
 
+/**
+ * Заполняет себя данными слоя
+ * @memberof CatCharacteristicsConstructionsRow
+ * @param [bounds] {external:Bounds}
+ * @param is_rectangular {Boolean}
+ * @param w {Number}
+ * @param h {Number}
+ * @param layer {external:Layer}
+ */
+$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {
+  this.x = bounds ? bounds.width.round(4) : 0;
+  this.y = bounds ? bounds.height.round(4) : 0;
+  this.is_rectangular = is_rectangular;
+  if (layer) {
+    this.w = w.round(4);
+    this.h = h.round(4);
+  }
+  else {
+    this.w = 0;
+    this.h = 0;
+  }
+};
+

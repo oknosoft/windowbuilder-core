@@ -5996,13 +5996,11 @@ set dop(v){this._setter_ts('dop',v)}
    * если текущее изделие помечено в обработке
    * @param engine {Scheme|CatInserts} - экземпляр рисовалки или вставки (соответственно, для изделий построителя и параметрика)
    * @param dp {DpBuyers_order} - экземпляр обработки в реквизитах и табчастях которой, правила перезаполнения
-   * @return {Promise.<Scheme|CatInserts>}
+   * @return {Scheme|CatInserts}
    */
   apply_props(engine, dp) {
-    let res;
-    const apply = dp && dp.production.find({use: true, characteristic: this});
     // если в dp взведён флаг, выполняем подмену
-    if(apply) {
+    if(dp && dp.production.find({use: true, characteristic: this})) {
       const {Scheme, Filling, Contour} = $p.EditorInvisible;
       if(engine instanceof Scheme) {
         const {length} = engine._ch;
@@ -6031,22 +6029,17 @@ set dop(v){this._setter_ts('dop',v)}
           }
         }
         if(engine._ch.length > length) {
-          res = engine.redraw();
+          engine.redraw();
         }
       }
-    }
-    return (res || Promise.resolve())
-      .then(() => {
-        if(apply) {
-          // подмена параметров - одинаково для рисовалки и параметрика
-          dp.product_params.forEach(({param, value, _ch}) => {
-            _ch && this.params.find_rows({param}, (row) => {
-              row.value = value;
-            });
-          });
-        }
-        return engine;
+      // подмена параметров - одинаково для рисовалки и параметрика
+      dp.product_params.forEach(({param, value, _ch}) => {
+        _ch && this.params.find_rows({param}, (row) => {
+          row.value = value;
+        });
       });
+    }
+    return engine;
   }
 
   /**
@@ -7664,7 +7657,7 @@ class DocCalc_orderManager extends DocManager {
    * Копирует заказ, возвращает промис с новым заказом
    * @param src {Object}
    * @param src.clone {Boolean} - если указано, создаётся копия объекта, иначе - новый объект с аналогичными свойствами
-   * @return {Promise.<DocCalc_order>}
+   * @return {Promise<DocCalc_order>}
    */
   async clone(src) {
     const {utils, cat} = this._owner.$p;
@@ -9117,11 +9110,15 @@ $p.RepSellingDataRow = RepSellingDataRow;
 */
 $p.rep.create('selling');
 
-/**
+/*
  * Подмешивается в конец init-файла
  *
  */
 
+/**
+ * Абстрактная строка табчасти параметров
+ * @class
+ */
 class ParamsRow extends TabularSectionRow{
   get param(){
     return this._getter('param') || $p.cch.properties.get();
@@ -9139,21 +9136,37 @@ class ParamsRow extends TabularSectionRow{
   }
 }
 
+/**
+ * Строка табчасти параметров с уточнением до элемента
+ * @class
+ */
 class ElmParamsRow extends ParamsRow{
   get elm(){return this._getter('elm')}
   set elm(v){this._setter('elm',v)}
 }
 
+/**
+ * Строка табчасти параметров с признаком сокрытия
+ * @class
+ */
 class HideParamsRow extends ParamsRow{
   get hide(){return this._getter('hide')}
   set hide(v){this._setter('hide',v)}
 }
 
+/**
+ * Строка табчасти параметров с признаками сокрытия и принудительной установки
+ * @class
+ */
 class HideForciblyParamsRow extends HideParamsRow{
   get forcibly(){return this._getter('forcibly')}
   set forcibly(v){this._setter('forcibly',v)}
 }
 
+/**
+ * Строка табчасти отбора технологических справочников
+ * @class
+ */
 class SelectionParamsRow extends ElmParamsRow{
   get area(){return this._getter('area')}
   set area(v){this._setter('area',v)}
@@ -9165,6 +9178,10 @@ class SelectionParamsRow extends ElmParamsRow{
   set origin(v){this._setter('origin',v)}
 }
 
+/**
+ * Строка табчасти допреквизитов
+ * @class
+ */
 class Extra_fieldsRow extends TabularSectionRow{
   get property(){return this._getter('property')}
   set property(v){this._setter('property',v)}
@@ -9182,6 +9199,10 @@ class Extra_fieldsRow extends TabularSectionRow{
   set txt_row(v){this._setter('txt_row',v)}
 }
 
+/**
+ * Строка допреквизитов ключей параметров
+ * @class
+ */
 class CatParameters_keysParamsRow extends Extra_fieldsRow{
   get area(){return this._getter('area')}
   set area(v){this._setter('area',v)}
@@ -9191,6 +9212,10 @@ class CatParameters_keysParamsRow extends Extra_fieldsRow{
   set comparison_type(v){this._setter('comparison_type',v)}
 }
 
+/**
+ * Строка табчасти назначения платежа
+ * @class
+ */
 class Payment_detailsRow extends TabularSectionRow{
   get cash_flow_article(){return this._getter('cash_flow_article')}
   set cash_flow_article(v){this._setter('cash_flow_article',v)}
@@ -9200,6 +9225,10 @@ class Payment_detailsRow extends TabularSectionRow{
   set amount(v){this._setter('amount',v)}
 }
 
+/**
+ * Строка табчасти параметров формул
+ * @class
+ */
 class CatFormulasParamsRow extends ParamsRow{}
 
 class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
