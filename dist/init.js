@@ -75,7 +75,7 @@ $p.enm.create('order_sending_stages');
 $p.enm.create('individual_legal');
 
 /**
-* План видов характеристик _Константы и списки_<br/>
+* План видов характеристик _Константы и списки_  
 * Хранит значения настроек и параметров подсистем
 * @class
 * @extends external:CatObj
@@ -976,7 +976,7 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
 $p.cch.create('properties', CchPropertiesManager, false);
 
 /**
-* Справочник _Связи параметров_<br/>
+* Справочник _Связи параметров_  
 * Подчиненные параметры
 * @class
 * @extends external:CatObj
@@ -1058,7 +1058,7 @@ $p.CatParams_linksValuesRow = CatParams_linksValuesRow;
 $p.cat.create('params_links');
 
 /**
-* Справочник _Параметры выбора_<br/>
+* Справочник _Параметры выбора_  
 * Для привязки ключей параметров к метаданным
 * @class
 * @extends external:CatObj
@@ -1155,7 +1155,7 @@ class CatChoice_paramsManager extends CatManager {
 $p.cat.create('choice_params', CatChoice_paramsManager, false);
 
 /**
-* Справочник _Банковские счета_<br/>
+* Справочник _Банковские счета_  
 * Банковские счета сторонних контрагентов и физических лиц.
 * @class
 * @extends external:CatObj
@@ -1204,7 +1204,7 @@ $p.CatPartner_bank_accounts = CatPartner_bank_accounts;
 $p.cat.create('partner_bank_accounts');
 
 /**
-* Справочник _Банковские счета организаций_<br/>
+* Справочник _Банковские счета организаций_  
 * Банковские счета собственных организаций. 
 * @class
 * @extends external:CatObj
@@ -1375,7 +1375,7 @@ $p.CatCountries = CatCountries;
 $p.cat.create('countries');
 
 /**
-* Справочник _Формулы_<br/>
+* Справочник _Формулы_  
 * Формулы пользователя, для выполнения при расчете спецификаций, модификаторы, вычисляемые свойства
 * @class
 * @extends external:CatObj
@@ -1580,7 +1580,7 @@ class CatFormulasManager extends CatManager {
 $p.cat.create('formulas', CatFormulasManager, false);
 
 /**
-* Справочник _Визуализация элементов_<br/>
+* Справочник _Визуализация элементов_  
 * Строки svg для рисования петель, ручек и графических примитивов
 * @class
 * @extends external:CatObj
@@ -1966,7 +1966,7 @@ class CatBranchesManager extends CatManager {
 $p.cat.create('branches', CatBranchesManager, false);
 
 /**
-* Справочник _Валюты_<br/>
+* Справочник _Валюты_  
 * Валюты, используемые при расчетах
 * @class
 * @extends external:CatObj
@@ -2078,7 +2078,7 @@ $p.CatNom_kinds = CatNom_kinds;
 $p.cat.create('nom_kinds');
 
 /**
-* Справочник _Договоры контрагентов_<br/>
+* Справочник _Договоры контрагентов_  
 * Перечень договоров, заключенных с контрагентами
 * @class
 * @extends external:CatObj
@@ -2143,7 +2143,7 @@ $p.CatContracts = CatContracts;
 $p.cat.create('contracts');
 
 /**
-* Справочник _Единицы измерения_<br/>
+* Справочник _Единицы измерения_  
 * Перечень единиц измерения номенклатуры и номенклатурных групп
 * @class
 * @extends external:CatObj
@@ -2200,7 +2200,7 @@ $p.CatProperty_values = CatProperty_values;
 $p.cat.create('property_values');
 
 /**
-* Справочник _Идентификаторы объектов метаданных_<br/>
+* Справочник _Идентификаторы объектов метаданных_  
 * Идентификаторы объектов метаданных для использования в базе данных.
 * @class
 * @extends external:CatObj
@@ -2221,7 +2221,7 @@ $p.CatMeta_ids = CatMeta_ids;
 $p.cat.create('meta_ids');
 
 /**
-* Справочник _Кассы_<br/>
+* Справочник _Кассы_  
 * Список мест фактического хранения и движения наличных денежных средств предприятия. Кассы разделены по организациям и валютам денежных средств. 
 * @class
 * @extends external:CatObj
@@ -2266,7 +2266,7 @@ $p.CatUnits = CatUnits;
 $p.cat.create('units');
 
 /**
-* Справочник _Контрагенты_<br/>
+* Справочник _Контрагенты_  
 * Список юридических или физических лиц клиентов (поставщиков, покупателей).
 * @class
 * @extends external:CatObj
@@ -2340,7 +2340,7 @@ $p.CatPartnersContact_informationRow = CatPartnersContact_informationRow;
 $p.cat.create('partners');
 
 /**
-* Справочник _Номенклатура_<br/>
+* Справочник _Номенклатура_  
 * Перечень товаров, продукции, материалов, полуфабрикатов, тары, услуг
 * @class
 * @extends external:CatObj
@@ -2914,7 +2914,7 @@ $p.CatOrganizationsContact_informationRow = CatOrganizationsContact_informationR
 $p.cat.create('organizations');
 
 /**
-* Справочник _Вставки_<br/>
+* Справочник _Вставки_  
 * Армирование, пленки, вставки - дополнение спецификации, которое зависит от одного элемента
 * @class
 * @extends external:CatObj
@@ -3061,7 +3061,7 @@ $p.CatInsertsInsertsRow = CatInsertsInsertsRow;
 $p.cat.create('inserts');
 
 /**
-* Справочник _Ключи параметров_<br/>
+* Справочник _Ключи параметров_  
 * Списки пар {Параметр:Значение} для фильтрации в подсистемах формирования спецификаций, планировании и ценообразовании
 
 * @class
@@ -3131,7 +3131,7 @@ $p.CatParameters_keys = CatParameters_keys;
 $p.cat.create('parameters_keys');
 
 /**
-* Справочник _Параметры продукции_<br/>
+* Справочник _Параметры продукции_  
 * Настройки системы профилей и фурнитуры
 * @class
 * @extends external:CatObj
@@ -3665,7 +3665,7 @@ $p.CatDelivery_areasCoordinatesRow = CatDelivery_areasCoordinatesRow;
 $p.cat.create('delivery_areas');
 
 /**
-* Справочник _Соединения элементов_<br/>
+* Справочник _Соединения элементов_  
 * Спецификации соединений элементов. См.: {@tutorial cnns}
 * @class
 * @extends external:CatObj
@@ -4281,7 +4281,7 @@ class CatCnnsManager extends CatManager {
 $p.cat.create('cnns', CatCnnsManager, false);
 
 /**
-* Справочник _Фурнитура_<br/>
+* Справочник _Фурнитура_  
 * Описывает ограничения и правила формирования спецификаций фурнитуры
 * @class
 * @extends external:CatObj
@@ -5065,7 +5065,7 @@ $p.CatColor_price_groupsExcludeRow = CatColor_price_groupsExcludeRow;
 $p.cat.create('color_price_groups');
 
 /**
-* Справочник _Подразделения_<br/>
+* Справочник _Подразделения_  
 * Перечень подразделений предприятия
 * @class
 * @extends external:CatObj
@@ -5297,7 +5297,7 @@ $p.CatProjectsAcl_objsRow = CatProjectsAcl_objsRow;
 $p.cat.create('projects');
 
 /**
-* Справочник _Склады (места хранения)_<br/>
+* Справочник _Склады (места хранения)_  
 * Сведения о местах хранения товаров (складах), их структуре и физических лицах, назначенных материально ответственными (МОЛ) за тот или иной склад
 * @class
 * @extends external:CatObj
@@ -5334,7 +5334,7 @@ $p.CatStores = CatStores;
 $p.cat.create('stores');
 
 /**
-* Справочник _Статьи движения денежных средств_<br/>
+* Справочник _Статьи движения денежных средств_  
 * Перечень статей движения денежных средств (ДДС), используемых в предприятии для проведения анализа поступлений и расходов в разрезе статей движения денежных средств. 
 * @class
 * @extends external:CatObj
@@ -5359,7 +5359,7 @@ $p.CatCash_flow_articles = CatCash_flow_articles;
 $p.cat.create('cash_flow_articles');
 
 /**
-* Справочник _Типы цен номенклатуры_<br/>
+* Справочник _Типы цен номенклатуры_  
 * Перечень типов отпускных цен предприятия
 * @class
 * @extends external:CatObj
@@ -5471,7 +5471,7 @@ $p.CatIndividualsContact_informationRow = CatIndividualsContact_informationRow;
 $p.cat.create('individuals');
 
 /**
-* Справочник _Характеристики номенклатуры_<br/>
+* Справочник _Характеристики номенклатуры_  
 * Дополнительные характеристики элементов номенклатуры: цвет, размер и т.п.
 * @class
 * @extends external:CatObj
@@ -5996,11 +5996,13 @@ set dop(v){this._setter_ts('dop',v)}
    * если текущее изделие помечено в обработке
    * @param engine {Scheme|CatInserts} - экземпляр рисовалки или вставки (соответственно, для изделий построителя и параметрика)
    * @param dp {DpBuyers_order} - экземпляр обработки в реквизитах и табчастях которой, правила перезаполнения
-   * @return {Scheme|CatInserts}
+   * @return {Promise.<Scheme|CatInserts>}
    */
   apply_props(engine, dp) {
+    let res;
+    const apply = dp && dp.production.find({use: true, characteristic: this});
     // если в dp взведён флаг, выполняем подмену
-    if(dp && dp.production.find({use: true, characteristic: this})) {
+    if(apply) {
       const {Scheme, Filling, Contour} = $p.EditorInvisible;
       if(engine instanceof Scheme) {
         const {length} = engine._ch;
@@ -6029,17 +6031,22 @@ set dop(v){this._setter_ts('dop',v)}
           }
         }
         if(engine._ch.length > length) {
-          engine.redraw();
+          res = engine.redraw();
         }
       }
-      // подмена параметров - одинаково для рисовалки и параметрика
-      dp.product_params.forEach(({param, value, _ch}) => {
-        _ch && this.params.find_rows({param}, (row) => {
-          row.value = value;
-        });
-      });
     }
-    return engine;
+    return (res || Promise.resolve())
+      .then(() => {
+        if(apply) {
+          // подмена параметров - одинаково для рисовалки и параметрика
+          dp.product_params.forEach(({param, value, _ch}) => {
+            _ch && this.params.find_rows({param}, (row) => {
+              row.value = value;
+            });
+          });
+        }
+        return engine;
+      });
   }
 
   /**
@@ -6598,7 +6605,7 @@ $p.CatCharges_discountsPrice_groupsRow = CatCharges_discountsPrice_groupsRow;
 $p.cat.create('charges_discounts');
 
 /**
-* Справочник _Группы фин. учета номенклатуры_<br/>
+* Справочник _Группы фин. учета номенклатуры_  
 * Перечень номенклатурных групп для учета затрат и укрупненного планирования продаж, закупок и производства
 * @class
 * @extends external:CatObj
@@ -6659,7 +6666,7 @@ class CatAbonentsManager extends CatManager {
 $p.cat.create('abonents', CatAbonentsManager, false);
 
 /**
-* Справочник _Привязки вставок_<br/>
+* Справочник _Привязки вставок_  
 * Замена регистра "Корректировка спецификации"
 * @class
 * @extends external:CatObj
@@ -6828,7 +6835,7 @@ class CatInsert_bindManager extends CatManager {
 $p.cat.create('insert_bind', CatInsert_bindManager, false);
 
 /**
-* Справочник _Группы шаблонов_<br/>
+* Справочник _Группы шаблонов_  
 * Для "быстрых окон"
 * @class
 * @extends external:CatObj
@@ -6931,7 +6938,7 @@ $p.CatNonstandard_attributes = CatNonstandard_attributes;
 $p.cat.create('nonstandard_attributes');
 
 /**
-* Справочник _Направления доставки_<br/>
+* Справочник _Направления доставки_  
 * Объединяет районы, территории или подразделения продаж
 * @class
 * @extends external:CatObj
@@ -7107,7 +7114,7 @@ $p.DocRegisters_correctionRegisters_tableRow = DocRegisters_correctionRegisters_
 $p.doc.create('registers_correction');
 
 /**
-* Документ _Поступление товаров и услуг_<br/>
+* Документ _Поступление товаров и услуг_  
 * Документы отражают поступление товаров и услуг
 * @class
 * @extends external:DocObj
@@ -7420,7 +7427,7 @@ $p.DocWork_centers_taskCuttingRow = DocWork_centers_taskCuttingRow;
 $p.doc.create('work_centers_task');
 
 /**
-* Документ _Расчет-заказ_<br/>
+* Документ _Расчет-заказ_  
 * Аналог заказа покупателя типовых конфигураций.
 Содержит инструменты для формирования спецификаций и подготовки данных производства и диспетчеризации
 * @class
@@ -7963,7 +7970,7 @@ $p.DocCredit_cash_order = DocCredit_cash_order;
 $p.doc.create('credit_cash_order');
 
 /**
-* Документ _Реализация товаров и услуг_<br/>
+* Документ _Реализация товаров и услуг_  
 * Документы отражают факт реализации (отгрузки) товаров
 * @class
 * @extends external:DocObj
@@ -8338,7 +8345,7 @@ $p.IregSettlements_course = IregSettlements_course;
 $p.ireg.create('settlements_course');
 
 /**
-* Обработка _Размерная линия_<br/>
+* Обработка _Размерная линия_  
 * Метаданные инструмента ruler
 * @class
 * @extends external:DataProcessorObj
@@ -8377,7 +8384,7 @@ $p.DpBuilder_size = DpBuilder_size;
 $p.dp.create('builder_size');
 
 /**
-* Обработка _Таблица координат_<br/>
+* Обработка _Таблица координат_  
 * Метаданные инструмента coordinates
 * @class
 * @extends external:DataProcessorObj
@@ -8413,7 +8420,7 @@ $p.DpBuilder_coordinatesCoordinatesRow = DpBuilder_coordinatesCoordinatesRow;
 $p.dp.create('builder_coordinates');
 
 /**
-* Обработка _Рисование_<br/>
+* Обработка _Рисование_  
 * Метаданные инструмента pen (рисование профилей)
 * @class
 * @extends external:DataProcessorObj
@@ -8446,7 +8453,7 @@ $p.DpBuilder_pen = DpBuilder_pen;
 $p.dp.create('builder_pen');
 
 /**
-* Обработка _Цены номенклатуры_<br/>
+* Обработка _Цены номенклатуры_  
 * Метаданные карточки цен номенклатуры
 * @class
 * @extends external:DataProcessorObj
@@ -8712,7 +8719,7 @@ $p.DpBuyers_orderSys_profileRow = DpBuyers_orderSys_profileRow;
 $p.dp.create('buyers_order');
 
 /**
-* Обработка _Произвольный текст_<br/>
+* Обработка _Произвольный текст_  
 * Метаданные инструмента text
 * @class
 * @extends external:DataProcessorObj

@@ -4614,15 +4614,18 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Вычисляемые поля в таблицах конструкций и координат
    * @param short {Boolean} - короткий вариант - только координаты контура
+   * @param [save] {Boolean}
+   * @param [close] {Boolean}
+   * @return {Promise<void>}
    */
   save_coordinates(short, save, close) {
 
     let res = Promise.resolve();
-    const push = (contour) => {
-      res = res.then(() => contour.save_coordinates(short, save, close))
-    };
 
     if (!short) {
+      const push = (contour) => {
+        res = res.then(() => contour.save_coordinates(short, save, close))
+      };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
         this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());
@@ -16287,7 +16290,7 @@ class Scheme extends paper.Project {
   /**
    * Обновляет связи параметров в иерархии слоёв
    * @param contour {Contour}
-   * @param isBrowser {Boolean}
+   * @param [isBrowser] {Boolean}
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
@@ -16683,7 +16686,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Читает изделие по ссылке или объекту продукции
+   * Читает изделие по ссылке или объекту продукции  
    * Выполняет следующую последовательность действий:
    * - Если передана ссылка, получает объект из базы данных
    * - Удаляет все слои и элементы текущего графического контекста
@@ -16695,7 +16698,6 @@ class Scheme extends paper.Project {
    * - Активирует текущий слой в дереве слоёв
    * - Рисует дополнительные элементы визуализации
    *
-   * @method load
    * @param id {String|CatObj} - идентификатор или объект продукции
    * @param [from_service] {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
    * @param [order] {DocCalc_order}
@@ -16744,76 +16746,77 @@ class Scheme extends paper.Project {
       _scheme.load_contour(null);
 
       // перерисовываем каркас
-      _scheme.redraw({from_service});
+      return _scheme.redraw({from_service})
+        .then(() => {
+          // ограничиваем список систем в интерфейсе
+          !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
+          _scheme.check_clr();
 
-      // ограничиваем список систем в интерфейсе
-      !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
-      _scheme.check_clr();
+          // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
+          return new Promise((resolve) => {
 
-      // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
-      return new Promise((resolve, reject) => {
+            _attr._bounds = null;
 
-        _attr._bounds = null;
+            // згружаем пользовательские размерные линии
+            _scheme.load_dimension_lines();
 
-        // згружаем пользовательские размерные линии
-        _scheme.load_dimension_lines();
+            setTimeout(() => {
 
-        setTimeout(() => {
+              _attr._bounds = null;
+              _scheme.zoom_fit();
 
-          _attr._bounds = null;
-          _scheme.zoom_fit();
+              const {_scope} = _scheme;
 
-          const {_scope} = _scheme;
+              // заставляем UndoRedo сделать начальный снапшот, одновременно, обновляем заголовок
+              if(!_attr._snapshot) {
+                _scope._undo.clear();
+                _scope._undo.save_snapshot(_scheme);
+                _scope.set_text();
+              }
 
-          // заставляем UndoRedo сделать начальный снапшот, одновременно, обновляем заголовок
-          if(!_attr._snapshot) {
-            _scope._undo.clear();
-            _scope._undo.save_snapshot(_scheme);
-            _scope.set_text();
-          }
+              // регистрируем изменение, чтобы отрисовались размерные линии
+              _scheme.register_change(true);
 
-          // регистрируем изменение, чтобы отрисовались размерные линии
-          _scheme.register_change(true);
+              // виртуальное событие, чтобы активировать слой в дереве слоёв
+              if(_scheme.contours.length) {
+                _scheme.notify(_scheme.contours[0], 'layer_activated', true);
+              }
 
-          // виртуальное событие, чтобы активировать слой в дереве слоёв
-          if(_scheme.contours.length) {
-            _scheme.notify(_scheme.contours[0], 'layer_activated', true);
-          }
+              delete _attr._loading;
 
-          delete _attr._loading;
-
-          // при необходимости загружаем типовой блок
-          ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
-            ?
-            Promise.resolve()
-            :
-            _scheme.ox.base_block.load().catch(() => null))
-            .then(() => {
-              if(_scheme.ox.coordinates.count()) {
-                if(_scheme.ox.specification.count() || from_service) {
-                  _scheme.draw_visualization();
-                  if(from_service){
-                    _scheme.zoom_fit();
-                    return resolve();
+              // при необходимости загружаем типовой блок
+              ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
+                ?
+                Promise.resolve()
+                :
+                _scheme.ox.base_block.load().catch(() => null))
+                .then(() => {
+                  if(_scheme.ox.coordinates.count()) {
+                    if(_scheme.ox.specification.count() || from_service) {
+                      _scheme.draw_visualization();
+                      if(from_service){
+                        _scheme.zoom_fit();
+                        return resolve();
+                      }
+                    }
+                    else {
+                      // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
+                      $p.products_building.recalc(_scheme, {});
+                    }
                   }
-                }
-                else {
-                  // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
-                  $p.products_building.recalc(_scheme, {});
-                }
-              }
-              else {
-                if(from_service){
-                  return resolve();
-                }
-                _scope.load_stamp && _scope.load_stamp();
-              }
-              delete _attr._snapshot;
+                  else {
+                    if(from_service){
+                      return resolve();
+                    }
+                    _scope.load_stamp && _scope.load_stamp();
+                  }
+                  delete _attr._snapshot;
 
-              (!from_service || !_scheme.ox.specification.count()) && resolve();
+                  (!from_service || !_scheme.ox.specification.count()) && resolve();
+                });
             });
-        });
-      })
+          });
+        })
         .then(() => {
           // при необходимости, перезаполним параметры изделия и фурнитуры
           if(_scheme.ox._data.refill_props) {
@@ -16949,16 +16952,17 @@ class Scheme extends paper.Project {
 
     const {_attr, _ch, contours, isBrowser, _scope, _deffer} = this;
     const {length} = _ch;
+    let queue = Promise.resolve();
 
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
 
     if(_attr._lock || !_scope?.eve || (isBrowser && _scope.eve._async?.move_points?.timer)) {
-      return;
+      return queue;
     }
 
     if(!_attr._opened || _attr._saving || !length) {
       _deffer.length = 0;
-      return;
+      return queue;
     }
 
     if(contours.length) {
@@ -16984,28 +16988,31 @@ class Scheme extends paper.Project {
       }
 
       // если перерисованы все контуры, перерисовываем их размерные линии
-      _attr._bounds = null;
-      contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
-
-      // перерисовываем габаритные размерные линии изделия
-      this.draw_sizes();
-
-      // обновляем изображение на экране
-      this.view.update();
+      contours.forEach((contour) => {
+        queue = queue.then(() => this.refresh_recursive(contour, isBrowser));
+      });
 
     }
-    else {
-      this.draw_sizes();
-    }
 
-    // сбрасываем счетчик изменений
-    _ch.length = 0;
+    return queue.catch(() => null)
+      .then(() => {
+        _attr._bounds = null;
+        // перерисовываем габаритные размерные линии изделия
+        this.draw_sizes();
 
-    // выполняем отложенные подписки
-    for(const deffer of _deffer) {
-      deffer(this);
-    }
-    _deffer.length = 0;
+        // обновляем изображение на экране
+        this.view.update();
+
+        // сбрасываем счетчик изменений
+        _ch.length = 0;
+
+        // выполняем отложенные подписки
+        for(const deffer of _deffer) {
+          deffer(this);
+        }
+        _deffer.length = 0;
+        return this;
+      });
   }
 
   /**
@@ -17138,8 +17145,8 @@ class Scheme extends paper.Project {
   /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
-   * @param type {String}
-   * @param fields {Array}
+   * @param [type] {String}
+   * @param [fields] {Array}
    */
   notify(obj, type = 'update', fields) {
     if(obj.type) {
@@ -25030,9 +25037,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
-              return project.load(cx, true, this)                                                     // читаем изделие в невизуальную рисовалку
-                .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
-                .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
+              return project.load(cx, true, this)                         // читаем изделие в невизуальную рисовалку
+                .then(() => cx.apply_props(project, dp))                  // выполняем пересчет спецификации
+                .then(() => project.save_coordinates({svg: false, save: false}))
+                .then(() => this.characteristic_saved(project));          // выполняем пересчет строки заказа
             });
           }
           else {
@@ -25041,12 +25049,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
-              cx.apply_props(origin, dp).calculate_spec({
-                elm: new FakeElm(row),
-                len_angl: new FakeLenAngl({len: row.len, inset: origin}),
-                ox: cx
-              });
-              row.value_change('quantity', '', row.quantity);
+              tmp = tmp.then(() => cx.apply_props(origin, dp))
+                .then(() => origin.calculate_spec({
+                  elm: new FakeElm(row),
+                  len_angl: new FakeLenAngl({len: row.len, inset: origin}),
+                  ox: cx
+                }))
+                .then(() => row.value_change('quantity', '', row.quantity));
             }
             else {
               row.value_change('quantity', '', row.quantity);

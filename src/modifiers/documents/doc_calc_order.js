@@ -1398,9 +1398,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
-              return project.load(cx, true, this)                                                     // читаем изделие в невизуальную рисовалку
-                .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
-                .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
+              return project.load(cx, true, this)                         // читаем изделие в невизуальную рисовалку
+                .then(() => cx.apply_props(project, dp))                  // выполняем пересчет спецификации
+                .then(() => project.save_coordinates({svg: false, save: false}))
+                .then(() => this.characteristic_saved(project));          // выполняем пересчет строки заказа
             });
           }
           else {
@@ -1409,12 +1410,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               // это paramrtric
               cx.specification.clear();
               // выполняем пересчет
-              cx.apply_props(origin, dp).calculate_spec({
-                elm: new FakeElm(row),
-                len_angl: new FakeLenAngl({len: row.len, inset: origin}),
-                ox: cx
-              });
-              row.value_change('quantity', '', row.quantity);
+              tmp = tmp.then(() => cx.apply_props(origin, dp))
+                .then(() => origin.calculate_spec({
+                  elm: new FakeElm(row),
+                  len_angl: new FakeLenAngl({len: row.len, inset: origin}),
+                  ox: cx
+                }))
+                .then(() => row.value_change('quantity', '', row.quantity));
             }
             else {
               row.value_change('quantity', '', row.quantity);

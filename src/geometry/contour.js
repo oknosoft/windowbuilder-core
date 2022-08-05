@@ -2542,15 +2542,18 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Вычисляемые поля в таблицах конструкций и координат
    * @param short {Boolean} - короткий вариант - только координаты контура
+   * @param [save] {Boolean}
+   * @param [close] {Boolean}
+   * @return {Promise<void>}
    */
   save_coordinates(short, save, close) {
 
     let res = Promise.resolve();
-    const push = (contour) => {
-      res = res.then(() => contour.save_coordinates(short, save, close))
-    };
 
     if (!short) {
+      const push = (contour) => {
+        res = res.then(() => contour.save_coordinates(short, save, close))
+      };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
         this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());

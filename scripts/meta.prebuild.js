@@ -224,7 +224,7 @@ function obj_constructor_text(_m, category, name, categoties) {
     text = jsdoc ? `\n/**\n* ${$p.msg.meta[category]} _${meta.synonym}_` : '',
     f, props = '';
   if(jsdoc && meta.illustration) {
-    text += `<br/>\n* ${meta.illustration}`;
+    text += `  \n* ${meta.illustration}`;
   }
 
   const filename = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}.js`);
