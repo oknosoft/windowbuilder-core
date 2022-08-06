@@ -14,7 +14,7 @@ const include = ['*'];
 const exclude = [
   'cat.servers',
   'cch.mdm_groups',
-  'out.registers_correction',
+  'doc.registers_correction',
   'ireg.i18n',
   'ireg.delivery_schedules',
   'ireg.delivery_scheme',

@@ -1,16 +1,13 @@
 
 /**
- * ### Изделие
+ * Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
  * - Стандартные слои (layers) - это контуры изделия, в них живут элементы
  * - Размерные линии, фурнитуру и визуализацию располагаем в отдельных слоях
  *
- * @class Scheme
- * @constructor
- * @extends paper.Project
+ * @class
+ * @extends external:Project
  * @param _canvas {HTMLCanvasElement} - канвас, в котором будет размещено изделие
- * @menuorder 20
- * @tooltip Изделие
  */
 
 class Scheme extends paper.Project {

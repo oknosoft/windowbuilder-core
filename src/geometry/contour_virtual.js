@@ -1,6 +1,8 @@
 
-/**
+/*
  * ### Виртуальный слой
+ * https://github.com/oknosoft/windowbuilder/issues/563
+ *
  *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
