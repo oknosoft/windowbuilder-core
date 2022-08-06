@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Родительский слой вложенного изделия
  * https://github.com/oknosoft/windowbuilder/issues/564
  *
@@ -41,7 +41,6 @@ class ContourParent extends Contour {
   /**
    * Удаляет контур из иерархии проекта
    * Одновлеменно, удаляет вложенное изделие из заказа
-   * @method remove
    */
   remove() {
     //удаляем детей

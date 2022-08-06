@@ -1,18 +1,17 @@
 
-/**
+/*
  * ### Контур (слой) изделия
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
  * Created 24.07.2015
  *
- * @module geometry
- * @submodule contour
  */
 
 
 /**
- * ### Сегмент заполнения
+ * Сегмент заполнения
+ *
  * содержит информацию о примыкающем профиле и координатах начала и конца
  * @class GlassSegment
  * @constructor
@@ -229,14 +228,11 @@ class PointMap extends Map {
 }
 
 /**
- * ### Контур (слой) изделия
- * Унаследован от  [paper.Layer](http://paperjs.org/reference/layer/)
- * новые элементы попадают в активный слой-контур и не могут его покинуть
- * @class Contour
- * @constructor
- * @extends paper.Layer
- * @menuorder 30
- * @tooltip Контур (слой) изделия
+ * Контур (слой) изделия
+ *
+ * Новые элементы попадают в активный слой-контур и не могут его покинуть
+ * @class
+ * @extends external:Layer
  */
 class Contour extends AbstractFilling(paper.Layer) {
 
@@ -270,16 +266,23 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  /**
+   * Возвращает класс-конструктор профилей текущего слоя
+   *
+   * Актуально для вложенных и виртуальных слоёв
+   * $type {Function}
+   */
   get ProfileConstructor() {
     return Profile;
   }
 
   /**
-   * ### Фурнитура по умолчанию
+   * Фурнитура по умолчанию
+   *
    * Возвращает фурнитуру текущего слоя по умолчанию
    *
    * @property default_furn
-   * @final
+   * $type {CatFurns}
    */
   get default_furn() {
     // ищем ранее выбранную фурнитуру для системы
@@ -467,9 +470,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * ### Возвращает строку svg слоя
-   *    *
-   * @method get_svg
+   * Возвращает строку svg слоя
+   *
    * @param [attr] {Object}
    */
   get_svg(attr = {}) {
@@ -528,7 +530,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Продукция текущего слоя
    * Для вложенных, отличается от изделия проекта
-   * @return {CatCharacteristics}
+   * @type {CatCharacteristics}
    */
   get _ox() {
     const {layer, project} = this;
@@ -537,7 +539,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Продукция слоя c учётом вытягивания
-   * @return {CatCharacteristics}
+   * @type {CatCharacteristics}
    */
   get prod_ox() {
     const layer = this.prod_layer();
@@ -689,9 +691,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Ищет и привязывает узлы профилей к пути заполнения
-   * @method glass_nodes
-   * @for Contour
-   * @param path {paper.Path} - массив ограничивается узлами, примыкающими к пути
+   * @param path {external:Path} - массив ограничивается узлами, примыкающими к пути
    * @param [nodes] {Array} - если указано, позволяет не вычислять исходный массив узлов контура, а использовать переданный
    * @param [bind] {Boolean} - если указано, сохраняет пары узлов в path._attr.curve_nodes
    * @returns {Array}
@@ -816,8 +816,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Получает замкнутые контуры, ищет подходящие створки или заполнения, при необходимости создаёт новые
-   * @method glass_recalc
-   * @for Contour
    */
   glass_recalc() {
     const {glass_contours} = this;      // массиы новых рёбер
@@ -1091,9 +1089,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает ребро текущего контура по узлам
-   * @param n1 {paper.Point} - первый узел
-   * @param n2 {paper.Point} - второй узел
-   * @param [point] {paper.Point} - дополнительная проверочная точка
+   * @param n1 {external:Point} - первый узел
+   * @param n2 {external:Point} - второй узел
+   * @param [point] {external:Point} - дополнительная проверочная точка
    * @returns {Profile}
    */
   profile_by_nodes(n1, n2, point) {
@@ -1110,7 +1108,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Удаляет контур из иерархии проекта
    * Одновлеменно, удаляет строку из табчасти _Конструкции_ и подчиненные строки из табчасти _Координаты_
-   * @method remove
    */
   remove() {
 
@@ -1150,6 +1147,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * виртуальный датаменеджер для автоформ
+   * @type external:DataManager
    */
   get _manager() {
     return this.project._dp._manager;
@@ -1301,10 +1299,9 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * ### Изменяет центр и масштаб, чтобы слой вписался в размер окна
+   * Изменяет центр и масштаб, чтобы слой вписался в размер окна
    * Используется инструментом {{#crossLink "ZoomFit"}}{{/crossLink}}, вызывается при открытии изделия и после загрузки типового блока
    *
-   * @method zoom_fit
    */
   zoom_fit() {
     this.project.zoom_fit.call(this, null, true);
@@ -2273,7 +2270,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Массив примыканий
-   * @return {Array.<ProfileAdjoining>}
+   * @type {Array.<ProfileAdjoining>}
    */
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
@@ -2282,7 +2279,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Массив раскладок
-   * @return {Array.<Onlay>}
+   * @type {Array.<Onlay>}
    */
   get onlays() {
     const res = [];
@@ -2295,8 +2292,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Перерисовывает элементы контура
-   * @method redraw
-   * @for Contour
    */
   redraw() {
 
@@ -2444,17 +2439,21 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Вычисляемые поля в таблицах конструкций и координат
-   * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
+   * @param [save] {Boolean}
+   * @param [close] {Boolean}
+   * @return {Promise<void>}
    */
   save_coordinates(short, save, close) {
 
     let res = Promise.resolve();
-    const push = (contour) => {
-      res = res.then(() => contour.save_coordinates(short, save, close))
-    };
-
-    if (!short) {
+    if(short) {
+      this._row.by_contour(this);
+    }
+    else {
+      const push = (contour) => {
+        res = res.then(() => contour.save_coordinates(short, save, close));
+      };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
         this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());
@@ -2470,28 +2469,14 @@ class Contour extends AbstractFilling(paper.Layer) {
           elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
+      res = res.then(() => this._row.by_contour(this));
     }
 
-    return res.then(() => {
-      // ответственность за строку в таблице конструкций лежит на контуре
-      const {bounds} = this;
-      this._row.x = bounds ? bounds.width.round(4) : 0;
-      this._row.y = bounds ? bounds.height.round(4) : 0;
-      this._row.is_rectangular = this.is_rectangular;
-      if (this.parent) {
-        this._row.w = this.w.round(4);
-        this._row.h = this.h.round(4);
-      }
-      else {
-        this._row.w = 0;
-        this._row.h = 0;
-      }
-    });
+    return res;
   }
 
   /**
    * Упорядочивает узлы, чтобы по ним можно было построить путь заполнения
-   * @method sort_nodes
    * @param [nodes] {Array}
    */
   sort_nodes(nodes) {
@@ -2526,7 +2511,8 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Уровень вложенности слоя
-   * @return {number}
+   * @type {number}
+   * @final
    */
   get level() {
     const {layer} = this;
@@ -2536,7 +2522,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Система текущего слоя
    * пока, повторяет систему проекта, но в будущем, можем переопределить
-   * @return {CatProduction_params}
+   * @type {CatProduction_params}
    */
   get sys() {
     const {layer, project} = this;
@@ -3006,7 +2992,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Обработчик при изменении системы
-   @param [refill] {Boolean}
+   * @param [refill] {Boolean}
    */
   on_sys_changed(refill) {
     const {enm: {elm_types, cnn_types}, cat: {cnns, inserts}} = $p;

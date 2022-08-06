@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Вспомогательные классы для формирования размерных линий
  *
  * Created by Evgeniy Malyarov on 12.05.2017.
@@ -81,9 +81,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Стирает размерные линии
-   *
-   * @method clear
+   * Стирает размерные линии
    */
   clear() {
 

@@ -137,29 +137,22 @@ $p.wsql.init((prm) => {
       debug('Выполняем текст модуля, чтобы создать менеджеры данных');
       eval(text);
 
-      debug('Получаем скрипт таблиц alasql');
-      $p.md.create_tables((sql) => {
+      text = create_modules(_m, true);
 
-        text = '/* eslint-disable */\nmodule.exports = function meta_init($p) {\n\n'
-          + '$p.wsql.alasql(\'' + sql + '\', []);\n\n'
-          + '$p.md.init(' + JSON.stringify(_m) + ');\n\n'
-          + text + '};';
-
-        debug('Записываем результат');
-        let fname = path.resolve(__dirname, '../dist/init.js');
-        fs.writeFile(fname, text, 'utf8', (err) => {
-          if (err) {
-            debug(err);
-            process.exit(1);
-          } else {
-            debug(`Успешно записан > ${fname}`);
-            process.exit(0);
-          }
-        });
-
-        $p = null;
-
+      debug('Записываем результат');
+      let fname = path.resolve(__dirname, '../jsdoc/enums.js');
+      fs.writeFile(fname, text, 'utf8', (err) => {
+        if (err) {
+          debug(err);
+          process.exit(1);
+        }
+        else {
+          debug(`Успешно записан > ${fname}`);
+          process.exit(0);
+        }
       });
+
+      $p = null;
 
     })
     .catch((err) => {
@@ -169,7 +162,7 @@ $p.wsql.init((prm) => {
 });
 
 
-function create_modules(_m) {
+function create_modules(_m, jsdoc) {
 
   const sys_nsmes = ['log', 'meta_objs', 'meta_fields', 'scheme_settings'];
   const categoties = {
@@ -184,33 +177,79 @@ function create_modules(_m) {
       dp: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj', dir: 'dataprocessors'},
       rep: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj', dir: 'reports'},
     };
-  let text = `(function(){
-  const {MetaEventEmitter,EnumManager,CatManager,DocManager,DataProcessorsManager,ChartOfCharacteristicManager,ChartOfAccountManager,
-    InfoRegManager,AccumRegManager,BusinessProcessManager,TaskManager,CatObj,DocObj,TabularSectionRow,DataProcessorObj,
-    RegisterRow,BusinessProcessObj,TaskObj} = $p.constructor.classes;
 
-  const _define = Object.defineProperties;
+  if(jsdoc) {
+    let text = `
+/**
+ * Коллекция перечислений
+ * @class Enumerations
+ * @extends external:Enumerations`;
+    const {enm} = $p;
 
+    // менеджеры перечислений
+    for (const name in _m.enm){
+      const emeta = _m.enm[name].find(({tag}) => tag);
+      if(emeta) {
+        const ename = enm[name].obj_constructor();
+        text += `\n * @prop ${name} {${ename}Manager} - ${emeta.tag}`;
+      }
+    }
+
+    text += '\n */\n';
+
+    for (const name in _m.enm){
+      const edata = _m.enm[name];
+      const emeta = edata.find(({tag}) => tag);
+      const ename = enm[name].obj_constructor();
+
+      text += `\n/**
+ * Значение перечисления _${emeta.tag}_${emeta.description ? '<br/>' + emeta.description : ''}
+ * @class ${ename}
+ * @see ${ename}Manager
+ */
+
+/**
+ * Менеджер перечисления _${emeta.tag}_${emeta.description ? '<br/>' + emeta.description : ''}
+ * @class
+ * @extends {external:EnumManager}`;
+
+      for(const {order, latin, name, synonym} of edata) {
+        if(order !== undefined) {
+          text += `\n * @prop ${latin || name} {${ename}} - ${synonym}`;
+        }
+      }
+      text += `\n */\nclass ${ename}Manager {}\n`;
+
+      // text += `\n * @prop ${name} {${ename}} - Тип движения регистра накопления`;
+    }
+
+    return text;
+  }
+  else {
+    let text = `(function(){
+const {MetaEventEmitter,EnumManager,CatManager,DocManager,DataProcessorsManager,ChartOfCharacteristicManager,ChartOfAccountManager,
+  InfoRegManager,AccumRegManager,BusinessProcessManager,TaskManager,CatObj,DocObj,TabularSectionRow,DataProcessorObj,
+  RegisterRow,BusinessProcessObj,TaskObj} = $p.constructor.classes;
+const _define = Object.defineProperties;
 `;
 
-
-  // менеджеры перечислений
-  for (const name in _m.enm){
-    text += `$p.enm.create('${name}');\n`;
+    // менеджеры перечислений
+    for (const name in _m.enm){
+      text += `$p.enm.create('${name}');\n`;
+    }
+    return text + '})();\n';
   }
 
   // менеджеры объектов данных, отчетов и обработок
-  for (const category in categoties) {
-    for (const name in _m[category]) {
-      if (sys_nsmes.indexOf(name) == -1) {
-        text += obj_constructor_text(_m, category, name, categoties);
-      }
-    }
-  }
+  // for (const category in categoties) {
+  //   for (const name in _m[category]) {
+  //     if (sys_nsmes.indexOf(name) == -1) {
+  //       text += obj_constructor_text(_m, category, name, categoties);
+  //     }
+  //   }
+  // }
 
-  text += fs.readFileSync(custom_constructors_path, 'utf8');
-
-  return text + '})();\n';
+  //text += fs.readFileSync(custom_constructors_path, 'utf8');
 
 }
 
@@ -221,10 +260,10 @@ function obj_constructor_text(_m, category, name, categoties) {
   const {DataManager} = MetaEngine.classes;
   let meta = _m[category][name],
     fn_name = DataManager.prototype.obj_constructor.call({class_name: category + '.' + name, constructor_names: {}}),
-    text = jsdoc ? `\n/**\n* ${$p.msg.meta[category]} _${meta.synonym}_` : '',
+    text = jsdoc ? `\n/**\n* ${$p.msg.meta[category]} _${meta.name}_` : '',
     f, props = '';
   if(jsdoc && meta.illustration) {
-    text += `  \n* ${meta.illustration}`;
+    text += `<br/>\n* ${meta.illustration}`;
   }
 
   const filename = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}.js`);
@@ -335,7 +374,7 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
 
   // если описан расширитель менеджера, дополняем
   if(jsdoc) {
-    text += `\n/**\n* ${$p.msg.meta_mgrs[category]} _${meta.synonym}_`;
+    text += `\n/**\n* ${$p.msg.meta_mgrs[category]} _${meta.name}_`;
     text += '\n* @class\n* @extends external:' + mgr;
     text += '\n*/\n';
   }

@@ -93,10 +93,13 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   }
 
   /**
-   * ПолучитьЦветПоПредопределенномуЦвету
+   * Возвращает цвет по предопределенному цвету при формировании спецификации
    * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
    * @param clr_elm {CatClrs} - цвет элемента
    * @param clr_sch {CatClrs} - цвет изделия
+   * @param [elm] {BuilderElement} - элемент рисовалки
+   * @param [spec] {TabularSection} - табчасть спецификации для поиска ведущих
+   * @param [row] {TabularSectionRow} - строка спецификации, где есть `nom`
    * @return {CatClrs}
    */
   by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
@@ -110,14 +113,17 @@ exports.CatClrsManager = class CatClrsManager extends Object {
           clr_elm = elm?._attr?.row_spec.clr;
         }
         return flipped ? this.inverted(clr_elm) :  clr_elm;
+
       case 'КакИзделие':
         return clr_sch;
+
       case 'КакЭлементСнаружи':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
         }
         return flipped ? this.by_predefined({predefined_name: 'КакЭлементИзнутри'}, clr_elm) :
           clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
+
       case 'КакЭлементИзнутри':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
@@ -125,19 +131,40 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         return flipped ?
           this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm) :
           clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
+
+      case 'БезЦветаИзнутри':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = this.getter(`${this.predefined('БезЦвета').ref}${
+          (clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out).ref}`);
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+
+      case 'БезЦветаСнаружи':
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = this.getter(`${
+          (clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in).ref}${this.predefined('БезЦвета').ref}`);
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+
       case 'КакИзделиеСнаружи':
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеИзнутри'}, clr_elm, clr_sch) :
           clr_sch.clr_out.empty() ? clr_sch : clr_sch.clr_out;
+
       case 'КакИзделиеИзнутри':
         return flipped ? this.by_predefined({predefined_name: 'КакИзделиеСнаружи'}, clr_elm, clr_sch) :
           clr_sch.clr_in.empty() ? clr_sch : clr_sch.clr_in;
+
       case 'КакЭлементИнверсный':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
         }
         return flipped ? clr_elm : this.inverted(clr_elm);
+
       case 'КакИзделиеИнверсный':
         return this.inverted(clr_sch);
+
       case 'БезЦвета':
         return this.get();
       case 'Белый':
@@ -216,25 +243,40 @@ exports.CatClrsManager = class CatClrsManager extends Object {
 
   /**
    * Скрывает составные цвета в отборе
-   * @param mf
+   * @param mf {Object} метаданные поля
+   * @param [clr_group] {CatColor_price_groups} цветогруппа
+   * @param [side] {EmnCnnSides} сторона цвета
    */
-  hide_composite(mf) {
+  hide_composite(mf, clr_group, side) {
     const choice_param = mf.choice_params && mf.choice_params.find(({name}) => name === 'parent');
     const {composite_clr_folder: ccf} = $p.job_prm.builder;
+    if(typeof side === 'string') {
+      side = $p.enm.cnn_sides[side];
+    }
     if(choice_param && choice_param.path.not) {
       choice_param.path = {nin: [choice_param.path.not, ccf]};
     }
     else if(choice_param && choice_param.path.nin && !choice_param.path.nin.find(v => v === ccf)) {
-      choice_param.path.nin.push();
+      choice_param.path.nin.push(ccf);
     }
     else {
       if(!mf.choice_params) {
-        mf.choice_params = [];
+        mf.choice_params = [{
+          name: 'parent',
+          path: {not: ccf},
+        }];
       }
-      mf.choice_params.push({
-        name: 'parent',
-        path: {not: ccf},
-      });
+    }
+    if(clr_group && side) {
+      const srows = clr_group.exclude.find_rows({side}).map(({_row}) => _row.clr);
+      const choice_param = srows.length && mf.choice_params.find(({name}) => name === 'ref');
+      if(choice_param) {
+        const {path} = choice_param;
+        if(path.in) {
+          delete choice_param.path;
+          choice_param.path = {in: path.in.filter((o) => !srows.includes(o))};
+        }
+      }
     }
   }
 
@@ -306,6 +348,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       else if(mf.single_value) {
         delete mf.single_value;
       }
+      return clr_group;
     }
   }
 
@@ -377,7 +420,7 @@ exports.CatClrs = class CatClrs extends Object {
 
   /**
    * Возвращает стороны, на которых цвет
-   * @return {{is_in: boolean, is_out: boolean}}
+   * @return {Object}
    */
   get sides() {
     const res = {is_in: false, is_out: false};

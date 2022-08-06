@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Размерные линии на эскизе
  *
  * Created 21.08.2015
@@ -567,7 +567,6 @@ class DimensionLine extends paper.Group {
   /**
    * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
-   * @method remove
    */
   remove() {
     if(this._row){
@@ -618,7 +617,6 @@ class DimensionLineCustom extends DimensionLine {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
    */
   save_coordinates() {
     const {_row, _attr, elm_type, pos, offset, size, align} = this;

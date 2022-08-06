@@ -239,8 +239,11 @@ class CnnPoint {
   }
 
   get vertex() {
-    const {parent, node} = this;
-    return parent.skeleton.vertexByPoint(parent[node]);
+    if(!this._vertex) {
+      const {parent, node} = this;
+      this._vertex = parent.skeleton.vertexByPoint(parent[node]);
+    }
+    return this._vertex;
   }
 
   /**
@@ -359,7 +362,7 @@ class CnnPoint {
 
   /**
    * fake-структура для расчета спецификации
-   * @return {{art2: boolean, art1: boolean, angle: number}}
+   * @return {Object}
    */
   len_angl() {
     const {is_t, cnn} = this;
@@ -1058,9 +1061,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Опорные точки и лучи
+   * Опорные точки и лучи
    *
-   * @property rays
    * @type ProfileRays
    * @final
    */
@@ -1073,9 +1075,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Доборы текущего профиля
+   * Доборы текущего профиля
    *
-   * @property addls
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -1084,9 +1085,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Сегменты текущей связки
+   * Сегменты текущей связки
    *
-   * @property segms
    * @type Array.<ProfileSegment>
    * @final
    */
@@ -1095,9 +1095,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Примыкания текущего профиля
+   * Примыкания текущего профиля
    *
-   * @property adjoinings
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -1107,14 +1106,17 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Строка цвета по умолчанию для эскиза
+   * @type {String}
    */
   get default_clr_str() {
     return 'FEFEFE';
   }
 
   /**
-   * ### Непрозрачность профиля
+   * Непрозрачность профиля
+   *
    * В отличии от прототипа `opacity`, не изменяет прозрачость образующей
+   * @type {Number}
    */
   get opacity() {
     return this.path ? this.path.opacity : 1;
@@ -1125,6 +1127,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Припуск для соединения "сварной шов"
+   * @type {Number}
    */
   get dx0() {
     const {cnn} = this.rays.b;
@@ -1134,7 +1137,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Структура примыкающих заполнений
-   * @return {Object}
+   * @type {Object}
    */
   get nearest_glasses() {
     const res = {
@@ -1306,8 +1309,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Вычисляемые поля в таблице координат
-   * @method save_coordinates
+   * Вычисляемые поля в таблице координат
    */
   save_coordinates() {
 
@@ -1451,7 +1453,6 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Вызывается из конструктора - создаёт пути и лучи
-   * @method initialize
    * @private
    */
   initialize(attr) {
@@ -1767,9 +1768,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Дополняет cnn_point свойствами соединения
+   * Дополняет cnn_point свойствами соединения
    *
-   * @method postcalc_cnn
    * @param node {String} b, e - начало или конец элемента
    * @return CnnPoint
    */
@@ -1783,10 +1783,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Пересчитывает вставку после пересчета соединений
+   * Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
    *
-   * @method postcalc_inset
    * @chainable
    */
   postcalc_inset() {
@@ -1796,10 +1795,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Пересчитывает вставку при смене системы или добавлении створки
+   * Пересчитывает вставку при смене системы или добавлении створки
    * Контроль пока только по типу элемента
    *
-   * @method default_inset
    * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
    * @param [refill] {Boolean} - принудительно устанавливать вставку из системы
    */
@@ -1841,10 +1839,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Рассчитывает точки пути
+   * Рассчитывает точки пути
    * на пересечении текущего и указанного профилей
    *
-   * @method path_points
    * @param cnn_point {CnnPoint}
    * @param [profile_point] {String}
    */
@@ -2364,10 +2361,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выделяет сегмент пути профиля, ближайший к точке
+   * Выделяет сегмент пути профиля, ближайший к точке
    *
-   * @method select_corn
-   * @param point {paper.Point}
+   * @param point {external:Point}
    */
   select_corn(point) {
 
@@ -2396,10 +2392,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Признак прямолинейности
+   * Признак прямолинейности
    * Вычисляется, как `is_linear()` {{#crossLink "BuilderElement/generatrix:property"}}образующей{{/crossLink}}
    *
-   * @method is_linear
    * @return Boolean
    */
   is_linear() {
@@ -2437,7 +2432,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * ### Выясняет, перпендикулярны ли профили
    * @param profile {ProfileItem}
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param delta {Number}
    */
   is_orthogonal(profile, point, delta) {
@@ -2479,9 +2474,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Формирует путь сегмента профиля
+   * Формирует путь сегмента профиля
    *
-   * @method redraw
    * @chainable
    */
   redraw() {
@@ -2580,9 +2574,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Координаты вершин (cornx1...corny4)
+   * Координаты вершин (cornx1...corny4)
    *
-   * @method corns
    * @param corn {String|Number} - имя или номер вершины
    * @return {Point|Number} - координата или точка
    */

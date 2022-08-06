@@ -1,5 +1,5 @@
 
-/**
+/*
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -105,10 +105,8 @@ class ProfileAddl extends ProfileItem {
    * - Не делает подмену соединения, хотя могла бы
    * - Не делает подмену вставки, хотя могла бы
    *
-   * @method cnn_point
-   * @for ProfileAddl
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {

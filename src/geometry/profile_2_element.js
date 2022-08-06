@@ -1,5 +1,5 @@
 
-/**
+/*
  * Created 24.07.2015
  *
  * @module geometry
@@ -7,34 +7,30 @@
  */
 
 /**
- * ### Профиль
- * Класс описывает поведение сегмента профиля (створка, рама, импост)<br />
+ * _Профиль_
+ * Класс описывает поведение сегмента профиля (створка, рама, импост).
  * У профиля есть координаты конца и начала, есть путь образующей - прямая или кривая линия
  *
- * @class Profile
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
+ * @class
  * @extends ProfileItem
- * @menuorder 42
- * @tooltip Профиль
  *
  * @example
  *
- *     // Создаём элемент профиля на основании пути образующей
- *     // одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет
- *     new Profile({
- *       generatrix: new paper.Path({
- *         segments: [[1000,100], [0, 100]]
- *       }),
- *       proto: {
- *         parent: _contour,
- *         inset: _inset
- *         clr: _clr
- *       }
- *     });
+ * // Создаём элемент профиля на основании пути образующей
+ * // одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет
+ * new Profile({
+ *   generatrix: new paper.Path({
+ *     segments: [[1000,100], [0, 100]]
+ *   }),
+ *   proto: {parent, inset, clr}
+ * });
  */
 class Profile extends ProfileItem {
 
+  /**
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   * см. {@link BuilderElement|параметр конструктора BuilderElement}
+   */
   constructor(attr) {
 
     const fromCoordinates = attr.row && attr.row.elm;
@@ -72,8 +68,7 @@ class Profile extends ProfileItem {
   /**
    * Расстояние от узла до опорной линии
    * для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений
-   * @property d0
-   * @type Number
+   * @type {Number}
    */
   get d0() {
     const {_attr} = this;
@@ -89,6 +84,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает тип элемента (рама, створка, импост)
+   * @type {EnmElm_types}
    */
   get elm_type() {
     const {_rays, _nearest} = this._attr;
@@ -108,8 +104,8 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * Является ли текущий элемент связкой
-   * @returns {boolean}
+   * Является ли текущий элемент _связкой_
+   * @type {Boolean}
    */
   get is_bundle() {
     return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
@@ -117,6 +113,7 @@ class Profile extends ProfileItem {
 
   /**
    * Положение элемента в контуре
+   * @type {EnmElm_positions}
    */
   get pos() {
     const {top, bottom, left, right} = this.layer.profiles_by_side();
@@ -153,8 +150,7 @@ class Profile extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
-   * @property nearest
-   * @type Profile
+   * @return {Profile}
    */
   nearest(ign_cnn) {
 
@@ -248,7 +244,7 @@ class Profile extends ProfileItem {
 
   /**
    * Добавляет сегменты
-   * @param [count] {Number} - на сколько сегментов резать
+   * @param [count=2] {Number} - на сколько сегментов резать
    */
   split_by(count) {
     const {generatrix, segms, inset, clr, project} = this;
@@ -268,6 +264,8 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих ипостов
+   * @param [check_only] {Boolean} - не формировать подробный ответ, только проверить наличие примыкающих импостов
+   * @returns {Object|Boolean}
    */
   joined_imposts(check_only) {
 
@@ -329,6 +327,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих створочных элементов
+   * @returns {Array.<Profile>}
    */
   joined_nearests() {
     const res = [];
@@ -347,7 +346,7 @@ class Profile extends ProfileItem {
   /**
    * Возвращает массив примыкающих заполнений и вложенных контуров
    * @param [glasses]
-   * @return {[]}
+   * @return {Array.<Filling>}
    */
   joined_glasses(glasses) {
     if(!glasses) {
@@ -364,7 +363,7 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * ### Соединение конца профиля
+   * Соединение конца профиля
    * С этой функции начинается пересчет и перерисовка профиля
    * Возвращает объект соединения конца профиля
    * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
@@ -372,9 +371,8 @@ class Profile extends ProfileItem {
    * - Не делает подмену соединения, хотя могла бы
    * - Не делает подмену вставки, хотя могла бы
    *
-   * @method cnn_point
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {

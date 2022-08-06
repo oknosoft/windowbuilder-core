@@ -26,7 +26,9 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     });
   }
 
-  // этот метод адаптер вызывает перед загрузкой doc_ram
+  /**
+   * этот метод адаптер вызывает перед загрузкой doc_ram
+   */
   job_prms() {
 
     // создаём константы из alatable
@@ -47,7 +49,10 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     }
   }
 
-  // создаёт константу
+  /**
+   * создаёт константу
+   * @param row
+   */
   job_prm(row) {
     const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = this._owner.$p;
     const {parents} = this;
@@ -155,7 +160,12 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     }
   }
 
-  // переопределяем load_array
+  /**
+   * переопределяем load_array
+   * @param aattr {Array.<Object>}
+   * @param [forse] {Boolean}
+   * @override
+   */
   load_array(aattr, forse) {
     const {job_prm} = this._owner.$p;
     const {parents} = this;

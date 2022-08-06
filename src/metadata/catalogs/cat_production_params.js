@@ -54,7 +54,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура
    * @param ox {CatCharacteristics}
    * @param [layer] {Contour}
-   * @return {*[]}
+   * @return {Array}
    */
   furns(ox, layer) {
     const {job_prm: {properties}, cat: {furns}} = $p;
@@ -162,7 +162,6 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
   /**
-   * @method refill_prm
    * @param ox {CatCharacteristics} - объект характеристики, табчасть которого надо перезаполнить
    * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно

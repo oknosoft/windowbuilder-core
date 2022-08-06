@@ -1,14 +1,19 @@
 
-/**
+/*
  * ### Виртуальный слой
  * https://github.com/oknosoft/windowbuilder/issues/563
  *
- * @module contour_virtual
  *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
 
 
+/**
+ * Виртуальный слой
+ * @link https://github.com/oknosoft/windowbuilder/issues/563
+ * @class
+ * @extends Contour
+ */
 class ContourVirtual extends Contour {
 
   constructor(attr) {
@@ -24,7 +29,7 @@ class ContourVirtual extends Contour {
 
   /**
    * Система виртуального слоя - можем переопределить
-   * @return {CatProduction_params}
+   * @type {CatProduction_params}
    */
   get sys() {
     const {_row: {dop}, layer: {sys}} = this;
@@ -48,12 +53,15 @@ class ContourVirtual extends Contour {
 
   /**
    * Бит, может ли данный слой иметь собственную систему
-   * @return {boolean}
+   * @type {boolean}
    */
   get own_sys() {
     return true;
   }
 
+  /**
+   * Перезаполняет параметры слоя с учетом системы, которая может отличаться от системы изделия
+   */
   refill_prm() {
     const {_ox: {params}, cnstr, sys: {product_params}} = this;
     const inset = $p.utils.blank.guid;
@@ -120,8 +128,6 @@ class ContourVirtual extends Contour {
 
   /**
    * Перерисовывает элементы контура
-   * @method redraw
-   * @for Contour
    */
   redraw() {
 

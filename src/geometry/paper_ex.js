@@ -1,5 +1,5 @@
 ﻿
-/**
+/*
  * Расширения объектов paper.js
  *
  * &copy; http://www.oknosoft.ru 2014-2018
@@ -143,7 +143,7 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
    * Выясняет, расположена ли точка в окрестности пути
-   * @param point {paper.Point}
+   * @param point {external:Point}
    * @param [sticking] {Boolean|Number}
    * @return {Boolean}
    */
@@ -155,10 +155,10 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * возвращает фрагмент пути между точками
-     * @param point1 {paper.Point}
-     * @param point2 {paper.Point}
+     * @param point1 {external:Point}
+     * @param point2 {external:Point}
      * @param [strict] {Boolean}
-     * @return {paper.Path}
+     * @return {external:Path}
      */
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
@@ -225,7 +225,7 @@ Object.defineProperties(paper.Path.prototype, {
      * возвращает путь, равноотстоящий от текущего пути
      * @param delta {number} - расстояние, на которое будет смещен новый путь
      * @param elong {number} - удлинение нового пути с каждого конца
-     * @return {paper.Path}
+     * @return {external:Path}
      */
   equidistant: {
       value: function equidistant(delta, elong) {
@@ -311,12 +311,10 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * Находит координату пересечения путей в окрестности точки
-     * @method intersect_point
-     * @for Path
-     * @param path {paper.Path}
+     * @param path {external:Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
      * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения
-     * @return [other_point] {paper.Point} - если указано, контролируем вектор пересечения
+     * @return [other_point] {external:Point} - если указано, контролируем вектор пересечения
      * @return [clone] {Boolean} - если указано, не удлиняем текущие пути
      */
   intersect_point: {
@@ -518,7 +516,7 @@ Object.defineProperties(paper.Point.prototype, {
 
 	/**
 	 * Выясняет, расположена ли точка в окрестности точки
-	 * @param point {paper.Point}
+	 * @param point {external:Point}
 	 * @param [sticking] {Boolean|Number}
 	 * @return {Boolean}
 	 */

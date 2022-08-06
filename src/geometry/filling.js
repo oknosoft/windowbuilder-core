@@ -1,20 +1,18 @@
 
 /**
- * ### Заполнение
+ * Заполнение
  * - Инкапсулирует поведение элемента заполнения
  * - У заполнения есть коллекция рёбер, образующая путь контура
  * - Путь всегда замкнутый, образует простой многоугольник без внутренних пересечений, рёбра могут быть гнутыми
  *
- * @class Filling
- * @param attr {Object} - объект со свойствами создаваемого элемента
- * @constructor
- * @extends BuilderElement
- * @menuorder 45
- * @tooltip Заполнение
+ * @extends AbstractFilling
  */
-
 class Filling extends AbstractFilling(BuilderElement) {
 
+  /**
+   *
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   */
   constructor(attr) {
 
     const {path} = attr;
@@ -132,8 +130,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for Filling
    */
   save_coordinates() {
 
@@ -632,7 +628,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * При удалении заполнения, не забываем про вложенные раскладки
-   * @method remove
    */
   remove() {
     //удаляем детей
@@ -645,26 +640,25 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * Габаритная площадь заполнения
-   * @return {number}
+   * @type {Number}
    */
   get area() {
     return (this.bounds.area / 1e6).round(5);
   }
 
   /**
-   * площадь заполнения с учетом наклонов-изгибов сегментов
-   * @return {number}
+   * Площадь заполнения с учетом наклонов-изгибов сегментов
+   * @type {Number}
    */
   get form_area() {
     return (this.path.area/1e6).round(5);
   }
 
   /**
-   * ### Точка внутри пути
+   * Точка внутри пути
    * Возвращает точку, расположенную гарантированно внутри заполнения
    *
-   * @property interiorPoint
-   * @type paper.Point
+   * @type {external:Point}
    */
   interiorPoint() {
     return this.path.interiorPoint;
@@ -672,6 +666,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * Признак прямоугольности
+   * @type {Boolean}
    */
   get is_rectangular() {
     const {profiles, path} = this;
@@ -685,7 +680,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * @property path
-   * @type paper.Path
+   * @type external:Path
    */
   get path() {
     return this._attr.path;

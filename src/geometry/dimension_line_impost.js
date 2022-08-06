@@ -1,5 +1,5 @@
 
-/**
+/*
  *
  *
  * @module dimension_line_impost

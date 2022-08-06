@@ -118,8 +118,6 @@ class EditorInvisible extends paper.PaperScope {
 
   /**
    * Returns path points which are contained in the rect
-   * @method segments_in_rect
-   * @for Editor
    * @param rect
    * @returns {Array}
    */
@@ -176,11 +174,9 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Устанавливает икону курсора
+   * Устанавливает икону курсора
    * Действие выполняется для всех канвасов редактора
    *
-   * @method canvas_cursor
-   * @for Editor
    * @param name {String} - имя css класса курсора
    */
   canvas_cursor(name) {

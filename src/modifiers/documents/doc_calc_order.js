@@ -1201,8 +1201,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @param [params]
    * @param [create]
    * @param [grid]
-   * @param [cx] {Promise.<CatCharacteristics>}
-   * @return {Promise.<DocCalc_orderProductionRow>}
+   * @param [cx] {CatCharacteristics}
+   * @return {Promise<DocCalc_orderProductionRow>}
    */
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
@@ -1562,7 +1562,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     if(rfield) {
 
-      _obj[field] = rfield === 'n' ? parseFloat(value) : '' + value;
+      _obj[field] = rfield === 'n' ? parseFloat(value || 0) : '' + value;
 
       nom = this.nom;
       characteristic = this.characteristic;
@@ -1619,7 +1619,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     if(DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
 
       if(!recalc) {
-        _obj[field] = parseFloat(value);
+        _obj[field] = parseFloat(value || 0);
       }
 
       isNaN(_obj.price) && (_obj.price = 0);

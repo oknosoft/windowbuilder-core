@@ -38,8 +38,6 @@ class ProfileConnective extends ProfileItem {
    * С этой функции начинается пересчет и перерисовка соединительного профиля
    * т.к. концы соединителя висят в пустоте и не связаны с другими профилями, возвращаем голый cnn_point
    *
-   * @method cnn_point
-   * @for ProfileConnective
    * @param node {String} - имя узла профиля: "b" или "e"
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
@@ -48,14 +46,12 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
-   * ### Двигает узлы
+   * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @method move_points
-   * @for ProfileItem
-   * @param delta {paper.Point} - куда и насколько смещать
+   * @param delta {external:Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
+   * @param [start_point] {external:Point} - откуда началось движение
    */
   move_points(delta, all_points, start_point) {
 
@@ -118,8 +114,6 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for ProfileConnective
    */
   save_coordinates() {
 
@@ -159,9 +153,8 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
-   * ### Удаляет элемент из контура и иерархии проекта
+   * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, инициирует обновление путей примыкающих элементов
-   * @method remove
    */
   remove() {
     this.joined_nearests().forEach((rama) => {
