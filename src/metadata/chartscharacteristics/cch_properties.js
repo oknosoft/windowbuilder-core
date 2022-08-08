@@ -199,6 +199,12 @@ exports.CchProperties = class CchProperties extends Object {
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
    */
   extract_pvalue({ox, cnstr, elm = {}, origin, prm_row}) {
+    
+    // для некоторых параметров, значения живут не в изделии, а в отделе абонента
+    if(this.inheritance === 3) {
+      return this.branch_value({project: elm.project, cnstr, ox});
+    }
+    
     const {product_params, params} = ox;
     let prow, cnstr0, elm0;
     if(params) {
@@ -509,13 +515,13 @@ exports.CchProperties = class CchProperties extends Object {
 
   /**
    * Значение, уточняемое отделом абонента
-   * @param project {Scheme}
+   * @param [project] {Scheme}
    * @param [cnstr] {Number}
    * @param [ox] {CatCharacteristics}
    */
   branch_value({project, cnstr = 0, ox}) {
-    const {branch} = project;
-    let brow = branch.extra_fields.find({property: this});
+    const branch = project ? project.branch : ox?.calc_order?.manager?.branch;
+    let brow = branch && branch.extra_fields.find({property: this});
     if(brow) {
       return brow.value;
     }
@@ -526,7 +532,7 @@ exports.CchProperties = class CchProperties extends Object {
         brow = ox.params.find({param: this, cnstr: 0, inset: blank.guid});
       }
     }
-    return brow && brow.value;
+    return brow ? brow.value : this.fetch_type();
   }
 
   /**

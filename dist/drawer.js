@@ -5831,8 +5831,10 @@ class ContourParent extends Contour {
 EditorInvisible.ContourParent = ContourParent;
 
 
-/**
+/*
  * ### Виртуальный слой
+ * https://github.com/oknosoft/windowbuilder/issues/563
+ *
  *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
@@ -16213,17 +16215,14 @@ EditorInvisible.ProfileParent = ProfileParent;
 
 
 /**
- * ### Изделие
+ * Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
  * - Стандартные слои (layers) - это контуры изделия, в них живут элементы
  * - Размерные линии, фурнитуру и визуализацию располагаем в отдельных слоях
  *
- * @class Scheme
- * @constructor
- * @extends paper.Project
+ * @class
+ * @extends external:Project
  * @param _canvas {HTMLCanvasElement} - канвас, в котором будет размещено изделие
- * @menuorder 20
- * @tooltip Изделие
  */
 
 class Scheme extends paper.Project {
@@ -16318,7 +16317,7 @@ class Scheme extends paper.Project {
     const {clr_group} = _dp.sys;
     const clrs = [...clr_group.clrs()];
 
-    cat.clrs.selection_exclude_service(cmeta, _dp);
+    cat.clrs.selection_exclude_service(cmeta, _dp, this);
     let first;
     if(cmeta.choice_params.length > 2) {
       const all = clrs.length ? clrs.splice(0) : cat.clrs;

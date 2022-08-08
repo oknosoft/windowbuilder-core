@@ -17,7 +17,10 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
     const res = [];
     const {enm, cat} = $p;
     const {inserts_types: {Заказ}, elm_types: {flap}} = enm;
-    for (const {production, inserts} of this) {
+    for (const {production, inserts, key} of this) {
+      if(!key.check_condition({ox})) {
+        continue;
+      }
       for (const {nom} of production) {
         if(!nom || nom.empty() || (sys && sys._hierarchy(nom)) || (owner && owner._hierarchy(nom))) {
           for (const {inset, elm_type} of inserts) {

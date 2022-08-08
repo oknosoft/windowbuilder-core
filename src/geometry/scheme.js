@@ -102,7 +102,7 @@ class Scheme extends paper.Project {
     const {clr_group} = _dp.sys;
     const clrs = [...clr_group.clrs()];
 
-    cat.clrs.selection_exclude_service(cmeta, _dp);
+    cat.clrs.selection_exclude_service(cmeta, _dp, this);
     let first;
     if(cmeta.choice_params.length > 2) {
       const all = clrs.length ? clrs.splice(0) : cat.clrs;
