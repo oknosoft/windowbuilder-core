@@ -76,7 +76,20 @@ class FakeElm {
 
   get perimeter() {
     const {len, height, width} = this.row_spec;
-    return [{len, angle: 0}, {len: height === undefined ? width : height, angle: 90}];
+    return [
+      {len, angle: 0, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 90, angle_next: 90},
+      {len, angle: 180, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 270, angle_next: 90},      
+    ];
+  }
+
+  bounds_inner(size) {
+    const {len, height} = this;
+    return new paper.Rectangle({
+      from: [0, 0],
+      to: [len - 2 * size, height - 2 * size]
+    });
   }
 
   get x1() {

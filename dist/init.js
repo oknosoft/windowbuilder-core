@@ -843,7 +843,7 @@ set use(v){this._setter_ts('use',v)}
         brow = ox.params.find({param: this, cnstr: 0, inset: blank.guid});
       }
     }
-    return brow?.value;
+    return brow ? brow.value : this.fetch_type();
   }
 
   /**

@@ -11,7 +11,8 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
+    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
 
   const {inserts_types} = enm;
 
@@ -1068,7 +1069,9 @@
           else if(count_calc_method === steps){
 
             const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
-              elm.layer.bounds_inner(sz) : {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+              (elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz))
+              :
+              {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
 
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;

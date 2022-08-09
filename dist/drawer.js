@@ -20889,7 +20889,7 @@ $p.spec_building = new SpecBuilding($p);
     const {quantity, sz, coefficient} = row_ins_spec;
     row_spec.qty = quantity;
     if(inset.insert_type == enm.inserts_types.mosquito) {
-      const bounds = elm.layer.bounds_inner(sz);
+      const bounds = elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz);
       row_spec.len = bounds.height * coefficient;
       row_spec.width = bounds.width * coefficient;
       row_spec.s = (row_spec.len * row_spec.width).round(4);
@@ -21832,7 +21832,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
+    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
 
   const {inserts_types} = enm;
 
@@ -22889,7 +22890,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           else if(count_calc_method === steps){
 
             const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
-              elm.layer.bounds_inner(sz) : {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+              (elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz))
+              :
+              {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
 
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
@@ -23706,7 +23709,20 @@ class FakeElm {
 
   get perimeter() {
     const {len, height, width} = this.row_spec;
-    return [{len, angle: 0}, {len: height === undefined ? width : height, angle: 90}];
+    return [
+      {len, angle: 0, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 90, angle_next: 90},
+      {len, angle: 180, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 270, angle_next: 90},      
+    ];
+  }
+
+  bounds_inner(size) {
+    const {len, height} = this;
+    return new paper.Rectangle({
+      from: [0, 0],
+      to: [len - 2 * size, height - 2 * size]
+    });
   }
 
   get x1() {
