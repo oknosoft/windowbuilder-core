@@ -2672,7 +2672,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(prm_ox) {
       _ox = prm_ox;
     }
-    if(plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+    // параметры, переопределяемые для отдела, читаем из отдела
+    if(param.inheritance !== 3 && 
+        plan_detailing.eq_product.includes(prm_row.origin) && 
+        (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
         param,
