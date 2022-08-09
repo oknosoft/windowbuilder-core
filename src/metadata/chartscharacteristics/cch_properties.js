@@ -198,15 +198,29 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
    */
-  extract_pvalue({ox, cnstr, elm = {}, origin, prm_row}) {
+  extract_pvalue({ox, cnstr, elm = {}, origin, layer, prm_row}) {
     
     // для некоторых параметров, значения живут не в изделии, а в отделе абонента
     if(this.inheritance === 3) {
       return this.branch_value({project: elm.project, cnstr, ox});
     }
-    
-    const {product_params, params} = ox;
+
     let prow, cnstr0, elm0;
+    const {product_params, params} = ox;
+    const find_nearest = () => {
+      if(cnstr && ox.constructions) {
+        cnstr0 = cnstr;
+        elm0 = elm;
+        elm = {};
+        const crow = ox.constructions.find({cnstr});
+        crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+          if(row !== crow) {
+            cnstr = row.cnstr;
+            return false;
+          }
+        });
+      }
+    };
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
       let src = prm_row.origin;
@@ -218,20 +232,29 @@ exports.CchProperties = class CchProperties extends Object {
         case plan_detailing.order:
           const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
           return prow && prow.value;
+          
         case plan_detailing.nearest:
-          if(cnstr && ox.constructions) {
-            cnstr0 = cnstr;
-            elm0 = elm;
-            elm = {};
-            const crow = ox.constructions.find({cnstr});
-            crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
-              if(row !== crow) {
-                cnstr = row.cnstr;
-                return false;
-              }
-            });
+          find_nearest();
+          break;
+          
+        case plan_detailing.layer_active:
+          if(!layer) {
+            layer = elm.layer;
+          }
+          if(layer && layer.furn.shtulp_kind() === 2) {
+            find_nearest();
           }
           break;
+          
+        case plan_detailing.layer_passive:
+          if(!layer) {
+            layer = elm.layer;
+          }
+          if(layer && layer.furn.shtulp_kind() === 1) {
+            find_nearest();
+          }
+          break;
+          
         case plan_detailing.parent:
           if(cnstr && ox.constructions) {
             cnstr0 = cnstr;
@@ -244,6 +267,7 @@ exports.CchProperties = class CchProperties extends Object {
             }
           }
           break;
+          
         case plan_detailing.product:
           if(cnstr) {
             cnstr0 = cnstr;
@@ -252,9 +276,11 @@ exports.CchProperties = class CchProperties extends Object {
             elm = {};
           }
           break;
+          
         case plan_detailing.elm:
         case plan_detailing.layer:
           break;
+          
         default:
           throw `Источник '${src.name}' не поддержан`;
         }
