@@ -1850,7 +1850,7 @@ class BuilderElement extends paper.Group {
       origin,
     });    
     if(text){
-      row.dop = {text};
+      row.specify = text;
     }
   }
 
