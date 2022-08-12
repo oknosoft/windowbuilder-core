@@ -835,27 +835,26 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
+   * Добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
    * @param nom {CatNom}
    * @param text {String}
    * @param origin {DataObj} - происхождение
    */
   err_spec_row(nom, text, origin) {
+    const {job_prm, cat, ProductsBuilding} = $p;
     if(!nom){
-      nom = $p.job_prm.nom.info_error;
+      nom = job_prm.nom.info_error;
     }
     const {_ox} = this.layer;
-    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
-      $p.ProductsBuilding.new_spec_row({
-        elm: this,
-        row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: _ox.specification,
-        ox: _ox,
-        origin,
-      });
-    }
+    const row = _ox.specification.find({elm: this.elm, nom}) || ProductsBuilding.new_spec_row({
+      elm: this,
+      row_base: {clr: cat.clrs.get(), nom},
+      spec: _ox.specification,
+      ox: _ox,
+      origin,
+    });    
     if(text){
-
+      row.dop = {text};
     }
   }
 

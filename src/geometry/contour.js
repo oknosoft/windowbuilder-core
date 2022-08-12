@@ -1334,6 +1334,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Габариты по образующим
+   * @type {external.Rectangle}
    */
   get lbounds() {
     const parent = new paper.Group({insert: false});
@@ -2057,6 +2058,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
+  /**
+   * Признак сокрытия слоя
+   * @return {boolean}
+   */
   get hidden() {
     return !!this._hidden;
   }
@@ -2807,8 +2812,8 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возаращает линию, проходящую через ручку
-   *
    * @param elm {Profile}
+   * @return {external:Profile}
    */
   handle_line(elm) {
 
@@ -2904,6 +2909,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Высота ручки
+   * @type {Number}
    */
   get h_ruch() {
     const {layer, _row} = this;
@@ -3018,6 +3024,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Высота контура по фальцу
+   * @type {Number}
    */
   get h() {
     const {is_rectangular, bounds} = this;
@@ -3027,6 +3034,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Cлужебная группа текстовых комментариев
+   * @type {external:Group}
    */
   get l_text() {
     const {_attr} = this;
@@ -3035,6 +3043,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Cлужебная группа визуализации допов,  петель и ручек
+   * @type {external:Group}
    */
   get l_visualization() {
     const {_attr} = this;
@@ -3047,8 +3056,9 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * ### Непрозрачность без учета вложенных контуров
+   * Непрозрачность без учета вложенных контуров  
    * В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
+   * @type {Boolean}
    */
   get opacity() {
     return this.children.length ? this.children[0].opacity : 1;

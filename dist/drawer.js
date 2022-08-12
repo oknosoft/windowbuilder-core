@@ -1831,27 +1831,26 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
+   * Добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
    * @param nom {CatNom}
    * @param text {String}
    * @param origin {DataObj} - происхождение
    */
   err_spec_row(nom, text, origin) {
+    const {job_prm, cat, ProductsBuilding} = $p;
     if(!nom){
-      nom = $p.job_prm.nom.info_error;
+      nom = job_prm.nom.info_error;
     }
     const {_ox} = this.layer;
-    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
-      $p.ProductsBuilding.new_spec_row({
-        elm: this,
-        row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: _ox.specification,
-        ox: _ox,
-        origin,
-      });
-    }
+    const row = _ox.specification.find({elm: this.elm, nom}) || ProductsBuilding.new_spec_row({
+      elm: this,
+      row_base: {clr: cat.clrs.get(), nom},
+      spec: _ox.specification,
+      ox: _ox,
+      origin,
+    });    
     if(text){
-
+      row.dop = {text};
     }
   }
 
@@ -3406,6 +3405,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Габариты по образующим
+   * @type {external.Rectangle}
    */
   get lbounds() {
     const parent = new paper.Group({insert: false});
@@ -4129,6 +4129,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
+  /**
+   * Признак сокрытия слоя
+   * @return {boolean}
+   */
   get hidden() {
     return !!this._hidden;
   }
@@ -4879,8 +4883,8 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возаращает линию, проходящую через ручку
-   *
    * @param elm {Profile}
+   * @return {external:Profile}
    */
   handle_line(elm) {
 
@@ -4976,6 +4980,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Высота ручки
+   * @type {Number}
    */
   get h_ruch() {
     const {layer, _row} = this;
@@ -5090,6 +5095,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Высота контура по фальцу
+   * @type {Number}
    */
   get h() {
     const {is_rectangular, bounds} = this;
@@ -5099,6 +5105,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Cлужебная группа текстовых комментариев
+   * @type {external:Group}
    */
   get l_text() {
     const {_attr} = this;
@@ -5107,6 +5114,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Cлужебная группа визуализации допов,  петель и ручек
+   * @type {external:Group}
    */
   get l_visualization() {
     const {_attr} = this;
@@ -5119,8 +5127,9 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * ### Непрозрачность без учета вложенных контуров
+   * Непрозрачность без учета вложенных контуров  
    * В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
+   * @type {Boolean}
    */
   get opacity() {
     return this.children.length ? this.children[0].opacity : 1;
@@ -10474,7 +10483,8 @@ class CnnPoint {
       }
       else {
         const {job_prm: {nom}, msg} = $p;
-        _parent.err_spec_row(nom.critical_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
+        const nom_error = nom.cnn_node_error || nom.critical_error;
+        _parent.err_spec_row(nom_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
       }
     }
   }
