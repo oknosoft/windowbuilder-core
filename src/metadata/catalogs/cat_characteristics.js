@@ -684,7 +684,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   /**
    * Выясняет, есть ли в спецификации номенклатура из константы cname
    * @param cname {String}
-   * @return {boolean}
+   * @return {Boolean}
    */
   has_nom(cname) {
     let noms = $p.job_prm.nom[cname];
@@ -701,6 +701,29 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
     }
     return res;
+  }
+
+  /**
+   * Формирует строку индекса слоя cnstr
+   * @param cnstr {Number}
+   * @return {String}
+   */
+  hierarchyName(cnstr) {
+    const {constructions} = this;
+    // строка табчасти конструкций
+    const row = constructions.find({cnstr});
+    if(!row) {
+      return '';
+    }
+    // найдём все слои нашего уровня
+    const rows = constructions.find_rows({parent: row.parent})
+      .map((row) => row._row)
+      .sort($p.utils.sort('cnstr'));
+    let index = (rows.indexOf(row) + 1).toFixed();
+    if(row.parent) {
+      index = `${this.hierarchyName(row.parent)}.${index}`;
+    }
+    return index;
   }
 
   /**
