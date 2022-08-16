@@ -454,7 +454,7 @@ class DimensionLine extends paper.Group {
   }
 
   get eve() {
-    return this.project._scope.eve;
+    return this.project?._scope?.eve;
   }
 
   // размер
