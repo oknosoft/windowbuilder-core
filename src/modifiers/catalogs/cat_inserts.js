@@ -1206,22 +1206,45 @@
       });
 
       // скорректируем габариты вытягиваемой конструкции
-      if(spec !== ox.specification && this.insert_type == enm.inserts_types.Жалюзи) {
-        const bounds = {x: 0, y: 0};
-        spec.forEach(({len, width}) => {
-          if(len && width) {
-            if(bounds.x < len) {
-              bounds.x = len;
-            }
-            if(bounds.y < width) {
-              bounds.y = width;
-            }
-          }
-        });
+      if(spec !== ox.specification) {
         const {_owner} = spec;
-        _owner.x = bounds.y * 1000;
-        _owner.y = bounds.x * 1000;
-        _owner.s = (bounds.x * bounds.y).round(3);
+        switch (this.insert_type) {
+          case enm.inserts_types.mosquito:
+            if(Array.isArray(elm.perimeter)) {
+              let start = new paper.Point([0,0]);
+              const path = new paper.Path({insert: false});
+              path.add(start);
+              for(const rib of elm.perimeter) {
+                const tmp = new paper.Point({
+                  length: rib.len,
+                  angle: rib.angle
+                });
+                const fin = start.add(tmp);
+                path.add(fin);
+                start = fin.clone();
+              }
+              const {bounds} = path;
+              _owner.x = bounds.width.round(1);
+              _owner.y = bounds.height.round(1);
+              _owner.s = (bounds.area / 1e6).round(3);
+            }
+            break;
+          case enm.inserts_types.jalousie:
+            const bounds = {x: 0, y: 0};
+            spec.forEach(({len, width}) => {
+              if(len && width) {
+                if(bounds.x < len) {
+                  bounds.x = len;
+                }
+                if(bounds.y < width) {
+                  bounds.y = width;
+                }
+              }
+            });
+            _owner.x = bounds.y * 1000;
+            _owner.y = bounds.x * 1000;
+            _owner.s = (bounds.x * bounds.y).round(3);
+        }
       }
     }
 
