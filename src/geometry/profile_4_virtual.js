@@ -94,6 +94,21 @@ class ProfileVirtual extends Profile {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
   }
 
+  do_bind(profile, bcnn, ecnn, moved) {
+    if(!moved) {
+      return super.do_bind(profile, bcnn, ecnn, moved);
+    }
+    if(profile === this.nearest()) {
+      
+    }
+    else if(bcnn.profile.nearest() == profile) {
+      
+    }
+    else if(ecnn.profile.nearest() == profile) {
+
+    }
+  }
+
   path_points(cnn_point, profile_point) {
 
     const {_attr: {_corns}, generatrix, layer: {bounds}} = this;

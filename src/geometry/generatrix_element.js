@@ -154,17 +154,7 @@ class GeneratrixElement extends BuilderElement {
   move_gen(delta) {
 
     // сразу получаем сегменты примыкающих импостов и створок
-    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
-    const isegments = [];
-    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
-      const {b, e} = profile.rays;
-      if(b.profile === this) {
-        isegments.push({profile, node: 'b'});
-      }
-      if(e.profile === this) {
-        isegments.push({profile, node: 'e'});
-      }
-    });
+    const {isegments} = this;
     const nearests = this.joined_nearests();
 
     // угловые соединения b, e
@@ -223,17 +213,7 @@ class GeneratrixElement extends BuilderElement {
     }
 
     // сразу получаем сегменты примыкающих импостов
-    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
-    const isegments = [];
-    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
-      const {b, e} = profile.rays;
-      if(b.profile === this) {
-        isegments.push({profile, node: 'b'});
-      }
-      if(e.profile === this) {
-        isegments.push({profile, node: 'e'});
-      }
-    });
+    const {isegments} = this;
 
     this.generatrix.segments.forEach((segm) => {
 
@@ -363,6 +343,25 @@ class GeneratrixElement extends BuilderElement {
     return other;
   }
 
+  /**
+   * Сегменты примыкающих импостов
+   * @return {Array}
+   */
+  get isegments() {
+    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
+    const segments = [];
+    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+      const {b, e} = profile.rays;
+      if(b.profile === this) {
+        segments.push({profile, node: 'b'});
+      }
+      if(e.profile === this) {
+        segments.push({profile, node: 'e'});
+      }
+    }); 
+    return segments;
+  }
+  
   /**
    * Вспомогательная функция do_bind, привязка импостов
    * @param profile {ProfileItem} - к которому примыкает текущий импост

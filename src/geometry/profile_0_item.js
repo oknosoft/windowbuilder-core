@@ -1629,9 +1629,9 @@ class ProfileItem extends GeneratrixElement {
     // если мы в обсервере и есть T и в массиве обработанных есть примыкающий T - пересчитываем
     if(moved && moved_fact) {
       const imposts = this.joined_imposts();
-      imposts.inner.concat(imposts.outer).forEach((impost) => {
-        if(moved.profiles.indexOf(impost) == -1) {
-          impost.profile.observer(this);
+      imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+        if(!moved.profiles.includes(profile)) {
+          profile.observer(this);
         }
       });
     }
@@ -2412,7 +2412,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выясняет, примыкает ли указанный профиль к текущему
+   * Выясняет, примыкает ли указанный профиль к текущему  
    * Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
    *
    * @param p {ProfileItem}

@@ -3661,8 +3661,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         // рисуем контур
         const perimetr = this.perimeter_inner(sz, nom);
+        const ppath = new paper.Path(props);
         for(const {sub_path} of perimetr) {
-          Object.assign(sub_path, props)
+          ppath.addSegments(sub_path.segments);
         }
 
         // добавляем текст
@@ -3681,46 +3682,38 @@ class Contour extends AbstractFilling(paper.Layer) {
         // рисуем поперечину
         if (imposts) {
           const {offsets, do_center, step} = imposts;
+          
           const add_impost = function (y) {
             const impost = Object.assign(new paper.Path({
               insert: false,
-              segments: [[bounds.left, y], [bounds.right, y]],
+              segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
             }), props);
             const {length} = impost;
-            for(const {sub_path} of perimetr) {
-              const aloc = sub_path.getIntersections(impost);
-              if (aloc.length) {
-                const l1 = impost.firstSegment.point.getDistance(aloc[0].point);
-                const l2 = impost.lastSegment.point.getDistance(aloc[0].point);
-                if (l1 < length / 2) {
-                  impost.firstSegment.point = aloc[0].point;
-                }
-                if (l2 < length / 2) {
-                  impost.lastSegment.point = aloc[0].point;
-                }
+            for(const {point} of ppath.getIntersections(impost)) {
+              const l1 = impost.firstSegment.point.getDistance(point);
+              const l2 = impost.lastSegment.point.getDistance(point);
+              if (l1 < length / 2) {
+                impost.firstSegment.point = point;
+              }
+              if (l2 < length / 2) {
+                impost.lastSegment.point = point;
               }
             }
           }
 
           if(step) {
-            const height = bounds.height - offsets;
-            if(height >= step) {
-              const {top, centerY} = bounds;
-              if(do_center) {
-                const stp = Math.trunc((-top - (-centerY)) / step); //stp - количество повторений рёбер от центра
-                const mv = (top - centerY) / (stp + 1); // размер одного смещения от центра
-
-                add_impost(centerY);
-                if(stp >= 1) {
-                  for (let y = 1; y <= stp; y += 1) {
-                    add_impost(centerY + (mv * y));
-                    add_impost(centerY - (mv * y));
-                  }
-                }
+            const {height, bottom} = bounds;
+            let count = height / step;
+            if(count > 1) {
+              count = Math.floor(count);
+              if(count === 1) {
+                add_impost(bottom - height / 2);
               }
               else {
-                for (let y = (offsets || step); y < height; y += step) {
-                  add_impost(top + offsets + y);
+                count += 1;
+                const step0 = height / (count);
+                for (let y = 1; y < count; y++) {
+                  add_impost(bottom - y * step0);
                 }
               }
             }
@@ -4202,8 +4195,15 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     function set_node(n) {
       if (!curr[n].is_nearest(elm[n], 0)) {
-        elm.rays.clear(true);
+        const {isegments, rays} = elm;
         elm[n] = curr[n];
+        
+        rays.clear(true);
+        isegments.forEach(({profile, node}) => {
+          profile.do_sub_bind(elm, node);
+          profile.rays.clear();
+        });
+        
         if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
@@ -4366,7 +4366,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @param [nom] {CatNom}
    * @return {Array}
    */
-  perimeter_inner(size, nom) {
+  perimeter_inner(size = 0, nom) {
     // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
     const {cat: {cnns}, enm: {cnn_types, elm_types, count_calculating_ways}, CatInserts} = $p;
@@ -4429,7 +4429,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @param [nom] {CatNom}
    * @return {Rectangle}
    */
-  bounds_inner(size, nom) {
+  bounds_inner(size = 0, nom) {
     const path = new paper.Path({insert: false});
     for (let curr of this.perimeter_inner(size, nom)) {
       path.addSegments(curr.sub_path.segments);
@@ -7026,7 +7026,7 @@ class DimensionLine extends paper.Group {
   }
 
   get eve() {
-    return this.project._scope.eve;
+    return this.project?._scope?.eve;
   }
 
   // размер
@@ -9057,17 +9057,7 @@ class GeneratrixElement extends BuilderElement {
   move_gen(delta) {
 
     // сразу получаем сегменты примыкающих импостов и створок
-    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
-    const isegments = [];
-    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
-      const {b, e} = profile.rays;
-      if(b.profile === this) {
-        isegments.push({profile, node: 'b'});
-      }
-      if(e.profile === this) {
-        isegments.push({profile, node: 'e'});
-      }
-    });
+    const {isegments} = this;
     const nearests = this.joined_nearests();
 
     // угловые соединения b, e
@@ -9126,17 +9116,7 @@ class GeneratrixElement extends BuilderElement {
     }
 
     // сразу получаем сегменты примыкающих импостов
-    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
-    const isegments = [];
-    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
-      const {b, e} = profile.rays;
-      if(b.profile === this) {
-        isegments.push({profile, node: 'b'});
-      }
-      if(e.profile === this) {
-        isegments.push({profile, node: 'e'});
-      }
-    });
+    const {isegments} = this;
 
     this.generatrix.segments.forEach((segm) => {
 
@@ -9266,6 +9246,25 @@ class GeneratrixElement extends BuilderElement {
     return other;
   }
 
+  /**
+   * Сегменты примыкающих импостов
+   * @return {Array}
+   */
+  get isegments() {
+    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
+    const segments = [];
+    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+      const {b, e} = profile.rays;
+      if(b.profile === this) {
+        segments.push({profile, node: 'b'});
+      }
+      if(e.profile === this) {
+        segments.push({profile, node: 'e'});
+      }
+    }); 
+    return segments;
+  }
+  
   /**
    * Вспомогательная функция do_bind, привязка импостов
    * @param profile {ProfileItem} - к которому примыкает текущий импост
@@ -11908,9 +11907,9 @@ class ProfileItem extends GeneratrixElement {
     // если мы в обсервере и есть T и в массиве обработанных есть примыкающий T - пересчитываем
     if(moved && moved_fact) {
       const imposts = this.joined_imposts();
-      imposts.inner.concat(imposts.outer).forEach((impost) => {
-        if(moved.profiles.indexOf(impost) == -1) {
-          impost.profile.observer(this);
+      imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+        if(!moved.profiles.includes(profile)) {
+          profile.observer(this);
         }
       });
     }
@@ -12691,7 +12690,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выясняет, примыкает ли указанный профиль к текущему
+   * Выясняет, примыкает ли указанный профиль к текущему  
    * Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
    *
    * @param p {ProfileItem}
@@ -14360,6 +14359,21 @@ class ProfileVirtual extends Profile {
 
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
+  }
+
+  do_bind(profile, bcnn, ecnn, moved) {
+    if(!moved) {
+      return super.do_bind(profile, bcnn, ecnn, moved);
+    }
+    if(profile === this.nearest()) {
+      
+    }
+    else if(bcnn.profile.nearest() == profile) {
+      
+    }
+    else if(ecnn.profile.nearest() == profile) {
+
+    }
   }
 
   path_points(cnn_point, profile_point) {
@@ -20902,7 +20916,7 @@ $p.spec_building = new SpecBuilding($p);
     const {quantity, sz, coefficient} = row_ins_spec;
     row_spec.qty = quantity;
     if(inset.insert_type == enm.inserts_types.mosquito) {
-      const bounds = elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz);
+      const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});
       row_spec.len = bounds.height * coefficient;
       row_spec.width = bounds.width * coefficient;
       row_spec.s = (row_spec.len * row_spec.width).round(4);
@@ -22852,7 +22866,28 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             if(!perimeter) {
               if(this.insert_type === enm.inserts_types.mosquito) {
                 perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom);
-                Object.defineProperty(elm, 'perimeter', {value: perimeter});
+                Object.defineProperties(elm, {
+                  perimeter: {
+                    value: perimeter
+                  },
+                  bounds_inner: {
+                    value(sz = 0) {
+                      let start = new paper.Point([0,0]);
+                      const path = new paper.Path({insert: false});
+                      path.add(start);
+                      for(const rib of perimeter) {
+                        const tmp = new paper.Point({
+                          length: rib.len - 2 * sz,
+                          angle: rib.angle
+                        });
+                        const fin = start.add(tmp);
+                        path.add(fin);
+                        start = fin.clone();
+                      }
+                      return path.bounds;
+                    }
+                  }
+                });
               }
               else {
                 perimeter = elm.layer.perimeter;
@@ -22902,41 +22937,23 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
           else if(count_calc_method === steps){
 
-            const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
-              (elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz))
-              :
-              {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            let bounds;
+            if(this.insert_type == enm.inserts_types.mosquito) {
+              if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {
+                bounds = elm.bounds_inner();
+              }
+              else {
+                bounds = elm.layer ? elm.layer.bounds_inner() : (elm.bounds_inner?.() || {});
+              }
+            }
+            else {
+              bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            }
 
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
             if(row_ins_spec.step){
-              let qty = 0;
-              let pos;
-              if(row_ins_spec.do_center && h >= row_ins_spec.step ){
-                pos = h / 2;
-                if(pos >= offsets &&  pos <= h - offsets){
-                  qty++;
-                }
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = h / 2 + i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                  pos = h / 2 - i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
-              }
-              else{
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
-              }
-
+              let qty = Math.floor(h / row_ins_spec.step);
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
@@ -23043,21 +23060,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       if(spec !== ox.specification) {
         const {_owner} = spec;
         switch (this.insert_type) {
-          case enm.inserts_types.mosquito:
-            if(Array.isArray(elm.perimeter)) {
-              let start = new paper.Point([0,0]);
-              const path = new paper.Path({insert: false});
-              path.add(start);
-              for(const rib of elm.perimeter) {
-                const tmp = new paper.Point({
-                  length: rib.len,
-                  angle: rib.angle
-                });
-                const fin = start.add(tmp);
-                path.add(fin);
-                start = fin.clone();
-              }
-              const {bounds} = path;
+          case enm.inserts_types.mosquito:             
+            if(elm.hasOwnProperty('bounds_inner')) {
+              const bounds = elm.bounds_inner();
               _owner.x = bounds.width.round(1);
               _owner.y = bounds.height.round(1);
               _owner.s = (bounds.area / 1e6).round(3);
@@ -23079,6 +23084,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             _owner.y = bounds.x * 1000;
             _owner.s = (bounds.x * bounds.y).round(3);
         }
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }
     }
 
@@ -23565,6 +23571,17 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('angle_next');
 
+  // высоты поперечин
+  ((name) => {
+    const prm = formulate(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function () {
+        return true;
+      }
+    }
+  })('traverse_heights');
+
   // уровень слоя
   ((name) => {
     const prm = formulate(name);
@@ -23753,7 +23770,7 @@ class FakeElm {
     ];
   }
 
-  bounds_inner(size) {
+  bounds_inner(size = 0) {
     const {len, height} = this;
     return new paper.Rectangle({
       from: [0, 0],

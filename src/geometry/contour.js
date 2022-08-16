@@ -1590,8 +1590,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         // рисуем контур
         const perimetr = this.perimeter_inner(sz, nom);
+        const ppath = new paper.Path(props);
         for(const {sub_path} of perimetr) {
-          Object.assign(sub_path, props)
+          ppath.addSegments(sub_path.segments);
         }
 
         // добавляем текст
@@ -1610,46 +1611,38 @@ class Contour extends AbstractFilling(paper.Layer) {
         // рисуем поперечину
         if (imposts) {
           const {offsets, do_center, step} = imposts;
+          
           const add_impost = function (y) {
             const impost = Object.assign(new paper.Path({
               insert: false,
-              segments: [[bounds.left, y], [bounds.right, y]],
+              segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
             }), props);
             const {length} = impost;
-            for(const {sub_path} of perimetr) {
-              const aloc = sub_path.getIntersections(impost);
-              if (aloc.length) {
-                const l1 = impost.firstSegment.point.getDistance(aloc[0].point);
-                const l2 = impost.lastSegment.point.getDistance(aloc[0].point);
-                if (l1 < length / 2) {
-                  impost.firstSegment.point = aloc[0].point;
-                }
-                if (l2 < length / 2) {
-                  impost.lastSegment.point = aloc[0].point;
-                }
+            for(const {point} of ppath.getIntersections(impost)) {
+              const l1 = impost.firstSegment.point.getDistance(point);
+              const l2 = impost.lastSegment.point.getDistance(point);
+              if (l1 < length / 2) {
+                impost.firstSegment.point = point;
+              }
+              if (l2 < length / 2) {
+                impost.lastSegment.point = point;
               }
             }
           }
 
           if(step) {
-            const height = bounds.height - offsets;
-            if(height >= step) {
-              const {top, centerY} = bounds;
-              if(do_center) {
-                const stp = Math.trunc((-top - (-centerY)) / step); //stp - количество повторений рёбер от центра
-                const mv = (top - centerY) / (stp + 1); // размер одного смещения от центра
-
-                add_impost(centerY);
-                if(stp >= 1) {
-                  for (let y = 1; y <= stp; y += 1) {
-                    add_impost(centerY + (mv * y));
-                    add_impost(centerY - (mv * y));
-                  }
-                }
+            const {height, bottom} = bounds;
+            let count = height / step;
+            if(count > 1) {
+              count = Math.floor(count);
+              if(count === 1) {
+                add_impost(bottom - height / 2);
               }
               else {
-                for (let y = (offsets || step); y < height; y += step) {
-                  add_impost(top + offsets + y);
+                count += 1;
+                const step0 = height / (count);
+                for (let y = 1; y < count; y++) {
+                  add_impost(bottom - y * step0);
                 }
               }
             }
@@ -2131,8 +2124,15 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     function set_node(n) {
       if (!curr[n].is_nearest(elm[n], 0)) {
-        elm.rays.clear(true);
+        const {isegments, rays} = elm;
         elm[n] = curr[n];
+        
+        rays.clear(true);
+        isegments.forEach(({profile, node}) => {
+          profile.do_sub_bind(elm, node);
+          profile.rays.clear();
+        });
+        
         if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
@@ -2295,7 +2295,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @param [nom] {CatNom}
    * @return {Array}
    */
-  perimeter_inner(size, nom) {
+  perimeter_inner(size = 0, nom) {
     // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
     const {cat: {cnns}, enm: {cnn_types, elm_types, count_calculating_ways}, CatInserts} = $p;
@@ -2358,7 +2358,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @param [nom] {CatNom}
    * @return {Rectangle}
    */
-  bounds_inner(size, nom) {
+  bounds_inner(size = 0, nom) {
     const path = new paper.Path({insert: false});
     for (let curr of this.perimeter_inner(size, nom)) {
       path.addSegments(curr.sub_path.segments);
