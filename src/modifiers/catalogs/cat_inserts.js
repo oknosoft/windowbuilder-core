@@ -1018,7 +1018,28 @@
             if(!perimeter) {
               if(this.insert_type === enm.inserts_types.mosquito) {
                 perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom);
-                Object.defineProperty(elm, 'perimeter', {value: perimeter});
+                Object.defineProperties(elm, {
+                  perimeter: {
+                    value: perimeter
+                  },
+                  bounds_inner: {
+                    value(sz = 0) {
+                      let start = new paper.Point([0,0]);
+                      const path = new paper.Path({insert: false});
+                      path.add(start);
+                      for(const rib of perimeter) {
+                        const tmp = new paper.Point({
+                          length: rib.len - 2 * sz,
+                          angle: rib.angle
+                        });
+                        const fin = start.add(tmp);
+                        path.add(fin);
+                        start = fin.clone();
+                      }
+                      return path.bounds;
+                    }
+                  }
+                });
               }
               else {
                 perimeter = elm.layer.perimeter;
@@ -1068,41 +1089,23 @@
           }
           else if(count_calc_method === steps){
 
-            const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
-              (elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz))
-              :
-              {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            let bounds;
+            if(this.insert_type == enm.inserts_types.mosquito) {
+              if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {
+                bounds = elm.bounds_inner();
+              }
+              else {
+                bounds = elm.layer ? elm.layer.bounds_inner() : (elm.bounds_inner?.() || {});
+              }
+            }
+            else {
+              bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            }
 
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
             if(row_ins_spec.step){
-              let qty = 0;
-              let pos;
-              if(row_ins_spec.do_center && h >= row_ins_spec.step ){
-                pos = h / 2;
-                if(pos >= offsets &&  pos <= h - offsets){
-                  qty++;
-                }
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = h / 2 + i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                  pos = h / 2 - i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
-              }
-              else{
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
-              }
-
+              let qty = Math.floor(h / row_ins_spec.step);
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
@@ -1209,21 +1212,9 @@
       if(spec !== ox.specification) {
         const {_owner} = spec;
         switch (this.insert_type) {
-          case enm.inserts_types.mosquito:
-            if(Array.isArray(elm.perimeter)) {
-              let start = new paper.Point([0,0]);
-              const path = new paper.Path({insert: false});
-              path.add(start);
-              for(const rib of elm.perimeter) {
-                const tmp = new paper.Point({
-                  length: rib.len,
-                  angle: rib.angle
-                });
-                const fin = start.add(tmp);
-                path.add(fin);
-                start = fin.clone();
-              }
-              const {bounds} = path;
+          case enm.inserts_types.mosquito:             
+            if(elm.hasOwnProperty('bounds_inner')) {
+              const bounds = elm.bounds_inner();
               _owner.x = bounds.width.round(1);
               _owner.y = bounds.height.round(1);
               _owner.s = (bounds.area / 1e6).round(3);
@@ -1245,6 +1236,7 @@
             _owner.y = bounds.x * 1000;
             _owner.s = (bounds.x * bounds.y).round(3);
         }
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }
     }
 

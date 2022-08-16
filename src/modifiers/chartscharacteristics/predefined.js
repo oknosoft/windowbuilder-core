@@ -146,6 +146,17 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('angle_next');
 
+  // высоты поперечин
+  ((name) => {
+    const prm = formulate(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function () {
+        return true;
+      }
+    }
+  })('traverse_heights');
+
   // уровень слоя
   ((name) => {
     const prm = formulate(name);

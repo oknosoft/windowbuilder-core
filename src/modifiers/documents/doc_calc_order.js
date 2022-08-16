@@ -84,7 +84,7 @@ class FakeElm {
     ];
   }
 
-  bounds_inner(size) {
+  bounds_inner(size = 0) {
     const {len, height} = this;
     return new paper.Rectangle({
       from: [0, 0],

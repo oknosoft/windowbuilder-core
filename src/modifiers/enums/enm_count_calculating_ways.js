@@ -48,7 +48,7 @@
     const {quantity, sz, coefficient} = row_ins_spec;
     row_spec.qty = quantity;
     if(inset.insert_type == enm.inserts_types.mosquito) {
-      const bounds = elm.layer ? elm.layer.bounds_inner(sz) : elm.bounds_inner(sz);
+      const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});
       row_spec.len = bounds.height * coefficient;
       row_spec.width = bounds.width * coefficient;
       row_spec.s = (row_spec.len * row_spec.width).round(4);
