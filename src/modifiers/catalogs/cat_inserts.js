@@ -71,6 +71,10 @@
 
               const {inset} = this;
               const prm = cch.properties.get(ref);
+              
+              if(prm && !prm.type.is_ref) {
+                Object.assign(mf.type, {}, prm.type);
+              }
 
               // удаляем все связи, кроме владельца
               if(mf.choice_params) {
@@ -1105,7 +1109,24 @@
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
             if(row_ins_spec.step){
+              // высоты поперечин могли задать в интерфейсе
+              const prop = cch.properties.predefined('traverse_heights');
+              const aprop = prop ? prop.avalue(
+                prop.extract_pvalue({
+                  ox,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  elm,
+                  origin: len_angl.origin || this,
+                  prm_row: {},
+                  //layer,
+                })) : [];
               let qty = Math.floor(h / row_ins_spec.step);
+              if(aprop.length === 1 && aprop[0] === 0) {
+                qty = 0;
+              }
+              else if(aprop.length) {
+                qty = aprop.length;
+              }
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 

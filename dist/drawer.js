@@ -3629,13 +3629,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    * Рисует визуализацию москитки
    */
   draw_mosquito() {
-    const {l_visualization, project, _ox} = this;
-    const {inserts_types, elm_types, count_calculating_ways} = $p.enm;
+    const {l_visualization, project, _ox, cnstr} = this;
     if(project.builder_props.mosquito === false) {
       return;
     }
-    _ox.inserts.find_rows({cnstr: this.cnstr}, (row) => {
-      if (row.inset.insert_type == inserts_types.МоскитнаяСетка) {
+    _ox.inserts.find_rows({cnstr}, (row) => {
+      if (row.inset.insert_type.is('mosquito')) {
         const props = {
           parent: new paper.Group({parent: l_visualization._by_insets}),
           strokeColor: 'grey',
@@ -3646,12 +3645,15 @@ class Contour extends AbstractFilling(paper.Layer) {
         let sz, nom, imposts;
 
         row.inset.specification.forEach((rspec) => {
-          if (!sz && rspec.count_calc_method == count_calculating_ways.perim && rspec.nom.elm_type == elm_types.rama) {
+          if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
             sz = rspec.sz;
             nom = rspec.nom;
           }
-          if (!imposts && rspec.count_calc_method == count_calculating_ways.steps && rspec.nom.elm_type == elm_types.Импост) {
+          if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
             imposts = rspec;
+          }
+          if(nom && imposts) {
+            return false;
           }
         });
 
@@ -3668,7 +3670,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         // добавляем текст
         const {elm_font_size} = consts;
-        const {bounds} = props.parent;
+        const {bounds} = ppath;
         new paper.PointText({
           parent: props.parent,
           fillColor: 'black',
@@ -3703,8 +3705,26 @@ class Contour extends AbstractFilling(paper.Layer) {
 
           if(step) {
             const {height, bottom} = bounds;
-            let count = height / step;
-            if(count > 1) {
+            // высоты поперечин могли задать в интерфейсе
+            const prop = $p.cch.properties.predefined('traverse_heights');
+            const aprop = prop ? prop.avalue(
+              prop.extract_pvalue({
+                ox: _ox,
+                cnstr,
+                origin: row.inset,
+                prm_row: {},
+                //layer,
+              })) : [];
+            let count = Math.floor(height / step);
+            if(aprop.length === 1 && aprop[0] === 0) {
+              count = 0;
+            }
+            else if(aprop.length) {
+              for (const y of aprop) {
+                add_impost(bottom - y);
+              }
+            }
+            else if(count > 1) {
               count = Math.floor(count);
               if(count === 1) {
                 add_impost(bottom - height / 2);
@@ -3734,7 +3754,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     _ox.inserts.find_rows({cnstr: -glass.elm}, ({inset, clr}) => {
-      if(inset.insert_type == $p.enm.inserts_types.Жалюзи) {
+      if(inset.insert_type.is('jalousie')) {
 
         let control, type, shift, step, steps, pos;
         _ox.params.find_rows({inset, cnstr: -glass.elm}, ({param, value}) => {
@@ -3868,7 +3888,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {length, width} = properties;
 
     _ox.inserts.find_rows({cnstr}, (row) => {
-      if (row.inset.insert_type == $p.enm.inserts_types.Подоконник) {
+      if (row.inset.insert_type.is('sill')) {
 
         const bottom = this.profiles_by_side('bottom');
         let vlen, vwidth;
@@ -4392,24 +4412,23 @@ class Contour extends AbstractFilling(paper.Layer) {
       // поправка на размер соединения
       const cnn = nom && cnns.nom_cnn(nom, profile, cnn_types.ii, true)[0];
       const sz = cnn ? cnn.size(profile, profile) : 0;
-
+      const offset = size + sz;
+      
       return {
         profile,
-        sub_path,
+        sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
         angle,
         b: curr.b,
         e: curr.e,
-        size: size + sz,
       };
     });
     const ubound = res.length - 1;
     return res.map((curr, index) => {
-      const elong = Math.abs(curr.size) * 2;
-      let sub_path = curr.sub_path.equidistant(curr.size, elong);
+      let {sub_path} = curr;
       const prev = !index ? res[ubound] : res[index - 1];
       const next = (index == ubound) ? res[0] : res[index + 1];
-      const b = sub_path.intersect_point(prev.sub_path.equidistant(curr.size, elong), curr.b, true);
-      const e = sub_path.intersect_point(next.sub_path.equidistant(curr.size, elong), curr.e, true);
+      const b = sub_path.intersect_point(prev.sub_path, curr.b, true);
+      const e = sub_path.intersect_point(next.sub_path, curr.e, true);
       if (b && e) {
         sub_path = sub_path.get_subpath(b, e);
       }
@@ -21919,6 +21938,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
               const {inset} = this;
               const prm = cch.properties.get(ref);
+              
+              if(prm && !prm.type.is_ref) {
+                Object.assign(mf.type, {}, prm.type);
+              }
 
               // удаляем все связи, кроме владельца
               if(mf.choice_params) {
@@ -22953,7 +22976,24 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
             if(row_ins_spec.step){
+              // высоты поперечин могли задать в интерфейсе
+              const prop = cch.properties.predefined('traverse_heights');
+              const aprop = prop ? prop.avalue(
+                prop.extract_pvalue({
+                  ox,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  elm,
+                  origin: len_angl.origin || this,
+                  prm_row: {},
+                  //layer,
+                })) : [];
               let qty = Math.floor(h / row_ins_spec.step);
+              if(aprop.length === 1 && aprop[0] === 0) {
+                qty = 0;
+              }
+              else if(aprop.length) {
+                qty = aprop.length;
+              }
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
@@ -23431,7 +23471,8 @@ $p.CatPartners.prototype.__define({
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, 
+    EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
   function formulate(name) {
@@ -23573,11 +23614,26 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
   // высоты поперечин
   ((name) => {
-    const prm = formulate(name);
+    const prm = properties.predefined(name);
     if(prm) {
+      // параметр не вычисляемый
+      prm.calculated = '';
       // проверка условия
       prm.check_condition = function () {
         return true;
+      };
+      // значение (массив высот)
+      prm.avalue = function (raw) {
+        const res = [];
+        if(raw) {
+          for(const elm of raw.split(',')) {
+            const num = parseFloat(elm);
+            if(typeof num === 'number' && !isNaN(num)) {
+              res.push(num);
+            }
+          }
+        }
+        return res;
       }
     }
   })('traverse_heights');

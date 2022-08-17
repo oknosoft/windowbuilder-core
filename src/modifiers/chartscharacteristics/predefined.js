@@ -6,7 +6,8 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, 
+    EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
   function formulate(name) {
@@ -148,11 +149,26 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
   // высоты поперечин
   ((name) => {
-    const prm = formulate(name);
+    const prm = properties.predefined(name);
     if(prm) {
+      // параметр не вычисляемый
+      prm.calculated = '';
       // проверка условия
       prm.check_condition = function () {
         return true;
+      };
+      // значение (массив высот)
+      prm.avalue = function (raw) {
+        const res = [];
+        if(raw) {
+          for(const elm of raw.split(',')) {
+            const num = parseFloat(elm);
+            if(typeof num === 'number' && !isNaN(num)) {
+              res.push(num);
+            }
+          }
+        }
+        return res;
       }
     }
   })('traverse_heights');
