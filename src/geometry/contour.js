@@ -1653,17 +1653,14 @@ class Contour extends AbstractFilling(paper.Layer) {
                 add_impost(bottom - y);
               }
             }
+            else if(count === 1) {
+              add_impost(bottom - height / 2);
+            }
             else if(count > 1) {
-              count = Math.floor(count);
-              if(count === 1) {
-                add_impost(bottom - height / 2);
-              }
-              else {
-                count += 1;
-                const step0 = height / (count);
-                for (let y = 1; y < count; y++) {
-                  add_impost(bottom - y * step0);
-                }
+              count += 1;
+              const step0 = height / (count);
+              for (let y = 1; y < count; y++) {
+                add_impost(bottom - y * step0);
               }
             }
           }
