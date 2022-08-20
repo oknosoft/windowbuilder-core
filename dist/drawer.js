@@ -3546,6 +3546,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_cnn_errors() {
 
     const {l_visualization, project: {_scope: {eve}}} = this;
+    const {job_prm: {nom}, msg} = $p;
 
     if (l_visualization._cnn) {
       l_visualization._cnn.removeChildren();
@@ -3577,12 +3578,23 @@ class Contour extends AbstractFilling(paper.Layer) {
 
       profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {
+          glass.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
           Object.assign(sub_path, err_attrs);
           err = true;
         }
       });
 
-      if (err || path.is_self_intersected() || !inset.check_base_restrictions(inset, glass)) {
+      if(path.is_self_intersected()) {
+        glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
+        err = true;
+      }
+      
+      if(!inset.check_base_restrictions(inset, glass)) {
+        glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
+        err = true;
+      }
+
+      if (err) {
         glass.fill_error();
       }
       else {
