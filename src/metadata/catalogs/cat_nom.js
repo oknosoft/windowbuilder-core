@@ -225,18 +225,21 @@ exports.CatNom = class CatNom extends Object {
       // если для номенклатуры существует структура цен, ищем подходящую
       if(_price){
         if(attr.clr && attr.characteristic == utils.blank.guid) {
-          for(let clrx in _price){
+          let tmp = 0;
+          for (let clrx in _price) {
             const cpg = color_price_groups[clrx];
-            if(cpg && cpg.clrs().includes(attr.clr)){
-              if(_price[clrx][attr.price_type]){
+            if (cpg && cpg.contains(attr.clr, null, true)) {
+              if (_price[clrx][attr.price_type]) {
                 _price[clrx][attr.price_type].some((row) => {
-                  if(row.date > start_date && row.date <= attr.date){
-                    price = row.price;
-                    currency = row.currency;
-                    return true;
+                  if (row.date > start_date && row.date <= attr.date) {
+                    const tprice = row.currency.to_currency(row.price, attr.date, attr.currency);
+                    if (tprice > tmp) {
+                      tmp = tprice;
+                      price = row.price;
+                      currency = row.currency;
+                    }
                   }
                 });
-                break;
               }
             }
           }
@@ -257,7 +260,7 @@ exports.CatNom = class CatNom extends Object {
           for(let clrx in _price){
             const cx = characteristics[clrx];
             const cpg = color_price_groups[clrx];
-            if((cx && cx.clr == attr.clr) || (cpg && cpg.clrs().includes(attr.clr))){
+            if((cx && cx.clr == attr.clr) || (cpg && cpg.contains(attr.clr, null, true))){
               if(_price[clrx][attr.price_type]){
                 _price[clrx][attr.price_type].some((row) => {
                   if(row.date > start_date && row.date <= attr.date){
