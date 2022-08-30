@@ -2574,7 +2574,11 @@ set colors(v){this._setter_ts('colors',v)}
   _price(attr) {
     const {
       job_prm: {pricing},
-      cat: {characteristics: {by_ref: characteristics}, color_price_groups: {by_ref: color_price_groups}},
+      cat: {
+        characteristics: {by_ref: characteristics},
+        color_price_groups: {by_ref: color_price_groups},
+        clrs: {by_ref: clrs}
+      },
       utils,
     } = this._manager._owner.$p;
 
@@ -2637,7 +2641,7 @@ set colors(v){this._setter_ts('colors',v)}
         if(attr.clr && attr.characteristic == utils.blank.guid) {
           let tmp = 0;
           for (let clrx in _price) {
-            const cpg = color_price_groups[clrx];
+            const cpg = color_price_groups[clrx] || clrs[clrx];
             if (cpg && cpg.contains(attr.clr, null, true)) {
               if (_price[clrx][attr.price_type]) {
                 _price[clrx][attr.price_type].some((row) => {
@@ -2669,7 +2673,7 @@ set colors(v){this._setter_ts('colors',v)}
         if(!price && attr.clr){
           for(let clrx in _price){
             const cx = characteristics[clrx];
-            const cpg = color_price_groups[clrx];
+            const cpg = color_price_groups[clrx] || clrs[clrx];
             if((cx && cx.clr == attr.clr) || (cpg && cpg.contains(attr.clr, null, true))){
               if(_price[clrx][attr.price_type]){
                 _price[clrx][attr.price_type].some((row) => {
@@ -4552,8 +4556,21 @@ set parent(v){this._setter('parent',v)}
     return res;
   }
 
-  contains(clr) {
-    return clr === this;
+  /**
+   * Аналог метода `contains()` цветоценовых групп
+   * @param clr {CatClrs}
+   * @param [fake]
+   * @param [any] {Boolean}
+   * @return {Boolean}
+   */
+  contains(clr, fake, any) {
+    if(clr === this) {
+      return true;
+    }
+    else if (clr.is_composite() && any) {
+      return clr.clr_in === this || clr.clr_out === this;
+    }
+    return  false;
   }
 }
 $p.CatClrs = CatClrs;

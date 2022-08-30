@@ -164,7 +164,11 @@ exports.CatNom = class CatNom extends Object {
   _price(attr) {
     const {
       job_prm: {pricing},
-      cat: {characteristics: {by_ref: characteristics}, color_price_groups: {by_ref: color_price_groups}},
+      cat: {
+        characteristics: {by_ref: characteristics},
+        color_price_groups: {by_ref: color_price_groups},
+        clrs: {by_ref: clrs}
+      },
       utils,
     } = this._manager._owner.$p;
 
@@ -227,7 +231,7 @@ exports.CatNom = class CatNom extends Object {
         if(attr.clr && attr.characteristic == utils.blank.guid) {
           let tmp = 0;
           for (let clrx in _price) {
-            const cpg = color_price_groups[clrx];
+            const cpg = color_price_groups[clrx] || clrs[clrx];
             if (cpg && cpg.contains(attr.clr, null, true)) {
               if (_price[clrx][attr.price_type]) {
                 _price[clrx][attr.price_type].some((row) => {
@@ -259,7 +263,7 @@ exports.CatNom = class CatNom extends Object {
         if(!price && attr.clr){
           for(let clrx in _price){
             const cx = characteristics[clrx];
-            const cpg = color_price_groups[clrx];
+            const cpg = color_price_groups[clrx] || clrs[clrx];
             if((cx && cx.clr == attr.clr) || (cpg && cpg.contains(attr.clr, null, true))){
               if(_price[clrx][attr.price_type]){
                 _price[clrx][attr.price_type].some((row) => {

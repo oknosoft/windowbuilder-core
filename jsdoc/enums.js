@@ -289,13 +289,13 @@ class EnmPath_kindManager {}
 class EnmInset_attrs_optionsManager {}
 
 /**
- * Значение перечисления _Варианты переноса операций_<br/>Для расчёта координат в фурнитуре
+ * Значение перечисления _Варианты переноса операций_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class EnmTransfer_operations_options
  * @see EnmTransfer_operations_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты переноса операций_<br/>Для расчёта координат в фурнитуре
+ * Менеджер перечисления _Варианты переноса операций_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class
  * @extends {external:EnumManager}
  * @prop НетПереноса {EnmTransfer_operations_options} - Нет переноса
@@ -306,13 +306,13 @@ class EnmInset_attrs_optionsManager {}
 class EnmTransfer_operations_optionsManager {}
 
 /**
- * Значение перечисления _Варианты смещений_<br/>Для расчёта координат в фурнитуре
+ * Значение перечисления _Варианты смещений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class EnmOffset_options
  * @see EnmOffset_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты смещений_<br/>Для расчёта координат в фурнитуре
+ * Менеджер перечисления _Варианты смещений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class
  * @extends {external:EnumManager}
  * @prop ОтНачалаСтороны {EnmOffset_options} - От начала стороны
@@ -343,13 +343,13 @@ class EnmOffset_optionsManager {}
 class EnmApplication_mode_kindsManager {}
 
 /**
- * Значение перечисления _Варианты укорочений_<br/>Для расчёта координат в фурнитуре
+ * Значение перечисления _Варианты укорочений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class EnmContraction_options
  * @see EnmContraction_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты укорочений_<br/>Для расчёта координат в фурнитуре
+ * Менеджер перечисления _Варианты укорочений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class
  * @extends {external:EnumManager}
  * @prop ОтДлиныСтороны {EnmContraction_options} - От длины стороны
@@ -641,14 +641,16 @@ class EnmOpeningManager {}
  * Менеджер перечисления _Детализация планирования_
  * @class
  * @extends {external:EnumManager}
+ * @prop order {EnmPlan_detailing} - Заказ
  * @prop product {EnmPlan_detailing} - Изделие
  * @prop layer {EnmPlan_detailing} - Контур
+ * @prop elm {EnmPlan_detailing} - Элемент
  * @prop nearest {EnmPlan_detailing} - Соседний элем или слой
  * @prop parent {EnmPlan_detailing} - Родительский элемент или слой
- * @prop elm {EnmPlan_detailing} - Элемент
  * @prop sub_elm {EnmPlan_detailing} - Вложенный элемент
- * @prop order {EnmPlan_detailing} - Заказ
  * @prop algorithm {EnmPlan_detailing} - Алгоритм
+ * @prop layer_active {EnmPlan_detailing} - Активн. створка
+ * @prop layer_passive {EnmPlan_detailing} - Пассивн. створка
  */
 class EnmPlan_detailingManager {}
 

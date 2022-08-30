@@ -446,8 +446,21 @@ exports.CatClrs = class CatClrs extends Object {
     return res;
   }
 
-  contains(clr) {
-    return clr === this;
+  /**
+   * Аналог метода `contains()` цветоценовых групп
+   * @param clr {CatClrs}
+   * @param [fake]
+   * @param [any] {Boolean}
+   * @return {Boolean}
+   */
+  contains(clr, fake, any) {
+    if(clr === this) {
+      return true;
+    }
+    else if (clr.is_composite() && any) {
+      return clr.clr_in === this || clr.clr_out === this;
+    }
+    return  false;
   }
 
 }
