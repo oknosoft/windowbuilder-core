@@ -46,6 +46,16 @@ class ProfileNested extends Profile {
   }
 
   /**
+   * Объект продукции текущего элемеента
+   * для ProfileNested, совпадает с продукцией проекта
+   * @type {CatCharacteristics}
+   */
+  get ox() {
+    const {project, _row} = this;
+    return _row ? _row._owner._owner : project.ox;
+  }
+
+  /**
    * Возвращает тип элемента (Вложение)
    */
   get elm_type() {

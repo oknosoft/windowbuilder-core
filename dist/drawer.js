@@ -1400,7 +1400,11 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
-  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  /**
+   * Объект продукции текущего элемеента  
+   * может отличаться от продукции текущего проекта
+   * @type {CatCharacteristics}
+   */
   get ox() {
     const {layer, _row} = this;
     const _ox = layer?._ox;
@@ -1411,7 +1415,7 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Номенклатура
+   * Номенклатура
    * свойство только для чтения, т.к. вычисляется во вставке
    * @type CatNom
    */
@@ -1423,7 +1427,10 @@ class BuilderElement extends paper.Group {
     return _attr.nom;
   }
 
-  // номер элемента - свойство только для чтения
+  /**
+   * Номер элемента
+   * @type {Number}
+   */
   get elm() {
     return (this._row && this._row._obj.elm) || 0;
   }
@@ -1448,8 +1455,12 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-
-  // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
+  
+  /**
+   * Опорный размер  
+   * рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @type {Number}
+   */
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
@@ -1545,7 +1556,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Дополнительные свойства json
-   * @return {Object}
+   * @type {Object}
    */
   get dop() {
     return this._row.dop;
@@ -1556,7 +1567,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Произвольный комментарий
-   * @return {String}
+   * @type {String}
    */
   get note() {
     return this.dop.note || '';
@@ -1567,7 +1578,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая себестоимость единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get first_cost() {
     return this.dop.first_cost || 0;
@@ -1578,7 +1589,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая цена продажи единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get price() {
     return this.dop.price || 0;
@@ -5319,15 +5330,17 @@ EditorInvisible.GlassSegment = GlassSegment;
 
 
 /*
- * ### Вложенное изделие в родительском
- * https://github.com/oknosoft/windowbuilder/issues/564
- *
- * @module contour_nested
- *
  * Created by Evgeniy Malyarov on 20.04.2020.
- * Содержит виртуальные профили, в которые служат внешним, неизменяемым слоев вложенного изделия
  */
 
+/*
+ * Вложенное изделие в родительском  
+ * https://github.com/oknosoft/windowbuilder/issues/564
+ * 
+ * Содержит виртуальные профили, в которые служат внешним, неизменяемым слоев вложенного изделия
+ * 
+ * @extends Contour
+ */
 class ContourNested extends Contour {
 
   constructor(attr) {
@@ -8692,28 +8705,20 @@ EditorInvisible.Filling = Filling;
 
 
 /*
- *
- * Created 21.08.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author    Evgeniy Malyarov
- *
- * @module geometry
- * @submodule freetext
+ * Created 21.08.2015
  */
 
 /**
- * ### Произвольный текст на эскизе
- *
- * @class FreeText
- * @param attr {Object} - объект с указанием на строку координат и родительского слоя
- * @param attr.parent {BuilderElement} - элемент, к которому привязывается комментарий
- * @constructor
+ * Произвольный текст на эскизе
  * @extends paper.PointText
- * @menuorder 46
- * @tooltip Текст на эскизе
  */
 class FreeText extends paper.PointText {
 
+  /**
+   *
+   * @param attr {Object} - объект с указанием на строку координат и родительского слоя
+   * @param attr.parent {BuilderElement} - элемент, к которому привязывается комментарий
+   */
   constructor(attr) {
 
     if(!attr.fontSize){
@@ -8773,7 +8778,7 @@ class FreeText extends paper.PointText {
   }
 
   /**
-   * Удаляет элемент из контура и иерархии проекта
+   * Удаляет элемент из контура и иерархии проекта  
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
    */
   remove() {
@@ -8819,8 +8824,7 @@ class FreeText extends paper.PointText {
 
   /**
    * Возвращает тип элемента (Текст)
-   * @property elm_type
-   * @for FreeText
+   * @type EnmElm_types
    */
   get elm_type() {
     return $p.enm.elm_types.Текст;
@@ -8847,7 +8851,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // семейство шрифта
+  /**
+   * Семейство шрифта
+   * @type {String}
+   */
   get font_family() {
     return this.fontFamily || "";
   }
@@ -8856,7 +8863,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // размер шрифта
+  /**
+   * Размер шрифта
+   * @type {Number}
+   */
   get font_size() {
     return this.fontSize || consts.font_size;
   }
@@ -8865,7 +8875,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // жирность шрифта
+  /**
+   * Жирность шрифта
+   * @type {Boolean}
+   */
   get bold() {
     return this.fontWeight != 'normal';
   }
@@ -8873,7 +8886,10 @@ class FreeText extends paper.PointText {
     this.fontWeight = v ? 'bold' : 'normal';
   }
 
-  // координата x
+  /**
+   * Координата x
+   * @type {Number}
+   */
   get x() {
     return (this.point.x - this.project.bounds.x).round(1);
   }
@@ -8882,7 +8898,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // координата y
+  /**
+   * Координата y
+   * @type {Number}
+   */
   get y() {
     const {bounds} = this.project;
     return (bounds.height + bounds.y - this.point.y).round(1);
@@ -8892,7 +8911,11 @@ class FreeText extends paper.PointText {
     this.point.y = bounds.height + bounds.y - parseFloat(v);
   }
 
-  // текст элемента - при установке пустой строки, элемент удаляется
+  /**
+   * текст элемента  
+   * при установке пустой строки, элемент удаляется
+   * @type {String}
+   */
   get text() {
     return this.content;
   }
@@ -8904,7 +8927,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // угол к горизонту
+  /**
+   * Угол к горизонту
+   * @type {Number}
+   */
   get angle() {
     return Math.round(this.rotation);
   }
@@ -8913,7 +8939,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // выравнивание текста
+  /**
+   * Выравнивание текста
+   * @type {EnmText_aligns}
+   */
   get align() {
     return $p.enm.text_aligns.get(this.justification);
   }
@@ -8934,6 +8963,7 @@ EditorInvisible.FreeText = FreeText;
  *
  * @abstract
  * @extends BuilderElement
+ * @tutorial profile
  */
 class GeneratrixElement extends BuilderElement {
 
@@ -10918,6 +10948,7 @@ class ProfileRays {
  *
  * @abstract
  * @extends BuilderElement
+ * @tutorial profile
  */
 class ProfileItem extends GeneratrixElement {
 
@@ -13459,6 +13490,8 @@ EditorInvisible.ProfileSegment = ProfileSegment;
  * У профиля есть координаты конца и начала, есть путь образующей - прямая или кривая линия
  *
  * @extends ProfileItem
+ * 
+ * @tutorial profile
  *
  * @example
  *
@@ -14092,6 +14125,16 @@ class ProfileNested extends Profile {
   // пересчет вставок и соединений не делаем
   default_inset(all) {
 
+  }
+
+  /**
+   * Объект продукции текущего элемеента
+   * для ProfileNested, совпадает с продукцией проекта
+   * @type {CatCharacteristics}
+   */
+  get ox() {
+    const {project, _row} = this;
+    return _row ? _row._owner._owner : project.ox;
   }
 
   /**

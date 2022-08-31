@@ -404,7 +404,11 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
-  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  /**
+   * Объект продукции текущего элемеента  
+   * может отличаться от продукции текущего проекта
+   * @type {CatCharacteristics}
+   */
   get ox() {
     const {layer, _row} = this;
     const _ox = layer?._ox;
@@ -415,7 +419,7 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Номенклатура
+   * Номенклатура
    * свойство только для чтения, т.к. вычисляется во вставке
    * @type CatNom
    */
@@ -427,7 +431,10 @@ class BuilderElement extends paper.Group {
     return _attr.nom;
   }
 
-  // номер элемента - свойство только для чтения
+  /**
+   * Номер элемента
+   * @type {Number}
+   */
   get elm() {
     return (this._row && this._row._obj.elm) || 0;
   }
@@ -452,8 +459,12 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-
-  // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
+  
+  /**
+   * Опорный размер  
+   * рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @type {Number}
+   */
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
@@ -549,7 +560,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Дополнительные свойства json
-   * @return {Object}
+   * @type {Object}
    */
   get dop() {
     return this._row.dop;
@@ -560,7 +571,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Произвольный комментарий
-   * @return {String}
+   * @type {String}
    */
   get note() {
     return this.dop.note || '';
@@ -571,7 +582,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая себестоимость единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get first_cost() {
     return this.dop.first_cost || 0;
@@ -582,7 +593,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая цена продажи единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get price() {
     return this.dop.price || 0;
