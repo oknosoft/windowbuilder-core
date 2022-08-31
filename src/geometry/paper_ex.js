@@ -80,8 +80,16 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-     * Угол по отношению к соседнему пути _other_ в точке _point_
-     */
+   * Угол по отношению к соседнему пути _other_ в точке _point_
+   * @memberof paper.Path
+   * @method
+   * @instance
+   * @param other {paper.Path}
+   * @param point {paper.Point}
+   * @param [interior] {paper.Point}
+   * @param [round] {Number}
+   * @return {Number}
+   */
   angle_to: {
       value : function angle_to(other, point, interior, round){
         const p1 = this.getNearestPoint(point),
@@ -101,6 +109,14 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
    * Угол между путями в точке _point_
+   * @memberof paper.Path
+   * @method
+   * @instance
+   * @param other {paper.Path}
+   * @param point {paper.Point}
+   * @param [interior] {paper.Point}
+   * @param [round] {Number}
+   * @return {Number}
    */
   angle_between: {
     value : function angle_between(other, point, interior, round){
@@ -113,9 +129,12 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-     * Выясняет, является ли путь прямым
-     * @return {Boolean}
-     */
+   * Выясняет, является ли путь прямым
+   * @memberof paper.Path
+   * @method
+   * @instance
+   * @return {Boolean}
+   */
   is_linear: {
     value: function is_linear() {
       const {curves, firstCurve} = this;
@@ -143,7 +162,7 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
    * Выясняет, расположена ли точка в окрестности пути
-   * @param point {external:Point}
+   * @param point {paper.Point}
    * @param [sticking] {Boolean|Number}
    * @return {Boolean}
    */
@@ -155,10 +174,10 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * возвращает фрагмент пути между точками
-     * @param point1 {external:Point}
-     * @param point2 {external:Point}
+     * @param point1 {paper.Point}
+     * @param point2 {paper.Point}
      * @param [strict] {Boolean}
-     * @return {external:Path}
+     * @return {paper.Path}
      */
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
@@ -225,7 +244,7 @@ Object.defineProperties(paper.Path.prototype, {
      * возвращает путь, равноотстоящий от текущего пути
      * @param delta {number} - расстояние, на которое будет смещен новый путь
      * @param elong {number} - удлинение нового пути с каждого конца
-     * @return {external:Path}
+     * @return {paper.Path}
      */
   equidistant: {
       value: function equidistant(delta, elong) {
@@ -311,10 +330,10 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * Находит координату пересечения путей в окрестности точки
-     * @param path {external:Path}
+     * @param path {paper.Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
      * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения
-     * @return [other_point] {external:Point} - если указано, контролируем вектор пересечения
+     * @return [other_point] {paper.Point} - если указано, контролируем вектор пересечения
      * @return [clone] {Boolean} - если указано, не удлиняем текущие пути
      */
   intersect_point: {
@@ -516,7 +535,7 @@ Object.defineProperties(paper.Point.prototype, {
 
 	/**
 	 * Выясняет, расположена ли точка в окрестности точки
-	 * @param point {external:Point}
+	 * @param point {paper.Point}
 	 * @param [sticking] {Boolean|Number}
 	 * @return {Boolean}
 	 */

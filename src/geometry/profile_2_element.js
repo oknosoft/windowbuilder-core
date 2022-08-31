@@ -7,12 +7,13 @@
  */
 
 /**
- * _Профиль_<br/>
+ * _Профиль_  
  * Класс описывает поведение сегмента профиля (створка, рама, импост).
  * У профиля есть координаты конца и начала, есть путь образующей - прямая или кривая линия
  *
- * @class
  * @extends ProfileItem
+ * 
+ * @tutorial profile
  *
  * @example
  *
@@ -376,7 +377,7 @@ class Profile extends ProfileItem {
    * - Не делает подмену вставки, хотя могла бы
    *
    * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {external:Point} - координаты точки, в окрестности которой искать
+   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {

@@ -658,7 +658,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Точка внутри пути
    * Возвращает точку, расположенную гарантированно внутри заполнения
    *
-   * @type {external:Point}
+   * @type {paper.Point}
    */
   interiorPoint() {
     return this.path.interiorPoint;
@@ -680,7 +680,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * @property path
-   * @type external:Path
+   * @type paper.Path
    */
   get path() {
     return this._attr.path;

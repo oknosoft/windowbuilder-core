@@ -595,15 +595,12 @@ class ProfileRays {
 
 
 /**
- * ### Элемент профиля
+ * Абстрактный элемент профиля  
  * Виртуальный класс описывает общие свойства профиля и раскладки
  *
- * @class ProfileItem
+ * @abstract
  * @extends BuilderElement
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
- * @menuorder 41
- * @tooltip Элемент профиля
+ * @tutorial profile
  */
 class ProfileItem extends GeneratrixElement {
 
@@ -2372,7 +2369,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Выделяет сегмент пути профиля, ближайший к точке
    *
-   * @param point {external:Point}
+   * @param point {paper.Point}
    */
   select_corn(point) {
 
@@ -2441,7 +2438,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * ### Выясняет, перпендикулярны ли профили
    * @param profile {ProfileItem}
-   * @param point {external:Point}
+   * @param point {paper.Point}
    * @param delta {Number}
    */
   is_orthogonal(profile, point, delta) {

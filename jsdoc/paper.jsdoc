@@ -1,7 +1,31 @@
 /**
-* The Layer item represents a layer in a Paper.js project.
-* @external Layer
-* @see http://paperjs.org/reference/layer/
-*/
+ * Библиотека [paper.js](http://paperjs.org/reference/global/)
+ * @namespace
+ */
+var paper = {
+
+    /**
+    * The Layer item represents a layer in a Paper.js project.
+    * @see http://paperjs.org/reference/layer/
+    * @constructor
+    */
+    Layer() {},
+    
+    /**
+    * The Point object represents a point in the two dimensional space of the Paper.js project. It is also used to represent two dimensional vector objects.
+    * @see http://paperjs.org/reference/point/
+    * @constructor
+    */
+    Point() {},
+    
+    /**
+    * Путь - прямая или изогнутая линия  
+    * может иметь переломы, самопересечения, быть разомкнутой или замкнутой
+    * @see http://paperjs.org/reference/path/
+    * @constructor
+    */
+    Path() {},
+};
+
 
 

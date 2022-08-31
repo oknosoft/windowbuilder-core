@@ -7,8 +7,8 @@
  *
  * @class BuilderElement
  * @param attr {Object} - объект со свойствами создаваемого элемента
- *  @param attr.b {external:Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
- *  @param attr.e {external:Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
+ *  @param attr.b {paper.Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
+ *  @param attr.e {paper.Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
  *  @param attr.contour {Contour} - контур, которому принадлежит элемент
  *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
  *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
@@ -97,7 +97,7 @@ class BuilderElement extends paper.Group {
    *
    * прочитать - установить путь образующей. здесь может быть линия, простая дуга или безье
    * по ней будут пересчитаны pathData и прочие свойства
-   * @type external:Path
+   * @type paper.Path
    */
   get generatrix() {
     return this._attr.generatrix;
@@ -153,7 +153,7 @@ class BuilderElement extends paper.Group {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * для профиля, вершин всегда 4, для заполнений может быть <> 4
-   * @type external:Path
+   * @type paper.Path
    */
   get path() {
     return this._attr.path;

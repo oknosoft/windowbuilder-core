@@ -13,8 +13,6 @@
  * Сегмент заполнения
  *
  * содержит информацию о примыкающем профиле и координатах начала и конца
- * @class GlassSegment
- * @constructor
  */
 class GlassSegment {
 
@@ -231,8 +229,7 @@ class PointMap extends Map {
  * Контур (слой) изделия
  *
  * Новые элементы попадают в активный слой-контур и не могут его покинуть
- * @class
- * @extends external:Layer
+ * @extends paper.Layer
  */
 class Contour extends AbstractFilling(paper.Layer) {
 
@@ -724,7 +721,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Ищет и привязывает узлы профилей к пути заполнения
-   * @param path {external:Path} - массив ограничивается узлами, примыкающими к пути
+   * @param path {paper.Path} - массив ограничивается узлами, примыкающими к пути
    * @param [nodes] {Array} - если указано, позволяет не вычислять исходный массив узлов контура, а использовать переданный
    * @param [bind] {Boolean} - если указано, сохраняет пары узлов в path._attr.curve_nodes
    * @returns {Array}
@@ -1211,9 +1208,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает ребро текущего контура по узлам
-   * @param n1 {external:Point} - первый узел
-   * @param n2 {external:Point} - второй узел
-   * @param [point] {external:Point} - дополнительная проверочная точка
+   * @param n1 {paper.Point} - первый узел
+   * @param n2 {paper.Point} - второй узел
+   * @param [point] {paper.Point} - дополнительная проверочная точка
    * @returns {Profile}
    */
   profile_by_nodes(n1, n2, point) {
@@ -2841,7 +2838,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Возаращает линию, проходящую через ручку
    * @param elm {Profile}
-   * @return {external:Profile}
+   * @return {paper.Profile}
    */
   handle_line(elm) {
 
@@ -3062,7 +3059,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Cлужебная группа текстовых комментариев
-   * @type {external:Group}
+   * @type {paper.Group}
    */
   get l_text() {
     const {_attr} = this;
@@ -3071,7 +3068,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Cлужебная группа визуализации допов,  петель и ручек
-   * @type {external:Group}
+   * @type {paper.Group}
    */
   get l_visualization() {
     const {_attr} = this;
