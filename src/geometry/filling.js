@@ -408,7 +408,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
-   * ### Рисует заполнение отдельным элементом
+   * Рисует заполнение отдельным элементом
    */
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts} = this;
@@ -679,7 +679,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
-   * @property path
    * @type paper.Path
    */
   get path() {

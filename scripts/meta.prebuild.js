@@ -246,7 +246,7 @@ function obj_constructor_text(_m, category, name, categoties) {
   const managerText = extModule && extModule[managerName] && extModule[managerName].toString();
 
   if(jsdoc) {
-    text += '\n* @class\n* @extends external:' + proto;
+    text += '\n* @extends external:' + proto;
     text += '\n*/\n';
   }
   text += `class ${fn_name} extends ${proto}{\n`;
@@ -259,13 +259,28 @@ function obj_constructor_text(_m, category, name, categoties) {
     // реквизиты по метаданным
     if (meta.fields) {
       for (f in meta.fields) {
+        const mfld = meta.fields[f];
+
+        if(jsdoc) {
+          text += `/**\n* ${mfld.tooltip || mfld.synonym}`;
+          text += `\n* @type ${mfld.type.types
+            .map((type) => {
+              if(type.includes('.')) {
+                return DataManager.prototype.obj_constructor.call({class_name: type, constructor_names: {}});
+              }
+              return type.charAt(0).toUpperCase() + type.substr(1);
+            })
+            .join('|')}`;          
+          text += '\n*/\n';
+        }
+        
         if(category === 'cch' && f === 'type') {
           text += `get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
 set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
         }
         else {
 
-          const mf = f === 'clr' && meta.fields[f];
+          const mf = f === 'clr' && mfld;
           if(mf && mf.type.str_len === 72 && !mf.type.types.includes('cat.color_price_groups')) {
             text += `get ${f}(){return $p.cat.clrs.getter(this._obj.clr)}\n`;
           }
@@ -336,7 +351,7 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
   // если описан расширитель менеджера, дополняем
   if(jsdoc) {
     text += `\n/**\n* ${$p.msg.meta_mgrs[category]} _${meta.synonym}_`;
-    text += '\n* @class\n* @extends external:' + mgr;
+    text += '\n* @extends external:' + mgr;
     text += '\n*/\n';
   }
   if(managerText){

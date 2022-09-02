@@ -1,5 +1,5 @@
-/**
- * ### Дополнительные методы плана видов характеристик _Свойства объектов_
+/*
+ * Дополнительные методы плана видов характеристик _Свойства объектов_
  * аналог подсистемы _Свойства_ БСП
  *
  * @module cch_properties
@@ -100,7 +100,6 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Является ли значение параметра вычисляемым
    *
-   * @property is_calculated
    * @type Boolean
    */
   get is_calculated() {

@@ -11,7 +11,7 @@
 
 
 /**
- * ### Дополнительный профиль
+ * Дополнительный профиль  
  * Класс описывает поведение доборного и расширительного профилей
  *
  * - похож в поведении на сегмент створки, но расположен в том же слое, что и ведущий элемент
@@ -64,8 +64,8 @@ class ProfileAddl extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
+   * @final
    */
   get d0() {
     const nearest = this.nearest();
@@ -88,7 +88,6 @@ class ProfileAddl extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент
-   * @property nearest
    * @type Profile
    */
   nearest() {

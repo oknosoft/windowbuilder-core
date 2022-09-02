@@ -196,10 +196,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Смещает импосты чтобы получить одинаковые размеры заполнений
+   * Смещает импосты чтобы получить одинаковые размеры заполнений  
    * возвращает массив дельт
-   * @param name
-   * @param glasses
+   * @param [name]
+   * @param [glasses]
    * @return {Array}
    */
   do_glass_align(name = 'auto', glasses) {
@@ -391,8 +391,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Уравнивание по ширинам заполнений
+   * Уравнивание по ширинам заполнений  
    * выполняет в цикле до получения приемлемой дельты
+   * @param [name]
+   * @param [glasses]
    */
   glass_align(name = 'auto', glasses) {
 
@@ -427,7 +429,7 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Смещает раскладку по световому проему, с учетом толщины раскладки
+   * Смещает раскладку по световому проему, с учетом толщины раскладки  
    * возвращает истину в случае успеха
    * @param name
    * @param glass
@@ -608,10 +610,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Уравнивание раскладки по световому проему
+   * Уравнивание раскладки по световому проему  
    * выполняет смещение по ширине и высоте
-   * @param name
-   * @param glass
+   * @param [name]
+   * @param [glass]
    * @return {Boolean}
    */
   lay_impost_align(name = 'auto', glass) {
@@ -632,10 +634,7 @@ class EditorInvisible extends paper.PaperScope {
 
 }
 
-/**
+/*
  * Экспортируем конструктор EditorInvisible, чтобы экземпляры построителя можно было создать снаружи
- * @property EditorInvisible
- * @for MetaEngine
- * @type function
  */
 $p.EditorInvisible = EditorInvisible;

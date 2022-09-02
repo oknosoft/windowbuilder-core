@@ -37,8 +37,7 @@ class GeneratrixElement extends BuilderElement {
 
   /**
    * Координаты конца элемента
-   * @property e
-   * @type Point
+   * @type paper.Point
    */
   get e() {
     const {generatrix} = this._attr;
@@ -51,9 +50,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата x начала профиля
-   *
-   * @property x1
+   * Координата x начала профиля
    * @type Number
    */
   get x1() {
@@ -69,9 +66,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата y начала профиля
-   *
-   * @property y1
+   * Координата y начала профиля
    * @type Number
    */
   get y1() {
@@ -87,9 +82,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ###Координата x конца профиля
-   *
-   * @property x2
+   * Координата x конца профиля
    * @type Number
    */
   get x2() {
@@ -105,9 +98,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата y конца профиля
-   *
-   * @property y2
+   * Координата y конца профиля
    * @type Number
    */
   get y2() {

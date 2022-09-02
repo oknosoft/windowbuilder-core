@@ -1,6 +1,6 @@
 
 /*
- * ### Контур (слой) изделия
+ * Контур (слой) изделия
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -274,11 +274,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Фурнитура по умолчанию
-   *
+   * Фурнитура по умолчанию  
    * Возвращает фурнитуру текущего слоя по умолчанию
-   *
-   * @property default_furn
    * $type {CatFurns}
    */
   get default_furn() {
@@ -565,16 +562,18 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * ### Габаритная площадь контура
+   * Габаритная площадь контура
+   * @type Number
    */
   get area() {
     return (this.bounds.area/1e6).round(3);
   }
 
   /**
-   * ### площадь контура с учетом наклонов-изгибов профиля
+   * площадь контура с учетом наклонов-изгибов профиля
    * Получаем, как сумму площадей всех заполнений и профилей контура
    * Вычисления тяжелые, но в общем случае, с учетом незамкнутых контуров и соединений с пустотой, короче не сделать
+   * @type Number
    */
   get form_area() {
     let upath;
@@ -641,11 +640,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив заполнений + створок текущего контура
-   * @property glasses
-   * @for Contour
    * @param [hide] {Boolean} - если истина, устанавливает для заполнений visible=false
    * @param [glass_only] {Boolean} - если истина, возвращает только заполнения
-   * @returns {Array}
+   * @return {Array.<Contour|Filling>}
    */
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
@@ -676,7 +673,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив массивов сегментов - база для построения пути заполнений
-   * @property glass_contours
    * @type Array
    */
   get glass_contours() {
@@ -935,8 +931,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Возвращает массив отрезков, которые потенциально могут образовывать заполнения
    * (соединения с пустотой отбрасываются)
-   * @property glass_segments
-   * @type Array
+   * @type Array.<GlassSegment>
    */
   get glass_segments() {
     const nodes = [];
@@ -1041,7 +1036,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив узлов текущего контура
-   * @property nodes
    * @type Array
    */
   get nodes() {
@@ -1111,7 +1105,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив внешних профилей текущего контура. Актуально для створок, т.к. они всегда замкнуты
-   * @property outer_nodes
    * @type Array
    */
   get outer_nodes() {
@@ -2106,8 +2099,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив импостов текущего + вложенных контуров
-   * @property imposts
-   * @for Contour
    * @returns {Array.<Profile>}
    */
   get imposts() {
@@ -2130,7 +2121,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * путь контура - при чтении похож на bounds
    * для вложенных контуров определяет положение, форму и количество сегментов створок
-   * @property attr {Array}
+   * @type paper.Rectangle
    */
   get path() {
     return this.bounds;
@@ -2404,8 +2395,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив профилей текущего контура
-   * @property profiles
-   * @for Contour
    * @returns {Array.<Profile>}
    */
   get profiles() {

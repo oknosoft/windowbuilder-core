@@ -1,6 +1,6 @@
 module.exports = function({$p, paper}) {
-/**
- * ### Движок графического построителя
+/*
+ * Движок графического построителя
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -273,10 +273,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Смещает импосты чтобы получить одинаковые размеры заполнений
+   * Смещает импосты чтобы получить одинаковые размеры заполнений  
    * возвращает массив дельт
-   * @param name
-   * @param glasses
+   * @param [name]
+   * @param [glasses]
    * @return {Array}
    */
   do_glass_align(name = 'auto', glasses) {
@@ -468,8 +468,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Уравнивание по ширинам заполнений
+   * Уравнивание по ширинам заполнений  
    * выполняет в цикле до получения приемлемой дельты
+   * @param [name]
+   * @param [glasses]
    */
   glass_align(name = 'auto', glasses) {
 
@@ -504,7 +506,7 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Смещает раскладку по световому проему, с учетом толщины раскладки
+   * Смещает раскладку по световому проему, с учетом толщины раскладки  
    * возвращает истину в случае успеха
    * @param name
    * @param glass
@@ -685,10 +687,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Уравнивание раскладки по световому проему
+   * Уравнивание раскладки по световому проему  
    * выполняет смещение по ширине и высоте
-   * @param name
-   * @param glass
+   * @param [name]
+   * @param [glass]
    * @return {Boolean}
    */
   lay_impost_align(name = 'auto', glass) {
@@ -709,11 +711,8 @@ class EditorInvisible extends paper.PaperScope {
 
 }
 
-/**
+/*
  * Экспортируем конструктор EditorInvisible, чтобы экземпляры построителя можно было создать снаружи
- * @property EditorInvisible
- * @for MetaEngine
- * @type function
  */
 $p.EditorInvisible = EditorInvisible;
 
@@ -770,13 +769,11 @@ EditorInvisible.History = History;
 
 
 /**
- * ### Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
+ * Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
  *
- * @class ToolElement
  * @extends paper.Tool
- * @constructor
  */
-EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
+class ToolElement extends paper.Tool {
 
   /* eslint-disable-next-line */
   resetHot(type, event, mode) {
@@ -843,6 +840,8 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
 
 };
 
+EditorInvisible.ToolElement = ToolElement;
+
 
 
 
@@ -850,7 +849,6 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
  * Абстрактное заполнение
  *
  * Общие свойства заполнения и контура
- *
  *
  * @class
  * @extends BuilderElement
@@ -861,6 +859,8 @@ const AbstractFilling = (superclass) => class extends superclass {
   /**
    * Тест положения контура в изделии
    * @param pos {EnmElm_positions}
+   * @memberOf AbstractFilling
+   * @instance
    * @return {Boolean}
    */
   is_pos(pos) {
@@ -897,6 +897,11 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Возвращает структуру профилей по сторонам
+   * @memberOf AbstractFilling
+   * @instance
+   * @param side
+   * @param profiles
+   * @return {Object}
    */
   profiles_by_side(side, profiles) {
     // получаем таблицу расстояний профилей от рёбер габаритов
@@ -959,9 +964,9 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Возвращает массив вложенных контуров текущего контура
-   * @property contours
-   * @for Contour
-   * @type Array
+   * @memberOf AbstractFilling
+   * @instance
+   * @type Array.<Contour>
    */
   get contours() {
     return this.children.filter((elm) => elm instanceof Contour);
@@ -973,6 +978,9 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Cлужебная группа размерных линий
+   * @memberOf AbstractFilling
+   * @instance
+   * @type DimensionDrawer
    */
   get l_dimensions() {
     const {_attr} = this;
@@ -981,6 +989,9 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
+   * @memberOf AbstractFilling
+   * @instance
+   * @type paper.Rectangle
    */
   get dimension_bounds() {
     let {bounds} = this;
@@ -996,7 +1007,7 @@ EditorInvisible.AbstractFilling = AbstractFilling;
 
 
 /**
- * ### Базовый класс элементов построителя
+ * Базовый класс элементов построителя  
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
@@ -1076,9 +1087,8 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Элемент - владелец
+   * Элемент - владелец
    * имеет смысл для раскладок и рёбер заполнения
-   * @property owner
    * @type BuilderElement
    */
   get owner() {
@@ -2083,7 +2093,7 @@ EditorInvisible.Compound = Compound;
 
 
 /*
- * ### Контур (слой) изделия
+ * Контур (слой) изделия
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -2357,11 +2367,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Фурнитура по умолчанию
-   *
+   * Фурнитура по умолчанию  
    * Возвращает фурнитуру текущего слоя по умолчанию
-   *
-   * @property default_furn
    * $type {CatFurns}
    */
   get default_furn() {
@@ -2648,16 +2655,18 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * ### Габаритная площадь контура
+   * Габаритная площадь контура
+   * @type Number
    */
   get area() {
     return (this.bounds.area/1e6).round(3);
   }
 
   /**
-   * ### площадь контура с учетом наклонов-изгибов профиля
+   * площадь контура с учетом наклонов-изгибов профиля
    * Получаем, как сумму площадей всех заполнений и профилей контура
    * Вычисления тяжелые, но в общем случае, с учетом незамкнутых контуров и соединений с пустотой, короче не сделать
+   * @type Number
    */
   get form_area() {
     let upath;
@@ -2724,11 +2733,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив заполнений + створок текущего контура
-   * @property glasses
-   * @for Contour
    * @param [hide] {Boolean} - если истина, устанавливает для заполнений visible=false
    * @param [glass_only] {Boolean} - если истина, возвращает только заполнения
-   * @returns {Array}
+   * @return {Array.<Contour|Filling>}
    */
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
@@ -2759,7 +2766,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив массивов сегментов - база для построения пути заполнений
-   * @property glass_contours
    * @type Array
    */
   get glass_contours() {
@@ -3018,8 +3024,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Возвращает массив отрезков, которые потенциально могут образовывать заполнения
    * (соединения с пустотой отбрасываются)
-   * @property glass_segments
-   * @type Array
+   * @type Array.<GlassSegment>
    */
   get glass_segments() {
     const nodes = [];
@@ -3124,7 +3129,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив узлов текущего контура
-   * @property nodes
    * @type Array
    */
   get nodes() {
@@ -3194,7 +3198,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив внешних профилей текущего контура. Актуально для створок, т.к. они всегда замкнуты
-   * @property outer_nodes
    * @type Array
    */
   get outer_nodes() {
@@ -4189,8 +4192,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив импостов текущего + вложенных контуров
-   * @property imposts
-   * @for Contour
    * @returns {Array.<Profile>}
    */
   get imposts() {
@@ -4213,7 +4214,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * путь контура - при чтении похож на bounds
    * для вложенных контуров определяет положение, форму и количество сегментов створок
-   * @property attr {Array}
+   * @type paper.Rectangle
    */
   get path() {
     return this.bounds;
@@ -4487,8 +4488,6 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает массив профилей текущего контура
-   * @property profiles
-   * @for Contour
    * @returns {Array.<Profile>}
    */
   get profiles() {
@@ -5826,16 +5825,16 @@ class ContourNestedContent extends Contour {
 
 EditorInvisible.ContourNestedContent = ContourNestedContent;
 
-
 /*
- * ### Родительский слой вложенного изделия
- * https://github.com/oknosoft/windowbuilder/issues/564
- *
- * @module contour_parent
- *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
 
+/**
+ * Родительский слой вложенного изделия  
+ * @link https://github.com/oknosoft/windowbuilder/issues/564
+ * @extends Contour
+ * 
+ */
 class ContourParent extends Contour {
 
   get ProfileConstructor() {
@@ -5883,7 +5882,7 @@ EditorInvisible.ContourParent = ContourParent;
 
 
 /*
- * ### Виртуальный слой
+ * Виртуальный слой
  * https://github.com/oknosoft/windowbuilder/issues/563
  *
  *
@@ -5894,7 +5893,6 @@ EditorInvisible.ContourParent = ContourParent;
 /**
  * Виртуальный слой
  * @link https://github.com/oknosoft/windowbuilder/issues/563
- * @class
  * @extends Contour
  */
 class ContourVirtual extends Contour {
@@ -6044,7 +6042,7 @@ EditorInvisible.ContourVirtual = ContourVirtual;
 
 
 /*
- * ### Вспомогательные классы для формирования размерных линий
+ * Вспомогательные классы для формирования размерных линий
  *
  * Created by Evgeniy Malyarov on 12.05.2017.
  *
@@ -6084,7 +6082,7 @@ class DimensionGroup {
 }
 
 /**
- * ### Служебный слой размерных линий
+ * Служебный слой размерных линий  
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
  * @class DimensionLayer
@@ -6109,13 +6107,11 @@ class DimensionLayer extends paper.Layer {
 }
 
 /**
- * ### Построитель авторазмерных линий
+ * Построитель авторазмерных линий
  *
- * @class DimensionDrawer
  * @extends paper.Group
  * @param attr
  * @param attr.parent - {paper.Item}, родитель должен иметь свойства profiles_by_side(), is_pos(), profiles, imposts
- * @constructor
  */
 class DimensionDrawer extends paper.Group {
 
@@ -6372,7 +6368,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии импоста
+   * Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
     const {base_offset, dop_offset} = consts;
@@ -6398,7 +6394,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии от габарита
+   * Формирует размерные линии от габарита
    */
   by_base(arr, collection, pos) {
     const {base_offset, dop_offset} = consts;
@@ -6421,7 +6417,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии контура
+   * Формирует размерные линии контура
    */
   by_contour(ihor, ivert, forse, by_side) {
 
@@ -6527,7 +6523,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии контура по фальцу
+   * Формирует размерные линии контура по фальцу
    */
   by_faltz(ihor, ivert, by_side) {
     const {base_offset} = consts;
@@ -6611,7 +6607,7 @@ EditorInvisible.DimensionLayer = DimensionLayer;
 
 
 /*
- * ### Размерные линии на эскизе
+ * Размерные линии на эскизе
  *
  * Created 21.08.2015
  *
@@ -6620,7 +6616,7 @@ EditorInvisible.DimensionLayer = DimensionLayer;
  */
 
 /**
- * ### Размерная линия на эскизе
+ * Размерная линия на эскизе  
  * Унаследована от [paper.Group](http://paperjs.org/reference/group/)<br />
  * См. так же, {{#crossLink "DimensionLineCustom"}}{{/crossLink}} - размерная линия, устанавливаемая пользователем
  *
@@ -7155,11 +7151,9 @@ class DimensionLine extends paper.Group {
 
 
 /**
- * ### Размерные линии, определяемые пользователем
- * @class DimensionLineCustom
+ * Размерные линии, определяемые пользователем
  * @extends DimensionLine
  * @param attr
- * @constructor
  */
 class DimensionLineCustom extends DimensionLine {
 
@@ -8002,7 +7996,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
-   * ### Рисует заполнение отдельным элементом
+   * Рисует заполнение отдельным элементом
    */
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts} = this;
@@ -8273,7 +8267,6 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
-   * @property path
    * @type paper.Path
    */
   get path() {
@@ -8995,8 +8988,7 @@ class GeneratrixElement extends BuilderElement {
 
   /**
    * Координаты конца элемента
-   * @property e
-   * @type Point
+   * @type paper.Point
    */
   get e() {
     const {generatrix} = this._attr;
@@ -9009,9 +9001,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата x начала профиля
-   *
-   * @property x1
+   * Координата x начала профиля
    * @type Number
    */
   get x1() {
@@ -9027,9 +9017,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата y начала профиля
-   *
-   * @property y1
+   * Координата y начала профиля
    * @type Number
    */
   get y1() {
@@ -9045,9 +9033,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ###Координата x конца профиля
-   *
-   * @property x2
+   * Координата x конца профиля
    * @type Number
    */
   get x2() {
@@ -9063,9 +9049,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата y конца профиля
-   *
-   * @property y2
+   * Координата y конца профиля
    * @type Number
    */
   get y2() {
@@ -9353,7 +9337,7 @@ EditorInvisible.GeneratrixElement = GeneratrixElement;
 
 
 /*
- * ### Визкализация таблицы координат
+ * Визуализация таблицы координат
  *
  * @module grid_coordinates
  *
@@ -10060,7 +10044,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * ### Минимальный радиус, высисляемый по кривизне пути
+   * Минимальный радиус, высисляемый по кривизне пути  
    * для прямых = 0
    */
   rmin: {
@@ -10082,7 +10066,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * ### Максимальный радиус, высисляемый по кривизне пути
+   * Максимальный радиус, высисляемый по кривизне пути
    * для прямых = 0
    */
   rmax: {
@@ -10104,7 +10088,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * ### Cредний радиус пути по трём точкам
+   * Cредний радиус пути по трём точкам
    */
   ravg: {
     value() {
@@ -10165,7 +10149,7 @@ Object.defineProperties(paper.Point.prototype, {
 	},
 
 	/**
-	 * ### Рассчитывает координаты центра окружности по точкам и радиусу
+	 * Рассчитывает координаты центра окружности по точкам и радиусу
 	 * @param x1 {Number}
 	 * @param y1 {Number}
 	 * @param x2 {Number}
@@ -10218,7 +10202,7 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 	/**
-	 * ### Рассчитывает координаты точки, лежащей на окружности
+	 * Рассчитывает координаты точки, лежащей на окружности
 	 * @param x1
 	 * @param y1
 	 * @param x2
@@ -10268,7 +10252,7 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 	/**
-	 * ### Привязка к углу
+	 * Привязка к углу  
 	 * Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
 	 *
 	 * @param [snapAngle] {Number} - шаг угла, по умолчанию 45°
@@ -10560,7 +10544,6 @@ class CnnPoint {
 
   /**
    * Профиль, с которым пересекается наш элемент в точке соединения
-   * @property profile
    * @type Profile
    */
   get profile() {
@@ -10953,9 +10936,8 @@ class ProfileRays {
 class ProfileItem extends GeneratrixElement {
 
   /**
-   * Расстояние от узла до внешнего ребра элемента
+   * Расстояние от узла до внешнего ребра элемента  
    * для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
-   * @property d1
    * @type Number
    */
   get d1() {
@@ -10963,9 +10945,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Расстояние от узла до внутреннего ребра элемента
+   * Расстояние от узла до внутреннего ребра элемента  
    * зависит от ширины элементов и свойств примыкающих соединений
-   * @property d2
    * @type Number
    */
   get d2() {
@@ -11002,7 +10983,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка проекции высоты ручки на ребро профиля
+   * Точка проекции высоты ручки на ребро профиля
    *
    * @param side
    * @return Point|undefined
@@ -11021,9 +11002,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка проекции высоты ручки на внутреннее ребро профиля
-   *
-   * @property hhi
+   * Точка проекции высоты ручки на внутреннее ребро профиля
    * @type Point|undefined
    */
   get hhi() {
@@ -11031,9 +11010,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка проекции высоты ручки на внешнее ребро профиля
-   *
-   * @property hho
+   * Точка проекции высоты ручки на внешнее ребро профиля
    * @type Point|undefined
    */
   get hho() {
@@ -11041,9 +11018,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Соединение в точке 'b' для диалога свойств
-   *
-   * @property cnn1
+   * Соединение в точке 'b' для диалога свойств
    * @type CatCnns
    * @private
    */
@@ -11056,9 +11031,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Соединение в точке 'b' c обратной стороны
-   *
-   * @property cnn1o
+   * Соединение в точке 'b' c обратной стороны
    * @type CatCnns
    * @private
    */
@@ -11072,8 +11045,6 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Соединение в точке 'e' для диалога свойств
-   *
-   * @property cnn2
    * @type CatCnns
    * @private
    */
@@ -11087,8 +11058,6 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Соединение в точке 'e' c обратной стороны
-   *
-   * @property cnn2o
    * @type CatCnns
    * @private
    */
@@ -11186,12 +11155,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * информация для диалога свойств
-   *
-   * @property info
+   * Информация для диалога свойств
    * @type String
    * @final
-   * @private
    */
   get info() {
     const {elm, angle_hor, length, layer} = this;
@@ -11199,9 +11165,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Радиус сегмента профиля
-   *
-   * @property r
+   * Радиус сегмента профиля
    * @type Number
    */
   get r() {
@@ -11219,7 +11183,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Минимальный радиус, высисляемый по кривизне элемента
+   * Минимальный радиус, высисляемый по кривизне элемента
    * для прямых = 0
    */
   get rmin() {
@@ -11227,7 +11191,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Максимальный радиус, высисляемый по кривизне элемента
+   * Максимальный радиус, высисляемый по кривизне элемента
    * для прямых = 0
    */
   get rmax() {
@@ -11235,7 +11199,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Средний радиус, высисляемый по трём точкам
+   * Средний радиус, высисляемый по трём точкам
    * для прямых = 0
    */
   get ravg() {
@@ -11243,9 +11207,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Направление дуги сегмента профиля против часовой стрелки
-   *
-   * @property arc_ccw
+   * Направление дуги сегмента профиля против часовой стрелки
    * @type Boolean
    */
   get arc_ccw() {
@@ -11263,10 +11225,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Высота дуги сегмента профиля
-   *
-   * @property arc_ccw
-   * @type Boolean
+   * Высота дуги сегмента профиля
+   * @type Number
    */
   get arc_h() {
     const {_row, b, e, generatrix} = this;
@@ -11296,10 +11256,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Угол к горизонту
+   * Угол к горизонту  
    * Рассчитывается для прямой, проходящей через узлы
    *
-   * @property angle_hor
    * @type Number
    * @final
    */
@@ -11310,9 +11269,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Длина профиля с учетом соединений
-   *
-   * @property length
+   * Длина профиля с учетом соединений
    * @type Number
    * @final
    */
@@ -11373,11 +11330,10 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Ориентация профиля
+   * Ориентация профиля  
    * Вычисляется по гулу к горизонту.
    * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
    *
-   * @property orientation
    * @type EnmOrientations
    * @final
    */
@@ -11852,7 +11808,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Обсервер
+   * Обсервер  
    * Наблюдает за изменениями контура и пересчитывает путь элемента при изменении соседних элементов
    *
    * @private
@@ -12699,10 +12655,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка внутри пути
+   * Точка внутри пути
    * Возвращает точку, расположенную гарантированно внутри профиля
    *
-   * @property interiorPoint
    * @type paper.Point
    */
   interiorPoint() {
@@ -12769,7 +12724,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выясняет, параллельны ли профили
+   * Выясняет, параллельны ли профили  
    * в пределах `consts.orientation_delta`
    *
    * @param profile {ProfileItem}
@@ -12784,7 +12739,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выясняет, перпендикулярны ли профили
+   * Выясняет, перпендикулярны ли профили
    * @param profile {ProfileItem}
    * @param point {paper.Point}
    * @param delta {Number}
@@ -13183,8 +13138,7 @@ class ProfileSegment extends ProfileItem {
   }
 
   /**
-   * ### Координаты начала элемента
-   * @property b
+   * Координаты начала элемента
    * @type paper.Point
    */
   get b() {
@@ -13197,8 +13151,7 @@ class ProfileSegment extends ProfileItem {
 
   /**
    * Координаты конца элемента
-   * @property e
-   * @type Point
+   * @type paper.Point
    */
   get e() {
     return super.e;
@@ -13229,10 +13182,8 @@ class ProfileSegment extends ProfileItem {
   /**
    * информация для диалога свойств
    *
-   * @property info
    * @type String
    * @final
-   * @private
    */
   get info() {
     const {elm, angle_hor, length, layer} = this;
@@ -13435,14 +13386,14 @@ class ProfileSegment extends ProfileItem {
   }
 
   /**
-   * ### У сегмента нет доборов
+   * У сегмента нет доборов
    */
   get addls() {
     return [];
   }
 
   /**
-   * ### У сегмента нет сегментов
+   * У сегмента нет сегментов
    */
   get segms() {
     return [];
@@ -14584,7 +14535,7 @@ EditorInvisible.ProfileVirtual = ProfileVirtual;
 
 
 /**
- * ### Опорная линия
+ * Опорная линия  
  * Вспомогательная линия для привязки узлов и уравнивания
  *
  * - у линии есть координаты конца и начала
@@ -14754,7 +14705,7 @@ EditorInvisible.BaseLine = BaseLine;
 
 
 /**
- * ### Дополнительный профиль
+ * Дополнительный профиль  
  * Класс описывает поведение доборного и расширительного профилей
  *
  * - похож в поведении на сегмент створки, но расположен в том же слое, что и ведущий элемент
@@ -14807,8 +14758,8 @@ class ProfileAddl extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
+   * @final
    */
   get d0() {
     const nearest = this.nearest();
@@ -14831,7 +14782,6 @@ class ProfileAddl extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент
-   * @property nearest
    * @type Profile
    */
   nearest() {
@@ -15048,7 +14998,7 @@ EditorInvisible.ProfileAddl = ProfileAddl;
 
 
 /**
- * ### Соединительный профиль
+ * Соединительный профиль  
  * Класс описывает поведение соединительного профиля
  *
  * - у соединительного профиля есть координаты конца и начала, такие же, как у Profile
@@ -15068,7 +15018,6 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
    */
   get d0() {
@@ -15145,6 +15094,7 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * К соединителям ипосты не крепятся
+   * @override
    */
   joined_imposts(check_only) {
     const tinner = [];
@@ -15154,7 +15104,7 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
-   * @property nearest
+   * @override
    */
   nearest() {
     return null;
@@ -15234,12 +15184,10 @@ class ProfileConnective extends ProfileItem {
 
 
 /**
- * ### Служебный слой соединительных профилей
+ * Служебный слой соединительных профилей  
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class ConnectiveLayer
  * @extends paper.Layer
- * @constructor
  */
 class ConnectiveLayer extends paper.Layer {
 
@@ -15341,7 +15289,6 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив профилей текущего слоя
-   * @property profiles
    * @returns {Array.<ProfileItem>}
    */
   get profiles() {
@@ -15503,7 +15450,7 @@ EditorInvisible.ProfileCut = ProfileCut;
  */
 
 /**
- * ### Виртуальный профиль примыкания
+ * Виртуальный профиль примыкания  
  * Класс описывает поведение внешнего примыкания к рамам изделия
  *
  * - у примыкания есть координаты конца и начала, такие же, как у Profile
@@ -15757,7 +15704,7 @@ EditorInvisible.ProfileNestedContent = ProfileNestedContent;
 
 
 /**
- * ### Раскладка
+ * Раскладка  
  * Класс описывает поведение элемента раскладки
  *
  * - у раскладки есть координаты конца и начала
@@ -15789,7 +15736,6 @@ class Onlay extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
    */
   get d0() {
@@ -17499,7 +17445,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Изменяет центр и масштаб, чтобы изделие вписалось в размер окна
+   * Изменяет центр и масштаб, чтобы изделие вписалось в размер окна  
    * Используется инструментом {{#crossLink "ZoomFit"}}{{/crossLink}}, вызывается при открытии изделия и после загрузки типового блока
    *
    * @method zoom_fit
@@ -17542,10 +17488,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Возвращает строку svg эскиза изделия
+   * Возвращает строку svg эскиза изделия  
    * Вызывается при записи изделия. Полученный эскиз сохраняется во вложении к характеристике
    *
-   * @method get_svg
    * @param [attr] {Object} - указывает видимость слоёв и элементов, используется для формирования эскиза части изделия
    */
   get_svg(attr = {}) {
@@ -17611,7 +17556,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Перезаполняет изделие данными типового блока или снапшота
+   * Перезаполняет изделие данными типового блока или снапшота  
    * Вызывается, обычно, из формы выбора типового блока, но может быть вызван явно в скриптах тестирования или групповых обработках
    *
    * @method load_stamp
@@ -17676,7 +17621,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выясняет, надо ли автоуравнивать изделие при сдвиге точек
+   * Выясняет, надо ли автоуравнивать изделие при сдвиге точек
    * @return {boolean}
    */
   get auto_align() {
@@ -17698,7 +17643,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Уравнивает геометрически или по заполнениям
+   * Уравнивает геометрически или по заполнениям
    * сюда попадаем из move_points, когда меняем габариты
    * @param auto_align {Boolean}
    * @param profiles {Set}
@@ -17742,10 +17687,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Вписывает канвас в указанные размеры
+   * Вписывает канвас в указанные размеры  
    * Используется при создании проекта и при изменении размеров области редактирования
    *
-   * @method resize_canvas
    * @param w {Number} - ширина, в которую будет вписан канвас
    * @param h {Number} - высота, в которую будет вписан канвас
    */
@@ -17841,11 +17785,10 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Создаёт и перерисовавает габаритные линии изделия
-   * Отвечает только за габариты изделия.<br />
+   * Создаёт и перерисовавает габаритные линии изделия  
+   * Отвечает только за габариты изделия  
    * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
    *
-   * @method draw_sizes
    */
   draw_sizes() {
 
@@ -17918,7 +17861,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Вставка по умолчанию
+   * Вставка по умолчанию  
    * Возвращает вставку по умолчанию с учетом свойств системы и положения элемента
    *
    * @method default_inset
@@ -18008,7 +17951,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Контроль вставки
+   * Контроль вставки  
    * Проверяет, годится ли текущая вставка для данного типа элемента и положения
    */
   check_inset(attr) {
@@ -18241,7 +18184,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выделенные заполнения
+   * Выделенные заполнения  
    *
    * @method selected_glasses
    * @returns {Array.<Filling>}
@@ -18864,7 +18807,7 @@ class Sectional extends GeneratrixElement {
   }
 
   /**
-   * ### Формирует путь разреза
+   * Формирует путь разреза
    *
    * @method redraw
    * @return {Sectional}
@@ -18955,8 +18898,7 @@ class Sectional extends GeneratrixElement {
   }
 
   /**
-   * ### Вычисляемые поля в таблице координат
-   * @method save_coordinates
+   * Вычисляемые поля в таблице координат
    */
   save_coordinates() {
 
@@ -19047,7 +18989,7 @@ class Skeleton {
 
 
 /**
- * ### Модуль Ценообразование
+ * Модуль Ценообразование  
  * Аналог УПзП-шного __ЦенообразованиеСервер__
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -19055,9 +18997,8 @@ class Skeleton {
  */
 
 /**
- * ### Ценообразование
+ * Ценообразование
  *
- * @class Pricing
  * @param $p {MetaEngine} - контекст
  * @static
  */
@@ -19516,8 +19457,9 @@ class Pricing {
 
 
 /**
- * ### Модуль Ценообразование
- * Аналог УПзП-шного __ЦенообразованиеСервер__ в контексте MetaEngine
+ * Объект ценообразования в контексте MetaEngine
+ * @property pricing
+ * @memberOf $p
  */
 $p.pricing = new Pricing($p);
 
@@ -21140,7 +21082,7 @@ $p.spec_building = new SpecBuilding($p);
 (function(_mgr){
 
   /**
-   * ### Список групп, задействованных в CalcOrderAdditions
+   * Список групп, задействованных в CalcOrderAdditions
    * - можно изменить состав и порядок
    * - в теории, здесь же можно создать новые значения перечислений и добавить их в состав (эксперимент)
    */
@@ -21151,8 +21093,8 @@ $p.spec_building = new SpecBuilding($p);
 
 
 
-/**
- * ### Модификаторы перечислений
+/*
+ * Модификаторы перечислений
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -21204,8 +21146,8 @@ $p.spec_building = new SpecBuilding($p);
 })($p);
 
 
-/**
- * ### Модуль объекта справочника ХарактеристикиНоменклатуры
+/*
+ * Модуль объекта справочника ХарактеристикиНоменклатуры
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
  * Методы выполняются в контексте текущего объекта this = DocObj
  *
@@ -21349,8 +21291,8 @@ $p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour
 
 
 
-/**
- * ### Дополнительные методы справочника _Соединения_
+/*
+ * Дополнительные методы справочника _Соединения_
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  * @module cat_cnns
@@ -21371,8 +21313,8 @@ $p.cat.cnns.__define({
 
 
 
-/**
- * ### Дополнительные методы справочника _Договоры контрагентов_
+/*
+ * Дополнительные методы справочника _Договоры контрагентов_
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -23444,8 +23386,8 @@ $p.cat.nom.__define({
 
 
 
-/**
- * ### Дополнительные методы справочника Контрагенты
+/*
+ * Дополнительные методы справочника Контрагенты
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
  *
@@ -23805,8 +23747,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 });
 
 
-/**
- * ### Модуль объекта документа Расчет-заказ
+/*
+ * Модуль объекта документа Расчет-заказ
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
  * Методы выполняются в контексте текущего объекта this = DocObj
  *
@@ -25119,9 +25061,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * ### Создаёт продукции заказа по массиву строк и параметров
+   * Создаёт продукции заказа по массиву строк и параметров  
    * если в dp.production заполнены уникальные характеристики - перезаполняет их, а новые не создаёт
-   * @method process_add_product_list
    * @param dp {DpBuyers_order} - экземпляр обработки с заполненными табличными частями
    */
   process_add_product_list(dp) {

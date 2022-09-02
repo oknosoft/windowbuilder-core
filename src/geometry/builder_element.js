@@ -1,6 +1,6 @@
 
 /**
- * ### Базовый класс элементов построителя
+ * Базовый класс элементов построителя  
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
@@ -80,9 +80,8 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Элемент - владелец
+   * Элемент - владелец
    * имеет смысл для раскладок и рёбер заполнения
-   * @property owner
    * @type BuilderElement
    */
   get owner() {

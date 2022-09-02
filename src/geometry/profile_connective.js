@@ -1,6 +1,6 @@
 
 /**
- * ### Соединительный профиль
+ * Соединительный профиль  
  * Класс описывает поведение соединительного профиля
  *
  * - у соединительного профиля есть координаты конца и начала, такие же, как у Profile
@@ -20,7 +20,6 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
    */
   get d0() {
@@ -97,6 +96,7 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * К соединителям ипосты не крепятся
+   * @override
    */
   joined_imposts(check_only) {
     const tinner = [];
@@ -106,7 +106,7 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
-   * @property nearest
+   * @override
    */
   nearest() {
     return null;
@@ -186,12 +186,10 @@ class ProfileConnective extends ProfileItem {
 
 
 /**
- * ### Служебный слой соединительных профилей
+ * Служебный слой соединительных профилей  
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class ConnectiveLayer
  * @extends paper.Layer
- * @constructor
  */
 class ConnectiveLayer extends paper.Layer {
 
@@ -293,7 +291,6 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив профилей текущего слоя
-   * @property profiles
    * @returns {Array.<ProfileItem>}
    */
   get profiles() {

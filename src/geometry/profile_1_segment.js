@@ -28,8 +28,7 @@ class ProfileSegment extends ProfileItem {
   }
 
   /**
-   * ### Координаты начала элемента
-   * @property b
+   * Координаты начала элемента
    * @type paper.Point
    */
   get b() {
@@ -42,8 +41,7 @@ class ProfileSegment extends ProfileItem {
 
   /**
    * Координаты конца элемента
-   * @property e
-   * @type Point
+   * @type paper.Point
    */
   get e() {
     return super.e;
@@ -74,10 +72,8 @@ class ProfileSegment extends ProfileItem {
   /**
    * информация для диалога свойств
    *
-   * @property info
    * @type String
    * @final
-   * @private
    */
   get info() {
     const {elm, angle_hor, length, layer} = this;
@@ -280,14 +276,14 @@ class ProfileSegment extends ProfileItem {
   }
 
   /**
-   * ### У сегмента нет доборов
+   * У сегмента нет доборов
    */
   get addls() {
     return [];
   }
 
   /**
-   * ### У сегмента нет сегментов
+   * У сегмента нет сегментов
    */
   get segms() {
     return [];

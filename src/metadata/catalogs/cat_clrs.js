@@ -222,7 +222,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   }
 
   /**
-   * ### Инверсный цвет
+   * Инверсный цвет  
    * Возвращает элемент, цвета которого изнутри и снаружи перевёрнуты местами
    * @param clr {CatClrs} - исходный цвет
    */

@@ -1,6 +1,6 @@
 
 /*
- * ### Виртуальный слой
+ * Виртуальный слой
  * https://github.com/oknosoft/windowbuilder/issues/563
  *
  *
@@ -11,7 +11,6 @@
 /**
  * Виртуальный слой
  * @link https://github.com/oknosoft/windowbuilder/issues/563
- * @class
  * @extends Contour
  */
 class ContourVirtual extends Contour {

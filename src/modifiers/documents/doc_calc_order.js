@@ -1,6 +1,6 @@
 
-/**
- * ### Модуль объекта документа Расчет-заказ
+/*
+ * Модуль объекта документа Расчет-заказ
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
  * Методы выполняются в контексте текущего объекта this = DocObj
  *
@@ -1313,9 +1313,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * ### Создаёт продукции заказа по массиву строк и параметров
+   * Создаёт продукции заказа по массиву строк и параметров  
    * если в dp.production заполнены уникальные характеристики - перезаполняет их, а новые не создаёт
-   * @method process_add_product_list
    * @param dp {DpBuyers_order} - экземпляр обработки с заполненными табличными частями
    */
   process_add_product_list(dp) {

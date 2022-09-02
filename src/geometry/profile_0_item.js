@@ -212,7 +212,6 @@ class CnnPoint {
 
   /**
    * Профиль, с которым пересекается наш элемент в точке соединения
-   * @property profile
    * @type Profile
    */
   get profile() {
@@ -605,9 +604,8 @@ class ProfileRays {
 class ProfileItem extends GeneratrixElement {
 
   /**
-   * Расстояние от узла до внешнего ребра элемента
+   * Расстояние от узла до внешнего ребра элемента  
    * для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
-   * @property d1
    * @type Number
    */
   get d1() {
@@ -615,9 +613,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Расстояние от узла до внутреннего ребра элемента
+   * Расстояние от узла до внутреннего ребра элемента  
    * зависит от ширины элементов и свойств примыкающих соединений
-   * @property d2
    * @type Number
    */
   get d2() {
@@ -654,7 +651,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка проекции высоты ручки на ребро профиля
+   * Точка проекции высоты ручки на ребро профиля
    *
    * @param side
    * @return Point|undefined
@@ -673,9 +670,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка проекции высоты ручки на внутреннее ребро профиля
-   *
-   * @property hhi
+   * Точка проекции высоты ручки на внутреннее ребро профиля
    * @type Point|undefined
    */
   get hhi() {
@@ -683,9 +678,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка проекции высоты ручки на внешнее ребро профиля
-   *
-   * @property hho
+   * Точка проекции высоты ручки на внешнее ребро профиля
    * @type Point|undefined
    */
   get hho() {
@@ -693,9 +686,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Соединение в точке 'b' для диалога свойств
-   *
-   * @property cnn1
+   * Соединение в точке 'b' для диалога свойств
    * @type CatCnns
    * @private
    */
@@ -708,9 +699,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Соединение в точке 'b' c обратной стороны
-   *
-   * @property cnn1o
+   * Соединение в точке 'b' c обратной стороны
    * @type CatCnns
    * @private
    */
@@ -724,8 +713,6 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Соединение в точке 'e' для диалога свойств
-   *
-   * @property cnn2
    * @type CatCnns
    * @private
    */
@@ -739,8 +726,6 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Соединение в точке 'e' c обратной стороны
-   *
-   * @property cnn2o
    * @type CatCnns
    * @private
    */
@@ -838,12 +823,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * информация для диалога свойств
-   *
-   * @property info
+   * Информация для диалога свойств
    * @type String
    * @final
-   * @private
    */
   get info() {
     const {elm, angle_hor, length, layer} = this;
@@ -851,9 +833,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Радиус сегмента профиля
-   *
-   * @property r
+   * Радиус сегмента профиля
    * @type Number
    */
   get r() {
@@ -871,7 +851,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Минимальный радиус, высисляемый по кривизне элемента
+   * Минимальный радиус, высисляемый по кривизне элемента
    * для прямых = 0
    */
   get rmin() {
@@ -879,7 +859,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Максимальный радиус, высисляемый по кривизне элемента
+   * Максимальный радиус, высисляемый по кривизне элемента
    * для прямых = 0
    */
   get rmax() {
@@ -887,7 +867,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Средний радиус, высисляемый по трём точкам
+   * Средний радиус, высисляемый по трём точкам
    * для прямых = 0
    */
   get ravg() {
@@ -895,9 +875,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Направление дуги сегмента профиля против часовой стрелки
-   *
-   * @property arc_ccw
+   * Направление дуги сегмента профиля против часовой стрелки
    * @type Boolean
    */
   get arc_ccw() {
@@ -915,10 +893,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Высота дуги сегмента профиля
-   *
-   * @property arc_ccw
-   * @type Boolean
+   * Высота дуги сегмента профиля
+   * @type Number
    */
   get arc_h() {
     const {_row, b, e, generatrix} = this;
@@ -948,10 +924,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Угол к горизонту
+   * Угол к горизонту  
    * Рассчитывается для прямой, проходящей через узлы
    *
-   * @property angle_hor
    * @type Number
    * @final
    */
@@ -962,9 +937,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Длина профиля с учетом соединений
-   *
-   * @property length
+   * Длина профиля с учетом соединений
    * @type Number
    * @final
    */
@@ -1025,11 +998,10 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Ориентация профиля
+   * Ориентация профиля  
    * Вычисляется по гулу к горизонту.
    * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
    *
-   * @property orientation
    * @type EnmOrientations
    * @final
    */
@@ -1504,7 +1476,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Обсервер
+   * Обсервер  
    * Наблюдает за изменениями контура и пересчитывает путь элемента при изменении соседних элементов
    *
    * @private
@@ -2351,10 +2323,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Точка внутри пути
+   * Точка внутри пути
    * Возвращает точку, расположенную гарантированно внутри профиля
    *
-   * @property interiorPoint
    * @type paper.Point
    */
   interiorPoint() {
@@ -2421,7 +2392,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выясняет, параллельны ли профили
+   * Выясняет, параллельны ли профили  
    * в пределах `consts.orientation_delta`
    *
    * @param profile {ProfileItem}
@@ -2436,7 +2407,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * ### Выясняет, перпендикулярны ли профили
+   * Выясняет, перпендикулярны ли профили
    * @param profile {ProfileItem}
    * @param point {paper.Point}
    * @param delta {Number}
