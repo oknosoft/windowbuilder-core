@@ -645,8 +645,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param [elmno] {number} - номер элемента (с полюсом) или слоя (с минусом)
-   * @return {number}
+   * @param [elmno] {Number|undefined} - номер элемента (с полюсом) или слоя (с минусом)
+   * @return {Number}
    */
   elm_weight(elmno) {
     const {coordinates, specification} = this;

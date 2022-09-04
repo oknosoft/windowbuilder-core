@@ -236,7 +236,7 @@ exports.CatNom = class CatNom extends Object {
               if (_price[clrx][attr.price_type]) {
                 _price[clrx][attr.price_type].some((row) => {
                   if (row.date > start_date && row.date <= attr.date) {
-                    const tprice = row.currency.to_currency(row.price, attr.date, attr.currency, this);
+                    const tprice = row.currency.to_currency(row.price, attr.date, attr.currency);
                     if (tprice > tmp) {
                       tmp = tprice;
                       price = row.price;
@@ -307,7 +307,7 @@ exports.CatNom = class CatNom extends Object {
     }
 
     // Пересчитать из валюты в валюту
-    return currency.to_currency(price, attr.date, attr.currency, this);
+    return currency.to_currency(price, attr.date, attr.currency);
   }
 
   /**
