@@ -455,8 +455,8 @@ class Pricing {
    * Пересчитывает сумму из валюты в валюту
    * @param amount {Number} - сумма к пересчету
    * @param date {Date} - дата курса
-   * @param from - исходная валюта
-   * @param [to] - конечная валюта
+   * @param from {CatCurrencies} - исходная валюта
+   * @param [to] {CatCurrencies} - конечная валюта
    * @return {Number}
    */
   from_currency_to_currency (amount, date, from, to) {

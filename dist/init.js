@@ -1838,6 +1838,13 @@ get parameters_russian_recipe(){return this._getter('parameters_russian_recipe')
 set parameters_russian_recipe(v){this._setter('parameters_russian_recipe',v)}
 
 
+  /**
+   * Пересчитывает сумму из валюты в валюту
+   * @param amount {Number}
+   * @param [date] {Date}
+   * @param [to] {CatCurrencies}
+   * @return {Number}
+   */
   to_currency(amount, date, to) {
     if(this == to){
       return amount;
@@ -2344,7 +2351,7 @@ set colors(v){this._setter_ts('colors',v)}
               if (_price[clrx][attr.price_type]) {
                 _price[clrx][attr.price_type].some((row) => {
                   if (row.date > start_date && row.date <= attr.date) {
-                    const tprice = row.currency.to_currency(row.price, attr.date, attr.currency);
+                    const tprice = row.currency.to_currency(row.price, attr.date, attr.currency, this);
                     if (tprice > tmp) {
                       tmp = tprice;
                       price = row.price;
@@ -2415,7 +2422,7 @@ set colors(v){this._setter_ts('colors',v)}
     }
 
     // Пересчитать из валюты в валюту
-    return currency.to_currency(price, attr.date, attr.currency);
+    return currency.to_currency(price, attr.date, attr.currency, this);
   }
 
   /**

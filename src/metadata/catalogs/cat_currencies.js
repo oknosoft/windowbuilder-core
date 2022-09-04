@@ -1,6 +1,13 @@
 
 exports.CatCurrencies = class CatCurrencies extends Object {
 
+  /**
+   * Пересчитывает сумму из валюты в валюту
+   * @param amount {Number}
+   * @param [date] {Date}
+   * @param [to] {CatCurrencies}
+   * @return {Number}
+   */
   to_currency(amount, date, to) {
     if(this == to){
       return amount;
