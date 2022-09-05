@@ -25316,7 +25316,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc, manager} = _owner._owner;
+    const {rounding, _slave_recalc, manager, date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
@@ -25359,7 +25359,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // рассчитаем цены
       const fake_prm = {
         calc_order_row: this,
-        spec: characteristic.specification
+        spec: characteristic.specification,
+        date,
       };
       const {price} = _obj;
       pricing.price_type(fake_prm);
