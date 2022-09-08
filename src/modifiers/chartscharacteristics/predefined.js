@@ -103,7 +103,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
 
             const prow = (ox || layer?._ox || elm?.ox).params.find({param: prm});
-            return prow && !prow.value.empty() ? prow.value : calc_order.manager.branch;
+            if(prow && !prow.value.empty()) {
+              return prow.value;  
+            }
+            const branch = calc_order.organization._extra(prm);
+            return branch && !branch.empty() ? branch : calc_order.manager.branch;
           };
           break;
 

@@ -846,7 +846,13 @@ set hide(v){this._setter_ts('hide',v)}
    * @param [ox] {CatCharacteristics}
    */
   branch_value({project, cnstr = 0, ox}) {
-    const branch = project ? project.branch : ox?.calc_order?.manager?.branch;
+    let branch = project?.branch;
+    if(!branch && ox) {
+      branch = ox.calc_order?.organization?._extra?.('branch');
+      if(!branch || branch.empty()) {
+        branch = ox.calc_order?.manager?.branch;
+      }
+    }
     let brow = branch && branch.extra_fields.find({property: this});
     if(brow) {
       return brow.value;
@@ -3103,7 +3109,10 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
         value = drow.value;
       }
       else if(param === properties.branch) {
-        value = ox.calc_order.manager.branch;
+        value = ox.calc_order.organization._extra(param);
+        if(!value || value.empty()) {
+          value = ox.calc_order.manager.branch;
+        }
         if(value.empty()) {
           value._manager.find_rows({parent: utils.blank.guid}, (branch) => {
             value = branch;

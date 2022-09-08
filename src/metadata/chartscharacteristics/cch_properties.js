@@ -545,7 +545,13 @@ exports.CchProperties = class CchProperties extends Object {
    * @param [ox] {CatCharacteristics}
    */
   branch_value({project, cnstr = 0, ox}) {
-    const branch = project ? project.branch : ox?.calc_order?.manager?.branch;
+    let branch = project?.branch;
+    if(!branch && ox) {
+      branch = ox.calc_order?.organization?._extra?.('branch');
+      if(!branch || branch.empty()) {
+        branch = ox.calc_order?.manager?.branch;
+      }
+    }
     let brow = branch && branch.extra_fields.find({property: this});
     if(brow) {
       return brow.value;

@@ -213,7 +213,10 @@ exports.CatProduction_params = class CatProduction_params extends Object {
         value = drow.value;
       }
       else if(param === properties.branch) {
-        value = ox.calc_order.manager.branch;
+        value = ox.calc_order.organization._extra(param);
+        if(!value || value.empty()) {
+          value = ox.calc_order.manager.branch;
+        }
         if(value.empty()) {
           value._manager.find_rows({parent: utils.blank.guid}, (branch) => {
             value = branch;
