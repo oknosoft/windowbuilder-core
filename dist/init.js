@@ -649,7 +649,7 @@ set hide(v){this._setter_ts('hide',v)}
         if(types && is_ref && arr.length) {
           let mgr;
           for(const type of types) {
-            const tmp = md.mgr_by_class_name(types[0]);
+            const tmp = md.mgr_by_class_name(type);
             if(tmp && arr.some(ref => tmp.by_ref[ref])) {
               mgr = tmp;
               break;
