@@ -438,6 +438,9 @@ set hide(v){this._setter_ts('hide',v)}
    */
   check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
+    if(this.empty()) {
+      return true;
+    }
     const {is_calculated, type} = this;
     const {utils, enm: {comparison_types, predefined_formulas}, EditorInvisible: {BuilderElement}} = $p;
     const ct = prm_row.comparison_type || comparison_types.eq;

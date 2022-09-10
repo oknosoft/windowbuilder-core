@@ -4408,14 +4408,15 @@ class Contour extends AbstractFilling(paper.Layer) {
   perimeter_inner(size = 0, nom) {
     // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
-    const {cat: {cnns}, enm: {cnn_types, elm_types, count_calculating_ways}, CatInserts} = $p;
+    const {cat: {cnns}, enm: {cnn_types}, CatInserts} = $p;
 
     // если передали вставку, ищем первую подходящую строку рамки профиля
     if(nom instanceof CatInserts) {
       for(const row of nom.specification) {
-        if(row.count_calc_method === count_calculating_ways.perim && row.nom.elm_type === elm_types.rama) {
+        if(row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
           nom = row.nom;
           size = row.sz;
+          break;
         }
       }
     }
