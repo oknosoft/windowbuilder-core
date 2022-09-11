@@ -609,14 +609,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const currency = this.contract.settlements_currency;
     return currency.empty() ? $p.job_prm.pricing.main_currency : currency;
   }
-
   set doc_currency(v) {
 
   }
 
   /**
    * Число знаков округления
-   * @return {Number}
+   * @type {Number}
    */
   get rounding() {
     const {pricing} = $p.job_prm;
@@ -631,8 +630,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * Отдел абонента текущего заказа
+   * @type {CatBranches}
+   */
+  get branch() {
+    const {manager, organization} = this;
+    let branch = organization._extra('branch');
+    if(!branch || branch.empty()) {
+      branch = manager.branch;
+    }
+    return branch;
+  }
+
+  /**
    * Дата прайса с учётом константы valid_days (Счет действителен N дней)
-   * @return {Date}
+   * @type {Date}
    */
   get price_date() {
     const {utils, job_prm: {pricing}} = $p;
