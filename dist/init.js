@@ -2310,7 +2310,10 @@ set colors(v){this._setter_ts('colors',v)}
     if(!attr){
       attr = {currency};
     }
-    const {_price} = this._data;
+    let {_price, _bprice} = this._data;
+    if(attr.branch && _bprice?.has?.(attr.branch)) {
+      _price = _bprice.get(attr.branch)
+    }
     const {x, y, z, clr, ref, calc_order} = (attr.characteristic || {});
 
     if(attr.price_type){

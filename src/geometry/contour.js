@@ -2321,6 +2321,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(nom instanceof CatInserts) {
       for(const row of nom.specification) {
         if(row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
+          //TODO: сюда бы еще, check_condition()
           nom = row.nom;
           size = row.sz;
           break;
