@@ -2458,7 +2458,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Contour}
    */
   static create(attr = {}) {
-    let {kind, row, project} = attr;
+    let {kind, row, project, parent} = attr;
     if(typeof kind === 'undefined') {
       kind = row ? row.kind : 0;
     }
@@ -2472,14 +2472,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 3) {
       Constructor = ContourParent;
     }
-    else if(attr.parent instanceof ContourNestedContent || attr.parent instanceof ContourNested) {
+    else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
       Constructor = ContourNestedContent;
     }
 
     // строка в таблице конструкций
     if (!attr.row) {
       const {constructions} = project.ox;
-      attr.row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
+      attr.row = constructions.add({parent: parent ? parent.cnstr : 0});
       attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
     if(kind) {
@@ -3658,7 +3658,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     _ox.inserts.find_rows({cnstr}, (row) => {
-      if (row.inset.insert_type.is('mosquito')) {
+      const {inset: origin} = row;
+      if (origin.insert_type.is('mosquito')) {
         const props = {
           parent: new paper.Group({parent: l_visualization._by_insets}),
           strokeColor: 'grey',
@@ -3666,20 +3667,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           dashArray: [6, 4],
           strokeScaling: false,
         };
-        let sz, nom, imposts;
-
-        row.inset.specification.forEach((rspec) => {
-          if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
-            sz = rspec.sz;
-            nom = rspec.nom;
-          }
-          if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
-            imposts = rspec;
-          }
-          if(nom && imposts) {
-            return false;
-          }
-        });
+        let {sz, nom, imposts} = origin.mosquito_props();
 
         if(!nom) {
           return false;
@@ -3693,23 +3681,22 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
 
         // добавляем текст
-        const {elm_font_size} = consts;
+        const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
           parent: props.parent,
           fillColor: 'black',
-          fontFamily: consts.font_family,
-          fontSize: consts.elm_font_size,
+          fontFamily: font_family,
+          fontSize: elm_font_size,
           guide: true,
-          content: row.inset.presentation,
+          content: origin.presentation,
           point: bounds.bottomLeft.add([elm_font_size * 1.2, -elm_font_size * 0.4]),
         });
 
         // рисуем поперечину
         if (imposts) {
-          const {offsets, do_center, step} = imposts;
           
-          const add_impost = function (y) {
+          const add_impost = (y) => {
             const impost = Object.assign(new paper.Path({
               insert: false,
               segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
@@ -3725,40 +3712,17 @@ class Contour extends AbstractFilling(paper.Layer) {
                 impost.lastSegment.point = point;
               }
             }
-          }
-
-          if(step) {
-            const {height, bottom} = bounds;
-            // высоты поперечин могли задать в интерфейсе
-            const prop = $p.cch.properties.predefined('traverse_heights');
-            const aprop = prop ? prop.avalue(
-              prop.extract_pvalue({
-                ox: _ox,
-                cnstr,
-                origin: row.inset,
-                prm_row: {},
-                //layer,
-              })) : [];
-            let count = Math.floor(height / step);
-            if(aprop.length === 1 && aprop[0] === 0) {
-              count = 0;
-            }
-            else if(aprop.length) {
-              for (const y of aprop) {
-                add_impost(bottom - y);
-              }
-            }
-            else if(count === 1) {
-              add_impost(bottom - height / 2);
-            }
-            else if(count > 1) {
-              count += 1;
-              const step0 = height / (count);
-              for (let y = 1; y < count; y++) {
-                add_impost(bottom - y * step0);
-              }
-            }
-          }
+          };
+          
+          $p.cat.inserts.traverse_steps({
+            imposts,
+            bounds, 
+            add_impost,
+            ox: _ox,
+            cnstr,
+            origin,
+          });
+          
         }
 
         return false;
@@ -4539,9 +4503,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {_by_insets, _by_spec} = this.l_visualization;
+    const {l_visualization: {_by_insets, _by_spec}, project: {_attr}} = this;
     _by_insets.removeChildren();
-    !this.project._attr._saving && _by_spec.removeChildren();
+    !_attr._saving && _by_spec.removeChildren();
 
     //$p.job_prm.debug && console.profile();
 
@@ -4563,11 +4527,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       elm.redraw();
     }
 
-    // рисуем ошибки соединений
-    this.draw_cnn_errors();
+    if(!_attr._hide_errors) {
+      // рисуем ошибки соединений
+      this.draw_cnn_errors();
 
-    //рисуем ошибки статических прогибов
-    this.draw_static_errors();
+      //рисуем ошибки статических прогибов
+      this.draw_static_errors();
+    }
 
     // перерисовываем все водоотливы контура
     for(const elm of this.sectionals) {
@@ -20402,10 +20368,24 @@ class ProductsBuilding {
    * чтобы его было проще переопределить снаружи
    */
   saver({ox, scheme, attr, finish}) {
-    const {calc_order} = ox;
+    const {calc_order, _order_rows} = ox;
+    let res = Promise.resolve();
+    for (const cx of (_order_rows || [])) {
+      if(cx.origin?.insert_type?.is?.('mosquito')) {
+        res = res
+          .then(() => cx.draw())
+          .then((img) => {
+            const {imgs} = Object.values(img)[0];
+            cx.svg = imgs.l0; 
+          })
+          .catch(() => null);
+      }
+    }
     calc_order.characteristic_saved(scheme, attr);
-    return (attr.save === 'recalc' ? Promise.resolve() : calc_order.save())
-      .then(() => {
+    if(attr.save !== 'recalc') {
+      res = res.then(() => calc_order.save());
+    }
+    return res.then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
       })
@@ -20797,7 +20777,7 @@ class SpecBuilding {
     const ax = [];
 
     // затем, добавляем в заказ строки, назначенные к вытягиванию
-    ox._order_rows && ox._order_rows.forEach((cx) => {
+    ox._order_rows?.forEach?.((cx) => {
       const row = order_rows.get(cx) || calc_order.production.add({nom: cx.owner, characteristic: cx});
       row.nom = cx.owner;
       row.unit = row.nom.storage_unit;
@@ -22225,6 +22205,67 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
     },
 
+    /**
+     * Возвращает временную вставку по номенклатуре
+     */
+    by_nom: {
+      value(nom, insert_type = 'Профиль') {
+        if(!this._by_nom) {
+          this._by_nom = new Map();
+        }
+        if(!this._by_nom.has(nom)) {
+          const tmp = this.create(false, false, true);
+          tmp.insert_type = insert_type;
+          tmp.specification.add({nom, is_main_elm: true});
+          if(nom.elm_type.is('impost') && nom.width) {
+            tmp.sizeb = nom.width / 2;
+          }
+          tmp._set_loaded(tmp.ref);
+          this._by_nom.set(nom, tmp);
+        }
+        return this._by_nom.get(nom);
+      }
+    },
+
+    traverse_steps: {
+      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+        const {offsets, do_center, step} = imposts;
+
+        if(step) {
+          const {height, bottom} = bounds;
+          // высоты поперечин могли задать в интерфейсе
+          const prop = $p.cch.properties.predefined('traverse_heights');
+          const aprop = prop ? prop.avalue(
+            prop.extract_pvalue({
+              ox,
+              cnstr,
+              origin,
+              prm_row: {},
+              //layer,
+            })) : [];
+          let count = Math.floor(height / step);
+          if(aprop.length === 1 && aprop[0] === 0) {
+            count = 0;
+          }
+          else if(aprop.length) {
+            for (const y of aprop) {
+              add_impost(bottom - y);
+            }
+          }
+          else if(count === 1) {
+            add_impost(bottom - height / 2);
+          }
+          else if(count > 1) {
+            count += 1;
+            const step0 = height / (count);
+            for (let y = 1; y < count; y++) {
+              add_impost(bottom - y * step0);
+            }
+          }
+        }
+      }
+    },
+    
     sql_selection_list_flds: {
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
@@ -23230,7 +23271,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     /**
      * Возвращает толщину вставки
-     * @param {elm} {BuilderElement}
+     * @param elm {BuilderElement}
      * @param [strict] {Number}
      * @return {number}
      */
@@ -23351,6 +23392,27 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return split_type;
     }
     set split_type(v){this._setter('split_type',v)}
+
+    /**
+     * Возвращает свойства для рисования москитки
+     * @return {Object}
+     */
+    mosquito_props() {
+      let sz, nom, imposts;
+      this.specification.forEach((rspec) => {
+        if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
+          sz = rspec.sz;
+          nom = rspec.nom;
+        }
+        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          imposts = rspec;
+        }
+        if(nom && imposts) {
+          return false;
+        }
+      });
+      return {sz, nom, imposts};
+    }
 
   }
   $p.CatInserts = CatInserts;

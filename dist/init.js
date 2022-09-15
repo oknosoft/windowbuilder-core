@@ -1096,7 +1096,7 @@ class CatChoice_paramsManager extends CatManager {
 
   load_array(aattr, forse) {
     const objs = super.load_array(aattr, forse);
-    const {md, utils, enm: {comparison_types}} = this._owner.$p;
+    const {md, utils, enm: {comparison_types}} = $p;
     // бежим по загруженным объектам
     for(const obj of objs) {
       // учитываем только те, что не runtime
@@ -1414,11 +1414,11 @@ class CatFormulasManager extends CatManager {
 
   constructor(owner, class_name) {
     super(owner, class_name);
-    this._owner.$p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
+    $p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
   }
 
   load_formulas(src) {
-    const {md, utils, wsql} = this._owner.$p;
+    const {md, utils, wsql} = $p;
     const {isNode, isBrowser} = wsql.alasql.utils;
     const parents = [this.predefined('printing_plates'), this.predefined('modifiers')];
     const filtered = [];
@@ -1471,7 +1471,7 @@ class CatFormulasManager extends CatManager {
       if(_data._formula) {
         _data._formula = null;
         if(parent === modifiers) {
-          this._owner.$p.record_log(`runtime modifier '${doc.name}'`);
+          $p.record_log(`runtime modifier '${doc.name}'`);
         }
       }
       if(_data._template) {
@@ -3654,8 +3654,7 @@ set priorities(v){this._setter_ts('priorities',v)}
     });
 
     return res;
-  }
-}
+  }}
 $p.CatCnns = CatCnns;
 class CatCnnsSpecificationRow extends TabularSectionRow{
 get elm(){return this._getter('elm')}
@@ -3729,7 +3728,7 @@ class CatCnnsManager extends CatManager {
 
   sort_cnns(elm1, elm2) {
 
-    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
+    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = $p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
     const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
@@ -3814,7 +3813,7 @@ class CatCnnsManager extends CatManager {
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
       enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii}, cnn_sides},
-      cat: {nom}, utils} = this._owner.$p;
+      cat: {nom}, utils} = $p;
 
     // если оба элемента - профили, определяем сторону
     const side = is_outer ? cnn_sides.outer :
@@ -3944,7 +3943,7 @@ class CatCnnsManager extends CatManager {
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
-    const {cnn_types: {acn, t, xx}, cnn_sides} = this._owner.$p.enm;
+    const {cnn_types: {acn, t, xx}, cnn_sides} = $p.enm;
 
     // если установленное ранее соединение проходит по типу и стороне, нового не ищем
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
@@ -3983,6 +3982,38 @@ class CatCnnsManager extends CatManager {
     else{
 
     }
+  }
+
+  /**
+   * Возвращает временное соединение по паре номенклатур и типу
+   * @param nom1 {CatNom}
+   * @param nom2 {CatNom}
+   * @param [cnn_type]
+   * @return {CatCnns}
+   */
+  by_nom(nom1, nom2, cnn_type = 'ad') {
+    if(typeof cnn_type === 'string') {
+      cnn_type = $p.enm.cnn_types[cnn_type]; 
+    }
+    
+    if(!this._by_cnn_type) {
+      this._by_cnn_type = new Map();
+    }
+    if(!this._by_cnn_type.has(cnn_type)) {
+      this._by_cnn_type.set(cnn_type, new Map());
+    }
+    const root = this._by_cnn_type.get(cnn_type)
+    if(!root.has(nom1)) {
+      root.set(nom1, new Map());
+    }
+    if(!root.get(nom1).has(nom2)) {
+      const tmp = this.create(false, false, true);
+      tmp.cnn_type = cnn_type;
+      tmp.cnn_elmnts.add({nom1, nom2});
+      tmp._set_loaded(tmp.ref);
+      root.get(nom1).set(nom2, tmp);
+    }
+    return root.get(nom1).get(nom2);
   }
 
 }
@@ -5685,6 +5716,7 @@ set demand(v){this._setter_ts('demand',v)}
    * @param editor
    */
   draw(attr = {}, editor) {
+    const {utils, cch, cat, EditorInvisible} = $p;
     const link = {imgs: {}};
 
     if(attr.res instanceof Map) {
@@ -5694,15 +5726,110 @@ set demand(v){this._setter_ts('demand',v)}
       if(!attr.res) {
         attr.res = {};
       }
-      attr.res[$p.utils.snake_ref(this.ref)] = link;
+      attr.res[utils.snake_ref(this.ref)] = link;
     }
-
+    
     // загружаем изделие в редактор
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
     const project = editor.create_scheme();
+
+    // если это москитка, полный проект можно не грузить
+    if(this.origin?.insert_type?.is?.('mosquito')) {
+      const {origin, leading_product, x, y} = this;
+      const ox = this._manager.create(false, false, true);
+      ox._set_loaded(ox.ref);
+      
+      // находим импосты и рамки
+      let {sz, nom, imposts} = origin.mosquito_props();
+      if(!nom) {
+        return Promise.resolve(attr.res);
+      }
+      const irama = cat.inserts.by_nom(nom);
+      const lcnn = cat.cnns.by_nom(nom, nom);
+      const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
+      const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
+
+      return project.load(ox, true)
+        .then(() => {
+          project._attr._hide_errors = true;
+          const layer = EditorInvisible.Contour.create({project, parent: null});
+          // рисуем рамы
+          const segm = [
+            [[x, 0], [0, 0]],
+            [[0, 0], [0, -y]],
+            [[0, -y], [x, -y]],
+            [[x, -y], [x, 0]],
+          ];
+          for(const segments of segm) {
+            new EditorInvisible.Profile({
+              generatrix: new editor.Path({segments}),
+              proto: {
+                inset: irama,
+                clr: this.clr,
+              },
+            });  
+          }
+          // рисуем импосты
+          const {bounds} = layer;
+          if(imposts) {
+            const add_impost = (y) => {
+              new EditorInvisible.Profile({
+                generatrix: new editor.Path({
+                  segments: [[0, y], [x, y]]
+                }),
+                proto: {
+                  inset: iimpost,
+                  clr: this.clr,
+                },
+              });
+            };
+            $p.cat.inserts.traverse_steps({
+              imposts,
+              bounds,
+              add_impost, 
+              ox: this,
+              cnstr: 0, 
+              origin: utils.blank.guid,
+            });
+          }
+          layer.redraw();
+          layer.l_dimensions.redraw(true);
+          for(const gl of layer.fillings) {
+            gl.visible = false;
+          }
+
+          // добавляем текст
+          const {elm_font_size, font_family} = editor.consts;
+          new editor.PointText({
+            parent: layer,
+            fillColor: 'black',
+            fontFamily: font_family,
+            fontSize: elm_font_size * 1.2,
+            guide: true,
+            content: this.origin.presentation,
+            point: bounds.bottomLeft.add([nom.width * 1.2, -nom.width * 1.2]),
+          });
+          
+          project.zoom_fit();
+          if(attr.format === 'png') {
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+          }
+          else {
+            link.imgs[`l0`] = project.get_svg(attr);
+          }
+        })
+        .catch(() => null)
+        .then(() => {
+          project.ox = '';
+          ox.unload();
+          return remove ? editor.unload() : project.unload();
+        })
+        .then(() => attr.res);
+      
+    }
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;

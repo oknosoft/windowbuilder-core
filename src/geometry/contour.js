@@ -365,7 +365,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Contour}
    */
   static create(attr = {}) {
-    let {kind, row, project} = attr;
+    let {kind, row, project, parent} = attr;
     if(typeof kind === 'undefined') {
       kind = row ? row.kind : 0;
     }
@@ -379,14 +379,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 3) {
       Constructor = ContourParent;
     }
-    else if(attr.parent instanceof ContourNestedContent || attr.parent instanceof ContourNested) {
+    else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
       Constructor = ContourNestedContent;
     }
 
     // строка в таблице конструкций
     if (!attr.row) {
       const {constructions} = project.ox;
-      attr.row = constructions.add({parent: attr.parent ? attr.parent.cnstr : 0});
+      attr.row = constructions.add({parent: parent ? parent.cnstr : 0});
       attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
     if(kind) {
@@ -1565,7 +1565,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     _ox.inserts.find_rows({cnstr}, (row) => {
-      if (row.inset.insert_type.is('mosquito')) {
+      const {inset: origin} = row;
+      if (origin.insert_type.is('mosquito')) {
         const props = {
           parent: new paper.Group({parent: l_visualization._by_insets}),
           strokeColor: 'grey',
@@ -1573,20 +1574,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           dashArray: [6, 4],
           strokeScaling: false,
         };
-        let sz, nom, imposts;
-
-        row.inset.specification.forEach((rspec) => {
-          if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
-            sz = rspec.sz;
-            nom = rspec.nom;
-          }
-          if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
-            imposts = rspec;
-          }
-          if(nom && imposts) {
-            return false;
-          }
-        });
+        let {sz, nom, imposts} = origin.mosquito_props();
 
         if(!nom) {
           return false;
@@ -1600,23 +1588,22 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
 
         // добавляем текст
-        const {elm_font_size} = consts;
+        const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
           parent: props.parent,
           fillColor: 'black',
-          fontFamily: consts.font_family,
-          fontSize: consts.elm_font_size,
+          fontFamily: font_family,
+          fontSize: elm_font_size,
           guide: true,
-          content: row.inset.presentation,
+          content: origin.presentation,
           point: bounds.bottomLeft.add([elm_font_size * 1.2, -elm_font_size * 0.4]),
         });
 
         // рисуем поперечину
         if (imposts) {
-          const {offsets, do_center, step} = imposts;
           
-          const add_impost = function (y) {
+          const add_impost = (y) => {
             const impost = Object.assign(new paper.Path({
               insert: false,
               segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
@@ -1632,40 +1619,17 @@ class Contour extends AbstractFilling(paper.Layer) {
                 impost.lastSegment.point = point;
               }
             }
-          }
-
-          if(step) {
-            const {height, bottom} = bounds;
-            // высоты поперечин могли задать в интерфейсе
-            const prop = $p.cch.properties.predefined('traverse_heights');
-            const aprop = prop ? prop.avalue(
-              prop.extract_pvalue({
-                ox: _ox,
-                cnstr,
-                origin: row.inset,
-                prm_row: {},
-                //layer,
-              })) : [];
-            let count = Math.floor(height / step);
-            if(aprop.length === 1 && aprop[0] === 0) {
-              count = 0;
-            }
-            else if(aprop.length) {
-              for (const y of aprop) {
-                add_impost(bottom - y);
-              }
-            }
-            else if(count === 1) {
-              add_impost(bottom - height / 2);
-            }
-            else if(count > 1) {
-              count += 1;
-              const step0 = height / (count);
-              for (let y = 1; y < count; y++) {
-                add_impost(bottom - y * step0);
-              }
-            }
-          }
+          };
+          
+          $p.cat.inserts.traverse_steps({
+            imposts,
+            bounds, 
+            add_impost,
+            ox: _ox,
+            cnstr,
+            origin,
+          });
+          
         }
 
         return false;
@@ -2446,9 +2410,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {_by_insets, _by_spec} = this.l_visualization;
+    const {l_visualization: {_by_insets, _by_spec}, project: {_attr}} = this;
     _by_insets.removeChildren();
-    !this.project._attr._saving && _by_spec.removeChildren();
+    !_attr._saving && _by_spec.removeChildren();
 
     //$p.job_prm.debug && console.profile();
 
@@ -2470,11 +2434,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       elm.redraw();
     }
 
-    // рисуем ошибки соединений
-    this.draw_cnn_errors();
+    if(!_attr._hide_errors) {
+      // рисуем ошибки соединений
+      this.draw_cnn_errors();
 
-    //рисуем ошибки статических прогибов
-    this.draw_static_errors();
+      //рисуем ошибки статических прогибов
+      this.draw_static_errors();
+    }
 
     // перерисовываем все водоотливы контура
     for(const elm of this.sectionals) {

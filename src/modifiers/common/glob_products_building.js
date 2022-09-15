@@ -935,10 +935,24 @@ class ProductsBuilding {
    * чтобы его было проще переопределить снаружи
    */
   saver({ox, scheme, attr, finish}) {
-    const {calc_order} = ox;
+    const {calc_order, _order_rows} = ox;
+    let res = Promise.resolve();
+    for (const cx of (_order_rows || [])) {
+      if(cx.origin?.insert_type?.is?.('mosquito')) {
+        res = res
+          .then(() => cx.draw())
+          .then((img) => {
+            const {imgs} = Object.values(img)[0];
+            cx.svg = imgs.l0; 
+          })
+          .catch(() => null);
+      }
+    }
     calc_order.characteristic_saved(scheme, attr);
-    return (attr.save === 'recalc' ? Promise.resolve() : calc_order.save())
-      .then(() => {
+    if(attr.save !== 'recalc') {
+      res = res.then(() => calc_order.save());
+    }
+    return res.then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
       })

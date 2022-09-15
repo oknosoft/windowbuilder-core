@@ -541,6 +541,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @param editor
    */
   draw(attr = {}, editor) {
+    const {utils, cch, cat, EditorInvisible} = $p;
     const link = {imgs: {}};
 
     if(attr.res instanceof Map) {
@@ -550,15 +551,110 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       if(!attr.res) {
         attr.res = {};
       }
-      attr.res[$p.utils.snake_ref(this.ref)] = link;
+      attr.res[utils.snake_ref(this.ref)] = link;
     }
-
+    
     // загружаем изделие в редактор
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
     const project = editor.create_scheme();
+
+    // если это москитка, полный проект можно не грузить
+    if(this.origin?.insert_type?.is?.('mosquito')) {
+      const {origin, leading_product, x, y} = this;
+      const ox = this._manager.create(false, false, true);
+      ox._set_loaded(ox.ref);
+      
+      // находим импосты и рамки
+      let {sz, nom, imposts} = origin.mosquito_props();
+      if(!nom) {
+        return Promise.resolve(attr.res);
+      }
+      const irama = cat.inserts.by_nom(nom);
+      const lcnn = cat.cnns.by_nom(nom, nom);
+      const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
+      const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
+
+      return project.load(ox, true)
+        .then(() => {
+          project._attr._hide_errors = true;
+          const layer = EditorInvisible.Contour.create({project, parent: null});
+          // рисуем рамы
+          const segm = [
+            [[x, 0], [0, 0]],
+            [[0, 0], [0, -y]],
+            [[0, -y], [x, -y]],
+            [[x, -y], [x, 0]],
+          ];
+          for(const segments of segm) {
+            new EditorInvisible.Profile({
+              generatrix: new editor.Path({segments}),
+              proto: {
+                inset: irama,
+                clr: this.clr,
+              },
+            });  
+          }
+          // рисуем импосты
+          const {bounds} = layer;
+          if(imposts) {
+            const add_impost = (y) => {
+              new EditorInvisible.Profile({
+                generatrix: new editor.Path({
+                  segments: [[0, y], [x, y]]
+                }),
+                proto: {
+                  inset: iimpost,
+                  clr: this.clr,
+                },
+              });
+            };
+            $p.cat.inserts.traverse_steps({
+              imposts,
+              bounds,
+              add_impost, 
+              ox: this,
+              cnstr: 0, 
+              origin: utils.blank.guid,
+            });
+          }
+          layer.redraw();
+          layer.l_dimensions.redraw(true);
+          for(const gl of layer.fillings) {
+            gl.visible = false;
+          }
+
+          // добавляем текст
+          const {elm_font_size, font_family} = editor.consts;
+          new editor.PointText({
+            parent: layer,
+            fillColor: 'black',
+            fontFamily: font_family,
+            fontSize: elm_font_size * 1.2,
+            guide: true,
+            content: this.origin.presentation,
+            point: bounds.bottomLeft.add([nom.width * 1.2, -nom.width * 1.2]),
+          });
+          
+          project.zoom_fit();
+          if(attr.format === 'png') {
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+          }
+          else {
+            link.imgs[`l0`] = project.get_svg(attr);
+          }
+        })
+        .catch(() => null)
+        .then(() => {
+          project.ox = '';
+          ox.unload();
+          return remove ? editor.unload() : project.unload();
+        })
+        .then(() => attr.res);
+      
+    }
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;

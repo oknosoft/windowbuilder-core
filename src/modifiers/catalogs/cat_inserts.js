@@ -351,6 +351,67 @@
       }
     },
 
+    /**
+     * Возвращает временную вставку по номенклатуре
+     */
+    by_nom: {
+      value(nom, insert_type = 'Профиль') {
+        if(!this._by_nom) {
+          this._by_nom = new Map();
+        }
+        if(!this._by_nom.has(nom)) {
+          const tmp = this.create(false, false, true);
+          tmp.insert_type = insert_type;
+          tmp.specification.add({nom, is_main_elm: true});
+          if(nom.elm_type.is('impost') && nom.width) {
+            tmp.sizeb = nom.width / 2;
+          }
+          tmp._set_loaded(tmp.ref);
+          this._by_nom.set(nom, tmp);
+        }
+        return this._by_nom.get(nom);
+      }
+    },
+
+    traverse_steps: {
+      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+        const {offsets, do_center, step} = imposts;
+
+        if(step) {
+          const {height, bottom} = bounds;
+          // высоты поперечин могли задать в интерфейсе
+          const prop = $p.cch.properties.predefined('traverse_heights');
+          const aprop = prop ? prop.avalue(
+            prop.extract_pvalue({
+              ox,
+              cnstr,
+              origin,
+              prm_row: {},
+              //layer,
+            })) : [];
+          let count = Math.floor(height / step);
+          if(aprop.length === 1 && aprop[0] === 0) {
+            count = 0;
+          }
+          else if(aprop.length) {
+            for (const y of aprop) {
+              add_impost(bottom - y);
+            }
+          }
+          else if(count === 1) {
+            add_impost(bottom - height / 2);
+          }
+          else if(count > 1) {
+            count += 1;
+            const step0 = height / (count);
+            for (let y = 1; y < count; y++) {
+              add_impost(bottom - y * step0);
+            }
+          }
+        }
+      }
+    },
+    
     sql_selection_list_flds: {
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
@@ -1356,7 +1417,7 @@
 
     /**
      * Возвращает толщину вставки
-     * @param {elm} {BuilderElement}
+     * @param elm {BuilderElement}
      * @param [strict] {Number}
      * @return {number}
      */
@@ -1477,6 +1538,27 @@
       return split_type;
     }
     set split_type(v){this._setter('split_type',v)}
+
+    /**
+     * Возвращает свойства для рисования москитки
+     * @return {Object}
+     */
+    mosquito_props() {
+      let sz, nom, imposts;
+      this.specification.forEach((rspec) => {
+        if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
+          sz = rspec.sz;
+          nom = rspec.nom;
+        }
+        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          imposts = rspec;
+        }
+        if(nom && imposts) {
+          return false;
+        }
+      });
+      return {sz, nom, imposts};
+    }
 
   }
   $p.CatInserts = CatInserts;
