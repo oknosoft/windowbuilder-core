@@ -1580,6 +1580,11 @@ class Contour extends AbstractFilling(paper.Layer) {
           return false;
         }
 
+        if(_ox.specification.find({elm: -cnstr, origin, nom: $p.job_prm.nom.cnn_ii_error})) {
+          props.strokeColor = '#f00';
+          props.dashArray = [8, 2, 2];
+        }
+
         // рисуем контур
         const perimetr = this.perimeter_inner(sz, nom);
         const ppath = new paper.Path(props);
@@ -2274,9 +2279,10 @@ class Contour extends AbstractFilling(paper.Layer) {
    * Массив с рёбрами периметра по внутренней стороне профилей
    * @param [size] {Number}
    * @param [nom] {CatNom}
+   * @param [check_cnn] {Object} - если указан, в него поместим найденное соединение
    * @return {Array}
    */
-  perimeter_inner(size = 0, nom) {
+  perimeter_inner(size = 0, nom, check_cnn) {
     // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
     const {cat: {cnns}, enm: {cnn_types}, CatInserts} = $p;
@@ -2305,6 +2311,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       const cnn = nom && cnns.nom_cnn(nom, profile, cnn_types.ii, true)[0];
       const sz = cnn ? cnn.size(profile, profile) : 0;
       const offset = size + sz;
+      if(check_cnn) {
+        check_cnn.cnn = cnn;
+      }
       
       return {
         profile,

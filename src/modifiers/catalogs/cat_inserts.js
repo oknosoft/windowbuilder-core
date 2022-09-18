@@ -1082,7 +1082,8 @@
             let {perimeter} = elm;
             if(!perimeter) {
               if(this.insert_type === enm.inserts_types.mosquito) {
-                perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom);
+                const check_cnn = {};
+                perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom, check_cnn);
                 Object.defineProperties(elm, {
                   perimeter: {
                     value: perimeter
@@ -1105,6 +1106,18 @@
                     }
                   }
                 });
+                if(!check_cnn.cnn) {
+                  // строка ошибки в спецификации
+                  const {cnn_ii_error: nom} = job_prm.nom
+                  const {_ox, cnstr} = elm.layer;
+                  const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
+                    elm: {elm: -cnstr, clr: cat.clrs.get()},
+                    row_base: {clr: cat.clrs.get(), nom},
+                    spec: _ox.specification,
+                    ox: _ox,
+                    origin: this,
+                  });
+                }
               }
               else {
                 perimeter = elm.layer.perimeter;
