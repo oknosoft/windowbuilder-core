@@ -5728,6 +5728,7 @@ set demand(v){this._setter_ts('demand',v)}
       }
       attr.res[utils.snake_ref(this.ref)] = link;
     }
+    const {format} = attr;
     
     // загружаем изделие в редактор
     const remove = !editor;
@@ -5786,7 +5787,7 @@ set demand(v){this._setter_ts('demand',v)}
                 },
               });
             };
-            $p.cat.inserts.traverse_steps({
+            cat.inserts.traverse_steps({
               imposts,
               bounds,
               add_impost, 
@@ -5814,11 +5815,12 @@ set demand(v){this._setter_ts('demand',v)}
           });
           
           project.zoom_fit();
-          if(attr.format === 'png') {
+          if(Array.isArray(format) ? format.includes('png') : format === 'png') {
+            project.view.update();
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
-          else {
-            link.imgs[`l0`] = project.get_svg(attr);
+          if(Array.isArray(format) ? format.includes('svg') : (format === 'svg' || !format)) {
+            link.imgs[`s0`] = project.get_svg(attr);
           }
         })
         .catch(() => null)
@@ -5839,7 +5841,7 @@ set demand(v){this._setter_ts('demand',v)}
           for(const elm of elmnts) {
             const item = project.draw_fragment({elm});
             const num = elm > 0 ? `g${elm}` : `l${elm}`;
-            if(attr.format === 'png') {
+            if(format === 'png') {
               link.imgs[num] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
@@ -5855,7 +5857,7 @@ set demand(v){this._setter_ts('demand',v)}
           link.glasses.forEach((row) => {
             const glass = project.draw_fragment({elm: row.elm});
             // подтянем формулу стеклопакета
-            if(attr.format === 'png') {
+            if(format === 'png') {
               link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
@@ -5868,7 +5870,7 @@ set demand(v){this._setter_ts('demand',v)}
           });
         }
         else {
-          if(attr.format === 'png') {
+          if(format === 'png') {
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
           else {
@@ -5877,7 +5879,7 @@ set demand(v){this._setter_ts('demand',v)}
           if(attr.glasses !== false) {
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
-              if(attr.format === 'png') {
+              if(format === 'png') {
                 link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
               }
               else {

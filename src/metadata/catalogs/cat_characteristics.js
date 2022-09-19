@@ -553,6 +553,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       attr.res[utils.snake_ref(this.ref)] = link;
     }
+    const {format} = attr;
     
     // загружаем изделие в редактор
     const remove = !editor;
@@ -611,7 +612,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
                 },
               });
             };
-            $p.cat.inserts.traverse_steps({
+            cat.inserts.traverse_steps({
               imposts,
               bounds,
               add_impost, 
@@ -639,11 +640,12 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           });
           
           project.zoom_fit();
-          if(attr.format === 'png') {
+          if(Array.isArray(format) ? format.includes('png') : format === 'png') {
+            project.view.update();
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
-          else {
-            link.imgs[`l0`] = project.get_svg(attr);
+          if(Array.isArray(format) ? format.includes('svg') : (format === 'svg' || !format)) {
+            link.imgs[`s0`] = project.get_svg(attr);
           }
         })
         .catch(() => null)
@@ -664,7 +666,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           for(const elm of elmnts) {
             const item = project.draw_fragment({elm});
             const num = elm > 0 ? `g${elm}` : `l${elm}`;
-            if(attr.format === 'png') {
+            if(format === 'png') {
               link.imgs[num] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
@@ -680,7 +682,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           link.glasses.forEach((row) => {
             const glass = project.draw_fragment({elm: row.elm});
             // подтянем формулу стеклопакета
-            if(attr.format === 'png') {
+            if(format === 'png') {
               link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
@@ -693,7 +695,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           });
         }
         else {
-          if(attr.format === 'png') {
+          if(format === 'png') {
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
           else {
@@ -702,7 +704,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           if(attr.glasses !== false) {
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
-              if(attr.format === 'png') {
+              if(format === 'png') {
                 link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
               }
               else {
