@@ -748,11 +748,27 @@
         return false;
       }
 
-      if (by_perimetr || row.count_calc_method !== enm.count_calculating_ways.perim) {
+      if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
         if(!(elm instanceof EditorInvisible.Filling)) {
-          const len = len_angl ? len_angl.len : _row.len;
-          if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
-            return false;
+          if(is_row && row.count_calc_method.is('area') && row.lmin) {
+            if(elm.bounds_inner) {
+              const {width, height} = elm.bounds_inner();
+              if(row.lmin > Math.min(width, height)) {
+                return false;
+              }
+              if(row.lmax && row.lmax < Math.max(width, height)) {
+                return false;
+              }
+            }
+            else if(elm.perimeter) {
+              //
+            }
+          }
+          else {
+            const len = len_angl ? len_angl.len : _row.len;
+            if (row.lmin > len || (row.lmax < len && row.lmax)) {
+              return false;
+            }
           }
         }
         if (is_row) {
@@ -906,6 +922,11 @@
         // Проверяем ограничения строки вставки
         if(!this.check_restrictions(row, elm, insert_type === profile, len_angl)){
           return;
+        }
+          
+        if(this.insert_type.is('mosquito') && !elm.perimeter 
+            && row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
+          this.mosquito_perimeter(elm, row);
         }
 
         // Проверяем параметры изделия, контура или элемента
@@ -1081,47 +1102,7 @@
           else if(count_calc_method === perim){
             let {perimeter} = elm;
             if(!perimeter) {
-              if(this.insert_type === enm.inserts_types.mosquito) {
-                const check_cnn = {};
-                perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom, check_cnn);
-                Object.defineProperties(elm, {
-                  perimeter: {
-                    value: perimeter
-                  },
-                  bounds_inner: {
-                    value(sz = 0) {
-                      let start = new paper.Point([0,0]);
-                      const path = new paper.Path({insert: false});
-                      path.add(start);
-                      for(const rib of perimeter) {
-                        const tmp = new paper.Point({
-                          length: rib.len - 2 * sz,
-                          angle: rib.angle
-                        });
-                        const fin = start.add(tmp);
-                        path.add(fin);
-                        start = fin.clone();
-                      }
-                      return path.bounds;
-                    }
-                  }
-                });
-                if(!check_cnn.cnn) {
-                  // строка ошибки в спецификации
-                  const {cnn_ii_error: nom} = job_prm.nom
-                  const {_ox, cnstr} = elm.layer;
-                  const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
-                    elm: {elm: -cnstr, clr: cat.clrs.get()},
-                    row_base: {clr: cat.clrs.get(), nom},
-                    spec: _ox.specification,
-                    ox: _ox,
-                    origin: this,
-                  });
-                }
-              }
-              else {
-                perimeter = elm.layer.perimeter;
-              }
+              perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }
             const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
             const {check_params} = ProductsBuilding;
@@ -1571,6 +1552,50 @@
         }
       });
       return {sz, nom, imposts};
+    }
+
+    /**
+     * Рассчитывает периметр москитки и помещает его в элемент
+     * @param elm {BuilderElement|FakeElm}
+     * @param rspec {CatInsertsSpecificationRow}
+     * @return {Array}
+     */
+    mosquito_perimeter(elm, rspec) {
+      const check_cnn = {};
+      const perimeter = elm.layer.perimeter_inner(rspec.sz, rspec.nom, check_cnn);
+      Object.defineProperties(elm, {
+        perimeter: {value: perimeter},
+        bounds_inner: {
+          value(sz = 0) {
+            let start = new paper.Point([0,0]);
+            const path = new paper.Path({insert: false});
+            path.add(start);
+            for(const rib of perimeter) {
+              const tmp = new paper.Point({
+                length: rib.len - 2 * sz,
+                angle: rib.angle
+              });
+              const fin = start.add(tmp);
+              path.add(fin);
+              start = fin.clone();
+            }
+            return path.bounds;
+          }
+        }
+      });
+      if(!check_cnn.cnn) {
+        // строка ошибки в спецификации
+        const {cnn_ii_error: nom} = job_prm.nom;
+        const {_ox, cnstr} = elm.layer;
+        const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
+          elm: {elm: -cnstr, clr: cat.clrs.get()},
+          row_base: {clr: cat.clrs.get(), nom},
+          spec: _ox.specification,
+          ox: _ox,
+          origin: this,
+        });
+      }
+      return perimeter;
     }
 
   }
