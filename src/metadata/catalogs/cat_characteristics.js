@@ -553,7 +553,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       attr.res[utils.snake_ref(this.ref)] = link;
     }
-    const {format} = attr;
+    const {format, keep_editor} = attr;
     
     // загружаем изделие в редактор
     const remove = !editor;
@@ -652,7 +652,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         .then(() => {
           project.ox = '';
           ox.unload();
-          return remove ? editor.unload() : project.unload();
+          return keep_editor ? null : (remove ? editor.unload() : project.unload());
         })
         .then(() => attr.res);
       
@@ -716,7 +716,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       })
       .then(() => {
         project.ox = '';
-        return remove ? editor.unload() : project.unload();
+        return keep_editor ? null : (remove ? editor.unload() : project.unload());
       })
       .then(() => attr.res);
   }

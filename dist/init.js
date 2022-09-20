@@ -5728,7 +5728,7 @@ set demand(v){this._setter_ts('demand',v)}
       }
       attr.res[utils.snake_ref(this.ref)] = link;
     }
-    const {format} = attr;
+    const {format, keep_editor} = attr;
     
     // загружаем изделие в редактор
     const remove = !editor;
@@ -5827,7 +5827,7 @@ set demand(v){this._setter_ts('demand',v)}
         .then(() => {
           project.ox = '';
           ox.unload();
-          return remove ? editor.unload() : project.unload();
+          return keep_editor ? null : (remove ? editor.unload() : project.unload());
         })
         .then(() => attr.res);
       
@@ -5891,7 +5891,7 @@ set demand(v){this._setter_ts('demand',v)}
       })
       .then(() => {
         project.ox = '';
-        return remove ? editor.unload() : project.unload();
+        return keep_editor ? null : (remove ? editor.unload() : project.unload());
       })
       .then(() => attr.res);
   }
