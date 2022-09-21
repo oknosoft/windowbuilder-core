@@ -943,7 +943,7 @@ class ProductsBuilding {
           .then(() => cx.draw())
           .then((img) => {
             const {imgs} = Object.values(img)[0];
-            cx.svg = imgs.l0; 
+            cx.svg = imgs.s0; 
           })
           .catch(() => null);
       }
