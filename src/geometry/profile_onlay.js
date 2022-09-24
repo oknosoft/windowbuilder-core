@@ -8,12 +8,9 @@
  * - владелец типа {{#crossLink "Filling"}}{{/crossLink}}
  * - концы могут соединяться не только с пустотой или другими раскладками, но и с рёбрами заполнения
  *
- * @class Onlay
+
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
- * @menuorder 44
- * @tooltip Раскладка
  */
 class Onlay extends ProfileItem {
 

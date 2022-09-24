@@ -950,13 +950,17 @@ class ProductsBuilding {
     }
     calc_order.characteristic_saved(scheme, attr);
     if(attr.save !== 'recalc') {
-      res = res.then(() => calc_order.save());
+      res = res.then(() => {
+        return calc_order.save();
+      });
     }
     return res.then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
       })
-      .then(() => ox);
+      .then(() => {
+        return ox;
+      });
   }
 
   /**

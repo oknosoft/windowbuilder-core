@@ -15689,12 +15689,9 @@ EditorInvisible.ProfileNestedContent = ProfileNestedContent;
  * - владелец типа {{#crossLink "Filling"}}{{/crossLink}}
  * - концы могут соединяться не только с пустотой или другими раскладками, но и с рёбрами заполнения
  *
- * @class Onlay
+
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
- * @menuorder 44
- * @tooltip Раскладка
  */
 class Onlay extends ProfileItem {
 
@@ -16244,6 +16241,26 @@ class ProfileParent extends Profile {
 }
 
 EditorInvisible.ProfileParent = ProfileParent;
+
+
+/**
+ * Разрыв заполнения  
+ * Похож на раскладку, но в отличии от неё, образует новое заполнение внутри своего замкнутого пути
+ * и вычитает фрагмент площади из родительского заполнения
+ *
+ * - у Разрыва заполнения есть координаты конца и начала
+ * - есть путь образующей - прямая или кривая линия, такая же, как у {{#crossLink "Profile"}}{{/crossLink}}
+ * - владелец типа {{#crossLink "Filling"}}{{/crossLink}}
+ * - концы могут соединяться с пустотой или другими разрывами заполнений
+ *
+ * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
+ * @extends ProfileItem
+ */
+class Tearing extends ProfileItem {
+  
+}
+
+EditorInvisible.Tearing = Tearing;
 
 
 /**
@@ -20392,13 +20409,17 @@ class ProductsBuilding {
     }
     calc_order.characteristic_saved(scheme, attr);
     if(attr.save !== 'recalc') {
-      res = res.then(() => calc_order.save());
+      res = res.then(() => {
+        return calc_order.save();
+      });
     }
     return res.then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
       })
-      .then(() => ox);
+      .then(() => {
+        return ox;
+      });
   }
 
   /**
