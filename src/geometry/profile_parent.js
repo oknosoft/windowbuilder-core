@@ -1,5 +1,5 @@
 
-/**
+/*
  * Виртуальный родительский профиль для вложенных слоёв
  *
  * @module profile_parent
@@ -41,6 +41,14 @@ class ProfileParent extends Profile {
    * @return {boolean}
    */
   get locked() {
+    return true;
+  }
+
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
     return true;
   }
 

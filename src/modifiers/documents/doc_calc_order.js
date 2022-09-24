@@ -1,6 +1,6 @@
 
-/**
- * ### Модуль объекта документа Расчет-заказ
+/*
+ * Модуль объекта документа Расчет-заказ
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
  * Методы выполняются в контексте текущего объекта this = DocObj
  *
@@ -76,7 +76,20 @@ class FakeElm {
 
   get perimeter() {
     const {len, height, width} = this.row_spec;
-    return [{len, angle: 0}, {len: height === undefined ? width : height, angle: 90}];
+    return [
+      {len, angle: 0, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 90, angle_next: 90},
+      {len, angle: 180, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 270, angle_next: 90},      
+    ];
+  }
+
+  bounds_inner(size = 0) {
+    const {len, height} = this;
+    return new paper.Rectangle({
+      from: [0, 0],
+      to: [len - 2 * size, height - 2 * size]
+    });
   }
 
   get x1() {
@@ -171,7 +184,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save(attr) {
 
-    const {msg, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
+    const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -184,8 +197,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // если установлен признак проведения, проверим состояние транспорта
     if(this.posted) {
       if([Отклонен, Отозван, Шаблон].includes(obj_delivery_state)) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
           title: this.presentation
         });
@@ -206,16 +218,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     else {
       if(this.department.empty()) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           text: 'Не заполнен реквизит "офис продаж" (подразделение)',
           title: this.presentation
         });
         return false || must_be_saved;
       }
       if(this.partner.empty()) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           text: 'Не указан контрагент (дилер)',
           title: this.presentation
         });
@@ -224,8 +234,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       const err_prices = this.check_prices();
       if(err_prices) {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           title: 'Ошибки в заказе',
           text: `Пустая цена ${err_prices.nom.toString()}<br/>Обратитесь к куратору номенклатуры`,
         });
@@ -289,8 +298,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         throw new Error(text);
       }
       else {
-        msg.show_msg && msg.show_msg({
-          type: 'alert-warning',
+        ui?.dialogs?.alert({
           title: 'Ошибки в заказе',
           text,
         });
@@ -541,7 +549,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         const {production, orders, presentation, _data} = this;
 
         // запрет удаления подчиненной продукции
-        const {msg} = $p;
+        const {ui} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
         if(!leading_product.empty() && leading_product.calc_order_row && (
           // если в изделии присутствует порождающая вставка
@@ -549,8 +557,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           // если это виртуальное изделие слоя
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
-          msg.show_msg && msg.show_msg({
-            type: 'alert-warning',
+          ui?.dialogs?.alert({
             text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
@@ -602,14 +609,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const currency = this.contract.settlements_currency;
     return currency.empty() ? $p.job_prm.pricing.main_currency : currency;
   }
-
   set doc_currency(v) {
 
   }
 
   /**
    * Число знаков округления
-   * @return {Number}
+   * @type {Number}
    */
   get rounding() {
     const {pricing} = $p.job_prm;
@@ -624,8 +630,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * Отдел абонента текущего заказа
+   * @type {CatBranches}
+   */
+  get branch() {
+    const {manager, organization} = this;
+    let branch = organization._extra('branch');
+    if(!branch || branch.empty()) {
+      branch = manager.branch;
+    }
+    return branch;
+  }
+
+  /**
    * Дата прайса с учётом константы valid_days (Счет действителен N дней)
-   * @return {Date}
+   * @type {Date}
    */
   get price_date() {
     const {utils, job_prm: {pricing}} = $p;
@@ -1075,7 +1094,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.planning.clear();
 
     // получаем url сервиса
-    const {wsql, aes, adapters: {pouch}, msg, utils} = $p;
+    const {wsql, aes, adapters: {pouch}, ui, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
 
     // сериализуем документ и характеристики
@@ -1103,8 +1122,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           })
           .catch(err => {
-            msg.show_msg({
-              type: "alert-warning",
+            ui?.dialogs?.alert({
               text: err.message,
               title: "Сервис планирования"
             });
@@ -1208,8 +1226,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @param [params]
    * @param [create]
    * @param [grid]
-   * @param [cx] {Promise.<CatCharacteristics>}
-   * @return {Promise.<DocCalc_orderProductionRow>}
+   * @param [cx] {CatCharacteristics}
+   * @return {Promise<DocCalc_orderProductionRow>}
    */
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
@@ -1307,9 +1325,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * ### Создаёт продукции заказа по массиву строк и параметров
+   * Создаёт продукции заказа по массиву строк и параметров  
    * если в dp.production заполнены уникальные характеристики - перезаполняет их, а новые не создаёт
-   * @method process_add_product_list
    * @param dp {DpBuyers_order} - экземпляр обработки с заполненными табличными частями
    */
   process_add_product_list(dp) {
@@ -1398,6 +1415,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             // это материал
             row.value_change('quantity', '', row.quantity);
           }
+          else if(cx.leading_product.calc_order === this) {
+            // это виртуальное изделие TODO: некоторые из таких, надо пересчитывать
+            return;
+          }
           else if(cx.coordinates.count()) {
             // это изделие рисовалки
             tmp = tmp.then(() => {
@@ -1405,9 +1426,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
                 .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
                 .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
             });
-          }
-          else if(cx.leading_product.calc_order === this) {
-            return;
           }
           else {
             const {origin} = cx;
@@ -1512,7 +1530,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           throw null;
         })
         .catch((err) => {
-          err && console.log(err);
+          err && console.error(err);
           delete this._data._templates_loading;
           return this.load_production()
             .then(() => {
@@ -1562,13 +1580,13 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc, manager} = _owner._owner;
+    const {rounding, _slave_recalc, manager, date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
     if(rfield) {
 
-      _obj[field] = rfield === 'n' ? parseFloat(value) : '' + value;
+      _obj[field] = rfield === 'n' ? parseFloat(value || 0) : '' + value;
 
       nom = this.nom;
       characteristic = this.characteristic;
@@ -1605,7 +1623,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // рассчитаем цены
       const fake_prm = {
         calc_order_row: this,
-        spec: characteristic.specification
+        spec: characteristic.specification,
+        date,
       };
       const {price} = _obj;
       pricing.price_type(fake_prm);
@@ -1625,7 +1644,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     if(DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
 
       if(!recalc) {
-        _obj[field] = parseFloat(value);
+        _obj[field] = parseFloat(value || 0);
       }
 
       isNaN(_obj.price) && (_obj.price = 0);

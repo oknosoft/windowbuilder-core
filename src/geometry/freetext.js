@@ -1,27 +1,19 @@
 
-/**
- *
- * Created 21.08.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author    Evgeniy Malyarov
- *
- * @module geometry
- * @submodule freetext
+/*
+ * Created 21.08.2015
  */
 
 /**
- * ### Произвольный текст на эскизе
- *
- * @class FreeText
- * @param attr {Object} - объект с указанием на строку координат и родительского слоя
- * @param attr.parent {BuilderElement} - элемент, к которому привязывается комментарий
- * @constructor
+ * Произвольный текст на эскизе
  * @extends paper.PointText
- * @menuorder 46
- * @tooltip Текст на эскизе
  */
 class FreeText extends paper.PointText {
 
+  /**
+   *
+   * @param attr {Object} - объект с указанием на строку координат и родительского слоя
+   * @param attr.parent {BuilderElement} - элемент, к которому привязывается комментарий
+   */
   constructor(attr) {
 
     if(!attr.fontSize){
@@ -81,9 +73,8 @@ class FreeText extends paper.PointText {
   }
 
   /**
-   * Удаляет элемент из контура и иерархии проекта
+   * Удаляет элемент из контура и иерархии проекта  
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
-   * @method remove
    */
   remove() {
     if(this._row) {
@@ -95,7 +86,6 @@ class FreeText extends paper.PointText {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
    */
   save_coordinates() {
     const {_row} = this;
@@ -120,8 +110,7 @@ class FreeText extends paper.PointText {
   }
 
   /**
-   * ### Перемещает элемент и информирует об этом наблюдателя
-   * @method move_points
+   * Перемещает элемент и информирует об этом наблюдателя
    */
   move_points(point) {
     this.point = point;
@@ -130,8 +119,7 @@ class FreeText extends paper.PointText {
 
   /**
    * Возвращает тип элемента (Текст)
-   * @property elm_type
-   * @for FreeText
+   * @type EnmElm_types
    */
   get elm_type() {
     return $p.enm.elm_types.Текст;
@@ -158,7 +146,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // семейство шрифта
+  /**
+   * Семейство шрифта
+   * @type {String}
+   */
   get font_family() {
     return this.fontFamily || "";
   }
@@ -167,7 +158,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // размер шрифта
+  /**
+   * Размер шрифта
+   * @type {Number}
+   */
   get font_size() {
     return this.fontSize || consts.font_size;
   }
@@ -176,7 +170,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // жирность шрифта
+  /**
+   * Жирность шрифта
+   * @type {Boolean}
+   */
   get bold() {
     return this.fontWeight != 'normal';
   }
@@ -184,7 +181,10 @@ class FreeText extends paper.PointText {
     this.fontWeight = v ? 'bold' : 'normal';
   }
 
-  // координата x
+  /**
+   * Координата x
+   * @type {Number}
+   */
   get x() {
     return (this.point.x - this.project.bounds.x).round(1);
   }
@@ -193,7 +193,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // координата y
+  /**
+   * Координата y
+   * @type {Number}
+   */
   get y() {
     const {bounds} = this.project;
     return (bounds.height + bounds.y - this.point.y).round(1);
@@ -203,7 +206,11 @@ class FreeText extends paper.PointText {
     this.point.y = bounds.height + bounds.y - parseFloat(v);
   }
 
-  // текст элемента - при установке пустой строки, элемент удаляется
+  /**
+   * текст элемента  
+   * при установке пустой строки, элемент удаляется
+   * @type {String}
+   */
   get text() {
     return this.content;
   }
@@ -215,7 +222,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // угол к горизонту
+  /**
+   * Угол к горизонту
+   * @type {Number}
+   */
   get angle() {
     return Math.round(this.rotation);
   }
@@ -224,7 +234,10 @@ class FreeText extends paper.PointText {
     this.project.register_update();
   }
 
-  // выравнивание текста
+  /**
+   * Выравнивание текста
+   * @type {EnmText_aligns}
+   */
   get align() {
     return $p.enm.text_aligns.get(this.justification);
   }

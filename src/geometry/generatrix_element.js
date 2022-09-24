@@ -1,14 +1,11 @@
 
 /**
- * ### Элемент c образующей
- * Виртуальный класс - BuilderElement, у которго есть образующая
+ * Элемент c образующей
+ * Виртуальный класс элементов построителя, у которго есть образующая
  *
- * @class GeneratrixElement
+ * @abstract
  * @extends BuilderElement
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
- * @menuorder 41
- * @tooltip Элемент c образующей
+ * @tutorial profile
  */
 class GeneratrixElement extends BuilderElement {
 
@@ -25,8 +22,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координаты начала элемента
-   * @property b
+   * Координаты начала элемента
    * @type paper.Point
    */
   get b() {
@@ -41,8 +37,7 @@ class GeneratrixElement extends BuilderElement {
 
   /**
    * Координаты конца элемента
-   * @property e
-   * @type Point
+   * @type paper.Point
    */
   get e() {
     const {generatrix} = this._attr;
@@ -55,9 +50,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата x начала профиля
-   *
-   * @property x1
+   * Координата x начала профиля
    * @type Number
    */
   get x1() {
@@ -73,9 +66,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата y начала профиля
-   *
-   * @property y1
+   * Координата y начала профиля
    * @type Number
    */
   get y1() {
@@ -91,9 +82,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ###Координата x конца профиля
-   *
-   * @property x2
+   * Координата x конца профиля
    * @type Number
    */
   get x2() {
@@ -109,9 +98,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Координата y конца профиля
-   *
-   * @property y2
+   * Координата y конца профиля
    * @type Number
    */
   get y2() {
@@ -127,9 +114,8 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Выделяет начало или конец профиля
+   * Выделяет начало или конец профиля
    *
-   * @method select_node
    * @param node {String} b, e - начало или конец элемента
    */
   select_node(node) {
@@ -155,17 +141,7 @@ class GeneratrixElement extends BuilderElement {
   move_gen(delta) {
 
     // сразу получаем сегменты примыкающих импостов и створок
-    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
-    const isegments = [];
-    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
-      const {b, e} = profile.rays;
-      if(b.profile === this) {
-        isegments.push({profile, node: 'b'});
-      }
-      if(e.profile === this) {
-        isegments.push({profile, node: 'e'});
-      }
-    });
+    const {isegments} = this;
     const nearests = this.joined_nearests();
 
     // угловые соединения b, e
@@ -197,10 +173,9 @@ class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * ### Двигает узлы
+   * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @method move_points
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
    * @param [start_point] {paper.Point} - откуда началось движение
@@ -225,17 +200,7 @@ class GeneratrixElement extends BuilderElement {
     }
 
     // сразу получаем сегменты примыкающих импостов
-    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
-    const isegments = [];
-    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
-      const {b, e} = profile.rays;
-      if(b.profile === this) {
-        isegments.push({profile, node: 'b'});
-      }
-      if(e.profile === this) {
-        isegments.push({profile, node: 'e'});
-      }
-    });
+    const {isegments} = this;
 
     this.generatrix.segments.forEach((segm) => {
 
@@ -275,7 +240,7 @@ class GeneratrixElement extends BuilderElement {
               // режем вертикальным лучом
               const ray = new paper.Path({
                 insert: false,
-                segments: [[free_point.x, bounds.top], [free_point.x, bounds.bottom]]
+                segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
               });
               segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
             }
@@ -283,7 +248,7 @@ class GeneratrixElement extends BuilderElement {
               // режем горизонтальным лучом
               const ray = new paper.Path({
                 insert: false,
-                segments: [[bounds.left, free_point.y], [bounds.right, free_point.y]]
+                segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
               });
               segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
             }
@@ -348,21 +313,42 @@ class GeneratrixElement extends BuilderElement {
 
       // ранняя привязка импостов
       _rays.clear();
-      isegments.forEach(({profile, node}) => {
-        profile.do_sub_bind(this, node);
-        profile.rays.clear();
-        other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
-        !noti.profiles.includes(profile) && noti.profiles.push(profile);
-      });
-      _rays.clear();
+      if(isegments.length) {
+        isegments.forEach(({profile, node}) => {
+          profile.do_sub_bind(this, node);
+          profile.rays.clear();
+          other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
+          !noti.profiles.includes(profile) && noti.profiles.push(profile);
+        });
+        _rays.clear();
+      }
 
-      layer && layer.notify && layer.notify(noti);
+      layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
 
     return other;
   }
 
+  /**
+   * Сегменты примыкающих импостов
+   * @return {Array}
+   */
+  get isegments() {
+    const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
+    const segments = [];
+    imposts.inner.concat(imposts.outer).forEach(({profile}) => {
+      const {b, e} = profile.rays;
+      if(b.profile === this) {
+        segments.push({profile, node: 'b'});
+      }
+      if(e.profile === this) {
+        segments.push({profile, node: 'e'});
+      }
+    }); 
+    return segments;
+  }
+  
   /**
    * Вспомогательная функция do_bind, привязка импостов
    * @param profile {ProfileItem} - к которому примыкает текущий импост

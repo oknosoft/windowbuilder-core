@@ -1,5 +1,5 @@
-/**
- * ### Дополнительные методы справочника _Цветоценовые группы_
+/*
+ * Дополнительные методы справочника _Цветоценовые группы_
  *
  * Created 17.06.2019.
  */
@@ -27,9 +27,10 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
 
   /**
    * Извлекает доступные цвета
+   * @param [side] {EmnCnnSides}
    * @return {Array.<CatClrs>}
    */
-  clrs() {
+  clrs(side) {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
     const {cat} = _owner.$p;
     if(!_data.clrs) {
@@ -73,16 +74,26 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
         _data.clrs = Array.from(clrs);
       }
     }
-    return _data.clrs;
+    const srows = this.exclude.find_rows({side});
+    return srows.length ? _data.clrs.filter((clr) => {
+      for(const {clr: eclr} of srows) {
+        if((eclr === clr) || (eclr instanceof CatColor_price_groups && eclr.contains(clr))) {
+          return false;
+        }
+      }
+      return true;
+    }) : _data.clrs;
   }
 
   /**
-   * Проверяйет, подходит ли цвет данной группе
-   * @param clr
+   * Проверяет, подходит ли цвет данной группе
+   * @param clr {CatClrs} - цвет, который проверяем
+   * @param [clrs] {Array} - массив clrs, если не задан, рассчитываем
+   * @param [any] {Boolean} - признак для составных - учитывать обе стороны или любую
    * @returns {boolean}
    */
-  contains(clr, clrs) {
-    if(this.empty()) {
+  contains(clr, clrs, any) {
+    if(this.empty() && !clrs) {
       return true;
     }
     if(!clrs) {
@@ -91,6 +102,10 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
     if(!clrs.length) {
       return true;
     }
-    return clr.is_composite() ? clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out) : clrs.includes(clr);
+    return clr.is_composite() ? (
+      any ? 
+        (clrs.includes(clr.clr_in) || clrs.includes(clr.clr_out)) :
+        clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out)
+    ) : clrs.includes(clr);
   }
 };

@@ -1,6 +1,6 @@
 
-/**
- * ### Размерные линии на эскизе
+/*
+ * Размерные линии на эскизе
  *
  * Created 21.08.2015
  *
@@ -9,7 +9,7 @@
  */
 
 /**
- * ### Размерная линия на эскизе
+ * Размерная линия на эскизе  
  * Унаследована от [paper.Group](http://paperjs.org/reference/group/)<br />
  * См. так же, {{#crossLink "DimensionLineCustom"}}{{/crossLink}} - размерная линия, устанавливаемая пользователем
  *
@@ -454,7 +454,7 @@ class DimensionLine extends paper.Group {
   }
 
   get eve() {
-    return this.project._scope.eve;
+    return this.project?._scope?.eve;
   }
 
   // размер
@@ -531,7 +531,6 @@ class DimensionLine extends paper.Group {
   /**
    * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
-   * @method remove
    */
   remove() {
     if(this._row){
@@ -545,11 +544,9 @@ class DimensionLine extends paper.Group {
 
 
 /**
- * ### Размерные линии, определяемые пользователем
- * @class DimensionLineCustom
+ * Размерные линии, определяемые пользователем
  * @extends DimensionLine
  * @param attr
- * @constructor
  */
 class DimensionLineCustom extends DimensionLine {
 
@@ -582,7 +579,6 @@ class DimensionLineCustom extends DimensionLine {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
    */
   save_coordinates() {
     const {_row, _attr, elm_type, pos, offset, size, align} = this;

@@ -1,6 +1,6 @@
 
 /**
- * ### Раскладка
+ * Раскладка  
  * Класс описывает поведение элемента раскладки
  *
  * - у раскладки есть координаты конца и начала
@@ -8,12 +8,9 @@
  * - владелец типа {{#crossLink "Filling"}}{{/crossLink}}
  * - концы могут соединяться не только с пустотой или другими раскладками, но и с рёбрами заполнения
  *
- * @class Onlay
+
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
- * @menuorder 44
- * @tooltip Раскладка
  */
 class Onlay extends ProfileItem {
 
@@ -32,7 +29,6 @@ class Onlay extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
    */
   get d0() {

@@ -75,8 +75,8 @@ class SpecBuilding {
     const ax = [];
 
     // затем, добавляем в заказ строки, назначенные к вытягиванию
-    ox._order_rows && ox._order_rows.forEach((cx) => {
-      const row = order_rows.get(cx) || calc_order.production.add({characteristic: cx});
+    ox._order_rows?.forEach?.((cx) => {
+      const row = order_rows.get(cx) || calc_order.production.add({nom: cx.owner, characteristic: cx});
       row.nom = cx.owner;
       row.unit = row.nom.storage_unit;
       row.ordn = ox;

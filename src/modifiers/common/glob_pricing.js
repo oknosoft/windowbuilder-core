@@ -1,6 +1,6 @@
 
 /**
- * ### Модуль Ценообразование
+ * Модуль Ценообразование  
  * Аналог УПзП-шного __ЦенообразованиеСервер__
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -8,9 +8,8 @@
  */
 
 /**
- * ### Ценообразование
+ * Ценообразование
  *
- * @class Pricing
  * @param $p {MetaEngine} - контекст
  * @static
  */
@@ -84,14 +83,14 @@ class Pricing {
   /**
    * Перестраивает кеш цен номенклатуры по длинному ключу
    * @param startkey
-   * @return {Promise.<TResult>|*}
+   * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=100, log=null, cache=null}) {
+  by_range({bookmark, step=1, limit=60, log=null, cache=null}) {
     const {utils, adapters: {pouch}} = $p;
 
     (log || console.log)(`load prices: page №${step}`);
 
-    return utils.sleep(100)
+    return utils.sleep(40)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
@@ -166,7 +165,7 @@ class Pricing {
    * @method nom_price
    * @param nom {CatNom}
    * @param characteristic {CatCharacteristics}
-   * @param price_type {CatNom_prices_types}
+   * @param price_type {CatNom_prices_types|CatBranches}
    * @param prm {Object}
    * @param row {Object}
    * @param [clr] {CatClrs}
@@ -456,8 +455,8 @@ class Pricing {
    * Пересчитывает сумму из валюты в валюту
    * @param amount {Number} - сумма к пересчету
    * @param date {Date} - дата курса
-   * @param from - исходная валюта
-   * @param [to] - конечная валюта
+   * @param from {CatCurrencies} - исходная валюта
+   * @param [to] {CatCurrencies} - конечная валюта
    * @return {Number}
    */
   from_currency_to_currency (amount, date, from, to) {
@@ -469,7 +468,8 @@ class Pricing {
 
 
 /**
- * ### Модуль Ценообразование
- * Аналог УПзП-шного __ЦенообразованиеСервер__ в контексте MetaEngine
+ * Объект ценообразования в контексте MetaEngine
+ * @property pricing
+ * @memberOf $p
  */
 $p.pricing = new Pricing($p);

@@ -5,7 +5,8 @@
 .vscode
 
 # Exclude compiled files
-build/
+jsdoc/wbcore/
+jsdoc/apidocs/
 
 # npm files
 node_modules

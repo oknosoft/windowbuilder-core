@@ -10,7 +10,7 @@ exports.CatChoice_paramsManager = class CatChoice_paramsManager extends Object {
 
   load_array(aattr, forse) {
     const objs = super.load_array(aattr, forse);
-    const {md, utils, enm: {comparison_types}} = this._owner.$p;
+    const {md, utils, enm: {comparison_types}} = $p;
     // бежим по загруженным объектам
     for(const obj of objs) {
       // учитываем только те, что не runtime

@@ -1,6 +1,6 @@
 
 /**
- * ### Опорная линия
+ * Опорная линия  
  * Вспомогательная линия для привязки узлов и уравнивания
  *
  * - у линии есть координаты конца и начала
@@ -56,13 +56,6 @@ class BaseLine extends ProfileItem {
 
   setSelection(selection) {
     paper.Item.prototype.setSelection.call(this, selection);
-  }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    return BaseLine.oxml;
   }
 
   /**
@@ -145,6 +138,12 @@ class BaseLine extends ProfileItem {
 
   }
 
+  /**
+   * Описание полей диалога свойств элемента
+   */
+  get oxml() {
+    return BaseLine.oxml;
+  }
 }
 
 BaseLine.oxml = {

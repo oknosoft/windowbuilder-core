@@ -1,12 +1,10 @@
 
 /**
- * ### Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
+ * Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
  *
- * @class ToolElement
  * @extends paper.Tool
- * @constructor
  */
-EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
+class ToolElement extends paper.Tool {
 
   /* eslint-disable-next-line */
   resetHot(type, event, mode) {
@@ -19,10 +17,8 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   }
 
   /**
-   * ### Отключает и выгружает из памяти окно свойств инструмента
+   * Отключает и выгружает из памяти окно свойств инструмента
    *
-   * @method detache_wnd
-   * @for ToolElement
    * @param tool
    */
   detache_wnd() {
@@ -30,9 +26,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   }
 
   /**
-   * ### Проверяет, есть ли в проекте слои, при необходимости добавляет
-   * @method detache_wnd
-   * @for ToolElement
+   * Проверяет, есть ли в проекте слои, при необходимости добавляет
    */
   check_layer() {
     const {project, eve} = this._scope;
@@ -45,10 +39,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   }
 
   /**
-   * ### Общие действия при активизации инструмента
-   *
-   * @method on_activate
-   * @for ToolElement
+   * Общие действия при активизации инструмента
    */
   on_activate(cursor) {
 
@@ -79,5 +70,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   }
 
 };
+
+EditorInvisible.ToolElement = ToolElement;
 
 

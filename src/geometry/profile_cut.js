@@ -2,10 +2,11 @@
 /**
  * Сечение фрагмена изделия
  *
- * Created by Evgeniy Malyarov on 28.08.2021.
+ * Сечение - полноценный BuilderElement. Его можно разместить в произвольном месте изделия.
+ * Сечение не оставляет следов в спецификации, но умеет генерировать эскиз разреза
+ * @extends BaseLine
+ *
  */
-
-
 class ProfileCut extends BaseLine {
 
   constructor(attr) {
@@ -49,6 +50,7 @@ class ProfileCut extends BaseLine {
 
   /**
    * Возвращает тип элемента (сечение)
+   * @type {EnmElm_types}
    */
   get elm_type() {
     return $p.enm.elm_types.Сечение;
@@ -74,6 +76,9 @@ class ProfileCut extends BaseLine {
     return (index + 1) >= letters.length ? `X${elm}` : letters[index];
   }
 
+  /**
+   * Перерисовывает элемент на эскизе
+   */
   redraw() {
     const {children: {thick1, thick2, callout1, callout2, text1, text2}, generatrix, length} = this;
     const tlength = length > 200 ? 90 : (length/2 - 10);

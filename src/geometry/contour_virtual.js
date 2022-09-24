@@ -1,14 +1,18 @@
 
-/**
- * ### Виртуальный слой
+/*
+ * Виртуальный слой
  * https://github.com/oknosoft/windowbuilder/issues/563
  *
- * @module contour_virtual
  *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
 
 
+/**
+ * Виртуальный слой
+ * @link https://github.com/oknosoft/windowbuilder/issues/563
+ * @extends Contour
+ */
 class ContourVirtual extends Contour {
 
   constructor(attr) {
@@ -24,30 +28,92 @@ class ContourVirtual extends Contour {
 
   /**
    * Система виртуального слоя - можем переопределить
-   * @return {CatProduction_params}
+   * @type {CatProduction_params}
    */
   get sys() {
     const {_row: {dop}, layer: {sys}} = this;
     return dop.sys ? sys._manager.get(dop.sys) : sys;
   }
   set sys(v) {
-    const {_row, layer: {sys}} = this;
+    const {_row, layer: {sys}, _ox: {params}, cnstr, project} = this;
+    const inset = $p.utils.blank.guid;
     if(!v || v == sys) {
       if(_row.dop.sys) {
         _row.dop = {sys: null};
+        params.clear({cnstr, inset});
       }
     }
     else {
       _row.dop = {sys: v.valueOf()};
+      this.refill_prm();
     }
+    project.register_change(true);
   }
 
   /**
    * Бит, может ли данный слой иметь собственную систему
-   * @return {boolean}
+   * @type {boolean}
    */
   get own_sys() {
     return true;
+  }
+
+  /**
+   * Перезаполняет параметры слоя с учетом системы, которая может отличаться от системы изделия
+   */
+  refill_prm() {
+    const {_ox: {params}, cnstr, sys: {product_params}} = this;
+    const inset = $p.utils.blank.guid;
+    // чистим
+    const rm = [];
+    params.find_rows({cnstr, inset}, (row) => {
+      if(!product_params.find({param: row.param})) {
+        rm.push(row);
+      }
+    });
+    for(const row of rm) {
+      params.del(row);
+    }
+    // добавляем
+    for(const row of product_params) {
+      let has;
+      params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
+        has = true;
+        return false;
+      });
+      if(!has) {
+        params.add({
+          cnstr,
+          inset,
+          region: 0,
+          param: row.param,
+          hide: row.hide,
+          value: row.value,
+        });
+      }
+    }
+  }
+
+  get hidden() {
+    return !!this._hidden;
+  }
+  set hidden(v) {
+    if (this.hidden != v) {
+      this._hidden = v;
+      this.children.forEach((elm) => {
+        if (elm instanceof BuilderElement) {
+          elm.opacity = v ? 0.2 : 1;
+        }
+      });
+    }
+  }
+
+  /**
+   * Виртуальный слой не добавляет вложенности
+   * @return {number}
+   */
+  get level() {
+    return this.layer.level;
   }
 
   presentation(bounds) {
@@ -61,8 +127,6 @@ class ContourVirtual extends Contour {
 
   /**
    * Перерисовывает элементы контура
-   * @method redraw
-   * @for Contour
    */
   redraw() {
 
@@ -85,6 +149,9 @@ class ContourVirtual extends Contour {
     for(const elm of this.contours) {
       elm.redraw();
     }
+
+    // информируем мир о новых размерах нашего контура
+    this.notify(this, 'contour_redrawed', this._attr._bounds);
   }
 
 }

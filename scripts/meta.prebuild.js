@@ -26,6 +26,9 @@ const settings = fs.readFileSync(settings_path, 'utf8');
 // конфигурация подключения к CouchDB
 const config = require(settings_path)();
 
+// если истина, добавляем в текст комментарии
+const jsdoc = Boolean(process.env.JSDOC);
+
 // эти классы создадим руками
 const custom_constructor = [
   'CatFormulasParamsRow',
@@ -97,34 +100,32 @@ $p.wsql.init((prm) => {
     auth: config.user_node,
   });
 
-  let _m;
-
   debug(`Читаем описание метаданных из CouchDB ${config.couch_local}`);
   return db.info()
     .then((info) => {
-    debug(`Подключение к ${info.host}`);
-    return db.get('meta')
+      debug(`Подключение к ${info.host}`);
+      return db.allDocs({
+        include_docs: true,
+        attachments: true,
+        startkey: 'meta',
+        endkey: 'meta\ufff0',
+      });
   })
     .catch((err) => {
-    debug('Не удалось получить объект meta из CouchDB\nПроверьте логин, пароль и строку подключения');
-    debug(err);
-    process.exit(1);
-  })
-    .then((doc) => {
-      _m = doc;
-      doc = null;
-      return db.get('meta_patch')
-        .catch((err) => ({}))
-        .then((doc) => doc);
+      debug('Не удалось получить объект meta из CouchDB\nПроверьте логин, пароль и строку подключения');
+      debug(err);
+      process.exit(1);
     })
-    .then((doc) => {
-      $p.utils._patch(_m, doc);
-      doc = null;
+    .then(({rows}) => {
+      const _m = {};
+      for(const {doc} of rows) {
+        $p.utils._patch(_m, doc);
+      }
       delete _m._id;
       delete _m._rev;
 
       // фильтруем и корректируем метаданные
-      patch(_m);
+      patch(_m, $p);
 
       return $p.md.init(_m);
     })
@@ -220,8 +221,11 @@ function obj_constructor_text(_m, category, name, categoties) {
   const {DataManager} = MetaEngine.classes;
   let meta = _m[category][name],
     fn_name = DataManager.prototype.obj_constructor.call({class_name: category + '.' + name, constructor_names: {}}),
-    text = '\n/**\n* ### ' + $p.msg.meta[category] + ' ' + meta.name,
+    text = jsdoc ? `\n/**\n* ${$p.msg.meta[category]} _${meta.synonym}_` : '',
     f, props = '';
+  if(jsdoc && meta.illustration) {
+    text += `  \n* ${meta.illustration}`;
+  }
 
   const filename = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}.js`);
   let extModule;
@@ -241,11 +245,10 @@ function obj_constructor_text(_m, category, name, categoties) {
   const managerName = `${fn_name}Manager`;
   const managerText = extModule && extModule[managerName] && extModule[managerName].toString();
 
-
-  text += '\n* ' + (meta.illustration || meta.synonym);
-  text += '\n* @class ' + fn_name;
-  text += '\n* @extends ' + proto;
-  text += '\n* @constructor \n*/\n';
+  if(jsdoc) {
+    text += '\n* @extends external:' + proto;
+    text += '\n*/\n';
+  }
   text += `class ${fn_name} extends ${proto}{\n`;
 
   // если описан конструктор объекта, используем его
@@ -256,13 +259,28 @@ function obj_constructor_text(_m, category, name, categoties) {
     // реквизиты по метаданным
     if (meta.fields) {
       for (f in meta.fields) {
+        const mfld = meta.fields[f];
+
+        if(jsdoc) {
+          text += `/**\n* ${mfld.tooltip || mfld.synonym}`;
+          text += `\n* @type ${mfld.type.types
+            .map((type) => {
+              if(type.includes('.')) {
+                return DataManager.prototype.obj_constructor.call({class_name: type, constructor_names: {}});
+              }
+              return type.charAt(0).toUpperCase() + type.substr(1);
+            })
+            .join('|')}`;          
+          text += '\n*/\n';
+        }
+        
         if(category === 'cch' && f === 'type') {
           text += `get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
 set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
         }
         else {
 
-          const mf = f === 'clr' && meta.fields[f];
+          const mf = f === 'clr' && mfld;
           if(mf && mf.type.str_len === 72 && !mf.type.types.includes('cat.color_price_groups')) {
             text += `get ${f}(){return $p.cat.clrs.getter(this._obj.clr)}\n`;
           }
@@ -331,6 +349,11 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
   }
 
   // если описан расширитель менеджера, дополняем
+  if(jsdoc) {
+    text += `\n/**\n* ${$p.msg.meta_mgrs[category]} _${meta.synonym}_`;
+    text += '\n* @extends external:' + mgr;
+    text += '\n*/\n';
+  }
   if(managerText){
     text += managerText.replace('extends Object', `extends ${mgr}`);
     text += `\n$p.${category}.create('${name}', ${managerName}, ${extModule[managerName]._freeze ? 'true' : 'false'});\n`;

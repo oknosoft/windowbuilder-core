@@ -1,12 +1,12 @@
 
-/**
- * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
- *
- * @module profile_virtual
- *
+/*
  * Created by Evgeniy Malyarov on 21.04.2020.
  */
 
+/**
+ * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
+ * @extends Profile
+ */
 class ProfileVirtual extends Profile {
 
   constructor(attr) {
@@ -45,6 +45,7 @@ class ProfileVirtual extends Profile {
 
   /**
    * Возвращает тип элемента (Створка, виртуальнвя)
+   * @type EnmElm_types
    */
   get elm_type() {
     return $p.enm.elm_types.flap;
@@ -56,7 +57,14 @@ class ProfileVirtual extends Profile {
   }
   set inset(v) {}
 
-  // цвет внешнего элемента
+  get nom() {
+    return this.nearest().nom;
+  }
+
+  /**
+   * Цвет внешнего элемента
+   * @type CatClrs
+   */
   get clr() {
     return this.nearest().clr;
   }
@@ -68,9 +76,17 @@ class ProfileVirtual extends Profile {
 
   /**
    * Запрещаем редактировать элемент из интерфейса
-   * @return {boolean}
+   * @type Boolean
    */
   get locked() {
+    return true;
+  }
+
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @type Boolean
+   */
+  get virtual() {
     return true;
   }
 
@@ -80,6 +96,21 @@ class ProfileVirtual extends Profile {
 
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
+  }
+
+  do_bind(profile, bcnn, ecnn, moved) {
+    if(!moved) {
+      return super.do_bind(profile, bcnn, ecnn, moved);
+    }
+    if(profile === this.nearest()) {
+      
+    }
+    else if(bcnn.profile.nearest() == profile) {
+      
+    }
+    else if(ecnn.profile.nearest() == profile) {
+
+    }
   }
 
   path_points(cnn_point, profile_point) {

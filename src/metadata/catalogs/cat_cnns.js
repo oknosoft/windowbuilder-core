@@ -4,12 +4,11 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
   constructor(owner, class_name) {
     super(owner, class_name);
     this._nomcache = {};
-    this.metadata('selection_params').index = 'elm';
   }
 
   sort_cnns(elm1, elm2) {
 
-    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
+    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = $p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
     const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
@@ -94,7 +93,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
       enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii}, cnn_sides},
-      cat: {nom}, utils} = this._owner.$p;
+      cat: {nom}, utils} = $p;
 
     // если оба элемента - профили, определяем сторону
     const side = is_outer ? cnn_sides.outer :
@@ -224,7 +223,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
-    const {cnn_types: {acn, t, xx}, cnn_sides} = this._owner.$p.enm;
+    const {cnn_types: {acn, t, xx}, cnn_sides} = $p.enm;
 
     // если установленное ранее соединение проходит по типу и стороне, нового не ищем
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
@@ -263,6 +262,38 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     else{
 
     }
+  }
+
+  /**
+   * Возвращает временное соединение по паре номенклатур и типу
+   * @param nom1 {CatNom}
+   * @param nom2 {CatNom}
+   * @param [cnn_type]
+   * @return {CatCnns}
+   */
+  by_nom(nom1, nom2, cnn_type = 'ad') {
+    if(typeof cnn_type === 'string') {
+      cnn_type = $p.enm.cnn_types[cnn_type]; 
+    }
+    
+    if(!this._by_cnn_type) {
+      this._by_cnn_type = new Map();
+    }
+    if(!this._by_cnn_type.has(cnn_type)) {
+      this._by_cnn_type.set(cnn_type, new Map());
+    }
+    const root = this._by_cnn_type.get(cnn_type)
+    if(!root.has(nom1)) {
+      root.set(nom1, new Map());
+    }
+    if(!root.get(nom1).has(nom2)) {
+      const tmp = this.create(false, false, true);
+      tmp.cnn_type = cnn_type;
+      tmp.cnn_elmnts.add({nom1, nom2});
+      tmp._set_loaded(tmp.ref);
+      root.get(nom1).set(nom2, tmp);
+    }
+    return root.get(nom1).get(nom2);
   }
 
 };
@@ -485,5 +516,4 @@ exports.CatCnns = class CatCnns extends Object {
 
     return res;
   }
-
 }

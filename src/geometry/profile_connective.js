@@ -1,6 +1,6 @@
 
 /**
- * ### Соединительный профиль
+ * Соединительный профиль  
  * Класс описывает поведение соединительного профиля
  *
  * - у соединительного профиля есть координаты конца и начала, такие же, как у Profile
@@ -20,7 +20,6 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
    * @type Number
    */
   get d0() {
@@ -38,8 +37,6 @@ class ProfileConnective extends ProfileItem {
    * С этой функции начинается пересчет и перерисовка соединительного профиля
    * т.к. концы соединителя висят в пустоте и не связаны с другими профилями, возвращаем голый cnn_point
    *
-   * @method cnn_point
-   * @for ProfileConnective
    * @param node {String} - имя узла профиля: "b" или "e"
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
@@ -48,11 +45,9 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
-   * ### Двигает узлы
+   * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @method move_points
-   * @for ProfileItem
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
    * @param [start_point] {paper.Point} - откуда началось движение
@@ -101,6 +96,7 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * К соединителям ипосты не крепятся
+   * @override
    */
   joined_imposts(check_only) {
     const tinner = [];
@@ -110,7 +106,7 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
-   * @property nearest
+   * @override
    */
   nearest() {
     return null;
@@ -118,8 +114,6 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for ProfileConnective
    */
   save_coordinates() {
 
@@ -159,9 +153,8 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
-   * ### Удаляет элемент из контура и иерархии проекта
+   * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, инициирует обновление путей примыкающих элементов
-   * @method remove
    */
   remove() {
     this.joined_nearests().forEach((rama) => {
@@ -193,12 +186,10 @@ class ProfileConnective extends ProfileItem {
 
 
 /**
- * ### Служебный слой соединительных профилей
+ * Служебный слой соединительных профилей  
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class ConnectiveLayer
  * @extends paper.Layer
- * @constructor
  */
 class ConnectiveLayer extends paper.Layer {
 
@@ -247,6 +238,14 @@ class ConnectiveLayer extends paper.Layer {
     return this.project.ox;
   }
 
+  /**
+   * Система слоя соединителей
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this.project._dp.sys;
+  }
+
   redraw() {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());
@@ -292,7 +291,6 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив профилей текущего слоя
-   * @property profiles
    * @returns {Array.<ProfileItem>}
    */
   get profiles() {
@@ -304,6 +302,13 @@ class ConnectiveLayer extends paper.Layer {
    */
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
+  }
+
+  /**
+   * Возвращает значение параметра с учётом наследования
+   */
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    return param.extract_pvalue({ox: this._ox, cnstr, elm, origin, prm_row});
   }
 
   /**

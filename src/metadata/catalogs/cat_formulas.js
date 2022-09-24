@@ -12,11 +12,11 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
 
   constructor(owner, class_name) {
     super(owner, class_name);
-    this._owner.$p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
+    $p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
   }
 
   load_formulas(src) {
-    const {md, utils, wsql} = this._owner.$p;
+    const {md, utils, wsql} = $p;
     const {isNode, isBrowser} = wsql.alasql.utils;
     const parents = [this.predefined('printing_plates'), this.predefined('modifiers')];
     const filtered = [];
@@ -69,7 +69,7 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
       if(_data._formula) {
         _data._formula = null;
         if(parent === modifiers) {
-          this._owner.$p.record_log(`runtime modifier '${doc.name}'`);
+          $p.record_log(`runtime modifier '${doc.name}'`);
         }
       }
       if(_data._template) {
@@ -84,8 +84,9 @@ exports.CatFormulas = class CatFormulas extends Object {
 
   execute(obj, attr) {
 
-    const {_manager, _data} = this;
+    const {_manager, _data, ref} = this;
     const {$p} = _manager._owner;
+    const {ireg, msg, ui} = $p;
 
     // создаём функцию из текста формулы
     if(!_data._formula && this.formula){
@@ -114,8 +115,8 @@ exports.CatFormulas = class CatFormulas extends Object {
     if(this.parent == _manager.predefined('printing_plates')) {
 
       if(!_formula) {
-        $p.msg.show_msg({
-          title: $p.msg.bld_title,
+        msg.show_msg({
+          title: msg.bld_title,
           type: 'alert-error',
           text: `Ошибка в формуле<br /><b>${this.name}</b>`
         });
@@ -124,7 +125,7 @@ exports.CatFormulas = class CatFormulas extends Object {
 
       // рендерим jsx в новое окно
       if(this.jsx) {
-        return $p.ui.dialogs.window({
+        return ui.dialogs.window({
           Component: _formula,
           title: this.name,
           //print: true,
@@ -134,16 +135,26 @@ exports.CatFormulas = class CatFormulas extends Object {
       }
 
       // получаем HTMLDivElement с отчетом
+      ireg.log?.timeStart?.(ref);
       return _formula(obj, $p, attr)
 
       // показываем отчет в отдельном окне
-        .then((doc) => $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print());
+        .then((doc) => {
+          ireg.log?.timeEnd?.(ref);
+          $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print();
+        })
+        .catch(err => {
+          ireg.log?.timeEnd?.(ref, err);
+          throw err;
+        });
 
     }
     else {
-      return _formula && _formula(obj, $p, attr);
+      ireg.log?.timeStart?.(ref);
+      const res = _formula && _formula(obj, $p, attr);
+      ireg.log?.timeEnd?.(ref);
+      return res;
     }
-
   }
 
   get _template() {

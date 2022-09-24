@@ -8,33 +8,45 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
   /**
    * возвращает доступные в данной системе элементы
-   * @property noms
-   * @for Production_params
+   * @type {Array.<CatInserts>}
    */
   get noms() {
     const noms = [];
-    const {utils} = $p;
-    this.elmnts._obj.forEach(({nom}) => !utils.is_empty_guid(nom) && !noms.includes(nom) && noms.push(nom));
+    for (const {nom} of this.elmnts) {
+      if (nom instanceof CchPredefined_elmnts) {
+        for (const {value} of nom.elmnts) {
+          !noms.includes(value) && noms.push(value)
+        }
+      } 
+      else {
+        !noms.includes(nom) && noms.push(nom);
+      }
+    }
     return noms;
   }
 
   /**
    * Массив доступных в данной системе толщин заполнений
-   * @return {number[]}
+   * @typw {Array.<Number>}
    */
   get thicknesses() {
     const {_data} = this;
     if(!_data.thin) {
       const thin = new Set();
-      this.elmnts.find_rows({elm_type: {in: $p.enm.elm_types.glasses}}, ({nom}) => {
+      const glasses = this.inserts($p.enm.elm_types.glasses, 'rows');
+      for(const {nom} of glasses) {
         const thickness = nom.thickness();
         thickness && thin.add(nom.thickness());
-      });
+      }
       _data.thin = Array.from(thin).sort((a, b) => a - b);
     }
     return _data.thin;
   }
 
+  /**
+   * Минимальная толщина заполнения
+   * @type {Number}
+   */
   get tmin() {
     return this.glass_thickness === 3 ? 0 : this.thicknesses[0];
   }
@@ -42,6 +54,10 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     return true;
   }
 
+  /**
+   * Максимальная толщина заполнения
+   * @type {Number}
+   */
   get tmax() {
     return this.glass_thickness === 3 ? Infinity : this.thicknesses[this.thicknesses.length - 1];
   }
@@ -54,18 +70,18 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура
    * @param ox {CatCharacteristics}
    * @param [layer] {Contour}
-   * @return {*[]}
+   * @return {Array}
    */
-  furns(ox, layer){
+  furns(ox, layer) {
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
-    if(properties.furn){
+    if(properties.furn) {
       const links = properties.furn.params_links({
         grid: {selection: {cnstr: layer ? layer.cnstr : 0}},
         obj: {_owner: {_owner: ox}},
         layer
       });
-      if(links.length){
+      if(links.length) {
         // собираем все доступные значения в одном массиве
         links.forEach((link) => link.values._obj.forEach(({value, by_default, forcibly}) => {
           const v = furns.get(value);
@@ -79,58 +95,60 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   /**
    * Доступна ли вставка в данной системе в качестве elm_type
    * @param nom {CatInserts}
-   * @param elm_type {EnmElmTypes}
+   * @param elm_type {EnmElmTypes|Array.<EnmElmTypes>}
    * @return {boolean}
    */
   is_elm_type(nom, elm_type) {
-    let res = false;
-    if(Array.isArray(elm_type)) {
-      this.elmnts.find_rows({nom, elm_type: {in: elm_type}}, () => {
-        res = true;
-        return false;
-      });
-    }
-    else {
-      res = Boolean(this.elmnts.find({nom, elm_type}));
-    }
-    return res;
+    const inserts = this.inserts(elm_type, 'rows').map((e) => e.nom);
+    return inserts.includes(nom);
   }
 
   /**
-   * возвращает доступные в данной системе элементы (вставки)
-   * @property inserts
-   * @for Production_params
-   * @param elm_types - допустимые типы элементов
+   * Возвращает доступные в данной системе элементы (вставки)
+   * @param elm_types {EnmElmTypes|Array.<EnmElmTypes>} - допустимые типы элементов
    * @param [rows] {String} - возвращать вставки или строки табчасти "Элементы"
    * @param [elm] {BuilderElement} - указатель на элемент или проект, чтобы отфильтровать по ключам
    * @return {Array.<CatInserts>}
    */
   inserts(elm_types, rows, elm){
-    const __noms = [];
-    const {enm} = $p;
+    const noms = [];
+    const {elm_types: types} = $p.enm;
     if(!elm_types) {
-      elm_types = enm.elm_types.rama_impost;
+      elm_types = types.rama_impost;
     }
     else if(typeof elm_types == 'string') {
-      elm_types = enm.elm_types[elm_types];
+      elm_types = types[elm_types];
     }
     else if(!Array.isArray(elm_types)) {
       elm_types = [elm_types];
     }
 
     for(const row of this.elmnts) {
-      const {key, nom, elm_type} = row;
+      const {key, nom, elm_type, pos, by_default} = row;
       if(!nom.empty() && elm_types.includes(elm_type) &&
-        (rows === 'rows' || !__noms.some((e) => nom == e.nom)) && key.check_condition({elm})) {
-        __noms.push(row);
+          (rows === 'rows' || !noms.some((e) => nom == e.nom)) &&
+          (!elm || key.check_condition({elm}))) {
+        if(nom instanceof CchPredefined_elmnts) {
+          for(const {value} of nom.elmnts) {
+            noms.push({
+              nom: value,
+              elm_type,
+              pos,
+              by_default,
+            });
+          }
+        }
+        else {
+          noms.push(row);
+        }
       }
     }
 
     if(rows === 'rows') {
-      return __noms;
+      return noms;
     }
 
-    __noms.sort((a, b) => {
+    noms.sort((a, b) => {
       if(a.by_default && !b.by_default) {
         return -1;
       }
@@ -150,7 +168,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
       }
     });
 
-    return __noms.map((e) => e.nom);
+    return noms.map((e) => e.nom);
   }
 
   /**
@@ -162,7 +180,6 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
   /**
-   * @method refill_prm
    * @param ox {CatCharacteristics} - объект характеристики, табчасть которого надо перезаполнить
    * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
@@ -196,7 +213,10 @@ exports.CatProduction_params = class CatProduction_params extends Object {
         value = drow.value;
       }
       else if(param === properties.branch) {
-        value = ox.calc_order.manager.branch;
+        value = ox.calc_order.organization._extra(param);
+        if(!value || value.empty()) {
+          value = ox.calc_order.manager.branch;
+        }
         if(value.empty()) {
           value._manager.find_rows({parent: utils.blank.guid}, (branch) => {
             value = branch;

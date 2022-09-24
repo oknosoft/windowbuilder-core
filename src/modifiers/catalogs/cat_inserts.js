@@ -11,7 +11,8 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
+    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
 
   const {inserts_types} = enm;
 
@@ -70,6 +71,10 @@
 
               const {inset} = this;
               const prm = cch.properties.get(ref);
+              
+              if(prm && !prm.type.is_ref) {
+                Object.assign(mf.type, {}, prm.type);
+              }
 
               // удаляем все связи, кроме владельца
               if(mf.choice_params) {
@@ -224,6 +229,11 @@
             }
             const mf = meta.fields[param.ref];
 
+            // специальный редактор поля
+            if(param.Editor) {
+              mf.Editor = param.Editor;
+            }
+
             // отбор по владельцу
             if(param.type.types.some(type => type === 'cat.property_values')) {
               mf.choice_params = [{name: 'owner', path: param}];
@@ -247,10 +257,17 @@
             if(!prototype.hasOwnProperty(param.ref)){
               Object.defineProperty(prototype, param.ref, {
                 get() {
-                  return this.get_row(param).value;
+                  const prow = this.get_row(param);
+                  return param.hasOwnProperty('extract_pvalue') ? param.extract_pvalue({prow}) : prow.value;
                 },
-                set(v) {
-                  this.get_row(param).value = v;
+                set(value) {
+                  const prow = this.get_row(param);
+                  if(param.hasOwnProperty('set_pvalue')) {
+                    param.set_pvalue({prow, value});
+                  }
+                  else {
+                    prow.value = value;
+                  }
                 },
                 configurable: true,
                 enumerable: true,
@@ -334,6 +351,67 @@
       }
     },
 
+    /**
+     * Возвращает временную вставку по номенклатуре
+     */
+    by_nom: {
+      value(nom, insert_type = 'Профиль') {
+        if(!this._by_nom) {
+          this._by_nom = new Map();
+        }
+        if(!this._by_nom.has(nom)) {
+          const tmp = this.create(false, false, true);
+          tmp.insert_type = insert_type;
+          tmp.specification.add({nom, is_main_elm: true});
+          if(nom.elm_type.is('impost') && nom.width) {
+            tmp.sizeb = nom.width / 2;
+          }
+          tmp._set_loaded(tmp.ref);
+          this._by_nom.set(nom, tmp);
+        }
+        return this._by_nom.get(nom);
+      }
+    },
+
+    traverse_steps: {
+      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+        const {offsets, do_center, step} = imposts;
+
+        if(step) {
+          const {height, bottom} = bounds;
+          // высоты поперечин могли задать в интерфейсе
+          const prop = $p.cch.properties.predefined('traverse_heights');
+          const aprop = prop ? prop.avalue(
+            prop.extract_pvalue({
+              ox,
+              cnstr,
+              origin,
+              prm_row: {},
+              //layer,
+            })) : [];
+          let count = Math.floor(height / step);
+          if(aprop.length === 1 && aprop[0] === 0) {
+            count = 0;
+          }
+          else if(aprop.length) {
+            for (const y of aprop) {
+              add_impost(bottom - y);
+            }
+          }
+          else if(count === 1) {
+            add_impost(bottom - height / 2);
+          }
+          else if(count > 1) {
+            count += 1;
+            const step0 = height / (count);
+            for (let y = 1; y < count; y++) {
+              add_impost(bottom - y * step0);
+            }
+          }
+        }
+      }
+    },
+    
     sql_selection_list_flds: {
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
@@ -350,7 +428,6 @@
 
   });
 
-  cat.inserts.metadata('selection_params').index = 'elm';
   cat.inserts.metadata('specification').index = 'is_main_elm';
 
   // переопределяем прототип
@@ -576,7 +653,7 @@
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
-          if(irow.count_calc_method == enm.count_calculating_ways.formula && !irow.formula.empty()){
+          if(irow.count_calc_method == enm.count_calculating_ways.formulas && !irow.formula.empty()){
             irow.formula.execute({
               ox: contour.project.ox,
               contour: contour,
@@ -587,7 +664,7 @@
           }
           if(irow.count_calc_method == enm.count_calculating_ways.area && this.insert_type == inserts_types.МоскитнаяСетка){
             // получаем габариты смещенного периметра
-            const bounds = contour.bounds_inner(irow.sz);
+            const bounds = contour.bounds_inner(irow.sz, this);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
             res.s = ((res.x * res.y) / 1e6).round(3);
@@ -671,11 +748,27 @@
         return false;
       }
 
-      if (by_perimetr || row.count_calc_method !== enm.count_calculating_ways.perimeter) {
+      if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
         if(!(elm instanceof EditorInvisible.Filling)) {
-          const len = len_angl ? len_angl.len : _row.len;
-          if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
-            return false;
+          if(is_row && row.count_calc_method.is('area') && row.lmin) {
+            if(elm.bounds_inner) {
+              const {width, height} = elm.bounds_inner();
+              if(row.lmin > Math.min(width, height)) {
+                return false;
+              }
+              if(row.lmax && row.lmax < Math.max(width, height)) {
+                return false;
+              }
+            }
+            else if(elm.perimeter) {
+              //
+            }
+          }
+          else {
+            const len = len_angl ? len_angl.len : _row.len;
+            if (row.lmin > len || (row.lmax < len && row.lmax)) {
+              return false;
+            }
           }
         }
         if (is_row) {
@@ -750,7 +843,7 @@
      * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
      * @return {Array}
      */
-    filtered_spec({elm, elm2, is_high_level_call, len_angl, own_row, ox}) {
+    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {
 
       const res = [];
 
@@ -759,7 +852,7 @@
       }
 
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {Профиль}, angle_calculating_ways: {Основной}, count_calculating_ways: {prm}} = enm;
+      const {inserts_types: {profile, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
@@ -775,7 +868,7 @@
         fakerow._owner = sub_row._owner;
 
         // количество по параметру
-        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === prm) {
+        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === parameters) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
             fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
@@ -784,7 +877,7 @@
         }
 
         if(row) {
-          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === prm ? 0 : 1)) * (row.quantity || 1);
+          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === parameters ? 0 : 1)) * (row.quantity || 1);
           fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
           if(fakerow.clr.empty()) {
             fakerow.clr = row.clr;
@@ -823,11 +916,17 @@
         }
       }
 
+      const {flipped} = elm.layer || {};
       this.specification.forEach((row) => {
 
         // Проверяем ограничения строки вставки
-        if(!this.check_restrictions(row, elm, insert_type == Профиль, len_angl)){
+        if(!this.check_restrictions(row, elm, insert_type === profile, len_angl)){
           return;
+        }
+          
+        if(this.insert_type.is('mosquito') && !elm.perimeter 
+            && row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
+          this.mosquito_perimeter(elm, row);
         }
 
         // Проверяем параметры изделия, контура или элемента
@@ -849,11 +948,63 @@
 
         // Добавляем или разузловываем дальше
         if(row.nom instanceof CatInserts){
-          row.nom.filtered_spec({elm, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
-            const fakerow = fake_row(subrow, row);
-            fakerow._origin = row.nom;
-            res.push(fakerow);
-          });
+          if(row.nom.insert_type === coloring) {
+            // добавляем одну или две строки
+            if(!eclr) {
+              eclr = elm.clr;
+            }
+            const selector = {
+              params: this.selection_params,
+              ox,
+              elm,
+              elm2,
+              row_spec: row,
+              cnstr: len_angl && len_angl.cnstr,
+              origin: len_angl && len_angl.origin,
+              eclr,
+            };
+            if(eclr.is_composite()) {
+              let {clr_in, clr_out} = eclr;
+              if(flipped) {
+                [clr_in, clr_out] = [clr_out, clr_in];
+              }
+              selector.eclr = clr_in;
+              if(check_params(selector)) {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                  const fakerow = fake_row(subrow, row);
+                  fakerow._origin = row.nom;
+                  fakerow._clr_side = '_in';
+                  fakerow._clr = clr_in;
+                  res.push(fakerow);
+                });
+              }
+              selector.eclr = clr_out;
+              if(check_params(selector)) {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                  const fakerow = fake_row(subrow, row);
+                  fakerow._origin = row.nom;
+                  fakerow._clr_side = '_out';
+                  fakerow._clr = clr_out;
+                  res.push(fakerow);
+                });
+              }
+            }
+            else {
+              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                const fakerow = fake_row(subrow, row);
+                fakerow._origin = row.nom;
+                fakerow._clr = eclr;
+                res.push(fakerow);
+              });
+            }
+          }
+          else {
+            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+              const fakerow = fake_row(subrow, row);
+              fakerow._origin = row.nom;
+              res.push(fakerow);
+            });
+          }
         }
         else{
           res.push(row);
@@ -862,7 +1013,7 @@
       });
 
       // контроль массы, размеров основной вставки
-      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == Профиль, len_angl)){
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == profile, len_angl)){
         elm.err_spec_row(job_prm.nom.critical_error, this);
       }
 
@@ -885,16 +1036,17 @@
 
       const {_row} = elm;
       const {
-        ПоПериметру,
-        ПоШагам,
-        ПоФормуле,
-        ДляЭлемента,
-        ПоПарам,
-        ПоПлощади,
-        ДлинаПоПарам,
-        ГабаритыПоПарам,
-        ПоСоединениям,
-        ПоЗаполнениям
+        perim,
+        steps,
+        formulas,
+        element,
+        parameters,
+        area,
+        len_prm,
+        dimensions,
+        cnns,
+        fillings,
+        coloring,
       } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
@@ -906,7 +1058,7 @@
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
-        let {count_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
+        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
         if(!coefficient) {
           coefficient = 0.001;
         }
@@ -914,23 +1066,27 @@
         let row_spec;
 
         // добавляем строку спецификации, если профиль или не про шагам
-        if(![ПоПериметру, ПоШагам, ПоЗаполнениям].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
+        if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
           if(!row_ins_spec.quantity) {
             return;
           }
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
 
-        if(count_calc_method == ПоФормуле && !formula.empty()){
+        if(count_calc_method === formulas && !formula.empty()){
           // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
           row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
         }
+        else if(count_calc_method === coloring) {
+          count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
+        }
         // для вставок в профиль способ расчета количества не учитывается
-        else if(profile_items.includes(_row.elm_type) || [ДляЭлемента, ПоПарам].includes(count_calc_method)){
+        else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
           calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
           // размер может уточняться по соединениям
-          if(count_calc_method == ПоСоединениям){
-            for(const node of [elm.rays.b, elm.rays.e]) {
+          if(count_calc_method == cnns){
+            const {b, e} = elm.rays;
+            for(const node of [b, e]) {
               const {cnn} = node;
               if(cnn) {
                 row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
@@ -940,36 +1096,14 @@
         }
         else{
 
-          if(count_calc_method == ПоПлощади){
-            row_spec.qty = row_ins_spec.quantity;
-            if(this.insert_type == enm.inserts_types.МоскитнаяСетка){
-              const bounds = elm.layer.bounds_inner(sz);
-              row_spec.len = bounds.height * coefficient;
-              row_spec.width = bounds.width * coefficient;
-              row_spec.s = (row_spec.len * row_spec.width).round(3);
-            }
-            else if(this.insert_type == enm.inserts_types.Жалюзи) {
-              if(elm.bounds_light) {
-                const bounds = elm.bounds_light();
-                row_spec.len = (bounds.height + offsets) * coefficient;
-                row_spec.width = (bounds.width + sz) * coefficient;
-              }
-              else {
-                row_spec.len = elm.len * coefficient;
-                row_spec.width = elm.height * coefficient;
-              }
-              row_spec.s = (row_spec.len * row_spec.width).round(3);
-            }
-            else{
-              row_spec.len = (_row.y2 - _row.y1 - sz) * coefficient;
-              row_spec.width = (_row.x2 - _row.x1 - sz) * coefficient;
-              row_spec.s = _row.s;
-            }
+          if(count_calc_method === area) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
           }
-          else if(count_calc_method == ПоПериметру){
-            const perimeter = elm.perimeter ? elm.perimeter : (
-              this.insert_type == enm.inserts_types.МоскитнаяСетка ? elm.layer.perimeter_inner(sz) : elm.layer.perimeter
-            )
+          else if(count_calc_method === perim){
+            let {perimeter} = elm;
+            if(!perimeter) {
+              perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
+            }
             const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
             const {check_params} = ProductsBuilding;
             perimeter.forEach((rib) => {
@@ -1006,47 +1140,48 @@
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             });
 
           }
-          else if(count_calc_method == ПоШагам){
+          else if(count_calc_method === steps){
 
-            const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
-              elm.layer.bounds_inner(sz) : {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            let bounds;
+            if(this.insert_type == enm.inserts_types.mosquito) {
+              if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {
+                bounds = elm.bounds_inner();
+              }
+              else {
+                bounds = elm.layer ? elm.layer.bounds_inner() : (elm.bounds_inner?.() || {});
+              }
+            }
+            else {
+              bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            }
 
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
             if(row_ins_spec.step){
-              let qty = 0;
-              let pos;
-              if(row_ins_spec.do_center && h >= row_ins_spec.step ){
-                pos = h / 2;
-                if(pos >= offsets &&  pos <= h - offsets){
-                  qty++;
-                }
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = h / 2 + i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                  pos = h / 2 - i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
+              // высоты поперечин могли задать в интерфейсе
+              const prop = cch.properties.predefined('traverse_heights');
+              const aprop = prop ? prop.avalue(
+                prop.extract_pvalue({
+                  ox,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  elm,
+                  origin: len_angl.origin || this,
+                  prm_row: {},
+                  //layer,
+                })) : [];
+              let qty = Math.floor(h / row_ins_spec.step);
+              if(aprop.length === 1 && aprop[0] === 0) {
+                qty = 0;
               }
-              else{
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
+              else if(aprop.length) {
+                qty = aprop.length;
               }
-
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
@@ -1064,29 +1199,15 @@
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
               }
               row_spec = null;
             }
           }
-          else if(count_calc_method == ДлинаПоПарам){
-            let len = 0;
-            this.selection_params.find_rows({elm: row_ins_spec.elm}, ({param}) => {
-              if(param.type.digits) {
-                ox.params.find_rows({cnstr: 0, param}, ({value}) => {
-                  len = value;
-                  return false;
-                });
-              }
-              if(len) return false;
-            });
-
-            row_spec.qty = row_ins_spec.quantity;
-            row_spec.len = (len - sz) * coefficient;
-            row_spec.width = 0;
-            row_spec.s = 0;
+          else if(count_calc_method === len_prm) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
-          else if(count_calc_method == ГабаритыПоПарам){
+          else if(count_calc_method === dimensions){
             let len = 0, width = 0;
             this.selection_params.find_rows({elm: row_ins_spec.elm}, ({param}) => {
               if(param.type.digits) {
@@ -1107,7 +1228,7 @@
             row_spec.width = (width - sz) * coefficient;
             row_spec.s = (row_spec.len * row_spec.width).round(3);
           }
-          else if(count_calc_method == ПоЗаполнениям){
+          else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
               row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
@@ -1151,35 +1272,47 @@
               clr,
               len: len_angl ? len_angl.len : _row.len
             });
-            if(count_calc_method == ПоФормуле){
+            if(count_calc_method == formulas) {
               row_spec.qty = qty;
             }
-            else if(formula.condition_formula && !qty){
+            else if(formula.condition_formula && !qty) {
               row_spec.qty = 0;
             }
           }
-          calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-            row_ins_spec.angle_calc_method, row_ins_spec.angle_calc_method, 0, 0, totqty0);
+          calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
+            angle_calc_method, angle_calc_method, 0, 0, totqty0);
         }
       });
 
       // скорректируем габариты вытягиваемой конструкции
-      if(spec !== ox.specification && this.insert_type == enm.inserts_types.Жалюзи) {
-        const bounds = {x: 0, y: 0};
-        spec.forEach(({len, width}) => {
-          if(len && width) {
-            if(bounds.x < len) {
-              bounds.x = len;
-            }
-            if(bounds.y < width) {
-              bounds.y = width;
-            }
-          }
-        });
+      if(spec !== ox.specification) {
         const {_owner} = spec;
-        _owner.x = bounds.y * 1000;
-        _owner.y = bounds.x * 1000;
-        _owner.s = (bounds.x * bounds.y).round(3);
+        switch (this.insert_type) {
+          case enm.inserts_types.mosquito:             
+            if(elm.hasOwnProperty('bounds_inner')) {
+              const bounds = elm.bounds_inner();
+              _owner.x = bounds.width.round(1);
+              _owner.y = bounds.height.round(1);
+              _owner.s = (bounds.area / 1e6).round(3);
+            }
+            break;
+          case enm.inserts_types.jalousie:
+            const bounds = {x: 0, y: 0};
+            spec.forEach(({len, width}) => {
+              if(len && width) {
+                if(bounds.x < len) {
+                  bounds.x = len;
+                }
+                if(bounds.y < width) {
+                  bounds.y = width;
+                }
+              }
+            });
+            _owner.x = bounds.y * 1000;
+            _owner.y = bounds.x * 1000;
+            _owner.s = (bounds.x * bounds.y).round(3);
+        }
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }
     }
 
@@ -1278,7 +1411,7 @@
 
     /**
      * Возвращает толщину вставки
-     * @param {elm} {BuilderElement}
+     * @param elm {BuilderElement}
      * @param [strict] {Number}
      * @return {number}
      */
@@ -1334,7 +1467,7 @@
      * @return {Array}
      */
     used_params() {
-      const {_data} = this;
+      const {_data, specification} = this;
       // если параметры этого набора уже обработаны - пропускаем
       if(_data.used_params) {
         return _data.used_params;
@@ -1342,12 +1475,24 @@
 
       const sprms = [];
       const {order, product, nearest} = enm.plan_detailing;
+      const use = cch.properties.predefined('use');
 
-      this.selection_params.forEach(({param, origin}) => {
+      this.selection_params.forEach(({param, origin, elm}) => {
         if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
         }
-        if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+        if(param === use) {
+          const {nom} = specification.find({elm}) || {};
+          if(nom) {
+            const prm = cch.properties.get(nom.ref);
+            if(!prm.name) {
+              prm.name = prm.caption = nom.name;
+              prm.type = {types: ['boolean']};
+            }
+            sprms.push(prm);
+          }
+        }
+        else if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
           sprms.push(param);
         }
       });
@@ -1359,7 +1504,7 @@
       });
 
       const {cx_prm} = enm.predefined_formulas;
-      this.specification.forEach(({nom, algorithm}) => {
+      specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
           for(const param of nom.used_params()) {
             !sprms.includes(param) && sprms.push(param);
@@ -1370,7 +1515,7 @@
         }
       });
 
-      return _data.used_params = sprms;
+      return _data.used_params = Object.freeze(sprms);
     }
 
     get split_type(){
@@ -1387,6 +1532,71 @@
       return split_type;
     }
     set split_type(v){this._setter('split_type',v)}
+
+    /**
+     * Возвращает свойства для рисования москитки
+     * @return {Object}
+     */
+    mosquito_props() {
+      let sz, nom, imposts;
+      this.specification.forEach((rspec) => {
+        if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
+          sz = rspec.sz;
+          nom = rspec.nom;
+        }
+        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          imposts = rspec;
+        }
+        if(nom && imposts) {
+          return false;
+        }
+      });
+      return {sz, nom, imposts};
+    }
+
+    /**
+     * Рассчитывает периметр москитки и помещает его в элемент
+     * @param elm {BuilderElement|FakeElm}
+     * @param rspec {CatInsertsSpecificationRow}
+     * @return {Array}
+     */
+    mosquito_perimeter(elm, rspec) {
+      const check_cnn = {};
+      const perimeter = elm.layer.perimeter_inner(rspec.sz, rspec.nom, check_cnn);
+      Object.defineProperties(elm, {
+        perimeter: {value: perimeter},
+        bounds_inner: {
+          value(sz = 0) {
+            let start = new paper.Point([0,0]);
+            const path = new paper.Path({insert: false});
+            path.add(start);
+            for(const rib of perimeter) {
+              const tmp = new paper.Point({
+                length: rib.len - 2 * sz,
+                angle: rib.angle
+              });
+              const fin = start.add(tmp);
+              path.add(fin);
+              start = fin.clone();
+            }
+            return path.bounds;
+          }
+        }
+      });
+      if(!check_cnn.cnn) {
+        // строка ошибки в спецификации
+        const {cnn_ii_error: nom} = job_prm.nom;
+        const {_ox, cnstr} = elm.layer;
+        const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
+          elm: {elm: -cnstr, clr: cat.clrs.get()},
+          row_base: {clr: cat.clrs.get(), nom},
+          spec: _ox.specification,
+          ox: _ox,
+          origin: this,
+        });
+      }
+      return perimeter;
+    }
 
   }
   $p.CatInserts = CatInserts;

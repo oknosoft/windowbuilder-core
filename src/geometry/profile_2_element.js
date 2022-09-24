@@ -1,5 +1,5 @@
 
-/**
+/*
  * Created 24.07.2015
  *
  * @module geometry
@@ -7,34 +7,31 @@
  */
 
 /**
- * ### Профиль
- * Класс описывает поведение сегмента профиля (створка, рама, импост)<br />
+ * _Профиль_  
+ * Класс описывает поведение сегмента профиля (створка, рама, импост).
  * У профиля есть координаты конца и начала, есть путь образующей - прямая или кривая линия
  *
- * @class Profile
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
- * @menuorder 42
- * @tooltip Профиль
+ * 
+ * @tutorial profile
  *
  * @example
  *
- *     // Создаём элемент профиля на основании пути образующей
- *     // одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет
- *     new Profile({
- *       generatrix: new paper.Path({
- *         segments: [[1000,100], [0, 100]]
- *       }),
- *       proto: {
- *         parent: _contour,
- *         inset: _inset
- *         clr: _clr
- *       }
- *     });
+ * // Создаём элемент профиля на основании пути образующей
+ * // одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет
+ * new Profile({
+ *   generatrix: new paper.Path({
+ *     segments: [[1000,100], [0, 100]]
+ *   }),
+ *   proto: {parent, inset, clr}
+ * });
  */
 class Profile extends ProfileItem {
 
+  /**
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   * см. {@link BuilderElement|параметр конструктора BuilderElement}
+   */
   constructor(attr) {
 
     const fromCoordinates = attr.row && attr.row.elm;
@@ -56,13 +53,16 @@ class Profile extends ProfileItem {
         const {cnstr, elm, _owner} = attr.row;
         const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          if(row.elm_type === elm_types.Добор) {
+          // добор
+          if(row.elm_type === elm_types.addition) {
             new ProfileAddl({row, parent: this});
           }
-          else if(row.elm_type === elm_types.Примыкание) {
+          // примыкание
+          else if(row.elm_type === elm_types.adjoining) {
             new ProfileAdjoining({row, parent: this});
           }
-          else if(elm_types.profiles.includes(row.elm_type)) {
+          // связка (чулок)
+          else if(row.elm_type === elm_types.bundle) {
             new ProfileSegment({row, parent: this});
           }
         });
@@ -73,8 +73,7 @@ class Profile extends ProfileItem {
   /**
    * Расстояние от узла до опорной линии
    * для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений
-   * @property d0
-   * @type Number
+   * @type {Number}
    */
   get d0() {
     const {_attr} = this;
@@ -90,6 +89,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает тип элемента (рама, створка, импост)
+   * @type {EnmElm_types}
    */
   get elm_type() {
     const {_rays, _nearest} = this._attr;
@@ -109,7 +109,16 @@ class Profile extends ProfileItem {
   }
 
   /**
+   * Является ли текущий элемент _связкой_
+   * @type {Boolean}
+   */
+  get is_bundle() {
+    return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
+  }
+
+  /**
    * Положение элемента в контуре
+   * @type {EnmElm_positions}
    */
   get pos() {
     const {top, bottom, left, right} = this.layer.profiles_by_side();
@@ -146,8 +155,7 @@ class Profile extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
-   * @property nearest
-   * @type Profile
+   * @return {Profile}
    */
   nearest(ign_cnn) {
 
@@ -240,7 +248,29 @@ class Profile extends ProfileItem {
   }
 
   /**
+   * Добавляет сегменты
+   * @param [count=2] {Number} - на сколько сегментов резать
+   */
+  split_by(count) {
+    const {generatrix, segms, inset, clr, project} = this;
+    if(!count || typeof count !== 'number' || count < 2) {
+      count = 2;
+    }
+    const len = generatrix.length / count;
+    let first = generatrix.clone({insert: false});
+    for(let i=1; i<count; i++) {
+      const loc = first.getLocationAt(len);
+      const second = first.splitAt(loc);
+      new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
+      first = second;
+    }
+    new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
+  }
+
+  /**
    * Возвращает массив примыкающих ипостов
+   * @param [check_only] {Boolean} - не формировать подробный ответ, только проверить наличие примыкающих импостов
+   * @returns {Object|Boolean}
    */
   joined_imposts(check_only) {
 
@@ -302,6 +332,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих створочных элементов
+   * @returns {Array.<Profile>}
    */
   joined_nearests() {
     const res = [];
@@ -320,7 +351,7 @@ class Profile extends ProfileItem {
   /**
    * Возвращает массив примыкающих заполнений и вложенных контуров
    * @param [glasses]
-   * @return {[]}
+   * @return {Array.<Filling>}
    */
   joined_glasses(glasses) {
     if(!glasses) {
@@ -337,7 +368,7 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * ### Соединение конца профиля
+   * Соединение конца профиля
    * С этой функции начинается пересчет и перерисовка профиля
    * Возвращает объект соединения конца профиля
    * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
@@ -345,7 +376,6 @@ class Profile extends ProfileItem {
    * - Не делает подмену соединения, хотя могла бы
    * - Не делает подмену вставки, хотя могла бы
    *
-   * @method cnn_point
    * @param node {String} - имя узла профиля: "b" или "e"
    * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
@@ -436,7 +466,7 @@ class Profile extends ProfileItem {
    */
   refresh_inset_depends(param, with_neighbor) {
     const {inset, _attr: {_rays, _nearest_cnn}} = this;
-    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of(param))) {
+    if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of?.(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }

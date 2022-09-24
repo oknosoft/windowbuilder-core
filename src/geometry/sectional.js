@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Разрез
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -242,7 +242,7 @@ class Sectional extends GeneratrixElement {
   }
 
   /**
-   * ### Формирует путь разреза
+   * Формирует путь разреза
    *
    * @method redraw
    * @return {Sectional}
@@ -333,8 +333,7 @@ class Sectional extends GeneratrixElement {
   }
 
   /**
-   * ### Вычисляемые поля в таблице координат
-   * @method save_coordinates
+   * Вычисляемые поля в таблице координат
    */
   save_coordinates() {
 

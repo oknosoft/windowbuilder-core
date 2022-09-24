@@ -1,5 +1,5 @@
 ﻿
-/**
+/*
  * Расширения объектов paper.js
  *
  * &copy; http://www.oknosoft.ru 2014-2018
@@ -80,8 +80,16 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-     * Угол по отношению к соседнему пути _other_ в точке _point_
-     */
+   * Угол по отношению к соседнему пути _other_ в точке _point_
+   * @memberof paper.Path
+   * @method
+   * @instance
+   * @param other {paper.Path}
+   * @param point {paper.Point}
+   * @param [interior] {paper.Point}
+   * @param [round] {Number}
+   * @return {Number}
+   */
   angle_to: {
       value : function angle_to(other, point, interior, round){
         const p1 = this.getNearestPoint(point),
@@ -101,6 +109,14 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
    * Угол между путями в точке _point_
+   * @memberof paper.Path
+   * @method
+   * @instance
+   * @param other {paper.Path}
+   * @param point {paper.Point}
+   * @param [interior] {paper.Point}
+   * @param [round] {Number}
+   * @return {Number}
    */
   angle_between: {
     value : function angle_between(other, point, interior, round){
@@ -113,9 +129,12 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-     * Выясняет, является ли путь прямым
-     * @return {Boolean}
-     */
+   * Выясняет, является ли путь прямым
+   * @memberof paper.Path
+   * @method
+   * @instance
+   * @return {Boolean}
+   */
   is_linear: {
     value: function is_linear() {
       const {curves, firstCurve} = this;
@@ -311,8 +330,6 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
      * Находит координату пересечения путей в окрестности точки
-     * @method intersect_point
-     * @for Path
      * @param path {paper.Path}
      * @param point {paper.Point|String} - точка или имя узла (b,e)
      * @param [elongate] {Boolean|Number} - если истина, пути будут продолжены до пересечения
@@ -450,7 +467,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * ### Минимальный радиус, высисляемый по кривизне пути
+   * Минимальный радиус, высисляемый по кривизне пути  
    * для прямых = 0
    */
   rmin: {
@@ -472,7 +489,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * ### Максимальный радиус, высисляемый по кривизне пути
+   * Максимальный радиус, высисляемый по кривизне пути
    * для прямых = 0
    */
   rmax: {
@@ -494,7 +511,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * ### Cредний радиус пути по трём точкам
+   * Cредний радиус пути по трём точкам
    */
   ravg: {
     value() {
@@ -555,7 +572,7 @@ Object.defineProperties(paper.Point.prototype, {
 	},
 
 	/**
-	 * ### Рассчитывает координаты центра окружности по точкам и радиусу
+	 * Рассчитывает координаты центра окружности по точкам и радиусу
 	 * @param x1 {Number}
 	 * @param y1 {Number}
 	 * @param x2 {Number}
@@ -608,7 +625,7 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 	/**
-	 * ### Рассчитывает координаты точки, лежащей на окружности
+	 * Рассчитывает координаты точки, лежащей на окружности
 	 * @param x1
 	 * @param y1
 	 * @param x2
@@ -658,7 +675,7 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 	/**
-	 * ### Привязка к углу
+	 * Привязка к углу  
 	 * Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
 	 *
 	 * @param [snapAngle] {Number} - шаг угла, по умолчанию 45°

@@ -1,5 +1,5 @@
 
-/**
+/*
  * Виртуальный профиль для вложенных изделий (не путать с виртуальными слоями)
  *
  * @module profile_nested
@@ -46,6 +46,16 @@ class ProfileNested extends Profile {
   }
 
   /**
+   * Объект продукции текущего элемеента
+   * для ProfileNested, совпадает с продукцией проекта
+   * @type {CatCharacteristics}
+   */
+  get ox() {
+    const {project, _row} = this;
+    return _row ? _row._owner._owner : project.ox;
+  }
+
+  /**
    * Возвращает тип элемента (Вложение)
    */
   get elm_type() {
@@ -58,9 +68,15 @@ class ProfileNested extends Profile {
   }
   set inset(v) {}
 
+  // номенклатура внешнего элемента
+  get nom() {
+    return this.nearest().nom;
+  }
+  set nom(v) {}
+
   // цвет внешнего элемента
   get clr() {
-    return this.nearest(true).clr;
+    return this.nearest().clr;
   }
   set clr(v) {}
 
@@ -73,6 +89,14 @@ class ProfileNested extends Profile {
    * @return {boolean}
    */
   get locked() {
+    return true;
+  }
+
+  /**
+   * Элемент не делает вклада в спецификацию
+   * @returns {boolean}
+   */
+  get virtual() {
     return true;
   }
 

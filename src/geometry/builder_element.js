@@ -1,6 +1,6 @@
 
 /**
- * ### Базовый класс элементов построителя
+ * Базовый класс элементов построителя  
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
@@ -10,8 +10,8 @@
  *  @param attr.b {paper.Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
  *  @param attr.e {paper.Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
  *  @param attr.contour {Contour} - контур, которому принадлежит элемент
- *  @param attr.type_el {_enm.elm_types}  может измениться при конструировании. например, импост -> рама
- *  @param [attr.inset] {_cat.inserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
+ *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
+ *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
  *  @param [attr.path] (r && arc_ccw && more_180)
  * @constructor
  * @extends paper.Group
@@ -80,9 +80,8 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Элемент - владелец
+   * Элемент - владелец
    * имеет смысл для раскладок и рёбер заполнения
-   * @property owner
    * @type BuilderElement
    */
   get owner() {
@@ -93,10 +92,10 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Образующая
+   * Образующая
+   *
    * прочитать - установить путь образующей. здесь может быть линия, простая дуга или безье
    * по ней будут пересчитаны pathData и прочие свойства
-   * @property generatrix
    * @type paper.Path
    */
   get generatrix() {
@@ -153,7 +152,6 @@ class BuilderElement extends paper.Group {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * для профиля, вершин всегда 4, для заполнений может быть <> 4
-   * @property path
    * @type paper.Path
    */
   get path() {
@@ -405,7 +403,11 @@ class BuilderElement extends paper.Group {
     return this.project._dp._manager;
   }
 
-  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  /**
+   * Объект продукции текущего элемеента  
+   * может отличаться от продукции текущего проекта
+   * @type {CatCharacteristics}
+   */
   get ox() {
     const {layer, _row} = this;
     const _ox = layer?._ox;
@@ -416,7 +418,7 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Номенклатура
+   * Номенклатура
    * свойство только для чтения, т.к. вычисляется во вставке
    * @type CatNom
    */
@@ -428,7 +430,10 @@ class BuilderElement extends paper.Group {
     return _attr.nom;
   }
 
-  // номер элемента - свойство только для чтения
+  /**
+   * Номер элемента
+   * @type {Number}
+   */
   get elm() {
     return (this._row && this._row._obj.elm) || 0;
   }
@@ -453,8 +458,12 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-
-  // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
+  
+  /**
+   * Опорный размер  
+   * рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @type {Number}
+   */
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
@@ -550,7 +559,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Дополнительные свойства json
-   * @return {Object}
+   * @type {Object}
    */
   get dop() {
     return this._row.dop;
@@ -561,7 +570,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Произвольный комментарий
-   * @return {String}
+   * @type {String}
    */
   get note() {
     return this.dop.note || '';
@@ -572,7 +581,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая себестоимость единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get first_cost() {
     return this.dop.first_cost || 0;
@@ -583,7 +592,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая цена продажи единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get price() {
     return this.dop.price || 0;
@@ -605,114 +614,115 @@ class BuilderElement extends paper.Group {
       inset = this.inset;
     }
 
-    // свойства, нужные вставке текущего элемента
-    const inset_params = inset.used_params();
-
     // получаем список свойств
     const props = [];
-    const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
-    for(const {param, elm} of product_params) {
-      if (!inset_params.includes(param)) {
-        continue;
-      }
-      // если переопределение явно указано в системе
-      if(elm) {
-        props.push(param);
-      }
-      // если переопределение указано в самом параметре
-      else if([1, 2].includes(param.inheritance)) {
-        // дополнительно учтём тип и положение элемента
-        const {elm_type, pos, orientation} = this;
-        if(!param.applying.count()) {
+    if(this.isInserted()) {
+      // свойства, нужные вставке текущего элемента
+      const inset_params = inset.used_params();
+      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      for(const {param, elm} of product_params) {
+        if (!inset_params.includes(param)) {
+          continue;
+        }
+        // если переопределение явно указано в системе
+        if(elm) {
           props.push(param);
         }
-        else {
-          for(const arow of param.applying) {
-            if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
-              (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
-              props.push(param);
-              break;
+        // если переопределение указано в самом параметре
+        else if([1, 2].includes(param.inheritance)) {
+          // дополнительно учтём тип и положение элемента
+          const {elm_type, pos, orientation} = this;
+          if(!param.applying.count()) {
+            props.push(param);
+          }
+          else {
+            for(const arow of param.applying) {
+              if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+                (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
+                props.push(param);
+                break;
+              }
             }
           }
         }
       }
-    }
 
-    if(!rnum) {
-      // удаляем возможные паразитные свойства
-      _attr.props && _attr.props.forEach((prop) => {
-        if(!props.includes(prop)) {
-          delete this[concat ? concat.ref + prop.ref : prop.ref];
-        }
-      });
-      _attr.props = props;
-      // создаём свойства
-      props.forEach((prop) => {
-        const key = concat ? concat.ref + prop.ref : prop.ref;
-        if(!this.hasOwnProperty(key)) {
-          Object.defineProperty(this, key, {
-            get() {
-              let prow;
-              params.find_rows({
-                param: prop,
-                cnstr: {in: [0, -_row.row]},
-                inset: concat || utils.blank.guid,
-                region: 0,
-              }, (row) => {
-                if(!prow || row.cnstr) {
-                  prow = row;
-                }
-              });
+      if(!rnum) {
+        // удаляем возможные паразитные свойства
+        _attr.props && _attr.props.forEach((prop) => {
+          if(!props.includes(prop)) {
+            delete this[concat ? concat.ref + prop.ref : prop.ref];
+          }
+        });
+        _attr.props = props;
+        // создаём свойства
+        props.forEach((prop) => {
+          const key = concat ? concat.ref + prop.ref : prop.ref;
+          if(!this.hasOwnProperty(key)) {
+            Object.defineProperty(this, key, {
+              get() {
+                let prow;
+                params.find_rows({
+                  param: prop,
+                  cnstr: {in: [0, -_row.row]},
+                  inset: concat || utils.blank.guid,
+                  region: 0,
+                }, (row) => {
+                  if(!prow || row.cnstr) {
+                    prow = row;
+                  }
+                });
 
-              if(prow) {
-                return prow.value;
-              }
-              const type = prop.type.types[0];
-              if(type.includes('.')) {
-                const mgr = md.mgr_by_class_name(type);
-                if(mgr) {
-                  return mgr.get();
+                if(prow) {
+                  return prow.value;
                 }
-              }
-            },
-            set(v) {
-              let prow, prow0;
-              params.find_rows({
-                param: prop,
-                cnstr: {in: [0, -_row.row]},
-                inset: concat || utils.blank.guid,
-                region: 0,
-              }, (row) => {
-                if(row.cnstr) {
-                  prow = row;
+                const type = prop.type.types[0];
+                if(type.includes('.')) {
+                  const mgr = md.mgr_by_class_name(type);
+                  if(mgr) {
+                    return mgr.get();
+                  }
+                }
+              },
+              set(v) {
+                let prow, prow0;
+                params.find_rows({
+                  param: prop,
+                  cnstr: {in: [0, -_row.row]},
+                  inset: concat || utils.blank.guid,
+                  region: 0,
+                }, (row) => {
+                  if(row.cnstr) {
+                    prow = row;
+                  }
+                  else {
+                    prow0 = row;
+                  }
+                });
+                // если устанавливаемое значение совпадает со значением изделия - удаляем
+                if(prow0 && prow0.value == v) {
+                  prow && prow._owner.del(prow);
+                }
+                else if(prow) {
+                  prow.value = v;
                 }
                 else {
-                  prow0 = row;
+                  params.add({
+                    param: prop,
+                    cnstr: -_row.row,
+                    region: 0,
+                    inset: concat || utils.blank.guid,
+                    value: v,
+                  });
                 }
-              });
-              // если устанавливаемое значение совпадает со значением изделия - удаляем
-              if(prow0 && prow0.value == v) {
-                prow && prow._owner.del(prow);
-              }
-              else if(prow) {
-                prow.value = v;
-              }
-              else {
-                params.add({
-                  param: prop,
-                  cnstr: -_row.row,
-                  region: 0,
-                  inset: concat || utils.blank.guid,
-                  value: v,
-                });
-              }
-              this.refresh_inset_depends(prop, true);
-              return true;
-            },
-            configurable: true,
-          });
-        }
-      });
+                this.refresh_inset_depends(prop, true);
+                return true;
+              },
+              configurable: true,
+            });
+          }
+        });
+      }
     }
 
     return props;
@@ -752,8 +762,22 @@ class BuilderElement extends paper.Group {
    */
   set_clr(v, ignore_select) {
     const {_row, path, project} = this;
-    const clr = _row.clr._manager.getter(v);
     const {clr_group} = _row.inset;
+    let clr = _row.clr._manager.getter(v);
+
+    if(clr.empty()) {
+      const {sys} = this.layer;
+      const group = clr_group.empty() ? sys.clr_group : clr_group;
+      let {default_clr} = sys;
+      if(default_clr.empty() || !group.contains(default_clr)) {
+        const clrs = group.clrs();
+        if(clrs.length) {
+          default_clr = clrs[0];
+        }
+      }
+      clr = default_clr;
+    }
+
     if(clr_group.contains(clr) && _row.clr != clr) {
       _row.clr = clr;
       project.register_change();
@@ -777,96 +801,70 @@ class BuilderElement extends paper.Group {
    */
   selected_cnn_ii() {
     const {project, elm, ox} = this;
-    const sel = project.getSelectedItems();
     const items = [];
-    let res;
 
-    sel.forEach((item) => {
-      if(item.parent instanceof ProfileItem || item.parent instanceof Filling)
-        items.push(item.parent);
-      else if(item instanceof Filling)
+    for(const item of project.getSelectedItems()) {
+      const {parent} = item;
+      if(!items.includes(parent) && (parent instanceof ProfileItem || parent instanceof Filling)) {
+        items.push(parent);
+      }
+      else if(item instanceof Filling && !items.includes(item)) {
         items.push(item);
-    });
+      }
+    }
 
-    if(items.length > 1 &&
-      items.some((item) => item == this) &&
-      items.some((item) => {
-        if(item != this){
-          ox.cnn_elmnts.forEach((row) => {
-            if(!row.node1 && !row.node2 &&
-              ((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm))){
-              res = {elm: item, row: row};
-              return false;
+    if(items.length > 1 && items.includes(this)) {
+      const nelm = this.nearest();
+      const shift = nelm instanceof ProfileVirtual && nelm.nearest();
+      const {cat: {cnns}, enm: {cnn_types}} = $p;
+
+      for(const item of items) {
+        if(item === this) {
+          continue;
+        }
+        for(const row of ox.cnn_elmnts) {
+          if(row.node1 || row.node2) {
+            continue;
+          }
+          if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
+            const cnn = (item instanceof Filling || (item.layer.level > this.layer.level)) ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            if(cnn !== row.cnn) {
+              row.cnn = cnn;
             }
-          });
-          if(res){
-            return true;
+            return {elm: item, row};
+          }
+          if(shift && row.elm1 == elm && row.elm2 == nelm.elm) {
+            row.cnn = item instanceof Filling ?
+              cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
+            return {elm: nelm, row};
           }
         }
-      })){
-      return res;
+      }
     }
   }
 
   /**
-   * ### Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
-   * @method remove
-   */
-  remove() {
-    this.detache_wnd && this.detache_wnd();
-
-    const {parent, project, _row, ox, elm, path} = this;
-
-    if(parent && parent.on_remove_elm) {
-      parent.on_remove_elm(this);
-    }
-
-    if(path && path.onMouseLeave) {
-      path.onMouseEnter = null;
-      path.onMouseLeave = null;
-    }
-
-    project._scope.eve.emit('elm_removed', this);
-
-    if (this.observer){
-      project._scope.eve.off(consts.move_points, this.observer);
-      delete this.observer;
-    }
-
-    if(_row && _row._owner._owner === ox && !project.ox.empty()){
-      ox.params.clear({cnstr: -elm});
-      ox.inserts.clear({cnstr: -elm});
-      _row._owner.del(_row);
-    }
-
-    project.register_change();
-
-    super.remove();
-  }
-
-  /**
-   * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
+   * Добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
    * @param nom {CatNom}
    * @param text {String}
    * @param origin {DataObj} - происхождение
    */
   err_spec_row(nom, text, origin) {
+    const {job_prm, cat, ProductsBuilding} = $p;
     if(!nom){
-      nom = $p.job_prm.nom.info_error;
+      nom = job_prm.nom.info_error;
     }
     const {_ox} = this.layer;
-    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
-      $p.ProductsBuilding.new_spec_row({
-        elm: this,
-        row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: _ox.specification,
-        ox: _ox,
-        origin,
-      });
-    }
+    const row = _ox.specification.find({elm: this.elm, nom}) || ProductsBuilding.new_spec_row({
+      elm: this,
+      row_base: {clr: cat.clrs.get(), nom},
+      spec: _ox.specification,
+      ox: _ox,
+      origin,
+    });    
     if(text){
-
+      row.specify = text;
     }
   }
 
@@ -919,6 +917,42 @@ class BuilderElement extends paper.Group {
       }
       return clr;
     }
+  }
+
+  /**
+   * Удаляет элемент из контура и иерархии проекта
+   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
+   */
+  remove() {
+    this.detache_wnd && this.detache_wnd();
+
+    const {parent, project, _row, ox, elm, path} = this;
+
+    if(parent && parent.on_remove_elm) {
+      parent.on_remove_elm(this);
+    }
+
+    if(path && path.onMouseLeave) {
+      path.onMouseEnter = null;
+      path.onMouseLeave = null;
+    }
+
+    project._scope.eve.emit('elm_removed', this);
+
+    if (this.observer){
+      project._scope.eve.off(consts.move_points, this.observer);
+      delete this.observer;
+    }
+
+    if(_row && _row._owner._owner === ox && !project.ox.empty()){
+      ox.params.clear({cnstr: -elm});
+      ox.inserts.clear({cnstr: -elm});
+      _row._owner.del(_row);
+    }
+
+    project.register_change();
+
+    super.remove();
   }
 }
 

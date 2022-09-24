@@ -1,14 +1,16 @@
 
-/**
- * ### Вложенное изделие в родительском
- * https://github.com/oknosoft/windowbuilder/issues/564
- *
- * @module contour_nested
- *
+/*
  * Created by Evgeniy Malyarov on 20.04.2020.
- * Содержит виртуальные профили, в которые служат внешним, неизменяемым слоев вложенного изделия
  */
 
+/*
+ * Вложенное изделие в родительском  
+ * https://github.com/oknosoft/windowbuilder/issues/564
+ * 
+ * Содержит виртуальные профили, в которые служат внешним, неизменяемым слоев вложенного изделия
+ * 
+ * @extends Contour
+ */
 class ContourNested extends Contour {
 
   constructor(attr) {
@@ -70,6 +72,29 @@ class ContourNested extends Contour {
       }
     }
     return _attr._ox;
+  }
+
+  // характеристика, из которой брать значения параметров
+  get prm_ox() {
+    return this.layer.ox;
+  }
+
+  /**
+   * Бит, может ли данный слой иметь собственную систему
+   * @return {boolean}
+   */
+  get own_sys() {
+    return true;
+  }
+
+  /**
+   * Система текущего слоя совпадает с системой вложенного изделия
+   * @return {CatProduction_params}
+   */
+  get sys() {
+    return this._ox.sys;
+  }
+  set sys(v) {
   }
 
   get hidden() {
@@ -141,10 +166,15 @@ class ContourNested extends Contour {
             contour.redraw();
             dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');
             dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');
+            contour.redraw();
 
             // пересчитываем, не записываем
             contour.refresh_prm_links(true);
             tproject.zoom_fit();
+            if(tproject._scope.eve._async?.move_points?.timer) {
+              clearTimeout(tproject._scope.eve._async.move_points.timer);
+              delete tproject._scope.eve._async.move_points.timer;
+            }
             while (tproject._ch.length) {
               tproject.redraw();
             }
@@ -266,7 +296,6 @@ class ContourNested extends Contour {
 
   /**
    * Вычисляемые поля в таблицах конструкций и координат
-   * @method save_coordinates
    * @param short {Boolean} - короткий вариант - только координаты контура
    */
   save_coordinates(short, save, close) {
@@ -321,8 +350,6 @@ class ContourNested extends Contour {
 
   /**
    * Перерисовывает элементы контура
-   * @method redraw
-   * @for Contour
    */
   redraw() {
 
@@ -347,7 +374,6 @@ class ContourNested extends Contour {
   /**
    * Удаляет контур из иерархии проекта
    * Одновлеменно, удаляет вложенное изделие из заказа
-   * @method remove
    */
   remove() {
     const {_ox} = this;

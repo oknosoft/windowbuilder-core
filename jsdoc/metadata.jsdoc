@@ -1,0 +1,55 @@
+/**
+* Пространство имён metadata.js
+* @see [MetaEngine](../apidocs/classes/MetaEngine.html)
+* @external MetaEngine
+* @prop enm {Enumerations} - Перечисления
+*/
+
+/**
+ * Контекст metadata.js
+ * @var {external:MetaEngine} $p
+ * @prop enm {Enumerations} - Перечисления
+ */
+
+/**
+* Менеджер данных в metadata.js
+* @see [MetaEngine/DataManager](../apidocs/classes/DataManager.html)
+* @external DataManager
+*/
+
+/**
+* Объект данных в metadata.js
+* @see [MetaEngine/DataObj](../apidocs/classes/DataObj.html)
+* @external DataObj
+*/
+
+/**
+* Элемент перечисления
+* @external EnumObj
+* @see [MetaEngine/EnumObj](../apidocs/classes/EnumObj.html)
+* @extends external:DataObj
+*/
+
+/**
+* Элемент справочника
+* @external CatObj
+* @see [MetaEngine/EnumObj](../apidocs/classes/CatObj.html)
+* @extends external:DataObj
+*/
+
+/**
+* Менеджер перечисления
+* @see [MetaEngine/EnumManager](../apidocs/classes/EnumManager.html)
+* @external EnumManager
+* @extends external:DataManager
+*/
+
+/**
+* Коллекция перечислений
+* @see [MetaEngine/Enumerations](../apidocs/classes/Enumerations.html)
+* @external Enumerations
+* @property name {String} - Имя (ключ) коллекции
+*/
+
+
+

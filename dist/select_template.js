@@ -39,11 +39,11 @@ export default function ({classes, cat: {characteristics, templates, params_link
           if(inset) {
             if(templates_nested && templates_nested.length) {
               if(!templates_nested.includes(this.calc_order)) {
-                this.value_change('calc_order', '', templates_nested[0]);
+                return this.value_change('calc_order', '', templates_nested[0]);
               }
             }
             else {
-              this.value_change('calc_order', '', '');
+              return this.value_change('calc_order', '', '');
             }
           }
           else {

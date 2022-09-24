@@ -118,8 +118,6 @@ class EditorInvisible extends paper.PaperScope {
 
   /**
    * Returns path points which are contained in the rect
-   * @method segments_in_rect
-   * @for Editor
    * @param rect
    * @returns {Array}
    */
@@ -176,11 +174,9 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Устанавливает икону курсора
+   * Устанавливает икону курсора
    * Действие выполняется для всех канвасов редактора
    *
-   * @method canvas_cursor
-   * @for Editor
    * @param name {String} - имя css класса курсора
    */
   canvas_cursor(name) {
@@ -200,10 +196,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Смещает импосты чтобы получить одинаковые размеры заполнений
+   * Смещает импосты чтобы получить одинаковые размеры заполнений  
    * возвращает массив дельт
-   * @param name
-   * @param glasses
+   * @param [name]
+   * @param [glasses]
    * @return {Array}
    */
   do_glass_align(name = 'auto', glasses) {
@@ -379,7 +375,14 @@ class EditorInvisible extends paper.PaperScope {
       }
 
       if(delta.length > consts.epsilon){
-        impost.move_gen(delta);
+        const {b, e} = impost.rays;
+        if(b.profile && impost.is_orthogonal(b.profile, b.point, 0.1) && e.profile && impost.is_orthogonal(e.profile, e.point, 0.1)) {
+          impost.move_gen(delta);
+        }
+        else {
+          impost.move_points(delta, true);
+          impost.layer.redraw();
+        }
         res.push(delta);
       }
     });
@@ -388,8 +391,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Уравнивание по ширинам заполнений
+   * Уравнивание по ширинам заполнений  
    * выполняет в цикле до получения приемлемой дельты
+   * @param [name]
+   * @param [glasses]
    */
   glass_align(name = 'auto', glasses) {
 
@@ -424,7 +429,7 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Смещает раскладку по световому проему, с учетом толщины раскладки
+   * Смещает раскладку по световому проему, с учетом толщины раскладки  
    * возвращает истину в случае успеха
    * @param name
    * @param glass
@@ -605,10 +610,10 @@ class EditorInvisible extends paper.PaperScope {
   }
 
   /**
-   * ### Уравнивание раскладки по световому проему
+   * Уравнивание раскладки по световому проему  
    * выполняет смещение по ширине и высоте
-   * @param name
-   * @param glass
+   * @param [name]
+   * @param [glass]
    * @return {Boolean}
    */
   lay_impost_align(name = 'auto', glass) {
@@ -629,10 +634,7 @@ class EditorInvisible extends paper.PaperScope {
 
 }
 
-/**
+/*
  * Экспортируем конструктор EditorInvisible, чтобы экземпляры построителя можно было создать снаружи
- * @property EditorInvisible
- * @for MetaEngine
- * @type function
  */
 $p.EditorInvisible = EditorInvisible;

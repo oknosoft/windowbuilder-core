@@ -1,0 +1,67 @@
+{
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "source": {
+    "include": [
+      "jsdoc/metadata.jsdoc",
+      "jsdoc/paper.jsdoc",
+      "jsdoc/enums.js",
+      "dist/init.js",
+      "src/geometry/"
+    ],
+    "exclude": [
+      "./src/geometry/contour_nested.js"
+    ],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "templates": {
+    "referenceTitle": "",
+    "disableSort": false,
+    "collapse": true,
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "resources": {
+      "metadata.js<br/>": "https://github.com/oknosoft/metadata.js/tree/develop/packages",
+      "paper.js": "http://paperjs.org/reference/"
+    }
+  },
+  "docdash": {
+    "meta": {
+      "title": "Ядро 'Заказа дилера'",
+      "description": "Ядро 'Заказа дилера'",
+      "keyword": "metadata, order dealer, cad, crm, window builder, windows calculator"
+    },
+    "search": true,
+    "sort": true,
+    "collapse": true,
+    "menu": {
+      "Заказ дилера": {
+        "href":"https://github.com/oknosoft/windowbuilder/wiki",
+        "target":"_blank",
+        "class":"menu-item",
+        "id":"website_link"
+      }
+    },
+    "sectionOrder": [
+      "Tutorials",
+      "Namespaces",
+      "Classes",
+      "Externals",
+      "Modules",
+      "Events",
+      "Mixins",
+      "Interfaces"
+    ]
+  },
+  "opts": {
+    "destination": "./jsdoc/wbcore/",
+    "encoding": "utf8",
+    "private": true,
+    "recurse": true,
+    "template": "./node_modules/docdash",
+    "tutorials": "./jsdoc/tutorials/",
+    "readme": "./README.md"
+  }
+}

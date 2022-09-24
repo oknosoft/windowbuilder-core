@@ -1,5 +1,5 @@
-/**
- * ### Дополнительные методы плана видов характеристик _Свойства объектов_
+/*
+ * Дополнительные методы плана видов характеристик _Свойства объектов_
  * аналог подсистемы _Свойства_ БСП
  *
  * @module cch_properties
@@ -8,9 +8,8 @@
 exports.CchPropertiesManager = class CchPropertiesManager extends Object {
 
   /**
-   * ### Проверяет заполненность обязательных полей
+   * Проверяет заполненность обязательных полей
    *
-   * @method check_mandatory
    * @override
    * @param prms {Array}
    * @param title {String}
@@ -35,9 +34,8 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
   }
 
   /**
-   * ### Возвращает массив доступных для данного свойства значений
+   * Возвращает массив доступных для данного свойства значений
    *
-   * @method slist
    * @override
    * @param prop {CatObj} - планвидовхарактеристик ссылка или объект
    * @param ret_mgr {Object} - установить в этом объекте указатель на менеджера объекта
@@ -100,9 +98,8 @@ exports.CchPropertiesManager = class CchPropertiesManager extends Object {
 exports.CchProperties = class CchProperties extends Object {
 
   /**
-   * ### Является ли значение параметра вычисляемым
+   * Является ли значение параметра вычисляемым
    *
-   * @property is_calculated
    * @type Boolean
    */
   get is_calculated() {
@@ -114,7 +111,7 @@ exports.CchProperties = class CchProperties extends Object {
   }
 
   /**
-   * ### Рассчитывает значение вычисляемого параметра
+   * Рассчитывает значение вычисляемого параметра
    * @param obj {Object}
    * @param [obj.row]
    * @param [obj.elm]
@@ -136,13 +133,25 @@ exports.CchProperties = class CchProperties extends Object {
   }
 
   /**
-   * ### Проверяет условие в строке отбора
+   * Проверяет условие в строке отбора
    */
   check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
 
+    if(this.empty()) {
+      return true;
+    }
     const {is_calculated, type} = this;
-    const {utils, enm: {comparison_types, predefined_formulas}} = $p;
+    const {utils, enm: {comparison_types, predefined_formulas}, EditorInvisible: {BuilderElement}} = $p;
     const ct = prm_row.comparison_type || comparison_types.eq;
+
+    if(!layer) {
+      if(elm instanceof BuilderElement) {
+        layer = elm.layer;
+      }
+      else if(elm2 instanceof BuilderElement) {
+        layer = elm2.layer;
+      }
+    }
 
     // для параметров алгоритма, фильтр отключаем
     if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
@@ -171,7 +180,7 @@ exports.CchProperties = class CchProperties extends Object {
         ok = val == prm_row.value;
       }
       else {
-        const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
         ok = value == val;
       }
     }
@@ -182,7 +191,7 @@ exports.CchProperties = class CchProperties extends Object {
     }
     // параметр явно указан в табчасти параметров изделия
     else {
-      const value = this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+      const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
       ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
     }
     return ok;
@@ -191,9 +200,29 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
    */
-  extract_pvalue({ox, cnstr, elm = {}, origin, prm_row}) {
-    const {product_params, params} = ox;
+  extract_pvalue({ox, cnstr, elm = {}, origin, layer, prm_row}) {
+    
+    // для некоторых параметров, значения живут не в изделии, а в отделе абонента
+    if(this.inheritance === 3) {
+      return this.branch_value({project: elm.project, cnstr, ox});
+    }
+
     let prow, cnstr0, elm0;
+    const {product_params, params} = ox;
+    const find_nearest = () => {
+      if(cnstr && ox.constructions) {
+        cnstr0 = cnstr;
+        elm0 = elm;
+        elm = {};
+        const crow = ox.constructions.find({cnstr});
+        crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+          if(row !== crow) {
+            cnstr = row.cnstr;
+            return false;
+          }
+        });
+      }
+    };
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
       let src = prm_row.origin;
@@ -205,20 +234,29 @@ exports.CchProperties = class CchProperties extends Object {
         case plan_detailing.order:
           const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
           return prow && prow.value;
+          
         case plan_detailing.nearest:
-          if(cnstr && ox.constructions) {
-            cnstr0 = cnstr;
-            elm0 = elm;
-            elm = {};
-            const crow = ox.constructions.find({cnstr});
-            crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
-              if(row !== crow) {
-                cnstr = row.cnstr;
-                return false;
-              }
-            });
+          find_nearest();
+          break;
+          
+        case plan_detailing.layer_active:
+          if(!layer) {
+            layer = elm.layer;
+          }
+          if(layer && layer.furn.shtulp_kind() === 2) {
+            find_nearest();
           }
           break;
+          
+        case plan_detailing.layer_passive:
+          if(!layer) {
+            layer = elm.layer;
+          }
+          if(layer && layer.furn.shtulp_kind() === 1) {
+            find_nearest();
+          }
+          break;
+          
         case plan_detailing.parent:
           if(cnstr && ox.constructions) {
             cnstr0 = cnstr;
@@ -231,6 +269,7 @@ exports.CchProperties = class CchProperties extends Object {
             }
           }
           break;
+          
         case plan_detailing.product:
           if(cnstr) {
             cnstr0 = cnstr;
@@ -239,9 +278,11 @@ exports.CchProperties = class CchProperties extends Object {
             elm = {};
           }
           break;
+          
         case plan_detailing.elm:
         case plan_detailing.layer:
           break;
+          
         default:
           throw `Источник '${src.name}' не поддержан`;
         }
@@ -310,7 +351,7 @@ exports.CchProperties = class CchProperties extends Object {
         if(types && is_ref && arr.length) {
           let mgr;
           for(const type of types) {
-            const tmp = md.mgr_by_class_name(types[0]);
+            const tmp = md.mgr_by_class_name(type);
             if(tmp && arr.some(ref => tmp.by_ref[ref])) {
               mgr = tmp;
               break;
@@ -502,23 +543,35 @@ exports.CchProperties = class CchProperties extends Object {
 
   /**
    * Значение, уточняемое отделом абонента
-   * @param project {Scheme}
+   * @param [project] {Scheme}
    * @param [cnstr] {Number}
    * @param [ox] {CatCharacteristics}
    */
   branch_value({project, cnstr = 0, ox}) {
-    const {branch} = project;
-    let brow = branch.extra_fields.find({property: this});
+    let branch = project?.branch;
+    if(!branch && ox) {
+      branch = ox.calc_order?.organization?._extra?.('branch');
+      if(!branch || branch.empty()) {
+        branch = ox.calc_order?.manager?.branch;
+      }
+    }
+    let brow = branch && branch.extra_fields.find({property: this});
     if(brow) {
       return brow.value;
     }
-    brow = ox && ox.params.find({param: this, cnstr, inset: $p.utils.blank.guid});
-    return brow && brow.value;
+    if(ox) {
+      const {blank} = $p.utils;
+      brow = ox.params.find({param: this, cnstr, inset: blank.guid});
+      if(!brow && cnstr) {
+        brow = ox.params.find({param: this, cnstr: 0, inset: blank.guid});
+      }
+    }
+    return brow ? brow.value : this.fetch_type();
   }
 
   /**
-   * ### Дополняет отбор фильтром по параметрам выбора
-   * Используется в полях ввода экранных форм
+   * Дополняет отбор фильтром по параметрам выбора,
+   * используется в полях ввода экранных форм
    * @param filter {Object} - дополняемый фильтр
    * @param attr {Object} - атрибуты OCombo
    */
