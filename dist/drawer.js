@@ -852,6 +852,7 @@ EditorInvisible.ToolElement = ToolElement;
  *
  * @class
  * @extends BuilderElement
+ * @hideconstructor
  *
  */
 const AbstractFilling = (superclass) => class extends superclass {

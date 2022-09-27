@@ -140,24 +140,18 @@ $p.wsql.init((prm) => {
       debug('Получаем скрипт таблиц alasql');
       $p.md.create_tables((sql) => {
 
-        text = '/* eslint-disable */\nmodule.exports = function meta_init($p) {\n\n'
-          + '$p.wsql.alasql(\'' + sql + '\', []);\n\n'
-          + '$p.md.init(' + JSON.stringify(_m) + ');\n\n'
-          + text + '};';
-
         debug('Записываем результат');
-        let fname = path.resolve(__dirname, '../dist/init.js');
-        fs.writeFile(fname, text, 'utf8', (err) => {
-          if (err) {
-            debug(err);
-            process.exit(1);
-          } else {
-            debug(`Успешно записан > ${fname}`);
-            process.exit(0);
-          }
-        });
+        
+        fs.writeFileSync(path.resolve(__dirname, '../dist/init_sql.js'), 
+          '/* eslint-disable */\nmodule.exports = function init_sql({wsql}) {\n'+
+          'wsql.alasql(\'' + sql + '\', [])};\n\n');
 
-        $p = null;
+        fs.writeFileSync(path.resolve(__dirname, '../dist/init_meta.js'),
+          '/* eslint-disable */\nmodule.exports = function init_meta({md}) {\n'+
+          'md.init(' + JSON.stringify(_m) + ')};\n\n');
+        
+        fs.writeFileSync(path.resolve(__dirname, '../dist/init.js'),
+          '/* eslint-disable */\nmodule.exports = function init_classes($p) {\n'+text+'};\n\n');
 
       });
 
@@ -246,6 +240,7 @@ function obj_constructor_text(_m, category, name, categoties) {
   const managerText = extModule && extModule[managerName] && extModule[managerName].toString();
 
   if(jsdoc) {
+    text += '\n* @hideconstructor';
     text += '\n* @extends external:' + proto;
     text += '\n*/\n';
   }
@@ -308,6 +303,14 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
 
     // табличные части по метаданным - устанавливаем геттер и сеттер для табличной части
     for (const ts in meta.tabular_sections) {
+      if(jsdoc) {
+        const row_fn_name = DataManager.prototype.obj_constructor.call({class_name: category + '.' + name, constructor_names: {}}, ts);
+        const mfld = meta.tabular_sections[ts];
+        text += `/**\n* Табличная часть _${mfld.tooltip || mfld.synonym}_`;
+        text += `\n* @see ${row_fn_name}`;
+        text += `\n* @type external:TabularSection`;
+        text += '\n*/\n';
+      }
       text += `get ${ts}(){return this._getter_ts('${ts}')}\nset ${ts}(v){this._setter_ts('${ts}',v)}\n`;
     }
 
@@ -329,6 +332,13 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
       continue;
     }
 
+    if(jsdoc) {
+      const mfld = meta.tabular_sections[ts];
+      text += `\n/**\n* Строка табчасти _${mfld.tooltip || mfld.synonym}_`
+      text += '\n* @extends external:TabularSectionRow';
+      text += '\n* @hideconstructor';
+      text += '\n*/\n';
+    }
     text += `class ${row_fn_name} extends TabularSectionRow{\n`;
 
     // в прототипе строки табчасти создаём свойства в соответствии с полями табчасти

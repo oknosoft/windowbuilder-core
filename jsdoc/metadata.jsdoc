@@ -8,7 +8,7 @@
 /**
  * Контекст metadata.js
  * @var {external:MetaEngine} $p
- * @prop enm {Enumerations} - Перечисления
+ * @prop enm {Enumerations} - Коллекция перечислений {@see [MetaEngine/Enumerations](../apidocs/classes/Enumerations.html)}
  */
 
 /**
@@ -33,7 +33,7 @@
 /**
 * Элемент справочника
 * @external CatObj
-* @see [MetaEngine/EnumObj](../apidocs/classes/CatObj.html)
+* @see [MetaEngine/CatObj](../apidocs/classes/CatObj.html)
 * @extends external:DataObj
 */
 
@@ -44,12 +44,21 @@
 * @extends external:DataManager
 */
 
+
 /**
-* Коллекция перечислений
-* @see [MetaEngine/Enumerations](../apidocs/classes/Enumerations.html)
-* @external Enumerations
-* @property name {String} - Имя (ключ) коллекции
+* Табличная часть
+* @see [MetaEngine/TabularSection](../apidocs/classes/TabularSection.html)
+* @external TabularSection
+* @property name {String} - Имя (ключ) табчасти
 */
+
+/**
+* Строка табличной части
+* @see [MetaEngine/TabularSectionRow](../apidocs/classes/TabularSectionRow.html)
+* @external TabularSectionRow
+*/
+
+
 
 
 

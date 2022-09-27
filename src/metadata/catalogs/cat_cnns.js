@@ -344,6 +344,8 @@ exports.CatCnns = class CatCnns extends Object {
 
   /**
    * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
+   * @param {CatNom} nom
+   * @return Boolean
    */
   check_nom2(nom) {
     const ref = nom.valueOf();
@@ -352,11 +354,12 @@ exports.CatCnns = class CatCnns extends Object {
 
   /**
    * Проверяет применимость для xx и t
+   * @param {CnnPoint} cnn_point
+   * @return Boolean
    */
   stop_applying(cnn_point) {
     const {applying, cnn_type, _manager} = this;
-    const {cnn_types} = _manager._owner.$p.enm;
-    let stop = applying && (cnn_type === cnn_types.t || cnn_type === cnn_types.xx);
+    let stop = applying && (cnn_type.is('t') || cnn_type.is('xx'));
     if(stop) {
       // 0 - Везде
       // 1 - Только стык
@@ -377,6 +380,7 @@ exports.CatCnns = class CatCnns extends Object {
 
   /**
    * Параметрический размер соединения
+   * @type Number
    */
   size(elm, elm2) {
     let {sz, sizes} = this;
