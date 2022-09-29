@@ -1,25 +1,25 @@
 
 /**
- * Базовый класс элементов построителя  
+ * @summary Элемент изделия
+ * @desc Базовый класс элементов построителя    
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
  *
- * @class BuilderElement
- * @param attr {Object} - объект со свойствами создаваемого элемента
- *  @param attr.b {paper.Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
- *  @param attr.e {paper.Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
- *  @param attr.contour {Contour} - контур, которому принадлежит элемент
- *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
- *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
- *  @param [attr.path] (r && arc_ccw && more_180)
- * @constructor
  * @extends paper.Group
- * @menuorder 40
- * @tooltip Элемент изделия
+ * @abstract
  */
 class BuilderElement extends paper.Group {
 
+  /**
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   *  @param attr.b {paper.Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
+   *  @param attr.e {paper.Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
+   *  @param attr.contour {Contour} - контур, которому принадлежит элемент
+   *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
+   *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
+   *  @param [attr.path] (r && arc_ccw && more_180)
+   */
   constructor(attr) {
 
     super(attr);

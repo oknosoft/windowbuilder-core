@@ -2,7 +2,7 @@
 /*
  *
  *
- * @module profile_connective_adjoining
+ * @module profile_adjoining
  *
  * Created by Evgeniy Malyarov on 18.03.2021.
  */
@@ -19,10 +19,8 @@
  * - живёт в том же слое, что и рамные профили
  * - длина может отличаться от длин профилей, к которым он примыкает
  *
- * @class ProfileAdjoining
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
- * @extends ProfileConnectiveOuter
+ * @extends ProfileConnective
  */
 class ProfileAdjoining extends BaseLine {
 

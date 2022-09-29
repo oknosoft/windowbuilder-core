@@ -7,11 +7,14 @@
 
 /**
  * Объект, описывающий геометрию соединения
- * @class CnnPoint
- * @constructor
  */
 class CnnPoint {
 
+  /**
+   * 
+   * @param {ProfileItem} parent - родительский профиль
+   * @param {NodeBE} node - имя узла профиля
+   */
   constructor(parent, node) {
 
     this._parent = parent;
@@ -175,9 +178,8 @@ class CnnPoint {
       return;
     }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
-    const angle = _parent.angle_at(node);
     const {cnn} = this;
-
+    let angle = _parent.angle_at(node);
     let aerr;
     if(cnn && cnn.amin && cnn.amax) {
       if(angle > 180) {
@@ -454,8 +456,6 @@ class CnnPoint {
 
 /**
  * Объект, описывающий лучи пути профиля
- * @class ProfileRays
- * @constructor
  */
 class ProfileRays {
 
@@ -748,6 +748,22 @@ class ProfileItem extends GeneratrixElement {
       rays[n].cnn = cnn;
       this.project.register_change();
     }
+  }
+
+  /**
+   * С этой функции начинается пересчет и перерисовка сегмента раскладки
+   * Возвращает объект соединения конца профиля
+   * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
+   * - Не делает подмену соединения, хотя могла бы
+   * - Не делает подмену вставки, хотя могла бы
+   *
+   * @abstract
+   * @param {'b'|'e'} node - имя узла профиля
+   * @param {paper.Point} [point] - координаты точки, в окрестности которой искать
+   * @return {CnnPoint}
+   */
+  cnn_point(node, point) {
+    
   }
 
   /**
@@ -1272,6 +1288,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Вычисляемые поля в таблице координат
+   * @return {void}
    */
   save_coordinates() {
 

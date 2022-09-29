@@ -1,19 +1,21 @@
 
 /**
- * Раскладка  
- * Класс описывает поведение элемента раскладки
+ * @summary Раскладка  
+ * @desc Класс описывает поведение элемента раскладки
  *
  * - у раскладки есть координаты конца и начала
- * - есть путь образующей - прямая или кривая линия, такая же, как у {{#crossLink "Profile"}}{{/crossLink}}
- * - владелец типа {{#crossLink "Filling"}}{{/crossLink}}
+ * - есть путь образующей - прямая или кривая линия, такая же, как у {@link ProfileItem}
+ * - владелец типа {@link Filling}
  * - концы могут соединяться не только с пустотой или другими раскладками, но и с рёбрами заполнения
  *
-
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
  * @extends ProfileItem
  */
 class Onlay extends ProfileItem {
 
+  /**
+   * @param attr {Object} - объект со свойствами создаваемого элемента
+   * см. {@link BuilderElement|параметр конструктора BuilderElement}
+   */
   constructor(attr) {
     super(attr);
     // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
@@ -37,6 +39,7 @@ class Onlay extends ProfileItem {
 
   /**
    * Возвращает тип элемента (раскладка)
+   * @type EnmElm_types
    */
   get elm_type() {
     return $p.enm.elm_types.Раскладка;
@@ -44,14 +47,13 @@ class Onlay extends ProfileItem {
 
   /**
    * Слой раскладки в стеклопакете
-   * @return {EnmLay_regions}
+   * @type {EnmLay_regions}
    */
   get region() {
     const {_row, parent} = this;
     let region = _row && _row.region;
     return region && !region.empty() ? region : $p.enm.lay_regions.r2;
   }
-
   set region(v) {
     this.set_region(v);
   }
@@ -75,6 +77,8 @@ class Onlay extends ProfileItem {
 
   /**
    * У раскладки не бывает ведущих элементов
+   * @override
+   * @return {void}
    */
   nearest() {
 
@@ -82,6 +86,8 @@ class Onlay extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих ипостов
+   * @param {Boolean} [check_only]
+   * @return {Boolean|JoinedProfiles}
    */
   joined_imposts(check_only) {
 
@@ -141,9 +147,8 @@ class Onlay extends ProfileItem {
   }
 
   /**
-   * Вычисляемые поля в таблице координат
-   * @method save_coordinates
-   * @for Onlay
+   * @override
+   * @return {void}
    */
   save_coordinates() {
 
@@ -226,18 +231,9 @@ class Onlay extends ProfileItem {
     _row.elm_type = this.elm_type;
   }
 
-  /**
-   * С этой функции начинается пересчет и перерисовка сегмента раскладки
-   * Возвращает объект соединения конца профиля
-   * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
-   * - Не делает подмену соединения, хотя могла бы
-   * - Не делает подмену вставки, хотя могла бы
-   *
-   * @method cnn_point
-   * @for Onlay
-   * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
-   * @return {CnnPoint} - объект {point, profile, cnn_types}
+  /** 
+   * @override
+   * @return {CnnPoint}
    */
   cnn_point(node, point) {
 
@@ -342,6 +338,12 @@ class Onlay extends ProfileItem {
     return res;
   }
 
+  /**
+   * Сдвигает узлы к точкам from и to
+   * @param {paper.Point} from
+   * @param {paper.Point} to
+   * @return {void}
+   */
   move_nodes(from, to) {
     for(let elm of this.parent.imposts){
       if(elm == this){

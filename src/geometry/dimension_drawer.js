@@ -43,10 +43,7 @@ class DimensionGroup {
  * Служебный слой размерных линий  
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class DimensionLayer
  * @extends paper.Layer
- * @param attr
- * @constructor
  */
 class DimensionLayer extends paper.Layer {
 

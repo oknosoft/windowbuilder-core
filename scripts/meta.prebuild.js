@@ -152,7 +152,8 @@ $p.wsql.init((prm) => {
         
         fs.writeFileSync(path.resolve(__dirname, '../dist/init.js'),
           '/* eslint-disable */\nmodule.exports = function init_classes($p) {\n'+text+'};\n\n');
-
+        
+        process.exit(0);
       });
 
     })

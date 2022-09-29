@@ -8,12 +8,8 @@
  * - живут линии в слое соединителей изделия
  * - никаких соединений у линии нет
  *
- * @class Baseline
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends GeneratrixElement
- * @menuorder 45
- * @tooltip Линия
  */
 class BaseLine extends ProfileItem {
 

@@ -5,13 +5,17 @@
  * - Стандартные слои (layers) - это контуры изделия, в них живут элементы
  * - Размерные линии, фурнитуру и визуализацию располагаем в отдельных слоях
  *
- * @class
  * @extends paper.Project
- * @param _canvas {HTMLCanvasElement} - канвас, в котором будет размещено изделие
  */
 
 class Scheme extends paper.Project {
 
+  /**
+   * 
+   * @param {HTMLCanvasElement} _canvas - канвас, в котором будет размещено изделие
+   * @param {paper.PaperScope} _editor - экземпляр редактора
+   * @param {boolean} _silent - тихий режим
+   */
   constructor(_canvas, _editor, _silent) {
 
     // создаём объект проекта paperjs
@@ -652,23 +656,36 @@ class Scheme extends paper.Project {
 
     // скрываем все слои
     const contours = this.getItems({class: Contour});
-
-    if(attr.elm) {
+    
+    const hide = () => {
       contours.forEach((l) => l.hidden = true);
       l_dimensions.visible = false;
       l_connective.visible = false;
-    }
+    };
+    
+    const transparence = () => {
+      contours.forEach((l) => l.opacity = .16);
+    };
 
     let elm;
     _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
-      if(elm && elm.draw_fragment) {
+      if(elm) {
         elm.selected = false;
-        elm.draw_fragment();
+        if(elm.draw_fragment) {
+          hide();
+          elm.draw_fragment();
+        }
+        else {
+          transparence();
+          elm.redraw();
+          elm.opacity = 1;
+        }
       }
     }
     else if(attr.elm < 0) {
+      hide();
       const cnstr = -attr.elm;
       contours.some((l) => {
         if(l.cnstr == cnstr) {

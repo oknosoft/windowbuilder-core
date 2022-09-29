@@ -11,9 +11,7 @@
  * - соединительный профиль живёт в слое одного из рамных контуров изделия, но может оказывать влияние на соединёные с ним контуры
  * - длина соединительного профиля может отличаться от длин профилей, к которым он примыкает
  *
- * @class ProfileConnective
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
  */
 class ProfileConnective extends ProfileItem {

@@ -17,6 +17,16 @@
     "excludePattern": "(^|\\/|\\\\)_"
   },
   "templates": {
+    "systemName": "wb-core",
+    "systemSummary": "Ядро Заказа дилера, безбумажки и параметрика",
+    "copyright": "© 2016-2022 Oknosoft Lab <info@oknosoft.ru> (https://oknosoft.ru)",
+    "navMembers": [
+      {"kind": "class", "title": "Classes", "summary": "Все классы библиотеки"},
+      {"kind": "namespace", "title": "Namespaces", "summary": "Пространства имён"},
+      {"kind": "global", "title": "Globals", "summary": "Глобальные переменные"},
+      {"kind": "tutorial", "title": "Tutorials", "summary": "Руководства и примеры"}
+    ],
+    "inlineNav": true,
     "referenceTitle": "",
     "disableSort": false,
     "collapse": true,
@@ -60,7 +70,7 @@
     "encoding": "utf8",
     "private": true,
     "recurse": true,
-    "template": "./node_modules/docdash",
+    "template": "./node_modules/foodoc/template",
     "tutorials": "./jsdoc/tutorials/",
     "readme": "./README.md"
   }

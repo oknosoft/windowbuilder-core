@@ -22,12 +22,8 @@
  * - есть путь образующей - прямая или кривая линия, такая же, как у створки
  * - длина дополнительного профиля может отличаться от длины ведущего элемента
  *
- * @class ProfileAddl
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
- * @menuorder 43
- * @tooltip Дополнительный профиль
  */
 class ProfileAddl extends ProfileItem {
 
@@ -88,7 +84,7 @@ class ProfileAddl extends ProfileItem {
 
   /**
    * Примыкающий внешний элемент
-   * @type Profile
+   * @return Profile
    */
   nearest() {
     const {_attr, parent, project} = this;
@@ -98,15 +94,8 @@ class ProfileAddl extends ProfileItem {
   }
 
   /**
-   * С этой функции начинается пересчет и перерисовка сегмента добора
-   * Возвращает объект соединения конца профиля
-   * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
-   * - Не делает подмену соединения, хотя могла бы
-   * - Не делает подмену вставки, хотя могла бы
-   *
-   * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
-   * @return {CnnPoint} - объект {point, profile, cnn_types}
+   * @override
+   * @return {CnnPoint}
    */
   cnn_point(node, point) {
 
@@ -160,8 +149,8 @@ class ProfileAddl extends ProfileItem {
 
   /**
    * Рассчитывает точки пути на пересечении текущего и указанного профилей
-   * @method path_points
-   * @param cnn_point {CnnPoint}
+   * @param {CnnPoint} cnn_point 
+   * @param {'b'|'e'} profile_point 
    */
   path_points(cnn_point, profile_point) {
 

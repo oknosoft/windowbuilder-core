@@ -32,12 +32,13 @@
     "paper-jsdom-canvas": "0.12.15"
   },
   "devDependencies": {
-    "docdash": "^1.2",
+    "foodoc": "github:oknosoft/foodoc#017f54b4ff4dd7999eac679a1a6e13af379e5729",
     "gulp": "^4.0",
     "gulp-concat": "^2.6",
     "gulp-replace": "^1.0",
     "gulp-umd": "^2.0",
-    "md5-file": "^5.0"
+    "md5-file": "^5.0",
+    "decomment": "^0.9.5"
   },
   "files": [
     "dist/**",

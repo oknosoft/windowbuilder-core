@@ -6,7 +6,8 @@
 
 const gulp = require('gulp'),
 	concat = require('gulp-concat'),
-	umd = require('gulp-umd');
+	umd = require('gulp-umd'),
+  decomment = require('./scripts/decoment');
 
 module.exports = gulp;
 
@@ -23,11 +24,17 @@ gulp.task('build-drawer', function () {
     './src/modifiers/documents/*.js',
   ])
     .pipe(concat('drawer.js'))
+    .pipe(decomment({safe: true}))
     .pipe(umd({
       // exports: function (file) {
       //   return 'EditorInvisible';
       // },
-      templateSource: 'module.exports = function({$p, paper}) {<%= contents %> \nreturn EditorInvisible;\n}',
+      templateSource: `/*!
+ * Движок графического построителя
+ * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2022
+ */
+ 
+module.exports = function({$p, paper}) {<%= contents %> \nreturn EditorInvisible;\n}`,
     }))
     .pipe(gulp.dest('./dist'));
 });

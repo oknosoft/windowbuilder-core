@@ -1,26 +1,46 @@
 {
   "01_meta": {
     "title": "Метаданные",
+    "summary": "Перечисления, справочники и документы",
     "children": {
-      "enums": {"title": "Перечисления"},
-      "catalogs": {"title": "Справочники"},
-      "docums": {"title": "Документы"}
+      "enums": {
+        "title": "Перечисления",
+        "showTableOfContents": false
+      },
+      "catalogs": {
+        "title": "Справочники",
+        "showTableOfContents": false
+      },
+      "docums": {
+        "title": "Документы",
+        "showTableOfContents": false
+      }
     }
   },
   "02_geometry": {
     "title": "Графический движок",
+    "summary": "Как устроена рисовалка",
     "children": {
-      "profile": {"title": "Элемент профиля"}, 
-      "cnns": {"title": "Справочник 'Соединения'"}
+      "profile": {
+        "title": "Элемент профиля",
+        "showTableOfContents": false
+      }, 
+      "cnns": {
+        "title": "Справочник 'Соединения'",
+        "showTableOfContents": false
+      }
     }
   },
   "03_specification": {
-    "title": "Формирование спецификаций"
+    "title": "Формирование спецификаций",
+    "summary": "Движок параметрика"
   },
   "04_pricing": {
-    "title": "Ценообразование"
+    "title": "Ценообразование",
+    "summary": "Типы цен и маржинальные коэффициенты"
   },
   "05_planing": {
-    "title": "Движок планирования"
+    "title": "Движок планирования",
+    "summary": "Планирование и диспетчеризация"
   }
 }
