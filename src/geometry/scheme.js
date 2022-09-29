@@ -664,7 +664,10 @@ class Scheme extends paper.Project {
     };
     
     const transparence = () => {
-      contours.forEach((l) => l.opacity = .16);
+      contours.forEach((l) => {
+        l.opacity = .16;
+        l.hide_generatrix();
+      });
     };
 
     let elm;
