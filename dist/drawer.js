@@ -9085,7 +9085,6 @@ class ProfileItem extends GeneratrixElement {
     const {_row} = this;
     return (_row && _row.offset) || 0;
   }
-
   set offset(v) {
     const {_row, _attr, selected} = this;
     v = parseFloat(v) || 0;
@@ -9357,7 +9356,7 @@ class ProfileItem extends GeneratrixElement {
     }
 
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + b.size + e.size;
+    const res = sub_gen.length + (this instanceof Onlay ? 0 : b.size + e.size);
     sub_gen.remove();
 
     return res;
@@ -10095,7 +10094,7 @@ class ProfileItem extends GeneratrixElement {
 
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
-      const oinner = prays[side];
+      let oinner = prays[side];
       const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
 
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
@@ -10204,6 +10203,16 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
+          if(this instanceof Onlay) {
+            const delta = cnn_point.cnn.size(this);
+            if(delta) {
+              const pt = oinner.getNearestPoint(cnn_point.point);
+              const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+              const tmp = oinner.clone({insert: false});
+              tmp.translate(normal);
+              oinner = tmp;
+            }
+          }
           if(is_b) {
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);

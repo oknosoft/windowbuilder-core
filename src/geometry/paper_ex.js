@@ -264,13 +264,13 @@ Object.defineProperties(paper.Path.prototype, {
     },
 
   /**
-     * Возвращает путь, равноотстоящий от текущего пути
+   * Возвращает путь, равноотстоящий от текущего пути
    * @memberof paper.Path#
    * @method
-     * @param {number} delta - расстояние, на которое будет смещен новый путь
-     * @param {number} elong - удлинение нового пути с каждого конца
-     * @return paper.Path
-     */
+   * @param {number} delta - расстояние, на которое будет смещен новый путь
+   * @param {number} elong - удлинение нового пути с каждого конца
+   * @return paper.Path
+   */
   equidistant: {
       value: function equidistant(delta, elong) {
 

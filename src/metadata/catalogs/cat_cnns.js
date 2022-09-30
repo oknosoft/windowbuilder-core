@@ -377,19 +377,36 @@ exports.CatCnns = class CatCnns extends Object {
     }
     return stop;
   }
-
+  
   /**
-   * Параметрический размер соединения
-   * @type Number
+   * Параметрический размер соединения 
+   * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
+   * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+   * @return Number
    */
-  size(elm, elm2) {
+  size(elm0, elm2) {
     let {sz, sizes} = this;
-    const {ox, layer} = elm;
+    const {ox, layer} = elm0;
     for(const prm_row of sizes) {
+      let elm = elm0;
+      let cnstr = 0;
+      if(prm_row.origin.is('layer')) {
+        cnstr = layer.cnstr;
+      }
+      else if(prm_row.origin.is('parent')) {
+        const {parent} = elm;
+        if(parent === layer) {
+          cnstr = layer.cnstr;
+        }
+        else if(parent.elm) {
+          cnstr = -parent.elm;
+          elm = parent;
+        }
+      }
       if(prm_row.param.check_condition({
           row_spec: {},
           prm_row,
-          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          cnstr,
           elm,
           elm2,
           layer,
@@ -399,12 +416,13 @@ exports.CatCnns = class CatCnns extends Object {
           elm,
           elm2,
           ox,
-          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          cnstr,
           layer,
         })) {
         sz = prm_row.elm;
         break;
       }
+      //if(elm != elm0 && elm.inset.insert_type.is('composite')) {}
     }
     return sz;
   }

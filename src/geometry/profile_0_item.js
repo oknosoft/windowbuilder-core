@@ -607,6 +607,7 @@ class ProfileItem extends GeneratrixElement {
    * Расстояние от узла до внешнего ребра элемента  
    * для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
    * @type Number
+   * @final
    */
   get d1() {
     return -(this.d0 - this.sizeb);
@@ -616,16 +617,22 @@ class ProfileItem extends GeneratrixElement {
    * Расстояние от узла до внутреннего ребра элемента  
    * зависит от ширины элементов и свойств примыкающих соединений
    * @type Number
+   * @final
    */
   get d2() {
     return this.d1 - this.width;
   }
 
+  /**
+   * Задаваемое пользователем смещение от образующей  
+   * Особенно актуально для наклонных элементов а так же, в случае, 
+   * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю
+   * @type Number
+   */
   get offset() {
     const {_row} = this;
     return (_row && _row.offset) || 0;
   }
-
   set offset(v) {
     const {_row, _attr, selected} = this;
     v = parseFloat(v) || 0;
@@ -769,6 +776,8 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Проекция точки b на образующую родительского элемента
    * Для рам и створок, совпадает с 'b', для импостов - отличается
+   * @type {paper.Point}
+   * @final
    */
   get gb() {
     return this.gn('b');
@@ -777,11 +786,19 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Проекция точки e на образующую родительского элемента
    * Для рам и створок, совпадает с 'e', для импостов - отличается
+   * @type {paper.Point}
+   * @final
    */
   get ge() {
     return this.gn('e');
   }
 
+  /**
+   * Вспомогательная для {@link ProfileItem#gb} {@link ProfileItem#ge}
+   * @private
+   * @param {String} n
+   * @return {paper.Point}
+   */
   gn(n) {
     if(this.layer.layer) {
       const {profile, is_t} = this.cnn_point(n);
@@ -794,7 +811,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу
-   * @param node {string}
+   * @param node {NodeBE}
    * @return {number}
    */
   angle_at(node) {
@@ -826,6 +843,8 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу в точке 'b'
+   * @type Number
+   * @final
    */
   get a1() {
     return this.angle_at('b');
@@ -833,6 +852,8 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу в точке 'e'
+   * @type Number
+   * @final
    */
   get a2() {
     return this.angle_at('e');
@@ -1007,7 +1028,7 @@ class ProfileItem extends GeneratrixElement {
 
     // получаем фрагмент образующей
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + b.size + e.size;
+    const res = sub_gen.length + (this instanceof Onlay ? 0 : b.size + e.size);
     sub_gen.remove();
 
     return res;
@@ -1890,7 +1911,7 @@ class ProfileItem extends GeneratrixElement {
 
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
-      const oinner = prays[side];
+      let oinner = prays[side];
       const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
 
       // импосты рисуем с учетом стороны примыкания
@@ -2004,6 +2025,17 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
+          // TODO: пока только для раскладок, после отладки - распространим на всех
+          if(this instanceof Onlay) {
+            const delta = cnn_point.cnn.size(this);
+            if(delta) {
+              const pt = oinner.getNearestPoint(cnn_point.point);
+              const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+              const tmp = oinner.clone({insert: false});
+              tmp.translate(normal);
+              oinner = tmp;
+            }
+          }
           // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
           if(is_b) {
             // в зависимости от стороны соединения
