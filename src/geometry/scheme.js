@@ -1251,7 +1251,8 @@ class Scheme extends paper.Project {
     }
     // в шаблонах скрываем размерные линии
     const hidden = new Set();
-    if(this.ox.calc_order.obj_delivery_state == 'Шаблон') {
+    const {sz_lines} = $p.job_prm.builder;
+    if(this.ox.calc_order.obj_delivery_state == 'Шаблон' || sz_lines == 'БезРазмеров' || attr.sz_lines == 'БезРазмеров') {
       for(const el of this.getItems({class: DimensionLine})) {
         el.visible = false;
         hidden.add(el);
@@ -1973,12 +1974,36 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * Ищет точки в выделенных элементах. Если не находит, то во всём проекте
+   * @summary Все профили изделия
+   * @type {Array<ProfileItem>}
+   */
+  get profiles() {
+    const {profiles} = this.l_connective;
+    for(const contour of this.getItems({class: Contour})) {
+      profiles.push(...contour.profiles);
+    }
+    return profiles;
+  }
+
+  /**
+   * @summary Все раскладки изделия
+   * @type {Array<Onlay>}
+   */
+  get onlays() {
+    const onlays = [];
+    for(const contour of this.getItems({class: Contour})) {
+      onlays.push(...contour.onlays);
+    }
+    return onlays;
+  }
+
+  /**
+   * @summary Ищет точки в выделенных элементах. Если не находит, то во всём проекте
    * @param point {paper.Point}
    * @param [tolerance] {Number}
    * @param [selected_first] {Boolean}
    * @param [with_onlays] {Boolean}
-   * @returns {*}
+   * @returns {paper.HitItem|void}
    */
   hitPoints(point, tolerance, selected_first, with_onlays) {
     let item, hit;
@@ -1998,7 +2023,7 @@ class Scheme extends paper.Project {
     }
 
     // отдаём предпочтение сегментам выделенных путей
-    if(selected_first) {
+    if(selected_first && selected_first !== 1) {
       this.selectedItems.some((item) => hit = item.hitTest(point, {segments: true, tolerance: tolerance || 8}));
       // если нет в выделенных, ищем во всех
       if(!hit) {
@@ -2006,14 +2031,16 @@ class Scheme extends paper.Project {
       }
     }
     else {
-      for (let elm of this.activeLayer.profiles) {
+      const profiles = selected_first === 1 ? this.profiles : this.activeLayer.profiles;
+      for (let elm of profiles) {
         check_corns(elm);
         for (let addl of elm.addls) {
           check_corns(addl);
         }
       }
       if(with_onlays) {
-        for (let elm of this.activeLayer.onlays) {
+        const onlays = selected_first === 1 ? this.onlays : this.activeLayer.onlays;
+        for (let elm of onlays) {
           check_corns(elm);
         }
       }

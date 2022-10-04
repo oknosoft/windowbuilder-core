@@ -675,6 +675,9 @@ class ProfileItem extends GeneratrixElement {
    */
   hhpoint(side) {
     const {layer, rays} = this;
+    if(layer instanceof ConnectiveLayer) {
+      return ;
+    }
     const {h_ruch, furn} = layer;
     const {furn_set, handle_side} = furn;
     if(!h_ruch || !handle_side || furn_set.empty()) {

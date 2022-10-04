@@ -9112,6 +9112,9 @@ class ProfileItem extends GeneratrixElement {
 
   hhpoint(side) {
     const {layer, rays} = this;
+    if(layer instanceof ConnectiveLayer) {
+      return ;
+    }
     const {h_ruch, furn} = layer;
     const {furn_set, handle_side} = furn;
     if(!h_ruch || !handle_side || furn_set.empty()) {
@@ -14356,7 +14359,8 @@ class Scheme extends paper.Project {
       options.precision = 1;
     }
     const hidden = new Set();
-    if(this.ox.calc_order.obj_delivery_state == 'Шаблон') {
+    const {sz_lines} = $p.job_prm.builder;
+    if(this.ox.calc_order.obj_delivery_state == 'Шаблон' || sz_lines == 'БезРазмеров' || attr.sz_lines == 'БезРазмеров') {
       for(const el of this.getItems({class: DimensionLine})) {
         el.visible = false;
         hidden.add(el);
@@ -14892,6 +14896,22 @@ class Scheme extends paper.Project {
     return Array.from(res);
   }
 
+  get profiles() {
+    const {profiles} = this.l_connective;
+    for(const contour of this.getItems({class: Contour})) {
+      profiles.push(...contour.profiles);
+    }
+    return profiles;
+  }
+
+  get onlays() {
+    const onlays = [];
+    for(const contour of this.getItems({class: Contour})) {
+      onlays.push(...contour.onlays);
+    }
+    return onlays;
+  }
+
   hitPoints(point, tolerance, selected_first, with_onlays) {
     let item, hit;
     let dist = Infinity;
@@ -14909,21 +14929,23 @@ class Scheme extends paper.Project {
       }
     }
 
-    if(selected_first) {
+    if(selected_first && selected_first !== 1) {
       this.selectedItems.some((item) => hit = item.hitTest(point, {segments: true, tolerance: tolerance || 8}));
       if(!hit) {
         hit = this.hitTest(point, {segments: true, tolerance: tolerance || 6});
       }
     }
     else {
-      for (let elm of this.activeLayer.profiles) {
+      const profiles = selected_first === 1 ? this.profiles : this.activeLayer.profiles;
+      for (let elm of profiles) {
         check_corns(elm);
         for (let addl of elm.addls) {
           check_corns(addl);
         }
       }
       if(with_onlays) {
-        for (let elm of this.activeLayer.onlays) {
+        const onlays = selected_first === 1 ? this.onlays : this.activeLayer.onlays;
+        for (let elm of onlays) {
           check_corns(elm);
         }
       }
