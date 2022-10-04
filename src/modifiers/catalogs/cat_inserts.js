@@ -834,14 +834,13 @@
 
     /**
      * Возвращает спецификацию вставки с фильтром
-     * @method filtered_spec
-     * @param elm {BuilderElement|Object} - элемент, к которому привязана вставка
-     * @param elm2 {BuilderElement|Object} - соседний элемент, имеет смысл, когда вставка вызвана из соединения
-     * @param ox {CatCharacteristics} - текущая продукция
-     * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
-     * @param [len_angl] {Object} - контекст размеров элемента
-     * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
-     * @return {Array}
+     * @param {BuilderElement|Object} elm - элемент, к которому привязана вставка
+     * @param {BuilderElement|Object} elm2 - соседний элемент, имеет смысл, когда вставка вызвана из соединения
+     * @param {CatCharacteristics} ox - текущая продукция
+     * @param {Boolean} [is_high_level_call] - вызов верхнего уровня - специфично для стеклопакетов
+     * @param {Object} [len_angl] - контекст размеров элемента
+     * @param {CatInsertsSpecificationRow|CatCnnsSpecificationRow} [own_row] - родительская строка для вложенных вставок
+     * @return {Array.<CatInsertsSpecificationRow|CatCnnsSpecificationRow>}
      */
     filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {
 
@@ -1021,16 +1020,17 @@
     }
 
     /**
-     * Дополняет спецификацию изделия спецификацией текущей вставки
-     * @method calculate_spec
-     * @param elm {BuilderElement}
-     * @param [elm2] {BuilderElement}
-     * @param [len_angl] {Object}
-     * @param ox {CatCharacteristics}
-     * @param own_row {CatCnnsSpecificationRow}
-     * @param spec {TabularSection}
-     * @param clr {CatClrs}
-     * @param totqty0 {Boolean} - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
+     * Дополняет спецификацию изделия спецификацией текущей вставки  
+     * Ничего не возвращает, создаёт строки в табчасти `spec`
+     * @param {BuilderElement} elm
+     * @param {BuilderElement} [elm2]
+     * @param {Object} [len_angl]
+     * @param {CatCharacteristics} ox
+     * @param {CatCnnsSpecificationRow} own_row
+     * @param {TabularSection} spec
+     * @param {CatClrs} clr
+     * @param {Boolean} [totqty0] - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
+     * $return {void}
      */
     calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {
 
@@ -1318,12 +1318,12 @@
 
     /**
      * Дополняет спецификацию изделия спецификацией текущего ряда
-     * @method region_spec
      * @param elm {BuilderElement}
      * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
      * @param region {Number}
+     * $return {void}
      */
     region_spec({elm, len_angl, ox, spec, region, totqty0}) {
       const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;

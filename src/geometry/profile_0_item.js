@@ -1,5 +1,5 @@
 
-/**
+/*
  * Базовые классы профиля
  *
  * Created by Evgeniy Malyarov on 24.07.2015.
@@ -157,7 +157,6 @@ class CnnPoint {
   get err() {
     return this._err;
   }
-
   set err(v) {
     if(!v) {
       this._err.length = 0;
@@ -223,7 +222,6 @@ class CnnPoint {
     }
     return this._profile;
   }
-
   set profile(v) {
     this._profile = v;
   }
@@ -243,7 +241,7 @@ class CnnPoint {
   /**
    * Возвращает профиль и узел, если есть соединение с outer-стороны профиля
    *
-   * @return {{node: string, profile: ProfileItem}}
+   * @return {NodeAndProfile}
    */
   find_other() {
 
@@ -267,6 +265,7 @@ class CnnPoint {
   /**
    * При наличии соединения с другой стороны, исправляет ссылки на основной профиль и profile_point
    * @param other
+   * @return {void}
    */
   correct_profile({profile}, cnn) {
     const {parent, point}  = this;
@@ -370,7 +369,7 @@ class CnnPoint {
 
   /**
    * Поправка на размер соединения с учётом угла к соседнему профилю
-   * @returns {number}
+   * @return {number}
    */
   get size() {
     const {parent, cnn, node} = this;
@@ -598,11 +597,22 @@ class ProfileRays {
  * Виртуальный класс описывает общие свойства профиля и раскладки
  *
  * @abstract
- * @extends BuilderElement
- * @tutorial profile
+ * @extends GeneratrixElement
+ * @tutorial 02_geometry
  */
 class ProfileItem extends GeneratrixElement {
 
+  /**
+   * Расстояние от узла до опорной линии  
+   * Для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений,
+   * для соединителей и раскладок = 0
+   * @type Number
+   * @final
+   */
+  get d0() {
+    return 0;
+  }
+  
   /**
    * Расстояние от узла до внешнего ребра элемента  
    * для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
@@ -660,8 +670,8 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Точка проекции высоты ручки на ребро профиля
    *
-   * @param side
-   * @return Point|undefined
+   * @param {InnerOuter} side
+   * @return {paper.Point|void}
    */
   hhpoint(side) {
     const {layer, rays} = this;
@@ -678,7 +688,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Точка проекции высоты ручки на внутреннее ребро профиля
-   * @type Point|undefined
+   * @type {paper.Point|void}
    */
   get hhi() {
     return this.hhpoint('inner');
@@ -686,7 +696,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Точка проекции высоты ручки на внешнее ребро профиля
-   * @type Point|undefined
+   * @type {paper.Point|void}
    */
   get hho() {
     return this.hhpoint('outer');
@@ -765,7 +775,7 @@ class ProfileItem extends GeneratrixElement {
    * - Не делает подмену вставки, хотя могла бы
    *
    * @abstract
-   * @param {'b'|'e'} node - имя узла профиля
+   * @param {NodeBE} node - имя узла профиля
    * @param {paper.Point} [point] - координаты точки, в окрестности которой искать
    * @return {CnnPoint}
    */
@@ -1801,8 +1811,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
-   *
-   * @chainable
+   * @return {ProfileItem}
    */
   postcalc_inset() {
     // если слева и справа T - и тип не импост или есть не T и тпи импост
@@ -2510,7 +2519,8 @@ class ProfileItem extends GeneratrixElement {
    * - {{#crossLink "ProfileItem/postcalc_inset:method"}}postcalc_inset(){{/crossLink}} - проверяет корректность вставки, заменяет при необходимости
    * - {{#crossLink "ProfileItem/path_points:method"}}path_points(){{/crossLink}} - рассчитывает координаты вершин пути профиля
    *
-   * @chainable
+   * @override
+   * @return {ProfileItem}
    */
   redraw() {
     // получаем узлы
@@ -2609,7 +2619,7 @@ class ProfileItem extends GeneratrixElement {
    * Координаты вершин (cornx1...corny4)
    *
    * @param corn {String|Number} - имя или номер вершины
-   * @return {Point|Number} - координата или точка
+   * @return {paper.Point|Number} - координата или точка
    */
   corns(corn) {
     const {_corns} = this._attr;

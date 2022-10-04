@@ -1014,9 +1014,9 @@ class Scheme extends paper.Project {
 
   /**
    * Двигает выделенные точки путей либо все точки выделенных элементов
-   * @method move_points
-   * @param delta {paper.Point}
-   * @param [all_points] {Boolean}
+   * @param {paper.Point} delta - куда и на сколько сдвигать
+   * @param {Boolean} [all_points] - указывает, двигать выделенные элементы целиком или только их выделенные узлы
+   * @return {void}
    */
   move_points(delta, all_points) {
 
@@ -1131,7 +1131,7 @@ class Scheme extends paper.Project {
 
   /**
    * Сохраняет координаты и пути элементов в табличных частях характеристики
-   * @method save_coordinates
+   * @return {Promise}
    */
   save_coordinates(attr) {
 
@@ -1195,10 +1195,10 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * Изменяет центр и масштаб, чтобы изделие вписалось в размер окна  
-   * Используется инструментом {{#crossLink "ZoomFit"}}{{/crossLink}}, вызывается при открытии изделия и после загрузки типового блока
+   * Изменяет центр и масштаб, чтобы изделие вписалось в размер окна    
+   * Используется инструментом _ZoomFit_, вызывается при открытии изделия и после загрузки типового блока
    *
-   * @method zoom_fit
+   * return {void}
    */
   zoom_fit(bounds, isNode) {
 
@@ -1308,12 +1308,11 @@ class Scheme extends paper.Project {
   /**
    * Перезаполняет изделие данными типового блока или снапшота  
    * Вызывается, обычно, из формы выбора типового блока, но может быть вызван явно в скриптах тестирования или групповых обработках
-   *
-   * @method load_stamp
-   * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
-   * @param [is_snapshot] {Boolean}
-   * @param [no_refill] {Boolean}
-   * @param [from_service] {Boolean}
+   * @param {String|CatObj|Object} obx - идентификатор или объект-основание (характеристика продукции либо снапшот)
+   * @param {Boolean} [is_snapshot]
+   * @param {Boolean} [no_refill]
+   * @param {Boolean} [from_service]
+   * @return {Promise}
    */
   load_stamp(obx, is_snapshot, no_refill, from_service) {
 
@@ -1599,6 +1598,7 @@ class Scheme extends paper.Project {
 
   /**
    * Перерисовавает визуализацию контуров изделия
+   * @return {void}
    */
   draw_visualization() {
     if(this.view){
@@ -1614,12 +1614,11 @@ class Scheme extends paper.Project {
    * Вставка по умолчанию  
    * Возвращает вставку по умолчанию с учетом свойств системы и положения элемента
    *
-   * @method default_inset
-   * @param [attr] {Object}
-   * @param [attr.elm] {BuilderElement}
-   * @param [attr.pos] {EnmPositions} - положение элемента
-   * @param [attr.elm_type] {EnmElm_types} - тип элемента
-   * @returns {Array.<ProfileItem>}
+   * @param {Object} [attr]
+   * @param {BuilderElement} [attr.elm]
+   * @param {EnmPositions} [attr.pos] - положение элемента
+   * @param {EnmElm_types} [attr.elm_type] - тип элемента
+   * @return {Array.<ProfileItem>}
    */
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
@@ -1703,6 +1702,7 @@ class Scheme extends paper.Project {
   /**
    * Контроль вставки  
    * Проверяет, годится ли текущая вставка для данного типа элемента и положения
+   * @return {CatInserts}
    */
   check_inset(attr) {
     const inset = attr.inset ? attr.inset : attr.elm.inset;
@@ -1741,7 +1741,7 @@ class Scheme extends paper.Project {
    * @param res {CnnPoint} - описание соединения на конце текущего профиля
    * @param point {paper.Point} - точка, окрестность которой анализируем
    * @param check_only {Boolean|String} - указывает, выполнять только проверку или привязывать точку к узлам или профилю или к узлам и профилю
-   * @returns {Boolean|undefined}
+   * @returns {Boolean|void}
    */
   check_distance(element, profile, res, point, check_only) {
 
@@ -1899,7 +1899,7 @@ class Scheme extends paper.Project {
    * Цвет по умолчанию  
    * Возвращает цвет по умолчанию с учетом свойств системы и элемента
    *
-   * @param [attr] {Object}
+   * @param {Object} [attr]
    * @return {CatClrs}
    */
   default_clr(attr) {
@@ -1910,7 +1910,7 @@ class Scheme extends paper.Project {
    * Выделенные профили  
    * Возвращает массив выделенных профилей. Выделенным считаем профиль, у которого выделены `b` и `e` или выделен сам профиль при невыделенных узлах
    *
-   * @param [all] {Boolean} - если true, возвращает все выделенные профили. Иначе, только те, которе можно двигать
+   * @param {Boolean} [all] - если true, возвращает все выделенные профили. Иначе, только те, которе можно двигать
    * @returns {Array.<ProfileItem>}
    */
   selected_profiles(all) {
@@ -1936,8 +1936,7 @@ class Scheme extends paper.Project {
   /**
    * Выделенные заполнения  
    *
-   * @method selected_glasses
-   * @returns {Array.<Filling>}
+   * @return {Array.<Filling>}
    */
   selected_glasses() {
     return this.selected_elements.filter((item) => item instanceof Filling);

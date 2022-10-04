@@ -20,7 +20,17 @@
  */
 
 /**
+ * @typedef InnerOuter {'inner'|'outer'}
+ */
+
+/**
  * @typedef NodeBE {'b'|'e'}
+ */
+
+/**
+ * @typedef NodeAndProfile
+ * @prop {NodeBE} node
+ * @prop {ProfileItem} profile
  */
 
 
@@ -34,7 +44,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @memberof paper.Path#
    * @method
    * @param {paper.Point} point
-   * @return Number
+   * @return {Number}
    */
   getDirectedAngle: {
     value: function getDirectedAngle(point) {
@@ -52,7 +62,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @memberof paper.Path#
    * @method
    * @param {Boolean} [first] - возвращать первое найденное пересечение
-   * @return Array
+   * @return {Array}
    */
   self_intersections: {
     value: function self_intersections(first) {
@@ -93,7 +103,7 @@ Object.defineProperties(paper.Path.prototype, {
    * Является ли путь самопересекающимся
    * @memberof paper.Path#
    * @method
-   * @return Boolean
+   * @return {Boolean}
    */
   is_self_intersected: {
     value: function is_self_intersected() {
@@ -109,7 +119,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @param {paper.Point} point - точка, в окрестности которой ищем угол
    * @param {paper.Point} [interior]  - точка внутри нашего пути
    * @param {Number} [round] - округлять до N знаков
-   * @return Number
+   * @return {Number}
    */
   angle_to: {
       value : function angle_to(other, point, interior, round){
@@ -136,7 +146,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @param {paper.Point} point - точка, в окрестности которой ищем угол
    * @param {paper.Point} [interior]  - точка внутри нашего пути
    * @param {Number} [round] - округлять до N знаков
-   * @return Number
+   * @return {Number}
    */
   angle_between: {
     value : function angle_between(other, point, interior, round){
@@ -152,7 +162,7 @@ Object.defineProperties(paper.Path.prototype, {
    * Выясняет, является ли путь прямым
    * @memberof paper.Path#
    * @method
-   * @return Boolean
+   * @return {Boolean}
    */
   is_linear: {
     value: function is_linear() {
@@ -185,7 +195,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @method
    * @param {paper.Point} point - точка, положение которой надо оценить
    * @param {Boolean|Number} [sticking] - прилипание (размер окрестности)
-   * @return Boolean
+   * @return {Boolean}
    */
   is_nearest: {
     value: function is_nearest(point, sticking) {
@@ -200,7 +210,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @param {paper.Point} point1 - точка начала фрагмента
    * @param {paper.Point} point2 - точка конца фрагмента
    * @param {Boolean} [strict] - если точки 1-2 не лежат в точности на пути, искать ли ближайшую
-   * @return paper.Path
+   * @return {paper.Path}
    */
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
@@ -269,7 +279,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @method
    * @param {number} delta - расстояние, на которое будет смещен новый путь
    * @param {number} elong - удлинение нового пути с каждого конца
-   * @return paper.Path
+   * @return {paper.Path}
    */
   equidistant: {
       value: function equidistant(delta, elong) {
@@ -335,7 +345,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @memberof paper.Path#
    * @method
    * @param {number} delta - расстояние, на которое будет смещен новый путь
-   * @return paper.Path
+   * @return {paper.Path}
    */
   elongation: {
       value: function elongation(delta) {
@@ -366,7 +376,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @param {Boolean|Number} [elongate] - если истина, пути будут продолжены до пересечения
    * @param {paper.Point} [other_point] - если указано, контролируем вектор пересечения
    * @param {Boolean} [clone] - если указано, не удлиняем текущие пути
-   * @return paper.Path
+   * @return {paper.Path}
    */
   intersect_point: {
       value: function intersect_point(path, point, elongate, other_point, clone) {
@@ -506,6 +516,9 @@ Object.defineProperties(paper.Path.prototype, {
   /**
    * Минимальный радиус, высисляемый по кривизне пути  
    * для прямых = 0
+   * @memberof paper.Path#
+   * @method
+   * @return {Number}
    */
   rmin: {
     value() {
@@ -528,6 +541,9 @@ Object.defineProperties(paper.Path.prototype, {
   /**
    * Максимальный радиус, высисляемый по кривизне пути
    * для прямых = 0
+   * @memberof paper.Path#
+   * @method
+   * @return {Number}
    */
   rmax: {
     value() {
@@ -549,6 +565,9 @@ Object.defineProperties(paper.Path.prototype, {
 
   /**
    * Cредний радиус пути по трём точкам
+   * @memberof paper.Path#
+   * @method
+   * @return {Number}
    */
   ravg: {
     value() {
@@ -572,6 +591,8 @@ Object.defineProperties(paper.Point.prototype, {
 
 	/**
 	 * Выясняет, расположена ли точка в окрестности точки
+   * @memberof paper.Point#
+   * @method
 	 * @param point {paper.Point}
 	 * @param [sticking] {Boolean|Number}
 	 * @return {Boolean}
@@ -586,12 +607,14 @@ Object.defineProperties(paper.Point.prototype, {
 	},
 
 	/**
-	 * ПоложениеТочкиОтносительноПрямой
-	 * @param x1 {Number}
-	 * @param y1 {Number}
-	 * @param x2 {Number}
-	 * @param y2 {Number}
-	 * @return {number}
+	 * Положение точки относительно прямой
+   * @memberof paper.Point#
+   * @method
+	 * @param {Number} x1
+	 * @param {Number} y1 
+	 * @param {Number} x2
+	 * @param {Number} y2
+	 * @return {Number}
 	 */
 	point_pos: {
 		value: function point_pos(x1,y1, x2,y2){
@@ -610,14 +633,16 @@ Object.defineProperties(paper.Point.prototype, {
 
 	/**
 	 * Рассчитывает координаты центра окружности по точкам и радиусу
-	 * @param x1 {Number}
-	 * @param y1 {Number}
-	 * @param x2 {Number}
-	 * @param y2 {Number}
-	 * @param r {Number}
-	 * @param arc_ccw {Boolean}
-	 * @param more_180 {Boolean}
-	 * @return {Point}
+   * @memberof paper.Point#
+   * @method
+	 * @param {Number} x1 
+	 * @param {Number} y1
+	 * @param {Number} x2
+	 * @param {Number} y2
+	 * @param {Number} r
+	 * @param {Boolean} arc_ccw
+	 * @param {Boolean} more_180
+	 * @return {paper.Point}
 	 */
 	arc_cntr: {
     value(x1, y1, x2, y2, r0, ccw) {
@@ -663,13 +688,15 @@ Object.defineProperties(paper.Point.prototype, {
 
 	/**
 	 * Рассчитывает координаты точки, лежащей на окружности
-	 * @param x1
-	 * @param y1
-	 * @param x2
-	 * @param y2
-	 * @param r
-	 * @param arc_ccw
-	 * @param more_180
+   * @memberof paper.Point#
+   * @method
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number} x2
+   * @param {Number} y2
+   * @param {Number} r
+   * @param {Boolean} arc_ccw
+   * @param {Boolean} more_180
 	 * @return {{x: number, y: number}}
 	 */
 	arc_point: {
@@ -700,6 +727,14 @@ Object.defineProperties(paper.Point.prototype, {
 
   /**
    * Рассчитывает радиус окружности по двум точкам и высоте
+   * @memberof paper.Point#
+   * @method
+   * @param {Number} x1
+   * @param {Number} y1
+   * @param {Number} x2
+   * @param {Number} y2
+   * @param {Number} h
+   * @return {Number}
    */
   arc_r: {
     value(x1, y1, x2, y2, h) {
@@ -714,9 +749,10 @@ Object.defineProperties(paper.Point.prototype, {
 	/**
 	 * Привязка к углу  
 	 * Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
-	 *
-	 * @param [snapAngle] {Number} - шаг угла, по умолчанию 45°
-	 * @return {Point}
+	 * @memberof paper.Point#
+   * @method
+	 * @param {Number} [snapAngle] - шаг угла, по умолчанию 45°
+	 * @return {paper.Point}
 	 */
 	snap_to_angle: {
 		value: function snap_to_angle(snapAngle, shift) {
@@ -740,6 +776,10 @@ Object.defineProperties(paper.Point.prototype, {
 
   /**
    * Выясняет одинаковость направлений векторов
+   * @memberof paper.Point#
+   * @method
+   * @param {paper.Point} point - вектор, с которым сравниваем
+   * @return {Boolean}
    */
   some_angle: {
     value: function some_angle(point) {
@@ -748,6 +788,15 @@ Object.defineProperties(paper.Point.prototype, {
     }
   },
 
+  /**
+   * Осуществляем привязку (магнетизм) к узлам текущего слоя
+   * Используется инструментами ui
+   * @memberof paper.Point#
+   * @method
+   * @param {Number} sticking - размер области магнетизма
+   * @param {Contour} activeLayer - текущий слой
+   * @return {Boolean}
+   */
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
       return activeLayer && activeLayer.nodes.some((point) => {

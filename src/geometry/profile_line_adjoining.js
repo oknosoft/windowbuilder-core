@@ -68,6 +68,7 @@ class ProfileAdjoining extends BaseLine {
 
   /**
    * У примыкания, внешний равен родителю
+   * @override
    */
   nearest() {
     return this.parent;

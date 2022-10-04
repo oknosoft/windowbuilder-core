@@ -78,8 +78,10 @@ debug('Создаём объект MetaEngine');
 
 const $p = new MetaEngine();    // подключим метадату
 let jstext = '';            // в этой переменной будем накапливать текст модуля
+const {DataManager} = MetaEngine.classes;
 
 debug('Настраиваем MetaEngine');
+
 
 // инициализация и установка параметров
 $p.wsql.init((prm) => {
@@ -209,18 +211,49 @@ function create_modules(_m) {
 
 }
 
+function fld_desc(fld, mfld) {
+  let text = '';
+  if(jsdoc) {
+    if(!mfld.synonym) {
+      if(fld === 'predefined_name') {
+        mfld.synonym = 'Имя предопределенных данных';
+      }
+      else if(fld === 'type') {
+        mfld.synonym = 'Тип значения';
+      }
+      else if(fld === 'parent') {
+        mfld.synonym = 'Группа (иерархия)';
+      }
+    }
+    text += `/**\n* @summary ${mfld.synonym}`;
+    if(mfld.tooltip) {
+      text += `\n* @desc ${mfld.tooltip}`;
+    }
+    text += `\n* @type ${mfld.type.types
+      .map((type) => {
+        if(type.includes('.')) {
+          return DataManager.prototype.obj_constructor.call({class_name: type, constructor_names: {}});
+        }
+        return type.charAt(0).toUpperCase() + type.substr(1);
+      })
+      .join('|')}`;
+    text += '\n*/\n';
+  }
+  return text;
+}
+
 function obj_constructor_text(_m, category, name, categoties) {
 
   const {mgr, proto, dir} = categoties[category];
-
-  const {DataManager} = MetaEngine.classes;
+  
   let meta = _m[category][name],
     fn_name = DataManager.prototype.obj_constructor.call({class_name: category + '.' + name, constructor_names: {}}),
-    text = jsdoc ? `\n/**\n* ${$p.msg.meta[category]} _${meta.synonym}_` : '',
-    f, props = '';
-  if(jsdoc && meta.illustration) {
-    text += `  \n* ${meta.illustration}`;
-  }
+    managerName = `${fn_name}Manager`,
+    text = jsdoc ? 
+      `\n/**
+* @summary ${$p.msg.meta[category]} _${meta.synonym}_ 
+* @see {@link ${managerName}} - менеджер данных`
+      : '', f, props = '';
 
   const filename = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}.js`);
   let extModule;
@@ -231,18 +264,31 @@ function obj_constructor_text(_m, category, name, categoties) {
     catch(err) {}
   };
 
+  if(jsdoc) {
+    const desc = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}.md`);
+    if(desc && fs.existsSync(desc)) {
+      text += `\n* @desc ${fs.readFileSync(desc).toString()}`;
+    }
+    else if(meta.illustration) {
+      text += `\n* @desc ${meta.illustration}`;
+    }
+    const example = dir && path.resolve(__dirname, `../src/metadata/${dir}/${category}_${name}_ex.md`);
+    if(example && fs.existsSync(example)) {
+      text += `\n* @example ${fs.readFileSync(example).toString()}`;
+    }
+  }
+
   const extender = extModule && extModule[fn_name] && extModule[fn_name].toString();
   const objText = extender && extender.substring(extender.indexOf('{') + 1, extender.lastIndexOf('}') - 1);
 
   const substitute = extModule && extModule.substitute && extModule.substitute.toString();
   const substituteText = substitute && substitute.substring(substitute.indexOf('{') + 3, substitute.lastIndexOf('}'));
 
-  const managerName = `${fn_name}Manager`;
+  
   const managerText = extModule && extModule[managerName] && extModule[managerName].toString();
 
   if(jsdoc) {
-    text += '\n* @hideconstructor';
-    text += '\n* @extends external:' + proto;
+    text += '\n* @extends metadata.' + proto;
     text += '\n*/\n';
   }
   text += `class ${fn_name} extends ${proto}{\n`;
@@ -256,19 +302,7 @@ function obj_constructor_text(_m, category, name, categoties) {
     if (meta.fields) {
       for (f in meta.fields) {
         const mfld = meta.fields[f];
-
-        if(jsdoc) {
-          text += `/**\n* ${mfld.tooltip || mfld.synonym}`;
-          text += `\n* @type ${mfld.type.types
-            .map((type) => {
-              if(type.includes('.')) {
-                return DataManager.prototype.obj_constructor.call({class_name: type, constructor_names: {}});
-              }
-              return type.charAt(0).toUpperCase() + type.substr(1);
-            })
-            .join('|')}`;          
-          text += '\n*/\n';
-        }
+        text += fld_desc(f, mfld);
         
         if(category === 'cch' && f === 'type') {
           text += `get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
@@ -307,9 +341,12 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
       if(jsdoc) {
         const row_fn_name = DataManager.prototype.obj_constructor.call({class_name: category + '.' + name, constructor_names: {}}, ts);
         const mfld = meta.tabular_sections[ts];
-        text += `/**\n* Табличная часть _${mfld.tooltip || mfld.synonym}_`;
+        text += `/**\n* @summary ${mfld.synonym}`;
+        if(mfld.tooltip) {
+          text += `\n* @desc ${mfld.tooltip}`;
+        }
         text += `\n* @see ${row_fn_name}`;
-        text += `\n* @type external:TabularSection`;
+        text += `\n* @type metadata.TabularSection`;
         text += '\n*/\n';
       }
       text += `get ${ts}(){return this._getter_ts('${ts}')}\nset ${ts}(v){this._setter_ts('${ts}',v)}\n`;
@@ -335,16 +372,22 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
 
     if(jsdoc) {
       const mfld = meta.tabular_sections[ts];
-      text += `\n/**\n* Строка табчасти _${mfld.tooltip || mfld.synonym}_`
-      text += '\n* @extends external:TabularSectionRow';
-      text += '\n* @hideconstructor';
+      text += `\n/**\n* @summary Строка табчасти _${mfld.synonym}_ ${$p.msg.meta_parents[category]} _${meta.synonym}_`;
+      if(mfld.tooltip) {
+        text += `\n* @desc ${mfld.tooltip}`;  
+      }      
+      text += `\n* @see {@link ${fn_name}} - объект-владелец`;
+      text += '\n* @extends metadata.TabularSectionRow';
       text += '\n*/\n';
     }
     text += `class ${row_fn_name} extends TabularSectionRow{\n`;
 
     // в прототипе строки табчасти создаём свойства в соответствии с полями табчасти
     for (const rf in meta.tabular_sections[ts].fields) {
-      const mf = rf === 'clr' && meta.tabular_sections[ts].fields[rf];
+      const mfld = meta.tabular_sections[ts].fields[rf];
+      const mf = rf === 'clr' && mfld;
+      text += fld_desc(rf, mfld);
+      
       if(mf && mf.type.str_len === 72 && !mf.type.types.includes('cat.color_price_groups')) {
         text += `get ${rf}(){return $p.cat.clrs.getter(this._obj.clr)}`;
       }
@@ -358,13 +401,17 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
     text += `$p.${row_fn_name} = ${row_fn_name};\n`;
 
   }
-
-  // если описан расширитель менеджера, дополняем
+  
   if(jsdoc) {
-    text += `\n/**\n* ${$p.msg.meta_mgrs[category]} _${meta.synonym}_`;
-    text += '\n* @extends external:' + mgr;
+    text += `\n/**\n* @summary ${$p.msg.meta_mgrs[category]} {@link ${fn_name}|${meta.synonym}}`;
+    text += `\n* @see {@link ${fn_name}} - объект данных`;
+    if(!managerText) {
+      text += `\n* @class ${managerName}`;  
+    }
+    text += '\n* @extends metadata.' + mgr;
     text += '\n*/\n';
   }
+  // если описан расширитель менеджера, дополняем
   if(managerText){
     text += managerText.replace('extends Object', `extends ${mgr}`);
     text += `\n$p.${category}.create('${name}', ${managerName}, ${extModule[managerName]._freeze ? 'true' : 'false'});\n`;

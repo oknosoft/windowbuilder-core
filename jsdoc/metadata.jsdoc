@@ -1,62 +1,151 @@
 /**
-* Пространство имён metadata.js
-* @see [MetaEngine](../apidocs/classes/MetaEngine.html)
-* @external MetaEngine
-* @prop enm {Enumerations} - Перечисления
-*/
+  * @summary Пространство имён _metadata.js_ 
+  * @see [MetaEngine](../apidocs/classes/MetaEngine.html)
+  * @namespace
+  */
+var metadata = {
+  
+/**
+  * @summary Тип экспортируемого объекта 
+  * @see [MetaEngine](../apidocs/classes/MetaEngine.html)
+  * @class
+  */
+  MetaEngine,
+  
+/**
+  * @summary Коллекция объектов метаданных 
+  * @see [Meta](../apidocs/classes/MetaMeta.html)
+  * @class
+  */
+  Meta,
+  
+/**
+  * @summary Менеджер данных в metadata.js
+  * @see [MetaEngine/DataManager](../apidocs/classes/DataManager.html)
+  * @class
+  * @abstract
+  */
+  DataManager,
+  
+/**
+  * @summary Объект данных в metadata.js
+  * @see [MetaEngine/DataObj](../apidocs/classes/DataObj.html)
+  * @class
+  * @abstract
+  */
+  DataObj,
+  
+/**
+  * @summary Табличная часть
+  * @see [MetaEngine/TabularSection](../apidocs/classes/TabularSection.html)
+  * @class
+  * @property name {String} - Имя (ключ) табчасти
+  */
+  TabularSection,
+  
+/**
+  * @summary Элемент абстрактного перечисления
+  * @see [MetaEngine/EnumObj](../apidocs/classes/EnumObj.html)
+  * @class
+  * @extends metadata.DataObj
+  * @abstract
+  */  
+  EnumObj,
+  
+/**
+  * @summary Строка табличной части
+  * @see [MetaEngine/TabularSectionRow](../apidocs/classes/TabularSectionRow.html)
+  * @class
+  * @extends metadata.DataObj
+  * @abstract
+  */
+  TabularSectionRow,
+  
+/**
+  * @summary Элемент абстрактного справочника
+  * @see [MetaEngine/CatObj](../apidocs/classes/CatObj.html)
+  * @class
+  * @abstract
+  * @extends metadata.DataObj
+  * @abstract
+  */  
+  CatObj: {
+    /**
+    * @summary Код элемента справочника
+    * @instance
+    * @type {String}
+    */
+    id,
+     /**
+     * @summary Наименование элемента справочника
+     * @instance
+     * @type {String}
+     */
+    name,
+  },
+  
+  /**
+    * @summary Элемент абстрактного документа
+    * @see [MetaEngine/DocObj](../apidocs/classes/DocObj.html)
+    * @class
+    * @abstract
+    * @extends metadata.DataObj
+    * @abstract
+    */  
+  DocObj: {
+    /**
+    * @summary Номер документа
+    * @instance
+    * @type {String}
+    */
+    number_doc,
+     /**
+     * @summary Дата документа
+     * @instance
+     * @type {Date}
+     */
+    date,
+    /**
+     * @summary Признак проведённости
+     * @instance
+     * @type {Boolean}
+     */ 
+    posted,
+  },
+  
+/**
+  * @summary Менеджер абстрактного перечисления
+  * @see [MetaEngine/EnumManager](../apidocs/classes/EnumManager.html)
+  * @class
+  * @extends metadata.DataManager
+  * @abstract
+  */
+  EnumManager,  
+  
+/**
+  * @summary Менеджер абстрактного справочника
+  * @see [MetaEngine/CatManager](../apidocs/classes/CatManager.html)
+  * @class
+  * @extends metadata.DataManager
+  * @abstract
+  */
+  CatManager, 
+  
+}
 
 /**
- * Контекст metadata.js
- * @var {external:MetaEngine} $p
- * @prop enm {Enumerations} - Коллекция перечислений {@see [MetaEngine/Enumerations](../apidocs/classes/Enumerations.html)}
+ * summary Контекст metadata.js
+ * @var {metadata.MetaEngine} $p
  */
 
-/**
-* Менеджер данных в metadata.js
-* @see [MetaEngine/DataManager](../apidocs/classes/DataManager.html)
-* @external DataManager
-*/
-
-/**
-* Объект данных в metadata.js
-* @see [MetaEngine/DataObj](../apidocs/classes/DataObj.html)
-* @external DataObj
-*/
-
-/**
-* Элемент перечисления
-* @external EnumObj
-* @see [MetaEngine/EnumObj](../apidocs/classes/EnumObj.html)
-* @extends external:DataObj
-*/
-
-/**
-* Элемент справочника
-* @external CatObj
-* @see [MetaEngine/CatObj](../apidocs/classes/CatObj.html)
-* @extends external:DataObj
-*/
-
-/**
-* Менеджер перечисления
-* @see [MetaEngine/EnumManager](../apidocs/classes/EnumManager.html)
-* @external EnumManager
-* @extends external:DataManager
-*/
 
 
-/**
-* Табличная часть
-* @see [MetaEngine/TabularSection](../apidocs/classes/TabularSection.html)
-* @external TabularSection
-* @property name {String} - Имя (ключ) табчасти
-*/
 
-/**
-* Строка табличной части
-* @see [MetaEngine/TabularSectionRow](../apidocs/classes/TabularSectionRow.html)
-* @external TabularSectionRow
-*/
+
+
+
+
+
 
 
 

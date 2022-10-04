@@ -1,111 +1,50 @@
 
 /**
- * Коллекция перечислений
- * @class Enumerations
- * @extends external:Enumerations
- * @prop accumulation_record_type {EnmAccumulation_record_typeManager} - Вид движения регистра накопления
- * @prop sort_directions {EnmSort_directionsManager} - Направление сортировки
- * @prop comparison_types {EnmComparison_typesManager} - Виды сравнений
- * @prop label_positions {EnmLabel_positionsManager} - Положение заголовка элемеента управления
- * @prop data_field_kinds {EnmData_field_kindsManager} - Типы полей ввода данных
- * @prop standard_period {EnmStandard_periodManager} - Стандартный период
- * @prop quick_access {EnmQuick_accessManager} - Расположение элемента быстрого доступа
- * @prop report_output {EnmReport_outputManager} - Варианты вывода отчёта
- * @prop path_kind {EnmPath_kindManager} - Вариант пути
- * @prop inset_attrs_options {EnmInset_attrs_optionsManager} - Варианты атрибутов вставок
- * @prop transfer_operations_options {EnmTransfer_operations_optionsManager} - Варианты переноса операций
- * @prop offset_options {EnmOffset_optionsManager} - Варианты смещений
- * @prop application_mode_kinds {EnmApplication_mode_kindsManager} - Варианты совместного применения скидок наценок
- * @prop contraction_options {EnmContraction_optionsManager} - Варианты укорочений
- * @prop align_types {EnmAlign_typesManager} - Варианты уравнивания
- * @prop mutual_contract_settlements {EnmMutual_contract_settlementsManager} - Ведение взаиморасчетов по договорам
- * @prop sketch_view {EnmSketch_viewManager} - Вид на эскиз
- * @prop debit_credit_kinds {EnmDebit_credit_kindsManager} - Виды движений приход/расход
- * @prop contract_kinds {EnmContract_kindsManager} - Виды договоров контрагентов
- * @prop inventory_kinds {EnmInventory_kindsManager} - Виды операций инвентаризации
- * @prop predefined_formulas {EnmPredefined_formulasManager} - Встроенные формулы
- * @prop text_aligns {EnmText_alignsManager} - Выравнивание текста
- * @prop obj_delivery_states {EnmObj_delivery_statesManager} - Статусы отправки документа
- * @prop use_cut {EnmUse_cutManager} - Использование обрези
- * @prop order_categories {EnmOrder_categoriesManager} - Категории заказов
- * @prop color_price_group_destinations {EnmColor_price_group_destinationsManager} - Назначения цветовых групп
- * @prop open_directions {EnmOpen_directionsManager} - Направление открывания
- * @prop rounding_quantity {EnmRounding_quantityManager} - Округлять количество
- * @prop orientations {EnmOrientationsManager} - Ориентация элемента
- * @prop opening {EnmOpeningManager} - Открывание
- * @prop plan_detailing {EnmPlan_detailingManager} - Детализация планирования
- * @prop positions {EnmPositionsManager} - Положение элемента
- * @prop gender {EnmGenderManager} - Пол физических Лиц
- * @prop parameters_keys_applying {EnmParameters_keys_applyingManager} - Применения ключей параметров
- * @prop bind_coordinates {EnmBind_coordinatesManager} - Приязка координат
- * @prop elm_positions {EnmElm_positionsManager} - Расположение элементов управления
- * @prop nested_object_editing_mode {EnmNested_object_editing_modeManager} - Режим редактирования вложенного объекта
- * @prop lay_regions {EnmLay_regionsManager} - Слои раскладки
- * @prop buyers_order_states {EnmBuyers_order_statesManager} - Состояния заказов клиентов
- * @prop coloring {EnmColoringManager} - Способ придания цвета
- * @prop application_joint_kinds {EnmApplication_joint_kindsManager} - Способы предоставления скидок наценок
- * @prop count_calculating_ways {EnmCount_calculating_waysManager} - Способы расчета количества
- * @prop angle_calculating_ways {EnmAngle_calculating_waysManager} - Способы расчета угла
- * @prop specification_installation_methods {EnmSpecification_installation_methodsManager} - Способы установки спецификации
- * @prop vat_rates {EnmVat_ratesManager} - Ставки НДС
- * @prop cnn_sides {EnmCnn_sidesManager} - Стороны соединений
- * @prop inserts_types {EnmInserts_typesManager} - Типы вставок
- * @prop inserts_glass_types {EnmInserts_glass_typesManager} - Типы вставок стеклопакета
- * @prop lay_split_types {EnmLay_split_typesManager} - Типы деления раскладки
- * @prop contact_information_types {EnmContact_information_typesManager} - Типы контактной информации
- * @prop lead_types {EnmLead_typesManager} - Типы лидов
- * @prop nom_types {EnmNom_typesManager} - Типы номенклатуры
- * @prop cutting_optimization_types {EnmCutting_optimization_typesManager} - Типы оптимизаций раскроя
- * @prop open_types {EnmOpen_typesManager} - Типы открывания
- * @prop sz_line_types {EnmSz_line_typesManager} - Типы размерных линий
- * @prop cnn_types {EnmCnn_typesManager} - Типы соединений
- * @prop specification_order_row_types {EnmSpecification_order_row_typesManager} - Типы строк в заказ
- * @prop elm_types {EnmElm_typesManager} - Типы элементов
- * @prop planning_phases {EnmPlanning_phasesManager} - Фазы планирования
- * @prop order_sending_stages {EnmOrder_sending_stagesManager} - Этапы отправки заказа
- * @prop individual_legal {EnmIndividual_legalManager} - Юр/ФизЛицо
- */
-
-/**
- * Значение перечисления _Вид движения регистра накопления_<br/>Системное перечисление
+ * @summary Значение перечисления {@link EnmAccumulation_record_typeManager|Вид движения регистра накопления}
+ * @desc Системное перечисление
  * @class EnmAccumulation_record_type
  * @see EnmAccumulation_record_typeManager
  */
 
 /**
- * Менеджер перечисления _Вид движения регистра накопления_<br/>Системное перечисление
+ * @summary Менеджер перечисления _Вид движения регистра накопления_ 
+ * @desc Системное перечисление
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop debit {EnmAccumulation_record_type} - Приход
  * @prop credit {EnmAccumulation_record_type} - Расход
  */
 class EnmAccumulation_record_typeManager {}
 
 /**
- * Значение перечисления _Направление сортировки_<br/>Для компоновки
+ * @summary Значение перечисления {@link EnmSort_directionsManager|Направление сортировки}
+ * @desc Для компоновки
  * @class EnmSort_directions
  * @see EnmSort_directionsManager
  */
 
 /**
- * Менеджер перечисления _Направление сортировки_<br/>Для компоновки
+ * @summary Менеджер перечисления _Направление сортировки_ 
+ * @desc Для компоновки
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop asc {EnmSort_directions} - По возрастанию
  * @prop desc {EnmSort_directions} - По убыванию
  */
 class EnmSort_directionsManager {}
 
 /**
- * Значение перечисления _Виды сравнений_<br/>Системное перечисление
+ * @summary Значение перечисления {@link EnmComparison_typesManager|Виды сравнений}
+ * @desc Системное перечисление
  * @class EnmComparison_types
  * @see EnmComparison_typesManager
  */
 
 /**
- * Менеджер перечисления _Виды сравнений_<br/>Системное перечисление
+ * @summary Менеджер перечисления _Виды сравнений_ 
+ * @desc Системное перечисление
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop gt {EnmComparison_types} - Больше
  * @prop gte {EnmComparison_types} - Больше или равно
  * @prop lt {EnmComparison_types} - Меньше
@@ -124,15 +63,17 @@ class EnmSort_directionsManager {}
 class EnmComparison_typesManager {}
 
 /**
- * Значение перечисления _Положение заголовка элемеента управления_<br/>Системное перечисление
+ * @summary Значение перечисления {@link EnmLabel_positionsManager|Положение заголовка элемеента управления}
+ * @desc Системное перечисление
  * @class EnmLabel_positions
  * @see EnmLabel_positionsManager
  */
 
 /**
- * Менеджер перечисления _Положение заголовка элемеента управления_<br/>Системное перечисление
+ * @summary Менеджер перечисления _Положение заголовка элемеента управления_ 
+ * @desc Системное перечисление
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop inherit {EnmLabel_positions} - Наследовать
  * @prop hide {EnmLabel_positions} - Скрыть
  * @prop left {EnmLabel_positions} - Лево
@@ -143,15 +84,17 @@ class EnmComparison_typesManager {}
 class EnmLabel_positionsManager {}
 
 /**
- * Значение перечисления _Типы полей ввода данных_<br/>Системное перечисление
+ * @summary Значение перечисления {@link EnmData_field_kindsManager|Типы полей ввода данных}
+ * @desc Системное перечисление
  * @class EnmData_field_kinds
  * @see EnmData_field_kindsManager
  */
 
 /**
- * Менеджер перечисления _Типы полей ввода данных_<br/>Системное перечисление
+ * @summary Менеджер перечисления _Типы полей ввода данных_ 
+ * @desc Системное перечисление
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop field {EnmData_field_kinds} - Поле ввода
  * @prop input {EnmData_field_kinds} - Простой текст
  * @prop text {EnmData_field_kinds} - Многострочный текст
@@ -169,15 +112,17 @@ class EnmLabel_positionsManager {}
 class EnmData_field_kindsManager {}
 
 /**
- * Значение перечисления _Стандартный период_<br/>Для компоновки
+ * @summary Значение перечисления {@link EnmStandard_periodManager|Стандартный период}
+ * @desc Для компоновки
  * @class EnmStandard_period
  * @see EnmStandard_periodManager
  */
 
 /**
- * Менеджер перечисления _Стандартный период_<br/>Для компоновки
+ * @summary Менеджер перечисления _Стандартный период_ 
+ * @desc Для компоновки
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop custom {EnmStandard_period} - Произвольный
  * @prop yesterday {EnmStandard_period} - Вчера
  * @prop today {EnmStandard_period} - Сегодня
@@ -221,15 +166,17 @@ class EnmData_field_kindsManager {}
 class EnmStandard_periodManager {}
 
 /**
- * Значение перечисления _Расположение элемента быстрого доступа_<br/>Для компоновки
+ * @summary Значение перечисления {@link EnmQuick_accessManager|Расположение элемента быстрого доступа}
+ * @desc Для компоновки
  * @class EnmQuick_access
  * @see EnmQuick_accessManager
  */
 
 /**
- * Менеджер перечисления _Расположение элемента быстрого доступа_<br/>Для компоновки
+ * @summary Менеджер перечисления _Расположение элемента быстрого доступа_ 
+ * @desc Для компоновки
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop none {EnmQuick_access} - Нет
  * @prop toolbar {EnmQuick_access} - Панель инструментов
  * @prop drawer {EnmQuick_access} - Панель формы
@@ -237,15 +184,17 @@ class EnmStandard_periodManager {}
 class EnmQuick_accessManager {}
 
 /**
- * Значение перечисления _Варианты вывода отчёта_<br/>Для компоновки
+ * @summary Значение перечисления {@link EnmReport_outputManager|Варианты вывода отчёта}
+ * @desc Для компоновки
  * @class EnmReport_output
  * @see EnmReport_outputManager
  */
 
 /**
- * Менеджер перечисления _Варианты вывода отчёта_<br/>Для компоновки
+ * @summary Менеджер перечисления _Варианты вывода отчёта_ 
+ * @desc Для компоновки
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop grid {EnmReport_output} - Таблица
  * @prop chart {EnmReport_output} - Диаграмма
  * @prop pivot {EnmReport_output} - Cводная таблица
@@ -254,15 +203,17 @@ class EnmQuick_accessManager {}
 class EnmReport_outputManager {}
 
 /**
- * Значение перечисления _Вариант пути_<br/>Для визуализации элементов. Привязка к образующей, внутренней или внешней стороне
+ * @summary Значение перечисления {@link EnmPath_kindManager|Вариант пути}
+ * @desc Для визуализации элементов. Привязка к образующей, внутренней или внешней стороне
  * @class EnmPath_kind
  * @see EnmPath_kindManager
  */
 
 /**
- * Менеджер перечисления _Вариант пути_<br/>Для визуализации элементов. Привязка к образующей, внутренней или внешней стороне
+ * @summary Менеджер перечисления _Вариант пути_ 
+ * @desc Для визуализации элементов. Привязка к образующей, внутренней или внешней стороне
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop generatrix {EnmPath_kind} - Образующая
  * @prop inner {EnmPath_kind} - Внутренний
  * @prop outer {EnmPath_kind} - Внешний
@@ -270,15 +221,17 @@ class EnmReport_outputManager {}
 class EnmPath_kindManager {}
 
 /**
- * Значение перечисления _Варианты атрибутов вставок_<br/>Используется для расчёта спецификации вставки "по шагам"
+ * @summary Значение перечисления {@link EnmInset_attrs_optionsManager|Варианты атрибутов вставок}
+ * @desc Используется для расчёта спецификации вставки "по шагам"
  * @class EnmInset_attrs_options
  * @see EnmInset_attrs_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты атрибутов вставок_<br/>Используется для расчёта спецификации вставки "по шагам"
+ * @summary Менеджер перечисления _Варианты атрибутов вставок_ 
+ * @desc Используется для расчёта спецификации вставки "по шагам"
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop НеПоперечина {EnmInset_attrs_options} - Не поперечина
  * @prop ОбаНаправления {EnmInset_attrs_options} - Оба направления
  * @prop ОтключитьВтороеНаправление {EnmInset_attrs_options} - Отключить второе направление
@@ -289,15 +242,17 @@ class EnmPath_kindManager {}
 class EnmInset_attrs_optionsManager {}
 
 /**
- * Значение перечисления _Варианты переноса операций_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
+ * @summary Значение перечисления {@link EnmTransfer_operations_optionsManager|Варианты переноса операций}
+ * @desc Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class EnmTransfer_operations_options
  * @see EnmTransfer_operations_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты переноса операций_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
+ * @summary Менеджер перечисления _Варианты переноса операций_ 
+ * @desc Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop НетПереноса {EnmTransfer_operations_options} - Нет переноса
  * @prop НаПримыкающий {EnmTransfer_operations_options} - На примыкающий
  * @prop НаПримыкающийОтКонца {EnmTransfer_operations_options} - На примыкающий от конца
@@ -306,15 +261,17 @@ class EnmInset_attrs_optionsManager {}
 class EnmTransfer_operations_optionsManager {}
 
 /**
- * Значение перечисления _Варианты смещений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
+ * @summary Значение перечисления {@link EnmOffset_optionsManager|Варианты смещений}
+ * @desc Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class EnmOffset_options
  * @see EnmOffset_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты смещений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
+ * @summary Менеджер перечисления _Варианты смещений_ 
+ * @desc Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ОтНачалаСтороны {EnmOffset_options} - От начала стороны
  * @prop ОтКонцаСтороны {EnmOffset_options} - От конца стороны
  * @prop ОтСередины {EnmOffset_options} - От середины
@@ -325,15 +282,15 @@ class EnmTransfer_operations_optionsManager {}
 class EnmOffset_optionsManager {}
 
 /**
- * Значение перечисления _Варианты совместного применения скидок наценок_
+ * @summary Значение перечисления {@link EnmApplication_mode_kindsManager|Варианты совместного применения скидок наценок}
  * @class EnmApplication_mode_kinds
  * @see EnmApplication_mode_kindsManager
  */
 
 /**
- * Менеджер перечисления _Варианты совместного применения скидок наценок_
+ * @summary Менеджер перечисления _Варианты совместного применения скидок наценок_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Минимум {EnmApplication_mode_kinds} - Минимум
  * @prop Максимум {EnmApplication_mode_kinds} - Максимум
  * @prop Сложение {EnmApplication_mode_kinds} - Сложение
@@ -343,15 +300,17 @@ class EnmOffset_optionsManager {}
 class EnmApplication_mode_kindsManager {}
 
 /**
- * Значение перечисления _Варианты укорочений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
+ * @summary Значение перечисления {@link EnmContraction_optionsManager|Варианты укорочений}
+ * @desc Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class EnmContraction_options
  * @see EnmContraction_optionsManager
  */
 
 /**
- * Менеджер перечисления _Варианты укорочений_<br/>Для расчёта координат в {@link CatFurns|фурнитуре}
+ * @summary Менеджер перечисления _Варианты укорочений_ 
+ * @desc Для расчёта координат в {@link CatFurns|фурнитуре}
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ОтДлиныСтороны {EnmContraction_options} - От длины стороны
  * @prop ОтВысотыРучки {EnmContraction_options} - От высоты ручки
  * @prop ОтДлиныСтороныМинусВысотыРучки {EnmContraction_options} - От длины стороны минус высота ручки
@@ -361,30 +320,32 @@ class EnmApplication_mode_kindsManager {}
 class EnmContraction_optionsManager {}
 
 /**
- * Значение перечисления _Варианты уравнивания_<br/>Для команды графического редактора "Уравнять"
+ * @summary Значение перечисления {@link EnmAlign_typesManager|Варианты уравнивания}
+ * @desc Для команды графического редактора "Уравнять"
  * @class EnmAlign_types
  * @see EnmAlign_typesManager
  */
 
 /**
- * Менеджер перечисления _Варианты уравнивания_<br/>Для команды графического редактора "Уравнять"
+ * @summary Менеджер перечисления _Варианты уравнивания_ 
+ * @desc Для команды графического редактора "Уравнять"
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Геометрически {EnmAlign_types} - Геометрически
  * @prop ПоЗаполнениям {EnmAlign_types} - По заполнениям
  */
 class EnmAlign_typesManager {}
 
 /**
- * Значение перечисления _Ведение взаиморасчетов по договорам_
+ * @summary Значение перечисления {@link EnmMutual_contract_settlementsManager|Ведение взаиморасчетов по договорам}
  * @class EnmMutual_contract_settlements
  * @see EnmMutual_contract_settlementsManager
  */
 
 /**
- * Менеджер перечисления _Ведение взаиморасчетов по договорам_
+ * @summary Менеджер перечисления _Ведение взаиморасчетов по договорам_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ПоДоговоруВЦелом {EnmMutual_contract_settlements} - По договору в целом
  * @prop ПоЗаказам {EnmMutual_contract_settlements} - По заказам
  * @prop ПоСчетам {EnmMutual_contract_settlements} - По счетам
@@ -392,15 +353,15 @@ class EnmAlign_typesManager {}
 class EnmMutual_contract_settlementsManager {}
 
 /**
- * Значение перечисления _Вид на эскиз_
+ * @summary Значение перечисления {@link EnmSketch_viewManager|Вид на эскиз}
  * @class EnmSketch_view
  * @see EnmSketch_viewManager
  */
 
 /**
- * Менеджер перечисления _Вид на эскиз_
+ * @summary Менеджер перечисления _Вид на эскиз_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop hinge {EnmSketch_view} - Со стороны петель
  * @prop inner {EnmSketch_view} - Изнутри
  * @prop outer {EnmSketch_view} - Снаружи
@@ -409,30 +370,30 @@ class EnmMutual_contract_settlementsManager {}
 class EnmSketch_viewManager {}
 
 /**
- * Значение перечисления _Виды движений приход/расход_
+ * @summary Значение перечисления {@link EnmDebit_credit_kindsManager|Виды движений приход/расход}
  * @class EnmDebit_credit_kinds
  * @see EnmDebit_credit_kindsManager
  */
 
 /**
- * Менеджер перечисления _Виды движений приход/расход_
+ * @summary Менеджер перечисления _Виды движений приход/расход_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Приход {EnmDebit_credit_kinds} - Приход
  * @prop Расход {EnmDebit_credit_kinds} - Расход
  */
 class EnmDebit_credit_kindsManager {}
 
 /**
- * Значение перечисления _Виды договоров контрагентов_
+ * @summary Значение перечисления {@link EnmContract_kindsManager|Виды договоров контрагентов}
  * @class EnmContract_kinds
  * @see EnmContract_kindsManager
  */
 
 /**
- * Менеджер перечисления _Виды договоров контрагентов_
+ * @summary Менеджер перечисления _Виды договоров контрагентов_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop СПоставщиком {EnmContract_kinds} - С поставщиком
  * @prop СПокупателем {EnmContract_kinds} - С покупателем
  * @prop committent {EnmContract_kinds} - С комитентом
@@ -442,15 +403,15 @@ class EnmDebit_credit_kindsManager {}
 class EnmContract_kindsManager {}
 
 /**
- * Значение перечисления _Виды операций инвентаризации_
+ * @summary Значение перечисления {@link EnmInventory_kindsManager|Виды операций инвентаризации}
  * @class EnmInventory_kinds
  * @see EnmInventory_kindsManager
  */
 
 /**
- * Менеджер перечисления _Виды операций инвентаризации_
+ * @summary Менеджер перечисления _Виды операций инвентаризации_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Инвентаризация {EnmInventory_kinds} - Инвентаризация
  * @prop Оприходование {EnmInventory_kinds} - Оприходование
  * @prop Списание {EnmInventory_kinds} - Списание
@@ -459,15 +420,15 @@ class EnmContract_kindsManager {}
 class EnmInventory_kindsManager {}
 
 /**
- * Значение перечисления _Встроенные формулы_
+ * @summary Значение перечисления {@link EnmPredefined_formulasManager|Встроенные формулы}
  * @class EnmPredefined_formulas
  * @see EnmPredefined_formulasManager
  */
 
 /**
- * Менеджер перечисления _Встроенные формулы_
+ * @summary Менеджер перечисления _Встроенные формулы_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop cx_prm {EnmPredefined_formulas} - Характеристика по параметрам
  * @prop cx_row {EnmPredefined_formulas} - Характеристика тек. строки
  * @prop cx_clr {EnmPredefined_formulas} - Характеристика по цвету
@@ -482,15 +443,15 @@ class EnmInventory_kindsManager {}
 class EnmPredefined_formulasManager {}
 
 /**
- * Значение перечисления _Выравнивание текста_
+ * @summary Значение перечисления {@link EnmText_alignsManager|Выравнивание текста}
  * @class EnmText_aligns
  * @see EnmText_alignsManager
  */
 
 /**
- * Менеджер перечисления _Выравнивание текста_
+ * @summary Менеджер перечисления _Выравнивание текста_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop left {EnmText_aligns} - Лево
  * @prop right {EnmText_aligns} - Право
  * @prop center {EnmText_aligns} - Центр
@@ -498,15 +459,17 @@ class EnmPredefined_formulasManager {}
 class EnmText_alignsManager {}
 
 /**
- * Значение перечисления _Статусы отправки документа_<br/>Статус отправки документа
+ * @summary Значение перечисления {@link EnmObj_delivery_statesManager|Статусы отправки документа}
+ * @desc Статус отправки документа
  * @class EnmObj_delivery_states
  * @see EnmObj_delivery_statesManager
  */
 
 /**
- * Менеджер перечисления _Статусы отправки документа_<br/>Статус отправки документа
+ * @summary Менеджер перечисления _Статусы отправки документа_ 
+ * @desc Статус отправки документа
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Черновик {EnmObj_delivery_states} - Черновик
  * @prop Отправлен {EnmObj_delivery_states} - Отправлен
  * @prop Проверяется {EnmObj_delivery_states} - Проверяется
@@ -519,15 +482,17 @@ class EnmText_alignsManager {}
 class EnmObj_delivery_statesManager {}
 
 /**
- * Значение перечисления _Использование обрези_<br/>Варианты использования деловой обрези
+ * @summary Значение перечисления {@link EnmUse_cutManager|Использование обрези}
+ * @desc Варианты использования деловой обрези
  * @class EnmUse_cut
  * @see EnmUse_cutManager
  */
 
 /**
- * Менеджер перечисления _Использование обрези_<br/>Варианты использования деловой обрези
+ * @summary Менеджер перечисления _Использование обрези_ 
+ * @desc Варианты использования деловой обрези
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop none {EnmUse_cut} - Не учитывать
  * @prop all {EnmUse_cut} - Учитывать
  * @prop input {EnmUse_cut} - Только входящую
@@ -536,15 +501,15 @@ class EnmObj_delivery_statesManager {}
 class EnmUse_cutManager {}
 
 /**
- * Значение перечисления _Категории заказов_
+ * @summary Значение перечисления {@link EnmOrder_categoriesManager|Категории заказов}
  * @class EnmOrder_categories
  * @see EnmOrder_categoriesManager
  */
 
 /**
- * Менеджер перечисления _Категории заказов_
+ * @summary Менеджер перечисления _Категории заказов_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop order {EnmOrder_categories} - Расчет заказ
  * @prop service {EnmOrder_categories} - Сервис
  * @prop complaints {EnmOrder_categories} - Рекламация
@@ -552,15 +517,15 @@ class EnmUse_cutManager {}
 class EnmOrder_categoriesManager {}
 
 /**
- * Значение перечисления _Назначения цветовых групп_
+ * @summary Значение перечисления {@link EnmColor_price_group_destinationsManager|Назначения цветовых групп}
  * @class EnmColor_price_group_destinations
  * @see EnmColor_price_group_destinationsManager
  */
 
 /**
- * Менеджер перечисления _Назначения цветовых групп_
+ * @summary Менеджер перечисления _Назначения цветовых групп_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ДляЦенообразования {EnmColor_price_group_destinations} - Для ценообразования
  * @prop ДляХарактеристик {EnmColor_price_group_destinations} - Для характеристик
  * @prop ДляГруппировкиВПараметрах {EnmColor_price_group_destinations} - Для группировки в параметрах
@@ -569,15 +534,17 @@ class EnmOrder_categoriesManager {}
 class EnmColor_price_group_destinationsManager {}
 
 /**
- * Значение перечисления _Направление открывания_<br/>Направление открывания створки
+ * @summary Значение перечисления {@link EnmOpen_directionsManager|Направление открывания}
+ * @desc Направление открывания створки
  * @class EnmOpen_directions
  * @see EnmOpen_directionsManager
  */
 
 /**
- * Менеджер перечисления _Направление открывания_<br/>Направление открывания створки
+ * @summary Менеджер перечисления _Направление открывания_ 
+ * @desc Направление открывания створки
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop left {EnmOpen_directions} - Левое
  * @prop right {EnmOpen_directions} - Правое
  * @prop folding {EnmOpen_directions} - Откидное
@@ -585,15 +552,15 @@ class EnmColor_price_group_destinationsManager {}
 class EnmOpen_directionsManager {}
 
 /**
- * Значение перечисления _Округлять количество_
+ * @summary Значение перечисления {@link EnmRounding_quantityManager|Округлять количество}
  * @class EnmRounding_quantity
  * @see EnmRounding_quantityManager
  */
 
 /**
- * Менеджер перечисления _Округлять количество_
+ * @summary Менеджер перечисления _Округлять количество_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop none {EnmRounding_quantity} - Без оптимизации
  * @prop stick {EnmRounding_quantity} - Раскрой до хлыста
  * @prop packing {EnmRounding_quantity} - Раскрой до упаковки
@@ -601,15 +568,15 @@ class EnmOpen_directionsManager {}
 class EnmRounding_quantityManager {}
 
 /**
- * Значение перечисления _Ориентация элемента_
+ * @summary Значение перечисления {@link EnmOrientationsManager|Ориентация элемента}
  * @class EnmOrientations
  * @see EnmOrientationsManager
  */
 
 /**
- * Менеджер перечисления _Ориентация элемента_
+ * @summary Менеджер перечисления _Ориентация элемента_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop hor {EnmOrientations} - Горизонтальная
  * @prop vert {EnmOrientations} - Вертикальная
  * @prop incline {EnmOrientations} - Наклонная
@@ -617,30 +584,32 @@ class EnmRounding_quantityManager {}
 class EnmOrientationsManager {}
 
 /**
- * Значение перечисления _Открывание_<br/>Вовнутрь или наружу
+ * @summary Значение перечисления {@link EnmOpeningManager|Открывание}
+ * @desc Вовнутрь или наружу
  * @class EnmOpening
  * @see EnmOpeningManager
  */
 
 /**
- * Менеджер перечисления _Открывание_<br/>Вовнутрь или наружу
+ * @summary Менеджер перечисления _Открывание_ 
+ * @desc Вовнутрь или наружу
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop in {EnmOpening} - На себя
  * @prop out {EnmOpening} - От себя
  */
 class EnmOpeningManager {}
 
 /**
- * Значение перечисления _Детализация планирования_
+ * @summary Значение перечисления {@link EnmPlan_detailingManager|Детализация планирования}
  * @class EnmPlan_detailing
  * @see EnmPlan_detailingManager
  */
 
 /**
- * Менеджер перечисления _Детализация планирования_
+ * @summary Менеджер перечисления _Детализация планирования_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop order {EnmPlan_detailing} - Заказ
  * @prop product {EnmPlan_detailing} - Изделие
  * @prop layer {EnmPlan_detailing} - Контур
@@ -655,15 +624,17 @@ class EnmOpeningManager {}
 class EnmPlan_detailingManager {}
 
 /**
- * Значение перечисления _Положение элемента_<br/>Используется для назначения {@link CatInserts|Вставки} в {@link CatProduction_params|Системе}
+ * @summary Значение перечисления {@link EnmPositionsManager|Положение элемента}
+ * @desc Используется для назначения {@link CatInserts|Вставки} в {@link CatProduction_params|Системе}
  * @class EnmPositions
  * @see EnmPositionsManager
  */
 
 /**
- * Менеджер перечисления _Положение элемента_<br/>Используется для назначения {@link CatInserts|Вставки} в {@link CatProduction_params|Системе}
+ * @summary Менеджер перечисления _Положение элемента_ 
+ * @desc Используется для назначения {@link CatInserts|Вставки} в {@link CatProduction_params|Системе}
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop any {EnmPositions} - Любое
  * @prop top {EnmPositions} - Верх
  * @prop bottom {EnmPositions} - Низ
@@ -680,30 +651,30 @@ class EnmPlan_detailingManager {}
 class EnmPositionsManager {}
 
 /**
- * Значение перечисления _Пол физических Лиц_
+ * @summary Значение перечисления {@link EnmGenderManager|Пол физических Лиц}
  * @class EnmGender
  * @see EnmGenderManager
  */
 
 /**
- * Менеджер перечисления _Пол физических Лиц_
+ * @summary Менеджер перечисления _Пол физических Лиц_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Мужской {EnmGender} - Мужской
  * @prop Женский {EnmGender} - Женский
  */
 class EnmGenderManager {}
 
 /**
- * Значение перечисления _Применения ключей параметров_
+ * @summary Значение перечисления {@link EnmParameters_keys_applyingManager|Применения ключей параметров}
  * @class EnmParameters_keys_applying
  * @see EnmParameters_keys_applyingManager
  */
 
 /**
- * Менеджер перечисления _Применения ключей параметров_
+ * @summary Менеджер перечисления _Применения ключей параметров_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop НаправлениеДоставки {EnmParameters_keys_applying} - Направление доставки
  * @prop РабочийЦентр {EnmParameters_keys_applying} - Рабочий центр
  * @prop Технология {EnmParameters_keys_applying} - Технология
@@ -713,15 +684,15 @@ class EnmGenderManager {}
 class EnmParameters_keys_applyingManager {}
 
 /**
- * Значение перечисления _Приязка координат_
+ * @summary Значение перечисления {@link EnmBind_coordinatesManager|Приязка координат}
  * @class EnmBind_coordinates
  * @see EnmBind_coordinatesManager
  */
 
 /**
- * Менеджер перечисления _Приязка координат_
+ * @summary Менеджер перечисления _Приязка координат_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop product {EnmBind_coordinates} - Изделие
  * @prop contour {EnmBind_coordinates} - Слой
  * @prop b {EnmBind_coordinates} - Начало пути
@@ -730,15 +701,15 @@ class EnmParameters_keys_applyingManager {}
 class EnmBind_coordinatesManager {}
 
 /**
- * Значение перечисления _Расположение элементов управления_
+ * @summary Значение перечисления {@link EnmElm_positionsManager|Расположение элементов управления}
  * @class EnmElm_positions
  * @see EnmElm_positionsManager
  */
 
 /**
- * Менеджер перечисления _Расположение элементов управления_
+ * @summary Менеджер перечисления _Расположение элементов управления_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop top {EnmElm_positions} - Шапка
  * @prop column1 {EnmElm_positions} - Колонка 1
  * @prop column2 {EnmElm_positions} - Колонка 2
@@ -748,15 +719,15 @@ class EnmBind_coordinatesManager {}
 class EnmElm_positionsManager {}
 
 /**
- * Значение перечисления _Режим редактирования вложенного объекта_
+ * @summary Значение перечисления {@link EnmNested_object_editing_modeManager|Режим редактирования вложенного объекта}
  * @class EnmNested_object_editing_mode
  * @see EnmNested_object_editing_modeManager
  */
 
 /**
- * Менеджер перечисления _Режим редактирования вложенного объекта_
+ * @summary Менеджер перечисления _Режим редактирования вложенного объекта_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop string {EnmNested_object_editing_mode} - Строка
  * @prop frm {EnmNested_object_editing_mode} - Форма
  * @prop both {EnmNested_object_editing_mode} - Строка и форма
@@ -764,15 +735,15 @@ class EnmElm_positionsManager {}
 class EnmNested_object_editing_modeManager {}
 
 /**
- * Значение перечисления _Слои раскладки_
+ * @summary Значение перечисления {@link EnmLay_regionsManager|Слои раскладки}
  * @class EnmLay_regions
  * @see EnmLay_regionsManager
  */
 
 /**
- * Менеджер перечисления _Слои раскладки_
+ * @summary Менеджер перечисления _Слои раскладки_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop inner {EnmLay_regions} - Изнутри
  * @prop outer {EnmLay_regions} - Снаружи
  * @prop all {EnmLay_regions} - С двух стор
@@ -783,15 +754,15 @@ class EnmNested_object_editing_modeManager {}
 class EnmLay_regionsManager {}
 
 /**
- * Значение перечисления _Состояния заказов клиентов_
+ * @summary Значение перечисления {@link EnmBuyers_order_statesManager|Состояния заказов клиентов}
  * @class EnmBuyers_order_states
  * @see EnmBuyers_order_statesManager
  */
 
 /**
- * Менеджер перечисления _Состояния заказов клиентов_
+ * @summary Менеджер перечисления _Состояния заказов клиентов_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ОжидаетсяСогласование {EnmBuyers_order_states} - Ожидается согласование
  * @prop ОжидаетсяАвансДоОбеспечения {EnmBuyers_order_states} - Ожидается аванс (до обеспечения)
  * @prop ГотовКОбеспечению {EnmBuyers_order_states} - Готов к обеспечению
@@ -806,30 +777,30 @@ class EnmLay_regionsManager {}
 class EnmBuyers_order_statesManager {}
 
 /**
- * Значение перечисления _Способ придания цвета_
+ * @summary Значение перечисления {@link EnmColoringManager|Способ придания цвета}
  * @class EnmColoring
  * @see EnmColoringManager
  */
 
 /**
- * Менеджер перечисления _Способ придания цвета_
+ * @summary Менеджер перечисления _Способ придания цвета_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop lam {EnmColoring} - Ламинация
  * @prop coloring {EnmColoring} - Покраска
  */
 class EnmColoringManager {}
 
 /**
- * Значение перечисления _Способы предоставления скидок наценок_
+ * @summary Значение перечисления {@link EnmApplication_joint_kindsManager|Способы предоставления скидок наценок}
  * @class EnmApplication_joint_kinds
  * @see EnmApplication_joint_kindsManager
  */
 
 /**
- * Менеджер перечисления _Способы предоставления скидок наценок_
+ * @summary Менеджер перечисления _Способы предоставления скидок наценок_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Сумма {EnmApplication_joint_kinds} - Скидка (наценка) суммой на документ
  * @prop СуммаДляКаждойСтроки {EnmApplication_joint_kinds} - Скидка (наценка) суммой для каждой строки
  * @prop Количество {EnmApplication_joint_kinds} - Скидка количеством
@@ -843,15 +814,15 @@ class EnmColoringManager {}
 class EnmApplication_joint_kindsManager {}
 
 /**
- * Значение перечисления _Способы расчета количества_
+ * @summary Значение перечисления {@link EnmCount_calculating_waysManager|Способы расчета количества}
  * @class EnmCount_calculating_ways
  * @see EnmCount_calculating_waysManager
  */
 
 /**
- * Менеджер перечисления _Способы расчета количества_
+ * @summary Менеджер перечисления _Способы расчета количества_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop perim {EnmCount_calculating_ways} - По периметру
  * @prop area {EnmCount_calculating_ways} - По площади
  * @prop element {EnmCount_calculating_ways} - Для элемента
@@ -867,15 +838,15 @@ class EnmApplication_joint_kindsManager {}
 class EnmCount_calculating_waysManager {}
 
 /**
- * Значение перечисления _Способы расчета угла_
+ * @summary Значение перечисления {@link EnmAngle_calculating_waysManager|Способы расчета угла}
  * @class EnmAngle_calculating_ways
  * @see EnmAngle_calculating_waysManager
  */
 
 /**
- * Менеджер перечисления _Способы расчета угла_
+ * @summary Менеджер перечисления _Способы расчета угла_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Основной {EnmAngle_calculating_ways} - Основной
  * @prop СварнойШов {EnmAngle_calculating_ways} - Сварной шов
  * @prop СоединениеПополам {EnmAngle_calculating_ways} - Соед./2
@@ -886,15 +857,15 @@ class EnmCount_calculating_waysManager {}
 class EnmAngle_calculating_waysManager {}
 
 /**
- * Значение перечисления _Способы установки спецификации_
+ * @summary Значение перечисления {@link EnmSpecification_installation_methodsManager|Способы установки спецификации}
  * @class EnmSpecification_installation_methods
  * @see EnmSpecification_installation_methodsManager
  */
 
 /**
- * Менеджер перечисления _Способы установки спецификации_
+ * @summary Менеджер перечисления _Способы установки спецификации_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Всегда {EnmSpecification_installation_methods} - Всегда
  * @prop САртикулом1 {EnmSpecification_installation_methods} - с Арт1
  * @prop САртикулом2 {EnmSpecification_installation_methods} - с Арт2
@@ -902,15 +873,15 @@ class EnmAngle_calculating_waysManager {}
 class EnmSpecification_installation_methodsManager {}
 
 /**
- * Значение перечисления _Ставки НДС_
+ * @summary Значение перечисления {@link EnmVat_ratesManager|Ставки НДС}
  * @class EnmVat_rates
  * @see EnmVat_ratesManager
  */
 
 /**
- * Менеджер перечисления _Ставки НДС_
+ * @summary Менеджер перечисления _Ставки НДС_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop НДС18 {EnmVat_rates} - 18%
  * @prop НДС18_118 {EnmVat_rates} - 18% / 118%
  * @prop НДС10 {EnmVat_rates} - 10%
@@ -923,15 +894,17 @@ class EnmSpecification_installation_methodsManager {}
 class EnmVat_ratesManager {}
 
 /**
- * Значение перечисления _Стороны соединений_<br/>Актуально для импостов и витражных элементов
+ * @summary Значение перечисления {@link EnmCnn_sidesManager|Стороны соединений}
+ * @desc Актуально для импостов и витражных элементов
  * @class EnmCnn_sides
  * @see EnmCnn_sidesManager
  */
 
 /**
- * Менеджер перечисления _Стороны соединений_<br/>Актуально для импостов и витражных элементов
+ * @summary Менеджер перечисления _Стороны соединений_ 
+ * @desc Актуально для импостов и витражных элементов
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop inner {EnmCnn_sides} - Изнутри
  * @prop outer {EnmCnn_sides} - Снаружи
  * @prop any {EnmCnn_sides} - Любая
@@ -939,15 +912,17 @@ class EnmVat_ratesManager {}
 class EnmCnn_sidesManager {}
 
 /**
- * Значение перечисления _Типы вставок_<br/>Задаёт алгоритмы расчета и визуализации, используется для отбора в интерфейсе
+ * @summary Значение перечисления {@link EnmInserts_typesManager|Типы вставок}
+ * @desc Задаёт алгоритмы расчета и визуализации, используется для отбора в интерфейсе
  * @class EnmInserts_types
  * @see EnmInserts_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы вставок_<br/>Задаёт алгоритмы расчета и визуализации, используется для отбора в интерфейсе
+ * @summary Менеджер перечисления _Типы вставок_ 
+ * @desc Задаёт алгоритмы расчета и визуализации, используется для отбора в интерфейсе
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop profile {EnmInserts_types} - Профиль
  * @prop glass {EnmInserts_types} - Заполнение
  * @prop element {EnmInserts_types} - Элемент
@@ -973,15 +948,17 @@ class EnmCnn_sidesManager {}
 class EnmInserts_typesManager {}
 
 /**
- * Значение перечисления _Типы вставок стеклопакета_<br/>Состав заполнения
+ * @summary Значение перечисления {@link EnmInserts_glass_typesManager|Типы вставок стеклопакета}
+ * @desc Состав заполнения
  * @class EnmInserts_glass_types
  * @see EnmInserts_glass_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы вставок стеклопакета_<br/>Состав заполнения
+ * @summary Менеджер перечисления _Типы вставок стеклопакета_ 
+ * @desc Состав заполнения
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Заполнение {EnmInserts_glass_types} - Заполнение
  * @prop Рамка {EnmInserts_glass_types} - Рамка
  * @prop Газ {EnmInserts_glass_types} - Гель, газ
@@ -995,15 +972,17 @@ class EnmInserts_typesManager {}
 class EnmInserts_glass_typesManager {}
 
 /**
- * Значение перечисления _Типы деления раскладки_<br/>Тип параметра для команды "добавить раскладку"
+ * @summary Значение перечисления {@link EnmLay_split_typesManager|Типы деления раскладки}
+ * @desc Тип параметра для команды "добавить раскладку"
  * @class EnmLay_split_types
  * @see EnmLay_split_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы деления раскладки_<br/>Тип параметра для команды "добавить раскладку"
+ * @summary Менеджер перечисления _Типы деления раскладки_ 
+ * @desc Тип параметра для команды "добавить раскладку"
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ДелениеГоризонтальных {EnmLay_split_types} - Деление горизонтальных
  * @prop ДелениеВертикальных {EnmLay_split_types} - Деление вертикальных
  * @prop КрестВСтык {EnmLay_split_types} - Крест в стык
@@ -1012,15 +991,15 @@ class EnmInserts_glass_typesManager {}
 class EnmLay_split_typesManager {}
 
 /**
- * Значение перечисления _Типы контактной информации_
+ * @summary Значение перечисления {@link EnmContact_information_typesManager|Типы контактной информации}
  * @class EnmContact_information_types
  * @see EnmContact_information_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы контактной информации_
+ * @summary Менеджер перечисления _Типы контактной информации_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Адрес {EnmContact_information_types} - Адрес
  * @prop Телефон {EnmContact_information_types} - Телефон
  * @prop АдресЭлектроннойПочты {EnmContact_information_types} - Адрес электронной почты
@@ -1032,15 +1011,15 @@ class EnmLay_split_typesManager {}
 class EnmContact_information_typesManager {}
 
 /**
- * Значение перечисления _Типы лидов_
+ * @summary Значение перечисления {@link EnmLead_typesManager|Типы лидов}
  * @class EnmLead_types
  * @see EnmLead_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы лидов_
+ * @summary Менеджер перечисления _Типы лидов_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop email {EnmLead_types} - Электронная почта
  * @prop social {EnmLead_types} - Социальная сеть
  * @prop phone {EnmLead_types} - Телефон
@@ -1050,31 +1029,31 @@ class EnmContact_information_typesManager {}
 class EnmLead_typesManager {}
 
 /**
- * Значение перечисления _Типы номенклатуры_
+ * @summary Значение перечисления {@link EnmNom_typesManager|Типы номенклатуры}
  * @class EnmNom_types
  * @see EnmNom_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы номенклатуры_
+ * @summary Менеджер перечисления _Типы номенклатуры_ 
  * @class
- * @extends {external:EnumManager}
- * @prop Товар {EnmNom_types} - Товар, материал
- * @prop Услуга {EnmNom_types} - Услуга
- * @prop Работа {EnmNom_types} - Работа, техоперация
+ * @extends metadata.EnumManager
+ * @prop goods {EnmNom_types} - Товар, материал
+ * @prop service {EnmNom_types} - Услуга
+ * @prop operation {EnmNom_types} - Работа, техоперация
  */
 class EnmNom_typesManager {}
 
 /**
- * Значение перечисления _Типы оптимизаций раскроя_
+ * @summary Значение перечисления {@link EnmCutting_optimization_typesManager|Типы оптимизаций раскроя}
  * @class EnmCutting_optimization_types
  * @see EnmCutting_optimization_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы оптимизаций раскроя_
+ * @summary Менеджер перечисления _Типы оптимизаций раскроя_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Нет {EnmCutting_optimization_types} - Нет
  * @prop РасчетНарезки {EnmCutting_optimization_types} - Расчет нарезки
  * @prop НельзяВращатьПереворачивать {EnmCutting_optimization_types} - Нельзя вращать переворачивать
@@ -1083,15 +1062,15 @@ class EnmNom_typesManager {}
 class EnmCutting_optimization_typesManager {}
 
 /**
- * Значение перечисления _Типы открывания_
+ * @summary Значение перечисления {@link EnmOpen_typesManager|Типы открывания}
  * @class EnmOpen_types
  * @see EnmOpen_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы открывания_
+ * @summary Менеджер перечисления _Типы открывания_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop Глухое {EnmOpen_types} - Глухое
  * @prop Поворотное {EnmOpen_types} - Поворотное
  * @prop Откидное {EnmOpen_types} - Откидное
@@ -1102,33 +1081,33 @@ class EnmCutting_optimization_typesManager {}
 class EnmOpen_typesManager {}
 
 /**
- * Значение перечисления _Типы размерных линий_
+ * @summary Значение перечисления {@link EnmSz_line_typesManager|Типы размерных линий}
  * @class EnmSz_line_types
  * @see EnmSz_line_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы размерных линий_
+ * @summary Менеджер перечисления _Типы размерных линий_ 
  * @class
- * @extends {external:EnumManager}
- * @prop Обычные {EnmSz_line_types} - Обычные
- * @prop Габаритные {EnmSz_line_types} - Только габаритные
- * @prop ПоСтворкам {EnmSz_line_types} - По створкам
- * @prop ОтКрая {EnmSz_line_types} - От края
- * @prop БезРазмеров {EnmSz_line_types} - Без размеров
+ * @extends metadata.EnumManager
+ * @prop normal {EnmSz_line_types} - Обычные
+ * @prop bounds {EnmSz_line_types} - Только габаритные
+ * @prop flap {EnmSz_line_types} - По створкам
+ * @prop borde {EnmSz_line_types} - От края
+ * @prop none {EnmSz_line_types} - Без размеров
  */
 class EnmSz_line_typesManager {}
 
 /**
- * Значение перечисления _Типы соединений_
+ * @summary Значение перечисления {@link EnmCnn_typesManager|Типы соединений}
  * @class EnmCnn_types
  * @see EnmCnn_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы соединений_
+ * @summary Менеджер перечисления _Типы соединений_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ad {EnmCnn_types} - Угловое диагональное
  * @prop av {EnmCnn_types} - Угловое к вертикальной
  * @prop ah {EnmCnn_types} - Угловое к горизонтальной
@@ -1143,15 +1122,17 @@ class EnmSz_line_typesManager {}
 class EnmCnn_typesManager {}
 
 /**
- * Значение перечисления _Типы строк в заказ_<br/>Способ вытягивания строки спецификации в заказ либо привязка к элементу или слою
+ * @summary Значение перечисления {@link EnmSpecification_order_row_typesManager|Типы строк в заказ}
+ * @desc Способ вытягивания строки спецификации в заказ либо привязка к элементу или слою
  * @class EnmSpecification_order_row_types
  * @see EnmSpecification_order_row_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы строк в заказ_<br/>Способ вытягивания строки спецификации в заказ либо привязка к элементу или слою
+ * @summary Менеджер перечисления _Типы строк в заказ_ 
+ * @desc Способ вытягивания строки спецификации в заказ либо привязка к элементу или слою
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop no {EnmSpecification_order_row_types} - Нет
  * @prop material {EnmSpecification_order_row_types} - Материал
  * @prop prod {EnmSpecification_order_row_types} - Продукция
@@ -1163,15 +1144,17 @@ class EnmCnn_typesManager {}
 class EnmSpecification_order_row_typesManager {}
 
 /**
- * Значение перечисления _Типы элементов_<br/>Определяют поведение элемента в графическом построителе. Не рекомендуется использовать для группировки номенклатур, т.к. один и тот же материал может выступать элементами разных типов
+ * @summary Значение перечисления {@link EnmElm_typesManager|Типы элементов}
+ * @desc Определяют поведение элемента в графическом построителе. Не рекомендуется использовать для группировки номенклатур, т.к. один и тот же материал может выступать элементами разных типов
  * @class EnmElm_types
  * @see EnmElm_typesManager
  */
 
 /**
- * Менеджер перечисления _Типы элементов_<br/>Определяют поведение элемента в графическом построителе. Не рекомендуется использовать для группировки номенклатур, т.к. один и тот же материал может выступать элементами разных типов
+ * @summary Менеджер перечисления _Типы элементов_ 
+ * @desc Определяют поведение элемента в графическом построителе. Не рекомендуется использовать для группировки номенклатур, т.к. один и тот же материал может выступать элементами разных типов
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop rama {EnmElm_types} - Рама
  * @prop flap {EnmElm_types} - Створка
  * @prop flap0 {EnmElm_types} - Створка безимпостная
@@ -1213,15 +1196,15 @@ class EnmSpecification_order_row_typesManager {}
 class EnmElm_typesManager {}
 
 /**
- * Значение перечисления _Фазы планирования_
+ * @summary Значение перечисления {@link EnmPlanning_phasesManager|Фазы планирования}
  * @class EnmPlanning_phases
  * @see EnmPlanning_phasesManager
  */
 
 /**
- * Менеджер перечисления _Фазы планирования_
+ * @summary Менеджер перечисления _Фазы планирования_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop plan {EnmPlanning_phases} - План
  * @prop run {EnmPlanning_phases} - Запуск
  * @prop ready {EnmPlanning_phases} - Готовность
@@ -1229,15 +1212,15 @@ class EnmElm_typesManager {}
 class EnmPlanning_phasesManager {}
 
 /**
- * Значение перечисления _Этапы отправки заказа_
+ * @summary Значение перечисления {@link EnmOrder_sending_stagesManager|Этапы отправки заказа}
  * @class EnmOrder_sending_stages
  * @see EnmOrder_sending_stagesManager
  */
 
 /**
- * Менеджер перечисления _Этапы отправки заказа_
+ * @summary Менеджер перечисления _Этапы отправки заказа_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop replenish {EnmOrder_sending_stages} - Уточнение информации
  * @prop pay_start {EnmOrder_sending_stages} - Ожидание оплаты
  * @prop pay_confirmed {EnmOrder_sending_stages} - Оплата подтверждена
@@ -1245,15 +1228,15 @@ class EnmPlanning_phasesManager {}
 class EnmOrder_sending_stagesManager {}
 
 /**
- * Значение перечисления _Юр/ФизЛицо_
+ * @summary Значение перечисления {@link EnmIndividual_legalManager|Юр/ФизЛицо}
  * @class EnmIndividual_legal
  * @see EnmIndividual_legalManager
  */
 
 /**
- * Менеджер перечисления _Юр/ФизЛицо_
+ * @summary Менеджер перечисления _Юр/ФизЛицо_ 
  * @class
- * @extends {external:EnumManager}
+ * @extends metadata.EnumManager
  * @prop ЮрЛицо {EnmIndividual_legal} - Юрлицо
  * @prop ФизЛицо {EnmIndividual_legal} - Физлицо
  */

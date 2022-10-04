@@ -12,7 +12,7 @@ class ProfileSegment extends ProfileItem {
     return this.parent.elm_type;
   }
 
-  // Расстояние от узла до опорной линии
+  /** @override */
   get d0() {
     return this.parent.d0;
   }
@@ -188,6 +188,9 @@ class ProfileSegment extends ProfileItem {
     return cnn_point;
   }
 
+  /**
+   * @override
+   */
   nearest() {
     return this.parent;
   }

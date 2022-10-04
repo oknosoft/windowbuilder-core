@@ -58,11 +58,7 @@ class ProfileAddl extends ProfileItem {
 
   }
 
-  /**
-   * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @type Number
-   * @final
-   */
+  /** @override */
   get d0() {
     const nearest = this.nearest();
     return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
@@ -83,8 +79,9 @@ class ProfileAddl extends ProfileItem {
   }
 
   /**
-   * Примыкающий внешний элемент
-   * @return Profile
+   * Примыкающий внешний элемент  
+   * У добора, равен родителю
+   * @override
    */
   nearest() {
     const {_attr, parent, project} = this;
@@ -150,7 +147,7 @@ class ProfileAddl extends ProfileItem {
   /**
    * Рассчитывает точки пути на пересечении текущего и указанного профилей
    * @param {CnnPoint} cnn_point 
-   * @param {'b'|'e'} profile_point 
+   * @param {NodeBE} profile_point 
    */
   path_points(cnn_point, profile_point) {
 

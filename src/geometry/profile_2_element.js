@@ -13,7 +13,7 @@
  *
  * @extends ProfileItem
  * 
- * @tutorial profile
+ * @tutorial 02_geometry
  *
  * @example {@caption Создаём элемент профиля на основании пути образующей. Одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет}
  *
@@ -26,10 +26,7 @@
  */
 class Profile extends ProfileItem {
 
-  /**
-   * @param attr {Object} - объект со свойствами создаваемого элемента
-   * см. {@link BuilderElement|параметр конструктора BuilderElement}
-   */
+  /** @inheritdoc */
   constructor(attr) {
 
     const fromCoordinates = attr.row && attr.row.elm;
@@ -68,11 +65,7 @@ class Profile extends ProfileItem {
     }
   }
 
-  /**
-   * Расстояние от узла до опорной линии
-   * для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений
-   * @type {Number}
-   */
+  /** @override */
   get d0() {
     const {_attr} = this;
     if(!_attr.hasOwnProperty('d0')) {
@@ -152,8 +145,7 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
-   * @return {Profile}
+   * @override
    */
   nearest(ign_cnn) {
 
@@ -247,7 +239,9 @@ class Profile extends ProfileItem {
 
   /**
    * Добавляет сегменты
+   * Превращает текущий элемент в "Чулок сегментов" и создаёт внутри несколько {@link ProfileSegment}
    * @param [count=2] {Number} - на сколько сегментов резать
+   * @return {void}
    */
   split_by(count) {
     const {generatrix, segms, inset, clr, project} = this;
@@ -267,7 +261,7 @@ class Profile extends ProfileItem {
 
   /**
    * Возвращает массив примыкающих ипостов
-   * @param [check_only] {Boolean} - не формировать подробный ответ, только проверить наличие примыкающих импостов
+   * @param {Boolean} [check_only] - не формировать подробный ответ, только проверить наличие примыкающих импостов
    * @returns {Object|Boolean}
    */
   joined_imposts(check_only) {
@@ -329,7 +323,7 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * Возвращает массив примыкающих створочных элементов
+   * Возвращает массив примыкающих створочных профилей
    * @returns {Array.<Profile>}
    */
   joined_nearests() {
@@ -374,8 +368,8 @@ class Profile extends ProfileItem {
    * - Не делает подмену соединения, хотя могла бы
    * - Не делает подмену вставки, хотя могла бы
    *
-   * @param node {String} - имя узла профиля: "b" или "e"
-   * @param [point] {paper.Point} - координаты точки, в окрестности которой искать
+   * @param {NodeBE} node - имя узла профиля
+   * @param {paper.Point} [point] - координаты точки, в окрестности которой искать
    * @return {CnnPoint} - объект {point, profile, cnn_types}
    */
   cnn_point(node, point) {
@@ -441,11 +435,13 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * тот, к кому примыкает импост
+   * Для всех элементов, кроме импостов, возвращает сам элемент
+   * Используется справочником {@link CatClrs|цветов} для расчёта алгоритмом КакВедущий*
+   * @param {NodeBE} be - узел
    * @return {BuilderElement}
    */
   t_parent(be) {
-    if(this.elm_type != $p.enm.elm_types.Импост) {
+    if(!this.elm_type.is('impost')) {
       return this;
     }
     const {_rays} = this._attr;
@@ -461,6 +457,7 @@ class Profile extends ProfileItem {
   /**
    * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
    * @param param {CchProperties}
+   * @return {void}
    */
   refresh_inset_depends(param, with_neighbor) {
     const {inset, _attr: {_rays, _nearest_cnn}} = this;

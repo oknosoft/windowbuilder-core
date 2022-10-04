@@ -17,14 +17,6 @@
 class ProfileConnective extends ProfileItem {
 
   /**
-   * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @type Number
-   */
-  get d0() {
-    return 0;
-  }
-
-  /**
    * Возвращает тип элемента (соединитель)
    */
   get elm_type() {
@@ -105,10 +97,9 @@ class ProfileConnective extends ProfileItem {
   /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
    * @override
+   * @return {void}
    */
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   /**
    * Вычисляемые поля в таблице координат

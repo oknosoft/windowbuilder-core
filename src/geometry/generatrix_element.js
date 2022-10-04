@@ -5,7 +5,7 @@
  *
  * @abstract
  * @extends BuilderElement
- * @tutorial profile
+ * @tutorial 02_geometry
  */
 class GeneratrixElement extends BuilderElement {
 
@@ -353,7 +353,7 @@ class GeneratrixElement extends BuilderElement {
    * Вспомогательная функция do_bind, привязка импостов
    * @param profile {ProfileItem} - к которому примыкает текущий импост
    * @param node {String} - b,e
-   * @return {boolean|Point|undefined}
+   * @return {boolean|paper.Point}
    */
   do_sub_bind(profile, node) {
     const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});

@@ -1259,7 +1259,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * виртуальный датаменеджер для автоформ
-   * @type external:DataManager
+   * @type metadata.DataManager
    */
   get _manager() {
     return this.project._dp._manager;

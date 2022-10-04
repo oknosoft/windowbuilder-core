@@ -1,15 +1,14 @@
 
 /**
- * Опорная линия  
- * Вспомогательная линия для привязки узлов и уравнивания
+ * @summary Опорная линия  
+ * @desc Вспомогательная линия для привязки узлов и уравнивания
  *
  * - у линии есть координаты конца и начала
- * - есть путь образующей - прямая или кривая линия, такая же, как у {{#crossLink "Profile"}}{{/crossLink}}
+ * - есть путь образующей - прямая или кривая линия, такая же, как у {@link Profile}
  * - живут линии в слое соединителей изделия
  * - никаких соединений у линии нет
  *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends GeneratrixElement
+ * @extends ProfileItem
  */
 class BaseLine extends ProfileItem {
 
@@ -26,10 +25,6 @@ class BaseLine extends ProfileItem {
       dashOffset: 4,
       dashArray: [4, 4],
     });
-  }
-
-  get d0() {
-    return 0;
   }
 
   get d1() {
@@ -66,11 +61,11 @@ class BaseLine extends ProfileItem {
   }
 
   /**
-   * У линии не бывает ведущих элементов
+   * У линии не бывает внешних примыкающих элементов
+   * @override
+   * @return {void}
    */
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   /**
    * Возвращает массив примыкающих рам

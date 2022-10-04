@@ -872,6 +872,8 @@ class BuilderElement extends paper.Group {
     this._attr.owner = v;
   }
 
+  nearest() {}
+
   get generatrix() {
     return this._attr.generatrix;
   }
@@ -935,6 +937,9 @@ class BuilderElement extends paper.Group {
     }
   }
 
+  get _metadata() {
+    return this.__metadata();
+  }
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
@@ -1155,9 +1160,7 @@ class BuilderElement extends paper.Group {
       }),
     };
   }
-  get _metadata() {
-    return this.__metadata();
-  }
+
 
   get _manager() {
     return this.project._dp._manager;
@@ -1470,10 +1473,6 @@ class BuilderElement extends paper.Group {
     if(path instanceof paper.Path){
       path.fillColor = BuilderElement.clr_by_clr.call(this, _row.clr);
     }
-  }
-
-  t_parent(be) {
-    return this;
   }
 
   selected_cnn_ii() {
@@ -6584,9 +6583,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return $p.enm.cnn_sides.inner;
   }
 
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   select_node(v) {
     let point, segm, delta = Infinity;
@@ -7996,6 +7993,8 @@ EditorInvisible.GridCoordinates = GridCoordinates;
 
 
 
+
+
 Object.defineProperties(paper.Path.prototype, {
 
   getDirectedAngle: {
@@ -8694,7 +8693,6 @@ class CnnPoint {
   get err() {
     return this._err;
   }
-
   set err(v) {
     if(!v) {
       this._err.length = 0;
@@ -8752,7 +8750,6 @@ class CnnPoint {
     }
     return this._profile;
   }
-
   set profile(v) {
     this._profile = v;
   }
@@ -9072,6 +9069,10 @@ class ProfileRays {
 
 
 class ProfileItem extends GeneratrixElement {
+
+  get d0() {
+    return 0;
+  }
 
   get d1() {
     return -(this.d0 - this.sizeb);
@@ -11522,7 +11523,7 @@ class Profile extends ProfileItem {
   }
 
   t_parent(be) {
-    if(this.elm_type != $p.enm.elm_types.Импост) {
+    if(!this.elm_type.is('impost')) {
       return this;
     }
     const {_rays} = this._attr;
@@ -12062,10 +12063,6 @@ class BaseLine extends ProfileItem {
     });
   }
 
-  get d0() {
-    return 0;
-  }
-
   get d1() {
     return 0;
   }
@@ -12092,9 +12089,7 @@ class BaseLine extends ProfileItem {
     return this.generatrix.length;
   }
 
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   joined_nearests() {
 
@@ -12396,10 +12391,6 @@ EditorInvisible.ProfileAddl = ProfileAddl;
 
 class ProfileConnective extends ProfileItem {
 
-  get d0() {
-    return 0;
-  }
-
   get elm_type() {
     return $p.enm.elm_types.Соединитель;
   }
@@ -12451,9 +12442,7 @@ class ProfileConnective extends ProfileItem {
     return check_only ? false : {inner: tinner, outer: touter};
   }
 
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   save_coordinates() {
 
@@ -12950,9 +12939,6 @@ class Onlay extends ProfileItem {
     }
   }
 
-  get d0() {
-    return 0;
-  }
 
   get elm_type() {
     return $p.enm.elm_types.Раскладка;
@@ -12984,9 +12970,7 @@ class Onlay extends ProfileItem {
     }
   }
 
-  nearest() {
-
-  }
+  nearest() {}
 
   joined_imposts(check_only) {
 

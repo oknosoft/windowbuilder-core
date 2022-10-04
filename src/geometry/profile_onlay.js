@@ -13,8 +13,7 @@
 class Onlay extends ProfileItem {
 
   /**
-   * @param attr {Object} - объект со свойствами создаваемого элемента
-   * см. {@link BuilderElement|параметр конструктора BuilderElement}
+   * @inheritdoc
    */
   constructor(attr) {
     super(attr);
@@ -28,14 +27,7 @@ class Onlay extends ProfileItem {
       this.region = attr.region;
     }
   }
-
-  /**
-   * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @type Number
-   */
-  get d0() {
-    return 0;
-  }
+  
 
   /**
    * Возвращает тип элемента (раскладка)
@@ -80,9 +72,7 @@ class Onlay extends ProfileItem {
    * @override
    * @return {void}
    */
-  nearest() {
-
-  }
+  nearest() {}
 
   /**
    * Возвращает массив примыкающих ипостов

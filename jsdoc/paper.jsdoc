@@ -1,59 +1,80 @@
 /**
- * Библиотека [paper.js](http://paperjs.org/reference/global/)
+ * @summary Библиотека _paper.js_
+ * @link [paper.js](http://paperjs.org/reference/global/)
  * @namespace
  */
 var paper = {
 
-    /**
-    * The Layer item represents a layer in a Paper.js project.
-    * @see http://paperjs.org/reference/layer/
-    * @extends paper.Group
-    * @extends paper.Item
-    * @constructor
-    */
-    Layer() {},
+/**
+  * The PaperScope class represents the scope associated with a Paper context. When working with PaperScript, these scopes are automatically created for us, and through clever scoping the properties and methods of the active scope seem to become part of the global scope.
+  * @see http://paperjs.org/reference/paperscope/
+  * @constructor
+  */
+  PaperScope,
+  
+  /**
+  * The PathItem class is the base for any items that describe paths and offer standardised methods for drawing and path manipulation, such as Path and CompoundPath.
+  * @see http://paperjs.org/reference/paperscope/
+  * @constructor
+  */
+  PathItem,
+
+/**
+  * The Layer item represents a layer in a Paper.js project.
+  * @see http://paperjs.org/reference/layer/
+  * @extends paper.Group
+  * @extends paper.Item
+  * @constructor
+  */
+  Layer,
     
-    /**
-    * The Point object represents a point in the two dimensional space of the Paper.js project. It is also used to represent two dimensional vector objects.
-    * @see http://paperjs.org/reference/point/
-    * @constructor
-    */
-    Point() {},
-    
-    /**
-    * Путь - прямая или изогнутая линия  
-    * может иметь переломы, самопересечения, быть разомкнутой или замкнутой
-    * @see http://paperjs.org/reference/path/
-    * @constructor
-    */
-    Path() {},
-    
-    /**
-    * Произвольный текст  
-    * @see http://paperjs.org/reference/pointtext/
-    * @constructor
-    */
-    PointText() {},
-    
-    /**
-    * Группа элементов
-    * @constructor
-    */
-    Group() {},
-    
-    /**
-    * Проект
-    * @constructor
-    */
-    Project() {},
-    
-    /** 
-    * The Item type allows you to access and modify the items in Paper.js projects.
-    * Its functionality is inherited by different project item types such as Path, CompoundPath, Group, Layer and Raster.
-    * They each add a layer of functionality that is unique to their type, but share the underlying properties and functions that they inherit from Item.
-    * @constructor
-    */
-    Item() {},
+/**
+  * The Point object represents a point in the two dimensional space of the Paper.js project. It is also used to represent two dimensional vector objects.
+  * @see http://paperjs.org/reference/point/
+  * @constructor
+  */
+  Point,
+  
+/**
+  * Путь - прямая или изогнутая линия  
+  * может иметь переломы, самопересечения, быть разомкнутой или замкнутой
+  * @see http://paperjs.org/reference/path/
+  * @extends paper.Item
+  * @extends paper.PathItem    
+  * @constructor
+  */
+  Path,
+  
+/**
+  * Произвольный текст  
+  * @see http://paperjs.org/reference/pointtext/
+  * @extends paper.Item
+  * @extends paper.TextItem  
+  * @constructor
+  */
+  PointText,
+  
+/**
+  * Группа элементов
+  * @see http://paperjs.org/reference/group/
+  * @constructor
+  */
+  Group,
+  
+/**
+  * Проект
+  * @see http://paperjs.org/reference/project/
+  * @constructor
+  */
+  Project,
+  
+/** 
+  * The Item type allows you to access and modify the items in Paper.js projects.
+  * Its functionality is inherited by different project item types such as Path, CompoundPath, Group, Layer and Raster.
+  * They each add a layer of functionality that is unique to their type, but share the underlying properties and functions that they inherit from Item.
+  * @constructor
+  */
+  Item,
 };
 
 

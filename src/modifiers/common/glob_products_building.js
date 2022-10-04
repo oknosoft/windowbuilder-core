@@ -76,7 +76,6 @@ class ProductsBuilding {
 
     /**
      * ДополнитьСпецификациюСпецификациейСоединения
-     * @method cnn_add_spec
      * @param cnn {_cat.Cnns}
      * @param elm {BuilderElement}
      * @param len_angl {Object}

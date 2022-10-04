@@ -18,13 +18,15 @@
   },
   "templates": {
     "systemName": "wb-core",
+    "systemLogo": "./jsdoc/tutorials/imgs/flask.png",
+    "favicon": "./jsdoc/tutorials/imgs/favicon.ico",
+    "dateFormat": "DD.MM.YYYY",
     "systemSummary": "Ядро Заказа дилера, безбумажки и параметрика",
     "copyright": "© 2016-2022 Oknosoft Lab <info@oknosoft.ru> (https://oknosoft.ru)",
     "navMembers": [
-      {"kind": "class", "title": "Classes", "summary": "Все классы библиотеки"},
-      {"kind": "namespace", "title": "Namespaces", "summary": "Пространства имён"},
-      {"kind": "global", "title": "Globals", "summary": "Глобальные переменные"},
-      {"kind": "tutorial", "title": "Tutorials", "summary": "Руководства и примеры"}
+      {"kind": "class", "title": "Классы", "summary": "Все классы библиотеки"},
+      {"kind": "namespace", "title": "Зависимости", "summary": "Пространства имён"},
+      {"kind": "tutorial", "title": "Руководства", "summary": "Руководства и примеры"}
     ],
     "inlineNav": true,
     "referenceTitle": "",
@@ -33,37 +35,9 @@
     "cleverLinks": false,
     "monospaceLinks": false,
     "resources": {
-      "metadata.js<br/>": "https://github.com/oknosoft/metadata.js/tree/develop/packages",
+      "metadata.js": "https://github.com/oknosoft/metadata.js/tree/develop/packages",
       "paper.js": "http://paperjs.org/reference/"
     }
-  },
-  "docdash": {
-    "meta": {
-      "title": "Ядро 'Заказа дилера'",
-      "description": "Ядро 'Заказа дилера'",
-      "keyword": "metadata, order dealer, cad, crm, window builder, windows calculator"
-    },
-    "search": true,
-    "sort": true,
-    "collapse": true,
-    "menu": {
-      "Заказ дилера": {
-        "href":"https://github.com/oknosoft/windowbuilder/wiki",
-        "target":"_blank",
-        "class":"menu-item",
-        "id":"website_link"
-      }
-    },
-    "sectionOrder": [
-      "Tutorials",
-      "Namespaces",
-      "Classes",
-      "Externals",
-      "Modules",
-      "Events",
-      "Mixins",
-      "Interfaces"
-    ]
   },
   "opts": {
     "destination": "./jsdoc/wbcore/",

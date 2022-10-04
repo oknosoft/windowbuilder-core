@@ -1,35 +1,7 @@
 {
-  "01_meta": {
-    "title": "Метаданные",
-    "summary": "Перечисления, справочники и документы",
-    "children": {
-      "enums": {
-        "title": "Перечисления",
-        "showTableOfContents": false
-      },
-      "catalogs": {
-        "title": "Справочники",
-        "showTableOfContents": false
-      },
-      "docums": {
-        "title": "Документы",
-        "showTableOfContents": false
-      }
-    }
-  },
   "02_geometry": {
     "title": "Графический движок",
-    "summary": "Как устроена рисовалка",
-    "children": {
-      "profile": {
-        "title": "Элемент профиля",
-        "showTableOfContents": false
-      }, 
-      "cnns": {
-        "title": "Справочник 'Соединения'",
-        "showTableOfContents": false
-      }
-    }
+    "summary": "Как устроена рисовалка"
   },
   "03_specification": {
     "title": "Формирование спецификаций",
