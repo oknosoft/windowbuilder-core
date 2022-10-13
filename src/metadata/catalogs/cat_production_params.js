@@ -241,7 +241,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
       if(proto.forcibly || drow || force === 1){
 
-        if(param.inheritance === 3) {
+        if(param.inheritance === 3 || param.inheritance === 4) {
           // пытаемся получить свойство из отдела абонента
           const bvalue = param.branch_value({project, cnstr, ox});
           if(bvalue !== undefined) {

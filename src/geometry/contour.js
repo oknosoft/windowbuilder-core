@@ -2494,9 +2494,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
       }
-      else if(param.inheritance === 3) {
+      else if(param.inheritance === 3 || param.inheritance === 4) {
         const bvalue = param.branch_value({project, cnstr, ox: prod_ox});
-        if(prow.value !== bvalue) {
+        if(param.inheritance === 3 && prow.value !== bvalue) {
+          prow.value = bvalue;
+          notify = true;
+        }
+        // для режима 4 - умолчание для отдела, устанавливаем только если пусто
+        else if(!prow.value || prow.value.empty?.()) {
           prow.value = bvalue;
           notify = true;
         }
@@ -2670,8 +2675,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     // параметры, переопределяемые для отдела, читаем из отдела
     if(param.inheritance !== 3 && 
-        plan_detailing.eq_product.includes(prm_row.origin) && 
-        (!cnstr || cnstr === this.cnstr)) {
+        plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
         param,
@@ -2688,6 +2692,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
+      }
+      if(param.inheritance === 4) {
+        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
