@@ -1096,7 +1096,7 @@ class CatChoice_paramsManager extends CatManager {
 
   load_array(aattr, forse) {
     const objs = super.load_array(aattr, forse);
-    const {md, utils, enm: {comparison_types}} = $p;
+    const {md, utils} = $p;
     // бежим по загруженным объектам
     for(const obj of objs) {
       // учитываем только те, что не runtime
@@ -1139,11 +1139,31 @@ class CatChoice_paramsManager extends CatManager {
         }
         if(or.size > 1) {
           const vmgr = md.mgr_by_class_name(mf.type.types[0]);
-          const path = [];
-          mf.choice_params.push({
-            name: obj.field || 'ref',
-            path: {[comparison_type.valueOf()]: v}
-          });
+          if(vmgr) {
+            const path = new Set();
+            for(const grp of or.values()) {
+              for(const row of grp) {
+                const {_obj, comparison_type, property} = row;
+                let v
+                if(!property.empty()) {
+                  v = property.extract_value(row);
+                }
+                else if(_obj.txt_row) {
+                  v = _obj.txt_row.split(',');
+                }
+                else if(_obj.value) {
+                  v = _obj.value;
+                }
+                vmgr.find_rows({[obj.field || 'ref']: {[comparison_type.valueOf()]: v}}, (o) => {
+                  path.add(o);
+                });
+              }  
+            }            
+            mf.choice_params.push({
+              name: obj.field || 'ref',
+              path: {in: Array.from(path)}
+            });
+          }
         }
         else {
           obj.key.params.forEach((row) => {

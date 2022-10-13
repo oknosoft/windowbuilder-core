@@ -578,6 +578,16 @@
             _nom = main_rows[0].nom;
           }
         }
+        else if(elm && main_rows[0].algorithm.is('nom_prm')) {
+          _nom = main_rows[0].nom;
+          const prm_row = this.selection_params.find({elm: main_rows[0].elm, origin: enm.plan_detailing.algorithm});
+          if(prm_row) {
+            const nom = prm_row.param.extract_pvalue({ox: elm.ox, elm, prm_row});
+            if(nom && !nom.empty()) {
+              _nom = nom;
+            }
+          }
+        }
         else {
           _nom = main_rows[0].nom;
         }

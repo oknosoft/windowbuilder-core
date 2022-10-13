@@ -16806,7 +16806,11 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
+      enm: {
+        predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
+        comparison_types: ct,
+        plan_detailing: {algorithm},
+      },
       cch: {properties},
     } = $p;
 
@@ -16884,6 +16888,15 @@ class ProductsBuilding {
           const fin0 = curr0.get_subpath(pp0, pn0);
           const fin1 = curr1.get_subpath(pp1, pn1);
           row_spec.len = (Math.max(fin0.length, fin1.length) * (row_base.coefficient || 0.001)).round(4);
+        }
+      }
+      else if(row_base?.algorithm === nom_prm && row_base._owner) {
+        const prm_row = row_base._owner._owner.selection_params.find({elm: row_base.elm, origin: algorithm});
+        if(prm_row) {
+          const nom = prm_row.param.extract_pvalue({ox, elm, prm_row});
+          if(nom && !nom.empty()) {
+            row_spec.nom = nom;
+          }
         }
       }
     }
@@ -18425,6 +18438,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           } catch (e) {
             _nom = main_rows[0].nom;
+          }
+        }
+        else if(elm && main_rows[0].algorithm.is('nom_prm')) {
+          _nom = main_rows[0].nom;
+          const prm_row = this.selection_params.find({elm: main_rows[0].elm, origin: enm.plan_detailing.algorithm});
+          if(prm_row) {
+            const nom = prm_row.param.extract_pvalue({ox: elm.ox, elm, prm_row});
+            if(nom && !nom.empty()) {
+              _nom = nom;
+            }
           }
         }
         else {
