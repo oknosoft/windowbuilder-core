@@ -3813,9 +3813,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
       }
-      else if(param.inheritance === 3) {
+      else if(param.inheritance === 3 || param.inheritance === 4) {
         const bvalue = param.branch_value({project, cnstr, ox: prod_ox});
-        if(prow.value !== bvalue) {
+        if(param.inheritance === 3 && prow.value !== bvalue) {
+          prow.value = bvalue;
+          notify = true;
+        }
+        else if(!prow.value || prow.value.empty?.()) {
           prow.value = bvalue;
           notify = true;
         }
@@ -3947,8 +3951,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _ox = prm_ox;
     }
     if(param.inheritance !== 3 && 
-        plan_detailing.eq_product.includes(prm_row.origin) && 
-        (!cnstr || cnstr === this.cnstr)) {
+        plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
         param,
@@ -3965,6 +3968,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else if(cnstr && layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
+      }
+      if(param.inheritance === 4) {
+        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
@@ -12589,9 +12595,16 @@ class ConnectiveLayer extends paper.Layer {
     return Contour.prototype._metadata.call(this, fld);
   }
 
+  get l_dimensions() {
+    return this.project.contours[0].l_dimensions;
+  }
 
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
+  }
+
+  get onlays() {
+    return [];
   }
 
   on_sys_changed() {
@@ -14099,7 +14112,6 @@ class Scheme extends paper.Project {
     }
 
     super.clear();
-    new paper.Layer();
   }
 
   unload() {

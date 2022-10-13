@@ -277,6 +277,13 @@ class ConnectiveLayer extends paper.Layer {
     return Contour.prototype._metadata.call(this, fld);
   }
 
+  /**
+   * Возвращает слой размерных линий проекта
+   * @type {DimensionLayer}
+   */
+  get l_dimensions() {
+    return this.project.contours[0].l_dimensions;
+  }
 
   /**
    * Возвращает массив профилей текущего слоя
@@ -284,6 +291,14 @@ class ConnectiveLayer extends paper.Layer {
    */
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
+  }
+
+  /**
+   * Возвращает массив раскладок текущего слоя
+   * @return {Array}
+   */
+  get onlays() {
+    return [];
   }
 
   /**
