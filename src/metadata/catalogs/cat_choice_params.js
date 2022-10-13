@@ -43,27 +43,44 @@ exports.CatChoice_paramsManager = class CatChoice_paramsManager extends Object {
         if(!mf.choice_params) {
           mf.choice_params = [];
         }
-        // дополняем отбор
-        obj.key.params.forEach((row) => {
-          const {_obj, comparison_type, property} = row;
-          let v
-          if(!property.empty()) {
-            v = property.extract_value(row);
+        // дополняем отбор с поддержкой групп ИЛИ
+        const or = new Map();
+        for(const row of obj.key.params) {
+          if(!or.has(row.area)) {
+            or.set(row.area, []);
           }
-          else if(_obj.txt_row) {
-            v = _obj.txt_row.split(',');
-          }
-          else if(_obj.value) {
-            v = _obj.value;
-          }
-          else {
-            return;
-          }
+          or.get(row.area).push(row);
+        }
+        if(or.size > 1) {
+          const vmgr = md.mgr_by_class_name(mf.type.types[0]);
+          const path = [];
           mf.choice_params.push({
             name: obj.field || 'ref',
             path: {[comparison_type.valueOf()]: v}
           });
-        });
+        }
+        else {
+          obj.key.params.forEach((row) => {
+            const {_obj, comparison_type, property} = row;
+            let v
+            if(!property.empty()) {
+              v = property.extract_value(row);
+            }
+            else if(_obj.txt_row) {
+              v = _obj.txt_row.split(',');
+            }
+            else if(_obj.value) {
+              v = _obj.value;
+            }
+            else {
+              return;
+            }
+            mf.choice_params.push({
+              name: obj.field || 'ref',
+              path: {[comparison_type.valueOf()]: v}
+            });
+          });
+        }
       });
     }
     return objs;
