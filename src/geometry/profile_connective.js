@@ -102,6 +102,18 @@ class ProfileConnective extends ProfileItem {
   nearest() {}
 
   /**
+   * Положение соединительного профиля
+   * @type {EnmPositions}
+   */
+  get pos() {
+    const nearests = this.joined_nearests();
+    if(nearests.length > 1) {
+      return $p.enm.positions.center;
+    }
+    return nearests[0].pos;
+  }
+
+  /**
    * Вычисляемые поля в таблице координат
    */
   save_coordinates() {

@@ -12453,6 +12453,14 @@ class ProfileConnective extends ProfileItem {
 
   nearest() {}
 
+  get pos() {
+    const nearests = this.joined_nearests();
+    if(nearests.length > 1) {
+      return $p.enm.positions.center;
+    }
+    return nearests[0].pos;
+  }
+
   save_coordinates() {
 
     if(!this._attr.generatrix){
