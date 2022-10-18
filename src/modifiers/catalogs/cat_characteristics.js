@@ -1,6 +1,6 @@
 
-/**
- * ### Модуль объекта справочника ХарактеристикиНоменклатуры
+/*
+ * Модуль объекта справочника ХарактеристикиНоменклатуры
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
  * Методы выполняются в контексте текущего объекта this = DocObj
  *
@@ -122,11 +122,11 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
 /**
  * Заполняет себя данными слоя
  * @memberof CatCharacteristicsConstructionsRow
- * @param [bounds] {external:Bounds}
+ * @param [bounds] {paper.Bounds}
  * @param is_rectangular {Boolean}
  * @param w {Number}
  * @param h {Number}
- * @param layer {external:Layer}
+ * @param layer {paper.Layer}
  */
 $p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {
   this.x = bounds ? bounds.width.round(4) : 0;

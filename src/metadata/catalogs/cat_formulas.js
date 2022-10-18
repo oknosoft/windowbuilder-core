@@ -12,11 +12,11 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
 
   constructor(owner, class_name) {
     super(owner, class_name);
-    this._owner.$p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
+    $p.adapters.pouch.once('pouch_doc_ram_start', this.load_formulas.bind(this));
   }
 
   load_formulas(src) {
-    const {md, utils, wsql} = this._owner.$p;
+    const {md, utils, wsql} = $p;
     const {isNode, isBrowser} = wsql.alasql.utils;
     const parents = [this.predefined('printing_plates'), this.predefined('modifiers')];
     const filtered = [];
@@ -69,7 +69,7 @@ exports.CatFormulasManager = class CatFormulasManager extends Object {
       if(_data._formula) {
         _data._formula = null;
         if(parent === modifiers) {
-          this._owner.$p.record_log(`runtime modifier '${doc.name}'`);
+          $p.record_log(`runtime modifier '${doc.name}'`);
         }
       }
       if(_data._template) {

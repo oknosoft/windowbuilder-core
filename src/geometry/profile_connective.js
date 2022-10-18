@@ -1,6 +1,6 @@
 
 /**
- * ### Соединительный профиль
+ * Соединительный профиль
  * Класс описывает поведение соединительного профиля
  *
  * - у соединительного профиля есть координаты конца и начала, такие же, как у Profile
@@ -11,21 +11,10 @@
  * - соединительный профиль живёт в слое одного из рамных контуров изделия, но может оказывать влияние на соединёные с ним контуры
  * - длина соединительного профиля может отличаться от длин профилей, к которым он примыкает
  *
- * @class ProfileConnective
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
  */
 class ProfileConnective extends ProfileItem {
-
-  /**
-   * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @property d0
-   * @type Number
-   */
-  get d0() {
-    return 0;
-  }
 
   /**
    * Возвращает тип элемента (соединитель)
@@ -49,9 +38,9 @@ class ProfileConnective extends ProfileItem {
    * Двигает узлы
    * Обрабатывает смещение выделенных сегментов образующей профиля
    *
-   * @param delta {external:Point} - куда и насколько смещать
+   * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {external:Point} - откуда началось движение
+   * @param [start_point] {paper.Point} - откуда началось движение
    */
   move_points(delta, all_points, start_point) {
 
@@ -97,19 +86,29 @@ class ProfileConnective extends ProfileItem {
 
   /**
    * К соединителям ипосты не крепятся
+   * @override
    */
   joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
+    return check_only ? false : {inner: [], outer: []};
   }
 
   /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
-   * @property nearest
+   * @override
+   * @return {void}
    */
-  nearest() {
-    return null;
+  nearest() {}
+
+  /**
+   * Положение соединительного профиля
+   * @type {EnmPositions}
+   */
+  get pos() {
+    const nearests = this.joined_nearests();
+    if(nearests.length > 1) {
+      return $p.enm.positions.center;
+    }
+    return nearests[0].pos;
   }
 
   /**
@@ -186,12 +185,10 @@ class ProfileConnective extends ProfileItem {
 
 
 /**
- * ### Служебный слой соединительных профилей
+ * Служебный слой соединительных профилей
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class ConnectiveLayer
  * @extends paper.Layer
- * @constructor
  */
 class ConnectiveLayer extends paper.Layer {
 
@@ -290,14 +287,28 @@ class ConnectiveLayer extends paper.Layer {
     return Contour.prototype._metadata.call(this, fld);
   }
 
+  /**
+   * Возвращает слой размерных линий проекта
+   * @type {DimensionLayer}
+   */
+  get l_dimensions() {
+    return this.project.contours[0].l_dimensions;
+  }
 
   /**
    * Возвращает массив профилей текущего слоя
-   * @property profiles
    * @returns {Array.<ProfileItem>}
    */
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
+  }
+
+  /**
+   * Возвращает массив раскладок текущего слоя
+   * @return {Array}
+   */
+  get onlays() {
+    return [];
   }
 
   /**

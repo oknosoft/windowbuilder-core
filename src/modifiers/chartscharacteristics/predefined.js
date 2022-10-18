@@ -6,7 +6,8 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, EditorInvisible, utils} = $p;
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, 
+    EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
   function formulate(name) {
@@ -16,17 +17,18 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       if(prm.calculated.empty()) {
         prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
-      if(!prm.calculated._data._formula) {
+      const {_data} = prm.calculated;
+      if(!_data._formula) {
         switch (name) {
 
         case 'clr_product':
-          prm.calculated._data._formula = function (obj) {
+          _data._formula = function (obj) {
             return obj?.ox?.clr || clrs.get();
           };
           break;
 
         case 'clr_inset':
-          prm.calculated._data._formula = function ({elm, cnstr, ox}) {
+          _data._formula = function ({elm, cnstr, ox}) {
             let clr;
             if(elm instanceof $p.DpBuyers_orderProductionRow || elm instanceof $p.DocCalc_order.FakeElm) {
               clr = elm.clr;
@@ -39,13 +41,13 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
 
         case 'width':
-          prm.calculated._data._formula = function (obj) {
+          _data._formula = function (obj) {
             return obj?.ox?.y || 0;
           };
           break;
 
         case 'inset':
-          prm.calculated._data._formula = function ({elm, prm_row, ox, row}) {
+          _data._formula = function ({elm, prm_row, ox, row}) {
 
             // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
             if(prm_row && prm_row.origin === prm_row.origin._manager.nearest && elm instanceof EditorInvisible.Filling){
@@ -63,33 +65,33 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
 
         case 'elm_weight':
-          prm.calculated._data._formula = function (obj) {
+          _data._formula = function (obj) {
             const {elm} = obj || {};
             return elm ? elm.weight : 0;
           };
           break;
 
         case 'elm_orientation':
-          prm.calculated._data._formula = function ({elm, elm2}) {
+          _data._formula = function ({elm, elm2}) {
             return elm?.orientation || elm2?.orientation || orientations.get();
           };
           break;
 
         case 'elm_pos':
-          prm.calculated._data._formula = function ({elm}) {
+          _data._formula = function ({elm}) {
             return elm?.pos || positions.get();
           };
           break;
 
         case 'elm_rectangular':
-          prm.calculated._data._formula = function ({elm}) {
+          _data._formula = function ({elm}) {
             const {is_rectangular} = elm;
             return typeof is_rectangular === 'boolean' ? is_rectangular : true;
           };
           break;
 
         case 'branch':
-          prm.calculated._data._formula = function ({elm, layer, ox, calc_order}) {
+          _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
               calc_order = ox.calc_order;
             }
@@ -101,12 +103,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
 
             const prow = (ox || layer?._ox || elm?.ox).params.find({param: prm});
-            return prow && !prow.value.empty() ? prow.value : calc_order.manager.branch;
+            if(prow && !prow.value.empty()) {
+              return prow.value;  
+            }
+            const branch = calc_order.organization._extra(prm);
+            return branch && !branch.empty() ? branch : calc_order.manager.branch;
           };
           break;
 
         default:
-          prm.calculated._data._formula = function () {};
+          _data._formula = function () {};
         }
       }
     }
@@ -145,6 +151,32 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('angle_next');
+
+  // высоты поперечин
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // параметр не вычисляемый
+      prm.calculated = '';
+      // проверка условия
+      prm.check_condition = function () {
+        return true;
+      };
+      // значение (массив высот)
+      prm.avalue = function (raw) {
+        const res = [];
+        if(raw) {
+          for(const elm of raw.split(',')) {
+            const num = parseFloat(elm);
+            if(typeof num === 'number' && !isNaN(num)) {
+              res.push(num);
+            }
+          }
+        }
+        return res;
+      }
+    }
+  })('traverse_heights');
 
   // уровень слоя
   ((name) => {

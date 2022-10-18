@@ -296,11 +296,11 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
-   * Примыкающий внешний элемент - для заполнений всегда null
+   * Примыкающий внешний элемент - для заполнений всегда пусто
+   * @override
+   * @return {void}
    */
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   select_node(v) {
     let point, segm, delta = Infinity;

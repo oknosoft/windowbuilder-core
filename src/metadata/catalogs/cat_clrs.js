@@ -191,7 +191,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       case 'КакВедущийСнаружи':
       case 'КакВедущийИнверсный':
         const sub_clr = this.predefined(predefined_name.replace('КакВедущий', 'КакЭлемент'));
-        const t_parent = elm && elm.t_parent();
+        const t_parent = elm?.t_parent?.();
         if(!elm || elm === t_parent){
           return this.by_predefined(sub_clr,  clr_elm);
         }
@@ -222,7 +222,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   }
 
   /**
-   * ### Инверсный цвет
+   * Инверсный цвет  
    * Возвращает элемент, цвета которого изнутри и снаружи перевёрнуты местами
    * @param clr {CatClrs} - исходный цвет
    */
@@ -284,8 +284,9 @@ exports.CatClrsManager = class CatClrsManager extends Object {
    * Дополняет связи параметров выбора отбором, исключающим служебные цвета
    * @param mf {Object} - описание метаданных поля
    * @param sys {Object} - объект, у которого можно спросить связи
+   * @param [project] {Scheme} - текущий проект
    */
-  selection_exclude_service(mf, sys) {
+  selection_exclude_service(mf, sys, project) {
     if(mf.choice_params) {
       mf.choice_params.length = 0;
     }
@@ -294,6 +295,10 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     }
 
     const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, DpBuyers_order, Editor} = $p;
+    
+    if(!project && sys instanceof Editor.BuilderElement) {
+      project = sys.project;
+    }
 
     mf.choice_params.push({
       name: 'parent',
@@ -306,7 +311,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       const {clr_product} = job_prm.properties;
       const filter = {}
       if(clr_product && sys instanceof DpBuyers_order) {
-        const links = clr_product.params_links({obj: {_owner: {_owner: sys.characteristic}}});
+        const links = clr_product.params_links({obj: {project, _owner: {_owner: sys.characteristic}}});
         // проверим вхождение значения в доступные и при необходимости изменим
         if(links.length) {
           clr_product.filter_params_links(filter, null, links);
@@ -441,8 +446,21 @@ exports.CatClrs = class CatClrs extends Object {
     return res;
   }
 
-  contains(clr) {
-    return clr === this;
+  /**
+   * Аналог метода `contains()` цветоценовых групп
+   * @param clr {CatClrs}
+   * @param [fake]
+   * @param [any] {Boolean}
+   * @return {Boolean}
+   */
+  contains(clr, fake, any) {
+    if(clr === this) {
+      return true;
+    }
+    else if (clr.is_composite() && any) {
+      return clr.clr_in === this || clr.clr_out === this;
+    }
+    return  false;
   }
 
 }

@@ -35,7 +35,9 @@ class ProfileNested extends Profile {
     this.path.dashArray = [8, 4, 2, 4];
   }
 
-  // ведущий элемент получаем в лоб
+  /**
+   * @override
+   */
   nearest() {
     return this._attr._nearest;
   }
@@ -43,6 +45,16 @@ class ProfileNested extends Profile {
   // пересчет вставок и соединений не делаем
   default_inset(all) {
 
+  }
+
+  /**
+   * Объект продукции текущего элемеента
+   * для ProfileNested, совпадает с продукцией проекта
+   * @type {CatCharacteristics}
+   */
+  get ox() {
+    const {project, _row} = this;
+    return _row ? _row._owner._owner : project.ox;
   }
 
   /**

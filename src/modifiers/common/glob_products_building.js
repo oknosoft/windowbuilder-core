@@ -76,7 +76,6 @@ class ProductsBuilding {
 
     /**
      * ДополнитьСпецификациюСпецификациейСоединения
-     * @method cnn_add_spec
      * @param cnn {_cat.Cnns}
      * @param elm {BuilderElement}
      * @param len_angl {Object}
@@ -935,14 +934,32 @@ class ProductsBuilding {
    * чтобы его было проще переопределить снаружи
    */
   saver({ox, scheme, attr, finish}) {
-    const {calc_order} = ox;
+    const {calc_order, _order_rows} = ox;
+    let res = Promise.resolve();
+    for (const cx of (_order_rows || [])) {
+      if(cx.origin?.insert_type?.is?.('mosquito')) {
+        res = res
+          .then(() => cx.draw())
+          .then((img) => {
+            const {imgs} = Object.values(img)[0];
+            cx.svg = imgs.s0; 
+          })
+          .catch(() => null);
+      }
+    }
     calc_order.characteristic_saved(scheme, attr);
-    return (attr.save === 'recalc' ? Promise.resolve() : calc_order.save())
-      .then(() => {
+    if(attr.save !== 'recalc') {
+      res = res.then(() => {
+        return calc_order.save();
+      });
+    }
+    return res.then(() => {
         finish();
         scheme._scope && !attr.silent && scheme._scope.eve.emit('characteristic_saved', scheme, attr);
       })
-      .then(() => ox);
+      .then(() => {
+        return ox;
+      });
   }
 
   /**
@@ -1024,7 +1041,11 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
-      enm: {predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out}, comparison_types: ct},
+      enm: {
+        predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
+        comparison_types: ct,
+        plan_detailing: {algorithm},
+      },
       cch: {properties},
     } = $p;
 
@@ -1107,6 +1128,15 @@ class ProductsBuilding {
           const fin0 = curr0.get_subpath(pp0, pn0);
           const fin1 = curr1.get_subpath(pp1, pn1);
           row_spec.len = (Math.max(fin0.length, fin1.length) * (row_base.coefficient || 0.001)).round(4);
+        }
+      }
+      else if(row_base?.algorithm === nom_prm && row_base._owner) {
+        const prm_row = row_base._owner._owner.selection_params.find({elm: row_base.elm, origin: algorithm});
+        if(prm_row) {
+          const nom = prm_row.param.extract_pvalue({ox, elm, prm_row});
+          if(nom && !nom.empty()) {
+            row_spec.nom = nom;
+          }
         }
       }
     }

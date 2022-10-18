@@ -11,7 +11,8 @@
 // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
 
-  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm, CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
+    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
 
   const {inserts_types} = enm;
 
@@ -70,6 +71,10 @@
 
               const {inset} = this;
               const prm = cch.properties.get(ref);
+              
+              if(prm && !prm.type.is_ref) {
+                Object.assign(mf.type, {}, prm.type);
+              }
 
               // удаляем все связи, кроме владельца
               if(mf.choice_params) {
@@ -346,6 +351,67 @@
       }
     },
 
+    /**
+     * Возвращает временную вставку по номенклатуре
+     */
+    by_nom: {
+      value(nom, insert_type = 'Профиль') {
+        if(!this._by_nom) {
+          this._by_nom = new Map();
+        }
+        if(!this._by_nom.has(nom)) {
+          const tmp = this.create(false, false, true);
+          tmp.insert_type = insert_type;
+          tmp.specification.add({nom, is_main_elm: true});
+          if(nom.elm_type.is('impost') && nom.width) {
+            tmp.sizeb = nom.width / 2;
+          }
+          tmp._set_loaded(tmp.ref);
+          this._by_nom.set(nom, tmp);
+        }
+        return this._by_nom.get(nom);
+      }
+    },
+
+    traverse_steps: {
+      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+        const {offsets, do_center, step} = imposts;
+
+        if(step) {
+          const {height, bottom} = bounds;
+          // высоты поперечин могли задать в интерфейсе
+          const prop = $p.cch.properties.predefined('traverse_heights');
+          const aprop = prop ? prop.avalue(
+            prop.extract_pvalue({
+              ox,
+              cnstr,
+              origin,
+              prm_row: {},
+              //layer,
+            })) : [];
+          let count = Math.floor(height / step);
+          if(aprop.length === 1 && aprop[0] === 0) {
+            count = 0;
+          }
+          else if(aprop.length) {
+            for (const y of aprop) {
+              add_impost(bottom - y);
+            }
+          }
+          else if(count === 1) {
+            add_impost(bottom - height / 2);
+          }
+          else if(count > 1) {
+            count += 1;
+            const step0 = height / (count);
+            for (let y = 1; y < count; y++) {
+              add_impost(bottom - y * step0);
+            }
+          }
+        }
+      }
+    },
+    
     sql_selection_list_flds: {
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
@@ -510,6 +576,16 @@
             }
           } catch (e) {
             _nom = main_rows[0].nom;
+          }
+        }
+        else if(elm && main_rows[0].algorithm.is('nom_prm')) {
+          _nom = main_rows[0].nom;
+          const prm_row = this.selection_params.find({elm: main_rows[0].elm, origin: enm.plan_detailing.algorithm});
+          if(prm_row) {
+            const nom = prm_row.param.extract_pvalue({ox: elm.ox, elm, prm_row});
+            if(nom && !nom.empty()) {
+              _nom = nom;
+            }
           }
         }
         else {
@@ -682,11 +758,27 @@
         return false;
       }
 
-      if (by_perimetr || row.count_calc_method !== enm.count_calculating_ways.perim) {
+      if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
         if(!(elm instanceof EditorInvisible.Filling)) {
-          const len = len_angl ? len_angl.len : _row.len;
-          if (row.lmin > len || (row.lmax < len && row.lmax > 0)) {
-            return false;
+          if(is_row && row.count_calc_method.is('area') && row.lmin) {
+            if(elm.bounds_inner) {
+              const {width, height} = elm.bounds_inner();
+              if(row.lmin > Math.min(width, height)) {
+                return false;
+              }
+              if(row.lmax && row.lmax < Math.max(width, height)) {
+                return false;
+              }
+            }
+            else if(elm.perimeter) {
+              //
+            }
+          }
+          else {
+            const len = len_angl ? len_angl.len : _row.len;
+            if (row.lmin > len || (row.lmax < len && row.lmax)) {
+              return false;
+            }
           }
         }
         if (is_row) {
@@ -752,14 +844,13 @@
 
     /**
      * Возвращает спецификацию вставки с фильтром
-     * @method filtered_spec
-     * @param elm {BuilderElement|Object} - элемент, к которому привязана вставка
-     * @param elm2 {BuilderElement|Object} - соседний элемент, имеет смысл, когда вставка вызвана из соединения
-     * @param ox {CatCharacteristics} - текущая продукция
-     * @param [is_high_level_call] {Boolean} - вызов верхнего уровня - специфично для стеклопакетов
-     * @param [len_angl] {Object} - контекст размеров элемента
-     * @param [own_row] {CatInsertsSpecificationRow|CatCnnsSpecificationRow} - родительская строка для вложенных вставок
-     * @return {Array}
+     * @param {BuilderElement|Object} elm - элемент, к которому привязана вставка
+     * @param {BuilderElement|Object} elm2 - соседний элемент, имеет смысл, когда вставка вызвана из соединения
+     * @param {CatCharacteristics} ox - текущая продукция
+     * @param {Boolean} [is_high_level_call] - вызов верхнего уровня - специфично для стеклопакетов
+     * @param {Object} [len_angl] - контекст размеров элемента
+     * @param {CatInsertsSpecificationRow|CatCnnsSpecificationRow} [own_row] - родительская строка для вложенных вставок
+     * @return {Array.<CatInsertsSpecificationRow|CatCnnsSpecificationRow>}
      */
     filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {
 
@@ -840,6 +931,11 @@
         // Проверяем ограничения строки вставки
         if(!this.check_restrictions(row, elm, insert_type === profile, len_angl)){
           return;
+        }
+          
+        if(this.insert_type.is('mosquito') && !elm.perimeter 
+            && row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
+          this.mosquito_perimeter(elm, row);
         }
 
         // Проверяем параметры изделия, контура или элемента
@@ -934,16 +1030,17 @@
     }
 
     /**
-     * Дополняет спецификацию изделия спецификацией текущей вставки
-     * @method calculate_spec
-     * @param elm {BuilderElement}
-     * @param [elm2] {BuilderElement}
-     * @param [len_angl] {Object}
-     * @param ox {CatCharacteristics}
-     * @param own_row {CatCnnsSpecificationRow}
-     * @param spec {TabularSection}
-     * @param clr {CatClrs}
-     * @param totqty0 {Boolean} - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
+     * Дополняет спецификацию изделия спецификацией текущей вставки  
+     * Ничего не возвращает, создаёт строки в табчасти `spec`
+     * @param {BuilderElement} elm
+     * @param {BuilderElement} [elm2]
+     * @param {Object} [len_angl]
+     * @param {CatCharacteristics} ox
+     * @param {CatCnnsSpecificationRow} own_row
+     * @param {TabularSection} spec
+     * @param {CatClrs} clr
+     * @param {Boolean} [totqty0] - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
+     * $return {void}
      */
     calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {
 
@@ -1015,13 +1112,7 @@
           else if(count_calc_method === perim){
             let {perimeter} = elm;
             if(!perimeter) {
-              if(this.insert_type === enm.inserts_types.mosquito) {
-                perimeter = elm.layer.perimeter_inner(sz, row_ins_spec.nom);
-                Object.defineProperty(elm, 'perimeter', {value: perimeter});
-              }
-              else {
-                perimeter = elm.layer.perimeter;
-              }
+              perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }
             const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
             const {check_params} = ProductsBuilding;
@@ -1067,39 +1158,40 @@
           }
           else if(count_calc_method === steps){
 
-            const bounds = this.insert_type == enm.inserts_types.МоскитнаяСетка ?
-              elm.layer.bounds_inner(sz) : {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            let bounds;
+            if(this.insert_type == enm.inserts_types.mosquito) {
+              if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {
+                bounds = elm.bounds_inner();
+              }
+              else {
+                bounds = elm.layer ? elm.layer.bounds_inner() : (elm.bounds_inner?.() || {});
+              }
+            }
+            else {
+              bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            }
 
             const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
             const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
             if(row_ins_spec.step){
-              let qty = 0;
-              let pos;
-              if(row_ins_spec.do_center && h >= row_ins_spec.step ){
-                pos = h / 2;
-                if(pos >= offsets &&  pos <= h - offsets){
-                  qty++;
-                }
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = h / 2 + i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                  pos = h / 2 - i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
+              // высоты поперечин могли задать в интерфейсе
+              const prop = cch.properties.predefined('traverse_heights');
+              const aprop = prop ? prop.avalue(
+                prop.extract_pvalue({
+                  ox,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  elm,
+                  origin: len_angl.origin || this,
+                  prm_row: {},
+                  //layer,
+                })) : [];
+              let qty = Math.floor(h / row_ins_spec.step);
+              if(aprop.length === 1 && aprop[0] === 0) {
+                qty = 0;
               }
-              else{
-                for(let i = 1; i <= Math.ceil(h / row_ins_spec.step); i++){
-                  pos = i * row_ins_spec.step;
-                  if(pos >= offsets &&  pos <= h - offsets){
-                    qty++;
-                  }
-                }
+              else if(aprop.length) {
+                qty = aprop.length;
               }
-
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
 
@@ -1203,33 +1295,45 @@
       });
 
       // скорректируем габариты вытягиваемой конструкции
-      if(spec !== ox.specification && this.insert_type == enm.inserts_types.Жалюзи) {
-        const bounds = {x: 0, y: 0};
-        spec.forEach(({len, width}) => {
-          if(len && width) {
-            if(bounds.x < len) {
-              bounds.x = len;
-            }
-            if(bounds.y < width) {
-              bounds.y = width;
-            }
-          }
-        });
+      if(spec !== ox.specification) {
         const {_owner} = spec;
-        _owner.x = bounds.y * 1000;
-        _owner.y = bounds.x * 1000;
-        _owner.s = (bounds.x * bounds.y).round(3);
+        switch (this.insert_type) {
+          case enm.inserts_types.mosquito:             
+            if(elm.hasOwnProperty('bounds_inner')) {
+              const bounds = elm.bounds_inner();
+              _owner.x = bounds.width.round(1);
+              _owner.y = bounds.height.round(1);
+              _owner.s = (bounds.area / 1e6).round(3);
+            }
+            break;
+          case enm.inserts_types.jalousie:
+            const bounds = {x: 0, y: 0};
+            spec.forEach(({len, width}) => {
+              if(len && width) {
+                if(bounds.x < len) {
+                  bounds.x = len;
+                }
+                if(bounds.y < width) {
+                  bounds.y = width;
+                }
+              }
+            });
+            _owner.x = bounds.y * 1000;
+            _owner.y = bounds.x * 1000;
+            _owner.s = (bounds.x * bounds.y).round(3);
+        }
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }
     }
 
     /**
      * Дополняет спецификацию изделия спецификацией текущего ряда
-     * @method region_spec
      * @param elm {BuilderElement}
      * @param [len_angl] {Object}
      * @param ox {CatCharacteristics}
      * @param spec {TabularSection}
      * @param region {Number}
+     * $return {void}
      */
     region_spec({elm, len_angl, ox, spec, region, totqty0}) {
       const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
@@ -1317,7 +1421,7 @@
 
     /**
      * Возвращает толщину вставки
-     * @param {elm} {BuilderElement}
+     * @param elm {BuilderElement}
      * @param [strict] {Number}
      * @return {number}
      */
@@ -1438,6 +1542,71 @@
       return split_type;
     }
     set split_type(v){this._setter('split_type',v)}
+
+    /**
+     * Возвращает свойства для рисования москитки
+     * @return {Object}
+     */
+    mosquito_props() {
+      let sz, nom, imposts;
+      this.specification.forEach((rspec) => {
+        if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
+          sz = rspec.sz;
+          nom = rspec.nom;
+        }
+        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          imposts = rspec;
+        }
+        if(nom && imposts) {
+          return false;
+        }
+      });
+      return {sz, nom, imposts};
+    }
+
+    /**
+     * Рассчитывает периметр москитки и помещает его в элемент
+     * @param elm {BuilderElement|FakeElm}
+     * @param rspec {CatInsertsSpecificationRow}
+     * @return {Array}
+     */
+    mosquito_perimeter(elm, rspec) {
+      const check_cnn = {};
+      const perimeter = elm.layer.perimeter_inner(rspec.sz, rspec.nom, check_cnn);
+      Object.defineProperties(elm, {
+        perimeter: {value: perimeter},
+        bounds_inner: {
+          value(sz = 0) {
+            let start = new paper.Point([0,0]);
+            const path = new paper.Path({insert: false});
+            path.add(start);
+            for(const rib of perimeter) {
+              const tmp = new paper.Point({
+                length: rib.len - 2 * sz,
+                angle: rib.angle
+              });
+              const fin = start.add(tmp);
+              path.add(fin);
+              start = fin.clone();
+            }
+            return path.bounds;
+          }
+        }
+      });
+      if(!check_cnn.cnn) {
+        // строка ошибки в спецификации
+        const {cnn_ii_error: nom} = job_prm.nom;
+        const {_ox, cnstr} = elm.layer;
+        const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
+          elm: {elm: -cnstr, clr: cat.clrs.get()},
+          row_base: {clr: cat.clrs.get(), nom},
+          spec: _ox.specification,
+          ox: _ox,
+          origin: this,
+        });
+      }
+      return perimeter;
+    }
 
   }
   $p.CatInserts = CatInserts;

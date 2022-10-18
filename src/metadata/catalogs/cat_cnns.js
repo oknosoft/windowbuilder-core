@@ -8,7 +8,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
 
   sort_cnns(elm1, elm2) {
 
-    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = this._owner.$p;
+    const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = $p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
     const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
@@ -93,7 +93,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
       enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii}, cnn_sides},
-      cat: {nom}, utils} = this._owner.$p;
+      cat: {nom}, utils} = $p;
 
     // если оба элемента - профили, определяем сторону
     const side = is_outer ? cnn_sides.outer :
@@ -223,7 +223,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
-    const {cnn_types: {acn, t, xx}, cnn_sides} = this._owner.$p.enm;
+    const {cnn_types: {acn, t, xx}, cnn_sides} = $p.enm;
 
     // если установленное ранее соединение проходит по типу и стороне, нового не ищем
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
@@ -262,6 +262,38 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     else{
 
     }
+  }
+
+  /**
+   * Возвращает временное соединение по паре номенклатур и типу
+   * @param nom1 {CatNom}
+   * @param nom2 {CatNom}
+   * @param [cnn_type]
+   * @return {CatCnns}
+   */
+  by_nom(nom1, nom2, cnn_type = 'ad') {
+    if(typeof cnn_type === 'string') {
+      cnn_type = $p.enm.cnn_types[cnn_type]; 
+    }
+    
+    if(!this._by_cnn_type) {
+      this._by_cnn_type = new Map();
+    }
+    if(!this._by_cnn_type.has(cnn_type)) {
+      this._by_cnn_type.set(cnn_type, new Map());
+    }
+    const root = this._by_cnn_type.get(cnn_type)
+    if(!root.has(nom1)) {
+      root.set(nom1, new Map());
+    }
+    if(!root.get(nom1).has(nom2)) {
+      const tmp = this.create(false, false, true);
+      tmp.cnn_type = cnn_type;
+      tmp.cnn_elmnts.add({nom1, nom2});
+      tmp._set_loaded(tmp.ref);
+      root.get(nom1).set(nom2, tmp);
+    }
+    return root.get(nom1).get(nom2);
   }
 
 };
@@ -312,6 +344,8 @@ exports.CatCnns = class CatCnns extends Object {
 
   /**
    * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
+   * @param {CatNom} nom
+   * @return Boolean
    */
   check_nom2(nom) {
     const ref = nom.valueOf();
@@ -320,11 +354,12 @@ exports.CatCnns = class CatCnns extends Object {
 
   /**
    * Проверяет применимость для xx и t
+   * @param {CnnPoint} cnn_point
+   * @return Boolean
    */
   stop_applying(cnn_point) {
     const {applying, cnn_type, _manager} = this;
-    const {cnn_types} = _manager._owner.$p.enm;
-    let stop = applying && (cnn_type === cnn_types.t || cnn_type === cnn_types.xx);
+    let stop = applying && (cnn_type.is('t') || cnn_type.is('xx'));
     if(stop) {
       // 0 - Везде
       // 1 - Только стык
@@ -342,18 +377,36 @@ exports.CatCnns = class CatCnns extends Object {
     }
     return stop;
   }
-
+  
   /**
-   * Параметрический размер соединения
+   * Параметрический размер соединения 
+   * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
+   * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+   * @return Number
    */
-  size(elm, elm2) {
+  size(elm0, elm2) {
     let {sz, sizes} = this;
-    const {ox, layer} = elm;
+    const {ox, layer} = elm0;
     for(const prm_row of sizes) {
+      let elm = elm0;
+      let cnstr = 0;
+      if(prm_row.origin.is('layer')) {
+        cnstr = layer.cnstr;
+      }
+      else if(prm_row.origin.is('parent')) {
+        const {parent} = elm;
+        if(parent === layer) {
+          cnstr = layer.cnstr;
+        }
+        else if(parent.elm) {
+          cnstr = -parent.elm;
+          elm = parent;
+        }
+      }
       if(prm_row.param.check_condition({
           row_spec: {},
           prm_row,
-          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          cnstr,
           elm,
           elm2,
           layer,
@@ -363,12 +416,13 @@ exports.CatCnns = class CatCnns extends Object {
           elm,
           elm2,
           ox,
-          cnstr: prm_row.origin == 'layer' ? layer.cnstr : 0,
+          cnstr,
           layer,
         })) {
         sz = prm_row.elm;
         break;
       }
+      //if(elm != elm0 && elm.inset.insert_type.is('composite')) {}
     }
     return sz;
   }
@@ -484,5 +538,4 @@ exports.CatCnns = class CatCnns extends Object {
 
     return res;
   }
-
 }

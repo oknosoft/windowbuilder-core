@@ -541,6 +541,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @param editor
    */
   draw(attr = {}, editor) {
+    const {utils, cch, cat, EditorInvisible} = $p;
     const link = {imgs: {}};
 
     if(attr.res instanceof Map) {
@@ -550,15 +551,112 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       if(!attr.res) {
         attr.res = {};
       }
-      attr.res[$p.utils.snake_ref(this.ref)] = link;
+      attr.res[utils.snake_ref(this.ref)] = link;
     }
-
+    const {format, keep_editor} = attr;
+    
     // загружаем изделие в редактор
     const remove = !editor;
     if(remove) {
-      editor = new $p.EditorInvisible();
+      editor = new EditorInvisible();
     }
     const project = editor.create_scheme();
+
+    // если это москитка, полный проект можно не грузить
+    if(this.origin?.insert_type?.is?.('mosquito')) {
+      const {origin, leading_product, x, y} = this;
+      const ox = this._manager.create(false, false, true);
+      ox._set_loaded(ox.ref);
+      
+      // находим импосты и рамки
+      let {sz, nom, imposts} = origin.mosquito_props();
+      if(!nom) {
+        return Promise.resolve(attr.res);
+      }
+      const irama = cat.inserts.by_nom(nom);
+      const lcnn = cat.cnns.by_nom(nom, nom);
+      const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
+      const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
+
+      return project.load(ox, true)
+        .then(() => {
+          project._attr._hide_errors = true;
+          const layer = EditorInvisible.Contour.create({project, parent: null});
+          // рисуем рамы
+          const segm = [
+            [[x, 0], [0, 0]],
+            [[0, 0], [0, -y]],
+            [[0, -y], [x, -y]],
+            [[x, -y], [x, 0]],
+          ];
+          for(const segments of segm) {
+            new EditorInvisible.Profile({
+              generatrix: new editor.Path({segments}),
+              proto: {
+                inset: irama,
+                clr: this.clr,
+              },
+            });  
+          }
+          // рисуем импосты
+          const {bounds} = layer;
+          if(imposts) {
+            const add_impost = (y) => {
+              new EditorInvisible.Profile({
+                generatrix: new editor.Path({
+                  segments: [[0, y], [x, y]]
+                }),
+                proto: {
+                  inset: iimpost,
+                  clr: this.clr,
+                },
+              });
+            };
+            cat.inserts.traverse_steps({
+              imposts,
+              bounds,
+              add_impost, 
+              ox: this,
+              cnstr: 0, 
+              origin: utils.blank.guid,
+            });
+          }
+          layer.redraw();
+          layer.l_dimensions.redraw(true);
+          for(const gl of layer.fillings) {
+            gl.visible = false;
+          }
+
+          // добавляем текст
+          const {elm_font_size, font_family} = editor.consts;
+          new editor.PointText({
+            parent: layer,
+            fillColor: 'black',
+            fontFamily: font_family,
+            fontSize: elm_font_size * 1.2,
+            guide: true,
+            content: this.origin.presentation,
+            point: bounds.bottomLeft.add([nom.width * 1.2, -nom.width * 1.2]),
+          });
+          
+          project.zoom_fit();
+          if(Array.isArray(format) ? format.includes('png') : format === 'png') {
+            project.view.update();
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+          }
+          if(Array.isArray(format) ? format.includes('svg') : (format === 'svg' || !format)) {
+            link.imgs[`s0`] = project.get_svg(attr);
+          }
+        })
+        .catch(() => null)
+        .then(() => {
+          project.ox = '';
+          ox.unload();
+          return keep_editor ? null : (remove ? editor.unload() : project.unload());
+        })
+        .then(() => attr.res);
+      
+    }
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
@@ -568,7 +666,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           for(const elm of elmnts) {
             const item = project.draw_fragment({elm});
             const num = elm > 0 ? `g${elm}` : `l${elm}`;
-            if(attr.format === 'png') {
+            if(format === 'png') {
               link.imgs[num] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
@@ -584,7 +682,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           link.glasses.forEach((row) => {
             const glass = project.draw_fragment({elm: row.elm});
             // подтянем формулу стеклопакета
-            if(attr.format === 'png') {
+            if(format === 'png') {
               link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
             }
             else {
@@ -597,7 +695,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           });
         }
         else {
-          if(attr.format === 'png') {
+          if(format === 'png') {
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
           else {
@@ -606,7 +704,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           if(attr.glasses !== false) {
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
-              if(attr.format === 'png') {
+              if(format === 'png') {
                 link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
               }
               else {
@@ -618,7 +716,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       })
       .then(() => {
         project.ox = '';
-        return remove ? editor.unload() : project.unload();
+        return keep_editor ? null : (remove ? editor.unload() : project.unload());
       })
       .then(() => attr.res);
   }
@@ -645,8 +743,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param [elmno] {number} - номер элемента (с полюсом) или слоя (с минусом)
-   * @return {number}
+   * @param [elmno] {Number|undefined} - номер элемента (с полюсом) или слоя (с минусом)
+   * @return {Number}
    */
   elm_weight(elmno) {
     const {coordinates, specification} = this;
@@ -684,7 +782,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   /**
    * Выясняет, есть ли в спецификации номенклатура из константы cname
    * @param cname {String}
-   * @return {boolean}
+   * @return {Boolean}
    */
   has_nom(cname) {
     let noms = $p.job_prm.nom[cname];
@@ -701,6 +799,29 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
     }
     return res;
+  }
+
+  /**
+   * Формирует строку индекса слоя cnstr
+   * @param cnstr {Number}
+   * @return {String}
+   */
+  hierarchyName(cnstr) {
+    const {constructions} = this;
+    // строка табчасти конструкций
+    const row = constructions.find({cnstr});
+    if(!row) {
+      return '';
+    }
+    // найдём все слои нашего уровня
+    const rows = constructions.find_rows({parent: row.parent})
+      .map((row) => row._row)
+      .sort($p.utils.sort('cnstr'));
+    let index = (rows.indexOf(row) + 1).toFixed();
+    if(row.parent) {
+      index = `${this.hierarchyName(row.parent)}.${index}`;
+    }
+    return index;
   }
 
   /**

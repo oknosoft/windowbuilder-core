@@ -1,12 +1,12 @@
 
 /*
- * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
- *
- * @module profile_virtual
- *
  * Created by Evgeniy Malyarov on 21.04.2020.
  */
 
+/**
+ * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
+ * @extends Profile
+ */
 class ProfileVirtual extends Profile {
 
   constructor(attr) {
@@ -26,7 +26,9 @@ class ProfileVirtual extends Profile {
     this.path.dashArray = [8, 4, 2, 4];
   }
 
-  // ведущий элемент получаем в лоб
+  /**
+   * @override
+   */
   nearest() {
     return this._attr._nearest;
   }
@@ -45,6 +47,7 @@ class ProfileVirtual extends Profile {
 
   /**
    * Возвращает тип элемента (Створка, виртуальнвя)
+   * @type EnmElm_types
    */
   get elm_type() {
     return $p.enm.elm_types.flap;
@@ -60,7 +63,10 @@ class ProfileVirtual extends Profile {
     return this.nearest().nom;
   }
 
-  // цвет внешнего элемента
+  /**
+   * Цвет внешнего элемента
+   * @type CatClrs
+   */
   get clr() {
     return this.nearest().clr;
   }
@@ -72,7 +78,7 @@ class ProfileVirtual extends Profile {
 
   /**
    * Запрещаем редактировать элемент из интерфейса
-   * @return {boolean}
+   * @type Boolean
    */
   get locked() {
     return true;
@@ -80,7 +86,7 @@ class ProfileVirtual extends Profile {
 
   /**
    * Элемент не делает вклада в спецификацию
-   * @returns {boolean}
+   * @type Boolean
    */
   get virtual() {
     return true;

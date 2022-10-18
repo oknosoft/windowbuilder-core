@@ -164,7 +164,11 @@ exports.CatNom = class CatNom extends Object {
   _price(attr) {
     const {
       job_prm: {pricing},
-      cat: {characteristics: {by_ref: characteristics}, color_price_groups: {by_ref: color_price_groups}},
+      cat: {
+        characteristics: {by_ref: characteristics},
+        color_price_groups: {by_ref: color_price_groups},
+        clrs: {by_ref: clrs}
+      },
       utils,
     } = this._manager._owner.$p;
 
@@ -175,7 +179,10 @@ exports.CatNom = class CatNom extends Object {
     if(!attr){
       attr = {currency};
     }
-    const {_price} = this._data;
+    let {_price, _bprice} = this._data;
+    if(attr.branch && _bprice?.has?.(attr.branch)) {
+      _price = _bprice.get(attr.branch)
+    }
     const {x, y, z, clr, ref, calc_order} = (attr.characteristic || {});
 
     if(attr.price_type){
@@ -225,18 +232,21 @@ exports.CatNom = class CatNom extends Object {
       // если для номенклатуры существует структура цен, ищем подходящую
       if(_price){
         if(attr.clr && attr.characteristic == utils.blank.guid) {
-          for(let clrx in _price){
-            const cpg = color_price_groups[clrx];
-            if(cpg && cpg.clrs().includes(attr.clr)){
-              if(_price[clrx][attr.price_type]){
+          let tmp = 0;
+          for (let clrx in _price) {
+            const cpg = color_price_groups[clrx] || clrs[clrx];
+            if (cpg && cpg.contains(attr.clr, null, true)) {
+              if (_price[clrx][attr.price_type]) {
                 _price[clrx][attr.price_type].some((row) => {
-                  if(row.date > start_date && row.date <= attr.date){
-                    price = row.price;
-                    currency = row.currency;
-                    return true;
+                  if (row.date > start_date && row.date <= attr.date) {
+                    const tprice = row.currency.to_currency(row.price, attr.date, attr.currency);
+                    if (tprice > tmp) {
+                      tmp = tprice;
+                      price = row.price;
+                      currency = row.currency;
+                    }
                   }
                 });
-                break;
               }
             }
           }
@@ -256,8 +266,8 @@ exports.CatNom = class CatNom extends Object {
         if(!price && attr.clr){
           for(let clrx in _price){
             const cx = characteristics[clrx];
-            const cpg = color_price_groups[clrx];
-            if((cx && cx.clr == attr.clr) || (cpg && cpg.clrs().includes(attr.clr))){
+            const cpg = color_price_groups[clrx] || clrs[clrx];
+            if((cx && cx.clr == attr.clr) || (cpg && cpg.contains(attr.clr, null, true))){
               if(_price[clrx][attr.price_type]){
                 _price[clrx][attr.price_type].some((row) => {
                   if(row.date > start_date && row.date <= attr.date){

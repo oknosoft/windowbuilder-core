@@ -1,5 +1,5 @@
-/**
- * ### Дополнительные методы ПВХ Предопределенные элементы
+/*
+ * Дополнительные методы ПВХ Предопределенные элементы
  * Предопределенные элементы - аналог констант для хранения ссылочных и списочных настроек приложения
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -60,6 +60,9 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
 
     if(parent) {
+      if(parent.synonym === 'lists' || !row.synonym) {
+        return;
+      }
       if(parent.hasOwnProperty(row.synonym)) {
         delete parent[row.synonym];
       }
@@ -178,14 +181,18 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
       }
       // если не задан синоним - пропускаем
       else if(row.synonym) {
+        const parent = parents[row.parent];
         // если есть подходящая папка, стразу делаем константу
-        if(parents[row.parent]) {
+        if(parent && parent.synonym !== 'lists') {
           !job_prm[parents[row.parent]][row.synonym] && this.job_prm(row);
         }
         // если папки нет - сохраним элемент в alatable
         else {
           elmnts.push(row);
         }
+      }
+      else {
+        elmnts.push(row);
       }
     }
     // метод по умолчанию

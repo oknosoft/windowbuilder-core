@@ -1,5 +1,5 @@
 
-/**
+/*
  *
  *
  * @module profile_nested_content

@@ -1,20 +1,21 @@
 
 /**
- * ### Изделие
+ * Изделие
  * - Расширение [paper.Project](http://paperjs.org/reference/project/)
  * - Стандартные слои (layers) - это контуры изделия, в них живут элементы
  * - Размерные линии, фурнитуру и визуализацию располагаем в отдельных слоях
  *
- * @class Scheme
- * @constructor
  * @extends paper.Project
- * @param _canvas {HTMLCanvasElement} - канвас, в котором будет размещено изделие
- * @menuorder 20
- * @tooltip Изделие
  */
 
 class Scheme extends paper.Project {
 
+  /**
+   *
+   * @param {HTMLCanvasElement} _canvas - канвас, в котором будет размещено изделие
+   * @param {paper.PaperScope} _editor - экземпляр редактора
+   * @param {boolean} _silent - тихий режим
+   */
   constructor(_canvas, _editor, _silent) {
 
     // создаём объект проекта paperjs
@@ -60,18 +61,16 @@ class Scheme extends paper.Project {
   /**
    * Обновляет связи параметров в иерархии слоёв
    * @param contour {Contour}
-   * @param isBrowser {Boolean}
+   * @param [isBrowser] {Boolean}
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    return contour.save_coordinates(true)
-      .then(() => {
-        isBrowser && layer && contour.refresh_prm_links();
-        !layer && l_dimensions.redraw();
-        return contours.reduce((sum, curr) => {
-          return sum.then(() => this.refresh_recursive(curr, isBrowser));
-        }, Promise.resolve());
-      });
+    contour.save_coordinates(true);
+    isBrowser && layer && contour.refresh_prm_links();
+    !layer && l_dimensions.redraw();
+    for(const curr of contours) {
+      this.refresh_recursive(curr, isBrowser);
+    }
   }
 
   /**
@@ -101,7 +100,7 @@ class Scheme extends paper.Project {
     const {clr_group} = _dp.sys;
     const clrs = [...clr_group.clrs()];
 
-    cat.clrs.selection_exclude_service(cmeta, _dp);
+    cat.clrs.selection_exclude_service(cmeta, _dp, this);
     let first;
     if(cmeta.choice_params.length > 2) {
       const all = clrs.length ? clrs.splice(0) : cat.clrs;
@@ -314,13 +313,11 @@ class Scheme extends paper.Project {
 
   /**
    * ХарактеристикаОбъект текущего изделия
-   * @property ox
    * @type CatCharacteristics
    */
   get ox() {
     return this._dp.characteristic;
   }
-
   set ox(v) {
     const {_dp, _attr, _scope} = this;
     let setted;
@@ -405,8 +402,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Допсвойства, например, скрыть размерные линии
+   * Допсвойства, например, скрыть размерные линии
    * при рендеринге может переопределяться или объединяться с параметрами рендеринга
+   * @type Object
    */
   get builder_props() {
     const {ox, _attr} = this;
@@ -415,12 +413,16 @@ class Scheme extends paper.Project {
 
   /**
    * Методы сдвига узлов и элементов
-   * @return {*}
+   * @type Mover
    */
   get mover() {
     return this._scope._mover;
   }
 
+  /**
+   * Задаёт режим отрисовки: каркас или полноценный эскиз
+   * @param [v] {Boolean}
+   */
   set_carcass(v) {
     const contours = this.getItems({class: Contour});
     contours.forEach(({skeleton}) => skeleton.carcass = v);
@@ -456,7 +458,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Читает изделие по ссылке или объекту продукции
+   * Читает изделие по ссылке или объекту продукции
    * Выполняет следующую последовательность действий:
    * - Если передана ссылка, получает объект из базы данных
    * - Удаляет все слои и элементы текущего графического контекста
@@ -468,7 +470,6 @@ class Scheme extends paper.Project {
    * - Активирует текущий слой в дереве слоёв
    * - Рисует дополнительные элементы визуализации
    *
-   * @method load
    * @param id {String|CatObj} - идентификатор или объект продукции
    * @param [from_service] {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
    * @param [order] {DocCalc_order}
@@ -524,7 +525,7 @@ class Scheme extends paper.Project {
       _scheme.check_clr();
 
       // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
 
         _attr._bounds = null;
 
@@ -626,12 +627,12 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Рисует фрагмент загруженного изделия
+   * Рисует фрагмент загруженного изделия
    * @param attr {Object}
    * @param [attr.elm] {Number} - Элемент или Контур
-   *        = 0, формируется эскиз изделия,
-   *        > 0, эскиз элемента (заполнения или палки)
-   *        < 0, эскиз контура (рамы или створки)
+   * - = 0, формируется эскиз изделия,
+   * - > 0, эскиз элемента (заполнения или палки)
+   * - < 0, эскиз контура (рамы или створки)
    * @param [attr.width] {Number} - если указано, эскиз будет вписан в данную ширину (по умолчению - 600px)
    * @param [attr.height] {Number} - если указано, эскиз будет вписан в данную высоту (по умолчению - 600px)
    * @param [attr.sz_lines] {enm.ТипыРазмерныхЛиний} - правила формирования размерных линий (по умолчению - Обычные)
@@ -650,22 +651,38 @@ class Scheme extends paper.Project {
     // скрываем все слои
     const contours = this.getItems({class: Contour});
 
-    if(attr.elm) {
+    const hide = () => {
       contours.forEach((l) => l.hidden = true);
       l_dimensions.visible = false;
       l_connective.visible = false;
-    }
+    };
+
+    const transparence = () => {
+      contours.forEach((l) => {
+        l.opacity = .16;
+        l.hide_generatrix();
+      });
+    };
 
     let elm;
     _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
       elm = this.getItem({class: BuilderElement, elm: attr.elm});
-      if(elm && elm.draw_fragment) {
+      if(elm) {
         elm.selected = false;
-        elm.draw_fragment();
+        if(elm.draw_fragment) {
+          hide();
+          elm.draw_fragment();
+        }
+        else {
+          transparence();
+          elm.redraw();
+          elm.opacity = 1;
+        }
       }
     }
     else if(attr.elm < 0) {
+      hide();
       const cnstr = -attr.elm;
       contours.some((l) => {
         if(l.cnstr == cnstr) {
@@ -717,6 +734,7 @@ class Scheme extends paper.Project {
   /**
    * Перерисовывает все контуры изделия. Не занимается биндингом.
    * Предполагается, что взаимное перемещение профилей уже обработано
+   * @param [attr] {Object} - параметры, уточняющие, как перерисовывать
    */
   redraw(attr = {}) {
 
@@ -769,7 +787,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * информирует о наличии изменений
+   * Выясняет, есть ли необработанные изменения
    */
   has_changes() {
     return this._ch.length > 0;
@@ -821,7 +839,6 @@ class Scheme extends paper.Project {
 
   /**
    * Габариты изделия. Рассчитываются, как объединение габаритов всех слоёв типа Contour
-   * @property bounds
    * @type Rectangle
    */
   get bounds() {
@@ -862,10 +879,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Габариты эскиза со всеми видимыми дополнениями
+   * Габариты эскиза со всеми видимыми дополнениями
    * В свойстве `strokeBounds` учтены все видимые дополнения - размерные линии, визуализация и т.д.
    *
-   * @property strokeBounds
    */
   get strokeBounds() {
     let bounds = this.l_dimensions.strokeBounds;
@@ -898,8 +914,8 @@ class Scheme extends paper.Project {
   /**
    * Формирует оповещение для тех, кто следит за this._noti
    * @param obj
-   * @param type {String}
-   * @param fields {Array}
+   * @param [type] {String}
+   * @param [fields] {Array}
    */
   notify(obj, type = 'update', fields) {
     if(obj.type) {
@@ -921,7 +937,7 @@ class Scheme extends paper.Project {
     }
 
     super.clear();
-    new paper.Layer();
+    //new paper.Layer({project: this});
   }
 
   /**
@@ -984,9 +1000,9 @@ class Scheme extends paper.Project {
 
   /**
    * Двигает выделенные точки путей либо все точки выделенных элементов
-   * @method move_points
-   * @param delta {paper.Point}
-   * @param [all_points] {Boolean}
+   * @param {paper.Point} delta - куда и на сколько сдвигать
+   * @param {Boolean} [all_points] - указывает, двигать выделенные элементы целиком или только их выделенные узлы
+   * @return {void}
    */
   move_points(delta, all_points) {
 
@@ -1039,7 +1055,7 @@ class Scheme extends paper.Project {
       }
       const {parent, layer} = item;
 
-      if(item instanceof paper.Path && parent instanceof GeneratrixElement && !profiles.has(parent)) {
+      if(!profiles.has(parent)) {
 
         profiles.add(parent);
 
@@ -1102,7 +1118,7 @@ class Scheme extends paper.Project {
 
   /**
    * Сохраняет координаты и пути элементов в табличных частях характеристики
-   * @method save_coordinates
+   * @return {Promise}
    */
   save_coordinates(attr) {
 
@@ -1166,10 +1182,10 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Изменяет центр и масштаб, чтобы изделие вписалось в размер окна
-   * Используется инструментом {{#crossLink "ZoomFit"}}{{/crossLink}}, вызывается при открытии изделия и после загрузки типового блока
+   * Изменяет центр и масштаб, чтобы изделие вписалось в размер окна
+   * Используется инструментом _ZoomFit_, вызывается при открытии изделия и после загрузки типового блока
    *
-   * @method zoom_fit
+   * return {void}
    */
   zoom_fit(bounds, isNode) {
 
@@ -1209,10 +1225,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Возвращает строку svg эскиза изделия
+   * Возвращает строку svg эскиза изделия
    * Вызывается при записи изделия. Полученный эскиз сохраняется во вложении к характеристике
    *
-   * @method get_svg
    * @param [attr] {Object} - указывает видимость слоёв и элементов, используется для формирования эскиза части изделия
    */
   get_svg(attr = {}) {
@@ -1223,7 +1238,8 @@ class Scheme extends paper.Project {
     }
     // в шаблонах скрываем размерные линии
     const hidden = new Set();
-    if(this.ox.calc_order.obj_delivery_state == 'Шаблон') {
+    const {sz_lines} = $p.job_prm.builder;
+    if(this.ox.calc_order.obj_delivery_state == 'Шаблон' || sz_lines == 'БезРазмеров' || attr.sz_lines == 'БезРазмеров') {
       for(const el of this.getItems({class: DimensionLine})) {
         el.visible = false;
         hidden.add(el);
@@ -1278,14 +1294,13 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Перезаполняет изделие данными типового блока или снапшота
+   * Перезаполняет изделие данными типового блока или снапшота
    * Вызывается, обычно, из формы выбора типового блока, но может быть вызван явно в скриптах тестирования или групповых обработках
-   *
-   * @method load_stamp
-   * @param obx {String|CatObj|Object} - идентификатор или объект-основание (характеристика продукции либо снапшот)
-   * @param [is_snapshot] {Boolean}
-   * @param [no_refill] {Boolean}
-   * @param [from_service] {Boolean}
+   * @param {String|CatObj|Object} obx - идентификатор или объект-основание (характеристика продукции либо снапшот)
+   * @param {Boolean} [is_snapshot]
+   * @param {Boolean} [no_refill]
+   * @param {Boolean} [from_service]
+   * @return {Promise}
    */
   load_stamp(obx, is_snapshot, no_refill, from_service) {
 
@@ -1343,7 +1358,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выясняет, надо ли автоуравнивать изделие при сдвиге точек
+   * Выясняет, надо ли автоуравнивать изделие при сдвиге точек
    * @return {boolean}
    */
   get auto_align() {
@@ -1365,7 +1380,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Уравнивает геометрически или по заполнениям
+   * Уравнивает геометрически или по заполнениям
    * сюда попадаем из move_points, когда меняем габариты
    * @param auto_align {Boolean}
    * @param profiles {Set}
@@ -1409,10 +1424,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Вписывает канвас в указанные размеры
+   * Вписывает канвас в указанные размеры
    * Используется при создании проекта и при изменении размеров области редактирования
    *
-   * @method resize_canvas
    * @param w {Number} - ширина, в которую будет вписан канвас
    * @param h {Number} - высота, в которую будет вписан канвас
    */
@@ -1424,18 +1438,16 @@ class Scheme extends paper.Project {
 
   /**
    * Возвращает массив РАМНЫХ контуров текущего изделия
-   * @property contours
-   * @type Array
+   * @type Array.<Contour>
    */
   get contours() {
     return this.layers.filter((l) => l instanceof Contour);
   }
 
   /**
-   * ### Габаритная площадь изделия
+   * Габаритная площадь изделия
    * Сумма габаритных площадей рамных контуров
    *
-   * @property area
    * @type Number
    * @final
    */
@@ -1444,10 +1456,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Площадь изделия с учетом наклонов-изгибов профиля
+   * Площадь изделия с учетом наклонов-изгибов профиля
    * Сумма площадей рамных контуров
    *
-   * @property area
    * @type Number
    * @final
    */
@@ -1456,9 +1467,8 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Цвет текущего изделия
-   *
-   * @property clr
+   * Цвет текущего изделия
+   * По сути, это не свойство, а макрос. При установке, пробегает по всем профилям изделия и присваивает им цвет
    * @type CatClrs
    */
   get clr() {
@@ -1469,9 +1479,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Служебный слой размерных линий
-   *
-   * @property l_dimensions
+   * Служебный слой размерных линий
    * @type DimensionLayer
    * @final
    */
@@ -1492,9 +1500,8 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Служебный слой соединительных профилей
+   * Служебный слой соединительных профилей
    *
-   * @property l_connective
    * @type ConnectiveLayer
    * @final
    */
@@ -1515,11 +1522,10 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Создаёт и перерисовавает габаритные линии изделия
-   * Отвечает только за габариты изделия.<br />
+   * Создаёт и перерисовавает габаритные линии изделия
+   * Отвечает только за габариты изделия
    * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
    *
-   * @method draw_sizes
    */
   draw_sizes() {
 
@@ -1580,6 +1586,7 @@ class Scheme extends paper.Project {
 
   /**
    * Перерисовавает визуализацию контуров изделия
+   * @return {void}
    */
   draw_visualization() {
     if(this.view){
@@ -1592,15 +1599,14 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Вставка по умолчанию
+   * Вставка по умолчанию
    * Возвращает вставку по умолчанию с учетом свойств системы и положения элемента
    *
-   * @method default_inset
-   * @param [attr] {Object}
-   * @param [attr.elm] {BuilderElement}
-   * @param [attr.pos] {EnmPositions} - положение элемента
-   * @param [attr.elm_type] {EnmElm_types} - тип элемента
-   * @returns {Array.<ProfileItem>}
+   * @param {Object} [attr]
+   * @param {BuilderElement} [attr.elm]
+   * @param {EnmPositions} [attr.pos] - положение элемента
+   * @param {EnmElm_types} [attr.elm_type] - тип элемента
+   * @return {Array.<ProfileItem>}
    */
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
@@ -1682,8 +1688,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Контроль вставки
+   * Контроль вставки
    * Проверяет, годится ли текущая вставка для данного типа элемента и положения
+   * @return {CatInserts}
    */
   check_inset(attr) {
     const inset = attr.inset ? attr.inset : attr.elm.inset;
@@ -1722,7 +1729,7 @@ class Scheme extends paper.Project {
    * @param res {CnnPoint} - описание соединения на конце текущего профиля
    * @param point {paper.Point} - точка, окрестность которой анализируем
    * @param check_only {Boolean|String} - указывает, выполнять только проверку или привязывать точку к узлам или профилю или к узлам и профилю
-   * @returns {Boolean|undefined}
+   * @returns {Boolean|void}
    */
   check_distance(element, profile, res, point, check_only) {
 
@@ -1877,22 +1884,21 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Цвет по умолчанию
+   * Цвет по умолчанию
    * Возвращает цвет по умолчанию с учетом свойств системы и элемента
    *
-   * @property default_clr
-   * @final
+   * @param {Object} [attr]
+   * @return {CatClrs}
    */
   default_clr(attr) {
     return this.ox.clr;
   }
 
   /**
-   * ### Выделенные профили
+   * Выделенные профили
    * Возвращает массив выделенных профилей. Выделенным считаем профиль, у которого выделены `b` и `e` или выделен сам профиль при невыделенных узлах
    *
-   * @method selected_profiles
-   * @param [all] {Boolean} - если true, возвращает все выделенные профили. Иначе, только те, которе можно двигать
+   * @param {Boolean} [all] - если true, возвращает все выделенные профили. Иначе, только те, которе можно двигать
    * @returns {Array.<ProfileItem>}
    */
   selected_profiles(all) {
@@ -1916,20 +1922,18 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выделенные заполнения
+   * Выделенные заполнения
    *
-   * @method selected_glasses
-   * @returns {Array.<Filling>}
+   * @return {Array.<Filling>}
    */
   selected_glasses() {
     return this.selected_elements.filter((item) => item instanceof Filling);
   }
 
   /**
-   * ### Выделенный элемент
+   * Выделенный элемент
    * Возвращает первый из найденных выделенных элементов
    *
-   * @property selected_elm
    * @returns {BuilderElement}
    */
   get selected_elm() {
@@ -1938,10 +1942,9 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * ### Выделенные элементы
+   * Выделенные элементы
    * Возвращает массив выделенных элементов
    *
-   * @property selected_elements
    * @returns {Array.<BuilderElement>}
    */
   get selected_elements() {
@@ -1958,12 +1961,36 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * Ищет точки в выделенных элементах. Если не находит, то во всём проекте
+   * @summary Все профили изделия
+   * @type {Array<ProfileItem>}
+   */
+  get profiles() {
+    const {profiles} = this.l_connective;
+    for(const contour of this.getItems({class: Contour})) {
+      profiles.push(...contour.profiles);
+    }
+    return profiles;
+  }
+
+  /**
+   * @summary Все раскладки изделия
+   * @type {Array<Onlay>}
+   */
+  get onlays() {
+    const onlays = [];
+    for(const contour of this.getItems({class: Contour})) {
+      onlays.push(...contour.onlays);
+    }
+    return onlays;
+  }
+
+  /**
+   * @summary Ищет точки в выделенных элементах. Если не находит, то во всём проекте
    * @param point {paper.Point}
    * @param [tolerance] {Number}
    * @param [selected_first] {Boolean}
    * @param [with_onlays] {Boolean}
-   * @returns {*}
+   * @returns {paper.HitItem|void}
    */
   hitPoints(point, tolerance, selected_first, with_onlays) {
     let item, hit;
@@ -1983,7 +2010,7 @@ class Scheme extends paper.Project {
     }
 
     // отдаём предпочтение сегментам выделенных путей
-    if(selected_first) {
+    if(selected_first && selected_first !== 1) {
       this.selectedItems.some((item) => hit = item.hitTest(point, {segments: true, tolerance: tolerance || 8}));
       // если нет в выделенных, ищем во всех
       if(!hit) {
@@ -1991,14 +2018,16 @@ class Scheme extends paper.Project {
       }
     }
     else {
-      for (let elm of this.activeLayer.profiles) {
+      const profiles = selected_first === 1 ? this.profiles : this.activeLayer.profiles;
+      for (let elm of profiles) {
         check_corns(elm);
         for (let addl of elm.addls) {
           check_corns(addl);
         }
       }
       if(with_onlays) {
-        for (let elm of this.activeLayer.onlays) {
+        const onlays = selected_first === 1 ? this.onlays : this.activeLayer.onlays;
+        for (let elm of onlays) {
           check_corns(elm);
         }
       }

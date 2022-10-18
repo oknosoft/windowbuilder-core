@@ -1,5 +1,5 @@
-/**
- * ### Дополнительные методы справочника _Цветоценовые группы_
+/*
+ * Дополнительные методы справочника _Цветоценовые группы_
  *
  * Created 17.06.2019.
  */
@@ -86,11 +86,13 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
   }
 
   /**
-   * Проверяйет, подходит ли цвет данной группе
-   * @param clr
+   * Проверяет, подходит ли цвет данной группе
+   * @param clr {CatClrs} - цвет, который проверяем
+   * @param [clrs] {Array} - массив clrs, если не задан, рассчитываем
+   * @param [any] {Boolean} - признак для составных - учитывать обе стороны или любую
    * @returns {boolean}
    */
-  contains(clr, clrs) {
+  contains(clr, clrs, any) {
     if(this.empty() && !clrs) {
       return true;
     }
@@ -100,6 +102,10 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
     if(!clrs.length) {
       return true;
     }
-    return clr.is_composite() ? clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out) : clrs.includes(clr);
+    return clr.is_composite() ? (
+      any ? 
+        (clrs.includes(clr.clr_in) || clrs.includes(clr.clr_out)) :
+        clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out)
+    ) : clrs.includes(clr);
   }
 };

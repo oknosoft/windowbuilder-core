@@ -1,6 +1,6 @@
 
-/**
- * ### Модуль объекта документа Расчет-заказ
+/*
+ * Модуль объекта документа Расчет-заказ
  * Обрботчики событий after_create, after_load, before_save, after_save, value_change
  * Методы выполняются в контексте текущего объекта this = DocObj
  *
@@ -76,7 +76,20 @@ class FakeElm {
 
   get perimeter() {
     const {len, height, width} = this.row_spec;
-    return [{len, angle: 0}, {len: height === undefined ? width : height, angle: 90}];
+    return [
+      {len, angle: 0, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 90, angle_next: 90},
+      {len, angle: 180, angle_next: 90},
+      {len: height === undefined ? width : height, angle: 270, angle_next: 90},      
+    ];
+  }
+
+  bounds_inner(size = 0) {
+    const {len, height} = this;
+    return new paper.Rectangle({
+      from: [0, 0],
+      to: [len - 2 * size, height - 2 * size]
+    });
   }
 
   get x1() {
@@ -596,14 +609,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const currency = this.contract.settlements_currency;
     return currency.empty() ? $p.job_prm.pricing.main_currency : currency;
   }
-
   set doc_currency(v) {
 
   }
 
   /**
    * Число знаков округления
-   * @return {Number}
+   * @type {Number}
    */
   get rounding() {
     const {pricing} = $p.job_prm;
@@ -618,8 +630,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * Отдел абонента текущего заказа
+   * @type {CatBranches}
+   */
+  get branch() {
+    const {manager, organization} = this;
+    let branch = organization._extra('branch');
+    if(!branch || branch.empty()) {
+      branch = manager.branch;
+    }
+    return branch;
+  }
+
+  /**
    * Дата прайса с учётом константы valid_days (Счет действителен N дней)
-   * @return {Date}
+   * @type {Date}
    */
   get price_date() {
     const {utils, job_prm: {pricing}} = $p;
@@ -1300,9 +1325,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * ### Создаёт продукции заказа по массиву строк и параметров
+   * Создаёт продукции заказа по массиву строк и параметров  
    * если в dp.production заполнены уникальные характеристики - перезаполняет их, а новые не создаёт
-   * @method process_add_product_list
    * @param dp {DpBuyers_order} - экземпляр обработки с заполненными табличными частями
    */
   process_add_product_list(dp) {
@@ -1556,7 +1580,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc, manager} = _owner._owner;
+    const {rounding, _slave_recalc, manager, date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
@@ -1599,7 +1623,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // рассчитаем цены
       const fake_prm = {
         calc_order_row: this,
-        spec: characteristic.specification
+        spec: characteristic.specification,
+        date,
       };
       const {price} = _obj;
       pricing.price_type(fake_prm);

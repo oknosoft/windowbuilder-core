@@ -1,6 +1,6 @@
 
 /**
- * ### Модуль Ценообразование
+ * Модуль Ценообразование  
  * Аналог УПзП-шного __ЦенообразованиеСервер__
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -8,9 +8,8 @@
  */
 
 /**
- * ### Ценообразование
+ * Ценообразование
  *
- * @class Pricing
  * @param $p {MetaEngine} - контекст
  * @static
  */
@@ -163,7 +162,6 @@ class Pricing {
    * Если в маржинальных коэффициентах или номенклатуре указана формула - выполняет
    *
    * Аналог УПзП-шного __ПолучитьЦенуНоменклатуры__
-   * @method nom_price
    * @param nom {CatNom}
    * @param characteristic {CatCharacteristics}
    * @param price_type {CatNom_prices_types|CatBranches}
@@ -203,7 +201,6 @@ class Pricing {
   /**
    * Возвращает структуру типов цен и КМарж
    * Аналог УПзП-шного __ПолучитьТипЦенНоменклатуры__
-   * @method price_type
    * @param prm {Object}
    * @param prm.calc_order_row {TabularSectionRow.doc.calc_order.production}
    */
@@ -456,8 +453,8 @@ class Pricing {
    * Пересчитывает сумму из валюты в валюту
    * @param amount {Number} - сумма к пересчету
    * @param date {Date} - дата курса
-   * @param from - исходная валюта
-   * @param [to] - конечная валюта
+   * @param from {CatCurrencies} - исходная валюта
+   * @param [to] {CatCurrencies} - конечная валюта
    * @return {Number}
    */
   from_currency_to_currency (amount, date, from, to) {
@@ -469,7 +466,8 @@ class Pricing {
 
 
 /**
- * ### Модуль Ценообразование
- * Аналог УПзП-шного __ЦенообразованиеСервер__ в контексте MetaEngine
+ * Объект ценообразования в контексте MetaEngine
+ * @property pricing
+ * @memberOf $p
  */
 $p.pricing = new Pricing($p);
