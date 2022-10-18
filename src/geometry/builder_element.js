@@ -1,25 +1,26 @@
 
 /**
- * ### Базовый класс элементов построителя
+ * @summary Элемент изделия
+ * @desc Базовый класс элементов построителя
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
  *
- * @class BuilderElement
- * @param attr {Object} - объект со свойствами создаваемого элемента
- *  @param attr.b {external:Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
- *  @param attr.e {external:Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
- *  @param attr.contour {Contour} - контур, которому принадлежит элемент
- *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
- *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
- *  @param [attr.path] (r && arc_ccw && more_180)
- * @constructor
  * @extends paper.Group
- * @menuorder 40
- * @tooltip Элемент изделия
+ * @abstract
  */
 class BuilderElement extends paper.Group {
 
+  /**
+   * @param {Object} attr - объект со свойствами создаваемого элемента
+   *  @param {Contour} [attr.layer] - контур (слой), которому принадлежит элемент
+   *  @param {BuilderElement} [attr.parent] - контур (слой), которому принадлежит элемент
+   *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
+   *  @param [attr.path] {paper.Path|Array} (r && arc_ccw && more_180)
+   *  @param {paper.Point} [attr.b] - координата узла начала элемента - не путать с координатами вершин пути элемента
+   *  @param {paper.Point} attr.e - координата узла конца элемента - не путать с координатами вершин пути элемента
+   *  @param {EnmElm_types} [attr.type_el]  может измениться при конструировании. например, импост -> рама
+   */
   constructor(attr) {
 
     super(attr);
@@ -80,9 +81,8 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Элемент - владелец
+   * Элемент - владелец
    * имеет смысл для раскладок и рёбер заполнения
-   * @property owner
    * @type BuilderElement
    */
   get owner() {
@@ -93,11 +93,18 @@ class BuilderElement extends paper.Group {
   }
 
   /**
+   * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
+   * @abstract
+   * @return {BuilderElement|void}
+   */
+  nearest() {}
+
+  /**
    * Образующая
    *
    * прочитать - установить путь образующей. здесь может быть линия, простая дуга или безье
    * по ней будут пересчитаны pathData и прочие свойства
-   * @type external:Path
+   * @type paper.Path
    */
   get generatrix() {
     return this._attr.generatrix;
@@ -153,7 +160,7 @@ class BuilderElement extends paper.Group {
   /**
    * путь элемента - состоит из кривых, соединяющих вершины элемента
    * для профиля, вершин всегда 4, для заполнений может быть <> 4
-   * @type external:Path
+   * @type paper.Path
    */
   get path() {
     return this._attr.path;
@@ -169,7 +176,13 @@ class BuilderElement extends paper.Group {
     }
   }
 
-  // виртуальные метаданные для автоформ
+  /**
+   * Виртуальные метаданные для ui
+   * @type metadata.Meta
+   */
+  get _metadata() {
+    return this.__metadata();
+  }
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
@@ -395,16 +408,21 @@ class BuilderElement extends paper.Group {
       }),
     };
   }
-  get _metadata() {
-    return this.__metadata();
-  }
 
-  // виртуальный датаменеджер для автоформ
+
+  /**
+   * Виртуальный датаменеджер для ui
+   * @type {metadata.DataManager}
+   */
   get _manager() {
     return this.project._dp._manager;
   }
 
-  // объект продукции текущего элемеента может отличаться от продукции текущего проекта
+  /**
+   * Объект продукции текущего элемеента
+   * может отличаться от продукции текущего проекта
+   * @type {CatCharacteristics}
+   */
   get ox() {
     const {layer, _row} = this;
     const _ox = layer?._ox;
@@ -415,8 +433,9 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### Номенклатура
-   * свойство только для чтения, т.к. вычисляется во вставке
+   * Номенклатура элемента
+   * свойство только для чтения, т.к. вычисляется во вставке с учётом текущих параметров и геометрии
+   * @final
    * @type CatNom
    */
   get nom() {
@@ -427,7 +446,11 @@ class BuilderElement extends paper.Group {
     return _attr.nom;
   }
 
-  // номер элемента - свойство только для чтения
+  /**
+   * Номер элемента
+   * @final
+   * @type {Number}
+   */
   get elm() {
     return (this._row && this._row._obj.elm) || 0;
   }
@@ -453,7 +476,11 @@ class BuilderElement extends paper.Group {
     return this.inset.thickness(this);
   }
 
-  // опорный размер (0 для рам и створок, 1/2 ширины для импостов)
+  /**
+   * Опорный размер
+   * рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @type {Number}
+   */
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
@@ -549,7 +576,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Дополнительные свойства json
-   * @return {Object}
+   * @type {Object}
    */
   get dop() {
     return this._row.dop;
@@ -560,7 +587,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Произвольный комментарий
-   * @return {String}
+   * @type {String}
    */
   get note() {
     return this.dop.note || '';
@@ -571,7 +598,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая себестоимость единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get first_cost() {
     return this.dop.first_cost || 0;
@@ -582,7 +609,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Плановая цена продажи единицы хранения в валюте упр. учёта
-   * @return {Number}
+   * @type {Number}
    */
   get price() {
     return this.dop.price || 0;
@@ -835,27 +862,26 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * ### добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
+   * Добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
    * @param nom {CatNom}
    * @param text {String}
    * @param origin {DataObj} - происхождение
    */
   err_spec_row(nom, text, origin) {
+    const {job_prm, cat, ProductsBuilding} = $p;
     if(!nom){
-      nom = $p.job_prm.nom.info_error;
+      nom = job_prm.nom.info_error;
     }
     const {_ox} = this.layer;
-    if(!_ox.specification.find_rows({elm: this.elm, nom}).length){
-      $p.ProductsBuilding.new_spec_row({
-        elm: this,
-        row_base: {clr: $p.cat.clrs.get(), nom},
-        spec: _ox.specification,
-        ox: _ox,
-        origin,
-      });
-    }
+    const row = _ox.specification.find({elm: this.elm, nom}) || ProductsBuilding.new_spec_row({
+      elm: this,
+      row_base: {clr: cat.clrs.get(), nom},
+      spec: _ox.specification,
+      ox: _ox,
+      origin,
+    });
     if(text){
-
+      row.specify = text;
     }
   }
 

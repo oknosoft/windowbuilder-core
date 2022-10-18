@@ -1,6 +1,6 @@
 {
   "name": "windowbuilder-core",
-  "version": "2.1.262",
+  "version": "2.1.263",
   "description": "Order dealer core library",
   "repository": {
     "type": "git",
@@ -26,19 +26,21 @@
   },
   "homepage": "http://www.oknosoft.ru/zd/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.30-beta.9",
-    "metadata-core": "2.0.30-beta.9",
-    "metadata-pouchdb": "2.0.30-beta.9",
+    "metadata-abstract-ui": "2.0.30-beta.11",
+    "metadata-core": "2.0.30-beta.11",
+    "metadata-pouchdb": "2.0.30-beta.11",
     "paper-jsdom-canvas": "0.12.15"
   },
   "devDependencies": {
-    "docdash": "^1.2.0",
+    "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
     "gulp": "^4.0",
     "gulp-concat": "^2.6",
     "gulp-replace": "^1.0",
     "gulp-umd": "^2.0",
-    "md5-file": "^5.0"
+    "md5-file": "^5.0",
+    "decomment": "^0.9.5"
   },
+  "packageManager": "^yarn@1.22.19",
   "files": [
     "dist/**",
     "LICENSE",

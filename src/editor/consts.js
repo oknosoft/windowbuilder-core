@@ -1,13 +1,5 @@
 
 /**
- * ### Движок графического построителя
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module geometry
- */
-
-/**
  * Константы и параметры
  */
 const consts = {

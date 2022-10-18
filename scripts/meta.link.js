@@ -9,7 +9,7 @@ const localNodeModules = path.resolve(__dirname, '../node_modules');
 const remoteNodeModules = '..\\metadata\\packages';
 const {dependencies} = require(path.resolve(__dirname, '../package.json'));
 const libs = Object.keys(dependencies).filter(v => /^metadata-/.test(v));
-libs.push('docdash');
+libs.push('foodoc');
 
 function fromDir(startPath, filter, callback) {
 
@@ -38,7 +38,7 @@ function fromDir(startPath, filter, callback) {
 let copied;
 for (const lib of libs) {
   const lpath = path.resolve(localNodeModules, lib);
-  const rpath = lib === 'docdash' ?  path.resolve('../', lib) : path.resolve(remoteNodeModules, lib);
+  const rpath = lib === 'foodoc' ?  path.resolve('../', lib) : path.resolve(remoteNodeModules, lib);
   let i = 0;
   fromDir(rpath, /\.(css|js|mjs|md|map|tmpl)$/, (rname, isDir) => {
     const name = rname.replace(rpath, '');

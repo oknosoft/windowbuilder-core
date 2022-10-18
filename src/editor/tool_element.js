@@ -1,12 +1,10 @@
 
 /**
- * ### Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
+ * Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
  *
- * @class ToolElement
  * @extends paper.Tool
- * @constructor
  */
-EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
+class ToolElement extends paper.Tool {
 
   /* eslint-disable-next-line */
   resetHot(type, event, mode) {
@@ -72,5 +70,7 @@ EditorInvisible.ToolElement = class ToolElement extends paper.Tool {
   }
 
 };
+
+EditorInvisible.ToolElement = ToolElement;
 
 

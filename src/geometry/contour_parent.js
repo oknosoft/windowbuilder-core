@@ -1,13 +1,13 @@
-
 /*
- * ### Родительский слой вложенного изделия
- * https://github.com/oknosoft/windowbuilder/issues/564
- *
- * @module contour_parent
- *
  * Created by Evgeniy Malyarov on 20.04.2020.
  */
 
+/**
+ * Родительский слой вложенного изделия
+ * @link https://github.com/oknosoft/windowbuilder/issues/564
+ * @extends Contour
+ *
+ */
 class ContourParent extends Contour {
 
   get ProfileConstructor() {

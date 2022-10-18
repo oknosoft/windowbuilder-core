@@ -1,6 +1,6 @@
 
 /*
- * ### Вспомогательные классы для формирования размерных линий
+ * Вспомогательные классы для формирования размерных линий
  *
  * Created by Evgeniy Malyarov on 12.05.2017.
  *
@@ -40,13 +40,10 @@ class DimensionGroup {
 }
 
 /**
- * ### Служебный слой размерных линий
+ * Служебный слой размерных линий
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class DimensionLayer
  * @extends paper.Layer
- * @param attr
- * @constructor
  */
 class DimensionLayer extends paper.Layer {
 
@@ -65,13 +62,11 @@ class DimensionLayer extends paper.Layer {
 }
 
 /**
- * ### Построитель авторазмерных линий
+ * Построитель авторазмерных линий
  *
- * @class DimensionDrawer
  * @extends paper.Group
  * @param attr
  * @param attr.parent - {paper.Item}, родитель должен иметь свойства profiles_by_side(), is_pos(), profiles, imposts
- * @constructor
  */
 class DimensionDrawer extends paper.Group {
 
@@ -328,7 +323,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии импоста
+   * Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
     const {base_offset, dop_offset} = consts;
@@ -354,7 +349,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии от габарита
+   * Формирует размерные линии от габарита
    */
   by_base(arr, collection, pos) {
     const {base_offset, dop_offset} = consts;
@@ -377,7 +372,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии контура
+   * Формирует размерные линии контура
    */
   by_contour(ihor, ivert, forse, by_side) {
 
@@ -483,7 +478,7 @@ class DimensionDrawer extends paper.Group {
   }
 
   /**
-   * ### Формирует размерные линии контура по фальцу
+   * Формирует размерные линии контура по фальцу
    */
   by_faltz(ihor, ivert, by_side) {
     const {base_offset} = consts;

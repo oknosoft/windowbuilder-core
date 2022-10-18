@@ -4,9 +4,9 @@
  *
  * Общие свойства заполнения и контура
  *
- *
  * @class
  * @extends BuilderElement
+ * @hideconstructor
  *
  */
 const AbstractFilling = (superclass) => class extends superclass {
@@ -14,6 +14,8 @@ const AbstractFilling = (superclass) => class extends superclass {
   /**
    * Тест положения контура в изделии
    * @param pos {EnmElm_positions}
+   * @memberOf AbstractFilling
+   * @instance
    * @return {Boolean}
    */
   is_pos(pos) {
@@ -50,6 +52,11 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Возвращает структуру профилей по сторонам
+   * @memberOf AbstractFilling
+   * @instance
+   * @param side
+   * @param profiles
+   * @return {Object}
    */
   profiles_by_side(side, profiles) {
     // получаем таблицу расстояний профилей от рёбер габаритов
@@ -112,9 +119,9 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Возвращает массив вложенных контуров текущего контура
-   * @property contours
-   * @for Contour
-   * @type Array
+   * @memberOf AbstractFilling
+   * @instance
+   * @type Array.<Contour>
    */
   get contours() {
     return this.children.filter((elm) => elm instanceof Contour);
@@ -126,6 +133,9 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Cлужебная группа размерных линий
+   * @memberOf AbstractFilling
+   * @instance
+   * @type DimensionDrawer
    */
   get l_dimensions() {
     const {_attr} = this;
@@ -134,6 +144,9 @@ const AbstractFilling = (superclass) => class extends superclass {
 
   /**
    * Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
+   * @memberOf AbstractFilling
+   * @instance
+   * @type paper.Rectangle
    */
   get dimension_bounds() {
     let {bounds} = this;

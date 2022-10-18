@@ -18,6 +18,8 @@ const exclude = [
   'ireg.i18n',
   'ireg.delivery_schedules',
   'ireg.delivery_scheme',
+  'ireg.settlements_course',
+  'ireg.predefined_elmnts',
 ];
 const minimal = [];
 const writable = ['*'];
