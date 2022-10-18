@@ -323,7 +323,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     const row_spec = res.add(row_furn);
     row_spec.origin = this;
-    if(algorithm === cx_prm) {
+    if (algorithm.empty()) {
+      return row_spec;
+    } else if (algorithm === cx_prm) {
       row_spec.nom_characteristic = cx;
     }
     else if(algorithm === clr_prm) {
