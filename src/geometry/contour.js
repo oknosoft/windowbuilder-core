@@ -1324,7 +1324,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Габариты по образующим
-   * @type {external.Rectangle}
+   * @type {paper.Rectangle}
    */
   get lbounds() {
     const parent = new paper.Group({insert: false});

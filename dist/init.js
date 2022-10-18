@@ -4327,7 +4327,8 @@ class CatClrsManager extends CatManager {
       let in_out = this.get(ref);
       if(in_out.is_new()) {
         Object.assign(in_out._obj, {clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder.valueOf()});
-        in_out._obj.name = `${in_out.clr_in.name} \\ ${in_out.clr_out.name}`;
+        in_out._obj.name = (in_out.clr_in.name && in_out.clr_out.name) ?
+          `${in_out.clr_in.name} \\ ${in_out.clr_out.name}` : '';
         in_out._set_loaded(ref);
       }
       return in_out;

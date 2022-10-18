@@ -89,9 +89,7 @@ class ProfileConnective extends ProfileItem {
    * @override
    */
   joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
+    return check_only ? false : {inner: [], outer: []};
   }
 
   /**
