@@ -5978,16 +5978,22 @@ set demand(v){this._setter_ts('demand',v)}
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param [elmno] {Number|undefined} - номер элемента (с полюсом) или слоя (с минусом)
+   * @param [elmno] {Number|Array|undefined} - номер элемента или массив номеров (с полюсом) или слоя (с минусом)
    * @return {Number}
    */
   elm_weight(elmno) {
     const {coordinates, specification} = this;
     const map = new Map();
+    const isArray = Array.isArray(elmno);
     let weight = 0;
     specification.forEach(({elm, nom, totqty}) => {
       // отбрасываем лишние строки
-      if(elmno !== undefined && elm !== elmno) {
+      if(isArray) {
+        if(!elmno.includes(elm)) {
+          return;
+        }
+      }
+      else if(elmno !== undefined && elm !== elmno) {
         if(elmno < 0 && elm > 0) {
           if(!map.get(elm)) {
             const crow = coordinates.find({elm});
@@ -6002,7 +6008,7 @@ set demand(v){this._setter_ts('demand',v)}
       weight += nom.density * totqty;
     });
     // элементы внутри слоя могут быть вынесены в отдельные строки заказа
-    if(elmno < 0) {
+    if(!isArray && elmno < 0) {
       const contour = {cnstr: -elmno};
       coordinates.find_rows(contour, ({elm, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {

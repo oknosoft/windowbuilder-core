@@ -749,39 +749,38 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   elm_weight(elmno) {
     const {coordinates, specification} = this;
     const map = new Map();
+    const isArray = Array.isArray(elmno);
     let weight = 0;
-    
-    if (Array.isArray(elmno)) {
-      weight = elmno
-        .map((elem) => this.elm_weight(elem))
-        .reduce((acc, weight) => (acc += weight), 0)
-    } else {
-      specification.forEach(({elm, nom, totqty}) => {
-        // отбрасываем лишние строки
-        if(elmno !== undefined && elm !== elmno) {
-          if(elmno < 0 && elm > 0) {
-            if(!map.get(elm)) {
-              const crow = coordinates.find({elm});
-              map.set(elm, crow ? -crow.cnstr : Infinity);
-            }
-            if(map.get(elm) !== elmno) return;
-          }
-          else {
-            return;
-          }
+    specification.forEach(({elm, nom, totqty}) => {
+      // отбрасываем лишние строки
+      if(isArray) {
+        if(!elmno.includes(elm)) {
+          return;
         }
-        weight += nom.density * totqty;
-      });
-      // элементы внутри слоя могут быть вынесены в отдельные строки заказа
-      if(elmno < 0) {
-        const contour = {cnstr: -elmno};
-        coordinates.find_rows(contour, ({elm, inset}) => {
-          if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {
-            const cx = this.find_create_cx(elm, $p.utils.blank.guid, false);
-            weight += cx.elm_weight();
-          }
-        });
       }
+      else if(elmno !== undefined && elm !== elmno) {
+        if(elmno < 0 && elm > 0) {
+          if(!map.get(elm)) {
+            const crow = coordinates.find({elm});
+            map.set(elm, crow ? -crow.cnstr : Infinity);
+          }
+          if(map.get(elm) !== elmno) return;
+        }
+        else {
+          return;
+        }
+      }
+      weight += nom.density * totqty;
+    });
+    // элементы внутри слоя могут быть вынесены в отдельные строки заказа
+    if(!isArray && elmno < 0) {
+      const contour = {cnstr: -elmno};
+      coordinates.find_rows(contour, ({elm, inset}) => {
+        if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {
+          const cx = this.find_create_cx(elm, $p.utils.blank.guid, false);
+          weight += cx.elm_weight();
+        }
+      });
     }
     return weight;
   }
