@@ -3704,7 +3704,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         angle: curr.angle.round(1),
         len: sub_path.length,
         sub_path,
-        angle_next: curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
+        angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),
+        angle_next: 180 - curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
       };
     });
   }
@@ -18919,6 +18920,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 count_calc_method,
               })){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                if (len_angl) {
+                  len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
+                  len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
+                }
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
@@ -18928,7 +18933,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   cnstr: len_angl && len_angl.cnstr || 0,
                   inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
                   row_ins: row_ins_spec,
-                  len: rib.len
+                  len: rib.len,
+                  rib,
                 });
                 if(fqty) {
                   if(!row_spec.qty) {

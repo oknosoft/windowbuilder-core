@@ -2338,7 +2338,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         angle: curr.angle.round(1),
         len: sub_path.length,
         sub_path,
-        angle_next: curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
+        angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),
+        angle_next: 180 - curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
       };
     });
   }
