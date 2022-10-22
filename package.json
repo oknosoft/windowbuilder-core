@@ -26,9 +26,9 @@
   },
   "homepage": "http://www.oknosoft.ru/zd/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.30-beta.11",
-    "metadata-core": "2.0.30-beta.11",
-    "metadata-pouchdb": "2.0.30-beta.11",
+    "metadata-abstract-ui": "2.0.30-beta.12",
+    "metadata-core": "2.0.30-beta.12",
+    "metadata-pouchdb": "2.0.30-beta.12",
     "paper-jsdom-canvas": "0.12.15"
   },
   "devDependencies": {
