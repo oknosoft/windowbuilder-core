@@ -5063,7 +5063,7 @@ class DimensionDrawer extends paper.Group {
 
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right')) {
+        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
         else if(parent.is_pos('left')) {
@@ -5076,7 +5076,7 @@ class DimensionDrawer extends paper.Group {
 
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom')) {
+        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
         else if(parent.is_pos('top')) {
@@ -14479,7 +14479,10 @@ class Scheme extends paper.Project {
       return do_load(obx);
     }
     else {
-      return $p.cat.characteristics.get(obx, true, true)
+      const {utils, cat} = $p;
+      return (utils.is_data_obj(obx) && obx.constructions.count() ?
+        Promise.resolve(obx) :
+        cat.characteristics.get(obx, true, true))
         .then(do_load);
     }
   }

@@ -1365,7 +1365,10 @@ class Scheme extends paper.Project {
       return do_load(obx);
     }
     else {
-      return $p.cat.characteristics.get(obx, true, true)
+      const {utils, cat} = $p;
+      return (utils.is_data_obj(obx) && obx.constructions.count() ?
+        Promise.resolve(obx) :
+        cat.characteristics.get(obx, true, true))
         .then(do_load);
     }
   }

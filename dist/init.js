@@ -5799,48 +5799,80 @@ set demand(v){this._setter_ts('demand',v)}
 
     // если это москитка, полный проект можно не грузить
     if(this.origin?.insert_type?.is?.('mosquito')) {
-      const {origin, leading_product, x, y} = this;
-      const ox = this._manager.create(false, false, true);
-      ox._set_loaded(ox.ref);
-      
+      const {calc_order, leading_product, leading_elm, origin, x, y} = this;
       // находим импосты и рамки
       let {sz, nom, imposts} = origin.mosquito_props();
       if(!nom) {
-        return Promise.resolve(attr.res);
+        return Promise
+          .resolve(keep_editor ? null : (remove ? editor.unload() : project.unload()))
+          .then(() => attr.res);
       }
+
+      const ox = this._manager.create({
+        calc_order,
+        owner: leading_product.owner, 
+        sys: leading_product.sys,
+        clr: leading_product.clr,
+        x: leading_product.x,
+        y: leading_product.y,
+      }, false, true);
+      leading_product.params.find_rows({cnstr: 0}, (row) => ox.params.add(row));
+      leading_product.constructions.find_rows({parent: 0}, (row) => ox.cpy_recursive(leading_product, row.cnstr));
+      ox._set_loaded(ox.ref);
+      
       const irama = cat.inserts.by_nom(nom);
       const lcnn = cat.cnns.by_nom(nom, nom);
       const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
       const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
 
-      return project.load(ox, true)
+      return project.load(ox, true, calc_order)
         .then(() => {
           project._attr._hide_errors = true;
-          const layer = EditorInvisible.Contour.create({project, parent: null});
-          // рисуем рамы
-          const segm = [
-            [[x, 0], [0, 0]],
-            [[0, 0], [0, -y]],
-            [[0, -y], [x, -y]],
-            [[x, -y], [x, 0]],
-          ];
-          for(const segments of segm) {
+          const olayer = project.getItem({cnstr: -leading_elm});
+          const perimetr = olayer.perimeter_inner(sz, nom);
+          for(const tmp of project.contours) {
+            tmp.visible = false;
+          }
+          const parent = EditorInvisible.Contour.create({project});
+
+          // рисуем контур
+          const ppath = new paper.Path({insert: false});
+          for(const {sub_path} of perimetr) {
+            ppath.addSegments(sub_path.segments);
             new EditorInvisible.Profile({
-              generatrix: new editor.Path({segments}),
+              parent,
+              generatrix: sub_path,
               proto: {
                 inset: irama,
                 clr: this.clr,
               },
-            });  
+            });
           }
+          
           // рисуем импосты
-          const {bounds} = layer;
+          const {bounds} = ppath;
           if(imposts) {
             const add_impost = (y) => {
+
+              const impost = new paper.Path({
+                insert: false,
+                segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
+              });
+              const {length} = impost;
+              for(const {point} of ppath.getIntersections(impost)) {
+                const l1 = impost.firstSegment.point.getDistance(point);
+                const l2 = impost.lastSegment.point.getDistance(point);
+                if (l1 < length / 2) {
+                  impost.firstSegment.point = point;
+                }
+                if (l2 < length / 2) {
+                  impost.lastSegment.point = point;
+                }
+              }
+              
               new EditorInvisible.Profile({
-                generatrix: new editor.Path({
-                  segments: [[0, y], [x, y]]
-                }),
+                parent,
+                generatrix: impost,
                 proto: {
                   inset: iimpost,
                   clr: this.clr,
@@ -5856,22 +5888,45 @@ set demand(v){this._setter_ts('demand',v)}
               origin: utils.blank.guid,
             });
           }
-          layer.redraw();
-          layer.l_dimensions.redraw(true);
-          for(const gl of layer.fillings) {
+          parent.redraw();
+          parent.l_dimensions.redraw(true);
+          const gg = new editor.Group({
+            parent: parent.l_dimensions,
+            owner_bounds: parent.bounds,
+            dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
+          });
+          const l_right = new EditorInvisible.DimensionLine({
+            pos: 'right',
+            offset: -120,
+            parent: gg,
+            project,
+            contour: true,
+          });
+          l_right.redraw();
+
+          const l_bottom = new EditorInvisible.DimensionLine({
+            pos: 'bottom',
+            offset: -120,
+            parent: gg,
+            project,
+            contour: true,
+          });
+          l_bottom.redraw();
+          
+          for(const gl of parent.fillings) {
             gl.visible = false;
           }
 
           // добавляем текст
           const {elm_font_size, font_family} = editor.consts;
           new editor.PointText({
-            parent: layer,
+            parent,
             fillColor: 'black',
             fontFamily: font_family,
             fontSize: elm_font_size * 1.2,
             guide: true,
             content: this.origin.presentation,
-            point: bounds.bottomLeft.add([nom.width * 1.2, -nom.width * 1.2]),
+            point: bounds.bottomLeft.add([nom.width * 1.4, -nom.width * 1.6]),
           });
           
           project.zoom_fit();
@@ -5880,10 +5935,12 @@ set demand(v){this._setter_ts('demand',v)}
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
           if(Array.isArray(format) ? format.includes('svg') : (format === 'svg' || !format)) {
-            link.imgs[`s0`] = project.get_svg(attr);
+            link.imgs[`s0`] = parent.get_svg(attr);
           }
         })
-        .catch(() => null)
+        .catch((err) => {
+          return null;
+        })
         .then(() => {
           project.ox = '';
           ox.unload();
@@ -5892,6 +5949,7 @@ set demand(v){this._setter_ts('demand',v)}
         .then(() => attr.res);
       
     }
+    
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
@@ -6118,70 +6176,6 @@ get dop(){return this._getter('dop')}
 set dop(v){this._setter('dop',v)}
 }
 $p.CatCharacteristicsConstructionsRow = CatCharacteristicsConstructionsRow;
-class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
-get cnstr(){return this._getter('cnstr')}
-set cnstr(v){this._setter('cnstr',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get region(){return this._getter('region')}
-set region(v){this._setter('region',v)}
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
-get elm_type(){return this._getter('elm_type')}
-set elm_type(v){this._setter('elm_type',v)}
-get clr(){return $p.cat.clrs.getter(this._obj.clr)}
-set clr(v){this._setter('clr',v)}
-get inset(){return this._getter('inset')}
-set inset(v){this._setter('inset',v)}
-get path_data(){return this._getter('path_data')}
-set path_data(v){this._setter('path_data',v)}
-get x1(){return this._getter('x1')}
-set x1(v){this._setter('x1',v)}
-get y1(){return this._getter('y1')}
-set y1(v){this._setter('y1',v)}
-get x2(){return this._getter('x2')}
-set x2(v){this._setter('x2',v)}
-get y2(){return this._getter('y2')}
-set y2(v){this._setter('y2',v)}
-get r(){return this._getter('r')}
-set r(v){this._setter('r',v)}
-get arc_ccw(){return this._getter('arc_ccw')}
-set arc_ccw(v){this._setter('arc_ccw',v)}
-get s(){return this._getter('s')}
-set s(v){this._setter('s',v)}
-get angle_hor(){return this._getter('angle_hor')}
-set angle_hor(v){this._setter('angle_hor',v)}
-get alp1(){return this._getter('alp1')}
-set alp1(v){this._setter('alp1',v)}
-get alp2(){return this._getter('alp2')}
-set alp2(v){this._setter('alp2',v)}
-get len(){return this._getter('len')}
-set len(v){this._setter('len',v)}
-get pos(){return this._getter('pos')}
-set pos(v){this._setter('pos',v)}
-get orientation(){return this._getter('orientation')}
-set orientation(v){this._setter('orientation',v)}
-get nom(){return this._getter('nom')}
-set nom(v){this._setter('nom',v)}
-get offset(){return this._getter('offset')}
-set offset(v){this._setter('offset',v)}
-get dop(){return this._getter('dop')}
-set dop(v){this._setter('dop',v)}
-}
-$p.CatCharacteristicsCoordinatesRow = CatCharacteristicsCoordinatesRow;
-class CatCharacteristicsInsertsRow extends TabularSectionRow{
-get cnstr(){return this._getter('cnstr')}
-set cnstr(v){this._setter('cnstr',v)}
-get region(){return this._getter('region')}
-set region(v){this._setter('region',v)}
-get inset(){return this._getter('inset')}
-set inset(v){this._setter('inset',v)}
-get clr(){return $p.cat.clrs.getter(this._obj.clr)}
-set clr(v){this._setter('clr',v)}
-get dop(){return this._getter('dop')}
-set dop(v){this._setter('dop',v)}
-}
-$p.CatCharacteristicsInsertsRow = CatCharacteristicsInsertsRow;
 class CatCharacteristicsCnn_elmntsRow extends TabularSectionRow{
 get elm1(){return this._getter('elm1')}
 set elm1(v){this._setter('elm1',v)}
@@ -8547,6 +8541,73 @@ class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
 
+class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
+  get cnstr(){return this._getter('cnstr')}
+  set cnstr(v){this._setter('cnstr',v)}
+  get parent(){return this._getter('parent')}
+  set parent(v){this._setter('parent',v)}
+  get region(){
+    const region = this._getter('region');
+    return typeof region === "number" ? region : (region.empty() ? 0 : region)}
+  set region(v){this._setter('region',v)}
+  get elm(){return this._getter('elm')}
+  set elm(v){this._setter('elm',v)}
+  get elm_type(){return this._getter('elm_type')}
+  set elm_type(v){this._setter('elm_type',v)}
+  get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+  set clr(v){this._setter('clr',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
+  get path_data(){return this._getter('path_data')}
+  set path_data(v){this._setter('path_data',v)}
+  get x1(){return this._getter('x1')}
+  set x1(v){this._setter('x1',v)}
+  get y1(){return this._getter('y1')}
+  set y1(v){this._setter('y1',v)}
+  get x2(){return this._getter('x2')}
+  set x2(v){this._setter('x2',v)}
+  get y2(){return this._getter('y2')}
+  set y2(v){this._setter('y2',v)}
+  get r(){return this._getter('r')}
+  set r(v){this._setter('r',v)}
+  get arc_ccw(){return this._getter('arc_ccw')}
+  set arc_ccw(v){this._setter('arc_ccw',v)}
+  get s(){return this._getter('s')}
+  set s(v){this._setter('s',v)}
+  get angle_hor(){return this._getter('angle_hor')}
+  set angle_hor(v){this._setter('angle_hor',v)}
+  get alp1(){return this._getter('alp1')}
+  set alp1(v){this._setter('alp1',v)}
+  get alp2(){return this._getter('alp2')}
+  set alp2(v){this._setter('alp2',v)}
+  get len(){return this._getter('len')}
+  set len(v){this._setter('len',v)}
+  get pos(){return this._getter('pos')}
+  set pos(v){this._setter('pos',v)}
+  get orientation(){return this._getter('orientation')}
+  set orientation(v){this._setter('orientation',v)}
+  get nom(){return this._getter('nom')}
+  set nom(v){this._setter('nom',v)}
+  get offset(){return this._getter('offset')}
+  set offset(v){this._setter('offset',v)}
+  get dop(){return this._getter('dop')}
+  set dop(v){this._setter('dop',v)}
+}
+class CatCharacteristicsInsertsRow extends TabularSectionRow{
+  get cnstr(){return this._getter('cnstr')}
+  set cnstr(v){this._setter('cnstr',v)}
+  get region(){
+    const region = this._getter('region');
+    return typeof region === "number" ? region : (region.empty() ? 0 : region)}
+  set region(v){this._setter('region',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
+  get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+  set clr(v){this._setter('clr',v)}
+  get dop(){return this._getter('dop')}
+  set dop(v){this._setter('dop',v)}
+}
+
 Object.assign($p, {
   CatFormulasParamsRow,
   CatCharacteristicsParamsRow,
@@ -8582,6 +8643,8 @@ Object.assign($p, {
   CatUsersExtra_fieldsRow,
   CatProduction_paramsExtra_fieldsRow,
   CatParameters_keysParamsRow,
+  CatCharacteristicsCoordinatesRow,
+  CatCharacteristicsInsertsRow,
 });
 
 })();
