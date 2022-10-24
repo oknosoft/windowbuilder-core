@@ -908,12 +908,3 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     articles: 0,
   };
 }
-
-/*
-CatCharacteristicsConstructionsRow
-CatCharacteristicsCoordinatesRow
-get region(){
-    const region = this._getter('region');
-    return typeof region === "number" ? region : (region.empty() ? 0 : region)}
-
- */

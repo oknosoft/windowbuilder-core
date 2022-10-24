@@ -275,7 +275,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         const {path} = choice_param;
         if(path.in) {
           delete choice_param.path;
-          choice_param.path = {in: path.in.filter((o) => !srows.includes(o))};
+          choice_param.path = {in: path.in.filter((o) => !srows.some((cg) => cg.contains(o)))};
         }
       }
     }

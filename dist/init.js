@@ -4590,7 +4590,7 @@ class CatClrsManager extends CatManager {
         const {path} = choice_param;
         if(path.in) {
           delete choice_param.path;
-          choice_param.path = {in: path.in.filter((o) => !srows.includes(o))};
+          choice_param.path = {in: path.in.filter((o) => !srows.some((cg) => cg.contains(o)))};
         }
       }
     }
