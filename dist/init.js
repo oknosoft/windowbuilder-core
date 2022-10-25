@@ -5830,7 +5830,8 @@ set demand(v){this._setter_ts('demand',v)}
           project._attr._hide_errors = true;
           const olayer = project.getItem({cnstr: -leading_elm});
           const perimetr = olayer.perimeter_inner(sz, nom);
-          for(const tmp of project.contours) {
+          const {contours, l_dimensions, l_connective} = project;
+          for(const tmp of [l_dimensions, l_connective].concat(contours)) {
             tmp.visible = false;
           }
           const parent = EditorInvisible.Contour.create({project});
