@@ -1819,10 +1819,6 @@ class CatBranchesManager extends CatManager {
 
       // если отделы не загружены и полноправный пользователь...
       let next = Promise.resolve();
-      if((!current_user || current_user.branch.empty()) && !/ram$/.test(this.cachable)) {
-        next = this.find_rows_remote({_top: 10000})
-          .then(() => this.metadata().cachable = 'ram');
-      }
 
       if(job_prm.properties && current_user && !current_user.branch.empty() && job_prm.builder) {
 
@@ -2911,6 +2907,8 @@ get check_static(){return this._getter('check_static')}
 set check_static(v){this._setter('check_static',v)}
 get show_flipped(){return this._getter('show_flipped')}
 set show_flipped(v){this._setter('show_flipped',v)}
+get show_ii(){return this._getter('show_ii')}
+set show_ii(v){this._setter('show_ii',v)}
 get glass_thickness(){return this._getter('glass_thickness')}
 set glass_thickness(v){this._setter('glass_thickness',v)}
 get furn_level(){return this._getter('furn_level')}

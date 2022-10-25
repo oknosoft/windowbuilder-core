@@ -3000,7 +3000,10 @@ class Contour extends AbstractFilling(paper.Layer) {
           Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
         }
       });
-    });
+
+      elm.check_err(err_attrs);
+
+          });
 
     l_visualization.bringToFront();
   }
@@ -9591,6 +9594,54 @@ class ProfileItem extends GeneratrixElement {
       return (this.corns(1)[xy] + this.corns(2)[xy]) / 2;
     default:
       return (this.b[xy] + this.e[xy]) / 2;
+    }
+  }
+
+  check_err(style) {
+    const {layer, parent, project, generatrix} = this;
+    if(layer !== parent || layer.level || !layer.sys.show_ii || this.nearest(true)) {
+      return;
+    }
+    const {contours} = project;
+    if(contours.length > 1) {
+      let i = 0;
+      for(const contour of contours) {
+        if(contour === layer) {
+          continue;
+        }
+        for(const profile of contour.profiles) {
+          i = 0;
+          if(generatrix.is_nearest(profile.b, 1)) {
+            i++;
+          }
+          if(generatrix.is_nearest(profile.e, 1)) {
+            i++;
+          }
+          if(!this.b.is_nearest(profile.b, 1) && !this.b.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.b, 1)) {
+            i++;
+          }
+          if(!this.e.is_nearest(profile.b, 1) && !this.e.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.e, 1)) {
+            i++;
+          }
+          if(i > 1) {
+            break;
+          }
+        }
+        if(i > 1) {
+          break;
+        }
+      }
+      if(i > 1) {
+        if(style) {
+          const {_corns} = this._attr;
+          const subpath = this.path.get_subpath(_corns[1], _corns[2]).equidistant(-6);
+          Object.assign(subpath, style);
+        }
+        else {
+          const {job_prm: {nom}, msg} = $p;
+          this.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, this.inset);
+        }
+      }
     }
   }
 
@@ -16236,6 +16287,7 @@ class ProductsBuilding {
         if(!b.cnn || !e.cnn) {
           return;
         }
+        elm.check_err();
         b.check_err();
         e.check_err();
 

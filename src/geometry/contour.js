@@ -1551,6 +1551,9 @@ class Contour extends AbstractFilling(paper.Layer) {
           Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
         }
       });
+
+      elm.check_err(err_attrs);
+      
     });
 
     l_visualization.bringToFront();
