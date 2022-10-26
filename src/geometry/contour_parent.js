@@ -3,10 +3,10 @@
  */
 
 /**
- * Родительский слой вложенного изделия
+ * Родительский слой вложенного изделия  
  * @link https://github.com/oknosoft/windowbuilder/issues/564
  * @extends Contour
- *
+ * 
  */
 class ContourParent extends Contour {
 

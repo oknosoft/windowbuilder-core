@@ -9,7 +9,7 @@
  */
 
 /**
- * Размерная линия на эскизе
+ * Размерная линия на эскизе  
  * Унаследована от [paper.Group](http://paperjs.org/reference/group/)<br />
  * См. так же, {{#crossLink "DimensionLineCustom"}}{{/crossLink}} - размерная линия, устанавливаемая пользователем
  *

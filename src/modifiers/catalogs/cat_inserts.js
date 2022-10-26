@@ -1128,6 +1128,11 @@
                 count_calc_method,
               })){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                // обогащаем len_angl информацией об углах
+                if (len_angl) {
+                  len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
+                  len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
+                }
                 // при расчете по периметру, выполняем формулу для каждого ребра периметра
                 const fqty = !formula.empty() && formula.execute({
                   ox,
@@ -1138,7 +1143,8 @@
                   cnstr: len_angl && len_angl.cnstr || 0,
                   inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
                   row_ins: row_ins_spec,
-                  len: rib.len
+                  len: rib.len,
+                  rib,
                 });
                 // если формула не вернула значение, устанавливаем qty_len стандартным способом
                 if(fqty) {

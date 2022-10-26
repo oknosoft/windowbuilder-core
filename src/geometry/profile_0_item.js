@@ -263,7 +263,7 @@ class CnnPoint {
         continue;
       }
       for(const node of 'be') {
-        if(elm[node].is_nearest(point, true) && parent.cnn_side(elm, null, rays) === outer) {
+        if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) === outer) {
           return {profile: elm, node};
         }
       }
@@ -286,7 +286,7 @@ class CnnPoint {
         continue;
       }
       for(const node of 'be') {
-        if(elm[node].is_nearest(point, true) && parent.cnn_side(elm, null, rays) !== outer) {
+        if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) !== outer) {
           this._profile = elm;
           this.profile_point = node;
           this._row = parent.ox.cnn_elmnts.add({
@@ -601,8 +601,8 @@ class ProfileRays {
 
 
 /**
- * Абстрактный элемент профиля
- * Виртуальный класс описывает общие свойства профиля и раскладки
+ * @summary Абстрактный элемент профиля
+ * @desc Виртуальный класс описывает общие свойства профиля и раскладки
  *
  * @abstract
  * @extends GeneratrixElement
@@ -611,8 +611,8 @@ class ProfileRays {
 class ProfileItem extends GeneratrixElement {
 
   /**
-   * Расстояние от узла до опорной линии
-   * Для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений,
+   * @summary Расстояние от узла до опорной линии
+   * @desc Для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений,
    * для соединителей и раскладок = 0
    * @type Number
    * @final
@@ -622,8 +622,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Расстояние от узла до внешнего ребра элемента
-   * для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
+   * @summary Расстояние от узла до внешнего ребра элемента
+   * @desc для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
    * @type Number
    * @final
    */
@@ -632,8 +632,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Расстояние от узла до внутреннего ребра элемента
-   * зависит от ширины элементов и свойств примыкающих соединений
+   * @summary Расстояние от узла до внутреннего ребра элемента
+   * @desc зависит от ширины элементов и свойств примыкающих соединений
    * @type Number
    * @final
    */
@@ -642,8 +642,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Задаваемое пользователем смещение от образующей
-   * Особенно актуально для наклонных элементов а так же, в случае,
+   * @summary Задаваемое пользователем смещение от образующей
+   * @desc Особенно актуально для наклонных элементов а так же, в случае,
    * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю
    * @type Number
    */
@@ -982,8 +982,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Угол к горизонту
-   * Рассчитывается для прямой, проходящей через узлы
+   * @summary Угол к горизонту
+   * @desc Рассчитывается для прямой, проходящей через узлы
    *
    * @type Number
    * @final
@@ -1056,8 +1056,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Ориентация профиля
-   * Вычисляется по гулу к горизонту.
+   * @summary Ориентация профиля
+   * @desc Вычисляется по гулу к горизонту.
    * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
    *
    * @type EnmOrientations
@@ -1325,6 +1325,55 @@ class ProfileItem extends GeneratrixElement {
       return (this.corns(1)[xy] + this.corns(2)[xy]) / 2;
     default:
       return (this.b[xy] + this.e[xy]) / 2;
+    }
+  }
+
+  // если профиль примыкает к соседнему слою и нет соединителя
+  check_err(style) {
+    const {layer, parent, project, generatrix} = this;
+    if(layer !== parent || layer.level || !layer.sys.show_ii || this.nearest(true)) {
+      return;
+    }
+    const {contours} = project;
+    if(contours.length > 1) {
+      let i = 0;
+      for(const contour of contours) {
+        if(contour === layer) {
+          continue;
+        }
+        for(const profile of contour.profiles) {
+          i = 0;
+          if(generatrix.is_nearest(profile.b, 1)) {
+            i++;
+          }
+          if(generatrix.is_nearest(profile.e, 1)) {
+            i++;
+          }
+          if(!this.b.is_nearest(profile.b, 1) && !this.b.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.b, 1)) {
+            i++;
+          }
+          if(!this.e.is_nearest(profile.b, 1) && !this.e.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.e, 1)) {
+            i++;
+          }
+          if(i > 1) {
+            break;
+          }
+        }
+        if(i > 1) {
+          break;
+        }
+      }
+      if(i > 1) {
+        if(style) {
+          const {_corns} = this._attr;
+          const subpath = this.path.get_subpath(_corns[1], _corns[2]).equidistant(-6);
+          Object.assign(subpath, style);
+        }
+        else {
+          const {job_prm: {nom}, msg} = $p;
+          this.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, this.inset);
+        }
+      }
     }
   }
 
@@ -2433,8 +2482,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Выясняет, примыкает ли указанный профиль к текущему
-   * Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
+   * @summary Выясняет, примыкает ли указанный профиль к текущему
+   * @desc Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
    *
    * @param p {ProfileItem}
    * @return Boolean
@@ -2445,8 +2494,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Выясняет, параллельны ли профили
-   * в пределах `consts.orientation_delta`
+   * @summary Выясняет, параллельны ли профили
+   * @desc в пределах `consts.orientation_delta`
    *
    * @param profile {ProfileItem}
    * @return Boolean

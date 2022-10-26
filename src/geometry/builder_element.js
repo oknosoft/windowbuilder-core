@@ -1,7 +1,7 @@
 
 /**
  * @summary Элемент изделия
- * @desc Базовый класс элементов построителя
+ * @desc Базовый класс элементов построителя    
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
@@ -175,7 +175,7 @@ class BuilderElement extends paper.Group {
       }
     }
   }
-
+  
   /**
    * Виртуальные метаданные для ui
    * @type metadata.Meta
@@ -409,9 +409,9 @@ class BuilderElement extends paper.Group {
     };
   }
 
-
+  
   /**
-   * Виртуальный датаменеджер для ui
+   * Виртуальный датаменеджер для ui 
    * @type {metadata.DataManager}
    */
   get _manager() {
@@ -419,7 +419,7 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Объект продукции текущего элемеента
+   * Объект продукции текущего элемеента  
    * может отличаться от продукции текущего проекта
    * @type {CatCharacteristics}
    */
@@ -475,9 +475,9 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-
+  
   /**
-   * Опорный размер
+   * Опорный размер  
    * рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
    * @type {Number}
    */
@@ -803,14 +803,6 @@ class BuilderElement extends paper.Group {
     if(path instanceof paper.Path){
       path.fillColor = BuilderElement.clr_by_clr.call(this, _row.clr);
     }
-  }
-
-  /**
-   * тот, к кому примыкает импост
-   * @return {BuilderElement}
-   */
-  t_parent(be) {
-    return this;
   }
 
   /**

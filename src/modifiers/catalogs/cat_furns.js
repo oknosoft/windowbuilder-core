@@ -312,7 +312,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    * @return {DpBuyers_orderSpecificationRow}
    */
   add_with_algorithm(res, ox, contour, row_furn) {
-    const {algorithm, formula, elm, dop} = row_furn;
+    const {algorithm, formula, elm, dop, offset_option} = row_furn;
     const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;
     let cx;
     if(algorithm === cx_prm) {
@@ -335,7 +335,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         }
       });
     }
-    if(!formula.empty() && !formula.condition_formula){
+    if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){
+      // для offset_option = Формула, вызов уже состоялся. Повторно не выполняем
       formula.execute({ox, contour, row_furn, row_spec});
     }
     return row_spec;

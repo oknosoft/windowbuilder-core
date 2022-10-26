@@ -345,6 +345,7 @@ class ProductsBuilding {
         if(!b.cnn || !e.cnn) {
           return;
         }
+        elm.check_err();
         b.check_err();
         e.check_err();
 

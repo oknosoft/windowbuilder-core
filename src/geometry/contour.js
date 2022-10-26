@@ -264,9 +264,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Возвращает класс-конструктор профилей текущего слоя
-   *
-   * Актуально для вложенных и виртуальных слоёв
+   * @summary Возвращает класс-конструктор профилей текущего слоя
+   * @desc Актуально для вложенных и виртуальных слоёв
    * $type {Function}
    */
   get ProfileConstructor() {
@@ -274,8 +273,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Фурнитура по умолчанию
-   * Возвращает фурнитуру текущего слоя по умолчанию
+   * @summary Фурнитура по умолчанию
+   * @desc Возвращает фурнитуру текущего слоя по умолчанию
    * $type {CatFurns}
    */
   get default_furn() {
@@ -522,8 +521,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Продукция текущего слоя
-   * Для вложенных, отличается от изделия проекта
+   * @summary Продукция текущего слоя
+   * @desc Для вложенных, отличается от изделия проекта
    * @type {CatCharacteristics}
    */
   get _ox() {
@@ -1430,6 +1429,9 @@ class Contour extends AbstractFilling(paper.Layer) {
           Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
         }
       });
+
+      elm.check_err(err_attrs);
+      
     });
 
     l_visualization.bringToFront();
@@ -2217,7 +2219,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         angle: curr.angle.round(1),
         len: sub_path.length,
         sub_path,
-        angle_next: curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
+        angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),
+        angle_next: 180 - curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
       };
     });
   }
@@ -2953,8 +2956,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Непрозрачность без учета вложенных контуров
-   * В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
+   * @summary Непрозрачность без учета вложенных контуров  
+   * @desc В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
    * @type {Boolean}
    */
   get opacity() {

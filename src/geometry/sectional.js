@@ -1,5 +1,5 @@
 
-/**
+/*
  * ### Разрез
  *
  * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
@@ -184,15 +184,12 @@ class LenText extends EditableText {
 
 /**
  * Вид в разрезе. например, водоотливы
- * @param attr {Object} - объект со свойствами создаваемого элемента
- * @constructor
- * @extends BuilderElement
+ * @extends GeneratrixElement
  */
 class Sectional extends GeneratrixElement {
 
   /**
    * Вызывается из конструктора - создаёт пути и лучи
-   * @method initialize
    * @private
    */
   initialize(attr) {
@@ -242,11 +239,9 @@ class Sectional extends GeneratrixElement {
   }
 
   /**
-   * ### Формирует путь разреза
+   * Формирует путь разреза
    *
-   * @method redraw
    * @return {Sectional}
-   * @chainable
    */
   redraw() {
     const {layer, generatrix, _attr, radius} = this;
@@ -333,8 +328,7 @@ class Sectional extends GeneratrixElement {
   }
 
   /**
-   * ### Вычисляемые поля в таблице координат
-   * @method save_coordinates
+   * Вычисляемые поля в таблице координат
    */
   save_coordinates() {
 
@@ -362,6 +356,7 @@ class Sectional extends GeneratrixElement {
 
   /**
    * заглушка для совместимости с профилем
+   * @override
    */
   cnn_point() {
 
