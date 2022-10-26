@@ -2324,7 +2324,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           fillColor: 'black',
           fontFamily: consts.font_family,
           fontSize: consts.elm_font_size * 2,
-          content: v.getKey(),
+          content: v.key,
           point: v.point.add([10, 20]),
         })
       });
