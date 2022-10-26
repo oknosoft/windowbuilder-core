@@ -6561,7 +6561,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(direction) {
       cattr.direction = direction;
     }
-    const {utils} = $p;
+    const {utils, enm: {elm_types}} = $p;
     if(kind === 0) {
       if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn) && furn !== utils.blank.guid)) {
         cattr.furn = furn;
@@ -6580,6 +6580,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     else {
       this.parent = contour;
       _row.cnstr = contour.cnstr;
+      this.set_inset(project.default_inset({
+        inset: this.inset,
+        elm: this,
+        elm_type: elm_types.glasses,
+      }), true);      
       this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
     }
 
