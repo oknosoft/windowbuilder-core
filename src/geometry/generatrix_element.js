@@ -345,10 +345,10 @@ class GeneratrixElement extends BuilderElement {
       if(e.profile === this) {
         segments.push({profile, node: 'e'});
       }
-    }); 
+    });
     return segments;
   }
-  
+
   /**
    * Вспомогательная функция do_bind, привязка импостов
    * @param profile {ProfileItem} - к которому примыкает текущий импост

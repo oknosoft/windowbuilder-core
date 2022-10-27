@@ -2821,6 +2821,8 @@ $p.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
 class CatInsertsInsertsRow extends TabularSectionRow{
 get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
+get by_default(){return this._getter('by_default')}
+set by_default(v){this._setter('by_default',v)}
 }
 $p.CatInsertsInsertsRow = CatInsertsInsertsRow;
 $p.cat.create('inserts');
@@ -5204,6 +5206,8 @@ get builder_props(){return this._getter('builder_props')}
 set builder_props(v){this._setter('builder_props',v)}
 get svg(){return this._getter('svg')}
 set svg(v){this._setter('svg',v)}
+get extra(){return this._getter('extra')}
+set extra(v){this._setter('extra',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}

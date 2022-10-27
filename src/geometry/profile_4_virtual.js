@@ -25,7 +25,7 @@ class ProfileVirtual extends Profile {
     this.path.strokeColor = 'darkgreen';
     this.path.dashArray = [8, 4, 2, 4];
   }
-  
+
   /**
    * @override
    */

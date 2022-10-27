@@ -1,6 +1,6 @@
 
 /**
- * @summary Раскладка  
+ * @summary Раскладка
  * @desc Класс описывает поведение элемента раскладки
  *
  * - у раскладки есть координаты конца и начала
@@ -221,7 +221,7 @@ class Onlay extends ProfileItem {
     _row.elm_type = this.elm_type;
   }
 
-  /** 
+  /**
    * @override
    * @return {CnnPoint}
    */

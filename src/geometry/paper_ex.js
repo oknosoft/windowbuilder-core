@@ -514,8 +514,8 @@ Object.defineProperties(paper.Path.prototype, {
   },
 
   /**
-   * Минимальный радиус, высисляемый по кривизне пути  
-   * для прямых = 0
+   * @summary Минимальный радиус, высисляемый по кривизне пути
+   * @desc для прямых = 0
    * @memberof paper.Path#
    * @method
    * @return {Number}
@@ -611,7 +611,7 @@ Object.defineProperties(paper.Point.prototype, {
    * @memberof paper.Point#
    * @method
 	 * @param {Number} x1
-	 * @param {Number} y1 
+	 * @param {Number} y1
 	 * @param {Number} x2
 	 * @param {Number} y2
 	 * @return {Number}
@@ -635,7 +635,7 @@ Object.defineProperties(paper.Point.prototype, {
 	 * Рассчитывает координаты центра окружности по точкам и радиусу
    * @memberof paper.Point#
    * @method
-	 * @param {Number} x1 
+	 * @param {Number} x1
 	 * @param {Number} y1
 	 * @param {Number} x2
 	 * @param {Number} y2
@@ -747,8 +747,8 @@ Object.defineProperties(paper.Point.prototype, {
   },
 
 	/**
-	 * Привязка к углу  
-	 * Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
+	 * @summary Привязка к углу
+	 * @desc Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
 	 * @memberof paper.Point#
    * @method
 	 * @param {Number} [snapAngle] - шаг угла, по умолчанию 45°

@@ -871,7 +871,7 @@ class BuilderElement extends paper.Group {
       spec: _ox.specification,
       ox: _ox,
       origin,
-    });    
+    });
     if(text){
       row.specify = text;
     }

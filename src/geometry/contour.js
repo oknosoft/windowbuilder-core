@@ -264,9 +264,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Возвращает класс-конструктор профилей текущего слоя
-   *
-   * Актуально для вложенных и виртуальных слоёв
+   * @summary Возвращает класс-конструктор профилей текущего слоя
+   * @desc Актуально для вложенных и виртуальных слоёв
    * $type {Function}
    */
   get ProfileConstructor() {
@@ -274,8 +273,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Фурнитура по умолчанию  
-   * Возвращает фурнитуру текущего слоя по умолчанию
+   * @summary Фурнитура по умолчанию
+   * @desc Возвращает фурнитуру текущего слоя по умолчанию
    * $type {CatFurns}
    */
   get default_furn() {
@@ -522,8 +521,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Продукция текущего слоя
-   * Для вложенных, отличается от изделия проекта
+   * @summary Продукция текущего слоя
+   * @desc Для вложенных, отличается от изделия проекта
    * @type {CatCharacteristics}
    */
   get _ox() {
@@ -1507,7 +1506,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
         err = true;
       }
-      
+
       if(!inset.check_base_restrictions(inset, glass)) {
         glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
         err = true;
@@ -1610,7 +1609,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         // рисуем поперечину
         if (imposts) {
-          
+
           const add_impost = (y) => {
             const impost = Object.assign(new paper.Path({
               insert: false,
@@ -1628,16 +1627,16 @@ class Contour extends AbstractFilling(paper.Layer) {
               }
             }
           };
-          
+
           $p.cat.inserts.traverse_steps({
             imposts,
-            bounds, 
+            bounds,
             add_impost,
             ox: _ox,
             cnstr,
             origin,
           });
-          
+
         }
 
         return false;
@@ -2115,13 +2114,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (!curr[n].is_nearest(elm[n], 0)) {
         const {isegments, rays} = elm;
         elm[n] = curr[n];
-        
+
         rays.clear(true);
         isegments.forEach(({profile, node}) => {
           profile.do_sub_bind(elm, node);
           profile.rays.clear();
         });
-        
+
         if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
@@ -2317,7 +2316,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(check_cnn) {
         check_cnn.cnn = cnn;
       }
-      
+
       return {
         profile,
         sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
@@ -2678,7 +2677,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _ox = prm_ox;
     }
     // параметры, переопределяемые для отдела, читаем из отдела
-    if(param.inheritance !== 3 && 
+    if(param.inheritance !== 3 &&
         plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
@@ -3058,8 +3057,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Непрозрачность без учета вложенных контуров  
-   * В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
+   * @summary Непрозрачность без учета вложенных контуров  
+   * @desc В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
    * @type {Boolean}
    */
   get opacity() {

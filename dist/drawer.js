@@ -1532,7 +1532,7 @@ class BuilderElement extends paper.Group {
       spec: _ox.specification,
       ox: _ox,
       origin,
-    });    
+    });
     if(text){
       row.specify = text;
     }
@@ -2962,7 +2962,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         err = true;
       }
 
-            if(!inset.check_base_restrictions(inset, glass)) {
+      if(!inset.check_base_restrictions(inset, glass)) {
         glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
         err = true;
       }
@@ -3054,7 +3054,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         if (imposts) {
 
-                    const add_impost = (y) => {
+          const add_impost = (y) => {
             const impost = Object.assign(new paper.Path({
               insert: false,
               segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
@@ -3072,16 +3072,16 @@ class Contour extends AbstractFilling(paper.Layer) {
             }
           };
 
-                    $p.cat.inserts.traverse_steps({
+          $p.cat.inserts.traverse_steps({
             imposts,
-            bounds, 
+            bounds,
             add_impost,
             ox: _ox,
             cnstr,
             origin,
           });
 
-                  }
+        }
 
         return false;
       }
@@ -3505,13 +3505,13 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {isegments, rays} = elm;
         elm[n] = curr[n];
 
-                rays.clear(true);
+        rays.clear(true);
         isegments.forEach(({profile, node}) => {
           profile.do_sub_bind(elm, node);
           profile.rays.clear();
         });
 
-                if (!noti.profiles.includes(elm)) {
+        if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
         if (!noti.points.some((point) => point.is_nearest(elm[n], 0))) {
@@ -3684,7 +3684,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         check_cnn.cnn = cnn;
       }
 
-            return {
+      return {
         profile,
         sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
         angle,
@@ -3954,7 +3954,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(prm_ox) {
       _ox = prm_ox;
     }
-    if(param.inheritance !== 3 && 
+    if(param.inheritance !== 3 &&
         plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       let prow;
       _ox.params.find_rows({
@@ -7743,7 +7743,7 @@ class GeneratrixElement extends BuilderElement {
       if(e.profile === this) {
         segments.push({profile, node: 'e'});
       }
-    }); 
+    });
     return segments;
   }
 
@@ -9195,7 +9195,7 @@ class ProfileItem extends GeneratrixElement {
 
   cnn_point(node, point) {
 
-      }
+  }
 
   get gb() {
     return this.gn('b');
@@ -13936,13 +13936,13 @@ class Scheme extends paper.Project {
 
     const contours = this.getItems({class: Contour});
 
-        const hide = () => {
+    const hide = () => {
       contours.forEach((l) => l.hidden = true);
       l_dimensions.visible = false;
       l_connective.visible = false;
     };
 
-        const transparence = () => {
+    const transparence = () => {
       contours.forEach((l) => {
         l.opacity = .16;
         l.hide_generatrix();
