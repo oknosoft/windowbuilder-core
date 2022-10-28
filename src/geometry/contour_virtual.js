@@ -47,7 +47,7 @@ class ContourVirtual extends Contour {
       _row.dop = {sys: v.valueOf()};
       this.refill_prm();
     }
-    project.register_change(true);
+    project.register_change();
   }
 
   /**

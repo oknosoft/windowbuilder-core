@@ -582,7 +582,7 @@ class Profile extends ProfileItem {
               target[prop] = val;
             }
           }
-          target.project.register_change(true, ({_scope}) => _scope.eve.emit_async('region_change', receiver, prop));
+          target.project.register_change(({_scope}) => _scope.eve.emit_async('region_change', receiver, prop));
           return true;
         },
       }));

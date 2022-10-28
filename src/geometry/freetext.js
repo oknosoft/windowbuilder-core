@@ -143,7 +143,7 @@ class FreeText extends paper.PointText {
     this._row.clr = v;
     if(this._row.clr.clr_str.length == 6)
       this.fillColor = "#" + this._row.clr.clr_str;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   /**
@@ -155,7 +155,7 @@ class FreeText extends paper.PointText {
   }
   set font_family(v) {
     this.fontFamily = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   /**
@@ -167,7 +167,7 @@ class FreeText extends paper.PointText {
   }
   set font_size(v) {
     this.fontSize = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   /**
@@ -190,7 +190,7 @@ class FreeText extends paper.PointText {
   }
   set x(v) {
     this.point.x = parseFloat(v) + this.project.bounds.x;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   /**
@@ -219,7 +219,7 @@ class FreeText extends paper.PointText {
       v = ' ';
     }
     this.content = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   /**
@@ -231,7 +231,7 @@ class FreeText extends paper.PointText {
   }
   set angle(v) {
     this.rotation = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   /**
@@ -243,7 +243,7 @@ class FreeText extends paper.PointText {
   }
   set align(v) {
     this.justification = $p.utils.is_data_obj(v) ? v.ref : v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
 }

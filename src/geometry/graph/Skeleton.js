@@ -122,7 +122,7 @@ class Skeleton extends Graph {
    * @param vertex
    */
   addImpostEdges(cnn, vertex) {
-    if(cnn.profile && !cnn.profile_point) {
+    if(cnn.profile && (!cnn.profile_point || cnn.profile_point === 't')) {
       // находим точки на ведущем профиле
       const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
       if(left.length && right.length) {

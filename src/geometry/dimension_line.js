@@ -255,7 +255,7 @@ class DimensionLine extends paper.Group {
         });
         project.mover.move_shapes(vertexes);
         project.deselectAll();
-        project.register_change(true);
+        project.register_change();
       }
 
       // двигаем отдельные узлы
@@ -273,7 +273,7 @@ class DimensionLine extends paper.Group {
         });
         project.move_points(mdelta);
         project.deselectAll();
-        project.register_change(true);
+        project.register_change();
       }
 
       project.redraw();
@@ -514,7 +514,7 @@ class DimensionLine extends paper.Group {
     const offset = (parseInt(v) || 90).round();
     if(this._attr.offset != offset){
       this._attr.offset = offset;
-      this.project.register_change(true);
+      this.project.register_change();
     }
   }
 
@@ -699,7 +699,7 @@ class DimensionLineCustom extends DimensionLine {
   }
   set angle(v) {
     this._attr.angle = parseFloat(v).round(1);
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   // использование фикс угла
@@ -708,7 +708,7 @@ class DimensionLineCustom extends DimensionLine {
   }
   set fix_angle(v) {
     this._attr.fix_angle = v;
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   get path() {

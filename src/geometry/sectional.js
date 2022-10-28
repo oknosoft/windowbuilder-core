@@ -152,7 +152,7 @@ class AngleText extends EditableText {
         segment.point = segment.point.add(delta);
       }
     }
-    project.register_change(true);
+    project.register_change();
 
   }
 }
@@ -178,7 +178,7 @@ class LenText extends EditableText {
         segment.point = segment.point.add(delta);
       }
     }
-    project.register_change(true);
+    project.register_change();
   }
 }
 

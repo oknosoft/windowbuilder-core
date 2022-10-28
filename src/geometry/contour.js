@@ -516,7 +516,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.project._activeLayer = this;
     if (this._row) {
       this.notify(this, 'layer_activated', !custom);
-      this.project.register_update();
+      this.project.view.update();
     }
   }
 
@@ -632,7 +632,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _attr._rays && _attr._rays.clear('with_neighbor');
     }
 
-    project.register_change(true);
+    project.register_change();
 
     this.notify(this, 'furn_changed');
   }
@@ -1252,7 +1252,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   set direction(v) {
     this._row.direction = v;
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   /**
@@ -1285,7 +1285,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else {
         params.add({param, cnstr, value: v});
       }
-      this.project.register_change(true);
+      this.project.register_change();
     }
   }
 
@@ -2900,7 +2900,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set flipped(v) {
     this._row.flipped = v;
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   /**

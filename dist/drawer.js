@@ -2137,7 +2137,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.project._activeLayer = this;
     if (this._row) {
       this.notify(this, 'layer_activated', !custom);
-      this.project.register_update();
+      this.project.view.update();
     }
   }
 
@@ -2223,7 +2223,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _attr._rays && _attr._rays.clear('with_neighbor');
     }
 
-    project.register_change(true);
+    project.register_change();
 
     this.notify(this, 'furn_changed');
   }
@@ -2731,7 +2731,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   set direction(v) {
     this._row.direction = v;
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   get opening() {
@@ -2761,7 +2761,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else {
         params.add({param, cnstr, value: v});
       }
-      this.project.register_change(true);
+      this.project.register_change();
     }
   }
 
@@ -4128,7 +4128,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set flipped(v) {
     this._row.flipped = v;
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   get side_count() {
@@ -4749,7 +4749,7 @@ class ContourVirtual extends Contour {
       _row.dop = {sys: v.valueOf()};
       this.refill_prm();
     }
-    project.register_change(true);
+    project.register_change();
   }
 
   get own_sys() {
@@ -5566,7 +5566,7 @@ class DimensionLine extends paper.Group {
         });
         project.mover.move_shapes(vertexes);
         project.deselectAll();
-        project.register_change(true);
+        project.register_change();
       }
 
       for(const {profile, node} of move_points) {
@@ -5583,7 +5583,7 @@ class DimensionLine extends paper.Group {
         });
         project.move_points(mdelta);
         project.deselectAll();
-        project.register_change(true);
+        project.register_change();
       }
 
       project.redraw();
@@ -5815,7 +5815,7 @@ class DimensionLine extends paper.Group {
     const offset = (parseInt(v) || 90).round();
     if(this._attr.offset != offset){
       this._attr.offset = offset;
-      this.project.register_change(true);
+      this.project.register_change();
     }
   }
 
@@ -5973,7 +5973,7 @@ class DimensionLineCustom extends DimensionLine {
   }
   set angle(v) {
     this._attr.angle = parseFloat(v).round(1);
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   get fix_angle() {
@@ -5981,7 +5981,7 @@ class DimensionLineCustom extends DimensionLine {
   }
   set fix_angle(v) {
     this._attr.fix_angle = v;
-    this.project.register_change(true);
+    this.project.register_change();
   }
 
   get path() {
@@ -7151,7 +7151,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             target[prop] = val;
           }
         }
-        target.project.register_change(true);
+        target.project.register_change();
         return true;
       }
     });
@@ -7275,7 +7275,7 @@ class FreeText extends paper.PointText {
     this._row.clr = v;
     if(this._row.clr.clr_str.length == 6)
       this.fillColor = "#" + this._row.clr.clr_str;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   get font_family() {
@@ -7283,7 +7283,7 @@ class FreeText extends paper.PointText {
   }
   set font_family(v) {
     this.fontFamily = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   get font_size() {
@@ -7291,7 +7291,7 @@ class FreeText extends paper.PointText {
   }
   set font_size(v) {
     this.fontSize = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   get bold() {
@@ -7306,7 +7306,7 @@ class FreeText extends paper.PointText {
   }
   set x(v) {
     this.point.x = parseFloat(v) + this.project.bounds.x;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   get y() {
@@ -7326,7 +7326,7 @@ class FreeText extends paper.PointText {
       v = ' ';
     }
     this.content = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   get angle() {
@@ -7334,7 +7334,7 @@ class FreeText extends paper.PointText {
   }
   set angle(v) {
     this.rotation = v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
   get align() {
@@ -7342,7 +7342,7 @@ class FreeText extends paper.PointText {
   }
   set align(v) {
     this.justification = $p.utils.is_data_obj(v) ? v.ref : v;
-    this.project.register_update();
+    this.project.view.update();
   }
 
 }
@@ -7553,7 +7553,7 @@ class GeneratrixElement extends BuilderElement {
           segm.point = free_point;
           if(cnn_point && !paper.Key.isDown('control')){
 
-            if(profile && profile_point && !profile[profile_point].is_nearest(free_point)){
+            if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point)){
               if(this instanceof Onlay){
                 this.move_nodes(noti_points.old, free_point);
               }
@@ -9008,7 +9008,7 @@ class ProfileItem extends GeneratrixElement {
         profile._attr._rays && profile._attr._rays.clear();
       }
       _attr._rays && _attr._rays.clear();
-      this.project.register_change(true);
+      this.project.register_change();
       if(selected) {
         this.selected = true;
       }
@@ -11581,7 +11581,7 @@ class Profile extends ProfileItem {
               target[prop] = val;
             }
           }
-          target.project.register_change(true, ({_scope}) => _scope.eve.emit_async('region_change', receiver, prop));
+          target.project.register_change(({_scope}) => _scope.eve.emit_async('region_change', receiver, prop));
           return true;
         },
       }));
@@ -13293,7 +13293,7 @@ class Scheme extends paper.Project {
       _vis_timer: 0,
     };
 
-    this._ch = [];
+    this._ch = 0;
 
     this._deffer = [];
 
@@ -13414,13 +13414,13 @@ class Scheme extends paper.Project {
         $p.wsql.set_user_param('editor_last_sys', obj.sys.ref);
       }
 
-      this.register_change(true);
+      this.register_change();
     }
 
     for (const name of row_changed_names) {
       if(_attr._calc_order_row && fields.hasOwnProperty(name)) {
         _attr._calc_order_row[name] = obj[name];
-        this.register_change(true);
+        this.register_change();
       }
     }
 
@@ -13681,7 +13681,7 @@ class Scheme extends paper.Project {
             _scope.set_text();
           }
 
-          _scheme.register_change(true);
+          _scheme.register_change();
 
           if(_scheme.contours.length) {
             _scheme.notify(_scheme.contours[0], 'layer_activated', true);
@@ -13843,11 +13843,12 @@ class Scheme extends paper.Project {
 
   redraw(attr = {}) {
 
-    const {with_links} = attr;
-    const {_attr, _ch, _deffer} = this;
-    const {length} = _ch;
+        const {_attr, _ch, _deffer} = this;
 
-    if(!length || _attr._saving || _attr._lock) {
+        _ch && clearTimeout(_ch);
+    this._ch = 0;
+
+    if(_attr._saving || _attr._lock) {
       return;
     }
 
@@ -13856,8 +13857,6 @@ class Scheme extends paper.Project {
     if(contours.length) {
 
       this.l_connective.redraw();
-
-      with_links && !_attr._silent && contours[0].refresh_prm_links(true);
 
       for (let contour of contours) {
         contour.redraw();
@@ -13875,8 +13874,6 @@ class Scheme extends paper.Project {
       this.draw_sizes();
     }
 
-    _ch.length = 0;
-
     for(const deffer of _deffer) {
       deffer(this);
     }
@@ -13884,25 +13881,15 @@ class Scheme extends paper.Project {
   }
 
   has_changes() {
-    return this._ch.length > 0;
+    return this._ch;
   }
 
-  register_update() {
-    const {_attr} = this;
-    if(_attr._update_timer) {
-      clearTimeout(_attr._update_timer);
-    }
-    _attr._update_timer = setTimeout(() => {
-      this.view && this.view.update();
-      _attr._update_timer = 0;
-    }, 100);
-  }
-
-  register_change(with_update, deffer) {
+  register_change(deffer) {
 
     const {_attr, _ch, _deffer} = this;
+    _ch && clearTimeout(_ch);
 
-    if(!_attr._loading) {
+        if(!_attr._loading) {
 
       _attr._bounds = null;
 
@@ -13913,12 +13900,13 @@ class Scheme extends paper.Project {
 
       this.ox._data._modified = true;
       this.notify(this, 'scheme_changed');
-    }
-    _ch.push(Date.now());
-    deffer && _deffer.push(deffer);
 
-    if(with_update) {
-      this.register_update();
+      this._ch = setTimeout(() => {
+        !_attr._silent && this.contours[0].refresh_prm_links(true);
+        this.redraw();
+      }, 10);
+
+      deffer && _deffer.push(deffer); 
     }
   }
 
@@ -14145,7 +14133,7 @@ class Scheme extends paper.Project {
       this.do_align(auto_align, profiles);
     }
     else if(!this._attr._from_service) {
-      this.register_change(true);
+      this.register_change();
     }
 
     _dp._manager.emit_async('update', {}, {x1: true, x2: true, y1: true, y2: true, a1: true, a2: true, cnn1: true, cnn2: true, info: true});
@@ -14943,7 +14931,7 @@ class Scheme extends paper.Project {
         this._scope.select_tool?.('pan');
       }
       else {
-        this.register_change(true);
+        this.register_change();
       }
     }
     return _attr._reflected;
@@ -15098,7 +15086,7 @@ FakePrmElm.region = function region(row, target) {
         }
       }
       const project = target instanceof Scheme ? target : target.project;
-      project.register_change(true);
+      project.register_change();
       return true;
     }
   });
@@ -15250,7 +15238,7 @@ class AngleText extends EditableText {
         segment.point = segment.point.add(delta);
       }
     }
-    project.register_change(true);
+    project.register_change();
 
   }
 }
@@ -15276,7 +15264,7 @@ class LenText extends EditableText {
         segment.point = segment.point.add(delta);
       }
     }
-    project.register_change(true);
+    project.register_change();
   }
 }
 
@@ -16076,7 +16064,7 @@ class Skeleton extends Graph {
   }
 
   addImpostEdges(cnn, vertex) {
-    if(cnn.profile && !cnn.profile_point) {
+    if(cnn.profile && (!cnn.profile_point || cnn.profile_point === 't')) {
       const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
       if(left.length && right.length) {
         const inner = cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint) === $p.enm.cnn_sides.Изнутри;

@@ -32,7 +32,7 @@ class Scheme extends paper.Project {
     };
 
     // массив с моментами времени изменений изделия
-    this._ch = [];
+    this._ch = 0;
 
     // массив с функциями, ожидающими redraw
     this._deffer = [];
@@ -181,13 +181,13 @@ class Scheme extends paper.Project {
         $p.wsql.set_user_param('editor_last_sys', obj.sys.ref);
       }
 
-      this.register_change(true);
+      this.register_change();
     }
 
     for (const name of row_changed_names) {
       if(_attr._calc_order_row && fields.hasOwnProperty(name)) {
         _attr._calc_order_row[name] = obj[name];
-        this.register_change(true);
+        this.register_change();
       }
     }
 
@@ -547,7 +547,7 @@ class Scheme extends paper.Project {
           }
 
           // регистрируем изменение, чтобы отрисовались размерные линии
-          _scheme.register_change(true);
+          _scheme.register_change();
 
           // виртуальное событие, чтобы активировать слой в дереве слоёв
           if(_scheme.contours.length) {
@@ -737,12 +737,13 @@ class Scheme extends paper.Project {
    * @param [attr] {Object} - параметры, уточняющие, как перерисовывать
    */
   redraw(attr = {}) {
-
-    const {with_links} = attr;
+    
     const {_attr, _ch, _deffer} = this;
-    const {length} = _ch;
+    
+    _ch && clearTimeout(_ch);
+    this._ch = 0;
 
-    if(!length || _attr._saving || _attr._lock) {
+    if(_attr._saving || _attr._lock) {
       return;
     }
 
@@ -752,9 +753,6 @@ class Scheme extends paper.Project {
 
       // перерисовываем соединительные профили
       this.l_connective.redraw();
-
-      // обновляем связи параметров изделия
-      with_links && !_attr._silent && contours[0].refresh_prm_links(true);
 
       // перерисовываем все контуры
       for (let contour of contours) {
@@ -776,9 +774,6 @@ class Scheme extends paper.Project {
       this.draw_sizes();
     }
 
-    // сбрасываем счетчик изменений
-    _ch.length = 0;
-
     // выполняем отложенные подписки
     for(const deffer of _deffer) {
       deffer(this);
@@ -790,30 +785,17 @@ class Scheme extends paper.Project {
    * Выясняет, есть ли необработанные изменения
    */
   has_changes() {
-    return this._ch.length > 0;
-  }
-
-  /**
-   * Регистрирует необходимость обновить изображение
-   */
-  register_update() {
-    const {_attr} = this;
-    if(_attr._update_timer) {
-      clearTimeout(_attr._update_timer);
-    }
-    _attr._update_timer = setTimeout(() => {
-      this.view && this.view.update();
-      _attr._update_timer = 0;
-    }, 100);
+    return this._ch;
   }
 
   /**
    * Регистрирует факты изменения элемнтов
    */
-  register_change(with_update, deffer) {
+  register_change(deffer) {
 
     const {_attr, _ch, _deffer} = this;
-
+    _ch && clearTimeout(_ch);
+    
     if(!_attr._loading) {
 
       // сбрасываем габариты
@@ -828,12 +810,15 @@ class Scheme extends paper.Project {
       // регистрируем изменённость характеристики
       this.ox._data._modified = true;
       this.notify(this, 'scheme_changed');
-    }
-    _ch.push(Date.now());
-    deffer && _deffer.push(deffer);
 
-    if(with_update) {
-      this.register_update();
+      this._ch = setTimeout(() => {
+        // обновляем связи параметров изделия
+        !_attr._silent && this.contours[0].refresh_prm_links(true);
+        // перерисовываем
+        this.redraw();
+      }, 10);
+
+      deffer && _deffer.push(deffer); 
     }
   }
 
@@ -1107,7 +1092,7 @@ class Scheme extends paper.Project {
     }
     // иначе перерисовываем контуры
     else if(!this._attr._from_service) {
-      this.register_change(true);
+      this.register_change();
     }
 
     _dp._manager.emit_async('update', {}, {x1: true, x2: true, y1: true, y2: true, a1: true, a2: true, cnn1: true, cnn2: true, info: true});
@@ -2154,7 +2139,7 @@ class Scheme extends paper.Project {
         this._scope.select_tool?.('pan');
       }
       else {
-        this.register_change(true);
+        this.register_change();
       }
     }
     return _attr._reflected;

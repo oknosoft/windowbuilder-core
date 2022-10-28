@@ -1076,7 +1076,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             target[prop] = val;
           }
         }
-        target.project.register_change(true);
+        target.project.register_change();
         return true;
       }
     });

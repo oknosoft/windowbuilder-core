@@ -137,7 +137,7 @@ FakePrmElm.region = function region(row, target) {
         }
       }
       const project = target instanceof Scheme ? target : target.project;
-      project.register_change(true);
+      project.register_change();
       return true;
     }
   });
