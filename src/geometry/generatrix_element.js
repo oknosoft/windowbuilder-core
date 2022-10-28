@@ -148,7 +148,7 @@ class GeneratrixElement extends BuilderElement {
     const {generatrix, rays, project} = this;
     generatrix.translate(delta);
     for(const {profile, profile_point, point} of [rays.b, rays.e]) {
-      if(profile && profile_point) {
+      if(profile && profile_point && profile_point !== 't') {
         profile.generatrix.segments.forEach((segm) => segm.selected = false);
         profile[profile_point].selected = true;
         profile.move_points(point.subtract(profile[profile_point]));
