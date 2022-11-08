@@ -6426,8 +6426,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
-      elm_type: elm_types.Раскладка
+      elm_type: elm_types.layout
     }, (row) => new Onlay({row, parent: this}));
+
+    _row._owner.find_rows({
+      cnstr: this.layer.cnstr,
+      parent: this.elm,
+      elm_type: elm_types.tearing
+    }, (row) => new TearingGroup({row, parent: this, inset: row.inset}));
 
     if (attr.proto) {
       const {glass_specification, _data} = this.ox;
@@ -13020,7 +13026,7 @@ class Onlay extends ProfileItem {
 
 
   get elm_type() {
-    return $p.enm.elm_types.Раскладка;
+    return $p.enm.elm_types.layout;
   }
 
   get region() {
@@ -13441,9 +13447,57 @@ EditorInvisible.ProfileParent = ProfileParent;
 
 class Tearing extends ProfileItem {
 
+  get elm_type() {
+    return $p.enm.elm_types.tearing;
   }
 
+  save_coordinates() {
+    super.save_coordinates();
+    this._row.parent = this.parent.elm;
+  }
+}
+
 EditorInvisible.Tearing = Tearing;
+
+class TearingGroup extends BuilderElement {
+
+    get profiles() {
+    return this.children.filter((v) => v instanceof Tearing);
+  }
+
+  set_inset(v) {
+    const {_row, profiles} = this;
+    _row.inset = v;
+    for(const profile of profiles) {
+      profile.inset = _row.inset; 
+    }
+  }
+
+  get elm_type() {
+    return $p.enm.elm_types.tearing;
+  }
+
+  save_coordinates() {
+    const {_row, project, parent, layer, bounds, area, ox: {cnn_elmnts: cnns}} = this;
+    const h = project.bounds.height + project.bounds.y;
+
+    _row.x1 = (bounds.bottomLeft.x - project.bounds.x).round(3);
+    _row.y1 = (h - bounds.bottomLeft.y).round(3);
+    _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
+    _row.y2 = (h - bounds.topRight.y).round(3);
+    _row.s = area;
+    _row.elm_type = this.elm_type;
+    _row.parent = parent.elm;
+  }
+
+
+  static create({parent, inset, point}) {
+    const group = new TearingGroup({parent, inset});
+
+      }
+}
+
+EditorInvisible.TearingGroup = TearingGroup;
 
 
 
@@ -19784,18 +19838,9 @@ class FakeLenAngl {
   constructor({len, inset}) {
     this.len = len;
     this.origin = inset;
-  }
-
-  get angle() {
-    return 0;
-  }
-
-  get alp1() {
-    return 0;
-  }
-
-  get alp2() {
-    return 0;
+    this.alp1 = 0;
+    this.alp2 = 0;
+    this.angle = 0;
   }
 
   get cnstr() {
