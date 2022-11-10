@@ -12631,6 +12631,10 @@ class ConnectiveLayer extends paper.Layer {
     return this.project._dp.sys;
   }
 
+  get furn() {
+    return $p.cat.furns.get();
+  }
+
   redraw() {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());
