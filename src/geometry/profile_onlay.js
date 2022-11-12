@@ -29,7 +29,7 @@ class Onlay extends ProfileItem {
    * @type EnmElm_types
    */
   get elm_type() {
-    return $p.enm.elm_types.Раскладка;
+    return $p.enm.elm_types.layout;
   }
 
   /**

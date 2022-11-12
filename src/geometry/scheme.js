@@ -818,7 +818,7 @@ class Scheme extends paper.Project {
         this.redraw();
       }, 10);
 
-      deffer && _deffer.push(deffer); 
+      typeof deffer === 'function' && _deffer.push(deffer); 
     }
   }
 

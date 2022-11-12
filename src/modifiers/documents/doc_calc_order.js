@@ -14,18 +14,9 @@ class FakeLenAngl {
   constructor({len, inset}) {
     this.len = len;
     this.origin = inset;
-  }
-
-  get angle() {
-    return 0;
-  }
-
-  get alp1() {
-    return 0;
-  }
-
-  get alp2() {
-    return 0;
+    this.alp1 = 0;
+    this.alp2 = 0;
+    this.angle = 0;
   }
 
   get cnstr() {

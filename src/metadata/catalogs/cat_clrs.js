@@ -193,7 +193,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       case 'КакВедущийИнверсный':
         const sub_clr = this.predefined(predefined_name.replace('КакВедущий', 'КакЭлемент'));
         const t_parent = elm?.t_parent?.();
-        if(!elm || elm === t_parent){
+        if(!elm || !t_parent || elm === t_parent){
           return this.by_predefined(sub_clr,  clr_elm);
         }
         let finded;
