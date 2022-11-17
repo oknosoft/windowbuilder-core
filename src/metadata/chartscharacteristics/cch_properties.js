@@ -324,7 +324,12 @@ exports.CchProperties = class CchProperties extends Object {
         return false;
       });
     }
-    return prow && prow.value;
+    if(prow) {
+      return prow && prow.value;  
+    }
+    if(this.inheritance === 4) {
+      return this.branch_value({project: elm.project, cnstr, ox});
+    }    
   }
 
   /**

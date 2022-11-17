@@ -13,12 +13,8 @@
  * Унаследована от [paper.Group](http://paperjs.org/reference/group/)<br />
  * См. так же, {{#crossLink "DimensionLineCustom"}}{{/crossLink}} - размерная линия, устанавливаемая пользователем
  *
- * @class DimensionLine
  * @extends paper.Group
  * @param attr {Object} - объект с указанием на строку координат и родительского слоя
- * @constructor
- * @menuorder 46
- * @tooltip Размерная линия
  */
 
 class DimensionLine extends paper.Group {

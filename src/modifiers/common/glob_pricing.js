@@ -162,7 +162,6 @@ class Pricing {
    * Если в маржинальных коэффициентах или номенклатуре указана формула - выполняет
    *
    * Аналог УПзП-шного __ПолучитьЦенуНоменклатуры__
-   * @method nom_price
    * @param nom {CatNom}
    * @param characteristic {CatCharacteristics}
    * @param price_type {CatNom_prices_types|CatBranches}
@@ -202,7 +201,6 @@ class Pricing {
   /**
    * Возвращает структуру типов цен и КМарж
    * Аналог УПзП-шного __ПолучитьТипЦенНоменклатуры__
-   * @method price_type
    * @param prm {Object}
    * @param prm.calc_order_row {TabularSectionRow.doc.calc_order.production}
    */

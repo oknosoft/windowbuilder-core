@@ -564,48 +564,81 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
     // если это москитка, полный проект можно не грузить
     if(this.origin?.insert_type?.is?.('mosquito')) {
-      const {origin, leading_product, x, y} = this;
-      const ox = this._manager.create(false, false, true);
-      ox._set_loaded(ox.ref);
-      
+      const {calc_order, leading_product, leading_elm, origin, x, y} = this;
       // находим импосты и рамки
       let {sz, nom, imposts} = origin.mosquito_props();
       if(!nom) {
-        return Promise.resolve(attr.res);
+        return Promise
+          .resolve(keep_editor ? null : (remove ? editor.unload() : project.unload()))
+          .then(() => attr.res);
       }
+
+      const ox = this._manager.create({
+        calc_order,
+        owner: leading_product.owner, 
+        sys: leading_product.sys,
+        clr: leading_product.clr,
+        x: leading_product.x,
+        y: leading_product.y,
+      }, false, true);
+      leading_product.params.find_rows({cnstr: 0}, (row) => ox.params.add(row));
+      leading_product.constructions.find_rows({parent: 0}, (row) => ox.cpy_recursive(leading_product, row.cnstr));
+      ox._set_loaded(ox.ref);
+      
       const irama = cat.inserts.by_nom(nom);
       const lcnn = cat.cnns.by_nom(nom, nom);
       const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
       const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
 
-      return project.load(ox, true)
+      return project.load(ox, true, calc_order)
         .then(() => {
           project._attr._hide_errors = true;
-          const layer = EditorInvisible.Contour.create({project, parent: null});
-          // рисуем рамы
-          const segm = [
-            [[x, 0], [0, 0]],
-            [[0, 0], [0, -y]],
-            [[0, -y], [x, -y]],
-            [[x, -y], [x, 0]],
-          ];
-          for(const segments of segm) {
+          const olayer = project.getItem({cnstr: -leading_elm});
+          const perimetr = olayer.perimeter_inner(sz, nom);
+          const {contours, l_dimensions, l_connective} = project;
+          for(const tmp of [l_dimensions, l_connective].concat(contours)) {
+            tmp.visible = false;
+          }
+          const parent = EditorInvisible.Contour.create({project});
+
+          // рисуем контур
+          const ppath = new paper.Path({insert: false});
+          for(const {sub_path} of perimetr) {
+            ppath.addSegments(sub_path.segments);
             new EditorInvisible.Profile({
-              generatrix: new editor.Path({segments}),
+              parent,
+              generatrix: sub_path,
               proto: {
                 inset: irama,
                 clr: this.clr,
               },
-            });  
+            });
           }
+          
           // рисуем импосты
-          const {bounds} = layer;
+          const {bounds} = ppath;
           if(imposts) {
             const add_impost = (y) => {
+
+              const impost = new paper.Path({
+                insert: false,
+                segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
+              });
+              const {length} = impost;
+              for(const {point} of ppath.getIntersections(impost)) {
+                const l1 = impost.firstSegment.point.getDistance(point);
+                const l2 = impost.lastSegment.point.getDistance(point);
+                if (l1 < length / 2) {
+                  impost.firstSegment.point = point;
+                }
+                if (l2 < length / 2) {
+                  impost.lastSegment.point = point;
+                }
+              }
+              
               new EditorInvisible.Profile({
-                generatrix: new editor.Path({
-                  segments: [[0, y], [x, y]]
-                }),
+                parent,
+                generatrix: impost,
                 proto: {
                   inset: iimpost,
                   clr: this.clr,
@@ -621,22 +654,45 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
               origin: utils.blank.guid,
             });
           }
-          layer.redraw();
-          layer.l_dimensions.redraw(true);
-          for(const gl of layer.fillings) {
+          parent.redraw();
+          parent.l_dimensions.redraw(true);
+          const gg = new editor.Group({
+            parent: parent.l_dimensions,
+            owner_bounds: parent.bounds,
+            dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
+          });
+          const l_right = new EditorInvisible.DimensionLine({
+            pos: 'right',
+            offset: -120,
+            parent: gg,
+            project,
+            contour: true,
+          });
+          l_right.redraw();
+
+          const l_bottom = new EditorInvisible.DimensionLine({
+            pos: 'bottom',
+            offset: -120,
+            parent: gg,
+            project,
+            contour: true,
+          });
+          l_bottom.redraw();
+          
+          for(const gl of parent.fillings) {
             gl.visible = false;
           }
 
           // добавляем текст
           const {elm_font_size, font_family} = editor.consts;
           new editor.PointText({
-            parent: layer,
+            parent,
             fillColor: 'black',
             fontFamily: font_family,
             fontSize: elm_font_size * 1.2,
             guide: true,
             content: this.origin.presentation,
-            point: bounds.bottomLeft.add([nom.width * 1.2, -nom.width * 1.2]),
+            point: bounds.bottomLeft.add([nom.width * 1.4, -nom.width * 1.6]),
           });
           
           project.zoom_fit();
@@ -645,10 +701,12 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
           }
           if(Array.isArray(format) ? format.includes('svg') : (format === 'svg' || !format)) {
-            link.imgs[`s0`] = project.get_svg(attr);
+            link.imgs[`s0`] = parent.get_svg(attr);
           }
         })
-        .catch(() => null)
+        .catch((err) => {
+          return null;
+        })
         .then(() => {
           project.ox = '';
           ox.unload();
@@ -657,6 +715,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         .then(() => attr.res);
       
     }
+    
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
@@ -743,16 +802,22 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param [elmno] {Number|undefined} - номер элемента (с полюсом) или слоя (с минусом)
+   * @param [elmno] {Number|Array|undefined} - номер элемента или массив номеров (с полюсом) или слоя (с минусом)
    * @return {Number}
    */
   elm_weight(elmno) {
     const {coordinates, specification} = this;
     const map = new Map();
+    const isArray = Array.isArray(elmno);
     let weight = 0;
     specification.forEach(({elm, nom, totqty}) => {
       // отбрасываем лишние строки
-      if(elmno !== undefined && elm !== elmno) {
+      if(isArray) {
+        if(!elmno.includes(elm)) {
+          return;
+        }
+      }
+      else if(elmno !== undefined && elm !== elmno) {
         if(elmno < 0 && elm > 0) {
           if(!map.get(elm)) {
             const crow = coordinates.find({elm});
@@ -767,7 +832,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       weight += nom.density * totqty;
     });
     // элементы внутри слоя могут быть вынесены в отдельные строки заказа
-    if(elmno < 0) {
+    if(!isArray && elmno < 0) {
       const contour = {cnstr: -elmno};
       coordinates.find_rows(contour, ({elm, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {

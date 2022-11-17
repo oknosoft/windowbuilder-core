@@ -1,5 +1,5 @@
 
-/**
+/*
  * Базовые классы профиля
  *
  * Created by Evgeniy Malyarov on 24.07.2015.
@@ -7,11 +7,14 @@
 
 /**
  * Объект, описывающий геометрию соединения
- * @class CnnPoint
- * @constructor
  */
 class CnnPoint {
 
+  /**
+   * 
+   * @param {ProfileItem} parent - родительский профиль
+   * @param {NodeBE} node - имя узла профиля
+   */
   constructor(parent, node) {
 
     this._parent = parent;
@@ -154,7 +157,6 @@ class CnnPoint {
   get err() {
     return this._err;
   }
-
   set err(v) {
     if(!v) {
       this._err.length = 0;
@@ -175,9 +177,8 @@ class CnnPoint {
       return;
     }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
-    const angle = _parent.angle_at(node);
     const {cnn} = this;
-
+    let angle = _parent.angle_at(node);
     let aerr;
     if(cnn && cnn.amin && cnn.amax) {
       if(angle > 180) {
@@ -221,7 +222,6 @@ class CnnPoint {
     }
     return this._profile;
   }
-
   set profile(v) {
     this._profile = v;
   }
@@ -241,7 +241,7 @@ class CnnPoint {
   /**
    * Возвращает профиль и узел, если есть соединение с outer-стороны профиля
    *
-   * @return {{node: string, profile: ProfileItem}}
+   * @return {NodeAndProfile}
    */
   find_other() {
 
@@ -265,6 +265,7 @@ class CnnPoint {
   /**
    * При наличии соединения с другой стороны, исправляет ссылки на основной профиль и profile_point
    * @param other
+   * @return {void}
    */
   correct_profile({profile}, cnn) {
     const {parent, point}  = this;
@@ -368,7 +369,7 @@ class CnnPoint {
 
   /**
    * Поправка на размер соединения с учётом угла к соседнему профилю
-   * @returns {number}
+   * @return {number}
    */
   get size() {
     const {parent, cnn, node} = this;
@@ -454,8 +455,6 @@ class CnnPoint {
 
 /**
  * Объект, описывающий лучи пути профиля
- * @class ProfileRays
- * @constructor
  */
 class ProfileRays {
 
@@ -594,38 +593,56 @@ class ProfileRays {
 
 
 /**
- * Абстрактный элемент профиля  
- * Виртуальный класс описывает общие свойства профиля и раскладки
+ * @summary Абстрактный элемент профиля
+ * @desc Виртуальный класс описывает общие свойства профиля и раскладки
  *
  * @abstract
- * @extends BuilderElement
- * @tutorial profile
+ * @extends GeneratrixElement
+ * @tutorial 02_geometry
  */
 class ProfileItem extends GeneratrixElement {
 
   /**
-   * Расстояние от узла до внешнего ребра элемента  
-   * для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
+   * @summary Расстояние от узла до опорной линии
+   * @desc Для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений,
+   * для соединителей и раскладок = 0
    * @type Number
+   * @final
+   */
+  get d0() {
+    return 0;
+  }
+
+  /**
+   * @summary Расстояние от узла до внешнего ребра элемента
+   * @desc для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
+   * @type Number
+   * @final
    */
   get d1() {
     return -(this.d0 - this.sizeb);
   }
 
   /**
-   * Расстояние от узла до внутреннего ребра элемента  
-   * зависит от ширины элементов и свойств примыкающих соединений
+   * @summary Расстояние от узла до внутреннего ребра элемента
+   * @desc зависит от ширины элементов и свойств примыкающих соединений
    * @type Number
+   * @final
    */
   get d2() {
     return this.d1 - this.width;
   }
 
+  /**
+   * @summary Задаваемое пользователем смещение от образующей
+   * @desc Особенно актуально для наклонных элементов а так же, в случае,
+   * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю
+   * @type Number
+   */
   get offset() {
     const {_row} = this;
     return (_row && _row.offset) || 0;
   }
-
   set offset(v) {
     const {_row, _attr, selected} = this;
     v = parseFloat(v) || 0;
@@ -653,11 +670,14 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Точка проекции высоты ручки на ребро профиля
    *
-   * @param side
-   * @return Point|undefined
+   * @param {InnerOuter} side
+   * @return {paper.Point|void}
    */
   hhpoint(side) {
     const {layer, rays} = this;
+    if(layer instanceof ConnectiveLayer) {
+      return ;
+    }
     const {h_ruch, furn} = layer;
     const {furn_set, handle_side} = furn;
     if(!h_ruch || !handle_side || furn_set.empty()) {
@@ -671,7 +691,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Точка проекции высоты ручки на внутреннее ребро профиля
-   * @type Point|undefined
+   * @type {paper.Point|void}
    */
   get hhi() {
     return this.hhpoint('inner');
@@ -679,7 +699,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Точка проекции высоты ручки на внешнее ребро профиля
-   * @type Point|undefined
+   * @type {paper.Point|void}
    */
   get hho() {
     return this.hhpoint('outer');
@@ -751,8 +771,26 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * С этой функции начинается пересчет и перерисовка сегмента раскладки
+   * Возвращает объект соединения конца профиля
+   * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
+   * - Не делает подмену соединения, хотя могла бы
+   * - Не делает подмену вставки, хотя могла бы
+   *
+   * @abstract
+   * @param {NodeBE} node - имя узла профиля
+   * @param {paper.Point} [point] - координаты точки, в окрестности которой искать
+   * @return {CnnPoint}
+   */
+  cnn_point(node, point) {
+
+  }
+
+  /**
    * Проекция точки b на образующую родительского элемента
    * Для рам и створок, совпадает с 'b', для импостов - отличается
+   * @type {paper.Point}
+   * @final
    */
   get gb() {
     return this.gn('b');
@@ -761,11 +799,19 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Проекция точки e на образующую родительского элемента
    * Для рам и створок, совпадает с 'e', для импостов - отличается
+   * @type {paper.Point}
+   * @final
    */
   get ge() {
     return this.gn('e');
   }
 
+  /**
+   * Вспомогательная для {@link ProfileItem#gb} {@link ProfileItem#ge}
+   * @private
+   * @param {String} n
+   * @return {paper.Point}
+   */
   gn(n) {
     if(this.layer.layer) {
       const {profile, is_t} = this.cnn_point(n);
@@ -778,7 +824,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу
-   * @param node {string}
+   * @param node {NodeBE}
    * @return {number}
    */
   angle_at(node) {
@@ -810,6 +856,8 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу в точке 'b'
+   * @type Number
+   * @final
    */
   get a1() {
     return this.angle_at('b');
@@ -817,6 +865,8 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Угол к соседнему элементу в точке 'e'
+   * @type Number
+   * @final
    */
   get a2() {
     return this.angle_at('e');
@@ -924,8 +974,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Угол к горизонту  
-   * Рассчитывается для прямой, проходящей через узлы
+   * @summary Угол к горизонту
+   * @desc Рассчитывается для прямой, проходящей через узлы
    *
    * @type Number
    * @final
@@ -991,15 +1041,15 @@ class ProfileItem extends GeneratrixElement {
 
     // получаем фрагмент образующей
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + b.size + e.size;
+    const res = sub_gen.length + (this instanceof Onlay ? 0 : b.size + e.size);
     sub_gen.remove();
 
     return res;
   }
 
   /**
-   * Ориентация профиля  
-   * Вычисляется по гулу к горизонту.
+   * @summary Ориентация профиля
+   * @desc Вычисляется по гулу к горизонту.
    * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
    *
    * @type EnmOrientations
@@ -1270,8 +1320,58 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
+  // если профиль примыкает к соседнему слою и нет соединителя
+  check_err(style) {
+    const {layer, parent, project, generatrix} = this;
+    if(layer !== parent || layer.level || !layer.sys.show_ii || this.nearest(true)) {
+      return;
+    }
+    const {contours} = project;
+    if(contours.length > 1) {
+      let i = 0;
+      for(const contour of contours) {
+        if(contour === layer) {
+          continue;
+        }
+        for(const profile of contour.profiles) {
+          i = 0;
+          if(generatrix.is_nearest(profile.b, 1)) {
+            i++;
+          }
+          if(generatrix.is_nearest(profile.e, 1)) {
+            i++;
+          }
+          if(!this.b.is_nearest(profile.b, 1) && !this.b.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.b, 1)) {
+            i++;
+          }
+          if(!this.e.is_nearest(profile.b, 1) && !this.e.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.e, 1)) {
+            i++;
+          }
+          if(i > 1) {
+            break;
+          }
+        }
+        if(i > 1) {
+          break;
+        }
+      }
+      if(i > 1) {
+        if(style) {
+          const {_corns} = this._attr;
+          const subpath = this.path.get_subpath(_corns[1], _corns[2]).equidistant(-6);
+          Object.assign(subpath, style);
+        }
+        else {
+          const {job_prm: {nom}, msg} = $p;
+          this.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, this.inset);
+        }
+      }
+    }
+  }
+
   /**
    * Вычисляемые поля в таблице координат
+   * @return {void}
    */
   save_coordinates() {
 
@@ -1763,8 +1863,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Пересчитывает вставку после пересчета соединений
    * Контроль пока только по типу элемента
-   *
-   * @chainable
+   * @return {ProfileItem}
    */
   postcalc_inset() {
     // если слева и справа T - и тип не импост или есть не T и тпи импост
@@ -1873,7 +1972,7 @@ class ProfileItem extends GeneratrixElement {
 
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
-      const oinner = prays[side];
+      let oinner = prays[side];
       const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
 
       // импосты рисуем с учетом стороны примыкания
@@ -1987,6 +2086,17 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
+          // TODO: пока только для раскладок, после отладки - распространим на всех
+          if(this instanceof Onlay) {
+            const delta = cnn_point.cnn.size(this);
+            if(delta) {
+              const pt = oinner.getNearestPoint(cnn_point.point);
+              const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+              const tmp = oinner.clone({insert: false});
+              tmp.translate(normal);
+              oinner = tmp;
+            }
+          }
           // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
           if(is_b) {
             // в зависимости от стороны соединения
@@ -2380,8 +2490,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Выясняет, примыкает ли указанный профиль к текущему  
-   * Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
+   * @summary Выясняет, примыкает ли указанный профиль к текущему
+   * @desc Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
    *
    * @param p {ProfileItem}
    * @return Boolean
@@ -2392,8 +2502,8 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Выясняет, параллельны ли профили  
-   * в пределах `consts.orientation_delta`
+   * @summary Выясняет, параллельны ли профили
+   * @desc в пределах `consts.orientation_delta`
    *
    * @param profile {ProfileItem}
    * @return Boolean
@@ -2461,7 +2571,8 @@ class ProfileItem extends GeneratrixElement {
    * - {{#crossLink "ProfileItem/postcalc_inset:method"}}postcalc_inset(){{/crossLink}} - проверяет корректность вставки, заменяет при необходимости
    * - {{#crossLink "ProfileItem/path_points:method"}}path_points(){{/crossLink}} - рассчитывает координаты вершин пути профиля
    *
-   * @chainable
+   * @override
+   * @return {ProfileItem}
    */
   redraw() {
     // получаем узлы
@@ -2560,7 +2671,7 @@ class ProfileItem extends GeneratrixElement {
    * Координаты вершин (cornx1...corny4)
    *
    * @param corn {String|Number} - имя или номер вершины
-   * @return {Point|Number} - координата или точка
+   * @return {paper.Point|Number} - координата или точка
    */
   corns(corn) {
     const {_corns} = this._attr;

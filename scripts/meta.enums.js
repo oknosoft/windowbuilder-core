@@ -179,23 +179,8 @@ function create_modules(_m, jsdoc) {
     };
 
   if(jsdoc) {
-    let text = `
-/**
- * Коллекция перечислений
- * @class Enumerations
- * @extends external:Enumerations`;
+    let text = ``;
     const {enm} = $p;
-
-    // менеджеры перечислений
-    for (const name in _m.enm){
-      const emeta = _m.enm[name].find(({tag}) => tag);
-      if(emeta) {
-        const ename = enm[name].obj_constructor();
-        text += `\n * @prop ${name} {${ename}Manager} - ${emeta.tag}`;
-      }
-    }
-
-    text += '\n */\n';
 
     for (const name in _m.enm){
       const edata = _m.enm[name];
@@ -203,15 +188,17 @@ function create_modules(_m, jsdoc) {
       const ename = enm[name].obj_constructor();
 
       text += `\n/**
- * Значение перечисления _${emeta.tag}_${emeta.description ? '<br/>' + emeta.description : ''}
+ * @summary Значение перечисления {@link ${ename}Manager|${emeta.tag}}${emeta.description ? `
+ * @desc ${emeta.description}` : ''}
  * @class ${ename}
  * @see ${ename}Manager
  */
 
 /**
- * Менеджер перечисления _${emeta.tag}_${emeta.description ? '<br/>' + emeta.description : ''}
+ * @summary Менеджер перечисления _${emeta.tag}_ ${emeta.description ? `
+ * @desc ${emeta.description}` : ''}
  * @class
- * @extends {external:EnumManager}`;
+ * @extends metadata.EnumManager`;
 
       for(const {order, latin, name, synonym} of edata) {
         if(order !== undefined) {
@@ -285,7 +272,7 @@ function obj_constructor_text(_m, category, name, categoties) {
   const managerText = extModule && extModule[managerName] && extModule[managerName].toString();
 
   if(jsdoc) {
-    text += '\n* @class\n* @extends external:' + proto;
+    text += '\n* @class\n* @extends metadata.' + proto;
     text += '\n*/\n';
   }
   text += `class ${fn_name} extends ${proto}{\n`;
@@ -375,7 +362,7 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
   // если описан расширитель менеджера, дополняем
   if(jsdoc) {
     text += `\n/**\n* ${$p.msg.meta_mgrs[category]} _${meta.name}_`;
-    text += '\n* @class\n* @extends external:' + mgr;
+    text += '\n* @class\n* @extends metadata.' + mgr;
     text += '\n*/\n';
   }
   if(managerText){

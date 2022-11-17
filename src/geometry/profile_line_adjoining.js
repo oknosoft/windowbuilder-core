@@ -2,14 +2,14 @@
 /*
  *
  *
- * @module profile_connective_adjoining
+ * @module profile_adjoining
  *
  * Created by Evgeniy Malyarov on 18.03.2021.
  */
 
 /**
- * Виртуальный профиль примыкания  
- * Класс описывает поведение внешнего примыкания к рамам изделия
+ * @summary Виртуальный профиль примыкания
+ * @desc Класс описывает поведение внешнего примыкания к рамам изделия
  *
  * - у примыкания есть координаты конца и начала, такие же, как у Profile
  * - концы соединяются с пустотой
@@ -19,10 +19,8 @@
  * - живёт в том же слое, что и рамные профили
  * - длина может отличаться от длин профилей, к которым он примыкает
  *
- * @class ProfileAdjoining
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
- * @extends ProfileConnectiveOuter
+ * @extends ProfileConnective
  */
 class ProfileAdjoining extends BaseLine {
 
@@ -70,6 +68,7 @@ class ProfileAdjoining extends BaseLine {
 
   /**
    * У примыкания, внешний равен родителю
+   * @override
    */
   nearest() {
     return this.parent;

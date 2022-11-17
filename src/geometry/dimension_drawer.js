@@ -43,10 +43,7 @@ class DimensionGroup {
  * Служебный слой размерных линий  
  * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
  *
- * @class DimensionLayer
  * @extends paper.Layer
- * @param attr
- * @constructor
  */
 class DimensionLayer extends paper.Layer {
 
@@ -138,7 +135,7 @@ class DimensionDrawer extends paper.Group {
       // для ihor добавляем по вертикали
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right')) {
+        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
         else if(parent.is_pos('left')) {
@@ -152,7 +149,7 @@ class DimensionDrawer extends paper.Group {
       // для ivert добавляем по горизонтали
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom')) {
+        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
         else if(parent.is_pos('top')) {

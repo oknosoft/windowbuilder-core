@@ -1,25 +1,26 @@
 
 /**
- * Базовый класс элементов построителя  
+ * @summary Элемент изделия
+ * @desc Базовый класс элементов построителя    
  * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
  * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
  * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
  *
- * @class BuilderElement
- * @param attr {Object} - объект со свойствами создаваемого элемента
- *  @param attr.b {paper.Point} - координата узла начала элемента - не путать с координатами вершин пути элемента
- *  @param attr.e {paper.Point} - координата узла конца элемента - не путать с координатами вершин пути элемента
- *  @param attr.contour {Contour} - контур, которому принадлежит элемент
- *  @param attr.type_el {EnmElm_types}  может измениться при конструировании. например, импост -> рама
- *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
- *  @param [attr.path] (r && arc_ccw && more_180)
- * @constructor
  * @extends paper.Group
- * @menuorder 40
- * @tooltip Элемент изделия
+ * @abstract
  */
 class BuilderElement extends paper.Group {
 
+  /**
+   * @param {Object} attr - объект со свойствами создаваемого элемента
+   *  @param {Contour} [attr.layer] - контур (слой), которому принадлежит элемент
+   *  @param {BuilderElement} [attr.parent] - контур (слой), которому принадлежит элемент
+   *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
+   *  @param [attr.path] {paper.Path|Array} (r && arc_ccw && more_180)
+   *  @param {paper.Point} [attr.b] - координата узла начала элемента - не путать с координатами вершин пути элемента
+   *  @param {paper.Point} attr.e - координата узла конца элемента - не путать с координатами вершин пути элемента
+   *  @param {EnmElm_types} [attr.type_el]  может измениться при конструировании. например, импост -> рама
+   */
   constructor(attr) {
 
     super(attr);
@@ -90,6 +91,13 @@ class BuilderElement extends paper.Group {
   set owner(v) {
     this._attr.owner = v;
   }
+
+  /**
+   * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
+   * @abstract
+   * @return {BuilderElement|void}
+   */
+  nearest() {}
 
   /**
    * Образующая
@@ -167,8 +175,14 @@ class BuilderElement extends paper.Group {
       }
     }
   }
-
-  // виртуальные метаданные для автоформ
+  
+  /**
+   * Виртуальные метаданные для ui
+   * @type metadata.Meta
+   */
+  get _metadata() {
+    return this.__metadata();
+  }
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
@@ -394,11 +408,12 @@ class BuilderElement extends paper.Group {
       }),
     };
   }
-  get _metadata() {
-    return this.__metadata();
-  }
 
-  // виртуальный датаменеджер для автоформ
+  
+  /**
+   * Виртуальный датаменеджер для ui 
+   * @type {metadata.DataManager}
+   */
   get _manager() {
     return this.project._dp._manager;
   }
@@ -418,8 +433,9 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Номенклатура
-   * свойство только для чтения, т.к. вычисляется во вставке
+   * Номенклатура элемента
+   * свойство только для чтения, т.к. вычисляется во вставке с учётом текущих параметров и геометрии
+   * @final
    * @type CatNom
    */
   get nom() {
@@ -432,6 +448,7 @@ class BuilderElement extends paper.Group {
 
   /**
    * Номер элемента
+   * @final
    * @type {Number}
    */
   get elm() {
@@ -789,14 +806,6 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * тот, к кому примыкает импост
-   * @return {BuilderElement}
-   */
-  t_parent(be) {
-    return this;
-  }
-
-  /**
    * Возвращает примыкающий элемент и строку табчасти соединений
    */
   selected_cnn_ii() {
@@ -862,7 +871,7 @@ class BuilderElement extends paper.Group {
       spec: _ox.specification,
       ox: _ox,
       origin,
-    });    
+    });
     if(text){
       row.specify = text;
     }

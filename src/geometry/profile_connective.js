@@ -1,7 +1,7 @@
 
 /**
- * Соединительный профиль  
- * Класс описывает поведение соединительного профиля
+ * @summary Соединительный профиль
+ * @desc Класс описывает поведение соединительного профиля
  *
  * - у соединительного профиля есть координаты конца и начала, такие же, как у Profile
  * - концы соединяются с пустотой
@@ -11,20 +11,10 @@
  * - соединительный профиль живёт в слое одного из рамных контуров изделия, но может оказывать влияние на соединёные с ним контуры
  * - длина соединительного профиля может отличаться от длин профилей, к которым он примыкает
  *
- * @class ProfileConnective
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @constructor
  * @extends ProfileItem
  */
 class ProfileConnective extends ProfileItem {
-
-  /**
-   * Расстояние от узла до опорной линии, для соединителей и раскладок == 0
-   * @type Number
-   */
-  get d0() {
-    return 0;
-  }
 
   /**
    * Возвращает тип элемента (соединитель)
@@ -99,17 +89,26 @@ class ProfileConnective extends ProfileItem {
    * @override
    */
   joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
+    return check_only ? false : {inner: [], outer: []};
   }
 
   /**
    * Примыкающий внешний элемент - для соединителя всегда пусто
    * @override
+   * @return {void}
    */
-  nearest() {
-    return null;
+  nearest() {}
+
+  /**
+   * Положение соединительного профиля
+   * @type {EnmPositions}
+   */
+  get pos() {
+    const nearests = this.joined_nearests();
+    if(nearests.length > 1) {
+      return $p.enm.positions.center;
+    }
+    return nearests[0].pos;
   }
 
   /**
@@ -186,8 +185,7 @@ class ProfileConnective extends ProfileItem {
 
 
 /**
- * Служебный слой соединительных профилей  
- * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
+ * @summary Служебный слой соединительных профилей
  *
  * @extends paper.Layer
  */
@@ -246,6 +244,14 @@ class ConnectiveLayer extends paper.Layer {
     return this.project._dp.sys;
   }
 
+  /**
+   * Фурнитура слоя соединителей всегда пустая
+   * @type {CatFurns}
+   */
+  get furn() {
+    return $p.cat.furns.get();
+  }
+
   redraw() {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());
@@ -288,6 +294,13 @@ class ConnectiveLayer extends paper.Layer {
     return Contour.prototype._metadata.call(this, fld);
   }
 
+  /**
+   * Возвращает слой размерных линий проекта
+   * @type {DimensionLayer}
+   */
+  get l_dimensions() {
+    return this.project.contours[0].l_dimensions;
+  }
 
   /**
    * Возвращает массив профилей текущего слоя
@@ -295,6 +308,14 @@ class ConnectiveLayer extends paper.Layer {
    */
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
+  }
+
+  /**
+   * Возвращает массив раскладок текущего слоя
+   * @return {Array}
+   */
+  get onlays() {
+    return [];
   }
 
   /**

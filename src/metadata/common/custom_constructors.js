@@ -199,6 +199,73 @@ class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
 
+class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
+  get cnstr(){return this._getter('cnstr')}
+  set cnstr(v){this._setter('cnstr',v)}
+  get parent(){return this._getter('parent')}
+  set parent(v){this._setter('parent',v)}
+  get region(){
+    const region = this._getter('region');
+    return typeof region === "number" ? region : (region.empty() ? 0 : region)}
+  set region(v){this._setter('region',v)}
+  get elm(){return this._getter('elm')}
+  set elm(v){this._setter('elm',v)}
+  get elm_type(){return this._getter('elm_type')}
+  set elm_type(v){this._setter('elm_type',v)}
+  get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+  set clr(v){this._setter('clr',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
+  get path_data(){return this._getter('path_data')}
+  set path_data(v){this._setter('path_data',v)}
+  get x1(){return this._getter('x1')}
+  set x1(v){this._setter('x1',v)}
+  get y1(){return this._getter('y1')}
+  set y1(v){this._setter('y1',v)}
+  get x2(){return this._getter('x2')}
+  set x2(v){this._setter('x2',v)}
+  get y2(){return this._getter('y2')}
+  set y2(v){this._setter('y2',v)}
+  get r(){return this._getter('r')}
+  set r(v){this._setter('r',v)}
+  get arc_ccw(){return this._getter('arc_ccw')}
+  set arc_ccw(v){this._setter('arc_ccw',v)}
+  get s(){return this._getter('s')}
+  set s(v){this._setter('s',v)}
+  get angle_hor(){return this._getter('angle_hor')}
+  set angle_hor(v){this._setter('angle_hor',v)}
+  get alp1(){return this._getter('alp1')}
+  set alp1(v){this._setter('alp1',v)}
+  get alp2(){return this._getter('alp2')}
+  set alp2(v){this._setter('alp2',v)}
+  get len(){return this._getter('len')}
+  set len(v){this._setter('len',v)}
+  get pos(){return this._getter('pos')}
+  set pos(v){this._setter('pos',v)}
+  get orientation(){return this._getter('orientation')}
+  set orientation(v){this._setter('orientation',v)}
+  get nom(){return this._getter('nom')}
+  set nom(v){this._setter('nom',v)}
+  get offset(){return this._getter('offset')}
+  set offset(v){this._setter('offset',v)}
+  get dop(){return this._getter('dop')}
+  set dop(v){this._setter('dop',v)}
+}
+class CatCharacteristicsInsertsRow extends TabularSectionRow{
+  get cnstr(){return this._getter('cnstr')}
+  set cnstr(v){this._setter('cnstr',v)}
+  get region(){
+    const region = this._getter('region');
+    return typeof region === "number" ? region : (region.empty() ? 0 : region)}
+  set region(v){this._setter('region',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
+  get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+  set clr(v){this._setter('clr',v)}
+  get dop(){return this._getter('dop')}
+  set dop(v){this._setter('dop',v)}
+}
+
 Object.assign($p, {
   CatFormulasParamsRow,
   CatCharacteristicsParamsRow,
@@ -234,5 +301,7 @@ Object.assign($p, {
   CatUsersExtra_fieldsRow,
   CatProduction_paramsExtra_fieldsRow,
   CatParameters_keysParamsRow,
+  CatCharacteristicsCoordinatesRow,
+  CatCharacteristicsInsertsRow,
 });
 

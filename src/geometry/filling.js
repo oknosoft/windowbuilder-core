@@ -103,8 +103,15 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
-      elm_type: elm_types.Раскладка
+      elm_type: elm_types.layout
     }, (row) => new Onlay({row, parent: this}));
+
+    // разрывы текущего заполнения
+    _row._owner.find_rows({
+      cnstr: this.layer.cnstr,
+      parent: this.elm,
+      elm_type: elm_types.tearing
+    }, (row) => new TearingGroup({row, parent: this, inset: row.inset}));
 
     // спецификация стеклопакета прототипа
     if (attr.proto) {
@@ -255,7 +262,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(direction) {
       cattr.direction = direction;
     }
-    const {utils} = $p;
+    const {utils, enm: {elm_types}} = $p;
     if(kind === 0) {
       if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn) && furn !== utils.blank.guid)) {
         cattr.furn = furn;
@@ -276,6 +283,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     else {
       this.parent = contour;
       _row.cnstr = contour.cnstr;
+      // проверим вставку
+      this.set_inset(project.default_inset({
+        inset: this.inset,
+        elm: this,
+        elm_type: elm_types.glasses,
+      }), true);      
       // дочерние раскладки
       this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
     }
@@ -296,11 +309,11 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
-   * Примыкающий внешний элемент - для заполнений всегда null
+   * Примыкающий внешний элемент - для заполнений всегда пусто
+   * @override
+   * @return {void}
    */
-  nearest() {
-    return null;
-  }
+  nearest() {}
 
   select_node(v) {
     let point, segm, delta = Infinity;

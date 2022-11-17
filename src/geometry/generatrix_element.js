@@ -5,7 +5,7 @@
  *
  * @abstract
  * @extends BuilderElement
- * @tutorial profile
+ * @tutorial 02_geometry
  */
 class GeneratrixElement extends BuilderElement {
 
@@ -148,7 +148,7 @@ class GeneratrixElement extends BuilderElement {
     const {generatrix, rays, project} = this;
     generatrix.translate(delta);
     for(const {profile, profile_point, point} of [rays.b, rays.e]) {
-      if(profile && profile_point) {
+      if(profile && profile_point && profile_point !== 't') {
         profile.generatrix.segments.forEach((segm) => segm.selected = false);
         profile[profile_point].selected = true;
         profile.move_points(point.subtract(profile[profile_point]));
@@ -262,7 +262,7 @@ class GeneratrixElement extends BuilderElement {
           // если соединение угловое, тянем тянем соседние узлы сразу
           if(cnn_point && !paper.Key.isDown('control')){
 
-            if(profile && profile_point && !profile[profile_point].is_nearest(free_point)){
+            if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point)){
               if(this instanceof Onlay){
                 this.move_nodes(noti_points.old, free_point);
               }
@@ -345,15 +345,15 @@ class GeneratrixElement extends BuilderElement {
       if(e.profile === this) {
         segments.push({profile, node: 'e'});
       }
-    }); 
+    });
     return segments;
   }
-  
+
   /**
    * Вспомогательная функция do_bind, привязка импостов
    * @param profile {ProfileItem} - к которому примыкает текущий импост
    * @param node {String} - b,e
-   * @return {boolean|Point|undefined}
+   * @return {boolean|paper.Point}
    */
   do_sub_bind(profile, node) {
     const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
