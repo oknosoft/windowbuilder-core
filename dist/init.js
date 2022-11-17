@@ -7020,12 +7020,6 @@ get amount_operation(){return this._getter('amount_operation')}
 set amount_operation(v){this._setter('amount_operation',v)}
 get amount_internal(){return this._getter('amount_internal')}
 set amount_internal(v){this._setter('amount_internal',v)}
-get accessory_characteristic(){return this._getter('accessory_characteristic')}
-set accessory_characteristic(v){this._setter('accessory_characteristic',v)}
-get sys_profile(){return this._getter('sys_profile')}
-set sys_profile(v){this._setter('sys_profile',v)}
-get sys_furn(){return this._getter('sys_furn')}
-set sys_furn(v){this._setter('sys_furn',v)}
 get phone(){return this._getter('phone')}
 set phone(v){this._setter('phone',v)}
 get delivery_area(){return this._getter('delivery_area')}
@@ -7036,6 +7030,10 @@ get coordinates(){return this._getter('coordinates')}
 set coordinates(v){this._setter('coordinates',v)}
 get address_fields(){return this._getter('address_fields')}
 set address_fields(v){this._setter('address_fields',v)}
+get sys_profile(){return this._getter('sys_profile')}
+set sys_profile(v){this._setter('sys_profile',v)}
+get sys_furn(){return this._getter('sys_furn')}
+set sys_furn(v){this._setter('sys_furn',v)}
 get difficult(){return this._getter('difficult')}
 set difficult(v){this._setter('difficult',v)}
 get vat_consider(){return this._getter('vat_consider')}
@@ -7054,10 +7052,12 @@ get category(){return this._getter('category')}
 set category(v){this._setter('category',v)}
 get sending_stage(){return this._getter('sending_stage')}
 set sending_stage(v){this._setter('sending_stage',v)}
-get approval(){return this._getter('approval')}
-set approval(v){this._setter('approval',v)}
+get basis(){return this._getter('basis')}
+set basis(v){this._setter('basis',v)}
 get lead(){return this._getter('lead')}
 set lead(v){this._setter('lead',v)}
+get approval(){return this._getter('approval')}
+set approval(v){this._setter('approval',v)}
 get production(){return this._getter_ts('production')}
 set production(v){this._setter_ts('production',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
@@ -7598,6 +7598,8 @@ get partner(){return this._getter('partner')}
 set partner(v){this._setter('partner',v)}
 get contract(){return this._getter('contract')}
 set contract(v){this._setter('contract',v)}
+get basis(){return this._getter('basis')}
+set basis(v){this._setter('basis',v)}
 get responsible(){return this._getter('responsible')}
 set responsible(v){this._setter('responsible',v)}
 get shipping_date(){return this._getter('shipping_date')}
