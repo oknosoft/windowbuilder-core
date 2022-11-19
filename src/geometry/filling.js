@@ -140,7 +140,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, layer, profiles, bounds, imposts, area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, imposts, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -151,7 +151,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       formula: this.formula(),
       width: bounds.width,
       height: bounds.height,
-      s: area,
+      s: form_area,
       is_rectangular: this.is_rectangular,
       is_sandwich: nom.elm_type == $p.enm.elm_types.Заполнение,
       thickness,
@@ -164,7 +164,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.y1 = (h - bounds.bottomLeft.y).round(3);
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.s = area;
+    _row.s = form_area;
     if(layer instanceof ContourNestedContent) {
       const {lbounds} = layer.layer;
       const path = this.path.clone({insert: false});
