@@ -590,7 +590,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
       const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
 
-      return project.load(ox, true, calc_order)
+      return project.load(ox, attr.builder_props || true, calc_order)
         .then(() => {
           project._attr._hide_errors = true;
           const olayer = project.getItem({cnstr: -leading_elm});
@@ -655,29 +655,34 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             });
           }
           parent.redraw();
-          parent.l_dimensions.redraw(true);
-          const gg = new editor.Group({
-            parent: parent.l_dimensions,
-            owner_bounds: parent.bounds,
-            dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
-          });
-          const l_right = new EditorInvisible.DimensionLine({
-            pos: 'right',
-            offset: -120,
-            parent: gg,
-            project,
-            contour: true,
-          });
-          l_right.redraw();
+          if(project.builder_props.auto_lines) {
+            parent.l_dimensions.redraw(true);
+            const gg = new editor.Group({
+              parent: parent.l_dimensions,
+              owner_bounds: parent.bounds,
+              dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
+            });
+            const l_right = new EditorInvisible.DimensionLine({
+              pos: 'right',
+              offset: -120,
+              parent: gg,
+              project,
+              contour: true,
+            });
+            l_right.redraw();
 
-          const l_bottom = new EditorInvisible.DimensionLine({
-            pos: 'bottom',
-            offset: -120,
-            parent: gg,
-            project,
-            contour: true,
-          });
-          l_bottom.redraw();
+            const l_bottom = new EditorInvisible.DimensionLine({
+              pos: 'bottom',
+              offset: -120,
+              parent: gg,
+              project,
+              contour: true,
+            });
+            l_bottom.redraw(); 
+          }
+          else {
+            parent.l_dimensions.visible = false;
+          }
           
           for(const gl of parent.fillings) {
             gl.visible = false;
