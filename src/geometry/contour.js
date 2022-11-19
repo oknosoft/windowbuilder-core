@@ -1506,7 +1506,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
         err = true;
       }
-
+      
       if(!inset.check_base_restrictions(inset, glass)) {
         glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
         err = true;
@@ -1609,7 +1609,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         // рисуем поперечину
         if (imposts) {
-
+          
           const add_impost = (y) => {
             const impost = Object.assign(new paper.Path({
               insert: false,
@@ -1627,7 +1627,7 @@ class Contour extends AbstractFilling(paper.Layer) {
               }
             }
           };
-
+          
           $p.cat.inserts.traverse_steps({
             imposts,
             bounds,
@@ -2114,13 +2114,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (!curr[n].is_nearest(elm[n], 0)) {
         const {isegments, rays} = elm;
         elm[n] = curr[n];
-
+        
         rays.clear(true);
         isegments.forEach(({profile, node}) => {
           profile.do_sub_bind(elm, node);
           profile.rays.clear();
         });
-
+        
         if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
@@ -2316,7 +2316,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(check_cnn) {
         check_cnn.cnn = cnn;
       }
-
+      
       return {
         profile,
         sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),

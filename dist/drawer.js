@@ -1453,7 +1453,7 @@ class BuilderElement extends paper.Group {
     const {clr_group} = _row.inset;
     let clr = _row.clr._manager.getter(v);
 
-    if(clr.empty()) {
+    if(clr.empty() || !clr_group.contains(clr)) {
       const {sys} = this.layer;
       const group = clr_group.empty() ? sys.clr_group : clr_group;
       let {default_clr} = sys;
@@ -2962,7 +2962,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         err = true;
       }
 
-      if(!inset.check_base_restrictions(inset, glass)) {
+            if(!inset.check_base_restrictions(inset, glass)) {
         glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
         err = true;
       }
@@ -3054,7 +3054,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         if (imposts) {
 
-          const add_impost = (y) => {
+                    const add_impost = (y) => {
             const impost = Object.assign(new paper.Path({
               insert: false,
               segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
@@ -3072,7 +3072,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             }
           };
 
-          $p.cat.inserts.traverse_steps({
+                    $p.cat.inserts.traverse_steps({
             imposts,
             bounds,
             add_impost,
@@ -3505,13 +3505,13 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {isegments, rays} = elm;
         elm[n] = curr[n];
 
-        rays.clear(true);
+                rays.clear(true);
         isegments.forEach(({profile, node}) => {
           profile.do_sub_bind(elm, node);
           profile.rays.clear();
         });
 
-        if (!noti.profiles.includes(elm)) {
+                if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
         if (!noti.points.some((point) => point.is_nearest(elm[n], 0))) {
@@ -3684,7 +3684,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         check_cnn.cnn = cnn;
       }
 
-      return {
+            return {
         profile,
         sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
         angle,
@@ -6458,7 +6458,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   save_coordinates() {
 
-    const {_row, project, layer, profiles, bounds, imposts, area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, imposts, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -6468,7 +6468,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       formula: this.formula(),
       width: bounds.width,
       height: bounds.height,
-      s: area,
+      s: form_area,
       is_rectangular: this.is_rectangular,
       is_sandwich: nom.elm_type == $p.enm.elm_types.Заполнение,
       thickness,
@@ -6480,7 +6480,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.y1 = (h - bounds.bottomLeft.y).round(3);
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.s = area;
+    _row.s = form_area;
     if(layer instanceof ContourNestedContent) {
       const {lbounds} = layer.layer;
       const path = this.path.clone({insert: false});
@@ -10037,6 +10037,7 @@ class ProfileItem extends GeneratrixElement {
       if(_attr && _attr._rays) {
         delete _attr.nom;
         _attr._rays.clear(ign_rays ? undefined : 'with_neighbor');
+        this.set_clr(_row.clr, true);
       }
 
       const rm = [];
@@ -15213,9 +15214,17 @@ EditorInvisible.Scheme = Scheme;
 
 
 class FakePrmElm {
-  constructor(project) {
-    this.project = project;
-    this.inserts = $p.cat.inserts.find_rows({insert_type: 'Изделие', available: true});
+  constructor(owner) {
+    const {inserts} = $p.cat; 
+    if(owner instanceof Contour) {
+      this.layer = owner;
+      this.project = owner.project;
+      this.inserts = inserts.find_rows({insert_type: 'Контур', available: true});
+    }
+    else {
+      this.project = owner;
+      this.inserts = inserts.find_rows({insert_type: 'Изделие', available: true});
+    }
   }
 
   get inset() {
@@ -15243,11 +15252,15 @@ class FakePrmElm {
   }
 
   get elm() {
-    return 0;
+    return this.layer ? -this.layer.cnstr : 0;
   }
 
   get _metadata() {
     return {fields: FakePrmElm.fields};
+  }
+
+    get info() {
+    return this.layer ? `слой ${this.layer.layer ? 'створок' : 'рам'} №${this.layer.cnstr}` : 'изделие';
   }
 
   region(row) {

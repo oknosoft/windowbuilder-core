@@ -782,7 +782,7 @@ class BuilderElement extends paper.Group {
     const {clr_group} = _row.inset;
     let clr = _row.clr._manager.getter(v);
 
-    if(clr.empty()) {
+    if(clr.empty() || !clr_group.contains(clr)) {
       const {sys} = this.layer;
       const group = clr_group.empty() ? sys.clr_group : clr_group;
       let {default_clr} = sys;

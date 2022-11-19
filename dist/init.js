@@ -5262,6 +5262,9 @@ set demand(v){this._setter_ts('demand',v)}
     if(calc_order.obj_delivery_state == 'Шаблон' && !this.base_block.empty()) {
       this.base_block = '';
     }
+    
+    // масса изделия
+    this.weight = this.elm_weight();
 
     // пересчитываем наименование
     const name = this.prod_name();
@@ -5856,7 +5859,7 @@ set demand(v){this._setter_ts('demand',v)}
           const {bounds} = ppath;
           if(imposts) {
             const add_impost = (y) => {
-
+              
               const impost = new paper.Path({
                 insert: false,
                 segments: [[bounds.left - 100, y], [bounds.right + 100, y]],

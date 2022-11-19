@@ -1806,6 +1806,7 @@ class ProfileItem extends GeneratrixElement {
       if(_attr && _attr._rays) {
         delete _attr.nom;
         _attr._rays.clear(ign_rays ? undefined : 'with_neighbor');
+        this.set_clr(_row.clr, true);
       }
 
       // если в новой вставке не разрешены текущие вставки в элемент - удаляем
