@@ -2144,12 +2144,14 @@ get nom_kind(){return this._getter('nom_kind')}
 set nom_kind(v){this._setter('nom_kind',v)}
 get nom_group(){return this._getter('nom_group')}
 set nom_group(v){this._setter('nom_group',v)}
+get price_group(){return this._getter('price_group')}
+set price_group(v){this._setter('price_group',v)}
+get production_kind(){return this._getter('production_kind')}
+set production_kind(v){this._setter('production_kind',v)}
 get vat_rate(){return this._getter('vat_rate')}
 set vat_rate(v){this._setter('vat_rate',v)}
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
-get price_group(){return this._getter('price_group')}
-set price_group(v){this._setter('price_group',v)}
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
 get len(){return this._getter('len')}
@@ -2816,11 +2818,15 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get is_main_elm(){return this._getter('is_main_elm')}
 set is_main_elm(v){this._setter('is_main_elm',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 }
 $p.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
 class CatInsertsInsertsRow extends TabularSectionRow{
 get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
+get key(){return this._getter('key')}
+set key(v){this._setter('key',v)}
 get by_default(){return this._getter('by_default')}
 set by_default(v){this._setter('by_default',v)}
 }
@@ -3754,6 +3760,8 @@ get contour_number(){return this._getter('contour_number')}
 set contour_number(v){this._setter('contour_number',v)}
 get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 }
 $p.CatCnnsSpecificationRow = CatCnnsSpecificationRow;
 class CatCnnsCnn_elmntsRow extends TabularSectionRow{
@@ -4196,6 +4204,8 @@ get is_procedure_row(){return this._getter('is_procedure_row')}
 set is_procedure_row(v){this._setter('is_procedure_row',v)}
 get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 }
 $p.CatFurnsSpecificationRow = CatFurnsSpecificationRow;
 class CatFurnsSpecification_restrictionsRow extends TabularSectionRow{
@@ -6267,6 +6277,8 @@ get amount(){return this._getter('amount')}
 set amount(v){this._setter('amount',v)}
 get amount_marged(){return this._getter('amount_marged')}
 set amount_marged(v){this._setter('amount_marged',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 get origin(){return this._getter('origin')}
 set origin(v){this._setter('origin',v)}
 get specify(){return this._getter('specify')}
@@ -6582,20 +6594,6 @@ set kind(v){this._setter('kind',v)}
 }
 $p.CatWork_centersWork_center_kindsRow = CatWork_centersWork_center_kindsRow;
 $p.cat.create('work_centers');
-class CatNonstandard_attributes extends CatObj{
-get crooked(){return this._getter('crooked')}
-set crooked(v){this._setter('crooked',v)}
-get colored(){return this._getter('colored')}
-set colored(v){this._setter('colored',v)}
-get lay(){return this._getter('lay')}
-set lay(v){this._setter('lay',v)}
-get made_to_order(){return this._getter('made_to_order')}
-set made_to_order(v){this._setter('made_to_order',v)}
-get packing(){return this._getter('packing')}
-set packing(v){this._setter('packing',v)}
-}
-$p.CatNonstandard_attributes = CatNonstandard_attributes;
-$p.cat.create('nonstandard_attributes');
 class CatDelivery_directions extends CatObj{
 get composition(){return this._getter_ts('composition')}
 set composition(v){this._setter_ts('composition',v)}
@@ -6733,6 +6731,21 @@ set value(v){this._setter('value',v)}
 }
 $p.CatCharges_discountsPrice_groupsRow = CatCharges_discountsPrice_groupsRow;
 $p.cat.create('charges_discounts');
+class CatProduction_kinds extends CatObj{
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
+get stages(){return this._getter_ts('stages')}
+set stages(v){this._setter_ts('stages',v)}
+}
+$p.CatProduction_kinds = CatProduction_kinds;
+class CatProduction_kindsStagesRow extends TabularSectionRow{
+get sorting(){return this._getter('sorting')}
+set sorting(v){this._setter('sorting',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+}
+$p.CatProduction_kindsStagesRow = CatProduction_kindsStagesRow;
+$p.cat.create('production_kinds');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
