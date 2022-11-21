@@ -69,7 +69,7 @@ class BuilderElement extends paper.Group {
     }
 
     if(this._row.elm_type.empty() && !this.inset.empty()){
-      this._row.elm_type = this.nom.elm_type;
+      this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
     }
 
     this.project.register_change();

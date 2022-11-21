@@ -779,7 +779,7 @@ const AbstractFilling = (superclass) => class extends superclass {
   }
 
   get contours() {
-    return this.children.filter((elm) => elm instanceof Contour);
+    return this.children.filter((elm) => (elm instanceof Contour) && !(elm instanceof ContourTearing));
   }
 
   get skeleton() {
@@ -854,7 +854,7 @@ class BuilderElement extends paper.Group {
     }
 
     if(this._row.elm_type.empty() && !this.inset.empty()){
-      this._row.elm_type = this.nom.elm_type;
+      this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
     }
 
     this.project.register_change();
@@ -1938,7 +1938,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     const ox = attr.ox || project.ox;
     this.prms = new BuilderPrms({layer: this});
-    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
+    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});
 
     project.l_connective.bringToFront();
 
@@ -2033,6 +2033,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     else if(kind === 3) {
       Constructor = ContourParent;
+    }
+    else if(kind === 4) {
+      Constructor = ContourTearing;
     }
     else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
       Constructor = ContourNestedContent;
@@ -2235,6 +2238,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
+      if(elm instanceof ContourTearing) {
+        return false;
+      }
       if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {
         if (hide) {
           elm.visible = false;
@@ -2563,12 +2569,16 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   move(delta) {
-    const {contours, profiles, project} = this;
+    const {contours, tearings, profiles, project} = this;
     const crays = (p) => p.rays.clear();
     this.translate(delta);
-    contours.forEach((elm) => elm.profiles.forEach(crays));
+    contours.concat(tearings).forEach((contour) => contour.profiles.forEach(crays));
     profiles.forEach(crays);
     project.register_change();
+  }
+
+    get tearings() {
+    return this.children.filter((item) => item instanceof ContourTearing);
   }
 
   get nodes() {
@@ -3773,7 +3783,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this.draw_opening();
 
-    for(const elm of this.contours) {
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
     }
 
@@ -4837,6 +4847,42 @@ class ContourParent extends Contour {
 }
 
 EditorInvisible.ContourParent = ContourParent;
+
+
+class ContourTearing extends Contour {
+
+  get ProfileConstructor() {
+    return ProfileTearing;
+  }
+
+  get path() {
+    return this.bounds;
+  }
+
+  set path(attr) {
+
+      }
+
+  get profiles() {
+    return this.children.filter((elm) => elm instanceof ProfileTearing);
+  }
+
+  initialize({inset, clr, path, parent}) {
+    this.dop = {parent: parent.elm};
+    const proto = {elm_type: $p.enm.elm_types.tearing, inset, clr};
+    for(const curr of path.curves) {
+      const profile = new ProfileTearing({
+        generatrix: new paper.Path({segments: [curr.segment1, curr.segment2]}),
+        proto,
+        parent: this,
+      });
+      profile.elm;
+    }
+  }
+
+  }
+
+EditorInvisible.ContourTearing = ContourTearing;
 
 
 
@@ -6428,12 +6474,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       parent: this.elm,
       elm_type: elm_types.layout
     }, (row) => new Onlay({row, parent: this}));
-
-    _row._owner.find_rows({
-      cnstr: this.layer.cnstr,
-      parent: this.elm,
-      elm_type: elm_types.tearing
-    }, (row) => new TearingGroup({row, parent: this, inset: row.inset}));
 
     if (attr.proto) {
       const {glass_specification, _data} = this.ox;
@@ -9203,6 +9243,38 @@ class ProfileItem extends GeneratrixElement {
 
   }
 
+  get pos() {
+    const {top, bottom, left, right} = this.layer.profiles_by_side();
+    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
+    if(top === this) {
+      return Верх;
+    }
+    if(bottom === this) {
+      return Низ;
+    }
+    if(left === this) {
+      return Лев;
+    }
+    if(right === this) {
+      return Прав;
+    }
+    const {x1, x2, y1, y2} = this;
+    const delta = 60;
+    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+      return Верх;
+    }
+    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+      return Низ;
+    }
+    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+      return Лев;
+    }
+    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+      return Прав;
+    }
+    return Центр;
+  }
+
   get gb() {
     return this.gn('b');
   }
@@ -11318,38 +11390,6 @@ class Profile extends ProfileItem {
     return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
   }
 
-  get pos() {
-    const {top, bottom, left, right} = this.layer.profiles_by_side();
-    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
-    if(top === this) {
-      return Верх;
-    }
-    if(bottom === this) {
-      return Низ;
-    }
-    if(left === this) {
-      return Лев;
-    }
-    if(right === this) {
-      return Прав;
-    }
-    const {x1, x2, y1, y2} = this;
-    const delta = 60;
-    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
-      return Верх;
-    }
-    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
-      return Низ;
-    }
-    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
-      return Лев;
-    }
-    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
-      return Прав;
-    }
-    return Центр;
-  }
-
   nearest(ign_cnn) {
 
     const {b, e, _attr, layer, project} = this;
@@ -13450,10 +13490,46 @@ class ProfileParent extends Profile {
 EditorInvisible.ProfileParent = ProfileParent;
 
 
-class Tearing extends ProfileItem {
+class ProfileTearing extends ProfileItem {
+
+  constructor(attr) {
+
+    super(attr);
+
+    if(this.parent) {
+      const {project: {_scope}, observer} = this;
+
+      this.observer = observer.bind(this);
+      _scope.eve.on(consts.move_points, this.observer);
+    }
+  }
+
+  observer(an) {
+    const {layer} = this;
+    if(an?.profiles?.some?.((elm) => elm.layer === layer)) {
+      super.observer(an);
+      this._attr._corns.length = 0;
+    }
+  }
 
   get elm_type() {
     return $p.enm.elm_types.tearing;
+  }
+
+  get info() {
+    return `разрыв ${super.info}`;
+  }
+
+  cnn_point(node, point) {
+    return Profile.prototype.cnn_point.call(this, node, point);
+  }
+
+  joined_imposts() {
+    return {inner: [], outer: []};
+  }
+
+  nearest() {
+    return null;
   }
 
   save_coordinates() {
@@ -13462,47 +13538,7 @@ class Tearing extends ProfileItem {
   }
 }
 
-EditorInvisible.Tearing = Tearing;
-
-class TearingGroup extends BuilderElement {
-
-    get profiles() {
-    return this.children.filter((v) => v instanceof Tearing);
-  }
-
-  set_inset(v) {
-    const {_row, profiles} = this;
-    _row.inset = v;
-    for(const profile of profiles) {
-      profile.inset = _row.inset; 
-    }
-  }
-
-  get elm_type() {
-    return $p.enm.elm_types.tearing;
-  }
-
-  save_coordinates() {
-    const {_row, project, parent, layer, bounds, area, ox: {cnn_elmnts: cnns}} = this;
-    const h = project.bounds.height + project.bounds.y;
-
-    _row.x1 = (bounds.bottomLeft.x - project.bounds.x).round(3);
-    _row.y1 = (h - bounds.bottomLeft.y).round(3);
-    _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
-    _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.s = area;
-    _row.elm_type = this.elm_type;
-    _row.parent = parent.elm;
-  }
-
-
-  static create({parent, inset, point}) {
-    const group = new TearingGroup({parent, inset});
-
-      }
-}
-
-EditorInvisible.TearingGroup = TearingGroup;
+EditorInvisible.ProfileTearing = ProfileTearing;
 
 
 
@@ -17388,15 +17424,15 @@ $p.spec_building = new SpecBuilding($p);
 
 
 
-(function(_mgr){
+(function(mgr){
 
 	const cache = {};
 
-	_mgr.__define({
+	mgr.__define({
 
 		profiles: {
 			get(){
-				return cache.profiles || (cache.profiles = [_mgr.rama, _mgr.flap, _mgr.impost, _mgr.shtulp]);
+				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing]);
 			}
 		},
 
@@ -17404,39 +17440,40 @@ $p.spec_building = new SpecBuilding($p);
 			get(){
 				return cache.profile_items
 					|| ( cache.profile_items = [
-						_mgr.Рама,
-						_mgr.Створка,
-						_mgr.Импост,
-						_mgr.Штульп,
-						_mgr.Добор,
-						_mgr.Соединитель,
-						_mgr.Раскладка,
-            _mgr.Связка,
+						mgr.Рама,
+						mgr.Створка,
+						mgr.Импост,
+						mgr.Штульп,
+						mgr.Добор,
+						mgr.Соединитель,
+						mgr.Раскладка,
+            mgr.Связка,
+            mgr.Разрыв,
 					] );
 			}
 		},
 
 		rama_impost: {
 			get(){
-				return cache.rama_impost || (cache.rama_impost = [_mgr.rama, _mgr.impost, _mgr.shtulp]);
+				return cache.rama_impost || (cache.rama_impost = [mgr.rama, mgr.impost, mgr.shtulp]);
 			}
 		},
 
 		impost_lay: {
 			get(){
-        return cache.impost_lay || (cache.impost_lay = [_mgr.Импост, _mgr.Раскладка]);
+        return cache.impost_lay || (cache.impost_lay = [mgr.Импост, mgr.Раскладка]);
 			}
 		},
 
 		stvs: {
 			get(){
-        return cache.stvs || (cache.stvs = [_mgr.Створка]);
+        return cache.stvs || (cache.stvs = [mgr.Створка]);
 			}
 		},
 
 		glasses: {
 			get(){
-        return cache.glasses || (cache.glasses = [_mgr.Стекло, _mgr.Заполнение]);
+        return cache.glasses || (cache.glasses = [mgr.Стекло, mgr.Заполнение]);
 			}
 		}
 

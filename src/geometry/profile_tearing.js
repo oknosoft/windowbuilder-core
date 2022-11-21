@@ -12,39 +12,27 @@
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
  * @extends ProfileItem
  */
-class Tearing extends ProfileItem {
+class ProfileTearing extends ProfileItem {
 
-  /**
-   * Возвращает тип элемента (разрыв заполнения)
-   * @type EnmElm_types
-   */
-  get elm_type() {
-    return $p.enm.elm_types.tearing;
+  /** @inheritdoc */
+  constructor(attr) {
+
+    super(attr);
+
+    if(this.parent) {
+      const {project: {_scope}, observer} = this;
+
+      // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
+      this.observer = observer.bind(this);
+      _scope.eve.on(consts.move_points, this.observer);
+    }
   }
 
-  save_coordinates() {
-    super.save_coordinates();
-    this._row.parent = this.parent.elm;
-  }
-}
-
-EditorInvisible.Tearing = Tearing;
-
-/**
- * @summary Область разрыва заполнения
- * @desc В ней живут профили разрыва (образуют замкнутую фигуру) и вложенное заполнение
- */
-class TearingGroup extends BuilderElement {
-  
-  get profiles() {
-    return this.children.filter((v) => v instanceof Tearing);
-  }
-
-  set_inset(v) {
-    const {_row, profiles} = this;
-    _row.inset = v;
-    for(const profile of profiles) {
-      profile.inset = _row.inset; 
+  observer(an) {
+    const {layer} = this;
+    if(an?.profiles?.some?.((elm) => elm.layer === layer)) {
+      super.observer(an);
+      this._attr._corns.length = 0;
     }
   }
 
@@ -56,30 +44,30 @@ class TearingGroup extends BuilderElement {
     return $p.enm.elm_types.tearing;
   }
 
-  save_coordinates() {
-    const {_row, project, parent, layer, bounds, area, ox: {cnn_elmnts: cnns}} = this;
-    const h = project.bounds.height + project.bounds.y;
-
-    _row.x1 = (bounds.bottomLeft.x - project.bounds.x).round(3);
-    _row.y1 = (h - bounds.bottomLeft.y).round(3);
-    _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
-    _row.y2 = (h - bounds.topRight.y).round(3);
-    _row.s = area;
-    _row.elm_type = this.elm_type;
-    _row.parent = parent.elm;
+  get info() {
+    return `разрыв ${super.info}`;
   }
-  
+
+  cnn_point(node, point) {
+    return Profile.prototype.cnn_point.call(this, node, point);
+  }
+
+  joined_imposts() {
+    return {inner: [], outer: []};
+  }
 
   /**
-   * 
-   * @param {Filling} parent - родительское заполнение
-   * @param {CatInserts} inset - вставка профиля разрыва
-   * @param {paper.Point} point - точка, в которой будет размещён разрыв
+   * У разрыва не бывает внешних профилей
+   * @return {null}
    */
-  static create({parent, inset, point}) {
-    const group = new TearingGroup({parent, inset});
-    
+  nearest() {
+    return null;
+  }
+
+  save_coordinates() {
+    super.save_coordinates();
+    this._row.parent = this.parent.elm;
   }
 }
 
-EditorInvisible.TearingGroup = TearingGroup;
+EditorInvisible.ProfileTearing = ProfileTearing;

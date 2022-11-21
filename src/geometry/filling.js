@@ -106,13 +106,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       elm_type: elm_types.layout
     }, (row) => new Onlay({row, parent: this}));
 
-    // разрывы текущего заполнения
-    _row._owner.find_rows({
-      cnstr: this.layer.cnstr,
-      parent: this.elm,
-      elm_type: elm_types.tearing
-    }, (row) => new TearingGroup({row, parent: this, inset: row.inset}));
-
     // спецификация стеклопакета прототипа
     if (attr.proto) {
       const {glass_specification, _data} = this.ox;

@@ -124,7 +124,7 @@ const AbstractFilling = (superclass) => class extends superclass {
    * @type Array.<Contour>
    */
   get contours() {
-    return this.children.filter((elm) => elm instanceof Contour);
+    return this.children.filter((elm) => (elm instanceof Contour) && !(elm instanceof ContourTearing));
   }
 
   get skeleton() {

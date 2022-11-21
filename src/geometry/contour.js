@@ -257,7 +257,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // добавляем элементы контура
     const ox = attr.ox || project.ox;
     this.prms = new BuilderPrms({layer: this});
-    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr});
+    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});
 
     project.l_connective.bringToFront();
 
@@ -377,6 +377,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     else if(kind === 3) {
       Constructor = ContourParent;
+    }
+    else if(kind === 4) {
+      Constructor = ContourTearing;
     }
     else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
       Constructor = ContourNestedContent;
@@ -645,6 +648,9 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
+      if(elm instanceof ContourTearing) {
+        return false;
+      }
       if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {
         if (hide) {
           elm.visible = false;
@@ -1025,12 +1031,16 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   move(delta) {
-    const {contours, profiles, project} = this;
+    const {contours, tearings, profiles, project} = this;
     const crays = (p) => p.rays.clear();
     this.translate(delta);
-    contours.forEach((elm) => elm.profiles.forEach(crays));
+    contours.concat(tearings).forEach((contour) => contour.profiles.forEach(crays));
     profiles.forEach(crays);
     project.register_change();
+  }
+  
+  get tearings() {
+    return this.children.filter((item) => item instanceof ContourTearing);
   }
 
   /**
@@ -2442,7 +2452,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.draw_opening();
 
     // перерисовываем вложенные контуры
-    for(const elm of this.contours) {
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
     }
 
