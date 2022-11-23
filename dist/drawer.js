@@ -4874,7 +4874,7 @@ class ContourTearing extends Contour {
     const {left, bottom} = this.profiles_by_side();
     return `Разрыв №${this.cnstr} ` +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()} ` : '') +
-      (left ? `X=${Math.min(left.x1, left.x2)} Y=${bottom.y1, bottom.y2}` : ``);
+      (left ? `X=${Math.min(left.x1, left.x2).toFixed()} Y=${Math.min(bottom.y1, bottom.y2).toFixed()}` : ``);
   }
 
   initialize({inset, clr, path, parent}) {
