@@ -4867,6 +4867,16 @@ class ContourTearing extends Contour {
     return this.children.filter((elm) => elm instanceof ProfileTearing);
   }
 
+  presentation(bounds) {
+    if(!bounds){
+      bounds = this.bounds;
+    }
+    const {left, bottom} = this.profiles_by_side();
+    return `Разрыв №${this.cnstr} ` +
+      (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()} ` : '') +
+      (left ? `X=${Math.min(left.x1, left.x2)} Y=${bottom.y1, bottom.y2}` : ``);
+  }
+
   initialize({inset, clr, path, parent}) {
     this.dop = {parent: parent.elm};
     const proto = {elm_type: $p.enm.elm_types.tearing, inset, clr};

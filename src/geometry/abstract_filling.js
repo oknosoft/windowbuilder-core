@@ -54,8 +54,8 @@ const AbstractFilling = (superclass) => class extends superclass {
    * Возвращает структуру профилей по сторонам
    * @memberOf AbstractFilling
    * @instance
-   * @param side
-   * @param profiles
+   * @param {String} [side]
+   * @param {Array.<ProfileItem>} [profiles]
    * @return {Object}
    */
   profiles_by_side(side, profiles) {
