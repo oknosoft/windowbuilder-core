@@ -1068,10 +1068,9 @@ class ProductsBuilding {
 
     // если алгоритм = характеристика по цвету
     if(row_base?.algorithm === cx_clr) {
-      const {ref} = properties.predefined('clr_elm');
-      const clr = row_spec.clr.ref;
+      const clr = row_base?._clr || row_spec.clr;
       // перебираем характеристики текущей номенклатуры
-      characteristics.find_rows({owner: row_spec.nom, clr: row_spec.clr}, (cx) => {
+      characteristics.find_rows({owner: row_spec.nom, clr}, (cx) => {
         row_spec.characteristic = cx;
         return false;
       });

@@ -592,7 +592,7 @@ class Scheme extends paper.Project {
 
               (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
-        });
+        }, 20);
       })
         .then(() => {
           // при необходимости, перезаполним параметры изделия и фурнитуры

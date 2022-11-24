@@ -13996,7 +13996,7 @@ class Scheme extends paper.Project {
 
               (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
-        });
+        }, 20);
       })
         .then(() => {
           if(_scheme.ox._data.refill_props) {
@@ -17015,9 +17015,8 @@ class ProductsBuilding {
     }
 
     if(row_base?.algorithm === cx_clr) {
-      const {ref} = properties.predefined('clr_elm');
-      const clr = row_spec.clr.ref;
-      characteristics.find_rows({owner: row_spec.nom, clr: row_spec.clr}, (cx) => {
+      const clr = row_base?._clr || row_spec.clr;
+      characteristics.find_rows({owner: row_spec.nom, clr}, (cx) => {
         row_spec.characteristic = cx;
         return false;
       });
