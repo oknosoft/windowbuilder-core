@@ -11,12 +11,17 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     }
   }
 
+  /**
+   * Загрузка из сырых данных для динсписка
+   * @param {Object} [force]
+   * @return {Promise<void>|*}
+   */
   direct_load(force) {
     if(this._direct_loaded && !force) {
       return Promise.resolve();
     }
 
-    const {adapters: {pouch}, utils: {moment}, ui} = this._owner.$p;
+    const {adapters: {pouch}, utils: {moment}, ui} = $p;
     const selector = force && force.selector ?
       force.selector :
       {
@@ -47,7 +52,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
    * @return {Promise<DocCalc_order>}
    */
   async clone(src) {
-    const {utils, cat} = this._owner.$p;
+    const {utils, cat} = $p;
     if(utils.is_guid(src)) {
       src = await this.get(src, 'promise');
     }

@@ -532,6 +532,36 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  accessories(mode='create', ox) {
+    const {cat: {characteristics}, job_prm: {nom}} = $p;
+    const {production} = this;
+    let crow = production.find({nom: nom.accessories});
+    if(mode === 'clear') {
+      if(crow?.characteristic && ox) {
+        crow.characteristic.specification.clear({specify: ox});
+      }
+      return crow?.characteristic;
+    }
+
+    let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
+    if(!cx) {
+      cx = characteristics.create({
+        calc_order: this,
+        owner: nom.accessories,
+      }, false, true);
+    }
+    if(!crow) {
+      crow = production.add({
+        nom: nom.accessories,
+        characteristic: cx,
+        unit: nom.accessories.storage_unit,
+        qty: 1,
+        quantity: 1,
+      });
+    }
+    return cx;
+  }
+
   // удаление строки
   del_row(row) {
     if(row instanceof $p.DocCalc_orderProductionRow) {
@@ -555,10 +585,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           });
           return false;
         }
-
-        // циклическое удаление ведомых при удалении основного изделия
+        
         const {_loading} = _data;
         _data._loading = true;
+        
+        // циклическое удаление ведомых при удалении основного изделия
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
         });
@@ -569,6 +600,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
+        
+        // чистим возможные строки аксессуаров
+        this.accessories('clear', characteristic);
+        
         _data._loading = _loading;
       }
     }

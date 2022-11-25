@@ -16834,6 +16834,7 @@ class ProductsBuilding {
       params = ox.params;
 
       spec.clear();
+      ox.calc_order.accessories('clear', ox);
 
       ox._order_rows = [];
 
@@ -16979,14 +16980,6 @@ class ProductsBuilding {
   }
 
   static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl}) {
-    if(!row_spec) {
-      row_spec = spec.add();
-    }
-    row_spec.nom = nom || row_base.nom;
-    if(row_base?.relm) {
-      elm = row_base.relm;
-    }
-
     const {
       utils: {blank},
       cat: {clrs, characteristics},
@@ -16994,9 +16987,24 @@ class ProductsBuilding {
         predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
         plan_detailing: {algorithm},
+        specification_order_row_types: {kit}
       },
       cch: {properties},
     } = $p;
+
+        if(!row_spec) {
+      if(row_base?.is_order_row === kit) {
+        specify = ox || spec._owner;
+        row_spec = specify.calc_order.accessories().specification.add();
+      }
+      else {
+        row_spec = spec.add();
+      }      
+    }
+    row_spec.nom = nom || row_base.nom;
+    if(row_base?.relm) {
+      elm = row_base.relm;
+    }
 
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;
@@ -17272,6 +17280,10 @@ class SpecBuilding {
       ax.push(cx);
       order_rows.set(cx, row);
     });
+    const kit = calc_order.accessories('clear');
+    if(kit) {
+      order_rows.set(kit, kit.calc_order_row);
+    }
     if(order_rows.size){
       attr.order_rows = order_rows;
     }
@@ -20390,6 +20402,36 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   }
 
+  accessories(mode='create', ox) {
+    const {cat: {characteristics}, job_prm: {nom}} = $p;
+    const {production} = this;
+    let crow = production.find({nom: nom.accessories});
+    if(mode === 'clear') {
+      if(crow?.characteristic && ox) {
+        crow.characteristic.specification.clear({specify: ox});
+      }
+      return crow?.characteristic;
+    }
+
+    let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
+    if(!cx) {
+      cx = characteristics.create({
+        calc_order: this,
+        owner: nom.accessories,
+      }, false, true);
+    }
+    if(!crow) {
+      crow = production.add({
+        nom: nom.accessories,
+        characteristic: cx,
+        unit: nom.accessories.storage_unit,
+        qty: 1,
+        quantity: 1,
+      });
+    }
+    return cx;
+  }
+
   del_row(row) {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {characteristic} = row;
@@ -20410,8 +20452,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           return false;
         }
 
-        const {_loading} = _data;
+                const {_loading} = _data;
         _data._loading = true;
+
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
         });
@@ -20422,7 +20465,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
-        _data._loading = _loading;
+
+        this.accessories('clear', characteristic);
+
+                _data._loading = _loading;
       }
     }
     return this;

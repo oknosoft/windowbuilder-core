@@ -89,6 +89,11 @@ class SpecBuilding {
       ax.push(cx);
       order_rows.set(cx, row);
     });
+    // если существует строка аксессуаров, добавляем её в order_rows
+    const kit = calc_order.accessories('clear');
+    if(kit) {
+      order_rows.set(kit, kit.calc_order_row);
+    }
     if(order_rows.size){
       attr.order_rows = order_rows;
     }

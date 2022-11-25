@@ -844,8 +844,9 @@ class ProductsBuilding {
       glass_specification = ox.glass_specification;
       params = ox.params;
 
-      // чистим спецификацию
+      // чистим спецификацию и возможные аксессуары
       spec.clear();
+      ox.calc_order.accessories('clear', ox);
 
       // массив продукций к добавлению в заказ
       ox._order_rows = [];
@@ -1030,15 +1031,6 @@ class ProductsBuilding {
    * @return {TabularSectionRow.cat.characteristics.specification}
    */
   static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl}) {
-    if(!row_spec) {
-      // row_spec = this.ox.specification.add();
-      row_spec = spec.add();
-    }
-    row_spec.nom = nom || row_base.nom;
-    if(row_base?.relm) {
-      elm = row_base.relm;
-    }
-
     const {
       utils: {blank},
       cat: {clrs, characteristics},
@@ -1046,9 +1038,24 @@ class ProductsBuilding {
         predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
         plan_detailing: {algorithm},
+        specification_order_row_types: {kit}
       },
       cch: {properties},
     } = $p;
+    
+    if(!row_spec) {
+      if(row_base?.is_order_row === kit) {
+        specify = ox || spec._owner;
+        row_spec = specify.calc_order.accessories().specification.add();
+      }
+      else {
+        row_spec = spec.add();
+      }      
+    }
+    row_spec.nom = nom || row_base.nom;
+    if(row_base?.relm) {
+      elm = row_base.relm;
+    }
 
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;

@@ -2405,6 +2405,7 @@ set colors(v){this._setter_ts('colors',v)}
       }
 
       // если для номенклатуры существует структура цен, ищем подходящую
+      attr.pdate = start_date;
       if(_price){
         if(attr.clr && attr.characteristic == utils.blank.guid) {
           let tmp = 0;
@@ -2419,7 +2420,11 @@ set colors(v){this._setter_ts('colors',v)}
                       tmp = tprice;
                       price = row.price;
                       currency = row.currency;
+                      return true;
                     }
+                  }
+                  else if(row.date > attr.pdate) {
+                    attr.pdate = row.date;
                   }
                 });
               }
@@ -5474,7 +5479,11 @@ set demand(v){this._setter_ts('demand',v)}
         }
 
         if(this.s) {
-          name += '/S:' + this.s.toFixed(3);
+          name += '/s:' + this.s.toFixed(3);
+        }
+        
+        if(this.weight && !this.s){
+          name += `/m:${this.weight.toFixed(3)}kg`;
         }
 
         // подмешиваем значения параметров
@@ -7240,12 +7249,17 @@ class DocCalc_orderManager extends DocManager {
     }
   }
 
+  /**
+   * Загрузка из сырых данных для динсписка
+   * @param {Object} [force]
+   * @return {Promise<void>|*}
+   */
   direct_load(force) {
     if(this._direct_loaded && !force) {
       return Promise.resolve();
     }
 
-    const {adapters: {pouch}, utils: {moment}, ui} = this._owner.$p;
+    const {adapters: {pouch}, utils: {moment}, ui} = $p;
     const selector = force && force.selector ?
       force.selector :
       {
@@ -7276,7 +7290,7 @@ class DocCalc_orderManager extends DocManager {
    * @return {Promise<DocCalc_order>}
    */
   async clone(src) {
-    const {utils, cat} = this._owner.$p;
+    const {utils, cat} = $p;
     if(utils.is_guid(src)) {
       src = await this.get(src, 'promise');
     }
