@@ -122,7 +122,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
       this._setter('sys', v);
       const {sys, params} = this;
       const selection = {};
-      clrs.selection_exclude_service(this._meta.fields.clr, sys);
+      clrs.selection_exclude_service(this._meta.fields.clr, sys, this);
       this._meta.fields.clr.choice_params.forEach(({name, path}) => {
         selection[name] = path;
       });

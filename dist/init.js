@@ -521,7 +521,7 @@ set hide(v){this._setter_ts('hide',v)}
     };
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
-      let src = prm_row.origin;
+      let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
         src = plan_detailing.get();
       }
@@ -1876,22 +1876,6 @@ class CatBranchesManager extends CatManager {
 
 }
 $p.cat.create('branches', CatBranchesManager, false);
-class CatProperty_values extends CatObj{
-get heft(){return this._getter('heft')}
-set heft(v){this._setter('heft',v)}
-get css(){return this._getter('css')}
-set css(v){this._setter('css',v)}
-get captured(){return this._getter('captured')}
-set captured(v){this._setter('captured',v)}
-get editor(){return this._getter('editor')}
-set editor(v){this._setter('editor',v)}
-get owner(){return this._getter('owner')}
-set owner(v){this._setter('owner',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-}
-$p.CatProperty_values = CatProperty_values;
-$p.cat.create('property_values');
 class CatCurrencies extends CatObj{
 get name_full(){return this._getter('name_full')}
 set name_full(v){this._setter('name_full',v)}
@@ -2023,8 +2007,19 @@ get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
+get extra_fields(){return this._getter_ts('extra_fields')}
+set extra_fields(v){this._setter_ts('extra_fields',v)}
 }
 $p.CatContracts = CatContracts;
+class CatContractsExtra_fieldsRow extends TabularSectionRow{
+get property(){return this._getter('property')}
+set property(v){this._setter('property',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
+get txt_row(){return this._getter('txt_row')}
+set txt_row(v){this._setter('txt_row',v)}
+}
+$p.CatContractsExtra_fieldsRow = CatContractsExtra_fieldsRow;
 $p.cat.create('contracts');
 class CatNom_units extends CatObj{
 get qualifier_unit(){return this._getter('qualifier_unit')}
@@ -2042,6 +2037,22 @@ set owner(v){this._setter('owner',v)}
 }
 $p.CatNom_units = CatNom_units;
 $p.cat.create('nom_units');
+class CatProperty_values extends CatObj{
+get heft(){return this._getter('heft')}
+set heft(v){this._setter('heft',v)}
+get css(){return this._getter('css')}
+set css(v){this._setter('css',v)}
+get captured(){return this._getter('captured')}
+set captured(v){this._setter('captured',v)}
+get editor(){return this._getter('editor')}
+set editor(v){this._setter('editor',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+}
+$p.CatProperty_values = CatProperty_values;
+$p.cat.create('property_values');
 class CatMeta_ids extends CatObj{
 get full_moniker(){return this._getter('full_moniker')}
 set full_moniker(v){this._setter('full_moniker',v)}
@@ -2146,8 +2157,6 @@ get nom_group(){return this._getter('nom_group')}
 set nom_group(v){this._setter('nom_group',v)}
 get price_group(){return this._getter('price_group')}
 set price_group(v){this._setter('price_group',v)}
-get production_kind(){return this._getter('production_kind')}
-set production_kind(v){this._setter('production_kind',v)}
 get vat_rate(){return this._getter('vat_rate')}
 set vat_rate(v){this._setter('vat_rate',v)}
 get note(){return this._getter('note')}
@@ -2925,6 +2934,8 @@ get base_clr(){return this._getter('base_clr')}
 set base_clr(v){this._setter('base_clr',v)}
 get sketch_view(){return this._getter('sketch_view')}
 set sketch_view(v){this._setter('sketch_view',v)}
+get production_kind(){return this._getter('production_kind')}
+set production_kind(v){this._setter('production_kind',v)}
 get outline(){return this._getter('outline')}
 set outline(v){this._setter('outline',v)}
 get note(){return this._getter('note')}
@@ -2951,6 +2962,8 @@ get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
 get templates(){return this._getter_ts('templates')}
 set templates(v){this._setter_ts('templates',v)}
+get color_price_groups(){return this._getter_ts('color_price_groups')}
+set color_price_groups(v){this._setter_ts('color_price_groups',v)}
 
 
   /**
@@ -3037,6 +3050,22 @@ set templates(v){this._setter_ts('templates',v)}
       }
     }
     return list;
+  }
+
+  /**
+   * Ищет цветогруппу системы с учётом цвета основы
+   * @param {CatCharacteristics} ox
+   * @return {CatColor_price_groups}
+   */
+  find_group(ox) {
+    const {base_clr, clr_group, color_price_groups} = this;
+    if(!base_clr.empty()) {
+      const row = color_price_groups.find({base_clr: base_clr.extract_pvalue({ox, cnstr: 0})});
+      if(row) {
+        return row.clr_group;
+      }
+    }
+    return clr_group;
   }
 
   /**
@@ -3365,6 +3394,13 @@ get template(){return this._getter('template')}
 set template(v){this._setter('template',v)}
 }
 $p.CatProduction_paramsTemplatesRow = CatProduction_paramsTemplatesRow;
+class CatProduction_paramsColor_price_groupsRow extends TabularSectionRow{
+get base_clr(){return this._getter('base_clr')}
+set base_clr(v){this._setter('base_clr',v)}
+get clr_group(){return this._getter('clr_group')}
+set clr_group(v){this._setter('clr_group',v)}
+}
+$p.CatProduction_paramsColor_price_groupsRow = CatProduction_paramsColor_price_groupsRow;
 class CatProduction_paramsManager extends CatManager {
 
   /**
@@ -4649,7 +4685,7 @@ class CatClrsManager extends CatManager {
       }
 
       // фильтр доступных цветов системы или вставки
-      let clr_group = clrs.find_group(sys);
+      let clr_group = clrs.find_group(sys, project?.ox || project);
 
       mf.choice_params.push({
         name: 'ref',
@@ -4688,25 +4724,27 @@ class CatClrsManager extends CatManager {
    * @param sys
    * @return {CatColor_price_groups}
    */
-  find_group(sys) {
+  find_group(sys, ox) {
     const {BuilderElement, Filling} = $p.EditorInvisible;
     let clr_group;
     if(sys instanceof BuilderElement) {
       clr_group = sys.inset.clr_group;
       if(clr_group.empty() && !(sys instanceof Filling)) {
-        clr_group = sys.project._dp.sys.clr_group;
+        clr_group = sys.layer.sys.find_group(ox);
       }
     }
     else if(sys.hasOwnProperty('sys') && sys.profile && sys.profile.inset) {
-      const sclr_group = sys.sys.clr_group;
       const iclr_group = sys.profile.inset.clr_group;
-      clr_group = iclr_group.empty() ? sclr_group : iclr_group;
+      clr_group = iclr_group.empty() ? sys.sys.find_group(ox) : iclr_group;
+    }
+    else if(sys.sys && sys.sys.find_group) {
+      clr_group = sys.sys.find_group(ox);
     }
     else if(sys.sys && sys.sys.clr_group) {
       clr_group = sys.sys.clr_group;
     }
     else {
-      clr_group = sys.clr_group;
+      clr_group = sys.find_group ? sys.find_group(ox) : sys.clr_group;
     }
     return clr_group;
   }
@@ -6347,6 +6385,47 @@ set grouping(v){this._setter('grouping',v)}
 }
 $p.CatProject_categoriesStagesRow = CatProject_categoriesStagesRow;
 $p.cat.create('project_categories');
+class CatCharges_discounts extends CatObj{
+get price_type(){return this._getter('price_type')}
+set price_type(v){this._setter('price_type',v)}
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
+get application_joint(){return this._getter('application_joint')}
+set application_joint(v){this._setter('application_joint',v)}
+get application_mode(){return this._getter('application_mode')}
+set application_mode(v){this._setter('application_mode',v)}
+get predefined_name(){return this._getter('predefined_name')}
+set predefined_name(v){this._setter('predefined_name',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get periods(){return this._getter_ts('periods')}
+set periods(v){this._setter_ts('periods',v)}
+get keys(){return this._getter_ts('keys')}
+set keys(v){this._setter_ts('keys',v)}
+get price_groups(){return this._getter_ts('price_groups')}
+set price_groups(v){this._setter_ts('price_groups',v)}
+}
+$p.CatCharges_discounts = CatCharges_discounts;
+class CatCharges_discountsPeriodsRow extends TabularSectionRow{
+get start_date(){return this._getter('start_date')}
+set start_date(v){this._setter('start_date',v)}
+get expiration_date(){return this._getter('expiration_date')}
+set expiration_date(v){this._setter('expiration_date',v)}
+}
+$p.CatCharges_discountsPeriodsRow = CatCharges_discountsPeriodsRow;
+class CatCharges_discountsKeysRow extends TabularSectionRow{
+get condition(){return this._getter('condition')}
+set condition(v){this._setter('condition',v)}
+}
+$p.CatCharges_discountsKeysRow = CatCharges_discountsKeysRow;
+class CatCharges_discountsPrice_groupsRow extends TabularSectionRow{
+get price_group(){return this._getter('price_group')}
+set price_group(v){this._setter('price_group',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
+}
+$p.CatCharges_discountsPrice_groupsRow = CatCharges_discountsPrice_groupsRow;
+$p.cat.create('charges_discounts');
 class CatNom_groups extends CatObj{
 get vat_rate(){return this._getter('vat_rate')}
 set vat_rate(v){this._setter('vat_rate',v)}
@@ -6670,6 +6749,21 @@ set values(v){this._setter('values',v)}
 }
 $p.CatHttp_apisParamsRow = CatHttp_apisParamsRow;
 $p.cat.create('http_apis');
+class CatProduction_kinds extends CatObj{
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
+get stages(){return this._getter_ts('stages')}
+set stages(v){this._setter_ts('stages',v)}
+}
+$p.CatProduction_kinds = CatProduction_kinds;
+class CatProduction_kindsStagesRow extends TabularSectionRow{
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+}
+$p.CatProduction_kindsStagesRow = CatProduction_kindsStagesRow;
+$p.cat.create('production_kinds');
 class CatLead_src extends CatObj{
 get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
@@ -6690,62 +6784,6 @@ set dop(v){this._setter('dop',v)}
 }
 $p.CatLeads = CatLeads;
 $p.cat.create('leads');
-class CatCharges_discounts extends CatObj{
-get price_type(){return this._getter('price_type')}
-set price_type(v){this._setter('price_type',v)}
-get sorting_field(){return this._getter('sorting_field')}
-set sorting_field(v){this._setter('sorting_field',v)}
-get application_joint(){return this._getter('application_joint')}
-set application_joint(v){this._setter('application_joint',v)}
-get application_mode(){return this._getter('application_mode')}
-set application_mode(v){this._setter('application_mode',v)}
-get predefined_name(){return this._getter('predefined_name')}
-set predefined_name(v){this._setter('predefined_name',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get periods(){return this._getter_ts('periods')}
-set periods(v){this._setter_ts('periods',v)}
-get keys(){return this._getter_ts('keys')}
-set keys(v){this._setter_ts('keys',v)}
-get price_groups(){return this._getter_ts('price_groups')}
-set price_groups(v){this._setter_ts('price_groups',v)}
-}
-$p.CatCharges_discounts = CatCharges_discounts;
-class CatCharges_discountsPeriodsRow extends TabularSectionRow{
-get start_date(){return this._getter('start_date')}
-set start_date(v){this._setter('start_date',v)}
-get expiration_date(){return this._getter('expiration_date')}
-set expiration_date(v){this._setter('expiration_date',v)}
-}
-$p.CatCharges_discountsPeriodsRow = CatCharges_discountsPeriodsRow;
-class CatCharges_discountsKeysRow extends TabularSectionRow{
-get condition(){return this._getter('condition')}
-set condition(v){this._setter('condition',v)}
-}
-$p.CatCharges_discountsKeysRow = CatCharges_discountsKeysRow;
-class CatCharges_discountsPrice_groupsRow extends TabularSectionRow{
-get price_group(){return this._getter('price_group')}
-set price_group(v){this._setter('price_group',v)}
-get value(){return this._getter('value')}
-set value(v){this._setter('value',v)}
-}
-$p.CatCharges_discountsPrice_groupsRow = CatCharges_discountsPrice_groupsRow;
-$p.cat.create('charges_discounts');
-class CatProduction_kinds extends CatObj{
-get note(){return this._getter('note')}
-set note(v){this._setter('note',v)}
-get stages(){return this._getter_ts('stages')}
-set stages(v){this._setter_ts('stages',v)}
-}
-$p.CatProduction_kinds = CatProduction_kinds;
-class CatProduction_kindsStagesRow extends TabularSectionRow{
-get sorting(){return this._getter('sorting')}
-set sorting(v){this._setter('sorting',v)}
-get stage(){return this._getter('stage')}
-set stage(v){this._setter('stage',v)}
-}
-$p.CatProduction_kindsStagesRow = CatProduction_kindsStagesRow;
-$p.cat.create('production_kinds');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -7782,26 +7820,6 @@ set y(v){this._setter('y',v)}
 }
 $p.DpBuilder_coordinatesCoordinatesRow = DpBuilder_coordinatesCoordinatesRow;
 $p.dp.create('builder_coordinates');
-class DpBuilder_pen extends DataProcessorObj{
-get elm_type(){return this._getter('elm_type')}
-set elm_type(v){this._setter('elm_type',v)}
-get inset(){return this._getter('inset')}
-set inset(v){this._setter('inset',v)}
-get clr(){return $p.cat.clrs.getter(this._obj.clr)}
-set clr(v){this._setter('clr',v)}
-get bind_generatrix(){return this._getter('bind_generatrix')}
-set bind_generatrix(v){this._setter('bind_generatrix',v)}
-get bind_node(){return this._getter('bind_node')}
-set bind_node(v){this._setter('bind_node',v)}
-get bind_sys(){return this._getter('bind_sys')}
-set bind_sys(v){this._setter('bind_sys',v)}
-get grid(){return this._getter('grid')}
-set grid(v){this._setter('grid',v)}
-get region(){return this._getter('region')}
-set region(v){this._setter('region',v)}
-}
-$p.DpBuilder_pen = DpBuilder_pen;
-$p.dp.create('builder_pen');
 class DpBuilder_price extends DataProcessorObj{
 get nom(){return this._getter('nom')}
 set nom(v){this._setter('nom',v)}
@@ -8043,28 +8061,6 @@ set sys(v){this._setter('sys',v)}
 }
 $p.DpBuyers_orderSys_profileRow = DpBuyers_orderSys_profileRow;
 $p.dp.create('buyers_order');
-class DpBuilder_text extends DataProcessorObj{
-get text(){return this._getter('text')}
-set text(v){this._setter('text',v)}
-get font_family(){return this._getter('font_family')}
-set font_family(v){this._setter('font_family',v)}
-get bold(){return this._getter('bold')}
-set bold(v){this._setter('bold',v)}
-get font_size(){return this._getter('font_size')}
-set font_size(v){this._setter('font_size',v)}
-get angle(){return this._getter('angle')}
-set angle(v){this._setter('angle',v)}
-get align(){return this._getter('align')}
-set align(v){this._setter('align',v)}
-get clr(){return this._getter('clr')}
-set clr(v){this._setter('clr',v)}
-get x(){return this._getter('x')}
-set x(v){this._setter('x',v)}
-get y(){return this._getter('y')}
-set y(v){this._setter('y',v)}
-}
-$p.DpBuilder_text = DpBuilder_text;
-$p.dp.create('builder_text');
 class DpBuilder_lay_impost extends DataProcessorObj{
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
@@ -8108,6 +8104,48 @@ set changed(v){this._setter('changed',v)}
 }
 $p.DpBuilder_lay_impostSizesRow = DpBuilder_lay_impostSizesRow;
 $p.dp.create('builder_lay_impost');
+class DpBuilder_pen extends DataProcessorObj{
+get elm_type(){return this._getter('elm_type')}
+set elm_type(v){this._setter('elm_type',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
+get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+set clr(v){this._setter('clr',v)}
+get bind_generatrix(){return this._getter('bind_generatrix')}
+set bind_generatrix(v){this._setter('bind_generatrix',v)}
+get bind_node(){return this._getter('bind_node')}
+set bind_node(v){this._setter('bind_node',v)}
+get bind_sys(){return this._getter('bind_sys')}
+set bind_sys(v){this._setter('bind_sys',v)}
+get grid(){return this._getter('grid')}
+set grid(v){this._setter('grid',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+}
+$p.DpBuilder_pen = DpBuilder_pen;
+$p.dp.create('builder_pen');
+class DpBuilder_text extends DataProcessorObj{
+get text(){return this._getter('text')}
+set text(v){this._setter('text',v)}
+get font_family(){return this._getter('font_family')}
+set font_family(v){this._setter('font_family',v)}
+get bold(){return this._getter('bold')}
+set bold(v){this._setter('bold',v)}
+get font_size(){return this._getter('font_size')}
+set font_size(v){this._setter('font_size',v)}
+get angle(){return this._getter('angle')}
+set angle(v){this._setter('angle',v)}
+get align(){return this._getter('align')}
+set align(v){this._setter('align',v)}
+get clr(){return this._getter('clr')}
+set clr(v){this._setter('clr',v)}
+get x(){return this._getter('x')}
+set x(v){this._setter('x',v)}
+get y(){return this._getter('y')}
+set y(v){this._setter('y',v)}
+}
+$p.DpBuilder_text = DpBuilder_text;
+$p.dp.create('builder_text');
 class RepMaterials_demand extends DataProcessorObj{
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
@@ -8192,6 +8230,27 @@ set amount_marged(v){this._setter('amount_marged',v)}
 }
 $p.RepMaterials_demandSpecificationRow = RepMaterials_demandSpecificationRow;
 $p.rep.create('materials_demand');
+class RepFormulas_stat extends DataProcessorObj{
+get data(){return this._getter_ts('data')}
+set data(v){this._setter_ts('data',v)}
+}
+$p.RepFormulas_stat = RepFormulas_stat;
+class RepFormulas_statDataRow extends TabularSectionRow{
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
+get formula(){return this._getter('formula')}
+set formula(v){this._setter('formula',v)}
+get user(){return this._getter('user')}
+set user(v){this._setter('user',v)}
+get suffix(){return this._getter('suffix')}
+set suffix(v){this._setter('suffix',v)}
+get requests(){return this._getter('requests')}
+set requests(v){this._setter('requests',v)}
+get time(){return this._getter('time')}
+set time(v){this._setter('time',v)}
+}
+$p.RepFormulas_statDataRow = RepFormulas_statDataRow;
+$p.rep.create('formulas_stat');
 class RepCash extends DataProcessorObj{
 get data(){return this._getter_ts('data')}
 set data(v){this._setter_ts('data',v)}
@@ -8345,27 +8404,6 @@ set discount(v){this._setter('discount',v)}
 }
 $p.RepSellingDataRow = RepSellingDataRow;
 $p.rep.create('selling');
-class RepFormulas_stat extends DataProcessorObj{
-get data(){return this._getter_ts('data')}
-set data(v){this._setter_ts('data',v)}
-}
-$p.RepFormulas_stat = RepFormulas_stat;
-class RepFormulas_statDataRow extends TabularSectionRow{
-get date(){return this._getter('date')}
-set date(v){this._setter('date',v)}
-get formula(){return this._getter('formula')}
-set formula(v){this._setter('formula',v)}
-get user(){return this._getter('user')}
-set user(v){this._setter('user',v)}
-get suffix(){return this._getter('suffix')}
-set suffix(v){this._setter('suffix',v)}
-get requests(){return this._getter('requests')}
-set requests(v){this._setter('requests',v)}
-get time(){return this._getter('time')}
-set time(v){this._setter('time',v)}
-}
-$p.RepFormulas_statDataRow = RepFormulas_statDataRow;
-$p.rep.create('formulas_stat');
 
 /*
  * Подмешивается в конец init-файла

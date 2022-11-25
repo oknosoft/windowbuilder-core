@@ -225,7 +225,7 @@ exports.CchProperties = class CchProperties extends Object {
     };
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
-      let src = prm_row.origin;
+      let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
         src = plan_detailing.get();
       }
