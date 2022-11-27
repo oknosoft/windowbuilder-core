@@ -2112,7 +2112,8 @@ class ProfileItem extends GeneratrixElement {
           const delta = cnn_point.cnn.size(this);
           if(delta) {
             const pt = oinner.getNearestPoint(cnn_point.point);
-            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
+              .normalize(other instanceof ProfileItem ? -delta : delta);
             const tmp = oinner.clone({insert: false});
             tmp.translate(normal);
             oinner = tmp;

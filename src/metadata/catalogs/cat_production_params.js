@@ -389,6 +389,15 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
 exports.CatProduction_paramsManager = class CatProduction_paramsManager extends Object {
 
+  // после загрузки, установим признак dhtmlxro цветам основы
+  load_array(aattr, forse) {
+    for(const obj of super.load_array(aattr, forse)) {
+      if(!obj.base_clr.empty()) {
+        obj.base_clr.dhtmlxro = true;
+      }
+    }
+  }
+
   /**
    * возвращает массив доступных для данного свойства значений
    * @param prop {CatObj} - планвидовхарактеристик ссылка или объект

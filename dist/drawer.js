@@ -1589,8 +1589,17 @@ class BuilderElement extends paper.Group {
     }
   }
 
+    beforeRemove() {
+    return true;
+  }
+
   remove() {
-    this.detache_wnd && this.detache_wnd();
+
+        if(!this.beforeRemove()) {
+      return;
+    }
+
+        this.detache_wnd && this.detache_wnd();
 
     const {parent, project, _row, ox, elm, path} = this;
 
@@ -10351,7 +10360,8 @@ class ProfileItem extends GeneratrixElement {
           const delta = cnn_point.cnn.size(this);
           if(delta) {
             const pt = oinner.getNearestPoint(cnn_point.point);
-            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
+              .normalize(other instanceof ProfileItem ? -delta : delta);
             const tmp = oinner.clone({insert: false});
             tmp.translate(normal);
             oinner = tmp;
@@ -11496,6 +11506,18 @@ class Profile extends ProfileItem {
       first = second;
     }
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
+  }
+
+  beforeRemove() {
+    const {project} = this;
+    if(project?._attr && !project._attr._loading && (this.joined_imposts(true) || this.joined_nearests().length)) {
+      $p.ui?.dialogs?.alert?.({
+        title: `Профиль №${this.elm}`,
+        text: 'Удаление невозможно, есть примыкающие элементы',
+      });
+      return false;
+    }
+    return true;
   }
 
   joined_imposts(check_only) {

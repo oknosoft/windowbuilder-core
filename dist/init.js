@@ -3408,6 +3408,15 @@ set clr_group(v){this._setter('clr_group',v)}
 $p.CatProduction_paramsColor_price_groupsRow = CatProduction_paramsColor_price_groupsRow;
 class CatProduction_paramsManager extends CatManager {
 
+  // после загрузки, установим признак dhtmlxro цветам основы
+  load_array(aattr, forse) {
+    for(const obj of super.load_array(aattr, forse)) {
+      if(!obj.base_clr.empty()) {
+        obj.base_clr.dhtmlxro = true;
+      }
+    }
+  }
+
   /**
    * возвращает массив доступных для данного свойства значений
    * @param prop {CatObj} - планвидовхарактеристик ссылка или объект
