@@ -927,12 +927,21 @@ class BuilderElement extends paper.Group {
       return clr;
     }
   }
+  
+  beforeRemove() {
+    return true;
+  }
 
   /**
    * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
    */
   remove() {
+    
+    if(!this.beforeRemove()) {
+      return;
+    }
+    
     this.detache_wnd && this.detache_wnd();
 
     const {parent, project, _row, ox, elm, path} = this;

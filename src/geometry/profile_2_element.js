@@ -222,6 +222,18 @@ class Profile extends ProfileItem {
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
   }
 
+  beforeRemove() {
+    const {project} = this;
+    if(project?._attr && !project._attr._loading && (this.joined_imposts(true) || this.joined_nearests().length)) {
+      $p.ui?.dialogs?.alert?.({
+        title: `Профиль №${this.elm}`,
+        text: 'Удаление невозможно, есть примыкающие элементы',
+      });
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Возвращает массив примыкающих ипостов
    * @param {Boolean} [check_only] - не формировать подробный ответ, только проверить наличие примыкающих импостов
