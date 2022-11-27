@@ -2476,6 +2476,36 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Формирует альтернативный связям параметров, список значений системных параметров
+   * @param {Object} attr
+   * @param {CatProduction_params} [sys]
+   * @param {Number} [cnstr]
+   * @return {boolean}
+   */
+  params_links(attr, sys, cnstr) {
+    if(!sys) {
+      sys = this.sys;
+      cnstr = this.cnstr;
+    }
+    const {prow, meta} = attr;
+
+    // Цвет основы
+    if(prow.param === sys.base_clr && sys.color_price_groups.count()) {
+      attr.oselect = true;
+      const values = sys.color_price_groups.unload_column('base_clr');
+      if(meta.choice_links?.length) {
+        meta.choice_links.length = 0;
+      }
+      meta.choice_params = [{name: 'ref', path: {in: values}}];
+      if(values.length && !values.includes(prow.value)) {
+        prow.value = values[0];
+      }
+      return true;
+    }
+    
+  }
+
+  /**
    * Пересчитывает связи параметров
    * @param root
    */

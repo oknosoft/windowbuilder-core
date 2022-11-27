@@ -3811,6 +3811,28 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  params_links(attr, sys, cnstr) {
+    if(!sys) {
+      sys = this.sys;
+      cnstr = this.cnstr;
+    }
+    const {prow, meta} = attr;
+
+    if(prow.param === sys.base_clr && sys.color_price_groups.count()) {
+      attr.oselect = true;
+      const values = sys.color_price_groups.unload_column('base_clr');
+      if(meta.choice_links?.length) {
+        meta.choice_links.length = 0;
+      }
+      meta.choice_params = [{name: 'ref', path: {in: values}}];
+      if(values.length && !values.includes(prow.value)) {
+        prow.value = values[0];
+      }
+      return true;
+    }
+
+      }
+
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
@@ -13634,7 +13656,7 @@ class Scheme extends paper.Project {
     const {ox, _dp} = this;
     const {cat, utils} = $p;
     const cmeta = _dp._metadata('clr');
-    const {clr_group} = _dp.sys;
+    const clr_group = _dp.sys.find_group(ox);
     const clrs = [...clr_group.clrs()];
 
     cat.clrs.selection_exclude_service(cmeta, _dp, this);
@@ -14011,7 +14033,7 @@ class Scheme extends paper.Project {
 
               (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
-        }, 20);
+        }, 30);
       })
         .then(() => {
           if(_scheme.ox._data.refill_props) {
@@ -14283,6 +14305,16 @@ class Scheme extends paper.Project {
       type = obj.type;
     }
     this._scope?.eve?.emit_async?.(type, obj, fields);
+  }
+
+  params_links(attr, sys, cnstr) {
+    if(!sys) {
+      sys = this._dp.sys;
+    }
+    if(!cnstr) {
+      cnstr = 0;
+    }
+    return Contour.prototype.params_links(attr, sys, cnstr);
   }
 
   clear() {

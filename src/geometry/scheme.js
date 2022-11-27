@@ -103,7 +103,7 @@ class Scheme extends paper.Project {
     const {ox, _dp} = this;
     const {cat, utils} = $p;
     const cmeta = _dp._metadata('clr');
-    const {clr_group} = _dp.sys;
+    const clr_group = _dp.sys.find_group(ox);
     const clrs = [...clr_group.clrs()];
 
     cat.clrs.selection_exclude_service(cmeta, _dp, this);
@@ -592,7 +592,7 @@ class Scheme extends paper.Project {
 
               (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
-        }, 20);
+        }, 30);
       })
         .then(() => {
           // при необходимости, перезаполним параметры изделия и фурнитуры
@@ -936,6 +936,23 @@ class Scheme extends paper.Project {
       type = obj.type;
     }
     this._scope?.eve?.emit_async?.(type, obj, fields);
+  }
+
+  /**
+   * Формирует альтернативный связям параметров, список значений системных параметров
+   * @param {Object} attr
+   * @param {CatProduction_params} [sys]
+   * @param {Number} [cnstr]
+   * @return {boolean}
+   */
+  params_links(attr, sys, cnstr) {
+    if(!sys) {
+      sys = this._dp.sys;
+    }
+    if(!cnstr) {
+      cnstr = 0;
+    }
+    return Contour.prototype.params_links(attr, sys, cnstr);
   }
 
   /**
