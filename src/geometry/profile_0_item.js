@@ -367,22 +367,6 @@ class CnnPoint {
     };
   }
 
-  /**
-   * Поправка на размер соединения с учётом угла к соседнему профилю
-   * @return {number}
-   */
-  get size() {
-    const {parent, cnn, node} = this;
-    let size = cnn ? cnn.size(parent) : 0;
-    if(size) {
-      const angle = Math.abs(parent.angle_at(node) - 90);
-      if(angle > 1 && angle < 90) {
-        size = size / Math.abs(Math.cos(angle * Math.PI / 180));
-      }
-    }
-    return size;
-  }
-
   initialize() {
 
     const {_parent, node} = this;
@@ -1078,7 +1062,7 @@ class ProfileItem extends GeneratrixElement {
 
     // получаем фрагмент образующей
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + (this instanceof Onlay ? 0 : b.size + e.size);
+    const res = sub_gen.length;
     sub_gen.remove();
 
     return res;
@@ -2125,16 +2109,15 @@ class ProfileItem extends GeneratrixElement {
         }
         else {
           // TODO: пока только для раскладок, после отладки - распространим на всех
-          if(this instanceof Onlay) {
-            const delta = cnn_point.cnn.size(this);
-            if(delta) {
-              const pt = oinner.getNearestPoint(cnn_point.point);
-              const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
-              const tmp = oinner.clone({insert: false});
-              tmp.translate(normal);
-              oinner = tmp;
-            }
+          const delta = cnn_point.cnn.size(this);
+          if(delta) {
+            const pt = oinner.getNearestPoint(cnn_point.point);
+            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+            const tmp = oinner.clone({insert: false});
+            tmp.translate(normal);
+            oinner = tmp;
           }
+          
           // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
           if(is_b) {
             // в зависимости от стороны соединения
@@ -2671,6 +2654,11 @@ class ProfileItem extends GeneratrixElement {
         chld.observer && chld.observer(this);
         chld.redraw();
       }
+    }
+    
+    if(this.elm_type.is('impost')) {
+      bcnn.profile?.bringToFront?.();
+      ecnn.profile?.bringToFront?.();
     }
 
     return this;

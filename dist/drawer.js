@@ -3785,6 +3785,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
+      elm.bringToFront();
     }
 
     if(!_attr._hide_errors) {
@@ -8944,18 +8945,6 @@ class CnnPoint {
     };
   }
 
-  get size() {
-    const {parent, cnn, node} = this;
-    let size = cnn ? cnn.size(parent) : 0;
-    if(size) {
-      const angle = Math.abs(parent.angle_at(node) - 90);
-      if(angle > 1 && angle < 90) {
-        size = size / Math.abs(Math.cos(angle * Math.PI / 180));
-      }
-    }
-    return size;
-  }
-
   initialize() {
 
     const {_parent, node} = this;
@@ -9463,7 +9452,7 @@ class ProfileItem extends GeneratrixElement {
     }
 
     const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + (this instanceof Onlay ? 0 : b.size + e.size);
+    const res = sub_gen.length;
     sub_gen.remove();
 
     return res;
@@ -10359,16 +10348,15 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
-          if(this instanceof Onlay) {
-            const delta = cnn_point.cnn.size(this);
-            if(delta) {
-              const pt = oinner.getNearestPoint(cnn_point.point);
-              const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
-              const tmp = oinner.clone({insert: false});
-              tmp.translate(normal);
-              oinner = tmp;
-            }
+          const delta = cnn_point.cnn.size(this);
+          if(delta) {
+            const pt = oinner.getNearestPoint(cnn_point.point);
+            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
+            const tmp = oinner.clone({insert: false});
+            tmp.translate(normal);
+            oinner = tmp;
           }
+
           if(is_b) {
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);
@@ -10825,6 +10813,11 @@ class ProfileItem extends GeneratrixElement {
         chld.observer && chld.observer(this);
         chld.redraw();
       }
+    }
+
+        if(this.elm_type.is('impost')) {
+      bcnn.profile?.bringToFront?.();
+      ecnn.profile?.bringToFront?.();
     }
 
     return this;

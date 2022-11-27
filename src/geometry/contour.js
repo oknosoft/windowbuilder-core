@@ -2454,6 +2454,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // перерисовываем вложенные контуры
     for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
+      elm.bringToFront();
     }
 
     if(!_attr._hide_errors) {
