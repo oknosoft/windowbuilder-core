@@ -266,7 +266,7 @@ class Scheme extends paper.Project {
    * @private
    */
   _papam_listener(obj, fields) {
-    const {_attr, _ch, ox} = this;
+    const {_attr, _ch, ox, _scope} = this;
     if(_attr._loading || _attr._snapshot) {
       return;
     }
@@ -292,6 +292,7 @@ class Scheme extends paper.Project {
     // при смене цвета основы, уточняем цвет изделия
     if(is_row && ox.sys.base_clr === obj.param) {
       this.check_clr();
+      _scope?._acc?.props?._grid?.reload();
     }
   }
 
