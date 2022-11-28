@@ -797,8 +797,8 @@
 
     /**
      * Проверяет базовые ограничения вставки или строки вставки
-     * @param row
-     * @param elm
+     * @param {CatInsertsSpecificationRow} row
+     * @param {BuilderElement} elm
      * @return {boolean}
      */
     check_base_restrictions(row, elm) {
@@ -845,8 +845,8 @@
 
     /**
      * Проверяет ограничения при поиске main_rows
-     * @param row
-     * @param elm
+     * @param {CatInsertsSpecificationRow} row
+     * @param {BuilderElement} elm
      * @return {boolean}
      */
     check_main_restrictions(row, elm) {
