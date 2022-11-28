@@ -9156,6 +9156,10 @@ class ProfileRays {
     this.inner.reverse();
   }
 
+    empty() {
+    return !this.inner.segments.length || !this.outer.segments.length 
+  }
+
 }
 
 
@@ -9486,7 +9490,7 @@ class ProfileItem extends GeneratrixElement {
     const res = sub_gen.length;
     sub_gen.remove();
 
-    return res;
+    return res.round();
   }
 
   get orientation() {
@@ -10851,6 +10855,7 @@ class ProfileItem extends GeneratrixElement {
       bcnn.profile?.bringToFront?.();
       ecnn.profile?.bringToFront?.();
     }
+    this._row.len = this.length;
 
     return this;
   }
@@ -18190,7 +18195,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+    CatFormulas, CatInsertsSpecificationRow} = $p;
 
   const {inserts_types} = enm;
 
@@ -18604,8 +18609,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       const {check_params} = ProductsBuilding;
       const ox = elm.prm_ox || elm.ox;
-      return main_rows.filter((row) => {
-        return this.check_base_restrictions(row, elm) && check_params({
+      const filtered = main_rows.filter((row) => {
+        return this.check_main_restrictions(row, elm) && check_params({
           params: this.selection_params,
           ox,
           elm,
@@ -18614,6 +18619,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           origin: elm.fake_origin || 0,
         });
       });
+      return filtered.length ? filtered : [main_rows[0]];
     }
 
     is_depend_of(param) {
@@ -18840,7 +18846,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
 
       if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
-        if(!(elm instanceof EditorInvisible.Filling)) {
+        if(!(elm instanceof Filling)) {
           if(is_row && row.count_calc_method.is('area') && row.lmin) {
             if(elm.bounds_inner) {
               const {width, height} = elm.bounds_inner();
@@ -18876,7 +18882,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     check_base_restrictions(row, elm) {
       const {_row} = elm;
 
-      if(elm instanceof EditorInvisible.Filling) {
+      if(elm instanceof Filling) {
         if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
           return false;
         }
@@ -18908,6 +18914,26 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return false;
       }
 
+      return true;
+    }
+
+    check_main_restrictions(row, elm) {
+      if(!this.check_base_restrictions(row, elm)) {
+        return false;
+      }
+      if(elm instanceof ProfileItem) {
+        const {angle_hor, _attr} = elm;
+        const {ahmin, ahmax, lmin, lmax} = row;
+        if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {
+          return false;
+        }
+        if (lmin || (lmax && lmax < 6000)) {
+          const length = _attr._rays.empty() ? elm._row.len : elm.length;
+          if (lmin > length || (lmax && lmax < length)) {
+            return false;
+          }
+        }
+      }
       return true;
     }
 

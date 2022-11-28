@@ -572,6 +572,10 @@ class ProfileRays {
 
     this.inner.reverse();
   }
+  
+  empty() {
+    return !this.inner.segments.length || !this.outer.segments.length 
+  }
 
 }
 
@@ -1065,7 +1069,7 @@ class ProfileItem extends GeneratrixElement {
     const res = sub_gen.length;
     sub_gen.remove();
 
-    return res;
+    return res.round();
   }
 
   /**
@@ -2661,6 +2665,7 @@ class ProfileItem extends GeneratrixElement {
       bcnn.profile?.bringToFront?.();
       ecnn.profile?.bringToFront?.();
     }
+    this._row.len = this.length;
 
     return this;
   }

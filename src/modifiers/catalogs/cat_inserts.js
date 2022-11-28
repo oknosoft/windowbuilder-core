@@ -12,7 +12,7 @@
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+    CatFormulas, CatInsertsSpecificationRow} = $p;
 
   const {inserts_types} = enm;
 
@@ -465,8 +465,8 @@
       }
       const {check_params} = ProductsBuilding;
       const ox = elm.prm_ox || elm.ox;
-      return main_rows.filter((row) => {
-        return this.check_base_restrictions(row, elm) && check_params({
+      const filtered = main_rows.filter((row) => {
+        return this.check_main_restrictions(row, elm) && check_params({
           params: this.selection_params,
           ox,
           elm,
@@ -475,6 +475,7 @@
           origin: elm.fake_origin || 0,
         });
       });
+      return filtered.length ? filtered : [main_rows[0]];
     }
 
     /**
@@ -759,7 +760,7 @@
       }
 
       if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
-        if(!(elm instanceof EditorInvisible.Filling)) {
+        if(!(elm instanceof Filling)) {
           if(is_row && row.count_calc_method.is('area') && row.lmin) {
             if(elm.bounds_inner) {
               const {width, height} = elm.bounds_inner();
@@ -803,7 +804,7 @@
     check_base_restrictions(row, elm) {
       const {_row} = elm;
 
-      if(elm instanceof EditorInvisible.Filling) {
+      if(elm instanceof Filling) {
         // проверяем площадь
         if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
           return false;
@@ -839,6 +840,32 @@
         return false;
       }
 
+      return true;
+    }
+
+    /**
+     * Проверяет ограничения при поиске main_rows
+     * @param row
+     * @param elm
+     * @return {boolean}
+     */
+    check_main_restrictions(row, elm) {
+      if(!this.check_base_restrictions(row, elm)) {
+        return false;
+      }
+      if(elm instanceof ProfileItem) {
+        const {angle_hor, _attr} = elm;
+        const {ahmin, ahmax, lmin, lmax} = row;
+        if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {
+          return false;
+        }
+        if (lmin || (lmax && lmax < 6000)) {
+          const length = _attr._rays.empty() ? elm._row.len : elm.length;
+          if (lmin > length || (lmax && lmax < length)) {
+            return false;
+          }
+        }
+      }
       return true;
     }
 
