@@ -572,10 +572,6 @@ class ProfileRays {
 
     this.inner.reverse();
   }
-  
-  empty() {
-    return !this.inner.segments.length || !this.outer.segments.length 
-  }
 
 }
 
@@ -1069,7 +1065,7 @@ class ProfileItem extends GeneratrixElement {
     const res = sub_gen.length;
     sub_gen.remove();
 
-    return res.round();
+    return res.round(1);
   }
 
   /**
@@ -1395,6 +1391,29 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * @summary Проверяет, не изменилась ли номенклатура элемента после изменения геометрии
+   * @desc складывает изменённые элементы в параметр arr
+   * @param {Array} arr
+   */
+  check_nom(arr) {
+    const {_row, _attr, length, angle_hor} = this;
+    // сохраняем угол к горизонту и длину профиля в _row
+    if(_row.len !== length || _row.angle_hor !== angle_hor) {
+      _row.len = length;
+      _row.angle_hor = angle_hor;
+
+      if(_attr && _attr._rays) {
+        const {nom: old} = _attr;
+        delete _attr.nom;
+        const {nom} = this;
+        if(old !== nom) {
+          arr.push(this);
+        }
+      }      
+    }
+  }
+
+  /**
    * Вычисляемые поля в таблице координат
    * @return {void}
    */
@@ -1426,12 +1445,6 @@ class ProfileItem extends GeneratrixElement {
       const r2 = path.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
       _row.r = Math.max(r1, r2);
     }
-
-    // добавляем припуски соединений
-    _row.len = this.length.round(1);
-
-    // получаем углы между элементами и к горизонту
-    _row.angle_hor = this.angle_hor;
 
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
       _row.alp1 = _row.alp2 = 0;
@@ -2587,15 +2600,15 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Формирует путь сегмента профиля
-   * Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
-   * - Сначала, вызывает {{#crossLink "ProfileItem/postcalc_cnn:method"}}postcalc_cnn(){{/crossLink}} для узлов `b` и `e`
-   * - Внутри `postcalc_cnn`, выполняется {{#crossLink "ProfileItem/cnn_point:method"}}cnn_point(){{/crossLink}} для пересчета соединений на концах профиля
+   * @summary Формирует путь сегмента профиля
+   * @desc Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
+   * - Сначала, вызывает `postcalc_cnn()` для узлов `b` и `e`
+   * - Внутри `postcalc_cnn`, выполняется `cnn_point()` для пересчета соединений на концах профиля
    * - Внутри `cnn_point`:
-   *    + {{#crossLink "ProfileItem/check_distance:method"}}check_distance(){{/crossLink}} - проверяет привязку, если вернулось false, `cnn_point` завершает свою работы
+   *    + `check_distance()` - проверяет привязку, если вернулось false, `cnn_point` завершает свою работы
    *    + цикл по всем профилям и поиск привязки
-   * - {{#crossLink "ProfileItem/postcalc_inset:method"}}postcalc_inset(){{/crossLink}} - проверяет корректность вставки, заменяет при необходимости
-   * - {{#crossLink "ProfileItem/path_points:method"}}path_points(){{/crossLink}} - рассчитывает координаты вершин пути профиля
+   * - `postcalc_inset()` - проверяет корректность вставки, заменяет при необходимости
+   * - `path_points()` - рассчитывает координаты вершин пути профиля
    *
    * @override
    * @return {ProfileItem}
@@ -2661,12 +2674,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     
-    if(this.elm_type.is('impost')) {
-      bcnn.profile?.bringToFront?.();
-      ecnn.profile?.bringToFront?.();
-    }
-    this._row.len = this.length;
-
     return this;
   }
 

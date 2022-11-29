@@ -3778,13 +3778,33 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     this._attr._bounds = null;
 
-    const {l_visualization: {_by_insets, _by_spec}, project: {_attr}} = this;
+    const {l_visualization: {_by_insets, _by_spec}, project, profiles} = this;
+    const {_attr, _scope} = project;
     _by_insets.removeChildren();
     !_attr._saving && _by_spec.removeChildren();
 
 
-    for(const elm of this.profiles) {
+    for(const elm of profiles) {
       elm.redraw();
+    }
+
+    for (const elm of profiles.filter(elm => elm.elm_type.is('impost')).sort((a, b) => b.elm - a.elm)) {
+      const {b, e} = elm._attr._rays;
+      b.profile?.bringToFront?.();
+      e.profile?.bringToFront?.();
+    }
+
+    const changed = [];
+    for(const elm of profiles) {
+      elm.check_nom(changed);
+    }
+    if (changed.length) {
+      for(const elm of changed) {
+        elm._attr._rays.clear('with_neighbor');
+        _scope.eve.emit('set_inset', elm);
+      }
+      project.register_change();
+      return;
     }
 
     this.glass_recalc();
@@ -9156,10 +9176,6 @@ class ProfileRays {
     this.inner.reverse();
   }
 
-    empty() {
-    return !this.inner.segments.length || !this.outer.segments.length 
-  }
-
 }
 
 
@@ -9490,7 +9506,7 @@ class ProfileItem extends GeneratrixElement {
     const res = sub_gen.length;
     sub_gen.remove();
 
-    return res.round();
+    return res.round(1);
   }
 
   get orientation() {
@@ -9762,6 +9778,23 @@ class ProfileItem extends GeneratrixElement {
     }
   }
 
+  check_nom(arr) {
+    const {_row, _attr, length, angle_hor} = this;
+    if(_row.len !== length || _row.angle_hor !== angle_hor) {
+      _row.len = length;
+      _row.angle_hor = angle_hor;
+
+      if(_attr && _attr._rays) {
+        const {nom: old} = _attr;
+        delete _attr.nom;
+        const {nom} = this;
+        if(old !== nom) {
+          arr.push(this);
+        }
+      }      
+    }
+  }
+
   save_coordinates() {
 
     const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e}, generatrix} = this;
@@ -9789,10 +9822,6 @@ class ProfileItem extends GeneratrixElement {
       const r2 = path.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
       _row.r = Math.max(r1, r2);
     }
-
-    _row.len = this.length.round(1);
-
-    _row.angle_hor = this.angle_hor;
 
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
       _row.alp1 = _row.alp2 = 0;
@@ -10851,13 +10880,7 @@ class ProfileItem extends GeneratrixElement {
       }
     }
 
-        if(this.elm_type.is('impost')) {
-      bcnn.profile?.bringToFront?.();
-      ecnn.profile?.bringToFront?.();
-    }
-    this._row.len = this.length;
-
-    return this;
+        return this;
   }
 
   mark_direction() {
@@ -16444,13 +16467,14 @@ class ProductsBuilding {
 
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
-      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && elm._attr._nearest_cnn) {
-        cnn_add_spec(elm._attr._nearest_cnn, elm, {
+      const {_attr} = elm;
+      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && _attr._nearest_cnn) {
+        cnn_add_spec(_attr._nearest_cnn, elm, {
           angle: 0,
           alp1: 0,
           alp2: 0,
-          len: elm._attr._len || elm.length,
-          origin: cnn_row(elm.elm, nearest.elm, elm._attr._nearest_cnn)
+          len: elm._row.len,
+          origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
         }, null, nearest);
       }
     }
@@ -16522,8 +16546,7 @@ class ProductsBuilding {
           row_spec.len += next.width * k001;
         }
 
-        elm._attr._len = _row.len;
-        _row.len = (_row.len
+        elm._attr._len = (_row.len
             - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
             - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
           * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
@@ -18940,13 +18963,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return false;
       }
       if(elm instanceof ProfileItem) {
-        const {angle_hor, _attr} = elm;
+        const {angle_hor, _row} = elm;
         const {ahmin, ahmax, lmin, lmax} = row;
         if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {
           return false;
         }
         if (lmin || (lmax && lmax < 6000)) {
-          const length = _attr._rays.empty() ? elm._row.len : elm.length;
+          const length = _row.len;
           if (lmin > length || (lmax && lmax < length)) {
             return false;
           }

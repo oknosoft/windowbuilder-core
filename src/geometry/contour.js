@@ -2432,15 +2432,37 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization: {_by_insets, _by_spec}, project: {_attr}} = this;
+    const {l_visualization: {_by_insets, _by_spec}, project, profiles} = this;
+    const {_attr, _scope} = project;
     _by_insets.removeChildren();
     !_attr._saving && _by_spec.removeChildren();
 
     //$p.job_prm.debug && console.profile();
 
     // сначала перерисовываем все профили контура
-    for(const elm of this.profiles) {
+    for(const elm of profiles) {
       elm.redraw();
+    }
+
+    // упорядочиваем по z
+    for (const elm of profiles.filter(elm => elm.elm_type.is('impost')).sort((a, b) => b.elm - a.elm)) {
+      const {b, e} = elm._attr._rays;
+      b.profile?.bringToFront?.();
+      e.profile?.bringToFront?.();
+    }
+    
+    // уточняем номенклатуры и соединения для новой геометрии профилей
+    const changed = [];
+    for(const elm of profiles) {
+      elm.check_nom(changed);
+    }
+    if (changed.length) {
+      for(const elm of changed) {
+        elm._attr._rays.clear('with_neighbor');
+        _scope.eve.emit('set_inset', elm);
+      }
+      project.register_change();
+      return;
     }
 
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки

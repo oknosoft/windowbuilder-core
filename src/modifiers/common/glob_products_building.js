@@ -304,13 +304,14 @@ class ProductsBuilding {
      */
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
-      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && elm._attr._nearest_cnn) {
-        cnn_add_spec(elm._attr._nearest_cnn, elm, {
+      const {_attr} = elm;
+      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && _attr._nearest_cnn) {
+        cnn_add_spec(_attr._nearest_cnn, elm, {
           angle: 0,
           alp1: 0,
           alp2: 0,
-          len: elm._attr._len || elm.length,
-          origin: cnn_row(elm.elm, nearest.elm, elm._attr._nearest_cnn)
+          len: elm._row.len,
+          origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
         }, null, nearest);
       }
     }
@@ -389,10 +390,10 @@ class ProductsBuilding {
           row_spec.len += next.width * k001;
         }
 
-        // profile._len - то, что получится после обработки
+        // profile._row._len - геометрический размер
+        // profile._attr._len - то, что получится после обработки
         // row_spec.len - сколько взять (отрезать)
-        elm._attr._len = _row.len;
-        _row.len = (_row.len
+        elm._attr._len = (_row.len
             - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
             - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
           * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;

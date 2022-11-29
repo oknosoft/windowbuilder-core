@@ -854,13 +854,13 @@
         return false;
       }
       if(elm instanceof ProfileItem) {
-        const {angle_hor, _attr} = elm;
+        const {angle_hor, _row} = elm;
         const {ahmin, ahmax, lmin, lmax} = row;
         if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {
           return false;
         }
         if (lmin || (lmax && lmax < 6000)) {
-          const length = _attr._rays.empty() ? elm._row.len : elm.length;
+          const length = _row.len;
           if (lmin > length || (lmax && lmax < length)) {
             return false;
           }
