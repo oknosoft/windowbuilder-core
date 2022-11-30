@@ -2017,7 +2017,8 @@ class ProfileItem extends GeneratrixElement {
       // импосты рисуем с учетом стороны примыкания
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
-        // при необходимости, перерисовываем ведущий элемент
+        // TODO: вместо path задействовать rays 
+        //  при необходимости, перерисовываем ведущий элемент
         if(!other.path.segments.length) {
           const {_attr, row} = other;
           if(_attr.force_redraw) {
@@ -2040,11 +2041,13 @@ class ProfileItem extends GeneratrixElement {
           }
         }
 
+        const {width} = this;
+        const w2 = width * width;
         const nodes = new Set();
         let profile2;
         cnn_point.point && !(this instanceof Onlay) && this.layer.profiles.forEach((profile) => {
           if(profile !== this){
-            if(cnn_point.point.is_nearest(profile.b, true)) {
+            if(cnn_point.point.is_nearest(profile.b, w2)) {
               const cp = profile.rays.b.profile;
               if(cp !== this) {
                 if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
@@ -2052,7 +2055,7 @@ class ProfileItem extends GeneratrixElement {
                 }
               }
             }
-            else if(cnn_point.point.is_nearest(profile.e, true)) {
+            else if(cnn_point.point.is_nearest(profile.e, w2)) {
               const cp = profile.rays.e.profile;
               if(cp !== this) {
                 if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
@@ -2072,19 +2075,40 @@ class ProfileItem extends GeneratrixElement {
           }
         });
 
+        // строим эквидистанту к внутренней стороне соседнего профиля
+        const delta = cnn_point.cnn.size(this);
+        if(delta) {
+          const pt = oinner.getNearestPoint(cnn_point.point);
+          const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
+            .normalize(other instanceof ProfileItem ? -delta : delta);
+          const tmp = oinner.clone({insert: false});
+          tmp.translate(normal);
+          oinner = tmp;
+        }
+
         if(profile2) {
           const interior = generatrix.getPointAt(generatrix.length/2)
           const {rays: prays2} = profile2;
           const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
+          let oinner2 = prays2[side2];
+          if(delta) {
+            const pt = oinner2.getNearestPoint(cnn_point.point);
+            const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
+              .normalize(profile2 instanceof ProfileItem ? -delta : delta);
+            const tmp = oinner2.clone({insert: false});
+            tmp.translate(normal);
+            oinner2 = tmp;
+          }
+          
           const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
-          const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
-          const pt4 = intersect_point(prays2[side2], rays.inner, 0, interior);
+          const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
+          const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
 
           if(is_b) {
-            pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2[side2], rays.outer, 1);
-            pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2[side2], rays.inner, 4);
-            intersect_point(prays2[side2], oinner, 5);
+            pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+            pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+            intersect_point(oinner2, oinner, 5);
             if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
               delete _corns[5];
             }
@@ -2103,15 +2127,14 @@ class ProfileItem extends GeneratrixElement {
             }
           }
           else if(is_e) {
-            pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2[side2], rays.outer, 2);
-            pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2[side2], rays.inner, 3);
-            intersect_point(prays2[side2], oinner, 6);
+            pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+            pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+            intersect_point(oinner2, oinner, 6);
             if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
               delete _corns[6];
             }
             else {
               // ищем удлинение
-              const {width} = this;
               const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 4);
               const l3 = new paper.Path({insert: false, segments: [_corns[3], _corns[6]]}).elongation(width * 4);
               const pts = [
@@ -2125,17 +2148,7 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
-          // TODO: пока только для раскладок, после отладки - распространим на всех
-          const delta = cnn_point.cnn.size(this);
-          if(delta) {
-            const pt = oinner.getNearestPoint(cnn_point.point);
-            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
-              .normalize(other instanceof ProfileItem ? -delta : delta);
-            const tmp = oinner.clone({insert: false});
-            tmp.translate(normal);
-            oinner = tmp;
-          }
-          
+                    
           // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
           if(is_b) {
             // в зависимости от стороны соединения
@@ -2906,10 +2919,10 @@ ProfileItem.path_attr = {
     }
     _attr.fillColor = fillColor.clone();
     const {red, green, blue, alpha} = fillColor;
-    fillColor.alpha = 0.9;
-    fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
-    fillColor.green = green > 0.7 ? green - 0.06 : green + 0.06;
-    fillColor.blue = blue > 0.7 ? blue - 0.08 : blue + 0.08;
+    fillColor.alpha = 0.86;
+    fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
+    fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
+    fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
   },
 
   onMouseLeave(event) {

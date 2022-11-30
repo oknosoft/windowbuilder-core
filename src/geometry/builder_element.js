@@ -911,7 +911,7 @@ class BuilderElement extends paper.Group {
           clr_str = '#' + clr_str;
         }
         clr = new paper.Color(clr_str);
-        clr.alpha = 0.96;
+        clr.alpha = 0.93;
       }
       else if(clr.length == 4) {
         clr = new paper.Color(clr[0], clr[1], clr[2], clr[3]);
@@ -921,7 +921,8 @@ class BuilderElement extends paper.Group {
           clr = new paper.Color({
             stops: [clr[0], clr[1], clr[2]],
             origin: this.path.bounds.bottomLeft,
-            destination: this.path.bounds.topRight
+            destination: this.path.bounds.topRight,
+            alpha: 0.96
           });
         }
         else {

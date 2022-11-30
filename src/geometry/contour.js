@@ -516,7 +516,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * Врезаем оповещение при активации слоя
    */
   activate(custom) {
-    this.project._activeLayer = this;
+    super.activate();
     if (this._row) {
       this.notify(this, 'layer_activated', !custom);
       this.project.register_update();
@@ -2446,9 +2446,21 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // упорядочиваем по z
     for (const elm of profiles.filter(elm => elm.elm_type.is('impost')).sort((a, b) => b.elm - a.elm)) {
-      const {b, e} = elm._attr._rays;
+      const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
+      if(b.profile.e.is_nearest(b.point, 20000)) {
+        b.profile.rays.e.profile?.bringToFront?.();
+      }
+      else if(b.profile.b.is_nearest(b.point, 20000)) {
+        b.profile.rays.b.profile?.bringToFront?.();
+      }
       e.profile?.bringToFront?.();
+      if(e.profile.e.is_nearest(e.point, 20000)) {
+        e.profile.rays.e.profile?.bringToFront?.();
+      }
+      else if(e.profile.b.is_nearest(e.point, 20000)) {
+        e.profile.rays.b.profile?.bringToFront?.();
+      }
     }
     
     // уточняем номенклатуры и соединения для новой геометрии профилей

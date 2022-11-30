@@ -1518,18 +1518,14 @@ class Scheme extends paper.Project {
    * @final
    */
   get l_dimensions() {
-    const {activeLayer, _attr} = this;
-
+    const {_attr} = this;
     if(!_attr.l_dimensions) {
-      _attr.l_dimensions = new DimensionLayer();
+      const {activeLayer} = this;
+      _attr.l_dimensions = new DimensionLayer({project: this});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }
     }
-    if(!_attr.l_dimensions.isInserted()) {
-      this.addLayer(_attr.l_dimensions);
-    }
-    if(activeLayer) {
-      this._activeLayer = activeLayer;
-    }
-
     return _attr.l_dimensions;
   }
 
@@ -1540,18 +1536,14 @@ class Scheme extends paper.Project {
    * @final
    */
   get l_connective() {
-    const {activeLayer, _attr} = this;
-
+    const {_attr} = this;
     if(!_attr.l_connective) {
-      _attr.l_connective = new ConnectiveLayer();
+      const {activeLayer} = this;
+      _attr.l_connective = new ConnectiveLayer({project: this});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }  
     }
-    if(!_attr.l_connective.isInserted()) {
-      this.addLayer(_attr.l_connective);
-    }
-    if(activeLayer) {
-      this._activeLayer = activeLayer;
-    }
-
     return _attr.l_connective;
   }
 

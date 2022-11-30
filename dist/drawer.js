@@ -1568,7 +1568,7 @@ class BuilderElement extends paper.Group {
           clr_str = '#' + clr_str;
         }
         clr = new paper.Color(clr_str);
-        clr.alpha = 0.96;
+        clr.alpha = 0.93;
       }
       else if(clr.length == 4) {
         clr = new paper.Color(clr[0], clr[1], clr[2], clr[3]);
@@ -1578,7 +1578,8 @@ class BuilderElement extends paper.Group {
           clr = new paper.Color({
             stops: [clr[0], clr[1], clr[2]],
             origin: this.path.bounds.bottomLeft,
-            destination: this.path.bounds.topRight
+            destination: this.path.bounds.topRight,
+            alpha: 0.96
           });
         }
         else {
@@ -2151,7 +2152,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   activate(custom) {
-    this.project._activeLayer = this;
+    super.activate();
     if (this._row) {
       this.notify(this, 'layer_activated', !custom);
       this.project.register_update();
@@ -3789,9 +3790,21 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     for (const elm of profiles.filter(elm => elm.elm_type.is('impost')).sort((a, b) => b.elm - a.elm)) {
-      const {b, e} = elm._attr._rays;
+      const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
+      if(b.profile.e.is_nearest(b.point, 20000)) {
+        b.profile.rays.e.profile?.bringToFront?.();
+      }
+      else if(b.profile.b.is_nearest(b.point, 20000)) {
+        b.profile.rays.b.profile?.bringToFront?.();
+      }
       e.profile?.bringToFront?.();
+      if(e.profile.e.is_nearest(e.point, 20000)) {
+        e.profile.rays.e.profile?.bringToFront?.();
+      }
+      else if(e.profile.b.is_nearest(e.point, 20000)) {
+        e.profile.rays.b.profile?.bringToFront?.();
+      }
     }
 
     const changed = [];
@@ -10330,11 +10343,13 @@ class ProfileItem extends GeneratrixElement {
           }
         }
 
+        const {width} = this;
+        const w2 = width * width;
         const nodes = new Set();
         let profile2;
         cnn_point.point && !(this instanceof Onlay) && this.layer.profiles.forEach((profile) => {
           if(profile !== this){
-            if(cnn_point.point.is_nearest(profile.b, true)) {
+            if(cnn_point.point.is_nearest(profile.b, w2)) {
               const cp = profile.rays.b.profile;
               if(cp !== this) {
                 if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
@@ -10342,7 +10357,7 @@ class ProfileItem extends GeneratrixElement {
                 }
               }
             }
-            else if(cnn_point.point.is_nearest(profile.e, true)) {
+            else if(cnn_point.point.is_nearest(profile.e, w2)) {
               const cp = profile.rays.e.profile;
               if(cp !== this) {
                 if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
@@ -10361,19 +10376,39 @@ class ProfileItem extends GeneratrixElement {
           }
         });
 
+        const delta = cnn_point.cnn.size(this);
+        if(delta) {
+          const pt = oinner.getNearestPoint(cnn_point.point);
+          const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
+            .normalize(other instanceof ProfileItem ? -delta : delta);
+          const tmp = oinner.clone({insert: false});
+          tmp.translate(normal);
+          oinner = tmp;
+        }
+
         if(profile2) {
           const interior = generatrix.getPointAt(generatrix.length/2)
           const {rays: prays2} = profile2;
           const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
-          const pt1 = intersect_point(oinner, rays.outer, 0, interior);
+          let oinner2 = prays2[side2];
+          if(delta) {
+            const pt = oinner2.getNearestPoint(cnn_point.point);
+            const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
+              .normalize(profile2 instanceof ProfileItem ? -delta : delta);
+            const tmp = oinner2.clone({insert: false});
+            tmp.translate(normal);
+            oinner2 = tmp;
+          }
+
+                    const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
-          const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
-          const pt4 = intersect_point(prays2[side2], rays.inner, 0, interior);
+          const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
+          const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
 
           if(is_b) {
-            pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2[side2], rays.outer, 1);
-            pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2[side2], rays.inner, 4);
-            intersect_point(prays2[side2], oinner, 5);
+            pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+            pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+            intersect_point(oinner2, oinner, 5);
             if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
               delete _corns[5];
             }
@@ -10391,14 +10426,13 @@ class ProfileItem extends GeneratrixElement {
             }
           }
           else if(is_e) {
-            pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2[side2], rays.outer, 2);
-            pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2[side2], rays.inner, 3);
-            intersect_point(prays2[side2], oinner, 6);
+            pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+            pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+            intersect_point(oinner2, oinner, 6);
             if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
               delete _corns[6];
             }
             else {
-              const {width} = this;
               const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 4);
               const l3 = new paper.Path({insert: false, segments: [_corns[3], _corns[6]]}).elongation(width * 4);
               const pts = [
@@ -10412,15 +10446,6 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
-          const delta = cnn_point.cnn.size(this);
-          if(delta) {
-            const pt = oinner.getNearestPoint(cnn_point.point);
-            const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
-              .normalize(other instanceof ProfileItem ? -delta : delta);
-            const tmp = oinner.clone({insert: false});
-            tmp.translate(normal);
-            oinner = tmp;
-          }
 
           if(is_b) {
             intersect_point(oinner, rays.outer, 1);
@@ -11082,10 +11107,10 @@ ProfileItem.path_attr = {
     }
     _attr.fillColor = fillColor.clone();
     const {red, green, blue, alpha} = fillColor;
-    fillColor.alpha = 0.9;
-    fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
-    fillColor.green = green > 0.7 ? green - 0.06 : green + 0.06;
-    fillColor.blue = blue > 0.7 ? blue - 0.08 : blue + 0.08;
+    fillColor.alpha = 0.86;
+    fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
+    fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
+    fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
   },
 
   onMouseLeave(event) {
@@ -14818,34 +14843,26 @@ class Scheme extends paper.Project {
   }
 
   get l_dimensions() {
-    const {activeLayer, _attr} = this;
-
+    const {_attr} = this;
     if(!_attr.l_dimensions) {
-      _attr.l_dimensions = new DimensionLayer();
+      const {activeLayer} = this;
+      _attr.l_dimensions = new DimensionLayer({project: this});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }
     }
-    if(!_attr.l_dimensions.isInserted()) {
-      this.addLayer(_attr.l_dimensions);
-    }
-    if(activeLayer) {
-      this._activeLayer = activeLayer;
-    }
-
     return _attr.l_dimensions;
   }
 
   get l_connective() {
-    const {activeLayer, _attr} = this;
-
+    const {_attr} = this;
     if(!_attr.l_connective) {
-      _attr.l_connective = new ConnectiveLayer();
+      const {activeLayer} = this;
+      _attr.l_connective = new ConnectiveLayer({project: this});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }  
     }
-    if(!_attr.l_connective.isInserted()) {
-      this.addLayer(_attr.l_connective);
-    }
-    if(activeLayer) {
-      this._activeLayer = activeLayer;
-    }
-
     return _attr.l_connective;
   }
 
