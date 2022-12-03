@@ -2440,12 +2440,26 @@ class Contour extends AbstractFilling(paper.Layer) {
     //$p.job_prm.debug && console.profile();
 
     // сначала перерисовываем все профили контура
+    const imposts = []
+    const other = new Set();
     for(const elm of profiles) {
       elm.redraw();
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        const {b, e} = elm.rays;
+        if(b.is_short) {
+          other.add(b.profile);
+        }
+        if(e.is_short) {
+          other.add(e.profile);
+        }
+      }
     }
 
     // упорядочиваем по z
-    for (const elm of profiles.filter(elm => elm.elm_type.is('impost')).sort((a, b) => b.elm - a.elm)) {
+    for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
       if(b.profile.e.is_nearest(b.point, 20000)) {
@@ -2461,6 +2475,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(e.profile.b.is_nearest(e.point, 20000)) {
         e.profile.rays.b.profile?.bringToFront?.();
       }
+    }
+    for (const elm of Array.from(other)) {
+      elm?.bringToFront?.();
     }
     
     // уточняем номенклатуры и соединения для новой геометрии профилей
@@ -3261,7 +3278,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 }
 
-GlassSegment.fn_sort = function sort_segments(a, b) {
+Contour.ecompare = (a, b) => b.elm - a.elm;
+
+GlassSegment.fn_sort = (a, b) => {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
   if (da < db) {

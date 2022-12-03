@@ -3785,11 +3785,25 @@ class Contour extends AbstractFilling(paper.Layer) {
     !_attr._saving && _by_spec.removeChildren();
 
 
+    const imposts = []
+    const other = new Set();
     for(const elm of profiles) {
       elm.redraw();
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        const {b, e} = elm.rays;
+        if(b.is_short) {
+          other.add(b.profile);
+        }
+        if(e.is_short) {
+          other.add(e.profile);
+        }
+      }
     }
 
-    for (const elm of profiles.filter(elm => elm.elm_type.is('impost')).sort((a, b) => b.elm - a.elm)) {
+    for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
       if(b.profile.e.is_nearest(b.point, 20000)) {
@@ -3805,6 +3819,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(e.profile.b.is_nearest(e.point, 20000)) {
         e.profile.rays.b.profile?.bringToFront?.();
       }
+    }
+    for (const elm of Array.from(other)) {
+      elm?.bringToFront?.();
     }
 
     const changed = [];
@@ -4437,7 +4454,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 }
 
-GlassSegment.fn_sort = function sort_segments(a, b) {
+Contour.ecompare = (a, b) => b.elm - a.elm;
+
+GlassSegment.fn_sort = (a, b) => {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
   if (da < db) {
@@ -8772,8 +8791,16 @@ class CnnPoint {
 
   get is_l() {
     const {cnn} = this;
-    const {cnn_types} = $p.enm;
-    return this.is_t || !!(cnn && (cnn.cnn_type === cnn_types.av || cnn.cnn_type === cnn_types.ah));
+    const {av, ah} = $p.enm.cnn_types;
+    return this.is_t || !!(cnn && (cnn.cnn_type === av || cnn.cnn_type === ah));
+  }
+
+  get is_short() {
+    const {cnn, orientation} = this;
+    const {short, av, ah} = $p.enm.cnn_types;
+    return cnn?.cnn_type === short ||
+      (cnn.cnn_type === av && orientation.is('hor')) ||
+      (cnn.cnn_type === ah && orientation.is('vert'));
   }
 
   get is_ll() {
@@ -10317,31 +10344,21 @@ class ProfileItem extends GeneratrixElement {
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
       let oinner = prays[side];
-      const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
+      let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
+
+      const delta = cnn_point.cnn.size(this);
+      if(delta || cnn_point.cnn.sd2) {
+        let base = cnn_point.cnn.sd2 ? oouter : oinner;
+        const pt = base.getNearestPoint(cnn_point.point);
+        const normal = base.getNormalAt(base.getOffsetOf(pt))
+          .normalize(other instanceof ProfileItem ? -delta : delta);
+        const tmp = base.clone({insert: false});
+        tmp.translate(normal);
+        oinner = tmp;
+      }
 
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
-        if(!other.path.segments.length) {
-          const {_attr, row} = other;
-          if(_attr.force_redraw) {
-            if(other.generatrix && other.generatrix.segments.length) {
-              other.path.addSegments(other.generatrix.segments);
-              _attr.force_redraw = false;
-            }
-            else if(other.row && other.row.path_data) {
-              other.path.pathData = other.row.path_data;
-              _attr.force_redraw = false;
-            }
-            else {
-              throw new Error('cycle redraw');
-            }
-          }
-          else {
-            _attr.force_redraw = true;
-            other.redraw();
-            _attr.force_redraw = false;
-          }
-        }
 
         const {width} = this;
         const w2 = width * width;
@@ -10375,16 +10392,6 @@ class ProfileItem extends GeneratrixElement {
             profile2 = p2;
           }
         });
-
-        const delta = cnn_point.cnn.size(this);
-        if(delta) {
-          const pt = oinner.getNearestPoint(cnn_point.point);
-          const normal = oinner.getNormalAt(oinner.getOffsetOf(pt))
-            .normalize(other instanceof ProfileItem ? -delta : delta);
-          const tmp = oinner.clone({insert: false});
-          tmp.translate(normal);
-          oinner = tmp;
-        }
 
         if(profile2) {
           const interior = generatrix.getPointAt(generatrix.length/2)
@@ -10458,10 +10465,9 @@ class ProfileItem extends GeneratrixElement {
             delete _corns[6];
           }
         }
-
       }
 
-      else if(cnn_type == cnn_types.xx) {
+      else if(cnn_type === cnn_types.xx) {
 
         if(other instanceof Onlay) {
           const width = this.width * 0.7;
@@ -10516,7 +10522,7 @@ class ProfileItem extends GeneratrixElement {
 
       }
 
-      else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type == cnn_types.i) {
+      else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type === cnn_types.i) {
         if(is_b) {
           delete _corns[1];
           delete _corns[4];
@@ -10530,16 +10536,13 @@ class ProfileItem extends GeneratrixElement {
       else {
         const cnn_other = cnn_point.find_other();
         const cnno = cnn_other && cnn_point.cnno(cnn_other);
+        const {orientation} = this;
 
-        if(cnno && cnno.cnn_type == cnn_types.ad && (cnn_type != cnn_types.ad || other.width < cnn_other.profile.width)) {
-          const other = cnn_other.profile;
-          const prays = other.rays;
-          const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
-          const oinner = prays[side];
-          const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
+        if(cnno && cnno.cnn_type === cnn_types.ad && (cnn_type != cnn_types.ad || other.width < cnn_other.profile.width)) {
+
           const tw = this.width, ow = other.width;
           let check_a2 = tw !== ow && cnno.main_row(this);
-          if(check_a2 && check_a2.angle_calc_method == a2) {
+          if(check_a2 && check_a2.angle_calc_method === a2) {
             const wprofile = tw > ow ? this : other;
             const winner = wprofile === this ? rays.outer : oinner;
             if(is_b) {
@@ -10602,10 +10605,11 @@ class ProfileItem extends GeneratrixElement {
             }
           }
         }
-        else if(cnn_type == cnn_types.ad) {
+
+        else if(cnn_type === cnn_types.ad) {
           const tw = this.width, ow = other.width;
           let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
-          if(check_a2 && check_a2.angle_calc_method == a2) {
+          if(check_a2 && check_a2.angle_calc_method === a2) {
             const wprofile = tw > ow ? this : other;
             const winner = wprofile === this ? rays.inner : oinner;
             if(is_b) {
@@ -10669,59 +10673,9 @@ class ProfileItem extends GeneratrixElement {
           }
         }
 
-        else if(cnn_type == cnn_types.av) {
-          if(this.orientation == $p.enm.orientations.vert) {
-            if(is_b) {
-              intersect_point(oouter, rays.outer, 1);
-              intersect_point(oouter, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oouter, rays.outer, 2);
-              intersect_point(oouter, rays.inner, 3);
-            }
-          }
-          else if(this.orientation == $p.enm.orientations.hor) {
-            if(is_b) {
-              intersect_point(oinner, rays.outer, 1);
-              intersect_point(oinner, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oinner, rays.outer, 2);
-              intersect_point(oinner, rays.inner, 3);
-            }
-          }
-          else {
-            cnn_point.err = 'orientation';
-          }
-        }
-
-        else if(cnn_type == cnn_types.ah) {
-          if(this.orientation == $p.enm.orientations.vert) {
-            if(is_b) {
-              intersect_point(oinner, rays.outer, 1);
-              intersect_point(oinner, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oinner, rays.outer, 2);
-              intersect_point(oinner, rays.inner, 3);
-            }
-          }
-          else if(this.orientation == $p.enm.orientations.hor) {
-            if(is_b) {
-              intersect_point(oouter, rays.outer, 1);
-              intersect_point(oouter, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oouter, rays.outer, 2);
-              intersect_point(oouter, rays.inner, 3);
-            }
-          }
-          else {
-            cnn_point.err = 'orientation';
-          }
-        }
-
-        else if(cnn_type == cnn_types.short) {
+        else if((cnn_type === cnn_types.short) ||
+            (cnn_type === cnn_types.av && orientation.is('hor')) || 
+            (cnn_type === cnn_types.ah && orientation.is('vert'))) {
           if(is_b) {
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);
@@ -10732,7 +10686,9 @@ class ProfileItem extends GeneratrixElement {
           }
         }
 
-        else if(cnn_type == cnn_types.long) {
+        else if((cnn_type === cnn_types.long) ||
+            (cnn_type === cnn_types.ah && orientation.is('hor')) ||
+            (cnn_type === cnn_types.av && orientation.is('vert'))) {
           if(is_b) {
             intersect_point(oouter, rays.outer, 1);
             intersect_point(oouter, rays.inner, 4);
@@ -10766,8 +10722,8 @@ class ProfileItem extends GeneratrixElement {
 
   interiorPoint() {
     const {generatrix, d1, d2} = this;
-    const igen = generatrix.curves.length == 1 ? generatrix.firstCurve.getPointAt(0.5, true) : (
-      generatrix.curves.length == 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2
+    const igen = generatrix.curves.length === 1 ? generatrix.firstCurve.getPointAt(0.5, true) : (
+      generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2
     );
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
