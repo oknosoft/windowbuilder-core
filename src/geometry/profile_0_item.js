@@ -2449,11 +2449,11 @@ class ProfileItem extends GeneratrixElement {
    */
   interiorPoint() {
     const {generatrix, d1, d2} = this;
-    const igen = generatrix.curves.length === 1 ? generatrix.firstCurve.getPointAt(0.5, true) : (
-      generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2
-    );
+    const igen = generatrix.curves.length === 1 ? 
+      generatrix.firstCurve.getPointAt(0.5, true) : 
+      (generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
-    return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
+    return igen.add(normal.multiply((d1 + d2) / 2));
   }
 
   /**

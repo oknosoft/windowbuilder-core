@@ -248,10 +248,10 @@ class Profile extends ProfileItem {
     // точки, в которых сходятся более 2 профилей
     const candidates = {b: [], e: []};
 
-    const {Снаружи} = $p.enm.cnn_sides;
+    const {outer} = $p.enm.cnn_sides;
     const add_impost = (ip, curr, point) => {
       const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === Снаружи) {
+      if(this.cnn_side(curr, ip, rays) === outer) {
         touter.push(res);
       }
       else {
@@ -264,14 +264,15 @@ class Profile extends ProfileItem {
         for(const pname of ['b', 'e']) {
           const cpoint = curr.rays[pname];
           if(cpoint.profile == this && cpoint.cnn) {
-            if(!cpoint.profile_point) {
+            const ipoint = curr.interiorPoint();
+            if(!cpoint.profile_point || cpoint.profile_point === 't') {
               if(check_only) {
                 return true;
               }
-              add_impost(curr.corns(1), curr, cpoint.point);
+              add_impost(ipoint, curr, cpoint.point);
             }
             else {
-              candidates[pname].push(curr.corns(1));
+              candidates[pname].push(ipoint);
             }
           }
         }
@@ -284,7 +285,7 @@ class Profile extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) === Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) === outer) {
             //this.cnn_point(node).is_cut = true;
             this.rays[node].is_cut = true;
             return true;

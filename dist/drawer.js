@@ -4456,7 +4456,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 Contour.ecompare = (a, b) => b.elm - a.elm;
 
-GlassSegment.fn_sort = (a, b) => {
+GlassSegment.fn_sort = function fn_sort(a, b) {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
   if (da < db) {
@@ -10722,11 +10722,11 @@ class ProfileItem extends GeneratrixElement {
 
   interiorPoint() {
     const {generatrix, d1, d2} = this;
-    const igen = generatrix.curves.length === 1 ? generatrix.firstCurve.getPointAt(0.5, true) : (
-      generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2
-    );
+    const igen = generatrix.curves.length === 1 ? 
+      generatrix.firstCurve.getPointAt(0.5, true) : 
+      (generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
-    return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
+    return igen.add(normal.multiply((d1 + d2) / 2));
   }
 
   select_corn(point) {
@@ -11559,10 +11559,10 @@ class Profile extends ProfileItem {
 
     const candidates = {b: [], e: []};
 
-    const {Снаружи} = $p.enm.cnn_sides;
+    const {outer} = $p.enm.cnn_sides;
     const add_impost = (ip, curr, point) => {
       const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === Снаружи) {
+      if(this.cnn_side(curr, ip, rays) === outer) {
         touter.push(res);
       }
       else {
@@ -11575,14 +11575,15 @@ class Profile extends ProfileItem {
         for(const pname of ['b', 'e']) {
           const cpoint = curr.rays[pname];
           if(cpoint.profile == this && cpoint.cnn) {
-            if(!cpoint.profile_point) {
+            const ipoint = curr.interiorPoint();
+            if(!cpoint.profile_point || cpoint.profile_point === 't') {
               if(check_only) {
                 return true;
               }
-              add_impost(curr.corns(1), curr, cpoint.point);
+              add_impost(ipoint, curr, cpoint.point);
             }
             else {
-              candidates[pname].push(curr.corns(1));
+              candidates[pname].push(ipoint);
             }
           }
         }
@@ -11594,7 +11595,7 @@ class Profile extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) === Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) === outer) {
             this.rays[node].is_cut = true;
             return true;
           }

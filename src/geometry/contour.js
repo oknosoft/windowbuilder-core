@@ -3280,7 +3280,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
 Contour.ecompare = (a, b) => b.elm - a.elm;
 
-GlassSegment.fn_sort = (a, b) => {
+GlassSegment.fn_sort = function fn_sort(a, b) {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
   if (da < db) {
