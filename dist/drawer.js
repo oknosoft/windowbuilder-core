@@ -9833,6 +9833,9 @@ class ProfileItem extends GeneratrixElement {
         }
       }      
     }
+    for(const chld of this.getItems({class: ProfileItem})) {
+      chld.check_nom(arr);
+    }
   }
 
   save_coordinates() {
@@ -10854,11 +10857,9 @@ class ProfileItem extends GeneratrixElement {
     path.closePath();
     path.reduce();
 
-    for(const chld of this.children) {
-      if(chld instanceof ProfileItem) {
-        chld.observer && chld.observer(this);
-        chld.redraw();
-      }
+    for(const chld of this.getItems({class: ProfileItem})) {
+      chld.observer?.(this);
+      chld.redraw();
     }
 
         return this;
@@ -18875,7 +18876,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
           else {
-            const len = len_angl ? len_angl.len : _row.len;
+            const len = len_angl ? len_angl.len : (_row.len || elm.length);
             if (row.lmin > len || (row.lmax < len && row.lmax)) {
               return false;
             }

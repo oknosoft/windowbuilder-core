@@ -1419,6 +1419,9 @@ class ProfileItem extends GeneratrixElement {
         }
       }      
     }
+    for(const chld of this.getItems({class: ProfileItem})) {
+      chld.check_nom(arr);
+    }
   }
 
   /**
@@ -2637,11 +2640,9 @@ class ProfileItem extends GeneratrixElement {
     path.closePath();
     path.reduce();
 
-    for(const chld of this.children) {
-      if(chld instanceof ProfileItem) {
-        chld.observer && chld.observer(this);
-        chld.redraw();
-      }
+    for(const chld of this.getItems({class: ProfileItem})) {
+      chld.observer?.(this);
+      chld.redraw();
     }
     
     return this;

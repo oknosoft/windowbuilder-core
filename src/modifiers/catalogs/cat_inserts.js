@@ -776,7 +776,7 @@
             }
           }
           else {
-            const len = len_angl ? len_angl.len : _row.len;
+            const len = len_angl ? len_angl.len : (_row.len || elm.length);
             if (row.lmin > len || (row.lmax < len && row.lmax)) {
               return false;
             }
