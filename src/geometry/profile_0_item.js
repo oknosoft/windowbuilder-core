@@ -88,7 +88,7 @@ class CnnPoint {
   }
 
   get is_short() {
-    const {cnn, orientation} = this;
+    const {cnn, parent: {orientation}} = this;
     const {short, av, ah} = $p.enm.cnn_types;
     return cnn?.cnn_type === short ||
       (cnn.cnn_type === av && orientation.is('hor')) ||
