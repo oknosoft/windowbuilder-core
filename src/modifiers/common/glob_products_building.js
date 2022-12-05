@@ -1162,8 +1162,7 @@ class ProductsBuilding {
 
     const {nom} = row_spec;
 
-    if(nom.cutting_optimization_type == $p.enm.cutting_optimization_types.Нет ||
-      nom.cutting_optimization_type.empty() || nom.is_pieces) {
+    if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
       if(!row_base.coefficient || !len) {
         row_spec.qty = row_base.quantity;
       }

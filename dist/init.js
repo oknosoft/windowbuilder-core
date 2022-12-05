@@ -3486,6 +3486,8 @@ get amax(){return this._getter('amax')}
 set amax(v){this._setter('amax',v)}
 get sd1(){return this._getter('sd1')}
 set sd1(v){this._setter('sd1',v)}
+get sd2(){return this._getter('sd2')}
+set sd2(v){this._setter('sd2',v)}
 get sz(){return this._getter('sz')}
 set sz(v){this._setter('sz',v)}
 get cnn_type(){return this._getter('cnn_type')}

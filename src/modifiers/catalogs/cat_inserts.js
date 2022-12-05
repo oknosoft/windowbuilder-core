@@ -1104,7 +1104,7 @@
 
         // добавляем строку спецификации, если профиль или не про шагам
         if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
-          if(!row_ins_spec.quantity) {
+          if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});

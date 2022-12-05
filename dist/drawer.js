@@ -17167,8 +17167,7 @@ class ProductsBuilding {
 
     const {nom} = row_spec;
 
-    if(nom.cutting_optimization_type == $p.enm.cutting_optimization_types.Нет ||
-      nom.cutting_optimization_type.empty() || nom.is_pieces) {
+    if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
       if(!row_base.coefficient || !len) {
         row_spec.qty = row_base.quantity;
       }
@@ -19155,7 +19154,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         let row_spec;
 
         if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
-          if(!row_ins_spec.quantity) {
+          if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
