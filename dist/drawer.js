@@ -3785,10 +3785,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     !_attr._saving && _by_spec.removeChildren();
 
 
-    const imposts = []
+    const imposts = [];
+    const addls = [];
     const other = new Set();
     for(const elm of profiles) {
       elm.redraw();
+      for(const addl of elm.addls) {
+        addls.push(addl);
+      }
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
       }
@@ -3822,6 +3826,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     for (const elm of Array.from(other)) {
       elm?.bringToFront?.();
+    }
+    for (const elm of addls) {
+      const {b, e} = elm.rays;
+      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
+      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
     }
 
     const changed = [];
@@ -10349,8 +10358,8 @@ class ProfileItem extends GeneratrixElement {
       let oinner = prays[side];
       let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
 
-      const delta = cnn_point.cnn.size(this);
-      if(delta || cnn_point.cnn.sd2) {
+      const delta = cnn_point?.cnn?.size(this);
+      if(delta || cnn_point?.cnn?.sd2) {
         let base = cnn_point.cnn.sd2 ? oouter : oinner;
         const pt = base.getNearestPoint(cnn_point.point);
         const normal = base.getNormalAt(base.getOffsetOf(pt))
@@ -10361,7 +10370,6 @@ class ProfileItem extends GeneratrixElement {
       }
 
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
-
 
         const {width} = this;
         const w2 = width * width;
@@ -12429,93 +12437,6 @@ class ProfileAddl extends ProfileItem {
     this.layer.profiles.forEach((addl) => check_distance(addl, true));
 
     return res;
-  }
-
-  path_points(cnn_point, profile_point) {
-
-    const {generatrix, rays} = this;
-    const interior = generatrix.getPointAt(generatrix.length/2);
-
-    const _profile = this;
-    const _corns = this._attr._corns;
-
-    if(!generatrix.curves.length){
-      return cnn_point;
-    }
-
-    function intersect_point(path1, path2, index){
-      var intersections = path1.getIntersections(path2),
-        delta = Infinity, tdelta, point, tpoint;
-
-      if(intersections.length == 1)
-        if(index)
-          _corns[index] = intersections[0].point;
-        else
-          return intersections[0].point.getDistance(cnn_point.point, true);
-
-      else if(intersections.length > 1){
-        intersections.forEach((o) => {
-          tdelta = o.point.getDistance(cnn_point.point, true);
-          if(tdelta < delta){
-            delta = tdelta;
-            point = o.point;
-          }
-        });
-        if(index)
-          _corns[index] = point;
-        else
-          return delta;
-      }
-      return delta;
-    }
-
-    const {profile} = cnn_point;
-    if(profile){
-      const prays = profile.rays;
-
-      if(!profile.path.segments.length){
-        profile.redraw();
-      }
-
-      if(profile_point == 'b') {
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer) {
-          intersect_point(prays.outer, rays.outer, 1);
-          intersect_point(prays.outer, rays.inner, 4);
-        }
-        else {
-          intersect_point(prays.inner, rays.outer, 1);
-          intersect_point(prays.inner, rays.inner, 4);
-        }
-      }
-      else if(profile_point == 'e') {
-        if(profile.cnn_side(this, interior, prays) == $p.enm.cnn_sides.outer) {
-          intersect_point(prays.outer, rays.outer, 2);
-          intersect_point(prays.outer, rays.inner, 3);
-        }
-        else {
-          intersect_point(prays.inner, rays.outer, 2);
-          intersect_point(prays.inner, rays.inner, 3);
-        }
-      }
-    }
-
-    if(profile_point == 'b') {
-      if(!_corns[1]) {
-        _corns[1] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
-      }
-      if(!_corns[4]) {
-        _corns[4] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
-      }
-    }
-    else if(profile_point == 'e') {
-      if(!_corns[2]) {
-        _corns[2] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
-      }
-      if(!_corns[3]) {
-        _corns[3] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
-      }
-    }
-    return cnn_point;
   }
 
   do_bind(p, bcnn, ecnn, moved) {

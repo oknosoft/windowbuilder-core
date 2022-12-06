@@ -2026,8 +2026,8 @@ class ProfileItem extends GeneratrixElement {
       let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
 
       // строим эквидистанту к внутренней стороне соседнего профиля
-      const delta = cnn_point.cnn.size(this);
-      if(delta || cnn_point.cnn.sd2) {
+      const delta = cnn_point?.cnn?.size(this);
+      if(delta || cnn_point?.cnn?.sd2) {
         let base = cnn_point.cnn.sd2 ? oouter : oinner;
         const pt = base.getNearestPoint(cnn_point.point);
         const normal = base.getNormalAt(base.getOffsetOf(pt))
@@ -2039,30 +2039,6 @@ class ProfileItem extends GeneratrixElement {
 
       // импосты рисуем с учетом стороны примыкания
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
-
-        // TODO: вместо path задействовать rays 
-        //  при необходимости, перерисовываем ведущий элемент
-        // if(!other.path.segments.length) {
-        //   const {_attr, row} = other;
-        //   if(_attr.force_redraw) {
-        //     if(other.generatrix && other.generatrix.segments.length) {
-        //       other.path.addSegments(other.generatrix.segments);
-        //       _attr.force_redraw = false;
-        //     }
-        //     else if(other.row && other.row.path_data) {
-        //       other.path.pathData = other.row.path_data;
-        //       _attr.force_redraw = false;
-        //     }
-        //     else {
-        //       throw new Error('cycle redraw');
-        //     }
-        //   }
-        //   else {
-        //     _attr.force_redraw = true;
-        //     other.redraw();
-        //     _attr.force_redraw = false;
-        //   }
-        // }
 
         const {width} = this;
         const w2 = width * width;

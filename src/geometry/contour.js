@@ -2440,10 +2440,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     //$p.job_prm.debug && console.profile();
 
     // сначала перерисовываем все профили контура
-    const imposts = []
+    const imposts = [];
+    const addls = [];
     const other = new Set();
     for(const elm of profiles) {
       elm.redraw();
+      for(const addl of elm.addls) {
+        addls.push(addl);
+      }
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
       }
@@ -2479,6 +2483,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     for (const elm of Array.from(other)) {
       elm?.bringToFront?.();
     }
+    // z-index доборов
+    for (const elm of addls) {
+      const {b, e} = elm.rays;
+      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
+      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
+    }
     
     // уточняем номенклатуры и соединения для новой геометрии профилей
     const changed = [];
@@ -2496,7 +2506,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
-
+    
     //$p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
