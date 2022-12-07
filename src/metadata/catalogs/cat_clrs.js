@@ -364,7 +364,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
    * @return {CatColor_price_groups}
    */
   find_group(sys, ox) {
-    const {BuilderElement, Filling} = $p.EditorInvisible;
+    const {EditorInvisible: {BuilderElement, Filling}, classes: {DataProcessorObj}} = $p;
     let clr_group;
     if(sys instanceof BuilderElement) {
       clr_group = sys.inset.clr_group;
@@ -382,10 +382,13 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     else if(sys.sys && sys.sys.clr_group) {
       clr_group = sys.sys.clr_group;
     }
+    else if(sys instanceof DataProcessorObj && ox) {
+      clr_group = ox.sys.find_group(ox);
+    }
     else {
       clr_group = sys.find_group ? sys.find_group(ox) : sys.clr_group;
     }
-    return clr_group;
+    return clr_group || this.get();
   }
 
 }
