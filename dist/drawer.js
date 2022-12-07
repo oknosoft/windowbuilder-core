@@ -7444,21 +7444,23 @@ class FreeText extends paper.PointText {
 
     super(attr);
 
+    const {project} = this;
+
     if(attr.row){
       this._row = attr.row;
     }
     else{
-      this._row = attr.row = this.project.ox.coordinates.add();
+      this._row = attr.row = project.ox.coordinates.add();
     }
 
     const {_row} = this;
 
     if(!_row.cnstr){
-      _row.cnstr = attr.parent ? attr.parent.layer.cnstr : this.project.activeLayer.cnstr;
+      _row.cnstr = attr.parent ? attr.parent.layer.cnstr : project.activeLayer.cnstr;
     }
 
     if(!_row.elm){
-      _row.elm = this.project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
+      _row.elm = project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
     }
 
     if(attr.point){
@@ -7483,6 +7485,10 @@ class FreeText extends paper.PointText {
       }
     }
 
+        if(project.builder_props.txts === false) {
+      this.visible = false;
+    }
+
     this.bringToFront();
 
   }
@@ -7492,7 +7498,7 @@ class FreeText extends paper.PointText {
       this._row._owner.del(this._row);
       this._row = null;
     }
-    paper.PointText.prototype.remove.call(this);
+    super.remove();
   }
 
   save_coordinates() {
@@ -13763,6 +13769,12 @@ class Scheme extends paper.Project {
       this.check_clr();
       _scope?._acc?.props?._grid?.reload();
     }
+    if(obj === ox && 'builder_props' in fields) {
+      const {txts} = this.builder_props;
+      for(const elm of this.getItems({class: FreeText})) {
+        elm.visible = txts;
+      }      
+    }
   }
 
   elm_cnn(elm1, elm2) {
@@ -14129,7 +14141,8 @@ class Scheme extends paper.Project {
       if (_attr.elm_fragment > 0) {
         const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
         elm && elm.draw_fragment && elm.draw_fragment(true);
-      } else {
+      } 
+      else {
         this.l_connective.redraw();
 
         isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);

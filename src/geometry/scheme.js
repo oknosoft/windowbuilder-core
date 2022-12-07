@@ -294,6 +294,13 @@ class Scheme extends paper.Project {
       this.check_clr();
       _scope?._acc?.props?._grid?.reload();
     }
+    // при изменении builder_props, уточняем видимость надписей
+    if(obj === ox && 'builder_props' in fields) {
+      const {txts} = this.builder_props;
+      for(const elm of this.getItems({class: FreeText})) {
+        elm.visible = txts;
+      }      
+    }
   }
 
   /**
@@ -764,7 +771,8 @@ class Scheme extends paper.Project {
       if (_attr.elm_fragment > 0) {
         const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
         elm && elm.draw_fragment && elm.draw_fragment(true);
-      } else {
+      } 
+      else {
         // перерисовываем соединительные профили
         this.l_connective.redraw();
 
