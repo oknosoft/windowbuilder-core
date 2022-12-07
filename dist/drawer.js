@@ -18144,7 +18144,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatInsertsSpecificationRow} = $p;
+    CatFormulas, CatNom, CatInsertsSpecificationRow} = $p;
 
   const {inserts_types} = enm;
 
@@ -18636,11 +18636,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       else if(main_rows.length){
         if(elm && !main_rows[0].formula.empty()) {
           try {
-            _nom = main_rows[0].formula.execute({elm});
-            if(!_nom) {
-              _nom = main_rows[0].nom;
-            }
-          } catch (e) {
+            const fnom = main_rows[0].formula.execute({elm});
+            _nom = fnom instanceof CatNom ? fnom : main_rows[0].nom;
+          }
+          catch (e) {
             _nom = main_rows[0].nom;
           }
         }
