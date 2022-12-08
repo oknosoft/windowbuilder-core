@@ -9961,12 +9961,14 @@ class ProfileItem extends GeneratrixElement {
         }
       }
 
-      _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
+      _row.alp1 = Math.round(((this.corns(5) || this.corns(4)).subtract(this.corns(1)).angle - 
+        generatrix.getTangentAt(0).angle) * 10) / 10;
       if(_row.alp1 < 0) {
         _row.alp1 = _row.alp1 + 360;
       }
 
-      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
+      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - 
+        this.corns(2).subtract(this.corns(6) || this.corns(3)).angle) * 10) / 10;
       if(_row.alp2 < 0) {
         _row.alp2 = _row.alp2 + 360;
       }
@@ -10438,15 +10440,8 @@ class ProfileItem extends GeneratrixElement {
             }
             else {
               const {width} = this;
-              const l1 = new paper.Path({insert: false, segments: [_corns[1], _corns[5]]}).elongation(width * 4);
-              const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 4);
-              const pts = [
-                [intersect_point(l1, rays.outer, 0, interior), l1, rays.outer],
-                [intersect_point(l1, rays.inner, 0, interior), l1, rays.inner],
-                [intersect_point(l4, rays.outer, 0, interior), l4, rays.outer],
-                [intersect_point(l4, rays.inner, 0, interior), l4, rays.inner],
-              ].sort((a, b) => b[0] - a[0]);
-              intersect_point(pts[0][1], pts[0][2], 7, interior);
+              const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
+              intersect_point(l4, rays.outer, 7, interior);
             }
           }
           else if(is_e) {
@@ -10457,15 +10452,8 @@ class ProfileItem extends GeneratrixElement {
               delete _corns[6];
             }
             else {
-              const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 4);
-              const l3 = new paper.Path({insert: false, segments: [_corns[3], _corns[6]]}).elongation(width * 4);
-              const pts = [
-                [intersect_point(l2, rays.outer, 0, interior), l2, rays.outer],
-                [intersect_point(l2, rays.inner, 0, interior), l2, rays.inner],
-                [intersect_point(l3, rays.outer, 0, interior), l3, rays.outer],
-                [intersect_point(l3, rays.inner, 0, interior), l3, rays.inner],
-              ].sort((a, b) => b[0] - a[0]);
-              intersect_point(pts[0][1], pts[0][2], 8, interior);
+              const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
+              intersect_point(l2, rays.inner, 8, interior);
             }
           }
         }
