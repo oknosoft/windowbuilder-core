@@ -7823,7 +7823,7 @@ class GeneratrixElement extends BuilderElement {
           segm.point = free_point;
           if(cnn_point && !paper.Key.isDown('control')){
 
-            if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point)){
+            if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point, 0)){
               if(this instanceof Onlay){
                 this.move_nodes(noti_points.old, free_point);
               }
@@ -8813,9 +8813,9 @@ class CnnPoint {
   get is_short() {
     const {cnn, parent: {orientation}} = this;
     const {short, av, ah} = $p.enm.cnn_types;
-    return cnn?.cnn_type === short ||
+    return cnn && (cnn.cnn_type === short ||
       (cnn.cnn_type === av && orientation.is('hor')) ||
-      (cnn.cnn_type === ah && orientation.is('vert'));
+      (cnn.cnn_type === ah && orientation.is('vert')));
   }
 
   get is_ll() {
