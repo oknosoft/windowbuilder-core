@@ -943,7 +943,7 @@ class BuilderElement extends paper.Group {
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
-      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields,
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
@@ -992,7 +992,7 @@ class BuilderElement extends paper.Group {
           if(!iface || utils.is_data_obj(o)) {
             const insert = inserts.get(o);
             const {insert_type, insert_glass_type} = insert;
-            if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+            if(_types_filling.includes(insert_type) && (glass_thickness === 1 || insert_glass_type.empty() || insert_glass_type.is('Заполнение'))) {
               if(glass_thickness === 0) {
                 return thicknesses.includes(insert.thickness(this));
               }
@@ -1012,7 +1012,7 @@ class BuilderElement extends paper.Group {
           else {
             let refs = '';
             inserts.by_thickness(sys).forEach((o) => {
-              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение) {
+              if(o.insert_glass_type.empty() || o.insert_glass_type.is('Заполнение')) {
                 if(refs) {
                   refs += ', ';
                 }
