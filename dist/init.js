@@ -2053,6 +2053,25 @@ set parent(v){this._setter('parent',v)}
 }
 $p.CatProperty_values = CatProperty_values;
 $p.cat.create('property_values');
+class CatDivisions extends CatObj{
+get main_project(){return this._getter('main_project')}
+set main_project(v){this._setter('main_project',v)}
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get extra_fields(){return this._getter_ts('extra_fields')}
+set extra_fields(v){this._setter_ts('extra_fields',v)}
+get keys(){return this._getter_ts('keys')}
+set keys(v){this._setter_ts('keys',v)}
+}
+$p.CatDivisions = CatDivisions;
+class CatDivisionsKeysRow extends TabularSectionRow{
+get acl_obj(){return this._getter('acl_obj')}
+set acl_obj(v){this._setter('acl_obj',v)}
+}
+$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
+$p.cat.create('divisions');
 class CatMeta_ids extends CatObj{
 get full_moniker(){return this._getter('full_moniker')}
 set full_moniker(v){this._setter('full_moniker',v)}
@@ -4916,25 +4935,6 @@ set clr(v){this._setter('clr',v)}
 }
 $p.CatColor_price_groupsExcludeRow = CatColor_price_groupsExcludeRow;
 $p.cat.create('color_price_groups');
-class CatDivisions extends CatObj{
-get main_project(){return this._getter('main_project')}
-set main_project(v){this._setter('main_project',v)}
-get sorting_field(){return this._getter('sorting_field')}
-set sorting_field(v){this._setter('sorting_field',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get extra_fields(){return this._getter_ts('extra_fields')}
-set extra_fields(v){this._setter_ts('extra_fields',v)}
-get keys(){return this._getter_ts('keys')}
-set keys(v){this._setter_ts('keys',v)}
-}
-$p.CatDivisions = CatDivisions;
-class CatDivisionsKeysRow extends TabularSectionRow{
-get acl_obj(){return this._getter('acl_obj')}
-set acl_obj(v){this._setter('acl_obj',v)}
-}
-$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
-$p.cat.create('divisions');
 class CatUsers extends CatObj{
 get invalid(){return this._getter('invalid')}
 set invalid(v){this._setter('invalid',v)}
@@ -8239,6 +8239,8 @@ get material(){return this._getter('material')}
 set material(v){this._setter('material',v)}
 get grouping(){return this._getter('grouping')}
 set grouping(v){this._setter('grouping',v)}
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
 get totqty(){return this._getter('totqty')}
 set totqty(v){this._setter('totqty',v)}
 get totqty1(){return this._getter('totqty1')}
