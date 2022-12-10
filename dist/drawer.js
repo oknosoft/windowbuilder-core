@@ -1022,27 +1022,23 @@ class BuilderElement extends paper.Group {
             return `_t_.ref in (${refs})`;
           }
         }
-        else if(this instanceof ProfileConnective) {
-          selection = {elm_type: elm_types.Соединитель};
-        }
-        else if(this instanceof ProfileAddl) {
-          selection = {elm_type: elm_types.Добор};
-        }
-        else if(this instanceof Profile) {
+        else if(this instanceof ProfileItem) {
           const {any} = positions;
-          if(this.nearest()) {
-            selection = {
-              pos:{in:[this.pos,any]},
-              elm_type: {in: [elm_types.flap, elm_types.flap0, elm_types.Добор]}
-            };
-          }
-          else {
-            selection = {pos:{in:[this.pos,any]},
-              elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+          selection = {
+            pos: {in: [this.pos, any]},
+            elm_type: this.elm_type,
+          };
+          switch (selection.elm_type) {
+            case (elm_types.flap):
+              selection.elm_type = {in: [elm_types.flap, elm_types.flap0]};
+              break;
+            case (elm_types.impost):
+              selection.elm_type = {in: [elm_types.impost, elm_types.shtulp]};
+              break;
           }
         }
         else {
-          selection = {elm_type: this.nom.elm_type};
+          selection = {elm_type: this.elm_type || this.nom.elm_type};
         }
 
         if(!iface || utils.is_data_obj(o)) {
@@ -12630,6 +12626,10 @@ class ConnectiveLayer extends paper.Layer {
 
   get info() {
     return this.presentation;
+  }
+
+    get kind() {
+    return 0;
   }
 
   get skeleton() {

@@ -222,6 +222,10 @@ class ConnectiveLayer extends paper.Layer {
   get info() {
     return this.presentation;
   }
+  
+  get kind() {
+    return 0;
+  }
 
   get skeleton() {
     return this.project._skeleton;
