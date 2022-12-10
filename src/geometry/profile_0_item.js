@@ -1023,18 +1023,12 @@ class ProfileItem extends GeneratrixElement {
   get length() {
     const {b, e, outer} = this.rays;
     const ppoints = {};
-    let gen = this.elm_type == $p.enm.elm_types.impost ? this.generatrix : outer;
 
     // находим проекции четырёх (шести) вершин на образующую
-    let elongated;
     for (const i of [1, 2, 3, 4, 7, 8]) {
       const pt = this.corns(i);
       if(pt) {
-        if(i > 4 && !elongated) {
-          gen = gen.clone({insert: false}).elongation(this.width * 2);
-          elongated = true;
-        }
-        ppoints[i] = gen.getNearestPoint(pt);
+        ppoints[i] = outer.getNearestPoint(pt);
       }
     }
 
@@ -1043,7 +1037,7 @@ class ProfileItem extends GeneratrixElement {
     for(const i of [7, 1, 4]) {
       const pt = ppoints[i];
       if(pt) {
-        const curr = gen.getOffsetOf(pt);
+        const curr = outer.getOffsetOf(pt);
         if(curr < distanse) {
           distanse = curr;
           ppoints.b = pt;
@@ -1057,7 +1051,7 @@ class ProfileItem extends GeneratrixElement {
     for(const i of [8, 2, 3]) {
       const pt = ppoints[i];
       if(pt) {
-        const curr = gen.getOffsetOf(pt);
+        const curr = outer.getOffsetOf(pt);
         if(curr > distanse) {
           distanse = curr;
           ppoints.e = pt;
@@ -1069,7 +1063,7 @@ class ProfileItem extends GeneratrixElement {
     }
 
     // получаем фрагмент образующей
-    const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
+    const sub_gen = outer.get_subpath(ppoints.b, ppoints.e);
     const res = sub_gen.length;
     sub_gen.remove();
 
