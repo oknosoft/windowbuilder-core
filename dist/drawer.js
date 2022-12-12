@@ -13060,9 +13060,11 @@ class Onlay extends ProfileItem {
   }
 
   get region() {
-    const {_row, parent} = this;
-    let region = _row && _row.region;
-    return region && !region.empty() ? region : $p.enm.lay_regions.r2;
+    let region = this._row?.region;
+    if(!region || region.empty?.()) {
+      region = this.inset?.region;
+    }
+    return region && !region.empty?.() ? region : $p.enm.lay_regions.r1;
   }
   set region(v) {
     this.set_region(v);
