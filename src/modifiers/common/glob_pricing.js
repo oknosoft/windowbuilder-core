@@ -355,7 +355,8 @@ class Pricing {
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
-        calc_order_row: value
+        calc_order_row: value,
+        date,
       };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);

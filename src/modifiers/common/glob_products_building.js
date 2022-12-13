@@ -1023,13 +1023,13 @@ class ProductsBuilding {
 
   /**
    * Добавляет или заполняет строку спецификации
-   * @param row_spec
-   * @param elm
-   * @param row_base
-   * @param spec
-   * @param [nom]
-   * @param [origin]
-   * @return {TabularSectionRow.cat.characteristics.specification}
+   * @param {CatCharacteristicsSpecificationRow} [row_spec]
+   * @param {BuilderElement} elm
+   * @param {CatInsertsSpecificationRow|CatFurnsSpecificationRow|CatCnnsSpecificationRow} [row_base]
+   * @param {TabularSection} spec
+   * @param {CatNom} [nom]
+   * @param {CatInserts|CatFurns|CatCnns} [origin]
+   * @return {CatCharacteristicsSpecificationRow}
    */
   static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl}) {
     const {
@@ -1048,6 +1048,7 @@ class ProductsBuilding {
       if(row_base?.is_order_row === kit) {
         specify = ox || spec._owner;
         row_spec = specify.calc_order.accessories().specification.add();
+        row_spec._quantity = specify.calc_order_row.quantity;
       }
       else {
         row_spec = spec.add();
@@ -1196,14 +1197,14 @@ class ProductsBuilding {
   /**
    * РассчитатьКоличествоПлощадьМассу
    *
-   * @param row_spec
-   * @param spec
-   * @param row_coord
-   * @param angle_calc_method_prev
-   * @param angle_calc_method_next
-   * @param alp1
-   * @param alp2
-   * @param totqty0
+   * @param {CatCharacteristicsSpecificationRow} row_spec
+   * @param {TabularSection} spec
+   * @param {Object} row_coord
+   * @param {EnmAngle_calculating_ways} [angle_calc_method_prev]
+   * @param {EnmAngle_calculating_ways} [angle_calc_method_next]
+   * @param {Number} [alp1]
+   * @param {Number} [alp2]
+   * @param {Boolean} [totqty0]
    */
   static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
 
@@ -1282,6 +1283,13 @@ class ProductsBuilding {
     }
 
     row_spec.totqty1 = totqty0 ? 0 : Math.max(row_spec.nom.min_volume, totqty * row_spec.nom.loss_factor);
+    
+    const {_quantity} = row_spec;
+    if(_quantity) {
+      row_spec.qty *= _quantity;
+      row_spec.totqty *= _quantity;
+      row_spec.totqty1 *= _quantity;
+    }
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));

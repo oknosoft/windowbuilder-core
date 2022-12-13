@@ -8808,8 +8808,8 @@ class CnnPoint {
 
   get is_short() {
     const {cnn, parent: {orientation}} = this;
-    const {short, av, ah} = $p.enm.cnn_types;
-    return cnn && (cnn.cnn_type === short ||
+    const {short, av, ah, t} = $p.enm.cnn_types;
+    return cnn && (cnn.cnn_type === short || cnn.cnn_type === t ||
       (cnn.cnn_type === av && orientation.is('hor')) ||
       (cnn.cnn_type === ah && orientation.is('vert')));
   }
@@ -16031,7 +16031,8 @@ class Pricing {
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
-        calc_order_row: value
+        calc_order_row: value,
+        date,
       };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);
@@ -16983,6 +16984,7 @@ class ProductsBuilding {
       if(row_base?.is_order_row === kit) {
         specify = ox || spec._owner;
         row_spec = specify.calc_order.accessories().specification.add();
+        row_spec._quantity = specify.calc_order_row.quantity;
       }
       else {
         row_spec = spec.add();
@@ -17190,6 +17192,13 @@ class ProductsBuilding {
     }
 
     row_spec.totqty1 = totqty0 ? 0 : Math.max(row_spec.nom.min_volume, totqty * row_spec.nom.loss_factor);
+
+        const {_quantity} = row_spec;
+    if(_quantity) {
+      row_spec.qty *= _quantity;
+      row_spec.totqty *= _quantity;
+      row_spec.totqty1 *= _quantity;
+    }
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));
@@ -18996,7 +19005,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
-                  res.push(fakerow);
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
                 });
               }
               selector.eclr = clr_out;
@@ -19006,7 +19017,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
-                  res.push(fakerow);
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
                 });
               }
             }
@@ -19015,7 +19028,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 const fakerow = fake_row(subrow, row);
                 fakerow._origin = row.nom;
                 fakerow._clr = eclr;
-                res.push(fakerow);
+                if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  res.push(fakerow);
+                }
               });
             }
           }
@@ -19023,7 +19038,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               fakerow._origin = row.nom;
-              res.push(fakerow);
+              if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                res.push(fakerow); 
+              }
             });
           }
         }
@@ -20442,18 +20459,25 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   del_row(row) {
     if(row instanceof $p.DocCalc_orderProductionRow) {
-      const {characteristic} = row;
+      const {nom, characteristic} = row;
+      const {ui, job_prm} = $p;
+      if(nom === job_prm.nom.accessories) {
+        ui?.dialogs?.alert({
+          html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
+          title: this.presentation,
+        });
+        return false;
+      }
       if(!characteristic.empty() && !characteristic.calc_order.empty()) {
         const {production, orders, presentation, _data} = this;
 
-        const {ui} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
         if(!leading_product.empty() && leading_product.calc_order_row && (
           leading_product.inserts.find({cnstr: -leading_elm, inset: origin}) ||
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
           ui?.dialogs?.alert({
-            text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
+            html: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
@@ -20465,6 +20489,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
+        });
+        production.find_rows({nom: job_prm.nom.accessories}, (prow) => {
+          const cx = prow.characteristic;
+          if(cx.specification.find({specify: characteristic})) {
+            cx.specification.clear({specify: characteristic});
+            cx.weight = cx.elm_weight();
+            cx.name = cx.prod_name();
+            prow.value_change('quantity', 'update', 1);
+          }
         });
         orders.forEach(({invoice}) => {
           if(!invoice.empty()) {
@@ -21345,7 +21378,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc, manager, date} = _owner._owner;
+    const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 

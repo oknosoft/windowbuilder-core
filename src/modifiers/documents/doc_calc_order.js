@@ -565,12 +565,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // удаление строки
   del_row(row) {
     if(row instanceof $p.DocCalc_orderProductionRow) {
-      const {characteristic} = row;
+      const {nom, characteristic} = row;
+      const {ui, job_prm} = $p;
+      if(nom === job_prm.nom.accessories) {
+        ui?.dialogs?.alert({
+          html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
+          title: this.presentation,
+        });
+        return false;
+      }
       if(!characteristic.empty() && !characteristic.calc_order.empty()) {
         const {production, orders, presentation, _data} = this;
 
         // запрет удаления подчиненной продукции
-        const {ui} = $p;
         const {leading_elm, leading_product, origin} = characteristic;
         if(!leading_product.empty() && leading_product.calc_order_row && (
           // если в изделии присутствует порождающая вставка
@@ -579,7 +586,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
         )) {
           ui?.dialogs?.alert({
-            text: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
+            html: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
               leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
@@ -592,6 +599,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // циклическое удаление ведомых при удалении основного изделия
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
+        });
+        production.find_rows({nom: job_prm.nom.accessories}, (prow) => {
+          const cx = prow.characteristic;
+          if(cx.specification.find({specify: characteristic})) {
+            cx.specification.clear({specify: characteristic});
+            cx.weight = cx.elm_weight();
+            cx.name = cx.prod_name();
+            prow.value_change('quantity', 'update', 1);
+          }
         });
         orders.forEach(({invoice}) => {
           if(!invoice.empty()) {
@@ -1606,7 +1622,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
-    const {rounding, _slave_recalc, manager, date} = _owner._owner;
+    const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
 
