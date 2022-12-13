@@ -1012,7 +1012,9 @@
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
-                  res.push(fakerow);
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
                 });
               }
               selector.eclr = clr_out;
@@ -1022,7 +1024,9 @@
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
-                  res.push(fakerow);
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
                 });
               }
             }
@@ -1031,7 +1035,9 @@
                 const fakerow = fake_row(subrow, row);
                 fakerow._origin = row.nom;
                 fakerow._clr = eclr;
-                res.push(fakerow);
+                if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  res.push(fakerow);
+                }
               });
             }
           }
@@ -1039,7 +1045,9 @@
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               fakerow._origin = row.nom;
-              res.push(fakerow);
+              if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                res.push(fakerow); 
+              }
             });
           }
         }
