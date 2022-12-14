@@ -2466,17 +2466,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
-      if(b.profile.e.is_nearest(b.point, 20000)) {
+      if(b.profile?.e?.is_nearest(b.point, 20000)) {
         b.profile.rays.e.profile?.bringToFront?.();
       }
-      else if(b.profile.b.is_nearest(b.point, 20000)) {
+      else if(b.profile?.b?.is_nearest(b.point, 20000)) {
         b.profile.rays.b.profile?.bringToFront?.();
       }
       e.profile?.bringToFront?.();
-      if(e.profile.e.is_nearest(e.point, 20000)) {
+      if(e.profile?.e?.is_nearest(e.point, 20000)) {
         e.profile.rays.e.profile?.bringToFront?.();
       }
-      else if(e.profile.b.is_nearest(e.point, 20000)) {
+      else if(e.profile?.b?.is_nearest(e.point, 20000)) {
         e.profile.rays.b.profile?.bringToFront?.();
       }
     }

@@ -170,6 +170,27 @@ class ProfileConnective extends ProfileItem {
 
   }
 
+  /** @inheritdoc */
+  set_inset(v) {
+    const {_row, selected} = this;
+    if(_row.inset != v) {
+      super.set_inset(v);
+
+      // для уже нарисованных элементов...
+      for(const rama of this.joined_nearests()) {
+        const {_attr} = rama;
+        const {inner, outer} = rama.joined_imposts();
+        _attr && _attr._rays && _attr._rays.clear('with_neighbor');
+        rama.redraw();
+        inner.concat(outer).forEach(({profile}) => {
+          profile.observer(rama);
+        });
+      }
+      this.setSelection(selected);
+    }
+  }
+
+
   /**
    * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, инициирует обновление путей примыкающих элементов

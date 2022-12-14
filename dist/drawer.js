@@ -3806,17 +3806,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
-      if(b.profile.e.is_nearest(b.point, 20000)) {
+      if(b.profile?.e?.is_nearest(b.point, 20000)) {
         b.profile.rays.e.profile?.bringToFront?.();
       }
-      else if(b.profile.b.is_nearest(b.point, 20000)) {
+      else if(b.profile?.b?.is_nearest(b.point, 20000)) {
         b.profile.rays.b.profile?.bringToFront?.();
       }
       e.profile?.bringToFront?.();
-      if(e.profile.e.is_nearest(e.point, 20000)) {
+      if(e.profile?.e?.is_nearest(e.point, 20000)) {
         e.profile.rays.e.profile?.bringToFront?.();
       }
-      else if(e.profile.b.is_nearest(e.point, 20000)) {
+      else if(e.profile?.b?.is_nearest(e.point, 20000)) {
         e.profile.rays.b.profile?.bringToFront?.();
       }
     }
@@ -9385,11 +9385,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   gn(n) {
-    if(this.layer.layer) {
-      const {profile, is_t} = this.cnn_point(n);
-      if(is_t && profile) {
-        return profile.generatrix.getNearestPoint(this[n]);
-      }
+    const {profile, is_t} = this.cnn_point(n);
+    if(is_t && profile) {
+      return profile.generatrix.getNearestPoint(this[n]);
     }
     return this[n];
   }
@@ -12577,6 +12575,25 @@ class ProfileConnective extends ProfileItem {
     _row.elm_type = this.elm_type;
 
   }
+
+  set_inset(v) {
+    const {_row, selected} = this;
+    if(_row.inset != v) {
+      super.set_inset(v);
+
+      for(const rama of this.joined_nearests()) {
+        const {_attr} = rama;
+        const {inner, outer} = rama.joined_imposts();
+        _attr && _attr._rays && _attr._rays.clear('with_neighbor');
+        rama.redraw();
+        inner.concat(outer).forEach(({profile}) => {
+          profile.observer(rama);
+        });
+      }
+      this.setSelection(selected);
+    }
+  }
+
 
   remove() {
     this.joined_nearests().forEach((rama) => {
