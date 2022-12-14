@@ -1219,10 +1219,12 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    super.setSelection(selection);
-
     const {generatrix, path} = this._attr;
-
+    if(!generatrix || !path) {
+      return;
+    }
+    super.setSelection(selection);
+    
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
 

@@ -9653,11 +9653,13 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
+    const {generatrix, path} = this._attr;
+    if(!generatrix || !path) {
+      return;
+    }
     super.setSelection(selection);
 
-    const {generatrix, path} = this._attr;
-
-    generatrix.setSelection(selection);
+        generatrix.setSelection(selection);
     this.ruler_line_select(false);
 
     if(selection) {
