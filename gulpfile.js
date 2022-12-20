@@ -24,7 +24,7 @@ gulp.task('build-drawer', function () {
     './src/modifiers/documents/*.js',
   ])
     .pipe(concat('drawer.js'))
-    .pipe(decomment({safe: true}))
+    .pipe(decomment({safe: true, trim: true}))
     .pipe(umd({
       // exports: function (file) {
       //   return 'EditorInvisible';

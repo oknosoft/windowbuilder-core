@@ -3,6 +3,14 @@
 var through = require('through2');
 var decomment = require('decomment');
 
+// https://www.regextester.com/94246
+function pre(text, options) {
+  const tmp = text
+    .replace(/(^|\s)\/\/.*$/gm, '')
+    .replace(/^\s*\n/gm, ''); 
+  return decomment(tmp, options);
+}
+
 function main(options, func) {
     return through.obj(function (file, enc, cb) {
         if (file.isNull()) {
@@ -19,7 +27,7 @@ function main(options, func) {
 }
 
 function gulpDecomment(options) {
-    return main(options, decomment);
+    return main(options, pre);
 }
 
 gulpDecomment.text = function (options) {
