@@ -1668,7 +1668,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         spec: characteristic.specification,
         date,
       };
-      const {price} = _obj;
+      const {price, price_internal} = _obj;
       pricing.price_type(fake_prm);
       if(origin instanceof DocPurchase_order) {
         fake_prm.first_cost = _obj.first_cost;
@@ -1679,6 +1679,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       pricing.calc_amount(fake_prm);
       if(price && !_obj.price) {
         _obj.price = price;
+        _obj.price_internal = price_internal;
         recalc = true;
       }
     }

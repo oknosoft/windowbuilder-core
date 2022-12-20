@@ -30,31 +30,29 @@ class GlassSegment {
   segment() {
 
     let gen;
+    const {profile} = this;
+    const cond = profile.children.some((addl) => {
 
-    if (this.profile.children.some((addl) => {
-
-        if (addl instanceof ProfileAddl && this.outer == addl.outer) {
-
-          if (!gen) {
-            gen = this.profile.generatrix;
-          }
-
-          const b = this.profile instanceof ProfileAddl ? this.profile.b : this.b;
-          const e = this.profile instanceof ProfileAddl ? this.profile.e : this.e;
-
-          // TODO: учесть импосты, привязанные к добору
-
-          if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {
-            this.profile = addl;
-            this.outer = false;
-            return true;
-          }
+      if (addl instanceof ProfileAddl && this.outer == addl.outer) {
+        if (!gen) {
+          gen = profile.generatrix;
         }
-      })) {
+        const b = profile instanceof ProfileAddl ? profile.b : this.b;
+        const e = profile instanceof ProfileAddl ? profile.e : this.e;
+        
+        // TODO: учесть импосты, привязанные к добору
 
+        if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {
+          this.profile = addl;
+          this.outer = false;
+          return true;
+        }
+      }
+    });
+
+    if (cond) {
       this.segment();
     }
-
   }
 
   /**
@@ -88,7 +86,6 @@ class GlassSegment {
       const poffset = generatrix.getOffsetOf(ppoint);
       const ptangent = generatrix.getTangentAt(poffset);
       for(const segm of segments) {
-        //if(segm.profile === elm.profile && (offset === 0 ? segm.e : segm.b).is_nearest(ppoint, true))
         if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {
           angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});
         }
@@ -111,7 +108,7 @@ class GlassSegment {
   }
 
   /**
-   * Выясныет, есть ли у текущего сегмента соединение с соседним
+   * Выясняет, есть ли у текущего сегмента соединение с соседним
    * @param segm
    * @param point
    * @param nodes
@@ -213,7 +210,6 @@ class GlassSegment {
     };
   }
 }
-
 class PointMap extends Map {
 
   byPoint(point) {
@@ -3284,6 +3280,24 @@ class Contour extends AbstractFilling(paper.Layer) {
         layer.bringToFront();
       }
     }
+  }
+
+  get sketch_view() {
+    let {sys: {sketch_view}, project: {_attr}} = this;
+    const {hinge, out_hinge, inner, outer} = sketch_view._manager;
+    if(_attr._reflected) {
+      switch (sketch_view) {
+      case hinge:
+        return out_hinge;
+      case out_hinge:
+        return hinge;
+      case inner:
+        return outer;
+      case outer:
+        return inner;
+      }
+    }
+    return sketch_view;
   }
 
 }
