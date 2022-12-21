@@ -210,6 +210,7 @@ class GlassSegment {
     };
   }
 }
+
 class PointMap extends Map {
 
   byPoint(point) {

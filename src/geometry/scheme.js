@@ -147,7 +147,7 @@ class Scheme extends paper.Project {
     }
 
     const scheme_changed_names = ['clr', 'sys'];
-    const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
+    const row_changed_names = ['note', 'quantity', 'discount_percent', 'discount_percent_internal'];
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
@@ -361,7 +361,7 @@ class Scheme extends paper.Project {
 
     // устанавливаем в _dp свойства строки заказа
     if(_attr._calc_order_row) {
-      'quantity,price_internal,discount_percent_internal,discount_percent,price,amount,note'.split(',').forEach((fld) => _dp[fld] = _attr._calc_order_row[fld]);
+      'quantity,price_internal,discount_percent_internal,discount_percent,price,amount,amount_internal,note'.split(',').forEach((fld) => _dp[fld] = _attr._calc_order_row[fld]);
     }
     else {
       // TODO: установить режим только просмотр, если не найдена строка заказа
