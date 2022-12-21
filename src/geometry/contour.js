@@ -2429,8 +2429,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization, l_text, project, profiles} = this;
-    const {_by_insets, _by_spec} = l_visualization;
+    const {l_visualization: {_by_insets, _by_spec}, project, profiles} = this;
     const {_attr, _scope} = project;
     _by_insets.removeChildren();
     !_attr._saving && _by_spec.removeChildren();
@@ -2512,8 +2511,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // перерисовываем вложенные контуры
     const children = this.contours.concat(this.tearings);
-    const left = this.children.filter((elm) => 
-      !children.includes(elm) && elm !== l_visualization && elm !== l_text);
+    const left = this.children.filter((elm) => !children.includes(elm));
     for(const elm of children) {
       elm.redraw();
       for(const lelm of left) {
@@ -3146,7 +3144,15 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get l_text() {
     const {_attr} = this;
-    return _attr._txt || (_attr._txt = new paper.Group({parent: this}));
+    if(!_attr._txt) {
+      _attr._txt = new paper.Group({parent: this});
+      for(const contour of this.contours) {
+        if(_attr._txt.isAbove(contour)) {
+          _attr._txt.insertBelow(contour);
+        }
+      }
+    }
+    return _attr._txt;
   }
 
   /**
@@ -3159,6 +3165,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       _attr._visl = new paper.Group({parent: this, guide: true});
       _attr._visl._by_insets = new paper.Group({parent: _attr._visl});
       _attr._visl._by_spec = new paper.Group({parent: _attr._visl});
+      for(const contour of this.contours) {
+        if(_attr._visl.isAbove(contour)) {
+          _attr._visl.insertBelow(contour);
+        }
+      }
     }
     return _attr._visl;
   }

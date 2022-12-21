@@ -139,7 +139,15 @@ const AbstractFilling = (superclass) => class extends superclass {
    */
   get l_dimensions() {
     const {_attr} = this;
-    return _attr._dimlns || (_attr._dimlns = new DimensionDrawer({parent: this}));
+    if(!_attr._dimlns) {
+      _attr._dimlns = new DimensionDrawer({parent: this});
+      for(const contour of this.contours) {
+       if(_attr._dimlns.isAbove(contour)) {
+         _attr._dimlns.insertBelow(contour);
+       } 
+      }
+    }
+    return _attr._dimlns;
   }
 
   /**
