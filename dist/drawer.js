@@ -1836,7 +1836,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     this._attr._bounds = null;
-    const {l_visualization: {_by_insets, _by_spec}, project, profiles} = this;
+    const {l_visualization, l_text, project, profiles} = this;
+    const {_by_insets, _by_spec} = l_visualization;
     const {_attr, _scope} = project;
     _by_insets.removeChildren();
     !_attr._saving && _by_spec.removeChildren();
@@ -1900,9 +1901,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     this.glass_recalc();
     this.draw_opening();
-    for(const elm of this.contours.concat(this.tearings)) {
+    const children = this.contours.concat(this.tearings);
+    const left = this.children.filter((elm) => 
+      !children.includes(elm) && elm !== l_visualization && elm !== l_text);
+    for(const elm of children) {
       elm.redraw();
-      elm.bringToFront();
+      for(const lelm of left) {
+        if(lelm.isAbove(elm)) {
+          lelm.insertBelow(elm);
+        }
+      }
     }
     if(!_attr._hide_errors) {
       this.draw_cnn_errors();
