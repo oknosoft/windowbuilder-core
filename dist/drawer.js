@@ -2914,11 +2914,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(builder_props.articles) {
       this.draw_articles(profiles, builder_props.articles);
     }
+    if(builder_props.glass_numbers) {
+      this.draw_glass_numbers();
+    }
     for(const contour of contours){
       contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
     }
   }
   draw_articles(profiles, articles = 3) {
+    const {l_visualization} = this;
     for(const profile of profiles) {
       const {rays: {outer}, sizeb, inset, nom} = profile;
       const p0 = outer.getNearestPoint(profile.corns(1));
@@ -2944,7 +2948,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           break;
       }
       const text = new paper.PointText({
-        parent: this.l_visualization._by_spec,
+        parent: l_visualization._by_spec,
         guide: true,
         fillColor: 'darkblue',
         fontFamily: consts.font_family,
@@ -2955,6 +2959,20 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {width} = text.bounds;
       text.rotate(tangent.angle);
       text.translate(tangent.multiply(width / 2));
+    }
+  }
+  draw_glass_numbers() {
+    const {l_visualization} = this;
+    for(const glass of this.glasses(false, true)) {
+      const text = new paper.PointText({
+        parent: l_visualization._by_spec,
+        guide: true,
+        fillColor: 'darkgreen',
+        fontFamily: consts.font_family,
+        fontSize: consts.font_size * 2,
+        content: glass.elm,
+        position: glass.bounds.center,
+      });
     }
   }
   get hidden() {

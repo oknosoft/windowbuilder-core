@@ -1992,6 +1992,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(builder_props.articles) {
       this.draw_articles(profiles, builder_props.articles);
     }
+    if(builder_props.glass_numbers) {
+      this.draw_glass_numbers();
+    }
+    
 
     // перерисовываем вложенные контуры
     for(const contour of contours){
@@ -2002,10 +2006,11 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Подписи профилей в отдельном методе
-   * @param profiles {Array.<Profile>}
-   * @param articles {Number}
+   * @param {Array.<Profile>} profiles
+   * @param {Number} articles
    */
   draw_articles(profiles, articles = 3) {
+    const {l_visualization} = this;
     for(const profile of profiles) {
       const {rays: {outer}, sizeb, inset, nom} = profile;
       const p0 = outer.getNearestPoint(profile.corns(1));
@@ -2033,7 +2038,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
 
       const text = new paper.PointText({
-        parent: this.l_visualization._by_spec,
+        parent: l_visualization._by_spec,
         guide: true,
         //justification: 'left',
         fillColor: 'darkblue',
@@ -2048,6 +2053,25 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
+  /**
+   * Рисует номера заполнений
+   */
+  draw_glass_numbers() {
+    const {l_visualization} = this;
+    for(const glass of this.glasses(false, true)) {
+      const text = new paper.PointText({
+        parent: l_visualization._by_spec,
+        guide: true,
+        //justification: 'left',
+        fillColor: 'darkgreen',
+        fontFamily: consts.font_family,
+        fontSize: consts.font_size * 2,
+        content: glass.elm,
+        position: glass.bounds.center,
+      });
+    }
+  }
+  
   /**
    * Признак сокрытия слоя
    * @return {boolean}

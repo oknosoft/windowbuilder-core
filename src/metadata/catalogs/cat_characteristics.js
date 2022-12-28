@@ -919,5 +919,6 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     carcass: false,
     mirror: false,
     articles: 0,
+    glass_numbers: false,
   };
 }
