@@ -6,7 +6,7 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, 
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
     EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
@@ -82,6 +82,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+          
+        case 'elm_type':
+          _data._formula = function ({elm}) {
+            return elm?.elm_type || elm_types.get();
+          };
+          break;
 
         case 'elm_rectangular':
           _data._formula = function ({elm}) {
@@ -125,6 +131,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
+    'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента
     'branch',           // отдел абонента текущего контекста
     'width',            // ширина из параметра

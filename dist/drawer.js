@@ -16829,7 +16829,7 @@ $p.CatPartners.prototype.__define({
 	}
 });
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, 
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
     EditorInvisible, utils} = $p;
   function formulate(name) {
     const prm = properties.predefined(name);
@@ -16892,6 +16892,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+        case 'elm_type':
+          _data._formula = function ({elm}) {
+            return elm?.elm_type || elm_types.get();
+          };
+          break;
         case 'elm_rectangular':
           _data._formula = function ({elm}) {
             const {is_rectangular} = elm;
@@ -16929,6 +16934,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_weight',      
     'elm_orientation', 
     'elm_pos',         
+    'elm_type',        
     'elm_rectangular', 
     'branch',          
     'width',           
