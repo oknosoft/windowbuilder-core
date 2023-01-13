@@ -3346,7 +3346,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
     const cnstr = root ? 0 : this.cnstr || -9999;
     const {project, sys, own_sys, prod_ox} = this;
-    const {_dp} = project;
+    const {_dp, _attr} = project;
     let notify;
     this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
       const {param} = prow;
@@ -3367,7 +3367,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else if(param.inheritance === 3 || param.inheritance === 4) {
         const bvalue = param.branch_value({project, cnstr, ox: prod_ox});
-        if(param.inheritance === 3 && prow.value !== bvalue) {
+        if((param.inheritance === 3 || _attr._loading) && prow.value !== bvalue) {
           prow.value = bvalue;
           notify = true;
         }
@@ -13533,7 +13533,7 @@ class Pricing {
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
-          price_type: {$in: abonents.price_types.map(v => v.valueOf())}, 
+          price_type: {$in: abonents.price_types.map(v => v.valueOf())},
         },
         limit,
         bookmark,
@@ -13550,6 +13550,7 @@ class Pricing {
   by_doc({goods, date, currency}, cache) {
     const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
+    date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
       const onom = nom.get(row.nom, true);
@@ -14384,7 +14385,8 @@ class ProductsBuilding {
       base_spec(scheme);
       spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       scheme.draw_visualization();
-      Promise.resolve().then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
+      Promise.resolve()
+        .then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
       if(ox.calc_order_row) {
         $p.spec_building.specification_adjustment({
           scheme: scheme,
@@ -14942,7 +14944,18 @@ $p.spec_building = new SpecBuilding($p);
 	});
 })($p.enm.elm_types);
 (function(_mgr){
-  _mgr.additions_groups = [_mgr.Подоконник, _mgr.Водоотлив, _mgr.МоскитнаяСетка, _mgr.Жалюзи, _mgr.Откос, _mgr.Профиль, _mgr.Монтаж, _mgr.Доставка, _mgr.Набор];
+  _mgr.additions_groups = [
+    _mgr.sill,     
+    _mgr.sectional,
+    _mgr.mosquito, 
+    _mgr.jalousie, 
+    _mgr.slope,    
+    _mgr.profile,  
+    _mgr.cut,      
+    _mgr.mount,    
+    _mgr.delivery, 
+    _mgr.set,      
+  ];
 })($p.enm.inserts_types);
 (function({enm}){
   enm.debit_credit_kinds.__define({
@@ -16119,7 +16132,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return res;
       }
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {profile, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
+      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
       const {check_params} = ProductsBuilding;
       function fake_row(sub_row, row) {
         const fakerow = {};
@@ -16174,7 +16187,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       const {flipped} = elm.layer || {};
       this.specification.forEach((row) => {
-        if(!this.check_restrictions(row, elm, insert_type === profile, len_angl)){
+        if(!this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl)){
           return;
         }
         if(this.insert_type.is('mosquito') && !elm.perimeter 
@@ -16266,7 +16279,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           res.push(row);
         }
       });
-      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == profile, len_angl)){
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl)){
         elm.err_spec_row(job_prm.nom.critical_error, this);
       }
       return res;
@@ -17610,7 +17623,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const {date} = this;
     const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
     const curr = new Date();
-    return curr > fin ? curr : date;
+    const tmp = curr > fin ? curr : new Date(date.valueOf());
+    tmp.setHours(23, 59, 59);
+    return tmp;
   }
   get contract() {
     return this._getter('contract');

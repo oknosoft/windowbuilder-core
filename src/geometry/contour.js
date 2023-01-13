@@ -2601,7 +2601,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
     const {project, sys, own_sys, prod_ox} = this;
-    const {_dp} = project;
+    const {_dp, _attr} = project;
     let notify;
 
     // пробегаем по всем строкам
@@ -2628,7 +2628,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else if(param.inheritance === 3 || param.inheritance === 4) {
         const bvalue = param.branch_value({project, cnstr, ox: prod_ox});
-        if(param.inheritance === 3 && prow.value !== bvalue) {
+        if((param.inheritance === 3 || _attr._loading) && prow.value !== bvalue) {
           prow.value = bvalue;
           notify = true;
         }
