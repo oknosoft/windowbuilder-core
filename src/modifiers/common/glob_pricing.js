@@ -95,7 +95,7 @@ class Pricing {
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
-          price_type: {$in: abonents.price_types.map(v => v.valueOf())}, 
+          price_type: {$in: abonents.price_types.map(v => v.valueOf())},
         },
         limit,
         bookmark,
@@ -120,6 +120,7 @@ class Pricing {
   by_doc({goods, date, currency}, cache) {
     const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
+    date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
       const onom = nom.get(row.nom, true);
