@@ -6799,6 +6799,21 @@ set stage(v){this._setter('stage',v)}
 }
 $p.CatProduction_kindsStagesRow = CatProduction_kindsStagesRow;
 $p.cat.create('production_kinds');
+class CatValues_options extends CatObj{
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+get values(){return this._getter_ts('values')}
+set values(v){this._setter_ts('values',v)}
+}
+$p.CatValues_options = CatValues_options;
+class CatValues_optionsValuesRow extends TabularSectionRow{
+get key(){return this._getter('key')}
+set key(v){this._setter('key',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
+}
+$p.CatValues_optionsValuesRow = CatValues_optionsValuesRow;
+$p.cat.create('values_options');
 class CatLead_src extends CatObj{
 get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
