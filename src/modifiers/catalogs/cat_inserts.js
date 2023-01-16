@@ -12,7 +12,7 @@
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatNom, CatInsertsSpecificationRow} = $p;
+    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow} = $p;
 
   const {inserts_types} = enm;
 
@@ -1648,6 +1648,42 @@
         });
       }
       return perimeter;
+    }
+
+    get available() {
+      let {available} = this._obj;
+      if(typeof available === 'boolean') {
+        return available;
+      }
+      return cat.parameters_keys.get(available);
+    }
+    set available(v){this._setter('available',v)}
+
+    /**
+     * Возвращает массив рекомендуемых для элемента вставок
+     * @param {BuilderElement} elm
+     * @return {Array.<CatInserts>}
+     */
+    offer_insets(elm) {
+      const {inserts, _manager} = this;
+      const res = new Set();
+      const cond = {
+        elm,
+        ox: elm.ox,
+        layer: elm.layer,
+      }
+      _manager.find_rows({insert_type: enm.inserts_types.element}, (o) => {
+        const {available} = o;
+        if(available instanceof CatParameters_keys && !available.empty() && available.check_condition(cond)) {
+          res.add(o);
+        }
+      });
+      for(const row of inserts) {
+        if(row.key.check_condition(cond)) {
+          res.add(row.inset);
+        }
+      }
+      return Array.from(res);
     }
 
   }
