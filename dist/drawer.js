@@ -1365,7 +1365,7 @@ class BuilderElement extends paper.Group {
   }
   remove() {
     if(!this.beforeRemove()) {
-      return;
+      return false;
     }
     this.detache_wnd && this.detache_wnd();
     const {parent, project, _row, ox, elm, path} = this;
@@ -2338,7 +2338,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
-      children[0].remove();
+      if(children[0].remove() === false) {
+        return;
+      }
     }
     project._scope.eve.emit('elm_removed', this);
     if (_row) {
@@ -2998,7 +3000,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   get imposts() {
     return this.getItems({class: Profile}).filter((elm) => {
-      if(elm instanceof ProfileNestedContent) {
+      if(elm instanceof ProfileNestedContent || elm instanceof ProfileVirtual) {
         return false;
       }
       const {b, e} = elm.rays;
@@ -4036,7 +4038,9 @@ class ContourNested extends Contour {
           .then(() => {
             const {lbounds, content} = this;
             while (content.children.length) {
-              content.children[0].remove();
+              if(content.children[0].remove() === false) {
+                throw new Error('Ошибка при удалении элемента');
+              }
             }
             for (const elm of this.profiles) {
               elm.save_coordinates();
@@ -7575,11 +7579,14 @@ class CnnPoint {
     return false;
   }
   get is_tt() {
-    const {profile_point, profile, point} = this;
-    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
+    let {profile_point, profile, parent, point} = this;
+    if(!point) {
+      point = parent[this.node];
+    }
+    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === parent) {
       return false;
     }
-    if(profile && !profile_point && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+    if(profile && (!profile_point || profile_point === 't') && (profile.b.is_nearest(point) || profile.e.is_nearest(point))) {
       return false;
     }
     return true;
@@ -10013,7 +10020,7 @@ class Profile extends ProfileItem {
           const cpoint = curr.rays[pname];
           if(cpoint.profile == this && cpoint.cnn) {
             const ipoint = curr.interiorPoint();
-            if(!cpoint.profile_point || cpoint.profile_point === 't') {
+            if(cpoint.is_tt) {
               if(check_only) {
                 return true;
               }
@@ -10521,6 +10528,9 @@ class ProfileVirtual extends Profile {
       intersect_point(pinner, inner, 3);
     }
     return cnn_point;
+  }
+  beforeRemove() {
+    return true;
   }
   redraw() {
     const bcnn = this.cnn_point('b');
@@ -13074,6 +13084,9 @@ class FakePrmElm {
         unload_column() {
           return inserts;
         }
+      },
+      offer_insets() {
+        return [];
       },
       valueOf() {
         return this.ref;

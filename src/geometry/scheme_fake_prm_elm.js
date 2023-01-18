@@ -30,6 +30,9 @@ class FakePrmElm {
           return inserts;
         }
       },
+      offer_insets() {
+        return [];
+      },
       valueOf() {
         return this.ref;
       },
