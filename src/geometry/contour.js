@@ -1242,7 +1242,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
-      children[0].remove();
+      if(children[0].remove() === false) {
+        return;
+      }
     }
 
     project._scope.eve.emit('elm_removed', this);
@@ -2105,7 +2107,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get imposts() {
     return this.getItems({class: Profile}).filter((elm) => {
-      if(elm instanceof ProfileNestedContent) {
+      if(elm instanceof ProfileNestedContent || elm instanceof ProfileVirtual) {
         return false;
       }
       const {b, e} = elm.rays;

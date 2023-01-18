@@ -67,11 +67,14 @@ class CnnPoint {
    */
   get is_tt() {
     // если это угол, то точно не T
-    const {profile_point, profile, point} = this;
-    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
+    let {profile_point, profile, parent, point} = this;
+    if(!point) {
+      point = parent[this.node];
+    }
+    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === parent) {
       return false;
     }
-    if(profile && !profile_point && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+    if(profile && (!profile_point || profile_point === 't') && (profile.b.is_nearest(point) || profile.e.is_nearest(point))) {
       return false;
     }
     return true;

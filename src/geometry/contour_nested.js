@@ -184,7 +184,9 @@ class ContourNested extends Contour {
             const {lbounds, content} = this;
             // чистим наше
             while (content.children.length) {
-              content.children[0].remove();
+              if(content.children[0].remove() === false) {
+                throw new Error('Ошибка при удалении элемента');
+              }
             }
             for (const elm of this.profiles) {
               elm.save_coordinates();

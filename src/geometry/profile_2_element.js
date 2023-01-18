@@ -265,7 +265,7 @@ class Profile extends ProfileItem {
           const cpoint = curr.rays[pname];
           if(cpoint.profile == this && cpoint.cnn) {
             const ipoint = curr.interiorPoint();
-            if(!cpoint.profile_point || cpoint.profile_point === 't') {
+            if(cpoint.is_tt) {
               if(check_only) {
                 return true;
               }

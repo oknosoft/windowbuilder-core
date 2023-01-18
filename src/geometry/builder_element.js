@@ -945,7 +945,7 @@ class BuilderElement extends paper.Group {
   remove() {
     
     if(!this.beforeRemove()) {
-      return;
+      return false;
     }
     
     this.detache_wnd && this.detache_wnd();
