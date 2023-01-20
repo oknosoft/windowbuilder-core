@@ -15042,7 +15042,7 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
       const {cnstr, region} = this;
       const {blank} = $p.utils;
       if (value != blank.guid) {
-        const res = _owner.params.find_rows({cnstr, region, inset: value, row: {not: this.row}});
+        const res = this._owner.find_rows({cnstr, region, inset: value, row: {not: this.row}});
         if (res.length) {
           $p.md.emit('alert', {
             obj: _owner,
