@@ -234,7 +234,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     super({parent: attr.parent, project: attr.project});
 
-    this._attr = {};
+    this._attr = {chnom: []};
 
     // узлы и рёбра текущего слоя
     this._skeleton = new Skeleton(this);
@@ -2455,7 +2455,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization: {_by_insets, _by_spec}, project, profiles} = this;
+    const {l_visualization: {_by_insets, _by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
     _by_insets.removeChildren();
     !_attr._saving && _by_spec.removeChildren();
@@ -2514,9 +2514,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     
     // уточняем номенклатуры и соединения для новой геометрии профилей
-    const changed = [];
+    const changed = chnom.splice(0);
     for(const elm of profiles) {
-      elm.check_nom(changed);
+      if(!changed.includes(elm)) {
+        elm.check_nom(changed);
+      }
     }
     if (changed.length) {
       for(const elm of changed) {

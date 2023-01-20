@@ -1159,7 +1159,7 @@ class Scheme extends paper.Project {
    * Сохраняет координаты и пути элементов в табличных частях характеристики
    * @return {Promise}
    */
-  save_coordinates(attr) {
+  save_coordinates(attr = {}) {
 
     const {_attr, bounds, ox, contours} = this;
 
@@ -1176,7 +1176,7 @@ class Scheme extends paper.Project {
 
     let res = Promise.resolve();
     const push = (contour) => {
-      res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
+      res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
     };
 
     if(bounds) {
@@ -1187,7 +1187,7 @@ class Scheme extends paper.Project {
 
       // вызываем метод save_coordinates в дочерних слоях
       contours.forEach((contour) => {
-        if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+        if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
           if(this.activeLayer === contour) {
             const other = contours.find((el) => el !== contour);
             other && other.activate();
@@ -1211,7 +1211,7 @@ class Scheme extends paper.Project {
 
     // пересчет спецификации и цен
     return res
-      .then(() => attr?.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .then(() => attr.no_recalc ? this : $p.products_building.recalc(this, attr))
       .catch((err) => {
         const {msg, ui} = $p;
         ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});

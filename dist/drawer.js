@@ -1636,7 +1636,7 @@ class PointMap extends Map {
 class Contour extends AbstractFilling(paper.Layer) {
   constructor(attr) {
     super({parent: attr.parent, project: attr.project});
-    this._attr = {};
+    this._attr = {chnom: []};
     this._skeleton = new Skeleton(this);
     const {project} = this;
     this._row = attr.row;
@@ -3243,7 +3243,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     this._attr._bounds = null;
-    const {l_visualization: {_by_insets, _by_spec}, project, profiles} = this;
+    const {l_visualization: {_by_insets, _by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
     _by_insets.removeChildren();
     !_attr._saving && _by_spec.removeChildren();
@@ -3293,9 +3293,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
       e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
     }
-    const changed = [];
+    const changed = chnom.splice(0);
     for(const elm of profiles) {
-      elm.check_nom(changed);
+      if(!changed.includes(elm)) {
+        elm.check_nom(changed);
+      }
     }
     if (changed.length) {
       for(const elm of changed) {
@@ -5035,7 +5037,7 @@ class DimensionLine extends paper.Group {
       delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
-      project.register_update();
+      project.register_change(false, () => project.register_change(true));
     }
   }
   sizes_wnd(event) {
@@ -12372,7 +12374,7 @@ class Scheme extends paper.Project {
     }
     _dp._manager.emit_async('update', {}, {x1: true, x2: true, y1: true, y2: true, a1: true, a2: true, cnn1: true, cnn2: true, info: true});
   }
-  save_coordinates(attr) {
+  save_coordinates(attr = {}) {
     const {_attr, bounds, ox, contours} = this;
     _attr._saving = true;
     ox._data._loading = true;
@@ -12384,14 +12386,14 @@ class Scheme extends paper.Project {
     ox.glasses.clear();
     let res = Promise.resolve();
     const push = (contour) => {
-      res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
+      res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
     };
     if(bounds) {
       ox.x = bounds.width.round(1);
       ox.y = bounds.height.round(1);
       ox.s = this.area;
       contours.forEach((contour) => {
-        if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+        if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
           if(this.activeLayer === contour) {
             const other = contours.find((el) => el !== contour);
             other && other.activate();
@@ -12411,7 +12413,7 @@ class Scheme extends paper.Project {
       ox.s = 0;
     }
     return res
-      .then(() => attr?.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .then(() => attr.no_recalc ? this : $p.products_building.recalc(this, attr))
       .catch((err) => {
         const {msg, ui} = $p;
         ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
@@ -15948,6 +15950,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       else{
         _data.nom = _nom;
+      }
+      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+        elm._row.nom = _data.nom;
+        const chnom = elm.layer?._attr?.chnom;
+        if(chnom && !chnom.includes(elm)) {
+          chnom.push(elm);
+        }
       }
       return _data.nom;
     }

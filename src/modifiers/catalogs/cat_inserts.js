@@ -603,6 +603,14 @@
         // TODO: реализовать фильтр
         _data.nom = _nom;
       }
+      
+      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+        elm._row.nom = _data.nom;
+        const chnom = elm.layer?._attr?.chnom;
+        if(chnom && !chnom.includes(elm)) {
+          chnom.push(elm);
+        }
+      }
 
       return _data.nom;
     }

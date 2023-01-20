@@ -241,7 +241,7 @@ class DimensionLine extends paper.Group {
       delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
-      project.register_update();
+      project.register_change(false, () => project.register_change(true));
     }
 
   }
