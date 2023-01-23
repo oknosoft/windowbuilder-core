@@ -2259,31 +2259,32 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   get outer_profiles() {
     const {profiles} = this;
-    const to_remove = [];
+    const tmp = [];
     const res = [];
     let findedb, findede;
-    for (let i = 0; i < profiles.length; i++) {
-      const elm = profiles[i];
-      if (elm._attr.simulated)
+    for(const elm of profiles) {
+      if (elm._attr.simulated) {
         continue;
+      }        
       findedb = false;
       findede = false;
-      for (let j = 0; j < profiles.length; j++) {
-        if (profiles[j] == elm)
+      for(const elm2 of profiles) {
+        if (elm2 == elm) {
           continue;
-        if (!findedb && elm.has_cnn(profiles[j], elm.b) && elm.b.is_nearest(profiles[j].e))
+        }
+        if (!findedb && elm.has_cnn(elm2, elm.b) && elm.b.is_nearest(elm2.e)) {
           findedb = true;
-        if (!findede && elm.has_cnn(profiles[j], elm.e) && elm.e.is_nearest(profiles[j].b))
+        }
+        if (!findede && elm.has_cnn(elm2, elm.e) && elm.e.is_nearest(elm2.b)) {
           findede = true;
+        }
       }
-      if (!findedb || !findede){
-        to_remove.push(elm);
+      if (findedb && findede){
+        tmp.push(elm);
       }
     }
-    for (let i = 0; i < profiles.length; i++) {
-      const elm = profiles[i];
-      if (to_remove.indexOf(elm) != -1)
-        continue;
+    tmp.sort(Contour.acompare);
+    for(const elm of tmp) {
       elm._attr.binded = false;
       res.push({
         elm: elm,
@@ -3889,6 +3890,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 }
 Contour.ecompare = (a, b) => b.elm - a.elm;
+Contour.acompare = (a, b) => a.angle_hor - b.angle_hor;
 GlassSegment.fn_sort = function fn_sort(a, b) {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
