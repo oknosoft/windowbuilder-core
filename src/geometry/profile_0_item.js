@@ -663,6 +663,15 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * @summary Дополнительный отступ на раме для углубления створки
+   * @desc Экзотика. Используется, например, в системах Термогласс
+   * @return {Number}
+   */
+  get frame_indent() {
+    return this.nom._extra('frame_indent') || 0;
+  }
+
+  /**
    * Точка проекции высоты ручки на ребро профиля
    *
    * @param {InnerOuter} side
@@ -2294,6 +2303,7 @@ class ProfileItem extends GeneratrixElement {
           if(check_a2 && check_a2.angle_calc_method === a2) {
             const wprofile = tw > ow ? this : other;
             const winner = wprofile === this ? rays.inner : oinner;
+            
             if(is_b) {
               intersect_point(oinner, rays.inner, 4);
               const pt = _corns[4];
@@ -2332,6 +2342,7 @@ class ProfileItem extends GeneratrixElement {
             }
           }
           else {
+            const {frame_indent} = this;
             if(is_b) {
               if(this.is_collinear(other, 1)) {
                 delete _corns[1];
@@ -2340,6 +2351,14 @@ class ProfileItem extends GeneratrixElement {
               else {
                 intersect_point(oouter, rays.outer, 1);
                 intersect_point(oinner, rays.inner, 4);
+                if(frame_indent) {
+                  delete _corns[11];
+                  const tmp = {
+                    outer: rays.outer.equidistant(-frame_indent),
+                    median: new paper.Path({insert: false, segments: [_corns[1], _corns[4]]})
+                  };
+                  intersect_point(tmp.outer, tmp.median, 11);
+                }
               }
             }
             else if(is_e) {
@@ -2350,6 +2369,14 @@ class ProfileItem extends GeneratrixElement {
               else {
                 intersect_point(oouter, rays.outer, 2);
                 intersect_point(oinner, rays.inner, 3);
+                if(frame_indent) {
+                  delete _corns[12];
+                  const tmp = {
+                    outer: rays.outer.equidistant(-frame_indent),
+                    median: new paper.Path({insert: false, segments: [_corns[2], _corns[3]]})
+                  };
+                  intersect_point(tmp.outer, tmp.median, 12);
+                }
               }
             }
           }

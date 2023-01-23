@@ -3890,7 +3890,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 }
 Contour.ecompare = (a, b) => b.elm - a.elm;
-Contour.acompare = (a, b) => a.angle_hor - b.angle_hor;
+Contour.acompare = (a, b) => b.angle_hor - a.angle_hor;
 GlassSegment.fn_sort = function fn_sort(a, b) {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
@@ -8006,6 +8006,9 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
+  get frame_indent() {
+    return this.nom._extra('frame_indent') || 0;
+  }
   hhpoint(side) {
     const {layer, rays} = this;
     if(layer instanceof ConnectiveLayer) {
@@ -9227,6 +9230,7 @@ class ProfileItem extends GeneratrixElement {
             }
           }
           else {
+            const {frame_indent} = this;
             if(is_b) {
               if(this.is_collinear(other, 1)) {
                 delete _corns[1];
@@ -9235,6 +9239,14 @@ class ProfileItem extends GeneratrixElement {
               else {
                 intersect_point(oouter, rays.outer, 1);
                 intersect_point(oinner, rays.inner, 4);
+                if(frame_indent) {
+                  delete _corns[11];
+                  const tmp = {
+                    outer: rays.outer.equidistant(-frame_indent),
+                    median: new paper.Path({insert: false, segments: [_corns[1], _corns[4]]})
+                  };
+                  intersect_point(tmp.outer, tmp.median, 11);
+                }
               }
             }
             else if(is_e) {
@@ -9245,6 +9257,14 @@ class ProfileItem extends GeneratrixElement {
               else {
                 intersect_point(oouter, rays.outer, 2);
                 intersect_point(oinner, rays.inner, 3);
+                if(frame_indent) {
+                  delete _corns[12];
+                  const tmp = {
+                    outer: rays.outer.equidistant(-frame_indent),
+                    median: new paper.Path({insert: false, segments: [_corns[2], _corns[3]]})
+                  };
+                  intersect_point(tmp.outer, tmp.median, 12);
+                }
               }
             }
           }
