@@ -1123,20 +1123,20 @@ class Contour extends AbstractFilling(paper.Layer) {
   get outer_profiles() {
     // сначала получим все профили
     const {profiles} = this;
-    const tmp = [];
+    const to_remove = [];
     const res = [];
-    
+
     let findedb, findede;
 
     // прочищаем, выкидывая такие, начало или конец которых соединениы не в узле
     for(const elm of profiles) {
       if (elm._attr.simulated) {
         continue;
-      }        
+      }
       findedb = false;
       findede = false;
       for(const elm2 of profiles) {
-        if (elm2 == elm) {
+        if (elm2 === elm) {
           continue;
         }
         if (!findedb && elm.has_cnn(elm2, elm.b) && elm.b.is_nearest(elm2.e)) {
@@ -1146,20 +1146,24 @@ class Contour extends AbstractFilling(paper.Layer) {
           findede = true;
         }
       }
-      if (findedb && findede){
-        tmp.push(elm);
+      if (!findedb || !findede) {
+        to_remove.push(elm);
       }
     }
-    tmp.sort(Contour.acompare);
-    for(const elm of tmp) {
+    for(const elm of profiles) {
+      if (to_remove.includes(elm)) {
+        continue;
+      }
       elm._attr.binded = false;
       res.push({
         elm: elm,
         profile: elm.nearest(true),
         b: elm.b,
         e: elm.e,
+        angle_hor: elm.angle_hor,
       });
     }
+    res.sort(Contour.acompare);
     return res;
   }
 
