@@ -260,7 +260,7 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * наблюдатель за изменениями параметров створки
+   * наблюдатель за изменениями параметров изделия и слоя
    * @param obj
    * @param fields
    * @private
@@ -272,7 +272,7 @@ class Scheme extends paper.Project {
     }
     const is_row = obj._owner === ox.params;
     // запоминаем значения базовых параметров в обработке шаблонов
-    if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
+    if(is_row || (obj === ox && 'params' in fields)) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
@@ -300,6 +300,10 @@ class Scheme extends paper.Project {
       for(const elm of this.getItems({class: FreeText})) {
         elm.visible = txts;
       }      
+    }
+    // изменили или удалили вложенную вставку
+    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields) || (obj === ox && 'inserts' in fields)) {
+      this.register_change(true);
     }
   }
 

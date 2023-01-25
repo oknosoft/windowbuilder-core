@@ -11806,7 +11806,7 @@ class Scheme extends paper.Project {
       return;
     }
     const is_row = obj._owner === ox.params;
-    if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
+    if(is_row || (obj === ox && 'params' in fields)) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
@@ -11832,6 +11832,9 @@ class Scheme extends paper.Project {
       for(const elm of this.getItems({class: FreeText})) {
         elm.visible = txts;
       }      
+    }
+    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields) || (obj === ox && 'inserts' in fields)) {
+      this.register_change(true);
     }
   }
   elm_cnn(elm1, elm2) {
