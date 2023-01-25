@@ -2352,12 +2352,12 @@ class ProfileItem extends GeneratrixElement {
                 intersect_point(oouter, rays.outer, 1);
                 intersect_point(oinner, rays.inner, 4);
                 if(frame_indent) {
-                  delete _corns[11];
+                  delete _corns.i1;
                   const tmp = {
                     outer: rays.outer.equidistant(-frame_indent),
                     median: new paper.Path({insert: false, segments: [_corns[1], _corns[4]]})
                   };
-                  intersect_point(tmp.outer, tmp.median, 11);
+                  intersect_point(tmp.outer, tmp.median, 'i1');
                 }
               }
             }
@@ -2370,12 +2370,12 @@ class ProfileItem extends GeneratrixElement {
                 intersect_point(oouter, rays.outer, 2);
                 intersect_point(oinner, rays.inner, 3);
                 if(frame_indent) {
-                  delete _corns[12];
+                  delete _corns.i2;
                   const tmp = {
                     outer: rays.outer.equidistant(-frame_indent),
                     median: new paper.Path({insert: false, segments: [_corns[2], _corns[3]]})
                   };
-                  intersect_point(tmp.outer, tmp.median, 12);
+                  intersect_point(tmp.outer, tmp.median, 'i2');
                 }
               }
             }
@@ -2578,7 +2578,7 @@ class ProfileItem extends GeneratrixElement {
     // получаем узлы
     const bcnn = this.postcalc_cnn('b');
     const ecnn = this.postcalc_cnn('e');
-    const {path, generatrix, rays} = this;
+    const {path, generatrix, rays, _attr} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями
     this.path_points(bcnn, 'b');
@@ -2627,6 +2627,24 @@ class ProfileItem extends GeneratrixElement {
     path.add(this.corns(4));
     path.closePath();
     path.reduce();
+    
+    // если задан frame_indent - рисуем
+    if(_attr._corns.i1 && _attr._corns.i2) {
+      if(!_attr.indent) {
+        _attr.indent = new paper.Path({
+          parent: this,
+          guide: true,
+          strokeColor: 'black',
+          strokeWidth: 1,
+          strokeScaling: false,
+          segments: [_attr._corns.i1, _attr._corns.i2],
+        });
+      }
+      else {
+        _attr.indent.firstSegment.point = _attr._corns.i1;
+        _attr.indent.lastSegment.point = _attr._corns.i2;
+      }
+    } 
 
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.observer?.(this);
