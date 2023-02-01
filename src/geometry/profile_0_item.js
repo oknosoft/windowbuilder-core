@@ -1824,6 +1824,7 @@ class ProfileItem extends GeneratrixElement {
       generatrix.lineTo(e);
     }
 
+    this.rays.clear('with_neighbor');
     layer.notify({
       type: consts.move_points,
       profiles: [this],

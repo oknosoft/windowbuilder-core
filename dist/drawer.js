@@ -8824,6 +8824,7 @@ class ProfileItem extends GeneratrixElement {
     else {
       generatrix.lineTo(e);
     }
+    this.rays.clear('with_neighbor');
     layer.notify({
       type: consts.move_points,
       profiles: [this],
@@ -18472,6 +18473,9 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
       if(unit.owner != nom) {
         _obj.unit = nom.storage_unit.ref;
+      }
+      if(field === 'nom' && !this.quantity) {
+        _obj.quantity = 1;
       }
       const {origin} = characteristic;
       if(origin && !origin.empty() && origin.slave) {

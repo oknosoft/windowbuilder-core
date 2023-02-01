@@ -1650,6 +1650,11 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       if(unit.owner != nom) {
         _obj.unit = nom.storage_unit.ref;
       }
+      
+      // количество по умолчанию
+      if(field === 'nom' && !this.quantity) {
+        _obj.quantity = 1;
+      }
 
       // если это следящая вставка, рассчитаем спецификацию
       const {origin} = characteristic;
