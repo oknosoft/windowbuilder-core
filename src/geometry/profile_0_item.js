@@ -2499,7 +2499,22 @@ class ProfileItem extends GeneratrixElement {
    */
   is_nearest(p) {
     const {b, e, generatrix} = this;
-    return (b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e));
+    if ((b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e))) {
+      if(p.is_linear() && this.is_linear()) {
+        return true;
+      }
+      // если один или оба профиля изогнуты, проверим среднюю точку
+      const pl = p.generatrix.length;
+      const tl = generatrix.length;
+      if(pl <= tl) {
+        const mid = p.generatrix.getPointAt(pl / 2);
+        return generatrix.is_nearest(mid);
+      }
+      else {
+        const mid = generatrix.getPointAt(tl / 2);
+        return p.generatrix.is_nearest(mid);
+      }
+    }
   }
 
   /**

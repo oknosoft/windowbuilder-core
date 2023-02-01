@@ -2284,7 +2284,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // информируем систему об изменениях
     if (noti.points.length) {
-      this.profiles.forEach((p) => p._attr._rays && p._attr._rays.clear());
+      this.profiles.forEach((p) => p._attr?._rays?.clear());
       this.notify(noti);
     }
 

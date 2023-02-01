@@ -3137,7 +3137,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.profiles.forEach((p) => p.default_inset());
     }
     if (noti.points.length) {
-      this.profiles.forEach((p) => p._attr._rays && p._attr._rays.clear());
+      this.profiles.forEach((p) => p._attr?._rays?.clear());
       this.notify(noti);
     }
     this._attr._bounds = null;
@@ -9351,7 +9351,21 @@ class ProfileItem extends GeneratrixElement {
   }
   is_nearest(p) {
     const {b, e, generatrix} = this;
-    return (b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e));
+    if ((b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e))) {
+      if(p.is_linear() && this.is_linear()) {
+        return true;
+      }
+      const pl = p.generatrix.length;
+      const tl = generatrix.length;
+      if(pl <= tl) {
+        const mid = p.generatrix.getPointAt(pl / 2);
+        return generatrix.is_nearest(mid);
+      }
+      else {
+        const mid = generatrix.getPointAt(tl / 2);
+        return p.generatrix.is_nearest(mid);
+      }
+    }
   }
   is_collinear(profile, delta = 0) {
     let angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
