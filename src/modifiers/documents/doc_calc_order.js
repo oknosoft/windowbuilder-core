@@ -1211,7 +1211,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   load_production(forse, db) {
     const prod = [];
-    const {cat: {characteristics}, enm: {obj_delivery_states}} = $p;
+    const {characteristics} = $p.cat;
     this.production.forEach(({characteristic}) => {
       if(!characteristic.empty() && (forse || characteristic.is_new())) {
         prod.push(characteristic.ref);
@@ -1584,7 +1584,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
       return this._data._templates_loading;
     }
-    return this.load_production();
+    return this.load_production()
+      .then((prod) => {
+        const blocks = [];
+        for(const {base_block} of prod) {
+          if(!base_block.empty() && base_block.is_new() && !blocks.includes(base_block.ref)) {
+            blocks.push(base_block.ref);
+          }
+        }
+        if(blocks.length) {
+          const {adapters: {pouch}, cat: {characteristics}} = $p;
+          return pouch.load_array(characteristics, blocks, false, pouch.remote.ram)
+            .then(() => prod)
+            .catch(() => prod);
+        }
+        return prod;
+      });
   }
 
   /**

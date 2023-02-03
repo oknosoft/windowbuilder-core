@@ -507,6 +507,7 @@ class Scheme extends paper.Project {
 
       // включаем перерисовку
       _attr._opened = true;
+      _attr._no_mod = true;
       _attr._bounds = new paper.Rectangle({point: [0, 0], size: [o.x, o.y]});
 
       // первым делом создаём соединители и опорные линии
