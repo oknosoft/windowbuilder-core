@@ -76,7 +76,7 @@ class Extra_fieldsRow extends TabularSectionRow{
   set property(v){this._setter('property',v)}
   get value(){
     const {property: param} = this;
-    return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
+    return (param?.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
   set value(v) {
     if(typeof v === 'string' && v.length === 72 && this.property?.type?.types?.includes('cat.clrs')) {
