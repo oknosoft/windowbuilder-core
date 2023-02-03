@@ -12,7 +12,7 @@
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow} = $p;
+    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatColor_price_groups} = $p;
 
   const {inserts_types} = enm;
 
@@ -1692,6 +1692,11 @@
         }
       }
       return Array.from(res);
+    }
+    
+    get clr_group() {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group
+      return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
     }
 
   }
