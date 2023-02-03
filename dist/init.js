@@ -704,7 +704,7 @@ set hide(v){this._setter_ts('hide',v)}
       const mgr = _manager.value_mgr({v}, 'v', type);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
-          return mgr.get(v, false, false);
+          return mgr.get(utils.is_guid(v) ? v : '', false, false);
         }
         else {
           return utils.fetch_type(v, mgr);
@@ -4178,6 +4178,8 @@ get selection_params(){return this._getter_ts('selection_params')}
 set selection_params(v){this._setter_ts('selection_params',v)}
 get specification_restrictions(){return this._getter_ts('specification_restrictions')}
 set specification_restrictions(v){this._setter_ts('specification_restrictions',v)}
+get attrs_option(){return this._getter_ts('attrs_option')}
+set attrs_option(v){this._setter_ts('attrs_option',v)}
 }
 $p.CatFurns = CatFurns;
 class CatFurnsOpen_tunesRow extends TabularSectionRow{
@@ -4279,6 +4281,17 @@ get for_direct_profile_only(){return this._getter('for_direct_profile_only')}
 set for_direct_profile_only(v){this._setter('for_direct_profile_only',v)}
 }
 $p.CatFurnsSpecification_restrictionsRow = CatFurnsSpecification_restrictionsRow;
+class CatFurnsAttrs_optionRow extends TabularSectionRow{
+get mmin(){return this._getter('mmin')}
+set mmin(v){this._setter('mmin',v)}
+get mmax(){return this._getter('mmax')}
+set mmax(v){this._setter('mmax',v)}
+get formula(){return this._getter('formula')}
+set formula(v){this._setter('formula',v)}
+get furn_set(){return this._getter('furn_set')}
+set furn_set(v){this._setter('furn_set',v)}
+}
+$p.CatFurnsAttrs_optionRow = CatFurnsAttrs_optionRow;
 $p.cat.create('furns');
 class CatClrs extends CatObj{
 get ral(){return this._getter('ral')}
@@ -8539,7 +8552,7 @@ class Extra_fieldsRow extends TabularSectionRow{
   set property(v){this._setter('property',v)}
   get value(){
     const {property: param} = this;
-    return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
+    return (param?.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
   set value(v) {
     if(typeof v === 'string' && v.length === 72 && this.property?.type?.types?.includes('cat.clrs')) {
