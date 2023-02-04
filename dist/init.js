@@ -704,7 +704,7 @@ set hide(v){this._setter_ts('hide',v)}
       const mgr = _manager.value_mgr({v}, 'v', type);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
-          return mgr.get(utils.is_guid(v) ? v : '', false, false);
+          return mgr.get((utils.is_enm_mgr(mgr) || utils.is_guid(v)) ? v : '', false, false);
         }
         else {
           return utils.fetch_type(v, mgr);
