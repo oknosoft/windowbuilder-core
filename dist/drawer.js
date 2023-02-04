@@ -5649,6 +5649,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.closePath(true);
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
+    _attr.paths = [];
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
       _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
@@ -5903,6 +5904,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
+    this.draw_regions();
   }
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts} = this;
@@ -5922,6 +5924,43 @@ class Filling extends AbstractFilling(BuilderElement) {
     lv._opening && lv._opening.removeChildren();
     lv.visible = true;
     !no_zoom && layer.zoom_fit();
+  }
+  draw_regions() {
+    const {inset, elm} = this;
+    if(inset.region) {
+      this.ox.glass_specification.find_rows({elm}, (row) => {
+        if(row.region === -1) {
+          const {profiles, path, _attr: {paths}} = this;
+          const nom = row.inset.nom(this);
+          const interior = this.interiorPoint();
+          if(!paths.length) {
+            paths.push(new paper.Path({parent: this}))
+          }
+          const rpath = paths[0];
+          rpath.fillColor = path.fillColor;
+          rpath.removeSegments();
+          const {enm: {cnn_types}, cat: {cnns}} = $p;
+          const outer_profiles = profiles.map((v) => {
+            const profile = v.profile.nearest() || v.profile;
+            const side = profile.cnn_side(this, interior);
+            const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
+            const size = cnn?.size(this, profile) || 0;
+            const ray = profile
+              .rays[side.is('outer') ? 'outer' : 'inner']
+              .get_subpath(v.b, v.e)
+              .equidistant(size, 100);
+            return v;
+          }); 
+          return false;
+        }
+      });
+    }
+    else if(paths.length) {
+      for(const elm of paths) {
+        elm?.remove?.();
+      }
+      paths.length = 0;
+    }
   }
   reset_fragment() {
     const {_attr, layer, path} = this;
@@ -5981,9 +6020,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.set_clr(v);
   }
   purge_paths() {
-    const paths = this.children.filter((child) => child instanceof paper.Path);
-    const {path} = this;
-    paths.forEach((p) => p !== path && p.remove());
+    const {path, _attr: {paths}} = this;
+    for(const p of this.children.filter((child) => child instanceof paper.Path)) {
+      if(p !== path && !paths.includes(p)) {
+        p.remove();
+      }
+    }
   }
   fill_error() {
     const {path} = this;
@@ -6396,31 +6438,6 @@ class Filling extends AbstractFilling(BuilderElement) {
         return true;
       }
     });
-  }
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr'
-      ],
-      Начало: [
-        {id: 'x1', path: 'o.x1', synonym: 'X1', type: 'ro'},
-        {id: 'y1', path: 'o.y1', synonym: 'Y1', type: 'ro'}
-      ],
-      Конец: [
-        {id: 'x2', path: 'o.x2', synonym: 'X2', type: 'ro'},
-        {id: 'y2', path: 'o.y2', synonym: 'Y2', type: 'ro'}
-      ]
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
   }
 }
 EditorInvisible.Filling = Filling;
