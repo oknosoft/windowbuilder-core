@@ -15149,6 +15149,26 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
     this.dop = Object.assign(dop, {params});
   }
 };
+Object.defineProperty($p.CatCharacteristicsGlass_specificationRow.prototype, 'region', {
+  get() {
+    const {region} = this.dop;
+    return typeof region === 'number' ? region : 0;
+  },
+  set(v) {
+    const region = typeof v === 'number' ? v : parseFloat(v);
+    if(!isNaN(region)) {
+      this.dop = {region: region.round()};
+    }
+  }
+});
+$p.cat.characteristics.metadata('glass_specification').fields.region = {
+  synonym: 'Ряд',
+  type: {
+    digits: 3,
+    fraction: 0,
+    types: ['number'],
+  }
+};
 $p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {
   this.x = bounds ? bounds.width.round(4) : 0;
   this.y = bounds ? bounds.height.round(4) : 0;
