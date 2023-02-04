@@ -18474,7 +18474,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(!manager || manager.empty()) {
         manager = $p.current_user;
       }
-      manager && manager.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
+      manager?.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
         if(this.department != row.acl_obj) {
           this.department = row.acl_obj;
         }
