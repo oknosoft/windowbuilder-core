@@ -2830,6 +2830,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     const rotary_folding = () => {
       const {_opening} = l_visualization;
       const {side_count, project: {sketch_view}} = this;
+      if(side_count < furn.side_count) {
+        return;
+      }
       furn.open_tunes.forEach((row) => {
         if (row.rotation_axis) {
           const axis = this.profile_by_furn_side(row.side, cache);
@@ -5930,11 +5933,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(inset.region) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
         if(row.region === -1) {
-          const {profiles, path, _attr: {paths}} = this;
+          const {profiles, path, _attr: {paths, _text}} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
           if(!paths.length) {
-            paths.push(new paper.Path({parent: this}))
+            paths.push(new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths[0];
           rpath.fillColor = path.fillColor;
@@ -5945,12 +5948,54 @@ class Filling extends AbstractFilling(BuilderElement) {
             const side = profile.cnn_side(this, interior);
             const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
             const size = cnn?.size(this, profile) || 0;
-            const ray = profile
+            const sub_path = profile
               .rays[side.is('outer') ? 'outer' : 'inner']
               .get_subpath(v.b, v.e)
               .equidistant(size, 100);
-            return v;
-          }); 
+            return {profile, sub_path, cnn, size, b: v.b, e: v.e};
+          });
+          const {length} = outer_profiles;
+          for (let i = 0; i < length; i++) {
+            const prev = i === 0 ? outer_profiles[length-1] : outer_profiles[i-1];
+            const curr = outer_profiles[i];
+            const next = i === length-1 ? outer_profiles[0] : outer_profiles[i+1];
+            if(!curr.pb) {
+              curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b);
+              if(prev !== next) {
+                prev.pe = curr.pb;
+              }
+            }
+            if(!curr.pe) {
+              curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e);
+              if(prev !== next) {
+                next.pb = curr.pe;
+              }
+            }
+          }
+          for (const curr of outer_profiles) {
+            if(curr.pb && curr.pe){
+              curr.sub_path = curr.sub_path.get_subpath(curr.pb, curr.pe, true);
+            }
+            else if(job_prm.debug) {
+              throw 'Filling:path';
+            }
+          }
+          for (const curr of outer_profiles) {
+            rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
+              if(index || !rpath.segments.length || v.hasHandles()) {
+                return true;
+              }
+            }));
+          }
+          if(rpath.segments.length && !rpath.closed){
+            rpath.closePath(true);
+          }
+          for(const {profile} of profiles) {
+            profile.insertBelow(this);
+          }
+          rpath.insertAbove(path);
+          _text?.insertAbove(rpath);
+          path.opacity = 0.7;
           return false;
         }
       });

@@ -1872,6 +1872,10 @@ class Contour extends AbstractFilling(paper.Layer) {
 
       const {_opening} = l_visualization;
       const {side_count, project: {sketch_view}} = this;
+      
+      if(side_count < furn.side_count) {
+        return;
+      }
 
       furn.open_tunes.forEach((row) => {
         if (row.rotation_axis) {
