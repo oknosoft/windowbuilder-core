@@ -798,7 +798,7 @@ set hide(v){this._setter_ts('hide',v)}
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
    * @param links {Array}
-   * @param [prow] {Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
+   * @param [prow] {CatCharacteristicsParamsRow|Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
    * @param [values] {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
    * @return {boolean}
    */
@@ -837,6 +837,16 @@ set hide(v){this._setter_ts('hide',v)}
       return true;
     }
     if(values.length) {
+      if(prow instanceof CatCharacteristicsParamsRow && [3, 4].includes(prow.param.inheritance)) {
+        const bvalue = prow.param.branch_value({ox: prow._owner._owner});
+        if(bvalue && !bvalue.empty()) {
+          if(prow.value !== bvalue) {
+            prow.value = bvalue;
+            return true;
+          }
+          return;
+        }
+      }
       prow.value = values[0]._obj.value;
       return true;
     }
