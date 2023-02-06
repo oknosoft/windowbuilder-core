@@ -444,11 +444,11 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Рисует при необходимости ряды
    */
   draw_regions() {
-    const {inset, elm} = this;
+    const {inset, elm, _attr: {paths, _text}} = this;
     if(inset.region) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
         if(row.region === -1) {
-          const {profiles, path, _attr: {paths, _text}} = this;
+          const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
           if(!paths.length) {
