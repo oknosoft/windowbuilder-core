@@ -3943,8 +3943,11 @@ class CatCnnsManager extends CatManager {
       cat: {nom}, utils} = $p;
 
     // если оба элемента - профили, определяем сторону
-    const side = is_outer ? cnn_sides.outer :
+    let side = is_outer ? cnn_sides.outer :
       (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
+    if(!side && !ign_side && is_outer === false) {
+      side = cnn_sides.inner;
+    }
 
     let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
 

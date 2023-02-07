@@ -5942,7 +5942,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           const rpath = paths[0];
           rpath.fillColor = path.fillColor;
           rpath.removeSegments();
-          const {enm: {cnn_types}, cat: {cnns}} = $p;
+          const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
           const outer_profiles = profiles.map((v) => {
             const profile = v.profile.nearest() || v.profile;
             const side = profile.cnn_side(this, interior);
@@ -5952,7 +5952,11 @@ class Filling extends AbstractFilling(BuilderElement) {
               .rays[side.is('outer') ? 'outer' : 'inner']
               .get_subpath(v.b, v.e)
               .equidistant(size, 100);
-            return {profile, sub_path, cnn, size, b: v.b, e: v.e};
+            let strip_path = cnn?.specification?.find({nom: strip});
+            if(strip_path?.sz) {
+              strip_path = sub_path.equidistant(-strip_path.sz);
+            }
+            return {profile, sub_path, strip_path, cnn, size, b: v.b, e: v.e};
           });
           const {length} = outer_profiles;
           for (let i = 0; i < length; i++) {
@@ -5971,6 +5975,18 @@ class Filling extends AbstractFilling(BuilderElement) {
                 next.pb = curr.pe;
               }
             }
+            if(!curr.sb) {
+              curr.sb = curr.strip_path.intersect_point(prev.strip_path, curr.b);
+              if(prev !== next) {
+                prev.se = curr.sb;
+              }
+            }
+            if(!curr.se) {
+              curr.se = curr.strip_path.intersect_point(next.strip_path, curr.e);
+              if(prev !== next) {
+                next.sb = curr.se;
+              }
+            }
           }
           for (const curr of outer_profiles) {
             if(curr.pb && curr.pe){
@@ -5979,16 +5995,36 @@ class Filling extends AbstractFilling(BuilderElement) {
             else if(job_prm.debug) {
               throw 'Filling:path';
             }
+            if(curr.sb && curr.se){
+              curr.strip_path = curr.strip_path.get_subpath(curr.sb, curr.se, true);
+            }
           }
+          let strip_path = rpath.children?.[0] || new paper.Path({parent: rpath});
+          rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
               if(index || !rpath.segments.length || v.hasHandles()) {
                 return true;
               }
             }));
+            if(curr.strip_path) {
+              strip_path.addSegments(curr.strip_path.segments.filter((v, index) => {
+                if(index || !strip_path.segments.length || v.hasHandles()) {
+                  return true;
+                }
+              }));
+            }
           }
           if(rpath.segments.length && !rpath.closed){
             rpath.closePath(true);
+          }
+          if(strip_path.segments.length && !strip_path.closed){
+            strip_path.closePath(true);
+          }
+          if(strip_path.segments.length){
+            strip_path = rpath.exclude(strip_path);
+            strip_path.parent = rpath;
+            strip_path.fillColor = 'grey';
           }
           for(const {profile} of profiles) {
             profile.insertBelow(this);
