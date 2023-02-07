@@ -107,7 +107,8 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
       if((!param.is_calculated || param.show_calculated)) {
         const def = product_params.find({param}) || (own_params && own_params.find({param}));
         if(def) {
-          params[param.valueOf()] = param.fetch_type(def.value);
+          const {value} = def;
+          params[param.valueOf()] = value ? value.valueOf() : value;
         }
       }
     });
@@ -128,7 +129,8 @@ Object.defineProperty($p.CatCharacteristicsGlass_specificationRow.prototype, 're
   set(v) {
     const region = typeof v === 'number' ? v : parseFloat(v);
     if(!isNaN(region)) {
-      this.dop = {region: region.round()};
+      const {dop} = this;
+      this.dop = Object.assign(dop,{region: region.round()});
     }
   }
 });

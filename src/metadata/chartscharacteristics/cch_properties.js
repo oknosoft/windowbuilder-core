@@ -397,18 +397,16 @@ exports.CchProperties = class CchProperties extends Object {
     const {utils} = $p;
     if(type.is_ref) {
 
-      if(type.digits && typeof v === 'number') {
-        return v;
-      }
-
-      if(type.hasOwnProperty('str_len') && !utils.is_guid(v)) {
+      if((type.digits && typeof v === 'number') || 
+          (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
         return v;
       }
 
       const mgr = _manager.value_mgr({v}, 'v', type);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
-          return mgr.get((utils.is_enm_mgr(mgr) || utils.is_guid(v)) ? v : '', false, false);
+          const ref = (utils.is_enm_mgr(mgr) || utils.is_guid(v)) ? v : '';
+          return mgr.get(ref, false, false);
         }
         else {
           return utils.fetch_type(v, mgr);
