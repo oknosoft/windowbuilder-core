@@ -6248,6 +6248,7 @@ set demand(v){this._setter_ts('demand',v)}
     mirror: false,
     articles: 0,
     glass_numbers: false,
+    bw: false,
   };}
 $p.CatCharacteristics = CatCharacteristics;
 class CatCharacteristicsConstructionsRow extends TabularSectionRow{

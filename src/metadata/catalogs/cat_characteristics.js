@@ -920,5 +920,6 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     mirror: false,
     articles: 0,
     glass_numbers: false,
+    bw: false,
   };
 }
