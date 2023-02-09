@@ -94,43 +94,54 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
 // при изменении реквизита табчасти состава заполнения
 $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
   // для вставок состава, перезаполняем параметры
-  const {_obj} = this;
   if(field === 'inset' && value != this.inset) {
-    _obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    const {inset, clr, dop, _owner: {_owner}} = this;
-    const {product_params} = inset;
-    const own_row = _owner.coordinates.find({elm: _obj.elm});
-    const own_params = own_row && own_row.inset.product_params;
-
-    const params = {};
-    inset.used_params().forEach((param) => {
-      if((!param.is_calculated || param.show_calculated)) {
-        const def = product_params.find({param}) || (own_params && own_params.find({param}));
-        if(def) {
-          const {value} = def;
-          params[param.valueOf()] = value ? value.valueOf() : value;
-        }
-      }
-    });
-    const clrs = inset.clr_group.clrs();
-    if(clrs.length && !clrs.includes(clr)) {
-      _obj.clr = clrs[0].valueOf();
-    }
-    this.dop = Object.assign(dop, {params});
+    this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
+    this.default_params();
   }
 };
 
 // виртуальный Ряд
-Object.defineProperty($p.CatCharacteristicsGlass_specificationRow.prototype, 'region', {
-  get() {
-    const {region} = this.dop;
-    return typeof region === 'number' ? region : 0;
+Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
+  region: {
+    get() {
+      const {region} = this.dop;
+      return typeof region === 'number' ? region : 0;
+    },
+    set(v) {
+      const region = typeof v === 'number' ? v : parseFloat(v);
+      if(!isNaN(region)) {
+        this.dop = {region: region.round()};
+      }
+    }
   },
-  set(v) {
-    const region = typeof v === 'number' ? v : parseFloat(v);
-    if(!isNaN(region)) {
-      const {dop} = this;
-      this.dop = Object.assign(dop,{region: region.round()});
+  default_params: {
+    value: function default_params() {
+      const {inset, clr, dop, _obj, _owner: {_owner}} = this;
+      const {product_params} = inset;
+      const own_row = _owner.coordinates.find({elm: _obj.elm});
+      const own_params = own_row && own_row.inset.product_params;
+
+      const params = {};
+      inset.used_params().forEach((param) => {
+        if((!param.is_calculated || param.show_calculated)) {
+          const def = product_params.find({param}) || (own_params && own_params.find({param}));
+          if(def) {
+            const pkey = param.valueOf();
+            if(dop.params && pkey in dop.params) {
+              params[pkey] = dop.params[pkey];
+              return;
+            }
+            const {value} = def;
+            params[pkey] = value ? value.valueOf() : value;
+          }
+        }
+      });
+      const clrs = inset.clr_group.clrs();
+      if(clrs.length && !clrs.includes(clr)) {
+        _obj.clr = clrs[0].valueOf();
+      }
+      this.dop = {params};
+      return this;
     }
   }
 });

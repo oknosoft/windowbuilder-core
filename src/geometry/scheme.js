@@ -1377,9 +1377,16 @@ class Scheme extends paper.Project {
         if(inset.insert_type === Заполнение) {
           ox.glass_specification.clear({elm});
         }
-        else if(inset.insert_type === Стеклопакет && !ox.glass_specification.find({elm})) {
-          for(const row of inset.specification) {
-            row.quantity && ox.glass_specification.add({elm, inset: row.nom});
+        else if(inset.insert_type === Стеклопакет) {
+          if(!ox.glass_specification.find({elm})) {
+            for(const row of inset.specification) {
+              row.quantity && ox.glass_specification.add({elm, inset: row.nom});
+            }
+          }
+          else {
+            ox.glass_specification.find_rows({elm}, (grow) => {
+              grow.default_params();
+            });
           }
         }
       }
