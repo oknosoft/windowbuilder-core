@@ -176,7 +176,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   before_save(attr) {
 
     const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
-      obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
+      obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
 
@@ -231,7 +231,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         if (!must_be_saved) {
           if(obj_delivery_state == Отправлен) {
-            this.obj_delivery_state = 'Черновик';
+            this.obj_delivery_state = Черновик;
           }
           return false;
         }
@@ -283,8 +283,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
 
       if (critical && !must_be_saved) {
-        if(obj_delivery_state == 'Отправлен') {
-          this.obj_delivery_state = 'Черновик';
+        if(obj_delivery_state == Отправлен) {
+          this.obj_delivery_state = Черновик;
         }
         throw new Error(text);
       }
@@ -297,7 +297,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     // фильтр по статусу
-    if(obj_delivery_state == 'Шаблон') {
+    if(obj_delivery_state == Шаблон) {
       _obj.state = 'template';
       // Шаблоны имеют дополнительное свойство, в котором можно задать доступные системы
       const permitted_sys = $p.cch.properties.predefined('permitted_sys');
@@ -313,13 +313,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else if(category == 'complaints') {
       _obj.state = 'complaints';
     }
-    else if(obj_delivery_state == 'Отправлен') {
+    else if(obj_delivery_state == Отправлен) {
       _obj.state = 'sent';
     }
-    else if(obj_delivery_state == 'Отклонен') {
+    else if(obj_delivery_state == Отклонен) {
       _obj.state = 'declined';
     }
-    else if(obj_delivery_state == 'Подтвержден') {
+    else if(obj_delivery_state == Подтвержден) {
       _obj.state = 'confirmed';
     }
     else if(obj_delivery_state == 'Архив') {
@@ -362,7 +362,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
 
-    const db = attr?.db || (obj_delivery_state == 'Шаблон' ?  pouch.remote.ram : pouch.db(_manager));
+    const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
 
     // пометим на удаление неиспользуемые характеристики
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
@@ -371,7 +371,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         let res = Promise.resolve();
         let deleted = 0;
         for (const {id} of rows) {
-          const ref = id.substr(20);
+          const ref = id.substring(20);
           if(this.production.find({characteristic: ref})) {
             continue;
           }
@@ -403,7 +403,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const _id = `${class_name}|${_obj.ref}`;
       // обычные заказы пишем честно - с текущими версиями, версии шаблонов не учитываем
       const rev = Promise.resolve().then(() => {
-        if(obj_delivery_state == 'Шаблон') {
+        if(obj_delivery_state == Шаблон) {
           return db.allDocs({keys: sobjs.map(({_id}) => _id)})
             .then(({rows}) => {
               for(const doc of rows) {

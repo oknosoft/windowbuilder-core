@@ -162,15 +162,15 @@ class Pricing {
   /**
    * Возвращает цену номенклатуры по типу цен из регистра пзМаржинальныеКоэффициентыИСкидки
    * Если в маржинальных коэффициентах или номенклатуре указана формула - выполняет
-   *
-   * Аналог УПзП-шного __ПолучитьЦенуНоменклатуры__
-   * @param nom {CatNom}
-   * @param characteristic {CatCharacteristics}
-   * @param price_type {CatNom_prices_types|CatBranches}
-   * @param prm {Object}
-   * @param row {Object}
-   * @param [clr] {CatClrs}
-   * @param [formula] {CatFormulas}
+   * @param {CatNom} nom
+   * @param {CatCharacteristics} characteristic
+   * @param {CatNom_prices_types|CatBranches} price_type
+   * @param {Object} prm
+   * @param {Object} row
+   * @param {CatClrs} clr
+   * @param {CatFormulas} [formula]
+   * @param {Date} [date]
+   * @return {Number}
    */
   nom_price(nom, characteristic, price_type, prm, row, clr, formula, date) {
 
