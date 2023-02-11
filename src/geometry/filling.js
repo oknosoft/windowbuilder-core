@@ -603,7 +603,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
       // если тип стеклопакет - заполняем по умолчанию
-      if(insert_type === insert_type._manager.Стеклопакет) {
+      if(insert_type.is('composite')) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
         }

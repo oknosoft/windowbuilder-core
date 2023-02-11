@@ -3826,7 +3826,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         elm.on_sys_changed(refill);
       }
       else {
-        const {thickness, project} = elm;
+        const {thickness, project, ox} = elm;
         if(!refill) {
           const {thicknesses, glass_thickness} = this.sys;
           if(glass_thickness === 0) {
@@ -3845,6 +3845,14 @@ class Contour extends AbstractFilling(paper.Layer) {
             elm_type = elm_types.Стекло;
           }
           elm.set_inset(project.default_inset({elm_type: [elm_type]}));
+        }
+        else {
+          const {inset} = elm;
+          if(inset.insert_type.is('composite') && !ox.glass_specification.find({elm: elm.elm})) {
+            for(const row of inset.specification) {
+              row.quantity && ox.glass_specification.add({elm: elm.elm, inset: row.nom});
+            }
+          }
         }
         elm.profiles.forEach((curr) => {
           if(!curr.cnn || !curr.cnn.check_nom2(curr.profile)) {
@@ -6072,7 +6080,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(!ign_select){
       inset.clr_group.default_clr(this);
       glass_specification.clear({elm});
-      if(insert_type === insert_type._manager.Стеклопакет) {
+      if(insert_type.is('composite')) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
         }
@@ -17448,7 +17456,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   before_save(attr) {
     const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
-      obj_delivery_states: {Отклонен, Отозван, Шаблон, Подтвержден, Отправлен},
+      obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
     const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp} = this;
@@ -17495,7 +17503,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         if (!must_be_saved) {
           if(obj_delivery_state == Отправлен) {
-            this.obj_delivery_state = 'Черновик';
+            this.obj_delivery_state = Черновик;
           }
           return false;
         }
@@ -17541,8 +17549,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       });
       if (critical && !must_be_saved) {
-        if(obj_delivery_state == 'Отправлен') {
-          this.obj_delivery_state = 'Черновик';
+        if(obj_delivery_state == Отправлен) {
+          this.obj_delivery_state = Черновик;
         }
         throw new Error(text);
       }
@@ -17553,7 +17561,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
       }
     }
-    if(obj_delivery_state == 'Шаблон') {
+    if(obj_delivery_state == Шаблон) {
       _obj.state = 'template';
       const permitted_sys = $p.cch.properties.predefined('permitted_sys');
       if(permitted_sys) {
@@ -17568,13 +17576,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else if(category == 'complaints') {
       _obj.state = 'complaints';
     }
-    else if(obj_delivery_state == 'Отправлен') {
+    else if(obj_delivery_state == Отправлен) {
       _obj.state = 'sent';
     }
-    else if(obj_delivery_state == 'Отклонен') {
+    else if(obj_delivery_state == Отклонен) {
       _obj.state = 'declined';
     }
-    else if(obj_delivery_state == 'Подтвержден') {
+    else if(obj_delivery_state == Подтвержден) {
       _obj.state = 'confirmed';
     }
     else if(obj_delivery_state == 'Архив') {
@@ -17610,13 +17618,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         sobjs.push(tmp);
       }
     }
-    const db = attr?.db || (obj_delivery_state == 'Шаблон' ?  pouch.remote.ram : pouch.db(_manager));
+    const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
     const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
       .then(({rows}) => {
         let res = Promise.resolve();
         let deleted = 0;
         for (const {id} of rows) {
-          const ref = id.substr(20);
+          const ref = id.substring(20);
           if(this.production.find({characteristic: ref})) {
             continue;
           }
@@ -17644,7 +17652,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const bulk = () => {
       const _id = `${class_name}|${_obj.ref}`;
       const rev = Promise.resolve().then(() => {
-        if(obj_delivery_state == 'Шаблон') {
+        if(obj_delivery_state == Шаблон) {
           return db.allDocs({keys: sobjs.map(({_id}) => _id)})
             .then(({rows}) => {
               for(const doc of rows) {

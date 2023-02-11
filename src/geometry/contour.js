@@ -3275,7 +3275,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       else {
         // заполнения проверяем с учетом правила системы - по толщине, массиву толщин или явному вхождению вставки
-        const {thickness, project} = elm;
+        const {thickness, project, ox} = elm;
         if(!refill) {
           const {thicknesses, glass_thickness} = this.sys;
           if(glass_thickness === 0) {
@@ -3294,6 +3294,14 @@ class Contour extends AbstractFilling(paper.Layer) {
             elm_type = elm_types.Стекло;
           }
           elm.set_inset(project.default_inset({elm_type: [elm_type]}));
+        }
+        else {
+          const {inset} = elm;
+          if(inset.insert_type.is('composite') && !ox.glass_specification.find({elm: elm.elm})) {
+            for(const row of inset.specification) {
+              row.quantity && ox.glass_specification.add({elm: elm.elm, inset: row.nom});
+            }
+          }
         }
         // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
