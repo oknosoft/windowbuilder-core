@@ -6113,7 +6113,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   purge_paths() {
     const {path, _attr: {paths}} = this;
-    for(const p of this.children.filter((child) => child instanceof paper.Path)) {
+    const {Path, CompoundPath} = paper;
+    for(const p of this.children.filter((child) => child instanceof Path || child instanceof CompoundPath)) {
       if(p !== path && !paths.includes(p)) {
         p.remove();
       }
