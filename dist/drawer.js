@@ -2822,8 +2822,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {l_visualization, furn, opening} = this;
     const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
-      if (l_visualization._opening && l_visualization._opening.visible)
+      if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
+      }
       return;
     }
     const cache = {
@@ -2852,6 +2853,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(_opening.dashArray.length) {
         _opening.dashArray = [];
       }
+      _opening.visible = true;
     };
     const sliding = () => {
       const {center} = this.bounds;
@@ -2870,6 +2872,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         _opening.lineTo(center.add([-100, 0]));
         _opening.lineTo(center.add([-30, -30]));
       }
+      _opening.visible = true;
     };
     if (!l_visualization._opening) {
       l_visualization._opening = new paper.CompoundPath({
