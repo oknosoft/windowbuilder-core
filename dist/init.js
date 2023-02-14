@@ -7387,7 +7387,7 @@ class DocCalc_orderManager extends DocManager {
     const src_ref = src.ref;
     src.production.forEach((row) => {
       const prow = Object.assign({}, row._obj || row);
-      if(row.characteristic.calc_order == src_ref) {
+      if(row.characteristic?.calc_order == src_ref) {
         const tmp = {calc_order: dst.ref};
         const _obj = row.characteristic._obj || row.characteristic;
         if(clone) {
@@ -7404,7 +7404,7 @@ class DocCalc_orderManager extends DocManager {
         }
         map.set(row.characteristic.ref, cx);
       }
-      dst.production.add(prow);
+      dst.production.add(prow, true, null, true); // (attr = {}, silent, Constructor, raw)
     });
 
     // обновляем leading_product
