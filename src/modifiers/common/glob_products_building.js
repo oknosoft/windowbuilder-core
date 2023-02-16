@@ -1209,7 +1209,8 @@ class ProductsBuilding {
    */
   static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
 
-    if(!row_spec.qty) {
+    const {qty, len, nom} = row_spec;
+    if(!qty) {
       // dop=-1 - визуализация, dop=-2 - техоперация,
       if(row_spec.dop >= 0) {
         spec.del(row_spec.row - 1, true);
@@ -1227,7 +1228,7 @@ class ProductsBuilding {
       angle_calc_method_next = angle_calc_method_prev;
     }
 
-    if(angle_calc_method_prev && !row_spec.nom.is_pieces) {
+    if(angle_calc_method_prev && !nom.is_pieces) {
 
       const {Основной, СварнойШов, СоединениеПополам, Соединение, _90} = $p.enm.angle_calculating_ways;
 
@@ -1258,9 +1259,9 @@ class ProductsBuilding {
       }
     }
 
-    if(row_spec.len) {
+    if(len) {
       if(row_spec.width && !row_spec.s) {
-        row_spec.s = row_spec.len * row_spec.width;
+        row_spec.s = len * row_spec.width;
       }
     }
     else {
@@ -1268,22 +1269,22 @@ class ProductsBuilding {
     }
 
     if(row_spec.s) {
-      row_spec.totqty = row_spec.qty * row_spec.s;
+      row_spec.totqty = qty * row_spec.s;
     }
-    else if(row_spec.len) {
-      row_spec.totqty = row_spec.qty * row_spec.len;
+    else if(len) {
+      row_spec.totqty = qty * len;
     }
     else {
-      row_spec.totqty = row_spec.qty;
+      row_spec.totqty = qty;
     }
     
     // при расчёте по площади, в totqty1 пишем площадь bounds вместо площади фигуры
-    let {totqty} = row_spec;
-    if(row_spec.s) {
-      totqty = row_spec.qty * row_spec.len * row_spec.width;
+    let {totqty, s, width} = row_spec;
+    if(s && s < len * width) {
+      totqty = qty * len * width;
     }
 
-    row_spec.totqty1 = totqty0 ? 0 : Math.max(row_spec.nom.min_volume, totqty * row_spec.nom.loss_factor);
+    row_spec.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
     
     const {_quantity} = row_spec;
     if(_quantity) {
