@@ -95,6 +95,15 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return typeof is_rectangular === 'boolean' ? is_rectangular : true;
           };
           break;
+          
+        case 'handle_height':
+          _data._formula = function ({elm, layer}) {
+            if(!layer && elm) {
+              layer = elm.layer;
+            }
+            return layer ? layer.h_ruch : 0;
+          };
+          break;
 
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
@@ -137,6 +146,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'width',            // ширина из параметра
     'inset',            // вставка текущего элемента
     'clr_inset',        // цвет вставки в элемент
+    'handle_height',    // высота ручки
   ]) {
     formulate(name);
   }
@@ -284,5 +294,30 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('use');
+
+  // направление открывания
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function ({prm_row, elm, elm2, layer}) {
+        if(!layer && elm) {
+          layer = elm.layer;
+        }
+        if(prm_row?.origin?.is('nearest')) {
+          if(elm2) {
+            layer = elm2.layer;
+          }
+        }
+        else if (prm_row?.origin?.is('parent')) {
+          if(layer?.layer) {
+            layer = layer.layer;
+          }
+        }
+        const value = layer?.direction;
+        return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('direction');
 
 });

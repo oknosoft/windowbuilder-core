@@ -9725,26 +9725,6 @@ class ProfileItem extends GeneratrixElement {
       });
     }
   }
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr',
-        this instanceof Onlay ? 'region' : 'offset',
-      ],
-      'Начало': ['x1','y1','a1','cnn1'],
-      'Конец': ['x2','y2','a2','cnn2']
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
-  }
 }
 ProfileItem.path_attr = {
   strokeColor: 'black',
@@ -10800,17 +10780,7 @@ class BaseLine extends ProfileItem {
   }
   redraw() {
   }
-  get oxml() {
-    return BaseLine.oxml;
-  }
 }
-BaseLine.oxml = {
-  ' ': [
-    {id: 'info', path: 'o.info', type: 'ro'},
-  ],
-  'Начало': ['x1', 'y1'],
-  'Конец': ['x2', 'y2']
-};
 EditorInvisible.BaseLine = BaseLine;
 class ProfileAddl extends ProfileItem {
   constructor(attr) {
@@ -11235,9 +11205,6 @@ class ProfileAdjoining extends BaseLine {
   get elm_type() {
     return $p.enm.elm_types.Примыкание;
   }
-  get oxml() {
-    return ProfileAdjoining.oxml;
-  }
   joined_nearests() {
     return [this.parent];
   }
@@ -11310,15 +11277,6 @@ class ProfileAdjoining extends BaseLine {
     }
   }
 }
-ProfileAdjoining.oxml = {
-  ' ': [
-    {id: 'info', path: 'o.info', type: 'ro'},
-    'inset',
-  ],
-  Начало: ['x1', 'y1'],
-  Конец: ['x2', 'y2'],
-  Соединение: ['cnn3'],
-};
 EditorInvisible.ProfileAdjoining = ProfileAdjoining;
 class ProfileNestedContent extends Profile {
   constructor(attr) {
@@ -17198,6 +17156,14 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return typeof is_rectangular === 'boolean' ? is_rectangular : true;
           };
           break;
+        case 'handle_height':
+          _data._formula = function ({elm, layer}) {
+            if(!layer && elm) {
+              layer = elm.layer;
+            }
+            return layer ? layer.h_ruch : 0;
+          };
+          break;
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
@@ -17235,6 +17201,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'width',           
     'inset',           
     'clr_inset',       
+    'handle_height',   
   ]) {
     formulate(name);
   }
@@ -17354,6 +17321,28 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('use');
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      prm.check_condition = function ({prm_row, elm, elm2, layer}) {
+        if(!layer && elm) {
+          layer = elm.layer;
+        }
+        if(prm_row?.origin?.is('nearest')) {
+          if(elm2) {
+            layer = elm2.layer;
+          }
+        }
+        else if (prm_row?.origin?.is('parent')) {
+          if(layer?.layer) {
+            layer = layer.layer;
+          }
+        }
+        const value = layer?.direction;
+        return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('direction');
 });
 class FakeLenAngl {
   constructor({len, inset}) {
