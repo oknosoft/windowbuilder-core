@@ -2861,30 +2861,6 @@ class ProfileItem extends GeneratrixElement {
       });
     }
   }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr',
-        this instanceof Onlay ? 'region' : 'offset',
-      ],
-      'Начало': ['x1','y1','a1','cnn1'],
-      'Конец': ['x2','y2','a2','cnn2']
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
-  }
 }
 
 ProfileItem.path_attr = {

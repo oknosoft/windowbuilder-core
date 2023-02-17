@@ -53,13 +53,6 @@ class ProfileAdjoining extends BaseLine {
   }
 
   /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    return ProfileAdjoining.oxml;
-  }
-
-  /**
    * Возвращает массив примыкающих рам
    */
   joined_nearests() {
@@ -144,16 +137,5 @@ class ProfileAdjoining extends BaseLine {
     }
   }
 }
-
-ProfileAdjoining.oxml = {
-  ' ': [
-    {id: 'info', path: 'o.info', type: 'ro'},
-    'inset',
-    //'clr',
-  ],
-  Начало: ['x1', 'y1'],
-  Конец: ['x2', 'y2'],
-  Соединение: ['cnn3'],
-};
 
 EditorInvisible.ProfileAdjoining = ProfileAdjoining;
