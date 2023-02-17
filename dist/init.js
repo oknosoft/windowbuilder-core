@@ -7225,6 +7225,8 @@ get s(){return this._getter('s')}
 set s(v){this._setter('s',v)}
 get first_cost(){return this._getter('first_cost')}
 set first_cost(v){this._setter('first_cost',v)}
+get specify(){return this._getter('specify')}
+set specify(v){this._setter('specify',v)}
 get marginality(){return this._getter('marginality')}
 set marginality(v){this._setter('marginality',v)}
 get price(){return this._getter('price')}
