@@ -8287,6 +8287,8 @@ get width(){return this._getter('width')}
 set width(v){this._setter('width',v)}
 get s(){return this._getter('s')}
 set s(v){this._setter('s',v)}
+get thickness(){return this._getter('thickness')}
+set thickness(v){this._setter('thickness',v)}
 get material(){return this._getter('material')}
 set material(v){this._setter('material',v)}
 get grouping(){return this._getter('grouping')}
