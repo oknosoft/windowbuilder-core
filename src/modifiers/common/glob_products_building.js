@@ -1283,7 +1283,7 @@ class ProductsBuilding {
     
     // при расчёте по площади, в totqty1 пишем площадь bounds вместо площади фигуры
     let {totqty, s, width} = row_spec;
-    if(s && s < len * width) {
+    if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
       totqty = qty * len * width;
     }
 

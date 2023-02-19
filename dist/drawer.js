@@ -14852,7 +14852,7 @@ class ProductsBuilding {
       row_spec.totqty = qty;
     }
     let {totqty, s, width} = row_spec;
-    if(s && s < len * width) {
+    if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
       totqty = qty * len * width;
     }
     row_spec.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
