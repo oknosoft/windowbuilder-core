@@ -14782,6 +14782,9 @@ class ProductsBuilding {
         }
       }
     }
+    else if(nom.is_pieces && !row_base.coefficient) {
+      row_spec.qty = row_base.quantity;
+    }
     else {
       row_spec.qty = row_base.quantity;
       row_spec.len = (len - row_base.sz) * (row_base.coefficient || 0.001);
