@@ -82,12 +82,12 @@
     }
     else {
       let {x1, x2, y1, y2, s} = _row;
-      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region === -1) {
-        const {paths} = elm._attr;
-        if(paths?.length) {
+      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region) {
+        const path = elm._attr.paths?.get(relm.irow.region);
+        if(path) {
           x1 = y1 = 0;
-          x2 = paths[0].bounds.width;
-          y2 = paths[0].bounds.height;
+          x2 = path.bounds.width;
+          y2 = path.bounds.height;
           s = x2 * y2 / 1e6;
         }
       }

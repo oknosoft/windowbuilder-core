@@ -135,7 +135,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, layer, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -163,13 +163,12 @@ exports.CchProperties = class CchProperties extends Object {
     const val = is_calculated ? this.calculated_value({
       row: row_spec,
       cnstr: cnstr || 0,
+      prm_row,
       elm,
       elm2,
       ox,
-      calc_order,
-      prm_row,
       layer,
-      calc_order_row,
+      ...other,
     }) : this.extract_value(prm_row);
 
     let ok = false;

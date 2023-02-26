@@ -8,7 +8,7 @@
 
 exports.CatParameters_keys = class CatParameters_keys extends Object {
 
-  check_condition({elm, elm2, ox, cnstr, layer, calc_order_row}) {
+  check_condition({elm, elm2, ox, layer, calc_order_row, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -23,18 +23,8 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
 
     for(const prm_row of this.params) {
       const {property, origin} = prm_row;
-      let ok;
-      // заглушка для совместимости с УПзП
-      if(calc_order_row && property.empty()){
-        const vpartner = $p.cat.partners.get(prm_row._obj.value);
-        if(vpartner && !vpartner.empty() && vpartner != calc_order.partner){
-          return false;
-        }
-      }
-      else {
-        if(!property.check_condition({prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
-          return false;
-        }
+      if(!property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other})) {
+        return false;
       }
     }
 
