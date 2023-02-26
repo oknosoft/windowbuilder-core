@@ -431,7 +431,7 @@ set hide(v){this._setter_ts('hide',v)}
   /**
    * Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, layer, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -459,13 +459,12 @@ set hide(v){this._setter_ts('hide',v)}
     const val = is_calculated ? this.calculated_value({
       row: row_spec,
       cnstr: cnstr || 0,
+      prm_row,
       elm,
       elm2,
       ox,
-      calc_order,
-      prm_row,
       layer,
-      calc_order_row,
+      ...other,
     }) : this.extract_value(prm_row);
 
     let ok = false;
@@ -2875,7 +2874,7 @@ get params(){return this._getter_ts('params')}
 set params(v){this._setter_ts('params',v)}
 
 
-  check_condition({elm, elm2, ox, cnstr, layer, calc_order_row}) {
+  check_condition({elm, elm2, ox, layer, calc_order_row, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -2890,18 +2889,8 @@ set params(v){this._setter_ts('params',v)}
 
     for(const prm_row of this.params) {
       const {property, origin} = prm_row;
-      let ok;
-      // заглушка для совместимости с УПзП
-      if(calc_order_row && property.empty()){
-        const vpartner = $p.cat.partners.get(prm_row._obj.value);
-        if(vpartner && !vpartner.empty() && vpartner != calc_order.partner){
-          return false;
-        }
-      }
-      else {
-        if(!property.check_condition({prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row})) {
-          return false;
-        }
+      if(!property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other})) {
+        return false;
       }
     }
 
@@ -3526,6 +3515,8 @@ get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
 get applying(){return this._getter('applying')}
 set applying(v){this._setter('applying',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -3624,9 +3615,10 @@ set priorities(v){this._setter_ts('priorities',v)}
    * Параметрический размер соединения 
    * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
    * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+   * @param {Number} [region] - Соседний элемент, если доступно в контексте вызова
    * @return Number
    */
-  size(elm0, elm2) {
+  size(elm0, elm2, region=0) {
     let {sz, sizes} = this;
     const {ox, layer} = elm0;
     for(const prm_row of sizes) {
@@ -3645,22 +3637,8 @@ set priorities(v){this._setter_ts('priorities',v)}
           elm = parent;
         }
       }
-      if(prm_row.param.check_condition({
-          row_spec: {},
-          prm_row,
-          cnstr,
-          elm,
-          elm2,
-          layer,
-          ox,
-        }) &&
-        prm_row.key.check_condition({
-          elm,
-          elm2,
-          ox,
-          cnstr,
-          layer,
-        })) {
+      if(prm_row.param.check_condition({row_spec: {}, prm_row, cnstr, elm, elm2, region, layer, ox}) &&
+        prm_row.key.check_condition({cnstr, elm, elm2, region, layer, ox})) {
         sz = prm_row.elm;
         break;
       }

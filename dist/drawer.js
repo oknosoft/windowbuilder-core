@@ -5666,7 +5666,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.closePath(true);
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
-    _attr.paths = [];
+    _attr.paths = new Map();
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
       _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
@@ -5946,14 +5946,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {inset, elm, _attr: {paths, _text}} = this;
     if(inset.region) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
-        if(row.region === -1) {
+        if([1, 2, -1].includes(row.region)) {
           const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
-          if(!paths.length) {
-            paths.push(new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
+          if(!paths.has(row.region)) {
+            paths.set(row.region, new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
           }
-          const rpath = paths[0];
+          const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
           rpath.removeSegments();
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
@@ -5961,7 +5961,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             const profile = v.profile.nearest() || v.profile;
             const side = profile.cnn_side(this, interior);
             const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
-            const size = cnn?.size(this, profile) || 0;
+            const size = cnn?.size(this, profile, row.region) || 0;
             const sub_path = profile
               .rays[side.is('outer') ? 'outer' : 'inner']
               .get_subpath(v.b, v.e)
@@ -6040,21 +6040,25 @@ class Filling extends AbstractFilling(BuilderElement) {
             strip_path.parent = rpath;
             strip_path.fillColor = 'grey';
           }
-          for(const {profile} of profiles) {
-            profile.insertBelow(this);
+          if(row.region > 0) {
+            rpath.insertBelow(path);  
           }
-          rpath.insertAbove(path);
-          _text?.insertAbove(rpath);
-          path.opacity = 0.7;
-          return false;
+          else {
+            for(const {profile} of profiles) {
+              profile.insertBelow(this);
+            }
+            rpath.insertAbove(path);
+            _text?.insertAbove(rpath);
+            path.opacity = 0.7;
+          }
         }
       });
     }
-    else if(paths.length) {
-      for(const elm of paths) {
+    else if(paths.size) {
+      for(const [region, elm] of paths) {
         elm?.remove?.();
       }
-      paths.length = 0;
+      paths.clear();
     }
   }
   reset_fragment() {
@@ -6115,10 +6119,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.set_clr(v);
   }
   purge_paths() {
-    const {path, _attr: {paths}} = this;
+    const {path, children, _attr: {paths}} = this;
     const {Path, CompoundPath} = paper;
-    for(const p of this.children.filter((child) => child instanceof Path || child instanceof CompoundPath)) {
-      if(p !== path && !paths.includes(p)) {
+    const rpaths = Array.from(paths.values());
+    for(const p of children.filter((child) => child instanceof Path || child instanceof CompoundPath)) {
+      if(p !== path && !rpaths.includes(p)) {
         p.remove();
       }
     }
@@ -15034,12 +15039,12 @@ $p.spec_building = new SpecBuilding($p);
     }
     else {
       let {x1, x2, y1, y2, s} = _row;
-      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region === -1) {
-        const {paths} = elm._attr;
-        if(paths?.length) {
+      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region) {
+        const path = elm._attr.paths?.get(relm.irow.region);
+        if(path) {
           x1 = y1 = 0;
-          x2 = paths[0].bounds.width;
-          y2 = paths[0].bounds.height;
+          x2 = path.bounds.width;
+          y2 = path.bounds.height;
           s = x2 * y2 / 1e6;
         }
       }
@@ -17159,6 +17164,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return typeof is_rectangular === 'boolean' ? is_rectangular : true;
           };
           break;
+        case 'region':
+            _data._formula = function (obj) {
+              const {region} = obj;
+              return typeof region === 'number' ? region : 0;
+            };
+            break;
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {
@@ -17205,6 +17216,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'inset',           
     'clr_inset',       
     'handle_height',   
+    'region',          
   ]) {
     formulate(name);
   }

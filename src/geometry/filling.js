@@ -70,7 +70,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
 
-    _attr.paths = [];
+    _attr.paths = new Map();
 
     // для нового устанавливаем вставку по умолчанию
     const {enm: {elm_types}, utils} = $p;
@@ -447,14 +447,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {inset, elm, _attr: {paths, _text}} = this;
     if(inset.region) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
-        if(row.region === -1) {
+        if([1, 2, -1].includes(row.region)) {
           const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
-          if(!paths.length) {
-            paths.push(new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
+          if(!paths.has(row.region)) {
+            paths.set(row.region, new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
           }
-          const rpath = paths[0];
+          const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
           rpath.removeSegments();
           // получаем периметр ряда
@@ -463,7 +463,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             const profile = v.profile.nearest() || v.profile;
             const side = profile.cnn_side(this, interior);
             const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
-            const size = cnn?.size(this, profile) || 0;
+            const size = cnn?.size(this, profile, row.region) || 0;
             const sub_path = profile
               .rays[side.is('outer') ? 'outer' : 'inner']
               .get_subpath(v.b, v.e)
@@ -543,21 +543,25 @@ class Filling extends AbstractFilling(BuilderElement) {
             strip_path.parent = rpath;
             strip_path.fillColor = 'grey';
           }
-          for(const {profile} of profiles) {
-            profile.insertBelow(this);
+          if(row.region > 0) {
+            rpath.insertBelow(path);  
           }
-          rpath.insertAbove(path);
-          _text?.insertAbove(rpath);
-          path.opacity = 0.7;
-          return false;
+          else {
+            for(const {profile} of profiles) {
+              profile.insertBelow(this);
+            }
+            rpath.insertAbove(path);
+            _text?.insertAbove(rpath);
+            path.opacity = 0.7;
+          }
         }
       });
     }
-    else if(paths.length) {
-      for(const elm of paths) {
+    else if(paths.size) {
+      for(const [region, elm] of paths) {
         elm?.remove?.();
       }
-      paths.length = 0;
+      paths.clear();
     }
   }
   
@@ -652,10 +656,11 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Прочищает паразитные пути
    */
   purge_paths() {
-    const {path, _attr: {paths}} = this;
+    const {path, children, _attr: {paths}} = this;
     const {Path, CompoundPath} = paper;
-    for(const p of this.children.filter((child) => child instanceof Path || child instanceof CompoundPath)) {
-      if(p !== path && !paths.includes(p)) {
+    const rpaths = Array.from(paths.values());
+    for(const p of children.filter((child) => child instanceof Path || child instanceof CompoundPath)) {
+      if(p !== path && !rpaths.includes(p)) {
         p.remove();
       }
     }

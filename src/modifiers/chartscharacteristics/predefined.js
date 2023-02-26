@@ -96,6 +96,13 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'region':
+            _data._formula = function (obj) {
+              const {region} = obj;
+              return typeof region === 'number' ? region : 0;
+            };
+            break;
+          
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {
@@ -147,6 +154,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'inset',            // вставка текущего элемента
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
+    'region',           // ряд
   ]) {
     formulate(name);
   }
