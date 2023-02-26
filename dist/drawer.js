@@ -5943,8 +5943,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     !no_zoom && layer.zoom_fit();
   }
   draw_regions() {
-    const {inset, elm, _attr: {paths, _text}} = this;
-    if(inset.region) {
+    const {inset, elm, layer, _attr: {paths, _text}} = this;
+    if(inset.region && !(layer instanceof ContourTearing)) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
         if([1, 2, -1].includes(row.region)) {
           const {profiles, path} = this;
@@ -5966,10 +5966,8 @@ class Filling extends AbstractFilling(BuilderElement) {
               .rays[side.is('outer') ? 'outer' : 'inner']
               .get_subpath(v.b, v.e)
               .equidistant(size, 100);
-            let strip_path = cnn?.specification?.find({nom: strip});
-            if(strip_path?.sz) {
-              strip_path = sub_path.equidistant(-strip_path.sz);
-            }
+            const sz = cnn?.specification?.find?.({nom: strip})?.sz;
+            const strip_path = sz ? sub_path.equidistant(-sz) : sub_path.clone({insert: false});
             return {profile, sub_path, strip_path, cnn, size, b: v.b, e: v.e};
           });
           const {length} = outer_profiles;
@@ -10057,7 +10055,7 @@ class Profile extends ProfileItem {
       ign_cnn = true;
     }
     const check_nearest = (elm) => {
-      if(!(elm instanceof Profile || elm instanceof ProfileConnective) || !elm.isInserted()) {
+      if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
         return;
       }
       let {generatrix} = elm;

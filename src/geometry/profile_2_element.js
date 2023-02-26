@@ -120,7 +120,7 @@ class Profile extends ProfileItem {
     }
 
     const check_nearest = (elm) => {
-      if(!(elm instanceof Profile || elm instanceof ProfileConnective) || !elm.isInserted()) {
+      if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
         return;
       }
       let {generatrix} = elm;
