@@ -4936,7 +4936,7 @@ class DimensionLine extends paper.Group {
     if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
       return true;
     }
-    if(elm1 instanceof ProfileParent && elm2 instanceof ProfileParent) {
+    if(project._scope?.tool?.disable_size || (elm1 instanceof ProfileParent && elm2 instanceof ProfileParent)) {
       return true;
     }
     return false;
@@ -17011,8 +17011,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return Array.from(res);
     }
     get clr_group() {
-      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
       return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
+    }
+    set clr_group(v) {
+      this._setter('clr_group',v);
     }
   }
   $p.CatInserts = CatInserts;

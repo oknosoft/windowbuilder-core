@@ -102,7 +102,7 @@ class DimensionLine extends paper.Group {
     if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
       return true;
     }
-    if(elm1 instanceof ProfileParent && elm2 instanceof ProfileParent) {
+    if(project._scope?.tool?.disable_size || (elm1 instanceof ProfileParent && elm2 instanceof ProfileParent)) {
       return true;
     }
     return false;

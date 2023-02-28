@@ -1695,8 +1695,11 @@
     }
     
     get clr_group() {
-      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
       return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
+    }
+    set clr_group(v) {
+      this._setter('clr_group',v);
     }
 
   }
