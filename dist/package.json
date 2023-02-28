@@ -18,27 +18,15 @@
     "window builder",
     "windows calculator"
   ],
-  "author": "Evgeniy Malyarov <info@oknosoft.ru> (http://www.oknosoft.ru)",
+  "author": "Evgeniy Malyarov <info@oknosoft.ru> (https://oknosoft.ru)",
   "license": "SEE LICENSE IN LICENSE.en.md",
   "private": true,
   "bugs": {
     "url": "https://github.com/oknosoft/windowbuilder/issues"
   },
-  "homepage": "http://www.oknosoft.ru/zd/",
+  "homepage": "https://oknosoft.ru/zd/",
   "dependencies": {
     "paper-jsdom-canvas": "0.12.17"
   },
-  "devDependencies": {
-  },
-  "packageManager": "^yarn@1.22",
-  "files": [
-    "dist/**",
-    "LICENSE",
-    "LICENSE.ru.md"
-  ],
-  "scripts": {
-    "meta:prebuild": "node scripts/meta.prebuild.js",
-    "meta:link": "node scripts/meta.link.js",
-    "jsdoc": "jsdoc -c jsdoc/conf.json"
-  }
+  "packageManager": "^yarn@1.22"
 }
