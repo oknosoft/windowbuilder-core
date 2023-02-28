@@ -7480,6 +7480,9 @@ Object.defineProperties(paper.Path.prototype, {
       if(!point) {
         return 0;
       }
+      if(!interior) {
+        interior = point;
+      }
       const np = this.getNearestPoint(interior);
       const offset = this.getOffsetOf(np);
       const line = new paper.Line(np, np.add(this.getTangentAt(offset)));
@@ -17476,10 +17479,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return this.number_doc ? Promise.resolve(this) : this.new_number_doc();
   }
   before_save(attr) {
-    const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
+    const {ui, utils, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
+    const  {blank, moment} = utils;
     const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp} = this;
     const must_be_saved = ![Подтвержден, Отправлен].includes(obj_delivery_state);
     if(this.posted) {
@@ -17613,7 +17617,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       _obj.state = 'draft';
     }
     this.check_mandatory();
-    const sobjs = this.product_rows(true, attr);
+    let sobjs = this.product_rows(true, attr);
     if(this._modified || this.is_new()) {
       const hash = this._hash();
       if(timestamp && timestamp.hash === hash) {
@@ -17639,6 +17643,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         sobjs.push(tmp);
       }
     }
+    sobjs = utils._clone(sobjs, true);
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
     const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
       .then(({rows}) => {
