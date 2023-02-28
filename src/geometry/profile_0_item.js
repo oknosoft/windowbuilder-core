@@ -67,11 +67,14 @@ class CnnPoint {
    */
   get is_tt() {
     // если это угол, то точно не T
-    const {profile_point, profile, point} = this;
-    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === this.parent) {
+    let {profile_point, profile, parent, point} = this;
+    if(!point) {
+      point = parent[this.node];
+    }
+    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === parent) {
       return false;
     }
-    if(profile && !profile_point && profile.b.is_nearest(point) || profile.e.is_nearest(point)) {
+    if(profile && (!profile_point || profile_point === 't') && (profile.b.is_nearest(point) || profile.e.is_nearest(point))) {
       return false;
     }
     return true;
@@ -83,8 +86,16 @@ class CnnPoint {
    */
   get is_l() {
     const {cnn} = this;
-    const {cnn_types} = $p.enm;
-    return this.is_t || !!(cnn && (cnn.cnn_type === cnn_types.av || cnn.cnn_type === cnn_types.ah));
+    const {av, ah} = $p.enm.cnn_types;
+    return this.is_t || !!(cnn && (cnn.cnn_type === av || cnn.cnn_type === ah));
+  }
+
+  get is_short() {
+    const {cnn, parent: {orientation}} = this;
+    const {short, av, ah, t} = $p.enm.cnn_types;
+    return cnn && (cnn.cnn_type === short || cnn.cnn_type === t ||
+      (cnn.cnn_type === av && orientation.is('hor')) ||
+      (cnn.cnn_type === ah && orientation.is('vert')));
   }
 
   /**
@@ -365,22 +376,6 @@ class CnnPoint {
       art1: invert ? !is_t : is_t,
       art2: invert ? is_t : !is_t,
     };
-  }
-
-  /**
-   * Поправка на размер соединения с учётом угла к соседнему профилю
-   * @return {number}
-   */
-  get size() {
-    const {parent, cnn, node} = this;
-    let size = cnn ? cnn.size(parent) : 0;
-    if(size) {
-      const angle = Math.abs(parent.angle_at(node) - 90);
-      if(angle > 1 && angle < 90) {
-        size = size / Math.abs(Math.cos(angle * Math.PI / 180));
-      }
-    }
-    return size;
   }
 
   initialize() {
@@ -668,6 +663,15 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * @summary Дополнительный отступ на раме для углубления створки
+   * @desc Экзотика. Используется, например, в системах Термогласс
+   * @return {Number}
+   */
+  get frame_indent() {
+    return this.nom._extra('frame_indent') || 0;
+  }
+
+  /**
    * Точка проекции высоты ручки на ребро профиля
    *
    * @param {InnerOuter} side
@@ -787,6 +791,43 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * Положение элемента в контуре
+   * @type {EnmElm_positions}
+   */
+  get pos() {
+    const {top, bottom, left, right} = this.layer.profiles_by_side();
+    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
+    if(top === this) {
+      return Верх;
+    }
+    if(bottom === this) {
+      return Низ;
+    }
+    if(left === this) {
+      return Лев;
+    }
+    if(right === this) {
+      return Прав;
+    }
+    const {x1, x2, y1, y2} = this;
+    const delta = 60;
+    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+      return Верх;
+    }
+    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+      return Низ;
+    }
+    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+      return Лев;
+    }
+    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+      return Прав;
+    }
+    // TODO: рассмотреть случай с выносом стоек и разрывами
+    return Центр;
+  }
+
+  /**
    * Проекция точки b на образующую родительского элемента
    * Для рам и створок, совпадает с 'b', для импостов - отличается
    * @type {paper.Point}
@@ -813,11 +854,9 @@ class ProfileItem extends GeneratrixElement {
    * @return {paper.Point}
    */
   gn(n) {
-    if(this.layer.layer) {
-      const {profile, is_t} = this.cnn_point(n);
-      if(is_t && profile) {
-        return profile.generatrix.getNearestPoint(this[n]);
-      }
+    const {profile, is_t} = this.cnn_point(n);
+    if(is_t && profile) {
+      return profile.generatrix.getNearestPoint(this[n]);
     }
     return this[n];
   }
@@ -994,18 +1033,12 @@ class ProfileItem extends GeneratrixElement {
   get length() {
     const {b, e, outer} = this.rays;
     const ppoints = {};
-    let gen = this.elm_type == $p.enm.elm_types.impost ? this.generatrix : outer;
 
     // находим проекции четырёх (шести) вершин на образующую
-    let elongated;
     for (const i of [1, 2, 3, 4, 7, 8]) {
       const pt = this.corns(i);
       if(pt) {
-        if(i > 4 && !elongated) {
-          gen = gen.clone({insert: false}).elongation(this.width * 2);
-          elongated = true;
-        }
-        ppoints[i] = gen.getNearestPoint(pt);
+        ppoints[i] = outer.getNearestPoint(pt);
       }
     }
 
@@ -1014,7 +1047,7 @@ class ProfileItem extends GeneratrixElement {
     for(const i of [7, 1, 4]) {
       const pt = ppoints[i];
       if(pt) {
-        const curr = gen.getOffsetOf(pt);
+        const curr = outer.getOffsetOf(pt);
         if(curr < distanse) {
           distanse = curr;
           ppoints.b = pt;
@@ -1028,7 +1061,7 @@ class ProfileItem extends GeneratrixElement {
     for(const i of [8, 2, 3]) {
       const pt = ppoints[i];
       if(pt) {
-        const curr = gen.getOffsetOf(pt);
+        const curr = outer.getOffsetOf(pt);
         if(curr > distanse) {
           distanse = curr;
           ppoints.e = pt;
@@ -1040,11 +1073,11 @@ class ProfileItem extends GeneratrixElement {
     }
 
     // получаем фрагмент образующей
-    const sub_gen = gen.get_subpath(ppoints.b, ppoints.e);
-    const res = sub_gen.length + (this instanceof Onlay ? 0 : b.size + e.size);
+    const sub_gen = outer.get_subpath(ppoints.b, ppoints.e);
+    const res = sub_gen.length;
     sub_gen.remove();
 
-    return res;
+    return res.round(1);
   }
 
   /**
@@ -1198,10 +1231,12 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    super.setSelection(selection);
-
     const {generatrix, path} = this._attr;
-
+    if(!generatrix || !path) {
+      return;
+    }
+    super.setSelection(selection);
+    
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
 
@@ -1370,6 +1405,32 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * @summary Проверяет, не изменилась ли номенклатура элемента после изменения геометрии
+   * @desc складывает изменённые элементы в параметр arr
+   * @param {Array} arr
+   */
+  check_nom(arr) {
+    const {_row, _attr, length, angle_hor} = this;
+    // сохраняем угол к горизонту и длину профиля в _row
+    if(_row.len !== length || _row.angle_hor !== angle_hor) {
+      _row.len = length;
+      _row.angle_hor = angle_hor;
+
+      if(_attr && _attr._rays) {
+        const {nom: old} = _attr;
+        delete _attr.nom;
+        const {nom} = this;
+        if(old !== nom) {
+          arr.push(this);
+        }
+      }      
+    }
+    for(const chld of this.getItems({class: ProfileItem})) {
+      chld.check_nom(arr);
+    }
+  }
+
+  /**
    * Вычисляемые поля в таблице координат
    * @return {void}
    */
@@ -1401,12 +1462,6 @@ class ProfileItem extends GeneratrixElement {
       const r2 = path.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
       _row.r = Math.max(r1, r2);
     }
-
-    // добавляем припуски соединений
-    _row.len = this.length.round(1);
-
-    // получаем углы между элементами и к горизонту
-    _row.angle_hor = this.angle_hor;
 
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
       _row.alp1 = _row.alp2 = 0;
@@ -1491,12 +1546,14 @@ class ProfileItem extends GeneratrixElement {
         }
       }
 
-      _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
+      _row.alp1 = Math.round(((this.corns(5) || this.corns(4)).subtract(this.corns(1)).angle - 
+        generatrix.getTangentAt(0).angle) * 10) / 10;
       if(_row.alp1 < 0) {
         _row.alp1 = _row.alp1 + 360;
       }
 
-      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
+      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - 
+        this.corns(2).subtract(this.corns(6) || this.corns(3)).angle) * 10) / 10;
       if(_row.alp2 < 0) {
         _row.alp2 = _row.alp2 + 360;
       }
@@ -1767,6 +1824,7 @@ class ProfileItem extends GeneratrixElement {
       generatrix.lineTo(e);
     }
 
+    this.rays.clear('with_neighbor');
     layer.notify({
       type: consts.move_points,
       profiles: [this],
@@ -1806,6 +1864,7 @@ class ProfileItem extends GeneratrixElement {
       if(_attr && _attr._rays) {
         delete _attr.nom;
         _attr._rays.clear(ign_rays ? undefined : 'with_neighbor');
+        this.set_clr(_row.clr, true);
       }
 
       // если в новой вставке не разрешены текущие вставки в элемент - удаляем
@@ -1916,11 +1975,11 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Рассчитывает точки пути
-   * на пересечении текущего и указанного профилей
+   * @summary Рассчитывает точки пути
+   * @desc на пересечении текущего и указанного профилей
    *
-   * @param cnn_point {CnnPoint}
-   * @param [profile_point] {String}
+   * @param {CnnPoint} cnn_point 
+   * @param {NodeBE} [profile_point]
    */
   path_points(cnn_point, profile_point) {
 
@@ -1973,39 +2032,30 @@ class ProfileItem extends GeneratrixElement {
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
       let oinner = prays[side];
-      const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
+      let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
+
+      // строим эквидистанту к внутренней стороне соседнего профиля
+      const delta = cnn_point?.cnn?.size(this);
+      if(delta || cnn_point?.cnn?.sd2) {
+        let base = cnn_point.cnn.sd2 ? oouter : oinner;
+        const pt = base.getNearestPoint(cnn_point.point);
+        const normal = base.getNormalAt(base.getOffsetOf(pt))
+          .normalize(other instanceof ProfileItem ? -delta : delta);
+        const tmp = base.clone({insert: false});
+        tmp.translate(normal);
+        oinner = tmp;
+      }
 
       // импосты рисуем с учетом стороны примыкания
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
 
-        // при необходимости, перерисовываем ведущий элемент
-        if(!other.path.segments.length) {
-          const {_attr, row} = other;
-          if(_attr.force_redraw) {
-            if(other.generatrix && other.generatrix.segments.length) {
-              other.path.addSegments(other.generatrix.segments);
-              _attr.force_redraw = false;
-            }
-            else if(other.row && other.row.path_data) {
-              other.path.pathData = other.row.path_data;
-              _attr.force_redraw = false;
-            }
-            else {
-              throw new Error('cycle redraw');
-            }
-          }
-          else {
-            _attr.force_redraw = true;
-            other.redraw();
-            _attr.force_redraw = false;
-          }
-        }
-
+        const {width} = this;
+        const w2 = width * width;
         const nodes = new Set();
         let profile2;
         cnn_point.point && !(this instanceof Onlay) && this.layer.profiles.forEach((profile) => {
           if(profile !== this){
-            if(cnn_point.point.is_nearest(profile.b, true)) {
+            if(cnn_point.point.is_nearest(profile.b, w2)) {
               const cp = profile.rays.b.profile;
               if(cp !== this) {
                 if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
@@ -2013,7 +2063,7 @@ class ProfileItem extends GeneratrixElement {
                 }
               }
             }
-            else if(cnn_point.point.is_nearest(profile.e, true)) {
+            else if(cnn_point.point.is_nearest(profile.e, w2)) {
               const cp = profile.rays.e.profile;
               if(cp !== this) {
                 if(cp !== other || other.cnn_side(this) === other.cnn_side(profile)) {
@@ -2037,66 +2087,51 @@ class ProfileItem extends GeneratrixElement {
           const interior = generatrix.getPointAt(generatrix.length/2)
           const {rays: prays2} = profile2;
           const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
+          let oinner2 = prays2[side2];
+          if(delta) {
+            const pt = oinner2.getNearestPoint(cnn_point.point);
+            const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
+              .normalize(profile2 instanceof ProfileItem ? -delta : delta);
+            const tmp = oinner2.clone({insert: false});
+            tmp.translate(normal);
+            oinner2 = tmp;
+          }
+          
           const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
-          const pt3 = intersect_point(prays2[side2], rays.outer, 0, interior);
-          const pt4 = intersect_point(prays2[side2], rays.inner, 0, interior);
+          const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
+          const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
 
           if(is_b) {
-            pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2[side2], rays.outer, 1);
-            pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2[side2], rays.inner, 4);
-            intersect_point(prays2[side2], oinner, 5);
+            pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+            pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+            intersect_point(oinner2, oinner, 5);
             if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
               delete _corns[5];
             }
             else {
               // ищем удлинение
               const {width} = this;
-              const l1 = new paper.Path({insert: false, segments: [_corns[1], _corns[5]]}).elongation(width * 4);
-              const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 4);
-              const pts = [
-                [intersect_point(l1, rays.outer, 0, interior), l1, rays.outer],
-                [intersect_point(l1, rays.inner, 0, interior), l1, rays.inner],
-                [intersect_point(l4, rays.outer, 0, interior), l4, rays.outer],
-                [intersect_point(l4, rays.inner, 0, interior), l4, rays.inner],
-              ].sort((a, b) => b[0] - a[0]);
-              intersect_point(pts[0][1], pts[0][2], 7, interior);
+              const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
+              intersect_point(l4, rays.outer, 7, interior);
             }
           }
           else if(is_e) {
-            pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2[side2], rays.outer, 2);
-            pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2[side2], rays.inner, 3);
-            intersect_point(prays2[side2], oinner, 6);
+            pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+            pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+            intersect_point(oinner2, oinner, 6);
             if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
               delete _corns[6];
             }
             else {
               // ищем удлинение
-              const {width} = this;
-              const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 4);
-              const l3 = new paper.Path({insert: false, segments: [_corns[3], _corns[6]]}).elongation(width * 4);
-              const pts = [
-                [intersect_point(l2, rays.outer, 0, interior), l2, rays.outer],
-                [intersect_point(l2, rays.inner, 0, interior), l2, rays.inner],
-                [intersect_point(l3, rays.outer, 0, interior), l3, rays.outer],
-                [intersect_point(l3, rays.inner, 0, interior), l3, rays.inner],
-              ].sort((a, b) => b[0] - a[0]);
-              intersect_point(pts[0][1], pts[0][2], 8, interior);
+              const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
+              intersect_point(l2, rays.inner, 8, interior);
             }
           }
         }
         else {
-          // TODO: пока только для раскладок, после отладки - распространим на всех
-          if(this instanceof Onlay) {
-            const delta = cnn_point.cnn.size(this);
-            if(delta) {
-              const pt = oinner.getNearestPoint(cnn_point.point);
-              const normal = oinner.getNormalAt(oinner.getOffsetOf(pt)).normalize(delta);
-              const tmp = oinner.clone({insert: false});
-              tmp.translate(normal);
-              oinner = tmp;
-            }
-          }
+                    
           // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
           if(is_b) {
             // в зависимости от стороны соединения
@@ -2111,11 +2146,10 @@ class ProfileItem extends GeneratrixElement {
             delete _corns[6];
           }
         }
-
       }
 
       // крест в стык
-      else if(cnn_type == cnn_types.xx) {
+      else if(cnn_type === cnn_types.xx) {
 
         // для раскладок, отступаем ширину профиля
         if(other instanceof Onlay) {
@@ -2173,7 +2207,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
       // соединение с пустотой
-      else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type == cnn_types.i) {
+      else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type === cnn_types.i) {
         // точки рассчитаются автоматически, как для ненайденных
         if(is_b) {
           delete _corns[1];
@@ -2190,18 +2224,15 @@ class ProfileItem extends GeneratrixElement {
         // если есть соединение с обратной стороны, его надо учитывать при отрисовке узла
         const cnn_other = cnn_point.find_other();
         const cnno = cnn_other && cnn_point.cnno(cnn_other);
+        const {orientation} = this;
 
-        // угловое диагональное
-        if(cnno && cnno.cnn_type == cnn_types.ad && (cnn_type != cnn_types.ad || other.width < cnn_other.profile.width)) {
-          const other = cnn_other.profile;
-          const prays = other.rays;
-          const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
-          const oinner = prays[side];
-          const oouter = prays[side === 'inner' ? 'outer' : 'inner'];
+        // угловое диагональное с переменными ширинами
+        if(cnno && cnno.cnn_type === cnn_types.ad && (cnn_type != cnn_types.ad || other.width < cnn_other.profile.width)) {
+
           // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
           const tw = this.width, ow = other.width;
           let check_a2 = tw !== ow && cnno.main_row(this);
-          if(check_a2 && check_a2.angle_calc_method == a2) {
+          if(check_a2 && check_a2.angle_calc_method === a2) {
             const wprofile = tw > ow ? this : other;
             const winner = wprofile === this ? rays.outer : oinner;
             if(is_b) {
@@ -2264,13 +2295,16 @@ class ProfileItem extends GeneratrixElement {
             }
           }
         }
-        else if(cnn_type == cnn_types.ad) {
+
+        // угловое диагональное со стандартными или переменными ширинами
+        else if(cnn_type === cnn_types.ad) {
           // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
           const tw = this.width, ow = other.width;
           let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
-          if(check_a2 && check_a2.angle_calc_method == a2) {
+          if(check_a2 && check_a2.angle_calc_method === a2) {
             const wprofile = tw > ow ? this : other;
             const winner = wprofile === this ? rays.inner : oinner;
+            
             if(is_b) {
               intersect_point(oinner, rays.inner, 4);
               const pt = _corns[4];
@@ -2309,6 +2343,7 @@ class ProfileItem extends GeneratrixElement {
             }
           }
           else {
+            const {frame_indent} = this;
             if(is_b) {
               if(this.is_collinear(other, 1)) {
                 delete _corns[1];
@@ -2317,6 +2352,14 @@ class ProfileItem extends GeneratrixElement {
               else {
                 intersect_point(oouter, rays.outer, 1);
                 intersect_point(oinner, rays.inner, 4);
+                if(frame_indent) {
+                  delete _corns.i1;
+                  const tmp = {
+                    outer: rays.outer.equidistant(-frame_indent),
+                    median: new paper.Path({insert: false, segments: [_corns[1], _corns[4]]})
+                  };
+                  intersect_point(tmp.outer, tmp.median, 'i1');
+                }
               }
             }
             else if(is_e) {
@@ -2327,67 +2370,23 @@ class ProfileItem extends GeneratrixElement {
               else {
                 intersect_point(oouter, rays.outer, 2);
                 intersect_point(oinner, rays.inner, 3);
+                if(frame_indent) {
+                  delete _corns.i2;
+                  const tmp = {
+                    outer: rays.outer.equidistant(-frame_indent),
+                    median: new paper.Path({insert: false, segments: [_corns[2], _corns[3]]})
+                  };
+                  intersect_point(tmp.outer, tmp.median, 'i2');
+                }
               }
             }
           }
         }
 
-        // угловое к вертикальной
-        else if(cnn_type == cnn_types.av) {
-          if(this.orientation == $p.enm.orientations.vert) {
-            if(is_b) {
-              intersect_point(oouter, rays.outer, 1);
-              intersect_point(oouter, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oouter, rays.outer, 2);
-              intersect_point(oouter, rays.inner, 3);
-            }
-          }
-          else if(this.orientation == $p.enm.orientations.hor) {
-            if(is_b) {
-              intersect_point(oinner, rays.outer, 1);
-              intersect_point(oinner, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oinner, rays.outer, 2);
-              intersect_point(oinner, rays.inner, 3);
-            }
-          }
-          else {
-            cnn_point.err = 'orientation';
-          }
-        }
-
-        // угловое к горизонтальной
-        else if(cnn_type == cnn_types.ah) {
-          if(this.orientation == $p.enm.orientations.vert) {
-            if(is_b) {
-              intersect_point(oinner, rays.outer, 1);
-              intersect_point(oinner, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oinner, rays.outer, 2);
-              intersect_point(oinner, rays.inner, 3);
-            }
-          }
-          else if(this.orientation == $p.enm.orientations.hor) {
-            if(is_b) {
-              intersect_point(oouter, rays.outer, 1);
-              intersect_point(oouter, rays.inner, 4);
-            }
-            else if(is_e) {
-              intersect_point(oouter, rays.outer, 2);
-              intersect_point(oouter, rays.inner, 3);
-            }
-          }
-          else {
-            cnn_point.err = 'orientation';
-          }
-        }
-
-        // короткое
-        else if(cnn_type == cnn_types.short) {
+        // короткое или угловое к вертикальной с учетом ориентации
+        else if((cnn_type === cnn_types.short) ||
+            (cnn_type === cnn_types.av && orientation.is('hor')) || 
+            (cnn_type === cnn_types.ah && orientation.is('vert'))) {
           if(is_b) {
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);
@@ -2398,8 +2397,10 @@ class ProfileItem extends GeneratrixElement {
           }
         }
 
-        // длинное
-        else if(cnn_type == cnn_types.long) {
+        // длинное угловое к горизонтальной с учётом ориентации
+        else if((cnn_type === cnn_types.long) ||
+            (cnn_type === cnn_types.ah && orientation.is('hor')) ||
+            (cnn_type === cnn_types.av && orientation.is('vert'))) {
           if(is_b) {
             intersect_point(oouter, rays.outer, 1);
             intersect_point(oouter, rays.inner, 4);
@@ -2440,11 +2441,11 @@ class ProfileItem extends GeneratrixElement {
    */
   interiorPoint() {
     const {generatrix, d1, d2} = this;
-    const igen = generatrix.curves.length == 1 ? generatrix.firstCurve.getPointAt(0.5, true) : (
-      generatrix.curves.length == 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2
-    );
+    const igen = generatrix.curves.length === 1 ? 
+      generatrix.firstCurve.getPointAt(0.5, true) : 
+      (generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
-    return igen.add(normal.multiply(d1).add(normal.multiply(d2)).divide(2));
+    return igen.add(normal.multiply((d1 + d2) / 2));
   }
 
   /**
@@ -2498,7 +2499,22 @@ class ProfileItem extends GeneratrixElement {
    */
   is_nearest(p) {
     const {b, e, generatrix} = this;
-    return (b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e));
+    if ((b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e))) {
+      if(p.is_linear() && this.is_linear()) {
+        return true;
+      }
+      // если один или оба профиля изогнуты, проверим среднюю точку
+      const pl = p.generatrix.length;
+      const tl = generatrix.length;
+      if(pl <= tl) {
+        const mid = p.generatrix.getPointAt(pl / 2);
+        return generatrix.is_nearest(mid);
+      }
+      else {
+        const mid = generatrix.getPointAt(tl / 2);
+        return p.generatrix.is_nearest(mid);
+      }
+    }
   }
 
   /**
@@ -2561,15 +2577,15 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Формирует путь сегмента профиля
-   * Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
-   * - Сначала, вызывает {{#crossLink "ProfileItem/postcalc_cnn:method"}}postcalc_cnn(){{/crossLink}} для узлов `b` и `e`
-   * - Внутри `postcalc_cnn`, выполняется {{#crossLink "ProfileItem/cnn_point:method"}}cnn_point(){{/crossLink}} для пересчета соединений на концах профиля
+   * @summary Формирует путь сегмента профиля
+   * @desc Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
+   * - Сначала, вызывает `postcalc_cnn()` для узлов `b` и `e`
+   * - Внутри `postcalc_cnn`, выполняется `cnn_point()` для пересчета соединений на концах профиля
    * - Внутри `cnn_point`:
-   *    + {{#crossLink "ProfileItem/check_distance:method"}}check_distance(){{/crossLink}} - проверяет привязку, если вернулось false, `cnn_point` завершает свою работы
+   *    + `check_distance()` - проверяет привязку, если вернулось false, `cnn_point` завершает свою работы
    *    + цикл по всем профилям и поиск привязки
-   * - {{#crossLink "ProfileItem/postcalc_inset:method"}}postcalc_inset(){{/crossLink}} - проверяет корректность вставки, заменяет при необходимости
-   * - {{#crossLink "ProfileItem/path_points:method"}}path_points(){{/crossLink}} - рассчитывает координаты вершин пути профиля
+   * - `postcalc_inset()` - проверяет корректность вставки, заменяет при необходимости
+   * - `path_points()` - рассчитывает координаты вершин пути профиля
    *
    * @override
    * @return {ProfileItem}
@@ -2578,7 +2594,7 @@ class ProfileItem extends GeneratrixElement {
     // получаем узлы
     const bcnn = this.postcalc_cnn('b');
     const ecnn = this.postcalc_cnn('e');
-    const {path, generatrix, rays} = this;
+    const {path, generatrix, rays, _attr} = this;
 
     // получаем соединения концов профиля и точки пересечения с соседями
     this.path_points(bcnn, 'b');
@@ -2627,14 +2643,30 @@ class ProfileItem extends GeneratrixElement {
     path.add(this.corns(4));
     path.closePath();
     path.reduce();
-
-    for(const chld of this.children) {
-      if(chld instanceof ProfileItem) {
-        chld.observer && chld.observer(this);
-        chld.redraw();
+    
+    // если задан frame_indent - рисуем
+    if(_attr._corns.i1 && _attr._corns.i2) {
+      if(!_attr.indent) {
+        _attr.indent = new paper.Path({
+          parent: this,
+          guide: true,
+          strokeColor: 'black',
+          strokeWidth: 1,
+          strokeScaling: false,
+          segments: [_attr._corns.i1, _attr._corns.i2],
+        });
       }
-    }
+      else {
+        _attr.indent.firstSegment.point = _attr._corns.i1;
+        _attr.indent.lastSegment.point = _attr._corns.i2;
+      }
+    } 
 
+    for(const chld of this.getItems({class: ProfileItem})) {
+      chld.observer?.(this);
+      chld.redraw();
+    }
+    
     return this;
   }
 
@@ -2829,30 +2861,6 @@ class ProfileItem extends GeneratrixElement {
       });
     }
   }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    const oxml = {
-      ' ': [
-        {id: 'info', path: 'o.info', type: 'ro'},
-        'inset',
-        'clr',
-        this instanceof Onlay ? 'region' : 'offset',
-      ],
-      'Начало': ['x1','y1','a1','cnn1'],
-      'Конец': ['x2','y2','a2','cnn2']
-    };
-    if(this.selected_cnn_ii()) {
-      oxml.Примыкание = ['cnn3'];
-    }
-    const props = this.elm_props();
-    if(props.length) {
-      oxml.Свойства = props.map(({ref}) => ref);
-    }
-    return oxml;
-  }
 }
 
 ProfileItem.path_attr = {
@@ -2867,10 +2875,10 @@ ProfileItem.path_attr = {
     }
     _attr.fillColor = fillColor.clone();
     const {red, green, blue, alpha} = fillColor;
-    fillColor.alpha = 0.9;
-    fillColor.red = red > 0.7 ? red - 0.1 : red + 0.1;
-    fillColor.green = green > 0.7 ? green - 0.06 : green + 0.06;
-    fillColor.blue = blue > 0.7 ? blue - 0.08 : blue + 0.08;
+    fillColor.alpha = 0.86;
+    fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
+    fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
+    fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
   },
 
   onMouseLeave(event) {

@@ -11,12 +11,17 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     }
   }
 
+  /**
+   * Загрузка из сырых данных для динсписка
+   * @param {Object} [force]
+   * @return {Promise<void>|*}
+   */
   direct_load(force) {
     if(this._direct_loaded && !force) {
       return Promise.resolve();
     }
 
-    const {adapters: {pouch}, utils: {moment}, ui} = this._owner.$p;
+    const {adapters: {pouch}, utils: {moment}, ui} = $p;
     const selector = force && force.selector ?
       force.selector :
       {
@@ -47,7 +52,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
    * @return {Promise<DocCalc_order>}
    */
   async clone(src) {
-    const {utils, cat} = this._owner.$p;
+    const {utils, cat} = $p;
     if(utils.is_guid(src)) {
       src = await this.get(src, 'promise');
     }
@@ -78,7 +83,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     const src_ref = src.ref;
     src.production.forEach((row) => {
       const prow = Object.assign({}, row._obj || row);
-      if(row.characteristic.calc_order == src_ref) {
+      if(row.characteristic?.calc_order == src_ref) {
         const tmp = {calc_order: dst.ref};
         const _obj = row.characteristic._obj || row.characteristic;
         if(clone) {
@@ -95,7 +100,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
         }
         map.set(row.characteristic.ref, cx);
       }
-      dst.production.add(prow);
+      dst.production.add(prow, true, null, true); // (attr = {}, silent, Constructor, raw)
     });
 
     // обновляем leading_product

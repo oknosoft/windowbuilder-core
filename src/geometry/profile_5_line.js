@@ -128,22 +128,7 @@ class BaseLine extends ProfileItem {
   redraw() {
 
   }
-
-  /**
-   * Описание полей диалога свойств элемента
-   */
-  get oxml() {
-    return BaseLine.oxml;
-  }
 }
-
-BaseLine.oxml = {
-  ' ': [
-    {id: 'info', path: 'o.info', type: 'ro'},
-  ],
-  'Начало': ['x1', 'y1'],
-  'Конец': ['x2', 'y2']
-};
 
 EditorInvisible.BaseLine = BaseLine;
 

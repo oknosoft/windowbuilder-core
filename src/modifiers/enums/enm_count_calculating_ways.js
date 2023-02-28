@@ -45,15 +45,16 @@
 
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
     const {_row} = elm;
-    const {quantity, sz, coefficient} = row_ins_spec;
+    const {insert_type} = inset;
+    const {quantity, sz, coefficient, relm} = row_ins_spec;
     row_spec.qty = quantity;
-    if(inset.insert_type == enm.inserts_types.mosquito) {
+    if(insert_type.is('mosquito')) {
       const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});
       row_spec.len = bounds.height * coefficient;
       row_spec.width = bounds.width * coefficient;
       row_spec.s = (row_spec.len * row_spec.width).round(4);
     }
-    else if(inset.insert_type == enm.inserts_types.jalousie) {
+    else if(insert_type.is('jalousie')) {
       if(elm.bounds_light) {
         const bounds = elm.bounds_light();
         row_spec.len = (bounds.height + offsets) * coefficient;
@@ -65,14 +66,14 @@
       }
       row_spec.s = (row_spec.len * row_spec.width).round(4);
     }
-    else if(inset.insert_type == enm.inserts_types.product) {
+    else if(insert_type.is('product')) {
       const {project} = elm;
       const {width, height} = project.bounds;
       row_spec.len = width / 1000;
       row_spec.width = height / 1000;
       row_spec.s = (project.form_area - sz) * coefficient;
     }
-    else if(inset.insert_type == enm.inserts_types.layer) {
+    else if(insert_type.is('layer')) {
       const {layer} = elm;
       const {width, height} = layer.bounds;
       row_spec.len = width / 1000;
@@ -80,9 +81,19 @@
       row_spec.s = (layer.form_area - sz) * coefficient;
     }
     else {
-      row_spec.len = (_row.y2 - _row.y1 - sz) * coefficient;
-      row_spec.width = (_row.x2 - _row.x1 - sz) * coefficient;
-      row_spec.s = _row.s;
+      let {x1, x2, y1, y2, s} = _row;
+      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region) {
+        const path = elm._attr.paths?.get(relm.irow.region);
+        if(path) {
+          x1 = y1 = 0;
+          x2 = path.bounds.width;
+          y2 = path.bounds.height;
+          s = x2 * y2 / 1e6;
+        }
+      }
+      row_spec.len = (y2 - y1 - sz) * coefficient;
+      row_spec.width = (x2 - x1 - sz) * coefficient;
+      row_spec.s = s;
     }
     return row_spec;
   };

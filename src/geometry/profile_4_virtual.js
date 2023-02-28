@@ -175,6 +175,10 @@ class ProfileVirtual extends Profile {
     return cnn_point;
   }
 
+  beforeRemove() {
+    return true;
+  }
+  
   redraw() {
     // получаем узлы
     const bcnn = this.cnn_point('b');

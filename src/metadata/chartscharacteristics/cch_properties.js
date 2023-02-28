@@ -135,7 +135,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, calc_order, layer, calc_order_row}) {
+  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, layer, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -163,13 +163,12 @@ exports.CchProperties = class CchProperties extends Object {
     const val = is_calculated ? this.calculated_value({
       row: row_spec,
       cnstr: cnstr || 0,
+      prm_row,
       elm,
       elm2,
       ox,
-      calc_order,
-      prm_row,
       layer,
-      calc_order_row,
+      ...other,
     }) : this.extract_value(prm_row);
 
     let ok = false;
@@ -225,7 +224,7 @@ exports.CchProperties = class CchProperties extends Object {
     };
     if(params) {
       const {enm: {plan_detailing}, utils, CatInserts} = $p;
-      let src = prm_row.origin;
+      let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
         src = plan_detailing.get();
       }
@@ -397,18 +396,16 @@ exports.CchProperties = class CchProperties extends Object {
     const {utils} = $p;
     if(type.is_ref) {
 
-      if(type.digits && typeof v === 'number') {
-        return v;
-      }
-
-      if(type.hasOwnProperty('str_len') && !utils.is_guid(v)) {
+      if((type.digits && typeof v === 'number') || 
+          (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
         return v;
       }
 
       const mgr = _manager.value_mgr({v}, 'v', type);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
-          return mgr.get(v, false, false);
+          const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';
+          return mgr.get(ref, false, false);
         }
         else {
           return utils.fetch_type(v, mgr);
@@ -502,7 +499,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
    * @param links {Array}
-   * @param [prow] {Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
+   * @param [prow] {CatCharacteristicsParamsRow|Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
    * @param [values] {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
    * @return {boolean}
    */
@@ -541,6 +538,16 @@ exports.CchProperties = class CchProperties extends Object {
       return true;
     }
     if(values.length) {
+      if(prow instanceof CatCharacteristicsParamsRow && [3, 4].includes(prow.param.inheritance)) {
+        const bvalue = prow.param.branch_value({ox: prow._owner._owner});
+        if(bvalue && !bvalue.empty()) {
+          if(prow.value !== bvalue) {
+            prow.value = bvalue;
+            return true;
+          }
+          return;
+        }
+      }
       prow.value = values[0]._obj.value;
       return true;
     }

@@ -93,6 +93,22 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
   /**
+   * Ищет цветогруппу системы с учётом цвета основы
+   * @param {CatCharacteristics} ox
+   * @return {CatColor_price_groups}
+   */
+  find_group(ox) {
+    const {base_clr, clr_group, color_price_groups} = this;
+    if(!base_clr.empty()) {
+      const row = color_price_groups.find({base_clr: base_clr.extract_pvalue({ox, cnstr: 0})});
+      if(row) {
+        return row.clr_group;
+      }
+    }
+    return clr_group;
+  }
+
+  /**
    * Доступна ли вставка в данной системе в качестве elm_type
    * @param nom {CatInserts}
    * @param elm_type {EnmElmTypes|Array.<EnmElmTypes>}
@@ -369,8 +385,18 @@ exports.CatProduction_params = class CatProduction_params extends Object {
   }
 
 }
+//exports.CatProduction_params.exclude = ['clr_group'];
 
 exports.CatProduction_paramsManager = class CatProduction_paramsManager extends Object {
+
+  // после загрузки, установим признак dhtmlxro цветам основы
+  load_array(aattr, forse) {
+    for(const obj of super.load_array(aattr, forse)) {
+      if(!obj.base_clr.empty()) {
+        obj.base_clr.dhtmlxro = true;
+      }
+    }
+  }
 
   /**
    * возвращает массив доступных для данного свойства значений

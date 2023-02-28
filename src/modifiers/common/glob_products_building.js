@@ -304,13 +304,14 @@ class ProductsBuilding {
      */
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
-      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && elm._attr._nearest_cnn) {
-        cnn_add_spec(elm._attr._nearest_cnn, elm, {
+      const {_attr} = elm;
+      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && _attr._nearest_cnn) {
+        cnn_add_spec(_attr._nearest_cnn, elm, {
           angle: 0,
           alp1: 0,
           alp2: 0,
-          len: elm._attr._len || elm.length,
-          origin: cnn_row(elm.elm, nearest.elm, elm._attr._nearest_cnn)
+          len: elm._row.len,
+          origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
         }, null, nearest);
       }
     }
@@ -389,10 +390,10 @@ class ProductsBuilding {
           row_spec.len += next.width * k001;
         }
 
-        // profile._len - то, что получится после обработки
+        // profile._row._len - геометрический размер
+        // profile._attr._len - то, что получится после обработки
         // row_spec.len - сколько взять (отрезать)
-        elm._attr._len = _row.len;
-        _row.len = (_row.len
+        elm._attr._len = (_row.len
             - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
             - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
           * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
@@ -844,8 +845,9 @@ class ProductsBuilding {
       glass_specification = ox.glass_specification;
       params = ox.params;
 
-      // чистим спецификацию
+      // чистим спецификацию и возможные аксессуары
       spec.clear();
+      ox.calc_order.accessories('clear', ox);
 
       // массив продукций к добавлению в заказ
       ox._order_rows = [];
@@ -862,7 +864,8 @@ class ProductsBuilding {
 
       // информируем мир об окончании расчета координат
       scheme.draw_visualization();
-      Promise.resolve().then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
+      Promise.resolve()
+        .then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
 
 
       // производим корректировку спецификации с возможным вытягиванием строк в заказ и удалением строк из заказа
@@ -1021,24 +1024,15 @@ class ProductsBuilding {
 
   /**
    * Добавляет или заполняет строку спецификации
-   * @param row_spec
-   * @param elm
-   * @param row_base
-   * @param spec
-   * @param [nom]
-   * @param [origin]
-   * @return {TabularSectionRow.cat.characteristics.specification}
+   * @param {CatCharacteristicsSpecificationRow} [row_spec]
+   * @param {BuilderElement} elm
+   * @param {CatInsertsSpecificationRow|CatFurnsSpecificationRow|CatCnnsSpecificationRow} [row_base]
+   * @param {TabularSection} spec
+   * @param {CatNom} [nom]
+   * @param {CatInserts|CatFurns|CatCnns} [origin]
+   * @return {CatCharacteristicsSpecificationRow}
    */
   static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl}) {
-    if(!row_spec) {
-      // row_spec = this.ox.specification.add();
-      row_spec = spec.add();
-    }
-    row_spec.nom = nom || row_base.nom;
-    if(row_base?.relm) {
-      elm = row_base.relm;
-    }
-
     const {
       utils: {blank},
       cat: {clrs, characteristics},
@@ -1046,9 +1040,25 @@ class ProductsBuilding {
         predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
         plan_detailing: {algorithm},
+        specification_order_row_types: {kit}
       },
       cch: {properties},
     } = $p;
+    
+    if(!row_spec) {
+      if(row_base?.is_order_row === kit) {
+        specify = ox || spec._owner;
+        row_spec = specify.calc_order.accessories().specification.add();
+        row_spec._quantity = specify.calc_order_row.quantity;
+      }
+      else {
+        row_spec = spec.add();
+      }      
+    }
+    row_spec.nom = nom || row_base.nom;
+    if(row_base?.relm) {
+      elm = row_base.relm;
+    }
 
     if(!row_spec.nom.visualization.empty()) {
       row_spec.dop = -1;
@@ -1068,10 +1078,9 @@ class ProductsBuilding {
 
     // если алгоритм = характеристика по цвету
     if(row_base?.algorithm === cx_clr) {
-      const {ref} = properties.predefined('clr_elm');
-      const clr = row_spec.clr.ref;
+      const clr = row_base?._clr || row_spec.clr;
       // перебираем характеристики текущей номенклатуры
-      characteristics.find_rows({owner: row_spec.nom, clr: row_spec.clr}, (cx) => {
+      characteristics.find_rows({owner: row_spec.nom, clr}, (cx) => {
         row_spec.characteristic = cx;
         return false;
       });
@@ -1155,8 +1164,7 @@ class ProductsBuilding {
 
     const {nom} = row_spec;
 
-    if(nom.cutting_optimization_type == $p.enm.cutting_optimization_types.Нет ||
-      nom.cutting_optimization_type.empty() || nom.is_pieces) {
+    if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
       if(!row_base.coefficient || !len) {
         row_spec.qty = row_base.quantity;
       }
@@ -1178,6 +1186,9 @@ class ProductsBuilding {
         }
       }
     }
+    else if(nom.is_pieces && !row_base.coefficient) {
+      row_spec.qty = row_base.quantity;
+    }
     else {
       row_spec.qty = row_base.quantity;
       row_spec.len = (len - row_base.sz) * (row_base.coefficient || 0.001);
@@ -1190,18 +1201,19 @@ class ProductsBuilding {
   /**
    * РассчитатьКоличествоПлощадьМассу
    *
-   * @param row_spec
-   * @param spec
-   * @param row_coord
-   * @param angle_calc_method_prev
-   * @param angle_calc_method_next
-   * @param alp1
-   * @param alp2
-   * @param totqty0
+   * @param {CatCharacteristicsSpecificationRow} row_spec
+   * @param {TabularSection} spec
+   * @param {Object} row_coord
+   * @param {EnmAngle_calculating_ways} [angle_calc_method_prev]
+   * @param {EnmAngle_calculating_ways} [angle_calc_method_next]
+   * @param {Number} [alp1]
+   * @param {Number} [alp2]
+   * @param {Boolean} [totqty0]
    */
   static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
 
-    if(!row_spec.qty) {
+    const {qty, len, nom} = row_spec;
+    if(!qty) {
       // dop=-1 - визуализация, dop=-2 - техоперация,
       if(row_spec.dop >= 0) {
         spec.del(row_spec.row - 1, true);
@@ -1219,7 +1231,7 @@ class ProductsBuilding {
       angle_calc_method_next = angle_calc_method_prev;
     }
 
-    if(angle_calc_method_prev && !row_spec.nom.is_pieces) {
+    if(angle_calc_method_prev && !nom.is_pieces) {
 
       const {Основной, СварнойШов, СоединениеПополам, Соединение, _90} = $p.enm.angle_calculating_ways;
 
@@ -1250,9 +1262,9 @@ class ProductsBuilding {
       }
     }
 
-    if(row_spec.len) {
+    if(len) {
       if(row_spec.width && !row_spec.s) {
-        row_spec.s = row_spec.len * row_spec.width;
+        row_spec.s = len * row_spec.width;
       }
     }
     else {
@@ -1260,16 +1272,29 @@ class ProductsBuilding {
     }
 
     if(row_spec.s) {
-      row_spec.totqty = row_spec.qty * row_spec.s;
+      row_spec.totqty = qty * row_spec.s;
     }
-    else if(row_spec.len) {
-      row_spec.totqty = row_spec.qty * row_spec.len;
+    else if(len) {
+      row_spec.totqty = qty * len;
     }
     else {
-      row_spec.totqty = row_spec.qty;
+      row_spec.totqty = qty;
+    }
+    
+    // при расчёте по площади, в totqty1 пишем площадь bounds вместо площади фигуры
+    let {totqty, s, width} = row_spec;
+    if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
+      totqty = qty * len * width;
     }
 
-    row_spec.totqty1 = totqty0 ? 0 : Math.max(row_spec.nom.min_volume, row_spec.totqty * row_spec.nom.loss_factor);
+    row_spec.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
+    
+    const {_quantity} = row_spec;
+    if(_quantity) {
+      row_spec.qty *= _quantity;
+      row_spec.totqty *= _quantity;
+      row_spec.totqty1 *= _quantity;
+    }
 
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
     ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));

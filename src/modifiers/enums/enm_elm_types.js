@@ -7,7 +7,7 @@
  * @module enm_elm_types
  */
 
-(function(_mgr){
+(function(mgr){
 
 	const cache = {};
 
@@ -15,11 +15,11 @@
    * Массивы Типов элементов
    * @type Object
    */
-	_mgr.__define({
+	mgr.__define({
 
 		profiles: {
 			get(){
-				return cache.profiles || (cache.profiles = [_mgr.rama, _mgr.flap, _mgr.impost, _mgr.shtulp]);
+				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing]);
 			}
 		},
 
@@ -27,39 +27,40 @@
 			get(){
 				return cache.profile_items
 					|| ( cache.profile_items = [
-						_mgr.Рама,
-						_mgr.Створка,
-						_mgr.Импост,
-						_mgr.Штульп,
-						_mgr.Добор,
-						_mgr.Соединитель,
-						_mgr.Раскладка,
-            _mgr.Связка,
+						mgr.Рама,
+						mgr.Створка,
+						mgr.Импост,
+						mgr.Штульп,
+						mgr.Добор,
+						mgr.Соединитель,
+						mgr.Раскладка,
+            mgr.Связка,
+            mgr.Разрыв,
 					] );
 			}
 		},
 
 		rama_impost: {
 			get(){
-				return cache.rama_impost || (cache.rama_impost = [_mgr.rama, _mgr.impost, _mgr.shtulp]);
+				return cache.rama_impost || (cache.rama_impost = [mgr.rama, mgr.impost, mgr.shtulp]);
 			}
 		},
 
 		impost_lay: {
 			get(){
-        return cache.impost_lay || (cache.impost_lay = [_mgr.Импост, _mgr.Раскладка]);
+        return cache.impost_lay || (cache.impost_lay = [mgr.Импост, mgr.Раскладка]);
 			}
 		},
 
 		stvs: {
 			get(){
-        return cache.stvs || (cache.stvs = [_mgr.Створка]);
+        return cache.stvs || (cache.stvs = [mgr.Створка]);
 			}
 		},
 
 		glasses: {
 			get(){
-        return cache.glasses || (cache.glasses = [_mgr.Стекло, _mgr.Заполнение]);
+        return cache.glasses || (cache.glasses = [mgr.Стекло, mgr.Заполнение]);
 			}
 		}
 

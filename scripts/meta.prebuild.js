@@ -299,9 +299,13 @@ function obj_constructor_text(_m, category, name, categoties) {
     text += objText;
   }
   else {
+    const exclude = extModule?.[fn_name]?.exclude || [];
     // реквизиты по метаданным
     if (meta.fields) {
       for (f in meta.fields) {
+        if(exclude.includes(f)) {
+          continue;
+        }
         const mfld = meta.fields[f];
         text += fld_desc(f, mfld);
         

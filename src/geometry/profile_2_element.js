@@ -108,43 +108,6 @@ class Profile extends ProfileItem {
   }
 
   /**
-   * Положение элемента в контуре
-   * @type {EnmElm_positions}
-   */
-  get pos() {
-    const {top, bottom, left, right} = this.layer.profiles_by_side();
-    const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
-    if(top === this) {
-      return Верх;
-    }
-    if(bottom === this) {
-      return Низ;
-    }
-    if(left === this) {
-      return Лев;
-    }
-    if(right === this) {
-      return Прав;
-    }
-    const {x1, x2, y1, y2} = this;
-    const delta = 60;
-    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
-      return Верх;
-    }
-    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
-      return Низ;
-    }
-    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
-      return Лев;
-    }
-    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
-      return Прав;
-    }
-    // TODO: рассмотреть случай с выносом стоек и разрывами
-    return Центр;
-  }
-
-  /**
    * @override
    */
   nearest(ign_cnn) {
@@ -157,7 +120,7 @@ class Profile extends ProfileItem {
     }
 
     const check_nearest = (elm) => {
-      if(!(elm instanceof Profile || elm instanceof ProfileConnective) || !elm.isInserted()) {
+      if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
         return;
       }
       let {generatrix} = elm;
@@ -259,6 +222,18 @@ class Profile extends ProfileItem {
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
   }
 
+  beforeRemove() {
+    const {project} = this;
+    if(project?._attr && !project._attr._loading && (this.joined_imposts(true) || this.joined_nearests().length)) {
+      $p.ui?.dialogs?.alert?.({
+        title: `Профиль №${this.elm}`,
+        text: 'Удаление невозможно, есть примыкающие элементы',
+      });
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Возвращает массив примыкающих ипостов
    * @param {Boolean} [check_only] - не формировать подробный ответ, только проверить наличие примыкающих импостов
@@ -273,10 +248,10 @@ class Profile extends ProfileItem {
     // точки, в которых сходятся более 2 профилей
     const candidates = {b: [], e: []};
 
-    const {Снаружи} = $p.enm.cnn_sides;
+    const {outer} = $p.enm.cnn_sides;
     const add_impost = (ip, curr, point) => {
       const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === Снаружи) {
+      if(this.cnn_side(curr, ip, rays) === outer) {
         touter.push(res);
       }
       else {
@@ -289,14 +264,15 @@ class Profile extends ProfileItem {
         for(const pname of ['b', 'e']) {
           const cpoint = curr.rays[pname];
           if(cpoint.profile == this && cpoint.cnn) {
-            if(!cpoint.profile_point) {
+            const ipoint = curr.interiorPoint();
+            if(cpoint.is_tt) {
               if(check_only) {
                 return true;
               }
-              add_impost(curr.corns(1), curr, cpoint.point);
+              add_impost(ipoint, curr, cpoint.point);
             }
             else {
-              candidates[pname].push(curr.corns(1));
+              candidates[pname].push(ipoint);
             }
           }
         }
@@ -309,7 +285,7 @@ class Profile extends ProfileItem {
     ['b', 'e'].forEach((node) => {
       if(candidates[node].length > 1) {
         candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) === Снаружи) {
+          if(ip && this.cnn_side(null, ip, rays) === outer) {
             //this.cnn_point(node).is_cut = true;
             this.rays[node].is_cut = true;
             return true;

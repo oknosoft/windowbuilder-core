@@ -6,7 +6,10 @@
  * Created by Evgeniy Malyarov on 24.12.2019.
  */
 
-export default function ({classes, cat: {characteristics, templates, params_links, clrs, production_params}, cch, job_prm, doc, utils, wsql}) {
+export default function ({
+  classes, EditorInvisible, 
+  cat: {characteristics, templates, params_links, clrs, production_params},
+  cch, job_prm, doc, utils, wsql}) {
 
   class FakeSelectTemplate extends classes.BaseDataObj {
 
@@ -122,7 +125,7 @@ export default function ({classes, cat: {characteristics, templates, params_link
       this._setter('sys', v);
       const {sys, params} = this;
       const selection = {};
-      clrs.selection_exclude_service(this._meta.fields.clr, sys);
+      clrs.selection_exclude_service(this._meta.fields.clr, sys, this);
       this._meta.fields.clr.choice_params.forEach(({name, path}) => {
         selection[name] = path;
       });
@@ -167,6 +170,10 @@ export default function ({classes, cat: {characteristics, templates, params_link
 
     get params() {return this._getter_ts('params')}
 
+    params_links(attr) {
+      return EditorInvisible.Contour.prototype.params_links(attr, this.sys, 0);
+    }
+    
     value_change(field, type, value) {
       if(field == 'calc_order' && this[field] != value) {
         this[field] = value;

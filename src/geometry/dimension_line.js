@@ -77,10 +77,7 @@ class DimensionLine extends paper.Group {
   }
 
   _font_size() {
-    const {width, height} = this.project.bounds;
-    const {cutoff, font_size} = consts;
-    const size = Math.max(width - cutoff, height - cutoff) / 60;
-    return font_size + (size > 0 ? size : 0);
+    return DimensionLine._font_size(this.project.bounds);
   }
 
   // виртуальные метаданные для автоформ
@@ -102,7 +99,7 @@ class DimensionLine extends paper.Group {
     if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
       return true;
     }
-    if(elm1 instanceof ProfileParent && elm2 instanceof ProfileParent) {
+    if(project._scope?.tool?.disable_size || (elm1 instanceof ProfileParent && elm2 instanceof ProfileParent)) {
       return true;
     }
     return false;
@@ -241,7 +238,7 @@ class DimensionLine extends paper.Group {
       delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
-      project.register_update();
+      project.register_change(false, () => project.register_change(true));
     }
 
   }
@@ -535,6 +532,12 @@ class DimensionLine extends paper.Group {
       this.project.register_change();
     }
     super.remove();
+  }
+  
+  static _font_size({width, height}) {
+    const {cutoff, font_size} = consts;
+    const size = Math.max(width - cutoff, height - cutoff) / 60;
+    return font_size + (size > 0 ? size : 0);
   }
 }
 

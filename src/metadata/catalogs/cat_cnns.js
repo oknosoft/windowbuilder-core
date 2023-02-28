@@ -96,8 +96,11 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       cat: {nom}, utils} = $p;
 
     // если оба элемента - профили, определяем сторону
-    const side = is_outer ? cnn_sides.outer :
+    let side = is_outer ? cnn_sides.outer :
       (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
+    if(!side && !ign_side && is_outer === false) {
+      side = cnn_sides.inner;
+    }
 
     let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
 
@@ -382,9 +385,10 @@ exports.CatCnns = class CatCnns extends Object {
    * Параметрический размер соединения 
    * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
    * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+   * @param {Number} [region] - Соседний элемент, если доступно в контексте вызова
    * @return Number
    */
-  size(elm0, elm2) {
+  size(elm0, elm2, region=0) {
     let {sz, sizes} = this;
     const {ox, layer} = elm0;
     for(const prm_row of sizes) {
@@ -403,22 +407,8 @@ exports.CatCnns = class CatCnns extends Object {
           elm = parent;
         }
       }
-      if(prm_row.param.check_condition({
-          row_spec: {},
-          prm_row,
-          cnstr,
-          elm,
-          elm2,
-          layer,
-          ox,
-        }) &&
-        prm_row.key.check_condition({
-          elm,
-          elm2,
-          ox,
-          cnstr,
-          layer,
-        })) {
+      if(prm_row.param.check_condition({row_spec: {}, prm_row, cnstr, elm, elm2, region, layer, ox}) &&
+        prm_row.key.check_condition({cnstr, elm, elm2, region, layer, ox})) {
         sz = prm_row.elm;
         break;
       }

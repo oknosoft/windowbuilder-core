@@ -111,6 +111,25 @@ class ProfileConnective extends ProfileItem {
     return nearests[0].pos;
   }
 
+  /** @inheritdoc */
+  check_err(style) {
+    const {ox: {cnn_elmnts}, elm: elm2} = this;
+    for(const profile of this.joined_nearests()) {
+      const crow = cnn_elmnts.find({elm1: profile.elm, node1: '', elm2, node2: ''});
+      if(!crow || crow.cnn.empty()) {
+        if(style) {
+          const {_corns} = profile._attr;
+          const subpath = profile.path.get_subpath(_corns[1], _corns[2]).equidistant(-6);
+          Object.assign(subpath, style);
+        }
+        else {
+          const {job_prm: {nom}, msg} = $p;
+          this.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, this.inset);
+        }
+      }
+    }
+  }
+
   /**
    * Вычисляемые поля в таблице координат
    */
@@ -150,6 +169,27 @@ class ProfileConnective extends ProfileItem {
     _row.elm_type = this.elm_type;
 
   }
+
+  /** @inheritdoc */
+  set_inset(v) {
+    const {_row, selected} = this;
+    if(_row.inset != v) {
+      super.set_inset(v);
+
+      // для уже нарисованных элементов...
+      for(const rama of this.joined_nearests()) {
+        const {_attr} = rama;
+        const {inner, outer} = rama.joined_imposts();
+        _attr && _attr._rays && _attr._rays.clear('with_neighbor');
+        rama.redraw();
+        inner.concat(outer).forEach(({profile}) => {
+          profile.observer(rama);
+        });
+      }
+      this.setSelection(selected);
+    }
+  }
+
 
   /**
    * Удаляет элемент из контура и иерархии проекта
@@ -202,6 +242,10 @@ class ConnectiveLayer extends paper.Layer {
 
   get info() {
     return this.presentation;
+  }
+  
+  get kind() {
+    return 0;
   }
 
   get skeleton() {
@@ -258,7 +302,7 @@ class ConnectiveLayer extends paper.Layer {
     _errors.removeChildren();
     _errors.bringToFront();
   }
-
+  
   save_coordinates() {
     return this.children.reduce((accumulator, elm) => {
       return elm?.save_coordinates ?  accumulator.then(() => elm.save_coordinates()) : accumulator;

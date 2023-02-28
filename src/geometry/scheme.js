@@ -103,7 +103,7 @@ class Scheme extends paper.Project {
     const {ox, _dp} = this;
     const {cat, utils} = $p;
     const cmeta = _dp._metadata('clr');
-    const {clr_group} = _dp.sys;
+    const clr_group = _dp.sys.find_group(ox);
     const clrs = [...clr_group.clrs()];
 
     cat.clrs.selection_exclude_service(cmeta, _dp, this);
@@ -147,7 +147,7 @@ class Scheme extends paper.Project {
     }
 
     const scheme_changed_names = ['clr', 'sys'];
-    const row_changed_names = ['quantity', 'discount_percent', 'discount_percent_internal'];
+    const row_changed_names = ['note', 'quantity', 'discount_percent', 'discount_percent_internal'];
 
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
       // информируем мир об изменениях
@@ -260,19 +260,19 @@ class Scheme extends paper.Project {
   }
 
   /**
-   * наблюдатель за изменениями параметров створки
+   * наблюдатель за изменениями параметров изделия и слоя
    * @param obj
    * @param fields
    * @private
    */
   _papam_listener(obj, fields) {
-    const {_attr, _ch, ox} = this;
+    const {_attr, _ch, ox, _scope} = this;
     if(_attr._loading || _attr._snapshot) {
       return;
     }
     const is_row = obj._owner === ox.params;
     // запоминаем значения базовых параметров в обработке шаблонов
-    if(is_row || (obj === ox && fields.hasOwnProperty('params'))) {
+    if(is_row || (obj === ox && 'params' in fields)) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
       const {_select_template: st} = templates;
@@ -292,6 +292,18 @@ class Scheme extends paper.Project {
     // при смене цвета основы, уточняем цвет изделия
     if(is_row && ox.sys.base_clr === obj.param) {
       this.check_clr();
+      _scope?._acc?.props?._grid?.reload();
+    }
+    // при изменении builder_props, уточняем видимость надписей
+    if(obj === ox && 'builder_props' in fields) {
+      const {txts} = this.builder_props;
+      for(const elm of this.getItems({class: FreeText})) {
+        elm.visible = txts;
+      }      
+    }
+    // изменили или удалили вложенную вставку
+    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields) || (obj === ox && 'inserts' in fields)) {
+      this.register_change(true);
     }
   }
 
@@ -353,7 +365,7 @@ class Scheme extends paper.Project {
 
     // устанавливаем в _dp свойства строки заказа
     if(_attr._calc_order_row) {
-      'quantity,price_internal,discount_percent_internal,discount_percent,price,amount,note'.split(',').forEach((fld) => _dp[fld] = _attr._calc_order_row[fld]);
+      'quantity,price_internal,discount_percent_internal,discount_percent,price,amount,amount_internal,note'.split(',').forEach((fld) => _dp[fld] = _attr._calc_order_row[fld]);
     }
     else {
       // TODO: установить режим только просмотр, если не найдена строка заказа
@@ -495,6 +507,7 @@ class Scheme extends paper.Project {
 
       // включаем перерисовку
       _attr._opened = true;
+      _attr._no_mod = true;
       _attr._bounds = new paper.Rectangle({point: [0, 0], size: [o.x, o.y]});
 
       // первым делом создаём соединители и опорные линии
@@ -592,7 +605,7 @@ class Scheme extends paper.Project {
 
               (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
-        });
+        }, 30);
       })
         .then(() => {
           // при необходимости, перезаполним параметры изделия и фурнитуры
@@ -763,7 +776,8 @@ class Scheme extends paper.Project {
       if (_attr.elm_fragment > 0) {
         const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
         elm && elm.draw_fragment && elm.draw_fragment(true);
-      } else {
+      } 
+      else {
         // перерисовываем соединительные профили
         this.l_connective.redraw();
 
@@ -936,6 +950,23 @@ class Scheme extends paper.Project {
       type = obj.type;
     }
     this._scope?.eve?.emit_async?.(type, obj, fields);
+  }
+
+  /**
+   * Формирует альтернативный связям параметров, список значений системных параметров
+   * @param {Object} attr
+   * @param {CatProduction_params} [sys]
+   * @param {Number} [cnstr]
+   * @return {boolean}
+   */
+  params_links(attr, sys, cnstr) {
+    if(!sys) {
+      sys = this._dp.sys;
+    }
+    if(!cnstr) {
+      cnstr = 0;
+    }
+    return Contour.prototype.params_links(attr, sys, cnstr);
   }
 
   /**
@@ -1133,7 +1164,7 @@ class Scheme extends paper.Project {
    * Сохраняет координаты и пути элементов в табличных частях характеристики
    * @return {Promise}
    */
-  save_coordinates(attr) {
+  save_coordinates(attr = {}) {
 
     const {_attr, bounds, ox, contours} = this;
 
@@ -1150,7 +1181,7 @@ class Scheme extends paper.Project {
 
     let res = Promise.resolve();
     const push = (contour) => {
-      res = res.then(() => contour.save_coordinates(false, attr?.save, attr?.close))
+      res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
     };
 
     if(bounds) {
@@ -1161,7 +1192,7 @@ class Scheme extends paper.Project {
 
       // вызываем метод save_coordinates в дочерних слоях
       contours.forEach((contour) => {
-        if(attr?.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
+        if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
           if(this.activeLayer === contour) {
             const other = contours.find((el) => el !== contour);
             other && other.activate();
@@ -1185,7 +1216,7 @@ class Scheme extends paper.Project {
 
     // пересчет спецификации и цен
     return res
-      .then(() => attr?.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .then(() => attr.no_recalc ? this : $p.products_building.recalc(this, attr))
       .catch((err) => {
         const {msg, ui} = $p;
         ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
@@ -1346,9 +1377,16 @@ class Scheme extends paper.Project {
         if(inset.insert_type === Заполнение) {
           ox.glass_specification.clear({elm});
         }
-        else if(inset.insert_type === Стеклопакет && !ox.glass_specification.find({elm})) {
-          for(const row of inset.specification) {
-            row.quantity && ox.glass_specification.add({elm, inset: row.nom});
+        else if(inset.insert_type === Стеклопакет) {
+          if(!ox.glass_specification.find({elm})) {
+            for(const row of inset.specification) {
+              row.quantity && ox.glass_specification.add({elm, inset: row.nom});
+            }
+          }
+          else {
+            ox.glass_specification.find_rows({elm}, (grow) => {
+              grow.default_params();
+            });
           }
         }
       }
@@ -1500,18 +1538,14 @@ class Scheme extends paper.Project {
    * @final
    */
   get l_dimensions() {
-    const {activeLayer, _attr} = this;
-
+    const {_attr} = this;
     if(!_attr.l_dimensions) {
-      _attr.l_dimensions = new DimensionLayer();
+      const {activeLayer} = this;
+      _attr.l_dimensions = new DimensionLayer({project: this});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }
     }
-    if(!_attr.l_dimensions.isInserted()) {
-      this.addLayer(_attr.l_dimensions);
-    }
-    if(activeLayer) {
-      this._activeLayer = activeLayer;
-    }
-
     return _attr.l_dimensions;
   }
 
@@ -1522,18 +1556,14 @@ class Scheme extends paper.Project {
    * @final
    */
   get l_connective() {
-    const {activeLayer, _attr} = this;
-
+    const {_attr} = this;
     if(!_attr.l_connective) {
-      _attr.l_connective = new ConnectiveLayer();
+      const {activeLayer} = this;
+      _attr.l_connective = new ConnectiveLayer({project: this});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }  
     }
-    if(!_attr.l_connective.isInserted()) {
-      this.addLayer(_attr.l_connective);
-    }
-    if(activeLayer) {
-      this._activeLayer = activeLayer;
-    }
-
     return _attr.l_connective;
   }
 

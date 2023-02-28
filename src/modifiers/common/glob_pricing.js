@@ -85,9 +85,9 @@ class Pricing {
    * @param startkey
    * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=60, log=null, cache=null}) {
-    const {utils, adapters: {pouch}} = $p;
-
+  by_range({bookmark, step=1, limit=40, log=null, cache=null}) {
+    const {utils, adapters: {pouch},  cat: {abonents}} = $p;
+    
     (log || console.log)(`load prices: page №${step}`);
 
     return utils.sleep(40)
@@ -95,6 +95,7 @@ class Pricing {
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
+          price_type: {$in: abonents.price_types.map(v => v.valueOf())},
         },
         limit,
         bookmark,
@@ -119,6 +120,7 @@ class Pricing {
   by_doc({goods, date, currency}, cache) {
     const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
+    date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
       const onom = nom.get(row.nom, true);
@@ -160,15 +162,15 @@ class Pricing {
   /**
    * Возвращает цену номенклатуры по типу цен из регистра пзМаржинальныеКоэффициентыИСкидки
    * Если в маржинальных коэффициентах или номенклатуре указана формула - выполняет
-   *
-   * Аналог УПзП-шного __ПолучитьЦенуНоменклатуры__
-   * @param nom {CatNom}
-   * @param characteristic {CatCharacteristics}
-   * @param price_type {CatNom_prices_types|CatBranches}
-   * @param prm {Object}
-   * @param row {Object}
-   * @param [clr] {CatClrs}
-   * @param [formula] {CatFormulas}
+   * @param {CatNom} nom
+   * @param {CatCharacteristics} characteristic
+   * @param {CatNom_prices_types|CatBranches} price_type
+   * @param {Object} prm
+   * @param {Object} row
+   * @param {CatClrs} clr
+   * @param {CatFormulas} [formula]
+   * @param {Date} [date]
+   * @return {Number}
    */
   nom_price(nom, characteristic, price_type, prm, row, clr, formula, date) {
 
@@ -355,7 +357,8 @@ class Pricing {
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
-        calc_order_row: value
+        calc_order_row: value,
+        date,
       };
       this.price_type(fake_prm);
       this.calc_first_cost(fake_prm);

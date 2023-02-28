@@ -54,8 +54,8 @@ const AbstractFilling = (superclass) => class extends superclass {
    * Возвращает структуру профилей по сторонам
    * @memberOf AbstractFilling
    * @instance
-   * @param side
-   * @param profiles
+   * @param {String} [side]
+   * @param {Array.<ProfileItem>} [profiles]
    * @return {Object}
    */
   profiles_by_side(side, profiles) {
@@ -124,7 +124,7 @@ const AbstractFilling = (superclass) => class extends superclass {
    * @type Array.<Contour>
    */
   get contours() {
-    return this.children.filter((elm) => elm instanceof Contour);
+    return this.children.filter((elm) => (elm instanceof Contour) && !(elm instanceof ContourTearing));
   }
 
   get skeleton() {
@@ -139,7 +139,15 @@ const AbstractFilling = (superclass) => class extends superclass {
    */
   get l_dimensions() {
     const {_attr} = this;
-    return _attr._dimlns || (_attr._dimlns = new DimensionDrawer({parent: this}));
+    if(!_attr._dimlns) {
+      _attr._dimlns = new DimensionDrawer({parent: this});
+      for(const contour of this.contours) {
+       if(_attr._dimlns.isAbove(contour)) {
+         _attr._dimlns.insertBelow(contour);
+       } 
+      }
+    }
+    return _attr._dimlns;
   }
 
   /**

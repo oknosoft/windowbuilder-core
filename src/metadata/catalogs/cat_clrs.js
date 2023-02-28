@@ -324,7 +324,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       }
 
       // фильтр доступных цветов системы или вставки
-      let clr_group = clrs.find_group(sys);
+      let clr_group = clrs.find_group(sys, project?.ox || project);
 
       mf.choice_params.push({
         name: 'ref',
@@ -363,27 +363,32 @@ exports.CatClrsManager = class CatClrsManager extends Object {
    * @param sys
    * @return {CatColor_price_groups}
    */
-  find_group(sys) {
-    const {BuilderElement, Filling} = $p.EditorInvisible;
+  find_group(sys, ox) {
+    const {EditorInvisible: {BuilderElement, Filling}, classes: {DataProcessorObj}} = $p;
     let clr_group;
     if(sys instanceof BuilderElement) {
       clr_group = sys.inset.clr_group;
       if(clr_group.empty() && !(sys instanceof Filling)) {
-        clr_group = sys.project._dp.sys.clr_group;
+        clr_group = sys.layer.sys.find_group(ox);
       }
     }
     else if(sys.hasOwnProperty('sys') && sys.profile && sys.profile.inset) {
-      const sclr_group = sys.sys.clr_group;
       const iclr_group = sys.profile.inset.clr_group;
-      clr_group = iclr_group.empty() ? sclr_group : iclr_group;
+      clr_group = iclr_group.empty() ? sys.sys.find_group(ox) : iclr_group;
+    }
+    else if(sys.sys && sys.sys.find_group) {
+      clr_group = sys.sys.find_group(ox);
     }
     else if(sys.sys && sys.sys.clr_group) {
       clr_group = sys.sys.clr_group;
     }
-    else {
-      clr_group = sys.clr_group;
+    else if(sys instanceof DataProcessorObj && ox) {
+      clr_group = ox.sys.find_group(ox);
     }
-    return clr_group;
+    else {
+      clr_group = sys.find_group ? sys.find_group(ox) : sys.clr_group;
+    }
+    return clr_group || this.get();
   }
 
 }

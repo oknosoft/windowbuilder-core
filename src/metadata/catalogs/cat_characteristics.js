@@ -25,6 +25,9 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     if(calc_order.obj_delivery_state == 'Шаблон' && !this.base_block.empty()) {
       this.base_block = '';
     }
+    
+    // масса изделия
+    this.weight = this.elm_weight();
 
     // пересчитываем наименование
     const name = this.prod_name();
@@ -186,7 +189,11 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         }
 
         if(this.s) {
-          name += '/S:' + this.s.toFixed(3);
+          name += '/s:' + this.s.toFixed(3);
+        }
+        
+        if(this.weight && !this.s){
+          name += `/m:${this.weight.toFixed(3)}kg`;
         }
 
         // подмешиваем значения параметров
@@ -590,7 +597,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
       const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
 
-      return project.load(ox, true, calc_order)
+      return project.load(ox, attr.builder_props || true, calc_order)
         .then(() => {
           project._attr._hide_errors = true;
           const olayer = project.getItem({cnstr: -leading_elm});
@@ -619,7 +626,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           const {bounds} = ppath;
           if(imposts) {
             const add_impost = (y) => {
-
+              
               const impost = new paper.Path({
                 insert: false,
                 segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
@@ -655,29 +662,34 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             });
           }
           parent.redraw();
-          parent.l_dimensions.redraw(true);
-          const gg = new editor.Group({
-            parent: parent.l_dimensions,
-            owner_bounds: parent.bounds,
-            dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
-          });
-          const l_right = new EditorInvisible.DimensionLine({
-            pos: 'right',
-            offset: -120,
-            parent: gg,
-            project,
-            contour: true,
-          });
-          l_right.redraw();
+          if(project.builder_props.auto_lines) {
+            parent.l_dimensions.redraw(true);
+            const gg = new editor.Group({
+              parent: parent.l_dimensions,
+              owner_bounds: parent.bounds,
+              dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
+            });
+            const l_right = new EditorInvisible.DimensionLine({
+              pos: 'right',
+              offset: -120,
+              parent: gg,
+              project,
+              contour: true,
+            });
+            l_right.redraw();
 
-          const l_bottom = new EditorInvisible.DimensionLine({
-            pos: 'bottom',
-            offset: -120,
-            parent: gg,
-            project,
-            contour: true,
-          });
-          l_bottom.redraw();
+            const l_bottom = new EditorInvisible.DimensionLine({
+              pos: 'bottom',
+              offset: -120,
+              parent: gg,
+              project,
+              contour: true,
+            });
+            l_bottom.redraw(); 
+          }
+          else {
+            parent.l_dimensions.visible = false;
+          }
           
           for(const gl of parent.fillings) {
             gl.visible = false;
@@ -907,5 +919,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     carcass: false,
     mirror: false,
     articles: 0,
+    glass_numbers: false,
+    bw: false,
   };
 }

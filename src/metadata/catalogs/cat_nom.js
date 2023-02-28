@@ -230,6 +230,7 @@ exports.CatNom = class CatNom extends Object {
       }
 
       // если для номенклатуры существует структура цен, ищем подходящую
+      attr.pdate = start_date;
       if(_price){
         if(attr.clr && attr.characteristic == utils.blank.guid) {
           let tmp = 0;
@@ -244,7 +245,11 @@ exports.CatNom = class CatNom extends Object {
                       tmp = tprice;
                       price = row.price;
                       currency = row.currency;
+                      return true;
                     }
+                  }
+                  else if(row.date > attr.pdate) {
+                    attr.pdate = row.date;
                   }
                 });
               }

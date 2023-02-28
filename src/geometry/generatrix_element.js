@@ -262,7 +262,7 @@ class GeneratrixElement extends BuilderElement {
           // если соединение угловое, тянем тянем соседние узлы сразу
           if(cnn_point && !paper.Key.isDown('control')){
 
-            if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point)){
+            if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point, 0)){
               if(this instanceof Onlay){
                 this.move_nodes(noti_points.old, free_point);
               }

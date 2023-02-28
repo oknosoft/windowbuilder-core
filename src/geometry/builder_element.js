@@ -69,7 +69,7 @@ class BuilderElement extends paper.Group {
     }
 
     if(this._row.elm_type.empty() && !this.inset.empty()){
-      this._row.elm_type = this.nom.elm_type;
+      this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
     }
 
     this.project.register_change();
@@ -186,7 +186,7 @@ class BuilderElement extends paper.Group {
   __metadata(iface) {
     const {fields, tabular_sections} = this.project.ox._metadata();
     const t = this,
-      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, inserts_glass_types, cnn_types}, cch} = $p,
+      {utils, cat: {inserts, cnns, clrs}, enm: {elm_types,positions, cnn_types}, cch} = $p,
       _xfields = tabular_sections.coordinates.fields,
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
@@ -231,13 +231,18 @@ class BuilderElement extends paper.Group {
         let selection;
 
         if(this instanceof Filling) {
+          // glass_thickness:
+          // 0 - по толщинам из списка
+          // 1 - по списку
+          // 2 - по вилке толщин (min max)
+          // 3 - без ограничений
           const {glass_thickness, thicknesses} = sys;
 
           // !iface - нет dhtmlx, чистый react
           if(!iface || utils.is_data_obj(o)) {
             const insert = inserts.get(o);
             const {insert_type, insert_glass_type} = insert;
-            if(_types_filling.includes(insert_type) && (insert_glass_type.empty() || insert_glass_type === inserts_glass_types.Заполнение)) {
+            if(_types_filling.includes(insert_type) && (glass_thickness === 1 || insert_glass_type.empty() || insert_glass_type.is('Заполнение'))) {
               /*разбор параметра glass_thickness*/
               if(glass_thickness === 0) {
                 return thicknesses.includes(insert.thickness(this));
@@ -258,7 +263,7 @@ class BuilderElement extends paper.Group {
           else {
             let refs = '';
             inserts.by_thickness(sys).forEach((o) => {
-              if(o.insert_glass_type.empty() || o.insert_glass_type === inserts_glass_types.Заполнение) {
+              if(o.insert_glass_type.empty() || o.insert_glass_type.is('Заполнение')) {
                 if(refs) {
                   refs += ', ';
                 }
@@ -268,27 +273,23 @@ class BuilderElement extends paper.Group {
             return `_t_.ref in (${refs})`;
           }
         }
-        else if(this instanceof ProfileConnective) {
-          selection = {elm_type: elm_types.Соединитель};
-        }
-        else if(this instanceof ProfileAddl) {
-          selection = {elm_type: elm_types.Добор};
-        }
-        else if(this instanceof Profile) {
+        else if(this instanceof ProfileItem) {
           const {any} = positions;
-          if(this.nearest()) {
-            selection = {
-              pos:{in:[this.pos,any]},
-              elm_type: {in: [elm_types.flap, elm_types.flap0, elm_types.Добор]}
-            };
-          }
-          else {
-            selection = {pos:{in:[this.pos,any]},
-              elm_type: {in: [elm_types.Рама, elm_types.Импост, elm_types.Штульп, elm_types.Добор]}};
+          selection = {
+            pos: {in: [this.pos, any]},
+            elm_type: this.elm_type,
+          };
+          switch (selection.elm_type) {
+            case (elm_types.flap):
+              selection.elm_type = {in: [elm_types.flap, elm_types.flap0]};
+              break;
+            case (elm_types.impost):
+              selection.elm_type = {in: [elm_types.impost, elm_types.shtulp]};
+              break;
           }
         }
         else {
-          selection = {elm_type: this.nom.elm_type};
+          selection = {elm_type: this.elm_type || this.nom.elm_type};
         }
 
         // !iface - нет dhtmlx, чистый react
@@ -419,8 +420,8 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Объект продукции текущего элемеента  
-   * может отличаться от продукции текущего проекта
+   * @summary Объект продукции текущего элемеента  
+   * @desc может отличаться от продукции текущего проекта
    * @type {CatCharacteristics}
    */
   get ox() {
@@ -433,8 +434,8 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Номенклатура элемента
-   * свойство только для чтения, т.к. вычисляется во вставке с учётом текущих параметров и геометрии
+   * @summary Номенклатура элемента
+   * @desc свойство только для чтения, т.к. вычисляется во вставке с учётом текущих параметров и геометрии
    * @final
    * @type CatNom
    */
@@ -471,14 +472,18 @@ class BuilderElement extends paper.Group {
     return this.nom.width || 80;
   }
 
-  // толщина (для заполнений и, возможно, профилей в 3D)
+  /**
+   * @summary Толщина элемента
+   * @desc для заполнений и, возможно, профилей в 3D
+   * @type {Number}
+   */
   get thickness() {
     return this.inset.thickness(this);
   }
   
   /**
-   * Опорный размер  
-   * рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @summary Опорный размер  
+   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
    * @type {Number}
    */
   get sizeb() {
@@ -782,7 +787,7 @@ class BuilderElement extends paper.Group {
     const {clr_group} = _row.inset;
     let clr = _row.clr._manager.getter(v);
 
-    if(clr.empty()) {
+    if(clr.empty() || !clr_group.contains(clr)) {
       const {sys} = this.layer;
       const group = clr_group.empty() ? sys.clr_group : clr_group;
       let {default_clr} = sys;
@@ -883,7 +888,11 @@ class BuilderElement extends paper.Group {
 
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
-    const {_reflected} = this.project._attr;
+    const {_attr: {_reflected}, builder_props} = this.project;
+    
+    if(builder_props.bw) {
+      return new paper.Color(1, 1, 1, 0.92);
+    }
 
     if(_reflected){
       if(!clr_out.empty() && clr_out.clr_str) {
@@ -907,7 +916,7 @@ class BuilderElement extends paper.Group {
           clr_str = '#' + clr_str;
         }
         clr = new paper.Color(clr_str);
-        clr.alpha = 0.96;
+        clr.alpha = 0.93;
       }
       else if(clr.length == 4) {
         clr = new paper.Color(clr[0], clr[1], clr[2], clr[3]);
@@ -917,7 +926,8 @@ class BuilderElement extends paper.Group {
           clr = new paper.Color({
             stops: [clr[0], clr[1], clr[2]],
             origin: this.path.bounds.bottomLeft,
-            destination: this.path.bounds.topRight
+            destination: this.path.bounds.topRight,
+            alpha: 0.96
           });
         }
         else {
@@ -927,12 +937,21 @@ class BuilderElement extends paper.Group {
       return clr;
     }
   }
+  
+  beforeRemove() {
+    return true;
+  }
 
   /**
    * Удаляет элемент из контура и иерархии проекта
    * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
    */
   remove() {
+    
+    if(!this.beforeRemove()) {
+      return false;
+    }
+    
     this.detache_wnd && this.detache_wnd();
 
     const {parent, project, _row, ox, elm, path} = this;

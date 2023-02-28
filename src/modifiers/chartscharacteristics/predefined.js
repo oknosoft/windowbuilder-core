@@ -6,7 +6,7 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, comparison_types: ect}, 
+  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
     EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
@@ -82,11 +82,33 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+          
+        case 'elm_type':
+          _data._formula = function ({elm}) {
+            return elm?.elm_type || elm_types.get();
+          };
+          break;
 
         case 'elm_rectangular':
           _data._formula = function ({elm}) {
             const {is_rectangular} = elm;
             return typeof is_rectangular === 'boolean' ? is_rectangular : true;
+          };
+          break;
+          
+        case 'region':
+            _data._formula = function (obj) {
+              const {region} = obj;
+              return typeof region === 'number' ? region : 0;
+            };
+            break;
+          
+        case 'handle_height':
+          _data._formula = function ({elm, layer}) {
+            if(!layer && elm) {
+              layer = elm.layer;
+            }
+            return layer ? layer.h_ruch : 0;
           };
           break;
 
@@ -125,11 +147,14 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
+    'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента
     'branch',           // отдел абонента текущего контекста
     'width',            // ширина из параметра
     'inset',            // вставка текущего элемента
     'clr_inset',        // цвет вставки в элемент
+    'handle_height',    // высота ручки
+    'region',           // ряд
   ]) {
     formulate(name);
   }
@@ -277,5 +302,30 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('use');
+
+  // направление открывания
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function ({prm_row, elm, elm2, layer}) {
+        if(!layer && elm) {
+          layer = elm.layer;
+        }
+        if(prm_row?.origin?.is('nearest')) {
+          if(elm2) {
+            layer = elm2.layer;
+          }
+        }
+        else if (prm_row?.origin?.is('parent')) {
+          if(layer?.layer) {
+            layer = layer.layer;
+          }
+        }
+        const value = layer?.direction;
+        return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('direction');
 
 });

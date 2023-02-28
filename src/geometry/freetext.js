@@ -29,21 +29,23 @@ class FreeText extends paper.PointText {
 
     super(attr);
 
+    const {project} = this;
+
     if(attr.row){
       this._row = attr.row;
     }
     else{
-      this._row = attr.row = this.project.ox.coordinates.add();
+      this._row = attr.row = project.ox.coordinates.add();
     }
 
     const {_row} = this;
 
     if(!_row.cnstr){
-      _row.cnstr = attr.parent ? attr.parent.layer.cnstr : this.project.activeLayer.cnstr;
+      _row.cnstr = attr.parent ? attr.parent.layer.cnstr : project.activeLayer.cnstr;
     }
 
     if(!_row.elm){
-      _row.elm = this.project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
+      _row.elm = project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
     }
 
     if(attr.point){
@@ -67,6 +69,10 @@ class FreeText extends paper.PointText {
         this.y = _row.y1;
       }
     }
+    
+    if(project.builder_props.txts === false) {
+      this.visible = false;
+    }
 
     this.bringToFront();
 
@@ -81,7 +87,7 @@ class FreeText extends paper.PointText {
       this._row._owner.del(this._row);
       this._row = null;
     }
-    paper.PointText.prototype.remove.call(this);
+    super.remove();
   }
 
   /**

@@ -6,9 +6,17 @@
  */
 
 class FakePrmElm {
-  constructor(project) {
-    this.project = project;
-    this.inserts = $p.cat.inserts.find_rows({insert_type: 'Изделие', available: true});
+  constructor(owner) {
+    const {inserts} = $p.cat; 
+    if(owner instanceof Contour) {
+      this.layer = owner;
+      this.project = owner.project;
+      this.inserts = inserts.find_rows({insert_type: 'Контур', available: true});
+    }
+    else {
+      this.project = owner;
+      this.inserts = inserts.find_rows({insert_type: 'Изделие', available: true});
+    }
   }
 
   get inset() {
@@ -21,6 +29,9 @@ class FakePrmElm {
         unload_column() {
           return inserts;
         }
+      },
+      offer_insets() {
+        return [];
       },
       valueOf() {
         return this.ref;
@@ -36,11 +47,15 @@ class FakePrmElm {
   }
 
   get elm() {
-    return 0;
+    return this.layer ? -this.layer.cnstr : 0;
   }
 
   get _metadata() {
     return {fields: FakePrmElm.fields};
+  }
+  
+  get info() {
+    return this.layer ? `слой ${this.layer.layer ? 'створок' : 'рам'} №${this.layer.cnstr}` : 'изделие';
   }
 
   region(row) {

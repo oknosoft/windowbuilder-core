@@ -12,7 +12,7 @@
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatInsertsSpecificationRow, EditorInvisible} = $p;
+    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatColor_price_groups} = $p;
 
   const {inserts_types} = enm;
 
@@ -465,8 +465,8 @@
       }
       const {check_params} = ProductsBuilding;
       const ox = elm.prm_ox || elm.ox;
-      return main_rows.filter((row) => {
-        return this.check_base_restrictions(row, elm) && check_params({
+      const filtered = main_rows.filter((row) => {
+        return this.check_main_restrictions(row, elm) && check_params({
           params: this.selection_params,
           ox,
           elm,
@@ -475,6 +475,7 @@
           origin: elm.fake_origin || 0,
         });
       });
+      return filtered.length ? filtered : [main_rows[0]];
     }
 
     /**
@@ -570,11 +571,10 @@
       else if(main_rows.length){
         if(elm && !main_rows[0].formula.empty()) {
           try {
-            _nom = main_rows[0].formula.execute({elm});
-            if(!_nom) {
-              _nom = main_rows[0].nom;
-            }
-          } catch (e) {
+            const fnom = main_rows[0].formula.execute({elm});
+            _nom = fnom instanceof CatNom ? fnom : main_rows[0].nom;
+          }
+          catch (e) {
             _nom = main_rows[0].nom;
           }
         }
@@ -602,6 +602,14 @@
       else{
         // TODO: реализовать фильтр
         _data.nom = _nom;
+      }
+      
+      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+        elm._row.nom = _data.nom;
+        const chnom = elm.layer?._attr?.chnom;
+        if(chnom && !chnom.includes(elm)) {
+          chnom.push(elm);
+        }
       }
 
       return _data.nom;
@@ -759,7 +767,7 @@
       }
 
       if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
-        if(!(elm instanceof EditorInvisible.Filling)) {
+        if(!(elm instanceof Filling)) {
           if(is_row && row.count_calc_method.is('area') && row.lmin) {
             if(elm.bounds_inner) {
               const {width, height} = elm.bounds_inner();
@@ -775,7 +783,7 @@
             }
           }
           else {
-            const len = len_angl ? len_angl.len : _row.len;
+            const len = len_angl ? len_angl.len : (_row.len || elm.length);
             if (row.lmin > len || (row.lmax < len && row.lmax)) {
               return false;
             }
@@ -796,14 +804,14 @@
 
     /**
      * Проверяет базовые ограничения вставки или строки вставки
-     * @param row
-     * @param elm
+     * @param {CatInsertsSpecificationRow} row
+     * @param {BuilderElement} elm
      * @return {boolean}
      */
     check_base_restrictions(row, elm) {
       const {_row} = elm;
 
-      if(elm instanceof EditorInvisible.Filling) {
+      if(elm instanceof Filling) {
         // проверяем площадь
         if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
           return false;
@@ -843,6 +851,34 @@
     }
 
     /**
+     * Проверяет ограничения при поиске main_rows
+     * @param {CatInsertsSpecificationRow} row
+     * @param {BuilderElement} elm
+     * @return {boolean}
+     */
+    check_main_restrictions(row, elm) {
+      if(!this.check_base_restrictions(row, elm)) {
+        return false;
+      }
+      if(elm instanceof ProfileItem) {
+        const {ahmin, ahmax, lmin, lmax} = row;
+        if(ahmin > 0 || (ahmax && ahmax < 360)) {
+          const {angle_hor} = elm;
+          if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {
+            return false;
+          }
+        }
+        if (lmin > 0 || (lmax && lmax < 6000)) {
+          const length = elm._row.len;
+          if (lmin > length || (lmax && lmax < length)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    /**
      * Возвращает спецификацию вставки с фильтром
      * @param {BuilderElement|Object} elm - элемент, к которому привязана вставка
      * @param {BuilderElement|Object} elm2 - соседний элемент, имеет смысл, когда вставка вызвана из соединения
@@ -861,7 +897,7 @@
       }
 
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {profile, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
+      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
@@ -929,7 +965,7 @@
       this.specification.forEach((row) => {
 
         // Проверяем ограничения строки вставки
-        if(!this.check_restrictions(row, elm, insert_type === profile, len_angl)){
+        if(!this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl)){
           return;
         }
           
@@ -984,7 +1020,9 @@
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
-                  res.push(fakerow);
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
                 });
               }
               selector.eclr = clr_out;
@@ -994,7 +1032,9 @@
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
-                  res.push(fakerow);
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
                 });
               }
             }
@@ -1003,7 +1043,9 @@
                 const fakerow = fake_row(subrow, row);
                 fakerow._origin = row.nom;
                 fakerow._clr = eclr;
-                res.push(fakerow);
+                if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  res.push(fakerow);
+                }
               });
             }
           }
@@ -1011,7 +1053,9 @@
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               fakerow._origin = row.nom;
-              res.push(fakerow);
+              if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                res.push(fakerow); 
+              }
             });
           }
         }
@@ -1022,7 +1066,7 @@
       });
 
       // контроль массы, размеров основной вставки
-      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, insert_type == profile, len_angl)){
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl)){
         elm.err_spec_row(job_prm.nom.critical_error, this);
       }
 
@@ -1077,7 +1121,7 @@
 
         // добавляем строку спецификации, если профиль или не про шагам
         if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
-          if(!row_ins_spec.quantity) {
+          if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
@@ -1612,6 +1656,50 @@
         });
       }
       return perimeter;
+    }
+
+    get available() {
+      let {available} = this._obj;
+      if(typeof available === 'boolean') {
+        return available;
+      }
+      return cat.parameters_keys.get(available);
+    }
+    set available(v){this._setter('available',v)}
+
+    /**
+     * Возвращает массив рекомендуемых для элемента вставок
+     * @param {BuilderElement} elm
+     * @return {Array.<CatInserts>}
+     */
+    offer_insets(elm) {
+      const {inserts, _manager} = this;
+      const res = new Set();
+      const cond = {
+        elm,
+        ox: elm.ox,
+        layer: elm.layer,
+      }
+      _manager.find_rows({insert_type: enm.inserts_types.element}, (o) => {
+        const {available} = o;
+        if(available instanceof CatParameters_keys && !available.empty() && available.check_condition(cond)) {
+          res.add(o);
+        }
+      });
+      for(const row of inserts) {
+        if(row.key.check_condition(cond)) {
+          res.add(row.inset);
+        }
+      }
+      return Array.from(res);
+    }
+    
+    get clr_group() {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
+      return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
+    }
+    set clr_group(v) {
+      this._setter('clr_group',v);
     }
 
   }
