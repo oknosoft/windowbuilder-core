@@ -175,10 +175,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save(attr) {
 
-    const {ui, utils: {blank, moment}, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
+    const {ui, utils, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
       obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
+    const  {blank, moment} = utils;
 
     //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
     //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
@@ -333,7 +334,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.check_mandatory();
 
     // массив сырых данных изменённых характеристик
-    const sobjs = this.product_rows(true, attr);
+    let sobjs = this.product_rows(true, attr);
 
     // если изменился hash заказа, добавим его в sobjs
     if(this._modified || this.is_new()) {
@@ -361,6 +362,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         sobjs.push(tmp);
       }
     }
+    sobjs = utils._clone(sobjs, true);
 
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
 
