@@ -15252,7 +15252,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
           const def = product_params.find({param}) || (own_params && own_params.find({param}));
           if(def) {
             const pkey = param.valueOf();
-            if(dop.params && pkey in dop.params) {
+            if(dop.params && pkey in dop.params && !def.forcibly) {
               params[pkey] = dop.params[pkey];
               return;
             }
