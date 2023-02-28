@@ -4920,10 +4920,7 @@ class DimensionLine extends paper.Group {
     });
   }
   _font_size() {
-    const {width, height} = this.project.bounds;
-    const {cutoff, font_size} = consts;
-    const size = Math.max(width - cutoff, height - cutoff) / 60;
-    return font_size + (size > 0 ? size : 0);
+    return DimensionLine._font_size(this.project.bounds);
   }
   _metadata(fld) {
     return $p.dp.builder_size.metadata(fld);
@@ -5303,6 +5300,11 @@ class DimensionLine extends paper.Group {
       this.project.register_change();
     }
     super.remove();
+  }
+  static _font_size({width, height}) {
+    const {cutoff, font_size} = consts;
+    const size = Math.max(width - cutoff, height - cutoff) / 60;
+    return font_size + (size > 0 ? size : 0);
   }
 }
 class DimensionLineCustom extends DimensionLine {
@@ -7661,6 +7663,33 @@ Object.defineProperties(paper.Point.prototype, {
     }
   },
 });
+paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
+  const {left, top, right, bottom} = this;
+  const {x, y} = point;
+  const {Line, Point} = paper;
+  const res = {rib: null, parallel: null, pos: ''};
+  if(x > right && y > top && y < bottom) {
+    res.rib = new Line(new Point(right, top), new Point(right, bottom));
+    res.parallel = new Line(new Point(x, top), new Point(x, bottom));
+    res.pos = 'right';
+  }
+  else if(x < left && y > top && y < bottom) {
+    res.rib = new Line(new Point(left, bottom), new Point(left, top));
+    res.parallel = new Line(new Point(x, bottom), new Point(x, top));
+    res.pos = 'left';
+  }
+  else if(y < top && x > left && x < right) {
+    res.rib = new Line(new Point(left, top), new Point(right, top));
+    res.parallel = new Line(new Point(left, y), new Point(right, y));
+    res.pos = 'top';
+  }
+  else if(y > bottom && x > left && x < right) {
+    res.rib = new Line(new Point(right, bottom), new Point(left, bottom));
+    res.parallel = new Line(new Point(right, y), new Point(left, y));
+    res.pos = 'bottom';
+  }
+  return res;
+};
 class PathUnselectable extends paper.Path {
   setSelection(selection) {
     const {parent, project: {_scope}} = this;
