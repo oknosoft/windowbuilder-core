@@ -715,7 +715,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   /**
    * Пересчитывает номера изделий в продукциях,
    * обновляет контрагента, состояние транспорта и подразделение
-   * @param [save] {Boolean} - если указано, выполняет before_save характеристик
+   * @param {Boolean} [save] - если указано, выполняет before_save характеристик
+   * @param {Object} [attr] - дополнительные атрибуты
    * @return {Array<Object>}
    */
   product_rows(save, attr) {
