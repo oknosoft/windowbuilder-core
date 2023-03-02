@@ -4939,10 +4939,10 @@ class DimensionLine extends paper.Group {
     return false;
   }
   _mouseenter() {
-    const {children: {text}, project: {_scope}} = this;
+    const {children: {text}, project: {_scope}, is_ruler, is_smart_size} = this;
     const dis = this.is_disabled();
     _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
-    if(!dis) {
+    if(!dis || is_ruler || is_smart_size) {
       text.fontWeight = 'bold';
       text.shadowBlur = 10;
       text.shadowOffset = 10;
@@ -5361,6 +5361,10 @@ class DimensionLineCustom extends DimensionLine {
     const {constructor: {ToolRuler}, tool} = _scope;
     return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
   }
+  get is_smart_size() {
+    const {_scope} = this._project;
+    return _scope?.tool?.options?.name === 'smart_size';
+  }
   setSelection(selection) {
     super.setSelection(selection);
     const {project, children, hide_c1, hide_c2, hide_line, is_ruler} = this
@@ -5374,17 +5378,8 @@ class DimensionLineCustom extends DimensionLine {
   }
   _click(event) {
     event.stop();
-    if(this.is_ruler){
+    if(this.is_ruler || this.is_smart_size){
       this.selected = true;
-    }
-  }
-  _mouseenter() {
-    const {project: {_scope}, is_ruler} = this;
-    if(is_ruler){
-      _scope.canvas_cursor('cursor-arrow-ruler');
-    }
-    else{
-      _scope.canvas_cursor('cursor-arrow-ruler-dis');
     }
   }
   get angle() {
@@ -7669,8 +7664,8 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
   const {Line, Point} = paper;
   const res = {rib: null, parallel: null, pos: ''};
   if(x > right && y > top && y < bottom) {
-    res.rib = new Line(new Point(right, top), new Point(right, bottom));
-    res.parallel = new Line(new Point(x, top), new Point(x, bottom));
+    res.rib = new Line(new Point(right, bottom), new Point(right, top));
+    res.parallel = new Line(new Point(x, bottom), new Point(x, top));
     res.pos = 'right';
   }
   else if(x < left && y > top && y < bottom) {
@@ -7684,8 +7679,8 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
     res.pos = 'top';
   }
   else if(y > bottom && x > left && x < right) {
-    res.rib = new Line(new Point(right, bottom), new Point(left, bottom));
-    res.parallel = new Line(new Point(right, y), new Point(left, y));
+    res.rib = new Line(new Point(left, bottom), new Point(right, bottom));
+    res.parallel = new Line(new Point(left, y), new Point(right, y));
     res.pos = 'bottom';
   }
   return res;

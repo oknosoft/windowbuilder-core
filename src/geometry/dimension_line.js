@@ -106,10 +106,10 @@ class DimensionLine extends paper.Group {
   }
 
   _mouseenter() {
-    const {children: {text}, project: {_scope}} = this;
+    const {children: {text}, project: {_scope}, is_ruler, is_smart_size} = this;
     const dis = this.is_disabled();
     _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
-    if(!dis) {
+    if(!dis || is_ruler || is_smart_size) {
       text.fontWeight = 'bold';
       text.shadowBlur = 10;
       text.shadowOffset = 10;
@@ -624,6 +624,11 @@ class DimensionLineCustom extends DimensionLine {
     const {constructor: {ToolRuler}, tool} = _scope;
     return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
   }
+  
+  get is_smart_size() {
+    const {_scope} = this._project;
+    return _scope?.tool?.options?.name === 'smart_size';
+  }
 
   // выделяем подключаем окно к свойствам
   setSelection(selection) {
@@ -641,18 +646,8 @@ class DimensionLineCustom extends DimensionLine {
   // выделяем только при активном инструменте
   _click(event) {
     event.stop();
-    if(this.is_ruler){
+    if(this.is_ruler || this.is_smart_size){
       this.selected = true;
-    }
-  }
-
-  _mouseenter() {
-    const {project: {_scope}, is_ruler} = this;
-    if(is_ruler){
-      _scope.canvas_cursor('cursor-arrow-ruler');
-    }
-    else{
-      _scope.canvas_cursor('cursor-arrow-ruler-dis');
     }
   }
 
