@@ -21,14 +21,33 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
     }
     const {calc_order} = ox;
 
-    for(const prm_row of this.params) {
-      const {property, origin} = prm_row;
-      if(!property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other})) {
-        return false;
+    // по таблице параметров сначала строим Map ИЛИ
+    let {_or} = this;
+    if(!_or) {
+      _or = new Map();
+      for(const prm_row of this.params) {
+        if(!_or.has(prm_row.area)) {
+          _or.set(prm_row.area, []);
+        }
+        _or.get(prm_row.area).push(prm_row);
       }
+      this._or = _or;
     }
 
-    return true;
+    let res = true;
+    for(const grp of _or.values()) {
+      let grp_ok = true;
+      for(const prm_row of grp) {
+        const {property, origin} = prm_row;
+        grp_ok = property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other});
+      }
+      res = grp_ok;
+      if(res) {
+        break;
+      }
+    }
+    
+    return res;
   }
 
 };
