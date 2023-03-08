@@ -70,17 +70,17 @@
             tune(ref, mf, column) {
 
               const {inset} = this;
-              const prm = cch.properties.get(ref);
+              const param = cch.properties.get(ref);
               
-              if(prm && !prm.type.is_ref) {
-                Object.assign(mf.type, {}, prm.type);
+              if(param && !param.type.is_ref) {
+                Object.assign(mf.type, {}, param.type);
               }
 
               // удаляем все связи, кроме владельца
               if(mf.choice_params) {
                 const adel = new Set();
                 for(const choice of mf.choice_params) {
-                  if(choice.name !== 'owner' && choice.path != prm) {
+                  if(choice.name !== 'owner' && choice.path != param) {
                     adel.add(choice);
                   }
                 }
@@ -97,28 +97,48 @@
               inset.used_params().forEach((param) => {
                 !param.is_calculated && prms.add(param);
               });
-              mf.read_only = !prms.has(prm);
+              mf.read_only = !prms.has(param);
 
               // находим связи параметров
               if(!mf.read_only) {
-                const links = prm.params_links({grid: {selection: {}}, obj: this});
-                const hide = links.some((link) => link.hide);
-                if(hide && !mf.read_only) {
-                  mf.read_only = true;
+                const drow = this.inset?.product_params?.find({param});
+                if(drow) {
+                  if(drow.hide) {
+                    mf.read_only = true;
+                  }
+                  if(drow.list) {
+                    try{
+                      mf.list = JSON.parse(drow.list);
+                    }
+                    catch (e) {
+                      delete mf.list;
+                    }
+                  }
+                  const {value} = this;
+                  if(!value || value?.empty() || (mf.list && !mf.list.includes(value.valueOf()))) {
+                    this.value = drow.value;
+                  }
                 }
+                else {
+                  delete mf.list;
+                  const links = param.params_links({grid: {selection: {}}, obj: this});
+                  const hide = links.some((link) => link.hide);
+                  if(hide) {
+                    mf.read_only = true;
+                  }
 
-                // проверим вхождение значения в доступные и при необходимости изменим
-                if(links.length) {
-                  // TODO: подумать про установку умолчаний
-                  //prm.linked_values(links, this);
-                  const filter = {}
-                  prm.filter_params_links(filter, null, links);
-                  filter.ref && mf.choice_params.push({
-                    name: 'ref',
-                    path: filter.ref,
-                  });
+                  // проверим вхождение значения в доступные и при необходимости изменим
+                  if(links.length) {
+                    // TODO: подумать про установку умолчаний
+                    //prm.linked_values(links, this);
+                    const filter = {}
+                    param.filter_params_links(filter, null, links);
+                    filter.ref && mf.choice_params.push({
+                      name: 'ref',
+                      path: filter.ref,
+                    });
+                  }
                 }
-
               }
             }
 
