@@ -697,7 +697,7 @@ set hide(v){this._setter_ts('hide',v)}
         return v;
       }
 
-      const mgr = _manager.value_mgr({v}, 'v', type);
+      const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
           const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';
@@ -2884,6 +2884,9 @@ set params(v){this._setter_ts('params',v)}
     }
     if(!layer && elm) {
       layer = elm.layer;
+    }
+    if(!calc_order_row) {
+      calc_order_row = ox?.calc_order_row;
     }
     const {calc_order} = ox;
 
@@ -6826,7 +6829,20 @@ get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
-}
+
+  
+  
+  option_value({elm, ...other}) {
+    const {values} = this;
+    for(const {key, value} of values) {
+      if(key.check_condition({elm, ...other})) {
+        return value;
+      }
+    }
+    if(values.length) {
+      return values[values.length-1];
+    }
+  }}
 $p.CatValues_options = CatValues_options;
 class CatValues_optionsValuesRow extends TabularSectionRow{
 get key(){return this._getter('key')}
@@ -8539,6 +8555,11 @@ class HideParamsRow extends ParamsRow{
 class HideForciblyParamsRow extends HideParamsRow{
   get forcibly(){return this._getter('forcibly')}
   set forcibly(v){this._setter('forcibly',v)}
+
+  option_value({elm, ...other}) {
+    const {value} = this;
+    return value instanceof CatValues_options ? value.option_value({elm, ...other}) : value;
+  }
 }
 
 /**

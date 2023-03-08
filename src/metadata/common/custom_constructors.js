@@ -50,6 +50,11 @@ class HideParamsRow extends ParamsRow{
 class HideForciblyParamsRow extends HideParamsRow{
   get forcibly(){return this._getter('forcibly')}
   set forcibly(v){this._setter('forcibly',v)}
+
+  option_value({elm, ...other}) {
+    const {value} = this;
+    return value instanceof CatValues_options ? value.option_value({elm, ...other}) : value;
+  }
 }
 
 /**

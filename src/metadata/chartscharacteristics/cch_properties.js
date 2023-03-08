@@ -401,7 +401,7 @@ exports.CchProperties = class CchProperties extends Object {
         return v;
       }
 
-      const mgr = _manager.value_mgr({v}, 'v', type);
+      const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
           const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';

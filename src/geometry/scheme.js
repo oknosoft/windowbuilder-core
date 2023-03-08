@@ -72,7 +72,7 @@ class Scheme extends paper.Project {
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
     contour.save_coordinates(true);
-    isBrowser && layer && contour.refresh_prm_links();
+    isBrowser && contour.refresh_prm_links();
     !layer && l_dimensions.redraw();
     for(const curr of contours) {
       this.refresh_recursive(curr, isBrowser);

@@ -19,6 +19,9 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
     if(!layer && elm) {
       layer = elm.layer;
     }
+    if(!calc_order_row) {
+      calc_order_row = ox?.calc_order_row;
+    }
     const {calc_order} = ox;
 
     // по таблице параметров сначала строим Map ИЛИ

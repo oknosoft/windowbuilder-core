@@ -1715,11 +1715,17 @@
     }
     
     get clr_group() {
+      // values_options
       const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
       return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
     }
     set clr_group(v) {
       this._setter('clr_group',v);
+    }
+
+    option_clr_group({elm, ...other}) {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
+      return tmp instanceof CatValues_options ? tmp.option_value({elm, ...other}) : tmp;
     }
 
   }

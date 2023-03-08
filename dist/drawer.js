@@ -1118,7 +1118,22 @@ class BuilderElement extends paper.Group {
     const props = [];
     if(this.isInserted()) {
       const inset_params = inset.used_params();
-      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      const product_params = [];
+      if(concat) {
+        for(const param of inset_params) {
+          product_params.push({param, elm: true});
+        }
+      }
+      else {
+        for(const row of layer.sys.product_params) {
+          product_params.push(row);
+        }
+        for(const param of inset_params) {
+          if([1, 2].includes(param.inheritance) && !product_params.find(v => v.param === param)) {
+            product_params.push({param, elm: false});
+          }
+        }
+      }
       for(const {param, elm} of product_params) {
         if (!inset_params.includes(param)) {
           continue;
@@ -3363,10 +3378,11 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   refresh_prm_links(root) {
     const cnstr = root ? 0 : this.cnstr || -9999;
-    const {project, sys, own_sys, prod_ox} = this;
+    const {project, sys, own_sys, prod_ox, params, layer} = this;
     const {_dp, _attr} = project;
+    const {blank} = $p.utils;
     let notify;
-    this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
+    params.find_rows({cnstr, inset: blank.guid}, (prow) => {
       const {param} = prow;
       const links = param.params_links({
         grid: {selection: {cnstr}},
@@ -3399,13 +3415,36 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
     });
+    if(!root && !layer) {
+      const {product_params} = this.sys;
+      for(const filling of this.fillings) {
+        const {inset, elm} = filling;
+        const inset_params = inset.used_params();
+        for(const param of inset_params) {
+          if(param.inheritance === 2 || (param.inheritance === 1 && !product_params.find({param}))) {
+            const key = {cnstr: -elm, param, inset: blank.guid, region: 0};
+            const prow = params.find(key) || params.add(key);
+            const drow = inset?.product_params?.find({param});
+            if(drow) {
+              if (drow.hide) {
+                prow.hide = true;
+              }
+              const {value} = prow;
+              if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {
+                prow.value = drow.option_value({elm: filling});
+              }
+            }
+          }
+        }
+      }
+    }
     if(notify) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
         project.check_clr();
       }
-    };
+    }
   }
   refresh_inset_depends(param) {
     const {contours, profiles} = this;
@@ -11807,7 +11846,7 @@ class Scheme extends paper.Project {
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
     contour.save_coordinates(true);
-    isBrowser && layer && contour.refresh_prm_links();
+    isBrowser && contour.refresh_prm_links();
     !layer && l_dimensions.redraw();
     for(const curr of contours) {
       this.refresh_recursive(curr, isBrowser);
@@ -17064,6 +17103,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     }
     set clr_group(v) {
       this._setter('clr_group',v);
+    }
+    option_clr_group({elm, ...other}) {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
+      return tmp instanceof CatValues_options ? tmp.option_value({elm, ...other}) : tmp;
     }
   }
   $p.CatInserts = CatInserts;

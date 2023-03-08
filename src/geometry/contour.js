@@ -2615,12 +2615,13 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
-    const {project, sys, own_sys, prod_ox} = this;
+    const {project, sys, own_sys, prod_ox, params, layer} = this;
     const {_dp, _attr} = project;
+    const {blank} = $p.utils;
     let notify;
 
     // пробегаем по всем строкам
-    this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
+    params.find_rows({cnstr, inset: blank.guid}, (prow) => {
       const {param} = prow;
       const links = param.params_links({
         grid: {selection: {cnstr}},
@@ -2658,6 +2659,32 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
     });
+    
+    // умолчания для параметров заполнений
+    if(!root && !layer) {
+      const {product_params} = this.sys;
+      for(const filling of this.fillings) {
+        const {inset, elm} = filling;
+        const inset_params = inset.used_params();
+        for(const param of inset_params) {
+          if(param.inheritance === 2 || (param.inheritance === 1 && !product_params.find({param}))) {
+            // если нет строки в params - добавляем
+            const key = {cnstr: -elm, param, inset: blank.guid, region: 0};
+            const prow = params.find(key) || params.add(key);
+            const drow = inset?.product_params?.find({param});
+            if(drow) {
+              if (drow.hide) {
+                prow.hide = true;
+              }
+              const {value} = prow;
+              if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {
+                prow.value = drow.option_value({elm: filling});
+              }
+            }
+          }
+        }
+      }
+    }
 
     // информируем мир о новых размерах нашего контура
     if(notify) {
@@ -2666,8 +2693,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
         project.check_clr();
       }
-    };
-
+    }
   }
 
   /**

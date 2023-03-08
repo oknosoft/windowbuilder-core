@@ -641,7 +641,22 @@ class BuilderElement extends paper.Group {
     if(this.isInserted()) {
       // свойства, нужные вставке текущего элемента
       const inset_params = inset.used_params();
-      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      const product_params = [];
+      if(concat) {
+        for(const param of inset_params) {
+          product_params.push({param, elm: true});
+        }
+      }
+      else {
+        for(const row of layer.sys.product_params) {
+          product_params.push(row);
+        }
+        for(const param of inset_params) {
+          if([1, 2].includes(param.inheritance) && !product_params.find(v => v.param === param)) {
+            product_params.push({param, elm: false});
+          }
+        }
+      }
       for(const {param, elm} of product_params) {
         if (!inset_params.includes(param)) {
           continue;
