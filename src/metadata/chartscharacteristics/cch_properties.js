@@ -400,6 +400,9 @@ exports.CchProperties = class CchProperties extends Object {
           (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
         return v;
       }
+      if(type.digits && !v && type.types.includes('cat.values_options')) {
+        return 0;
+      }
 
       const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
