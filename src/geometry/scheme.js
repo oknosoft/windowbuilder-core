@@ -1385,7 +1385,7 @@ class Scheme extends paper.Project {
           }
           else {
             ox.glass_specification.find_rows({elm}, (grow) => {
-              grow.default_params();
+              grow.default_params({elm, ox, project: {ox}, inset: grow.inset});
             });
           }
         }

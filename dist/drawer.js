@@ -12739,7 +12739,7 @@ class Scheme extends paper.Project {
           }
           else {
             ox.glass_specification.find_rows({elm}, (grow) => {
-              grow.default_params();
+              grow.default_params({elm, ox, project: {ox}, inset: grow.inset});
             });
           }
         }
@@ -15290,7 +15290,8 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
 $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
   if(field === 'inset' && value != this.inset) {
     this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    this.default_params();
+    const ox = this._owner._owner;
+    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});
   }
 };
 Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
@@ -15307,7 +15308,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
     }
   },
   default_params: {
-    value: function default_params() {
+    value: function default_params(elm) {
       const {inset, clr, dop, _obj, _owner: {_owner}} = this;
       const {product_params} = inset;
       const own_row = _owner.coordinates.find({elm: _obj.elm});
@@ -15322,7 +15323,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
               params[pkey] = dop.params[pkey];
               return;
             }
-            const {value} = def;
+            const value = def.option_value({elm});
             params[pkey] = value ? value.valueOf() : value;
           }
         }
