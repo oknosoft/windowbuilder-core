@@ -6517,8 +6517,8 @@ class CatAbonentsManager extends CatManager {
     const {server} = $p.job_prm;
     const price_types = new Set();
     for(const id of server.abonents) {
-      for(const price_type of this.by_id(id)?.price_types) {
-        price_types.add(price_type);
+      for(const {acl_obj} of this.by_id(id)?.price_types) {
+        price_types.add(acl_obj);
       }
     }
     return Array.from(price_types);
