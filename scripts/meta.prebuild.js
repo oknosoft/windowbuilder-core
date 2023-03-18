@@ -315,9 +315,9 @@ set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}\n`;
         }
         else {
 
-          const mf = f === 'clr' && mfld;
+          const mf = f.endsWith('clr') && mfld;
           if(mf && mf.type.str_len === 72 && !mf.type.types.includes('cat.color_price_groups')) {
-            text += `get ${f}(){return $p.cat.clrs.getter(this._obj.clr)}\n`;
+            text += `get ${f}(){return $p.cat.clrs.getter(this._obj.${f})}\n`;
           }
           else {
             text += `get ${f}(){return this._getter('${f}')}\n`;

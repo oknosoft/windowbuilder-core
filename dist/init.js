@@ -2925,7 +2925,7 @@ set params(v){this._setter_ts('params',v)}
 $p.CatParameters_keys = CatParameters_keys;
 $p.cat.create('parameters_keys');
 class CatProduction_params extends CatObj{
-get default_clr(){return this._getter('default_clr')}
+get default_clr(){return $p.cat.clrs.getter(this._obj.default_clr)}
 set default_clr(v){this._setter('default_clr',v)}
 get clr_group(){return this._getter('clr_group')}
 set clr_group(v){this._setter('clr_group',v)}
