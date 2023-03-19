@@ -246,28 +246,21 @@ Object.defineProperties(paper.Path.prototype, {
             });
           }
           else{
-            // для кривого строим по точкам, наподобие эквидистанты
-            const step = (offset2 - offset1) * 0.02;
-
-            tmp = new paper.Path({
-              project,
-              segments: [loc1.point],
-              insert: false
-            });
-
-            if(step < 0){
-              tmp._reversed = true;
-              for(let i = offset1 + step; i > offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            // для кривого, создаём клон, вырезаем и добавляем плоский хвостик
+            
+            if(offset1 > offset2){
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset1);
+              tmp = tmp.splitAt(offset2);
+              tmp.reverse();
             }
-            else if(step > 0){
-              for(let i = offset1 + step; i < offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            else {
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset2);
+              tmp = tmp.splitAt(offset1);                
             }
-            tmp.add(loc2.point);
-            tmp.simplify(0.8);
+            const fs = tmp.divideAt(tmp.length * 0.99);
+            tmp.lastSegment.clearHandles();
           }
 
           if(offset1 > offset2){
