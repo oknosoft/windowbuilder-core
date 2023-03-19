@@ -6280,27 +6280,29 @@ class Filling extends AbstractFilling(BuilderElement) {
       let {length} = attr;
       if(length > 1) {
         let prev, curr, next;
+        const nominate = (i) => {
+          prev = i === 0 ? attr[length-1] : attr[i-1];
+          curr = attr[i];
+          next = i === length-1 ? attr[0] : attr[i+1];
+        };
         const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
         for (let i = 0; i < length; i++) {
-          curr = attr[i];
-          next = i === length - 1 ? attr[0] : attr[i + 1];
+          nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
         for (let i = 0; i < length; i++) {
-          prev = i === 0 ? attr[length-1] : attr[i-1];
-          curr = attr[i];
-          next = i === length-1 ? attr[0] : attr[i+1];
+          nominate(i);
           if(!curr.pb) {
             curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
-            if(prev !== next) {
+            if(prev !== curr && !prev.pe) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
             curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
-            if(prev !== next) {
+            if(next !== curr && !next.pb) {
               next.pb = curr.pe;
             }
           }
@@ -6317,8 +6319,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         if(length > 2) {
           const remove = [];
           for (let i = 0; i < length; i++) {
-            prev = i === 0 ? attr[length-1] : attr[i-1];
-            next = i === length-1 ? attr[0] : attr[i+1];
+            nominate(i);
             const crossings =  prev.sub_path.getCrossings(next.sub_path);
             if(crossings.length){
               if((prev.e.getDistance(crossings[0].point) < prev.profile.width * 2) ||  (next.b.getDistance(crossings[0].point) < next.profile.width * 2)) {
@@ -6336,12 +6337,13 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
         for (let i = 0; i < length; i++) {
           curr = attr[i];
-          path.addSegments(curr.sub_path.segments.filter((v, index) => {
+          const segments = curr.sub_path.segments.filter((v, index) => {
             if(index || !path.segments.length || v.hasHandles()) {
               return true;
             }
-            return !path.lastSegment.point.is_nearest(v.point, 1);
-          }));
+            return !path.lastSegment.point.is_nearest(v.point, .5);
+          });
+          path.addSegments(segments);
           ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
           _attr._profiles.push(curr);
         }
@@ -7324,25 +7326,19 @@ Object.defineProperties(paper.Path.prototype, {
             });
           }
           else{
-            const step = (offset2 - offset1) * 0.02;
-            tmp = new paper.Path({
-              project,
-              segments: [loc1.point],
-              insert: false
-            });
-            if(step < 0){
-              tmp._reversed = true;
-              for(let i = offset1 + step; i > offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            if(offset1 > offset2){
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset1);
+              tmp = tmp.splitAt(offset2);
+              tmp.reverse();
             }
-            else if(step > 0){
-              for(let i = offset1 + step; i < offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            else {
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset2);
+              tmp = tmp.splitAt(offset1);                
             }
-            tmp.add(loc2.point);
-            tmp.simplify(0.8);
+            const fs = tmp.divideAt(tmp.length * 0.99);
+            tmp.lastSegment.clearHandles();
           }
           if(offset1 > offset2){
             tmp._reversed = true;
