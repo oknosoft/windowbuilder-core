@@ -1202,7 +1202,13 @@ class Filling extends AbstractFilling(BuilderElement) {
               if(!params) {
                 params = {};
               }
-              params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              const {type} = param;
+              if(param.type.digits) {
+                params[prop] = parseFloat(val || 0);  
+              }
+              else {
+                params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              }
               row.dop = {params};
             }
           }
