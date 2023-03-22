@@ -1163,7 +1163,1369 @@ EditorInvisible.Filling = Filling;
     }
 	}
 })($p);
-(function(_mgr){  const {ad, av, ah, long, short, t, ii, i, xt, xx} = _mgr;  	Object.defineProperties(_mgr, {    acn: {      value: {        ii: [ii],        i: [i],        a: [av, ad, ah, t, xx, long, short],        t: [t, xx],        xsl: [t, xx, long, short],      }    },  });})($p.enm.cnn_types);(function({enm, cat: {clrs}, cch}){  const {coloring, len_prm, area} = enm.count_calculating_ways;  const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;  const is_side = (side) => ['_in', '_out'].includes(side);  coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {    let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula} = row_ins_spec;    if(!_clr) {      _clr = elm.clr;    }    const prefix = _clr.area_src.valueOf();    if(prefix) {      const {_row} = elm;      const nom = elm.inset === inset ? elm.nom : inset.nom(elm);      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);      if(is_side(_clr_side)) {        row_spec.width = nom._extra(prefix + _clr_side);      }      else {        const areas = [nom._extra(prefix) || 0, nom._extra(prefix + '_in') || 0, nom._extra(prefix + '_out') || 0];        row_spec.width = areas[0] || (areas[1] + areas[2]);      }      if(row_spec.width) {        row_spec.qty = quantity;        row_spec.len = (elm.length / 1000).round(3);        row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);      }    }    if(!row_spec.width) {      row_spec.qty = 0;    }    return row_spec;  };  area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {    const {_row} = elm;    const {insert_type} = inset;    const {quantity, sz, coefficient, relm} = row_ins_spec;    row_spec.qty = quantity;    if(insert_type.is('mosquito')) {      const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});      row_spec.len = bounds.height * coefficient;      row_spec.width = bounds.width * coefficient;      row_spec.s = (row_spec.len * row_spec.width).round(4);    }    else if(insert_type.is('jalousie')) {      if(elm.bounds_light) {        const bounds = elm.bounds_light();        row_spec.len = (bounds.height + offsets) * coefficient;        row_spec.width = (bounds.width + sz) * coefficient;      }      else {        row_spec.len = elm.len * coefficient;        row_spec.width = elm.height * coefficient;      }      row_spec.s = (row_spec.len * row_spec.width).round(4);    }    else if(insert_type.is('product')) {      const {project} = elm;      const {width, height} = project.bounds;      row_spec.len = width / 1000;      row_spec.width = height / 1000;      row_spec.s = (project.form_area - sz) * coefficient;    }    else if(insert_type.is('layer')) {      const {layer} = elm;      const {width, height} = layer.bounds;      row_spec.len = width / 1000;      row_spec.width = height / 1000;      row_spec.s = (layer.form_area - sz) * coefficient;    }    else {      let {x1, x2, y1, y2, s} = _row;      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region) {        const path = elm._attr.paths?.get(relm.irow.region);        if(path) {          x1 = y1 = 0;          x2 = path.bounds.width;          y2 = path.bounds.height;          s = x2 * y2 / 1e6;        }      }      row_spec.len = (y2 - y1 - sz) * coefficient;      row_spec.width = (x2 - x1 - sz) * coefficient;      row_spec.s = s;    }    return row_spec;  };  len_prm.calculate = function ({inset, elm, row_spec, row_ins_spec, origin}) {    let len = 0;    inset.selection_params.find_rows({elm: row_ins_spec.elm}, (prm_row) => {      const {param} = prm_row;      if(param.type.digits) {        len = elm.layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row})      }      if(len) return false;    });    const {quantity, sz, coefficient} = row_ins_spec;    row_spec.qty = quantity;    row_spec.len = len ? (len - sz) * coefficient : 0;    row_spec.width = 0;    row_spec.s = 0;    return row_spec;  };})($p);(function(mgr){	const cache = {};  	mgr.__define({		profiles: {			get(){				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing]);			}		},		profile_items: {			get(){				return cache.profile_items					|| ( cache.profile_items = [						mgr.Рама,						mgr.Створка,						mgr.Импост,						mgr.Штульп,						mgr.Добор,						mgr.Соединитель,						mgr.Раскладка,            mgr.Связка,            mgr.Разрыв,					] );			}		},		rama_impost: {			get(){				return cache.rama_impost || (cache.rama_impost = [mgr.rama, mgr.impost, mgr.shtulp]);			}		},		impost_lay: {			get(){        return cache.impost_lay || (cache.impost_lay = [mgr.Импост, mgr.Раскладка]);			}		},		stvs: {			get(){        return cache.stvs || (cache.stvs = [mgr.Створка]);			}		},		glasses: {			get(){        return cache.glasses || (cache.glasses = [mgr.Стекло, mgr.Заполнение]);			}		}	});})($p.enm.elm_types);(function(_mgr){    _mgr.additions_groups = [    _mgr.sill,         _mgr.sectional,    _mgr.mosquito,     _mgr.jalousie,     _mgr.slope,        _mgr.profile,      _mgr.cut,          _mgr.mount,        _mgr.delivery,     _mgr.set,        ];})($p.enm.inserts_types);(function({enm}){    enm.debit_credit_kinds.__define({    debit: {      get() {        return this.Приход;      }    },    credit: {      get() {        return this.Расход;      }    },  });		enm.open_types.__define({    is_opening: {      value(v) {        if(!v || v.empty() || v == this.Глухое || v == this.Неподвижное) {          return false;        }        return true;      }    }  });  enm.plan_detailing.__define({    eq_product: {      value: [enm.plan_detailing.get(), enm.plan_detailing.product, enm.plan_detailing.algorithm]    }  })})($p);(function({cat: {characteristics, nom}}){  const {value_mgr} = characteristics.constructor.prototype;  characteristics.value_mgr = function(_obj, f, mf, array_enabled, v) {    if(f === 'owner') {      return nom;    }    if(f === 'value' && _obj.param && nom.by_ref[_obj.param]){      return characteristics;    }    return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);  };  characteristics.extra_fields = function() {    return [];  };  characteristics._direct_ram = true;})($p);!$p.job_prm.is_node && $p.md.once('predefined_elmnts_inited', () => {  const _mgr = $p.cat.characteristics;  Promise.resolve()    .then(() => {      const {current_user} = $p;      if(current_user && (          current_user.role_available('СогласованиеРасчетовЗаказов') ||          current_user.role_available('ИзменениеТехнологическойНСИ') ||          current_user.role_available('РедактированиеЦен')        )) {        return;      }      const {form} = _mgr.metadata();      if(form && form.obj && form.obj.tabular_sections) {        form.obj.tabular_sections.specification.widths = "50,*,70,*,50,70,70,80,70,70,70,0,0,0";      }    });});$p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, value) {  if(field == 'inset') {    if (value != this.inset) {      const {_owner} = this._owner;      const {cnstr, region} = this;      const {blank} = $p.utils;      if (value != blank.guid) {        const res = this._owner.find_rows({cnstr, region, inset: value, row: {not: this.row}});        if (res.length) {          $p.md.emit('alert', {            obj: _owner,            row: this,            title: $p.msg.data_error,            type: 'alert-error',            text: 'Нельзя добавлять две одинаковые вставки в один элемент или слой'          });          return false;        }      }      !this.inset.empty() && _owner.params.clear({inset: this.inset, cnstr});      this._obj.inset = value.valueOf();      if(!region && this.inset.region) {        this._obj.region = this.inset.region;      }      this.inset.clr_group.default_clr(this);      _owner.add_inset_params(this.inset, cnstr, null, region);    }  }};$p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {  if(field === 'inset' && value != this.inset) {    this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;    const ox = this._owner._owner;    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});  }};Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {  region: {    get() {      const {region} = this.dop;      return typeof region === 'number' ? region : 0;    },    set(v) {      const region = typeof v === 'number' ? v : parseFloat(v);      if(!isNaN(region)) {        this.dop = {region: region.round()};      }    }  },  default_params: {    value: function default_params(elm) {      const {inset, clr, dop, _obj, _owner: {_owner}} = this;      const {product_params} = inset;      const own_row = _owner.coordinates.find({elm: _obj.elm});      const own_params = own_row && own_row.inset.product_params;      const params = {};      inset.used_params().forEach((param) => {        if((!param.is_calculated || param.show_calculated)) {          const def = product_params.find({param}) || (own_params && own_params.find({param}));          if(def) {            const pkey = param.valueOf();            if(dop.params && pkey in dop.params && !def.forcibly) {              params[pkey] = dop.params[pkey];              return;            }            const value = def.option_value({elm});            params[pkey] = value ? value.valueOf() : value;          }        }      });      const clrs = inset.clr_group.clrs();      if(clrs.length && !clrs.includes(clr)) {        _obj.clr = clrs[0].valueOf();      }      this.dop = {params};      return this;    }  }});$p.cat.characteristics.metadata('glass_specification').fields.region = {  synonym: 'Ряд',  type: {    digits: 3,    fraction: 0,    types: ['number'],  }};$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {  this.x = bounds ? bounds.width.round(4) : 0;  this.y = bounds ? bounds.height.round(4) : 0;  this.is_rectangular = is_rectangular;  if (layer) {    this.w = w.round(4);    this.h = h.round(4);  }  else {    this.w = 0;    this.h = 0;  }};$p.cat.cnns.__define({  sql_selection_list_flds: {    value(initial_value){      return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as cnn_type," +        " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_cnns AS _t_" +        " left outer join enm_cnn_types as _k_ on _k_.ref = _t_.cnn_type %3 %4 LIMIT 300";    }  },});$p.cat.contracts.__define({	sql_selection_list_flds: {		value(initial_value){			return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as contract_kind, _m_.synonym as mutual_settlements, _o_.name as organization, _p_.name as partner," +				" case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_contracts AS _t_" +				" left outer join cat_organizations as _o_ on _o_.ref = _t_.organization" +				" left outer join cat_partners as _p_ on _p_.ref = _t_.owner" +				" left outer join enm_mutual_contract_settlements as _m_ on _m_.ref = _t_.mutual_settlements" +				" left outer join enm_contract_kinds as _k_ on _k_.ref = _t_.contract_kind %3 %4 LIMIT 300";		}	},	by_partner_and_org: {    value(partner, organization, contract_kind = $p.enm.contract_kinds.СПокупателем) {      const {main_contract} = $p.cat.partners.get(partner);      if(main_contract && main_contract.contract_kind == contract_kind && main_contract.organization == organization){        return main_contract;      }      const res = this.find_rows({owner: partner, organization: organization, contract_kind: contract_kind});      res.sort((a, b) => a.date > b.date);      return res.length ? res[0] : this.get();    }	}});(({md}) => {  const {specification_restrictions, specification} = md.get('cat.furns').tabular_sections;  specification.index = 'elm';  specification_restrictions.index = 'elm';  const {fields} = specification;  fields.nom_set = fields.nom;})($p);$p.CatFurns = class CatFurns extends $p.CatFurns {    refill_prm(layer, force=false) {    const {project, furn, cnstr, sys} = layer;    const fprms = project.ox.params;    const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;    const aprm = furn.furn_set.used_params();    aprm.sort(utils.sort('presentation'));    aprm.forEach((v) => {      if(v == direction || v == opening){        return;      }      let prm_row, forcibly = true;      fprms.find_rows({param: v, cnstr: cnstr}, (row) => {        prm_row = row;        return forcibly = force;      });      if(!prm_row){        prm_row = fprms.add({param: v, cnstr: cnstr}, true);      }      const {param} = prm_row;      const drow = sys.prm_defaults(param, cnstr);      if(drow && (drow.forcibly || forcibly)) {        prm_row.value = drow.value;      }      prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);      param.linked_values(param.params_links({        grid: {selection: {cnstr: cnstr}},        obj: {_owner: {_owner: project.ox}},        layer,      }), prm_row);    });    const adel = [];    fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {      if(aprm.indexOf(row.param) == -1){        adel.push(row);      }    });    adel.forEach((row) => fprms.del(row, true));  }    used_params() {    const {_data} = this;    if(_data.used_params) {      return _data.used_params;    }    const sprms = [];    const {order, product, nearest} = $p.enm.plan_detailing;    this.selection_params.forEach(({param, origin}) => {      if(param.empty() || origin === product || origin === order || origin === nearest) {        return;      }      if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){        sprms.push(param);      }    });    const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;    this.specification.forEach(({nom, algorithm}) => {      if(nom instanceof CatFurns) {        for(const param of nom.used_params()) {          !sprms.includes(param) && sprms.push(param);        }      }      else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {        sprms.push(nom);      }    });    return _data.used_params = sprms;  }    get_spec(contour, cache, exclude_dop) {    const res = $p.dp.buyers_order.create({specification: []}, true).specification;    const {_ox: ox} = contour;    const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},      open_directions, offset_options} = $p.enm;    this.specification.find_rows({dop: 0}, (row_furn) => {      if(!row_furn.check_restrictions(contour, cache)){        return;      }      if(!exclude_dop){        this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {          if(!dop_row.check_restrictions(contour, cache)){            return;          }          if(dop_row.is_procedure_row){            const invert = contour.direction == open_directions.Правое;            const elm = contour.profile_by_furn_side(dop_row.side, cache);            const {len} = elm._row;            const {sizefurn} = elm.nom;            const dx1 = $p.job_prm.builder.add_d ? sizefurn : 0;            const faltz = len - 2 * sizefurn;            let coordin = 0;            if(dop_row.offset_option == offset_options.Формула){              if(!dop_row.formula.empty()){                coordin = dop_row.formula.execute({ox, elm, contour, len, sizefurn, dx1, faltz, invert, dop_row});              }            }            else if(dop_row.offset_option == offset_options.РазмерПоФальцу){              coordin = faltz + dop_row.contraction;            }            else if(dop_row.offset_option == offset_options.ОтРучки){              const {generatrix} = elm;              const hor = contour.handle_line(elm);              coordin = generatrix.getOffsetOf(generatrix.intersect_point(hor)) -                generatrix.getOffsetOf(generatrix.getNearestPoint(elm.corns(1))) +                (invert ? dop_row.contraction : -dop_row.contraction);            }            else if(dop_row.offset_option == offset_options.ОтСередины){              coordin = len / 2 + (invert ? dop_row.contraction : -dop_row.contraction);            }            else{              if(invert){                if(dop_row.offset_option == offset_options.ОтКонцаСтороны){                  coordin = dop_row.contraction;                }                else{                  coordin = len - dop_row.contraction;                }              }              else{                if(dop_row.offset_option == offset_options.ОтКонцаСтороны){                  coordin = len - dop_row.contraction;                }                else{                  coordin = dop_row.contraction;                }              }            }            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row);            proc_row.origin = this;            proc_row.specify = row_furn.nom;            proc_row.handle_height_max = contour.cnstr;            if([nea, through, inverse].includes(dop_row.transfer_option)){              let nearest = elm.nearest();              if(dop_row.transfer_option == through){                const joined = nearest.joined_nearests().reduce((acc, cur) => {                  if(cur !== elm){                    acc.push(cur);                  }                  return acc;                }, []);                if(joined.length){                  nearest = joined[0];                }              }              const {outer} = elm.rays;              const nouter = nearest.rays.outer;              const point = outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);              proc_row.handle_height_min = nearest.elm;              if(dop_row.transfer_option == inverse){                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(2))) - nouter.getOffsetOf(nouter.getNearestPoint(point));              }              else {                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(point)) - nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(1)));              }              if(dop_row.overmeasure){                proc_row.coefficient +=  nearest.dx0;              }            }            else{              proc_row.handle_height_min = elm.elm;              proc_row.coefficient = coordin;              if(dop_row.overmeasure){                proc_row.coefficient +=  elm.dx0;              }            }            return;          }          else if(!dop_row.quantity){            return;          }          if(dop_row.is_set_row){            const {nom} = dop_row;            nom && nom.get_spec(contour, cache).forEach((sub_row) => {              if(sub_row.is_procedure_row){                res.add(sub_row);              }              else if(sub_row.quantity) {                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);                row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;              }            });          }          else{            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);            row_spec.specify = row_furn.nom;          }        });      }      if(row_furn.is_set_row){        const {nom} = row_furn;        nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {          if(sub_row.is_procedure_row) {            res.add(sub_row);          }          else if(sub_row.quantity) {            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);            row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;          }        });      }      else{        if(row_furn.quantity) {          this.add_with_algorithm(res, ox, contour, row_furn);        }      }    });    return res;  }    add_with_algorithm(res, ox, contour, row_furn) {    const {algorithm, formula, elm, dop, offset_option} = row_furn;    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;    let cx;    if(algorithm === cx_prm) {      cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});      if(cx.toString().toLowerCase() === 'нет') {        return;      }    }    const row_spec = res.add(row_furn);    row_spec.origin = this;    if(algorithm === cx_prm) {      row_spec.nom_characteristic = cx;    }    else if(algorithm === clr_prm) {      this.selection_params.find_rows({elm, dop}, (prm_row) => {        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&          prm_row.param.type.types.includes('cat.clrs') &&          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {          row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});        }      });    }    if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){      formula.execute({ox, contour, row_furn, row_spec});    }    return row_spec;  }    shtulp_kind() {    let res = 0;    this.open_tunes.forEach(({shtulp_available, shtulp_fix_here}) => {      if(shtulp_available && !res) {        res = 1;      }      if(shtulp_fix_here) {        res = 2;      }    });    return res;  }};$p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurnsSpecificationRow {    check_restrictions(contour, cache) {    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;    const {direction, h_ruch, cnstr} = contour;    if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){      return false;    }    if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {      return false;    }    if(mmin || (mmax && mmax < 1000)) {      if(!cache.hasOwnProperty('weight')) {        if(contour.sys.flap_weight_max) {          const weights = [];          for(const cnt of contour.layer.contours) {            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));          }          cache.weight = Math.max(...weights);        }        else {          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));        }      }      if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {        return false;      }    }    const {selection_params, specification_restrictions} = this._owner._owner;    const prop_direction = $p.job_prm.properties.direction;    let {_or} = this;    if(!_or) {      _or = new Map();      for(const {_row} of selection_params._obj.filter((row) => row.elm === elm && row.dop === dop)) {        if(!_or.has(_row.area)) {          _or.set(_row.area, []);        }        _or.get(_row.area).push(_row);      }      this._or = _or;    }    let res = true;    const profile = contour.profile_by_furn_side(side, cache);    for(const grp of _or.values()) {      let grp_ok = true;      for (const prm_row of grp) {        grp_ok = (prop_direction == prm_row.param) ?          direction == prm_row.value : prm_row.param.check_condition({            row_spec: this,            prm_row,            elm: profile,            cnstr,            ox: cache.ox,            layer: contour,          });        if (!grp_ok) {          break;        }      }      res = grp_ok;      if(res) {        break;      }    }    if(res) {      specification_restrictions.find_rows({elm, dop}, (row) => {        const {lmin, lmax, amin, amax, side, for_direct_profile_only} = row;        const elm = contour.profile_by_furn_side(side, cache);        if(for_direct_profile_only === -1 && elm.is_linear()) {          return res = false;        }        if(for_direct_profile_only === 1 && !elm.is_linear()) {          return res = false;        }        const { side_count } = contour;        const prev = contour.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);        const next = contour.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);        const len = (elm._row.len - prev.nom.sizefurn - next.nom.sizefurn).round();        if (len < lmin || len > lmax) {          return res = false;        }        const angle = direction == $p.enm.open_directions.Правое ?          elm.generatrix.angle_to(prev.generatrix, elm.e) :          prev.generatrix.angle_to(elm.generatrix, elm.b);        if (angle < amin || angle > amax) {          return res = false;        }      });    }    return res;  }  get nom() {    return this._getter('nom') || this._getter('nom_set');  }  set nom(v) {    if(v !== '') {      this._setter('nom', v);    }  }  get nom_set() {    return this.nom;  }  set nom_set (v) {    this.nom = v;  }};(($p) => {  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatColor_price_groups} = $p;  const {inserts_types} = enm;  if(job_prm.use_ram !== false){    md.once('predefined_elmnts_inited', () => {      cat.scheme_settings && cat.scheme_settings.find_schemas('dp.buyers_order.production');    });  }  cat.inserts.__define({    _types_filling: {      value: [        inserts_types.Заполнение,        inserts_types.Стеклопакет,      ]    },    _types_main: {      value: [        inserts_types.Профиль,        inserts_types.Заполнение,        inserts_types.Стеклопакет,      ]    },        _prms_by_type: {      value(insert_type) {        const prms = new Set();        this.find_rows({available: true, insert_type}, (inset) => {          inset.used_params().forEach((param) => {            !param.is_calculated && prms.add(param);          });        });        return prms;      }    },    ItemData: {      value: class ItemData {        constructor(item, Renderer) {          this.Renderer = Renderer;          this.count = 0;          const idata = this;          class ItemRow extends $p.DpBuyers_orderProductionRow {            tune(ref, mf, column) {              const {inset} = this;              const param = cch.properties.get(ref);              if(param && !param.type.is_ref) {                Object.assign(mf.type, {}, param.type);              }              if(mf.choice_params) {                const adel = new Set();                for(const choice of mf.choice_params) {                  if(choice.name !== 'owner' && choice.path != param) {                    adel.add(choice);                  }                }                for(const choice of adel) {                  mf.choice_params.splice(mf.choice_params.indexOf(choice), 1);                }              }              else {                mf.choice_params = [];              }              const prms = new Set();              inset.used_params().forEach((param) => {                !param.is_calculated && prms.add(param);              });              mf.read_only = !prms.has(param);              if(!mf.read_only) {                const drow = this.inset?.product_params?.find({param});                if(drow) {                  if(drow.hide) {                    mf.read_only = true;                  }                  if(drow.list) {                    try{                      mf.list = JSON.parse(drow.list);                    }                    catch (e) {                      delete mf.list;                    }                  }                  const {value} = this;                  if(!value || value?.empty() || (mf.list && !mf.list.includes(value.valueOf()))) {                    this.value = drow.value;                  }                }                else {                  delete mf.list;                  const links = param.params_links({grid: {selection: {}}, obj: this});                  const hide = links.some((link) => link.hide);                  if(hide) {                    mf.read_only = true;                  }                  if(links.length) {                    const filter = {}                    param.filter_params_links(filter, null, links);                    filter.ref && mf.choice_params.push({                      name: 'ref',                      path: filter.ref,                    });                  }                }              }            }            get_row(param) {              const {product_params} = this._owner._owner;              return product_params.find({elm: this.row, param}) || product_params.add({elm: this.row, param});            }            value_change(field, type, value) {              if(field === 'inset') {                value = cat.inserts.get(value);                if(value.insert_type == inserts_types.Параметрик) {                  idata.tune_meta(value, this);                }              }              super.value_change(field, type, value);            }            get elm() {              return this.row;            }          }          this.ProductionRow = ItemRow;          this.meta = utils._clone(dp.buyers_order.metadata('production'));          this.meta.fields.inset.choice_params[0].path = item;          this.meta.fields.inset.disable_clear = true;          if(item !== inserts_types.Параметрик) {            const changed = this.tune_meta(item);            const {current_user} = $p;            for(const scheme of changed) {              if(pouch.local.doc.adapter === 'http' && !scheme.user) {                current_user && current_user.roles.includes('doc_full') && scheme.save();              }              else {                scheme.save();              }            }          }        }        tune_meta(item, prototype) {          const changed = new Set();          let params, with_scheme, meta;          if(!prototype) {            prototype = this.ProductionRow.prototype;            params = cat.inserts._prms_by_type(item);            with_scheme = true;            meta = this.meta;          }          else {            params = new Set();            item.product_params.forEach(({param}) => params.add(param));            if(!prototype._meta) {              Object.defineProperty(prototype, '_meta', {value: utils._clone(this.meta)});            }            meta = prototype._meta;          }          if(!with_scheme) {            for(const fld in prototype) {              if(utils.is_guid(fld) && !Array.from(params).some(({ref}) => ref === fld)) {                delete prototype[fld];                delete meta.fields[fld];                if(prototype._owner && prototype._owner._owner) {                  const {product_params} = prototype._owner._owner;                  for(const rm of product_params.find_rows({elm: prototype.row, fld})) {                    product_params.del(rm);                  }                }              }            }          }          for (const param of params) {            if(with_scheme) {              cat.scheme_settings.find_rows({obj: 'dp.buyers_order.production', name: item.name}, (scheme) => {                if(!scheme.fields.find({field: param.ref})) {                  const row = scheme.fields.add({                    field: param.ref,                    caption: param.caption,                    use: true,                  });                  const note = scheme.fields.find({field: 'note'});                  note && scheme.fields.swap(row, note);                  changed.add(scheme);                }              });            }            if(!meta.fields[param.ref]) {              meta.fields[param.ref] = {                synonym: param.caption,                type: param.type,              };            }            const mf = meta.fields[param.ref];            if(param.Editor) {              mf.Editor = param.Editor;            }            if(param.type.types.some(type => type === 'cat.property_values')) {              mf.choice_params = [{name: 'owner', path: param}];            }            const drow = item.product_params && item.product_params.find({param});            if(drow && drow.list) {              try{                mf.list = JSON.parse(drow.list);              }              catch (e) {                delete mf.list;              }            }            else {              delete mf.list;            }            if(!prototype.hasOwnProperty(param.ref)){              Object.defineProperty(prototype, param.ref, {                get() {                  const prow = this.get_row(param);                  return param.hasOwnProperty('extract_pvalue') ? param.extract_pvalue({prow}) : prow.value;                },                set(value) {                  const prow = this.get_row(param);                  if(param.hasOwnProperty('set_pvalue')) {                    param.set_pvalue({prow, value});                  }                  else {                    prow.value = value;                  }                },                configurable: true,                enumerable: true,              });            }          }          return changed;        }      }    },        by_thickness: {      value(min, max) {        const res = [];        if(!this._by_thickness) {          this._by_thickness = new Map();          this.find_rows({insert_type: {in: this._types_filling}, _top: 10000}, (ins) => {            const thickness = ins.thickness();            if(thickness) {              if(!this._by_thickness.has(thickness)) {                this._by_thickness.set(thickness, []);              }              this._by_thickness.get(thickness).push(ins);            }          });        }        if(min instanceof $p.CatProduction_params) {          const {thicknesses, glass_thickness} = min;          max = 0;          if(glass_thickness === 0) {            min = thicknesses;          }          else if(glass_thickness === 1) {            const {Заполнение, Стекло} = $p.enm.elm_types;            min.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => res.push(nom));            return res;          }          else if(glass_thickness === 2) {            const min_in_sys = thicknesses[0];            const max_in_sys = thicknesses[thicknesses.length - 1];            for (const [thin, arr] of this._by_thickness) {              if(thin >= min_in_sys && thin <= max_in_sys) {                Array.prototype.push.apply(res, arr);              }            }            return res;          }          else if(glass_thickness === 3) {            for (const obj of this._by_thickness) {              Array.prototype.push.apply(res, obj[1]);            }            return res;          }        }        for (const [thin, arr] of this._by_thickness) {          if(!max && Array.isArray(min)) {            if(min.includes(thin)) {              Array.prototype.push.apply(res, arr);            }          }          else {            if(thin >= min && thin <= max) {              Array.prototype.push.apply(res, arr);            }          }        }        return res;      }    },        by_nom: {      value(nom, insert_type = 'Профиль') {        if(!this._by_nom) {          this._by_nom = new Map();        }        if(!this._by_nom.has(nom)) {          const tmp = this.create(false, false, true);          tmp.insert_type = insert_type;          tmp.specification.add({nom, is_main_elm: true});          if(nom.elm_type.is('impost') && nom.width) {            tmp.sizeb = nom.width / 2;          }          tmp._set_loaded(tmp.ref);          this._by_nom.set(nom, tmp);        }        return this._by_nom.get(nom);      }    },    traverse_steps: {      value({imposts, bounds, add_impost, ox, cnstr, origin}) {        const {offsets, do_center, step} = imposts;        if(step) {          const {height, bottom} = bounds;          const prop = $p.cch.properties.predefined('traverse_heights');          const aprop = prop ? prop.avalue(            prop.extract_pvalue({              ox,              cnstr,              origin,              prm_row: {},            })) : [];          let count = Math.floor(height / step);          if(aprop.length === 1 && aprop[0] === 0) {            count = 0;          }          else if(aprop.length) {            for (const y of aprop) {              add_impost(bottom - y);            }          }          else if(count === 1) {            add_impost(bottom - height / 2);          }          else if(count > 1) {            count += 1;            const step0 = height / (count);            for (let y = 1; y < count; y++) {              add_impost(bottom - y * step0);            }          }        }      }    },    sql_selection_list_flds: {      value(initial_value) {        return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +          " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_inserts AS _t_" +          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 2000 ";      }    },    sql_selection_where_flds: {      value(filter){        return ` OR _t_.note LIKE '${filter}' OR _t_.id LIKE '${filter}' OR _t_.name LIKE '${filter}'`;      }    },  });  cat.inserts.metadata('specification').index = 'is_main_elm';  class CatInserts extends $p.CatInserts {        main_rows(elm, strict) {      const {_data} = this;      let main_rows;      if(strict) {        if(!_data.main_rows_strict) {          _data.main_rows_strict = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);        }        main_rows = _data.main_rows_strict;      }      else {        if(!_data.main_rows) {          _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);          if(!_data.main_rows.length && this.specification.count()){            _data.main_rows.push(this.specification.get(0));          }        }        main_rows = _data.main_rows;      }      if(!elm || main_rows.length < 2) {        return main_rows;      }      const {check_params} = ProductsBuilding;      const ox = elm.prm_ox || elm.ox;      const filtered = main_rows.filter((row) => {        return this.check_main_restrictions(row, elm) && check_params({          params: this.selection_params,          ox,          elm,          row_spec: row,          cnstr: 0,          origin: elm.fake_origin || 0,        });      });      return filtered.length ? filtered : [main_rows[0]];    }        is_depend_of(param) {      const {_data: {main_rows}, selection_params} = this;      if(!main_rows || main_rows.length === 1) {        return false;      }      for(const row of main_rows) {        if(selection_params.find({elm: row.elm, param: param.ref})) {          return true;        }      }    }        is_order_row_prod({ox, elm, contour}) {      const {Продукция} = enm.specification_order_row_types;      const {params} = ox;      let {is_order_row, insert_type, _manager: {_types_filling}} = this;      if(_types_filling.includes(insert_type)) {        const param = cch.properties.predefined('without_glasses');        if(param && params?.find({cnstr: 0, param})?.value) {          return false;        }      }      if(_types_filling.includes(insert_type)) {        const param = cch.properties.predefined('glass_separately');        param && params?.find_rows({param}, ({cnstr, value}) => {          if(elm && (cnstr === -elm.elm)) {            is_order_row = value ? Продукция : '';            return false;          }          if(!cnstr || (contour && cnstr === contour.cnstr)) {            is_order_row = value ? Продукция : '';          }        });      }      if(is_order_row instanceof CatFormulas) {        is_order_row = is_order_row.execute({ox, elm, contour});      }      return is_order_row === Продукция;    }        nom(elm, strict) {      const {_data} = this;      if(!strict && !elm && _data.nom) {        return _data.nom;      }      let _nom;      const main_rows = this.main_rows(elm, strict);      if(main_rows.length && main_rows[0].nom instanceof CatInserts){        if(main_rows[0].nom == this) {          _nom = cat.nom.get();        }        else {          _nom = main_rows[0].nom.nom(elm, strict);        }      }      else if(main_rows.length){        if(elm && !main_rows[0].formula.empty()) {          try {            const fnom = main_rows[0].formula.execute({elm});            _nom = fnom instanceof CatNom ? fnom : main_rows[0].nom;          }          catch (e) {            _nom = main_rows[0].nom;          }        }        else if(elm && main_rows[0].algorithm.is('nom_prm')) {          _nom = main_rows[0].nom;          const prm_row = this.selection_params.find({elm: main_rows[0].elm, origin: enm.plan_detailing.algorithm});          if(prm_row) {            const nom = prm_row.param.extract_pvalue({ox: elm.ox, elm, prm_row});            if(nom && !nom.empty()) {              _nom = nom;            }          }        }        else {          _nom = main_rows[0].nom;        }      }      else {        _nom = cat.nom.get();      }      if(main_rows.length < 2){        _data.nom = typeof _nom == 'string' ? cat.nom.get(_nom) : _nom;      }      else{        _data.nom = _nom;      }      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {        elm._row.nom = _data.nom;        const chnom = elm.layer?._attr?.chnom;        if(chnom && !chnom.includes(elm)) {          chnom.push(elm);        }      }      return _data.nom;    }        width(elm, strict) {      return this.nom(elm, strict).width || 80;    }        contour_attrs(contour) {      const main_rows = [];      const res = {calc_order: contour.project.ox.calc_order};      this.specification.find_rows({is_main_elm: true}, (row) => {        main_rows.push(row);        return false;      });      if(main_rows.length){        const irow = main_rows[0],          sizes = {},          sz_keys = {},          sz_prms = ['length', 'width', 'thickness']            .map((name) => {              const prm = job_prm.properties[name];              if(prm) {                sz_keys[prm.ref] = name;                return prm;              }            })            .filter((prm) => prm);        res.owner = irow.nom instanceof CatInserts ? irow.nom.nom() : irow.nom;        contour.project.ox.params.find_rows({          cnstr: contour.cnstr,          inset: this,          param: {in: sz_prms}        }, (row) => {          sizes[sz_keys[row.param.ref]] = row.value        });        if(Object.keys(sizes).length > 0){          res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;          res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;          res.s = ((res.x * res.y) / 1e6).round(3);          res.z = sizes.thickness * (irow.coefficient * 1000 || 1);        }        else{          if(irow.count_calc_method == enm.count_calculating_ways.formulas && !irow.formula.empty()){            irow.formula.execute({              ox: contour.project.ox,              contour: contour,              inset: this,              row_ins: irow,              res: res            });          }          if(irow.count_calc_method == enm.count_calculating_ways.area && this.insert_type == inserts_types.МоскитнаяСетка){            const bounds = contour.bounds_inner(irow.sz, this);            res.x = bounds.width.round(1);            res.y = bounds.height.round(1);            res.s = ((res.x * res.y) / 1e6).round(3);          }          else{            res.x = contour.w + irow.sz;            res.y = contour.h + irow.sz;            res.s = ((res.x * res.y) / 1e6).round(3);          }        }      }      return res;    }        check_prm_restrictions({elm, len_angl, params}) {      const {lmin, lmax, hmin, hmax} = this;      const {len, height, s} = elm;      let name = this.name + ':', err = false;      if(lmin && len < lmin) {        err = true;        name += `\nдлина ${len} < ${lmin}`;      }      if(lmax && len > lmax) {        err = true;        name += `\nдлина ${len} > ${lmax}`;      }      if(hmin && height < hmin) {        err = true;        name += `\nвысота ${height} < ${hmin}`;      }      if(hmax && height > hmax) {        err = true;        name += `\nвысота ${height} > ${hmax}`;      }      const used_params = this.used_params();      params.forEach(({param, value}) => {        if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {          err = true;          name += `\nне заполнен обязательный параметр '${param.name}'`;        }      });      if(err) {        throw new Error(name);      }    }        check_restrictions(row, elm, by_perimetr, len_angl) {      if(!this.check_base_restrictions(row, elm)) {        return false;      }      const {_row} = elm;      const is_row = !utils.is_data_obj(row);      if(is_row && row.is_main_elm && !row.quantity){        return false;      }      if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {        if(!(elm instanceof Filling)) {          if(is_row && row.count_calc_method.is('area') && row.lmin) {            if(elm.bounds_inner) {              const {width, height} = elm.bounds_inner();              if(row.lmin > Math.min(width, height)) {                return false;              }              if(row.lmax && row.lmax < Math.max(width, height)) {                return false;              }            }            else if(elm.perimeter) {            }          }          else {            const len = len_angl ? len_angl.len : (_row.len || elm.length);            if (row.lmin > len || (row.lmax < len && row.lmax)) {              return false;            }          }        }        if (is_row) {          const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;          if (row.ahmin > angle_hor || row.ahmax < angle_hor) {            return false;          }        }      }      return true;    }        check_base_restrictions(row, elm) {      const {_row} = elm;      if(elm instanceof Filling) {        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){          return false;        }        if(row instanceof CatInserts) {          const {width, height} = elm.bounds;          const {lmin, lmax, hmin, hmax, can_rotate} = row;          if (can_rotate) {            const w1 = width > lmin && width < lmax;            const h1 = height > hmin && height < hmax;            const w2 = height > lmin && height < lmax;            const h2 = width > hmin && width < hmax;            if (!((w1 && h1) || (w2 && h2))) {              return false;            }          }          else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {            return false;          }        }      }      else {        const is_linear = elm.is_linear ? elm.is_linear() : true;        if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){          return false;        }      }      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){        return false;      }      return true;    }        check_main_restrictions(row, elm) {      if(!this.check_base_restrictions(row, elm)) {        return false;      }      if(elm instanceof ProfileItem) {        const {ahmin, ahmax, lmin, lmax} = row;        if(ahmin > 0 || (ahmax && ahmax < 360)) {          const {angle_hor} = elm;          if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {            return false;          }        }        if (lmin > 0 || (lmax && lmax < 6000)) {          const length = elm._row.len;          if (lmin > length || (lmax && lmax < length)) {            return false;          }        }      }      return true;    }        filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {      const res = [];      if(this.empty()){        return res;      }      const {insert_type, _manager: {_types_filling, _types_main}} = this;      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;      const {check_params} = ProductsBuilding;      function fake_row(sub_row, row) {        const fakerow = {};        if(sub_row._metadata) {          for (let fld in sub_row._metadata().fields) {            fakerow[fld] = sub_row[fld];          }        }        else {          Object.assign(fakerow, sub_row);        }        fakerow._owner = sub_row._owner;        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === parameters) {          fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {            const {rnum} = elm;            fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;            return false;          });        }        if(row) {          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === parameters ? 0 : 1)) * (row.quantity || 1);          fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;          if(fakerow.clr.empty()) {            fakerow.clr = row.clr;          }          if(fakerow.angle_calc_method === Основной) {            fakerow.angle_calc_method = row.angle_calc_method;          }          if(!fakerow.sz) {            fakerow.sz = row.sz;          }        }        return fakerow;      }      if(is_high_level_call && _types_filling.includes(insert_type)){        const glass_rows = [];        ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {          glass_rows.push(row);        });        if(glass_rows.length){          glass_rows.forEach((row) => {            const relm = elm.region(row);            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {              const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;              frow.relm = relm;              frow.origin = row.inset;              res.push(frow);            }          });          return res;        }      }      const {flipped} = elm.layer || {};      this.specification.forEach((row) => {        if(!this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl)){          return;        }        if(this.insert_type.is('mosquito') && !elm.perimeter             && row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {          this.mosquito_perimeter(elm, row);        }        if(own_row && row.clr.empty() && !own_row.clr.empty()){          row = fake_row(row);          row.clr = own_row.clr;        }        if(!check_params({          params: this.selection_params,          ox,          elm,          elm2,          row_spec: row,          cnstr: len_angl && len_angl.cnstr,          origin: len_angl && len_angl.origin,        })){          return;        }        if(row.nom instanceof CatInserts){          if(row.nom.insert_type === coloring) {            if(!eclr) {              eclr = elm.clr;            }            const selector = {              params: this.selection_params,              ox,              elm,              elm2,              row_spec: row,              cnstr: len_angl && len_angl.cnstr,              origin: len_angl && len_angl.origin,              eclr,            };            if(eclr.is_composite()) {              let {clr_in, clr_out} = eclr;              if(flipped) {                [clr_in, clr_out] = [clr_out, clr_in];              }              selector.eclr = clr_in;              if(check_params(selector)) {                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {                  const fakerow = fake_row(subrow, row);                  fakerow._origin = row.nom;                  fakerow._clr_side = '_in';                  fakerow._clr = clr_in;                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {                    res.push(fakerow);                  }                });              }              selector.eclr = clr_out;              if(check_params(selector)) {                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {                  const fakerow = fake_row(subrow, row);                  fakerow._origin = row.nom;                  fakerow._clr_side = '_out';                  fakerow._clr = clr_out;                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {                    res.push(fakerow);                  }                });              }            }            else {              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {                const fakerow = fake_row(subrow, row);                fakerow._origin = row.nom;                fakerow._clr = eclr;                if(fakerow.quantity || subrow.count_calc_method !== parameters) {                  res.push(fakerow);                }              });            }          }          else {            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {              const fakerow = fake_row(subrow, row);              fakerow._origin = row.nom;              if(fakerow.quantity || subrow.count_calc_method !== parameters) {                res.push(fakerow);               }            });          }        }        else{          res.push(row);        }      });      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl)){        elm.err_spec_row(job_prm.nom.critical_error, this);      }      return res;    }        calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {      const {_row} = elm;      const {        perim,        steps,        formulas,        element,        parameters,        area,        len_prm,        dimensions,        cnns,        fillings,        coloring,      } = enm.count_calculating_ways;      const {profile_items} = enm.elm_types;      const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;      if(!spec){        spec = ox.specification;      }      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {        const origin = row_ins_spec._origin || this;        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;        if(!coefficient) {          coefficient = 0.001;        }        let row_spec;        if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){          if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {            return;          }          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});        }        if(count_calc_method === formulas && !formula.empty()){          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});        }        else if(count_calc_method === coloring) {          count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});        }        else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){          calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);          if(count_calc_method == cnns){            const {b, e} = elm.rays;            for(const node of [b, e]) {              const {cnn} = node;              if(cnn) {                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;              }            }          }        }        else{          if(count_calc_method === area) {            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});          }          else if(count_calc_method === perim){            let {perimeter} = elm;            if(!perimeter) {              perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;            }            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};            const {check_params} = ProductsBuilding;            perimeter.forEach((rib) => {              row_prm._row._mixin(rib);              row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;              if(this.check_restrictions(row_ins_spec, row_prm, true) && check_params({                params: (row_ins_spec.origin || this).selection_params,                ox,                elm: row_prm,                row_spec: row_ins_spec,                origin: row_ins_spec.origin || this,                count_calc_method,              })){                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});                if (len_angl) {                  len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;                  len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;                }                const fqty = !formula.empty() && formula.execute({                  ox,                  clr,                  row_spec,                  elm: rib.profile || rib,                  elm2,                  cnstr: len_angl && len_angl.cnstr || 0,                  inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,                  row_ins: row_ins_spec,                  len: rib.len,                  rib,                });                if(fqty) {                  if(!row_spec.qty) {                    row_spec.qty = fqty;                  }                }                else {                  calc_qty_len(row_spec, row_ins_spec, rib.len);                }                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,                  angle_calc_method, angle_calc_method, 0, 0, totqty0);              }              row_spec = null;            });          }          else if(count_calc_method === steps){            let bounds;            if(this.insert_type == enm.inserts_types.mosquito) {              if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {                bounds = elm.bounds_inner();              }              else {                bounds = elm.layer ? elm.layer.bounds_inner() : (elm.bounds_inner?.() || {});              }            }            else {              bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};            }            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);            const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;            if(row_ins_spec.step){              const prop = cch.properties.predefined('traverse_heights');              const aprop = prop ? prop.avalue(                prop.extract_pvalue({                  ox,                  cnstr: len_angl && len_angl.cnstr || 0,                  elm,                  origin: len_angl.origin || this,                  prm_row: {},                })) : [];              let qty = Math.floor(h / row_ins_spec.step);              if(aprop.length === 1 && aprop[0] === 0) {                qty = 0;              }              else if(aprop.length) {                qty = aprop.length;              }              if(qty){                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});                const fqty = !formula.empty() && formula.execute({                  ox,                  clr,                  row_spec,                  elm,                  elm2,                  cnstr: len_angl && len_angl.cnstr || 0,                  row_ins: row_ins_spec,                  len: len_angl ? len_angl.len : _row.len                });                calc_qty_len(row_spec, row_ins_spec, w);                row_spec.qty *= qty;                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,                  angle_calc_method, angle_calc_method, 0, 0, totqty0);              }              row_spec = null;            }          }          else if(count_calc_method === len_prm) {            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});          }          else if(count_calc_method === dimensions){            let len = 0, width = 0;            this.selection_params.find_rows({elm: row_ins_spec.elm}, ({param}) => {              if(param.type.digits) {                ox.params.find_rows({cnstr: 0, param}, ({value}) => {                  if(!len) {                    len = value;                  }                  else if(!width) {                    width = value;                  }                  return false;                });              }              if(len && width) return false;            });            row_spec.qty = row_ins_spec.quantity;            row_spec.len = (len - sz) * coefficient;            row_spec.width = (width - sz) * coefficient;            row_spec.s = (row_spec.len * row_spec.width).round(3);          }          else if(count_calc_method === fillings){            (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {              const {bounds} = glass;              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});              row_spec.elm = 11000 + glass.elm;              row_spec.qty = row_ins_spec.quantity;              row_spec.len = (bounds.height - sz) * coefficient;              row_spec.width = (bounds.width - sz) * coefficient;              row_spec.s = (row_spec.len * row_spec.width).round(3);              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, 0, 0, totqty0);              const qty = !formula.empty() && formula.execute({                ox: ox,                elm: glass,                cnstr: len_angl && len_angl.cnstr || 0,                inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,                row_ins: row_ins_spec,                row_spec: row_spec,                clr,              });              row_spec = null;            });          }          else{            throw new Error(`count_calc_method: ${count_calc_method}`);          }        }        if(row_spec){          if(!formula.empty()){            const qty = formula.execute({              ox: ox,              elm: elm,              elm2,              cnstr: len_angl && len_angl.cnstr || 0,              inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,              row_ins: row_ins_spec,              row_spec: row_spec,              clr,              len: len_angl ? len_angl.len : _row.len            });            if(count_calc_method == formulas) {              row_spec.qty = qty;            }            else if(formula.condition_formula && !qty) {              row_spec.qty = 0;            }          }          calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,            angle_calc_method, angle_calc_method, 0, 0, totqty0);        }      });      if(spec !== ox.specification) {        const {_owner} = spec;        switch (this.insert_type) {          case enm.inserts_types.mosquito:                         if(elm.hasOwnProperty('bounds_inner')) {              const bounds = elm.bounds_inner();              _owner.x = bounds.width.round(1);              _owner.y = bounds.height.round(1);              _owner.s = (bounds.area / 1e6).round(3);            }            break;          case enm.inserts_types.jalousie:            const bounds = {x: 0, y: 0};            spec.forEach(({len, width}) => {              if(len && width) {                if(bounds.x < len) {                  bounds.x = len;                }                if(bounds.y < width) {                  bounds.y = width;                }              }            });            _owner.x = bounds.y * 1000;            _owner.y = bounds.x * 1000;            _owner.s = (bounds.x * bounds.y).round(3);        }        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');      }    }        region_spec({elm, len_angl, ox, spec, region, totqty0}) {      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;      const relm = elm.region(region);      const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, e.profile, e.cnn_types, false, undefined, e)[0];      if(cnn1 && cnn2) {        const row_cnn_prev = cnn1.main_row(relm);        const row_cnn_next = cnn2.main_row(relm);        const {new_spec_row, calc_count_area_mass} = ProductsBuilding;        const row_base = row_cnn_prev || row_cnn_next;        if(row_base) {          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, spec, ox});          row_spec.qty = row_base.quantity;          const k001 = 0.001;          const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?            elm.generatrix.length : _row.len;          row_spec.len = (len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;          if(!elm.is_linear()) {            row_spec.len = row_spec.len + row_spec.nom.arc_elongation * k001;          }          if(!row_cnn_prev.formula.empty()) {            row_cnn_prev.formula.execute({              ox,              elm: relm,              inset: this,              row_cnn: row_cnn_prev || row_cnn_next,              row_spec            });          }          else if(!row_cnn_next.formula.empty()) {            row_cnn_next.formula.execute({              ox,              elm: relm,              inset: this,              row_cnn: row_cnn_next|| row_cnn_prev,              row_spec            });          }          const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;          const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;          calc_count_area_mass(            row_spec,            spec,            _row,            angle_calc_method_prev,            angle_calc_method_next,            angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? b.profile.generatrix.angle_between(elm.generatrix, b.point) : 0,            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0,            totqty0,          );          const len_angl = {            angle: 0,            alp1: b.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,            alp2: e.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,            len: row_spec ? row_spec.len * 1000 : _row.len,            art1: false,            art2: true,            node: 'e',          };          len_angl.angle = len_angl.alp2;          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, e.profile);          len_angl.angle = len_angl.alp1;          len_angl.art2 = false;          len_angl.art1 = true;          len_angl.node = 'b';          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, b.profile);        }      }      this.calculate_spec({elm: relm, len_angl, ox, spec});    }        thickness(elm, strict) {      if(elm) {        const nom = this.nom(elm, true);        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {          return nom.thickness;        }        const {check_params} = ProductsBuilding;        const {_ox} = elm.layer;        let thickness = 0;        for(const row of this.specification) {          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({            params: this.selection_params,            ox: _ox,            elm,            row_spec: row,            cnstr: 0,            origin: elm.fake_origin || 0,          })) {            const {nom} = row;            if(nom) {              thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;            }          }        }        return thickness;      }      const {_data} = this;      if(!_data.hasOwnProperty('thickness')) {        _data.thickness = 0;        const nom = this.nom(elm, true);        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {          _data.thickness = nom.thickness;        }        else {          for(const {nom, quantity} of this.specification) {            if(nom && quantity) {              _data.thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;            }          }        }      }      return _data.thickness;    }        used_params() {      const {_data, specification} = this;      if(_data.used_params) {        return _data.used_params;      }      const sprms = [];      const {order, product, nearest} = enm.plan_detailing;      const use = cch.properties.predefined('use');      this.selection_params.forEach(({param, origin, elm}) => {        if(param.empty() || origin === product || origin === order || origin === nearest) {          return;        }        if(param === use) {          const {nom} = specification.find({elm}) || {};          if(nom) {            const prm = cch.properties.get(nom.ref);            if(!prm.name) {              prm.name = prm.caption = nom.name;              prm.type = {types: ['boolean']};            }            sprms.push(prm);          }        }        else if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){          sprms.push(param);        }      });      this.product_params.forEach(({param}) => {        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){          sprms.push(param);        }      });      const {cx_prm} = enm.predefined_formulas;      specification.forEach(({nom, algorithm}) => {        if(nom instanceof CatInserts) {          for(const param of nom.used_params()) {            !sprms.includes(param) && sprms.push(param);          }        }        else if(algorithm === cx_prm && !sprms.includes(nom)) {          sprms.push(nom);        }      });      return _data.used_params = Object.freeze(sprms);    }    get split_type(){      let {split_type} = this._obj;      if(!split_type) {        split_type = [];      }      else if(split_type.startsWith('[')) {        split_type = JSON.parse(split_type).map((ref) => enm.lay_split_types.get(ref));      }      else {        split_type = [enm.lay_split_types.get(split_type)];      }      return split_type;    }    set split_type(v){this._setter('split_type',v)}        mosquito_props() {      let sz, nom, imposts;      this.specification.forEach((rspec) => {        if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {          sz = rspec.sz;          nom = rspec.nom;        }        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {          imposts = rspec;        }        if(nom && imposts) {          return false;        }      });      return {sz, nom, imposts};    }        mosquito_perimeter(elm, rspec) {      const check_cnn = {};      const perimeter = elm.layer.perimeter_inner(rspec.sz, rspec.nom, check_cnn);      Object.defineProperties(elm, {        perimeter: {value: perimeter},        bounds_inner: {          value(sz = 0) {            let start = new paper.Point([0,0]);            const path = new paper.Path({insert: false});            path.add(start);            for(const rib of perimeter) {              const tmp = new paper.Point({                length: rib.len - 2 * sz,                angle: rib.angle              });              const fin = start.add(tmp);              path.add(fin);              start = fin.clone();            }            return path.bounds;          }        }      });      if(!check_cnn.cnn) {        const {cnn_ii_error: nom} = job_prm.nom;        const {_ox, cnstr} = elm.layer;        const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({          elm: {elm: -cnstr, clr: cat.clrs.get()},          row_base: {clr: cat.clrs.get(), nom},          spec: _ox.specification,          ox: _ox,          origin: this,        });      }      return perimeter;    }    get available() {      let {available} = this._obj;      if(typeof available === 'boolean') {        return available;      }      return cat.parameters_keys.get(available);    }    set available(v){this._setter('available',v)}        offer_insets(elm) {      const {inserts, _manager} = this;      const res = new Set();      const cond = {        elm,        ox: elm.ox,        layer: elm.layer,      }      _manager.find_rows({insert_type: enm.inserts_types.element}, (o) => {        const {available} = o;        if(available instanceof CatParameters_keys && !available.empty() && available.check_condition(cond)) {          res.add(o);        }      });      for(const row of inserts) {        if(row.key.check_condition(cond)) {          res.add(row.inset);        }      }      return Array.from(res);    }    get clr_group() {      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;      return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();    }    set clr_group(v) {      this._setter('clr_group',v);    }    option_clr_group({elm, ...other}) {      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;      return tmp instanceof CatValues_options ? tmp.option_value({elm, ...other}) : tmp;    }  }  $p.CatInserts = CatInserts;})($p);
+(function(_mgr){  const {ad, av, ah, long, short, t, ii, i, xt, xx} = _mgr;  	Object.defineProperties(_mgr, {    acn: {      value: {        ii: [ii],        i: [i],        a: [av, ad, ah, t, xx, long, short],        t: [t, xx],        xsl: [t, xx, long, short],      }    },  });})($p.enm.cnn_types);(function({enm, cat: {clrs}, cch}){  const {coloring, len_prm, area} = enm.count_calculating_ways;  const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;  const is_side = (side) => ['_in', '_out'].includes(side);  coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {    let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula} = row_ins_spec;    if(!_clr) {      _clr = elm.clr;    }    const prefix = _clr.area_src.valueOf();    if(prefix) {      const {_row} = elm;      const nom = elm.inset === inset ? elm.nom : inset.nom(elm);      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);      if(is_side(_clr_side)) {        row_spec.width = nom._extra(prefix + _clr_side);      }      else {        const areas = [nom._extra(prefix) || 0, nom._extra(prefix + '_in') || 0, nom._extra(prefix + '_out') || 0];        row_spec.width = areas[0] || (areas[1] + areas[2]);      }      if(row_spec.width) {        row_spec.qty = quantity;        row_spec.len = (elm.length / 1000).round(3);        row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);      }    }    if(!row_spec.width) {      row_spec.qty = 0;    }    return row_spec;  };  area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {    const {_row} = elm;    const {insert_type} = inset;    const {quantity, sz, coefficient, relm} = row_ins_spec;    row_spec.qty = quantity;    if(insert_type.is('mosquito')) {      const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});      row_spec.len = bounds.height * coefficient;      row_spec.width = bounds.width * coefficient;      row_spec.s = (row_spec.len * row_spec.width).round(4);    }    else if(insert_type.is('jalousie')) {      if(elm.bounds_light) {        const bounds = elm.bounds_light();        row_spec.len = (bounds.height + offsets) * coefficient;        row_spec.width = (bounds.width + sz) * coefficient;      }      else {        row_spec.len = elm.len * coefficient;        row_spec.width = elm.height * coefficient;      }      row_spec.s = (row_spec.len * row_spec.width).round(4);    }    else if(insert_type.is('product')) {      const {project} = elm;      const {width, height} = project.bounds;      row_spec.len = width / 1000;      row_spec.width = height / 1000;      row_spec.s = (project.form_area - sz) * coefficient;    }    else if(insert_type.is('layer')) {      const {layer} = elm;      const {width, height} = layer.bounds;      row_spec.len = width / 1000;      row_spec.width = height / 1000;      row_spec.s = (layer.form_area - sz) * coefficient;    }    else {      let {x1, x2, y1, y2, s} = _row;      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region) {        const path = elm._attr.paths?.get(relm.irow.region);        if(path) {          x1 = y1 = 0;          x2 = path.bounds.width;          y2 = path.bounds.height;          s = x2 * y2 / 1e6;        }      }      row_spec.len = (y2 - y1 - sz) * coefficient;      row_spec.width = (x2 - x1 - sz) * coefficient;      row_spec.s = s;    }    return row_spec;  };  len_prm.calculate = function ({inset, elm, row_spec, row_ins_spec, origin}) {    let len = 0;    inset.selection_params.find_rows({elm: row_ins_spec.elm}, (prm_row) => {      const {param} = prm_row;      if(param.type.digits) {        len = elm.layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row})      }      if(len) return false;    });    const {quantity, sz, coefficient} = row_ins_spec;    row_spec.qty = quantity;    row_spec.len = len ? (len - sz) * coefficient : 0;    row_spec.width = 0;    row_spec.s = 0;    return row_spec;  };})($p);(function(mgr){	const cache = {};  	mgr.__define({		profiles: {			get(){				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing]);			}		},		profile_items: {			get(){				return cache.profile_items					|| ( cache.profile_items = [						mgr.Рама,						mgr.Створка,						mgr.Импост,						mgr.Штульп,						mgr.Добор,						mgr.Соединитель,						mgr.Раскладка,            mgr.Связка,            mgr.Разрыв,					] );			}		},		rama_impost: {			get(){				return cache.rama_impost || (cache.rama_impost = [mgr.rama, mgr.impost, mgr.shtulp]);			}		},		impost_lay: {			get(){        return cache.impost_lay || (cache.impost_lay = [mgr.Импост, mgr.Раскладка]);			}		},		stvs: {			get(){        return cache.stvs || (cache.stvs = [mgr.Створка]);			}		},		glasses: {			get(){        return cache.glasses || (cache.glasses = [mgr.Стекло, mgr.Заполнение]);			}		}	});})($p.enm.elm_types);(function(_mgr){    _mgr.additions_groups = [    _mgr.sill,         _mgr.sectional,    _mgr.mosquito,     _mgr.jalousie,     _mgr.slope,        _mgr.profile,      _mgr.cut,          _mgr.mount,        _mgr.delivery,     _mgr.set,        ];})($p.enm.inserts_types);(function({enm}){    enm.debit_credit_kinds.__define({    debit: {      get() {        return this.Приход;      }    },    credit: {      get() {        return this.Расход;      }    },  });		enm.open_types.__define({    is_opening: {      value(v) {        if(!v || v.empty() || v == this.Глухое || v == this.Неподвижное) {          return false;        }        return true;      }    }  });  enm.plan_detailing.__define({    eq_product: {      value: [enm.plan_detailing.get(), enm.plan_detailing.product, enm.plan_detailing.algorithm]    }  })})($p);(function({cat: {characteristics, nom}}){  const {value_mgr} = characteristics.constructor.prototype;  characteristics.value_mgr = function(_obj, f, mf, array_enabled, v) {    if(f === 'owner') {      return nom;    }    if(f === 'value' && _obj.param && nom.by_ref[_obj.param]){      return characteristics;    }    return value_mgr.call(characteristics, _obj, f, mf, array_enabled, v);  };  characteristics.extra_fields = function() {    return [];  };  characteristics._direct_ram = true;})($p);!$p.job_prm.is_node && $p.md.once('predefined_elmnts_inited', () => {  const _mgr = $p.cat.characteristics;  Promise.resolve()    .then(() => {      const {current_user} = $p;      if(current_user && (          current_user.role_available('СогласованиеРасчетовЗаказов') ||          current_user.role_available('ИзменениеТехнологическойНСИ') ||          current_user.role_available('РедактированиеЦен')        )) {        return;      }      const {form} = _mgr.metadata();      if(form && form.obj && form.obj.tabular_sections) {        form.obj.tabular_sections.specification.widths = "50,*,70,*,50,70,70,80,70,70,70,0,0,0";      }    });});$p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, value) {  if(field == 'inset') {    if (value != this.inset) {      const {_owner} = this._owner;      const {cnstr, region} = this;      const {blank} = $p.utils;      if (value != blank.guid) {        const res = this._owner.find_rows({cnstr, region, inset: value, row: {not: this.row}});        if (res.length) {          $p.md.emit('alert', {            obj: _owner,            row: this,            title: $p.msg.data_error,            type: 'alert-error',            text: 'Нельзя добавлять две одинаковые вставки в один элемент или слой'          });          return false;        }      }      !this.inset.empty() && _owner.params.clear({inset: this.inset, cnstr});      this._obj.inset = value.valueOf();      if(!region && this.inset.region) {        this._obj.region = this.inset.region;      }      this.inset.clr_group.default_clr(this);      _owner.add_inset_params(this.inset, cnstr, null, region);    }  }};$p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {  if(field === 'inset' && value != this.inset) {    this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;    const ox = this._owner._owner;    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});  }};Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {  region: {    get() {      const {region} = this.dop;      return typeof region === 'number' ? region : 0;    },    set(v) {      const region = typeof v === 'number' ? v : parseFloat(v);      if(!isNaN(region)) {        this.dop = {region: region.round()};      }    }  },  default_params: {    value: function default_params(elm) {      const {inset, clr, dop, _obj, _owner: {_owner}} = this;      const {product_params} = inset;      const own_row = _owner.coordinates.find({elm: _obj.elm});      const own_params = own_row && own_row.inset.product_params;      const params = {};      inset.used_params().forEach((param) => {        if((!param.is_calculated || param.show_calculated)) {          const def = product_params.find({param}) || (own_params && own_params.find({param}));          if(def) {            const pkey = param.valueOf();            if(dop.params && pkey in dop.params && !def.forcibly) {              params[pkey] = dop.params[pkey];              return;            }            const value = def.option_value({elm});            params[pkey] = value ? value.valueOf() : value;          }        }      });      const clrs = inset.clr_group.clrs();      if(clrs.length && !clrs.includes(clr)) {        _obj.clr = clrs[0].valueOf();      }      this.dop = {params};      return this;    }  }});$p.cat.characteristics.metadata('glass_specification').fields.region = {  synonym: 'Ряд',  type: {    digits: 3,    fraction: 0,    types: ['number'],  }};$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {  this.x = bounds ? bounds.width.round(4) : 0;  this.y = bounds ? bounds.height.round(4) : 0;  this.is_rectangular = is_rectangular;  if (layer) {    this.w = w.round(4);    this.h = h.round(4);  }  else {    this.w = 0;    this.h = 0;  }};$p.cat.cnns.__define({  sql_selection_list_flds: {    value(initial_value){      return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as cnn_type," +        " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_cnns AS _t_" +        " left outer join enm_cnn_types as _k_ on _k_.ref = _t_.cnn_type %3 %4 LIMIT 300";    }  },});$p.cat.contracts.__define({	sql_selection_list_flds: {		value(initial_value){			return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as contract_kind, _m_.synonym as mutual_settlements, _o_.name as organization, _p_.name as partner," +				" case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_contracts AS _t_" +				" left outer join cat_organizations as _o_ on _o_.ref = _t_.organization" +				" left outer join cat_partners as _p_ on _p_.ref = _t_.owner" +				" left outer join enm_mutual_contract_settlements as _m_ on _m_.ref = _t_.mutual_settlements" +				" left outer join enm_contract_kinds as _k_ on _k_.ref = _t_.contract_kind %3 %4 LIMIT 300";		}	},	by_partner_and_org: {    value(partner, organization, contract_kind = $p.enm.contract_kinds.СПокупателем) {      const {main_contract} = $p.cat.partners.get(partner);      if(main_contract && main_contract.contract_kind == contract_kind && main_contract.organization == organization){        return main_contract;      }      const res = this.find_rows({owner: partner, organization: organization, contract_kind: contract_kind});      res.sort((a, b) => a.date > b.date);      return res.length ? res[0] : this.get();    }	}});(({md}) => {  const {specification_restrictions, specification} = md.get('cat.furns').tabular_sections;  specification.index = 'elm';  specification_restrictions.index = 'elm';  const {fields} = specification;  fields.nom_set = fields.nom;})($p);$p.CatFurns = class CatFurns extends $p.CatFurns {    refill_prm(layer, force=false) {    const {project, furn, cnstr, sys} = layer;    const fprms = project.ox.params;    const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;    const aprm = furn.furn_set.used_params();    aprm.sort(utils.sort('presentation'));    aprm.forEach((v) => {      if(v == direction || v == opening){        return;      }      let prm_row, forcibly = true;      fprms.find_rows({param: v, cnstr: cnstr}, (row) => {        prm_row = row;        return forcibly = force;      });      if(!prm_row){        prm_row = fprms.add({param: v, cnstr: cnstr}, true);      }      const {param} = prm_row;      const drow = sys.prm_defaults(param, cnstr);      if(drow && (drow.forcibly || forcibly)) {        prm_row.value = drow.value;      }      prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);      param.linked_values(param.params_links({        grid: {selection: {cnstr: cnstr}},        obj: {_owner: {_owner: project.ox}},        layer,      }), prm_row);    });    const adel = [];    fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {      if(aprm.indexOf(row.param) == -1){        adel.push(row);      }    });    adel.forEach((row) => fprms.del(row, true));  }    used_params() {    const {_data} = this;    if(_data.used_params) {      return _data.used_params;    }    const sprms = [];    const {order, product, nearest} = $p.enm.plan_detailing;    this.selection_params.forEach(({param, origin}) => {      if(param.empty() || origin === product || origin === order || origin === nearest) {        return;      }      if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){        sprms.push(param);      }    });    const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;    this.specification.forEach(({nom, algorithm}) => {      if(nom instanceof CatFurns) {        for(const param of nom.used_params()) {          !sprms.includes(param) && sprms.push(param);        }      }      else if(algorithm === cx_prm && nom instanceof CatNom && !sprms.includes(nom)) {        sprms.push(nom);      }    });    return _data.used_params = sprms;  }    get_spec(contour, cache, exclude_dop) {    const res = $p.dp.buyers_order.create({specification: []}, true).specification;    const {_ox: ox} = contour;    const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},      open_directions, offset_options} = $p.enm;    this.specification.find_rows({dop: 0}, (row_furn) => {      if(!row_furn.check_restrictions(contour, cache)){        return;      }      if(!exclude_dop){        this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {          if(!dop_row.check_restrictions(contour, cache)){            return;          }          if(dop_row.is_procedure_row){            const invert = contour.direction == open_directions.Правое;            const elm = contour.profile_by_furn_side(dop_row.side, cache);            const {len} = elm._row;            const {sizefurn} = elm.nom;            const dx1 = $p.job_prm.builder.add_d ? sizefurn : 0;            const faltz = len - 2 * sizefurn;            let coordin = 0;            if(dop_row.offset_option == offset_options.Формула){              if(!dop_row.formula.empty()){                coordin = dop_row.formula.execute({ox, elm, contour, len, sizefurn, dx1, faltz, invert, dop_row});              }            }            else if(dop_row.offset_option == offset_options.РазмерПоФальцу){              coordin = faltz + dop_row.contraction;            }            else if(dop_row.offset_option == offset_options.ОтРучки){              const {generatrix} = elm;              const hor = contour.handle_line(elm);              coordin = generatrix.getOffsetOf(generatrix.intersect_point(hor)) -                generatrix.getOffsetOf(generatrix.getNearestPoint(elm.corns(1))) +                (invert ? dop_row.contraction : -dop_row.contraction);            }            else if(dop_row.offset_option == offset_options.ОтСередины){              coordin = len / 2 + (invert ? dop_row.contraction : -dop_row.contraction);            }            else{              if(invert){                if(dop_row.offset_option == offset_options.ОтКонцаСтороны){                  coordin = dop_row.contraction;                }                else{                  coordin = len - dop_row.contraction;                }              }              else{                if(dop_row.offset_option == offset_options.ОтКонцаСтороны){                  coordin = len - dop_row.contraction;                }                else{                  coordin = dop_row.contraction;                }              }            }            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row);            proc_row.origin = this;            proc_row.specify = row_furn.nom;            proc_row.handle_height_max = contour.cnstr;            if([nea, through, inverse].includes(dop_row.transfer_option)){              let nearest = elm.nearest();              if(dop_row.transfer_option == through){                const joined = nearest.joined_nearests().reduce((acc, cur) => {                  if(cur !== elm){                    acc.push(cur);                  }                  return acc;                }, []);                if(joined.length){                  nearest = joined[0];                }              }              const {outer} = elm.rays;              const nouter = nearest.rays.outer;              const point = outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);              proc_row.handle_height_min = nearest.elm;              if(dop_row.transfer_option == inverse){                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(2))) - nouter.getOffsetOf(nouter.getNearestPoint(point));              }              else {                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(point)) - nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(1)));              }              if(dop_row.overmeasure){                proc_row.coefficient +=  nearest.dx0;              }            }            else{              proc_row.handle_height_min = elm.elm;              proc_row.coefficient = coordin;              if(dop_row.overmeasure){                proc_row.coefficient +=  elm.dx0;              }            }            return;          }          else if(!dop_row.quantity){            return;          }          if(dop_row.is_set_row){            const {nom} = dop_row;            nom && nom.get_spec(contour, cache).forEach((sub_row) => {              if(sub_row.is_procedure_row){                res.add(sub_row);              }              else if(sub_row.quantity) {                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);                row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;              }            });          }          else{            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);            row_spec.specify = row_furn.nom;          }        });      }      if(row_furn.is_set_row){        const {nom} = row_furn;        nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {          if(sub_row.is_procedure_row) {            res.add(sub_row);          }          else if(sub_row.quantity) {            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);            row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;          }        });      }      else{        if(row_furn.quantity) {          this.add_with_algorithm(res, ox, contour, row_furn);        }      }    });    return res;  }    add_with_algorithm(res, ox, contour, row_furn) {    const {algorithm, formula, elm, dop, offset_option} = row_furn;    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;    let cx;    if(algorithm === cx_prm) {      cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});      if(cx.toString().toLowerCase() === 'нет') {        return;      }    }    const row_spec = res.add(row_furn);    row_spec.origin = this;    if(algorithm === cx_prm) {      row_spec.nom_characteristic = cx;    }    else if(algorithm === clr_prm) {      this.selection_params.find_rows({elm, dop}, (prm_row) => {        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&          prm_row.param.type.types.includes('cat.clrs') &&          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {          row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});        }      });    }    if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){      formula.execute({ox, contour, row_furn, row_spec});    }    return row_spec;  }    shtulp_kind() {    let res = 0;    this.open_tunes.forEach(({shtulp_available, shtulp_fix_here}) => {      if(shtulp_available && !res) {        res = 1;      }      if(shtulp_fix_here) {        res = 2;      }    });    return res;  }};$p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurnsSpecificationRow {    check_restrictions(contour, cache) {    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;    const {direction, h_ruch, cnstr} = contour;    if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){      return false;    }    if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {      return false;    }    if(mmin || (mmax && mmax < 1000)) {      if(!cache.hasOwnProperty('weight')) {        if(contour.sys.flap_weight_max) {          const weights = [];          for(const cnt of contour.layer.contours) {            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));          }          cache.weight = Math.max(...weights);        }        else {          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));        }      }      if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {        return false;      }    }    const {selection_params, specification_restrictions} = this._owner._owner;    const prop_direction = $p.job_prm.properties.direction;    let {_or} = this;    if(!_or) {      _or = new Map();      for(const {_row} of selection_params._obj.filter((row) => row.elm === elm && row.dop === dop)) {        if(!_or.has(_row.area)) {          _or.set(_row.area, []);        }        _or.get(_row.area).push(_row);      }      this._or = _or;    }    let res = true;    const profile = contour.profile_by_furn_side(side, cache);    for(const grp of _or.values()) {      let grp_ok = true;      for (const prm_row of grp) {        grp_ok = (prop_direction == prm_row.param) ?          direction == prm_row.value : prm_row.param.check_condition({            row_spec: this,            prm_row,            elm: profile,            cnstr,            ox: cache.ox,            layer: contour,          });        if (!grp_ok) {          break;        }      }      res = grp_ok;      if(res) {        break;      }    }    if(res) {      specification_restrictions.find_rows({elm, dop}, (row) => {        const {lmin, lmax, amin, amax, side, for_direct_profile_only} = row;        const elm = contour.profile_by_furn_side(side, cache);        if(for_direct_profile_only === -1 && elm.is_linear()) {          return res = false;        }        if(for_direct_profile_only === 1 && !elm.is_linear()) {          return res = false;        }        const { side_count } = contour;        const prev = contour.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);        const next = contour.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);        const len = (elm._row.len - prev.nom.sizefurn - next.nom.sizefurn).round();        if (len < lmin || len > lmax) {          return res = false;        }        const angle = direction == $p.enm.open_directions.Правое ?          elm.generatrix.angle_to(prev.generatrix, elm.e) :          prev.generatrix.angle_to(elm.generatrix, elm.b);        if (angle < amin || angle > amax) {          return res = false;        }      });    }    return res;  }  get nom() {    return this._getter('nom') || this._getter('nom_set');  }  set nom(v) {    if(v !== '') {      this._setter('nom', v);    }  }  get nom_set() {    return this.nom;  }  set nom_set (v) {    this.nom = v;  }};
+(($p) => {
+  const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
+    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatColor_price_groups} = $p;
+  const {inserts_types} = enm;
+  if(job_prm.use_ram !== false){
+    md.once('predefined_elmnts_inited', () => {
+      cat.scheme_settings && cat.scheme_settings.find_schemas('dp.buyers_order.production');
+    });
+  }
+  cat.inserts.__define({
+    _types_filling: {
+      value: [
+        inserts_types.Заполнение,
+        inserts_types.Стеклопакет,
+      ]
+    },
+    _types_main: {
+      value: [
+        inserts_types.Профиль,
+        inserts_types.Заполнение,
+        inserts_types.Стеклопакет,
+      ]
+    },
+    _prms_by_type: {
+      value(insert_type) {
+        const prms = new Set();
+        this.find_rows({available: true, insert_type}, (inset) => {
+          inset.used_params().forEach((param) => {
+            !param.is_calculated && prms.add(param);
+          });
+        });
+        return prms;
+      }
+    },
+    ItemData: {
+      value: class ItemData {
+        constructor(item, Renderer) {
+          this.Renderer = Renderer;
+          this.count = 0;
+          const idata = this;
+          class ItemRow extends $p.DpBuyers_orderProductionRow {
+            tune(ref, mf, column) {
+              const {inset} = this;
+              const param = cch.properties.get(ref);
+              if(param && !param.type.is_ref) {
+                Object.assign(mf.type, {}, param.type);
+              }
+              if(mf.choice_params) {
+                const adel = new Set();
+                for(const choice of mf.choice_params) {
+                  if(choice.name !== 'owner' && choice.path != param) {
+                    adel.add(choice);
+                  }
+                }
+                for(const choice of adel) {
+                  mf.choice_params.splice(mf.choice_params.indexOf(choice), 1);
+                }
+              }
+              else {
+                mf.choice_params = [];
+              }
+              const prms = new Set();
+              inset.used_params().forEach((param) => {
+                !param.is_calculated && prms.add(param);
+              });
+              mf.read_only = !prms.has(param);
+              if(!mf.read_only) {
+                const drow = this.inset?.product_params?.find({param});
+                if(drow) {
+                  if(drow.hide) {
+                    mf.read_only = true;
+                  }
+                  if(drow.list) {
+                    try{
+                      mf.list = JSON.parse(drow.list);
+                    }
+                    catch (e) {
+                      delete mf.list;
+                    }
+                  }
+                  const {value} = this;
+                  if(!value || value?.empty() || (mf.list && !mf.list.includes(value.valueOf()))) {
+                    this.value = drow.value;
+                  }
+                }
+                if(!drow || !drow.list) {
+                  delete mf.list;
+                  const links = param.params_links({grid: {selection: {}}, obj: this});
+                  const hide = links.some((link) => link.hide);
+                  if(hide) {
+                    mf.read_only = true;
+                  }
+                  if(links.length) {
+                    const filter = {}
+                    param.filter_params_links(filter, null, links);
+                    filter.ref && mf.choice_params.push({
+                      name: 'ref',
+                      path: filter.ref,
+                    });
+                  }
+                }
+              }
+            }
+            get_row(param) {
+              const {product_params} = this._owner._owner;
+              return product_params.find({elm: this.row, param}) || product_params.add({elm: this.row, param});
+            }
+            value_change(field, type, value) {
+              if(field === 'inset') {
+                value = cat.inserts.get(value);
+                if(value.insert_type == inserts_types.Параметрик) {
+                  idata.tune_meta(value, this);
+                }
+              }
+              super.value_change(field, type, value);
+            }
+            get elm() {
+              return this.row;
+            }
+          }
+          this.ProductionRow = ItemRow;
+          this.meta = utils._clone(dp.buyers_order.metadata('production'));
+          this.meta.fields.inset.choice_params[0].path = item;
+          this.meta.fields.inset.disable_clear = true;
+          if(item !== inserts_types.Параметрик) {
+            const changed = this.tune_meta(item);
+            const {current_user} = $p;
+            for(const scheme of changed) {
+              if(pouch.local.doc.adapter === 'http' && !scheme.user) {
+                current_user && current_user.roles.includes('doc_full') && scheme.save();
+              }
+              else {
+                scheme.save();
+              }
+            }
+          }
+        }
+        tune_meta(item, prototype) {
+          const changed = new Set();
+          let params, with_scheme, meta;
+          if(!prototype) {
+            prototype = this.ProductionRow.prototype;
+            params = cat.inserts._prms_by_type(item);
+            with_scheme = true;
+            meta = this.meta;
+          }
+          else {
+            params = new Set();
+            item.product_params.forEach(({param}) => params.add(param));
+            if(!prototype._meta) {
+              Object.defineProperty(prototype, '_meta', {value: utils._clone(this.meta)});
+            }
+            meta = prototype._meta;
+          }
+          if(!with_scheme) {
+            for(const fld in prototype) {
+              if(utils.is_guid(fld) && !Array.from(params).some(({ref}) => ref === fld)) {
+                delete prototype[fld];
+                delete meta.fields[fld];
+                if(prototype._owner && prototype._owner._owner) {
+                  const {product_params} = prototype._owner._owner;
+                  for(const rm of product_params.find_rows({elm: prototype.row, fld})) {
+                    product_params.del(rm);
+                  }
+                }
+              }
+            }
+          }
+          for (const param of params) {
+            if(with_scheme) {
+              cat.scheme_settings.find_rows({obj: 'dp.buyers_order.production', name: item.name}, (scheme) => {
+                if(!scheme.fields.find({field: param.ref})) {
+                  const row = scheme.fields.add({
+                    field: param.ref,
+                    caption: param.caption,
+                    use: true,
+                  });
+                  const note = scheme.fields.find({field: 'note'});
+                  note && scheme.fields.swap(row, note);
+                  changed.add(scheme);
+                }
+              });
+            }
+            if(!meta.fields[param.ref]) {
+              meta.fields[param.ref] = {
+                synonym: param.caption,
+                type: param.type,
+              };
+            }
+            const mf = meta.fields[param.ref];
+            if(param.Editor) {
+              mf.Editor = param.Editor;
+            }
+            if(param.type.types.some(type => type === 'cat.property_values')) {
+              mf.choice_params = [{name: 'owner', path: param}];
+            }
+            const drow = item.product_params && item.product_params.find({param});
+            if(drow && drow.list) {
+              try{
+                mf.list = JSON.parse(drow.list);
+              }
+              catch (e) {
+                delete mf.list;
+              }
+            }
+            else {
+              delete mf.list;
+            }
+            if(!prototype.hasOwnProperty(param.ref)){
+              Object.defineProperty(prototype, param.ref, {
+                get() {
+                  const prow = this.get_row(param);
+                  return param.hasOwnProperty('extract_pvalue') ? param.extract_pvalue({prow}) : prow.value;
+                },
+                set(value) {
+                  const prow = this.get_row(param);
+                  if(param.hasOwnProperty('set_pvalue')) {
+                    param.set_pvalue({prow, value});
+                  }
+                  else {
+                    prow.value = value;
+                  }
+                },
+                configurable: true,
+                enumerable: true,
+              });
+            }
+          }
+          return changed;
+        }
+      }
+    },
+    by_thickness: {
+      value(min, max) {
+        const res = [];
+        if(!this._by_thickness) {
+          this._by_thickness = new Map();
+          this.find_rows({insert_type: {in: this._types_filling}, _top: 10000}, (ins) => {
+            const thickness = ins.thickness();
+            if(thickness) {
+              if(!this._by_thickness.has(thickness)) {
+                this._by_thickness.set(thickness, []);
+              }
+              this._by_thickness.get(thickness).push(ins);
+            }
+          });
+        }
+        if(min instanceof $p.CatProduction_params) {
+          const {thicknesses, glass_thickness} = min;
+          max = 0;
+          if(glass_thickness === 0) {
+            min = thicknesses;
+          }
+          else if(glass_thickness === 1) {
+            const {Заполнение, Стекло} = $p.enm.elm_types;
+            min.elmnts.find_rows({elm_type: {in: [Заполнение, Стекло]}}, ({nom}) => res.push(nom));
+            return res;
+          }
+          else if(glass_thickness === 2) {
+            const min_in_sys = thicknesses[0];
+            const max_in_sys = thicknesses[thicknesses.length - 1];
+            for (const [thin, arr] of this._by_thickness) {
+              if(thin >= min_in_sys && thin <= max_in_sys) {
+                Array.prototype.push.apply(res, arr);
+              }
+            }
+            return res;
+          }
+          else if(glass_thickness === 3) {
+            for (const obj of this._by_thickness) {
+              Array.prototype.push.apply(res, obj[1]);
+            }
+            return res;
+          }
+        }
+        for (const [thin, arr] of this._by_thickness) {
+          if(!max && Array.isArray(min)) {
+            if(min.includes(thin)) {
+              Array.prototype.push.apply(res, arr);
+            }
+          }
+          else {
+            if(thin >= min && thin <= max) {
+              Array.prototype.push.apply(res, arr);
+            }
+          }
+        }
+        return res;
+      }
+    },
+    by_nom: {
+      value(nom, insert_type = 'Профиль') {
+        if(!this._by_nom) {
+          this._by_nom = new Map();
+        }
+        if(!this._by_nom.has(nom)) {
+          const tmp = this.create(false, false, true);
+          tmp.insert_type = insert_type;
+          tmp.specification.add({nom, is_main_elm: true});
+          if(nom.elm_type.is('impost') && nom.width) {
+            tmp.sizeb = nom.width / 2;
+          }
+          tmp._set_loaded(tmp.ref);
+          this._by_nom.set(nom, tmp);
+        }
+        return this._by_nom.get(nom);
+      }
+    },
+    traverse_steps: {
+      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+        const {offsets, do_center, step} = imposts;
+        if(step) {
+          const {height, bottom} = bounds;
+          const prop = $p.cch.properties.predefined('traverse_heights');
+          const aprop = prop ? prop.avalue(
+            prop.extract_pvalue({
+              ox,
+              cnstr,
+              origin,
+              prm_row: {},
+            })) : [];
+          let count = Math.floor(height / step);
+          if(aprop.length === 1 && aprop[0] === 0) {
+            count = 0;
+          }
+          else if(aprop.length) {
+            for (const y of aprop) {
+              add_impost(bottom - y);
+            }
+          }
+          else if(count === 1) {
+            add_impost(bottom - height / 2);
+          }
+          else if(count > 1) {
+            count += 1;
+            const step0 = height / (count);
+            for (let y = 1; y < count; y++) {
+              add_impost(bottom - y * step0);
+            }
+          }
+        }
+      }
+    },
+    sql_selection_list_flds: {
+      value(initial_value) {
+        return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
+          " case when _t_.ref = '" + initial_value + "' then 0 else 1 end as is_initial_value FROM cat_inserts AS _t_" +
+          " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 2000 ";
+      }
+    },
+    sql_selection_where_flds: {
+      value(filter){
+        return ` OR _t_.note LIKE '${filter}' OR _t_.id LIKE '${filter}' OR _t_.name LIKE '${filter}'`;
+      }
+    },
+  });
+  cat.inserts.metadata('specification').index = 'is_main_elm';
+  class CatInserts extends $p.CatInserts {
+    main_rows(elm, strict) {
+      const {_data} = this;
+      let main_rows;
+      if(strict) {
+        if(!_data.main_rows_strict) {
+          _data.main_rows_strict = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+        }
+        main_rows = _data.main_rows_strict;
+      }
+      else {
+        if(!_data.main_rows) {
+          _data.main_rows = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
+          if(!_data.main_rows.length && this.specification.count()){
+            _data.main_rows.push(this.specification.get(0));
+          }
+        }
+        main_rows = _data.main_rows;
+      }
+      if(!elm || main_rows.length < 2) {
+        return main_rows;
+      }
+      const {check_params} = ProductsBuilding;
+      const ox = elm.prm_ox || elm.ox;
+      const filtered = main_rows.filter((row) => {
+        return this.check_main_restrictions(row, elm) && check_params({
+          params: this.selection_params,
+          ox,
+          elm,
+          row_spec: row,
+          cnstr: 0,
+          origin: elm.fake_origin || 0,
+        });
+      });
+      return filtered.length ? filtered : [main_rows[0]];
+    }
+    is_depend_of(param) {
+      const {_data: {main_rows}, selection_params} = this;
+      if(!main_rows || main_rows.length === 1) {
+        return false;
+      }
+      for(const row of main_rows) {
+        if(selection_params.find({elm: row.elm, param: param.ref})) {
+          return true;
+        }
+      }
+    }
+    is_order_row_prod({ox, elm, contour}) {
+      const {Продукция} = enm.specification_order_row_types;
+      const {params} = ox;
+      let {is_order_row, insert_type, _manager: {_types_filling}} = this;
+      if(_types_filling.includes(insert_type)) {
+        const param = cch.properties.predefined('without_glasses');
+        if(param && params?.find({cnstr: 0, param})?.value) {
+          return false;
+        }
+      }
+      if(_types_filling.includes(insert_type)) {
+        const param = cch.properties.predefined('glass_separately');
+        param && params?.find_rows({param}, ({cnstr, value}) => {
+          if(elm && (cnstr === -elm.elm)) {
+            is_order_row = value ? Продукция : '';
+            return false;
+          }
+          if(!cnstr || (contour && cnstr === contour.cnstr)) {
+            is_order_row = value ? Продукция : '';
+          }
+        });
+      }
+      if(is_order_row instanceof CatFormulas) {
+        is_order_row = is_order_row.execute({ox, elm, contour});
+      }
+      return is_order_row === Продукция;
+    }
+    nom(elm, strict) {
+      const {_data} = this;
+      if(!strict && !elm && _data.nom) {
+        return _data.nom;
+      }
+      let _nom;
+      const main_rows = this.main_rows(elm, strict);
+      if(main_rows.length && main_rows[0].nom instanceof CatInserts){
+        if(main_rows[0].nom == this) {
+          _nom = cat.nom.get();
+        }
+        else {
+          _nom = main_rows[0].nom.nom(elm, strict);
+        }
+      }
+      else if(main_rows.length){
+        if(elm && !main_rows[0].formula.empty()) {
+          try {
+            const fnom = main_rows[0].formula.execute({elm});
+            _nom = fnom instanceof CatNom ? fnom : main_rows[0].nom;
+          }
+          catch (e) {
+            _nom = main_rows[0].nom;
+          }
+        }
+        else if(elm && main_rows[0].algorithm.is('nom_prm')) {
+          _nom = main_rows[0].nom;
+          const prm_row = this.selection_params.find({elm: main_rows[0].elm, origin: enm.plan_detailing.algorithm});
+          if(prm_row) {
+            const nom = prm_row.param.extract_pvalue({ox: elm.ox, elm, prm_row});
+            if(nom && !nom.empty()) {
+              _nom = nom;
+            }
+          }
+        }
+        else {
+          _nom = main_rows[0].nom;
+        }
+      }
+      else {
+        _nom = cat.nom.get();
+      }
+      if(main_rows.length < 2){
+        _data.nom = typeof _nom == 'string' ? cat.nom.get(_nom) : _nom;
+      }
+      else{
+        _data.nom = _nom;
+      }
+      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+        elm._row.nom = _data.nom;
+        const chnom = elm.layer?._attr?.chnom;
+        if(chnom && !chnom.includes(elm)) {
+          chnom.push(elm);
+        }
+      }
+      return _data.nom;
+    }
+    width(elm, strict) {
+      return this.nom(elm, strict).width || 80;
+    }
+    contour_attrs(contour) {
+      const main_rows = [];
+      const res = {calc_order: contour.project.ox.calc_order};
+      this.specification.find_rows({is_main_elm: true}, (row) => {
+        main_rows.push(row);
+        return false;
+      });
+      if(main_rows.length){
+        const irow = main_rows[0],
+          sizes = {},
+          sz_keys = {},
+          sz_prms = ['length', 'width', 'thickness']
+            .map((name) => {
+              const prm = job_prm.properties[name];
+              if(prm) {
+                sz_keys[prm.ref] = name;
+                return prm;
+              }
+            })
+            .filter((prm) => prm);
+        res.owner = irow.nom instanceof CatInserts ? irow.nom.nom() : irow.nom;
+        contour.project.ox.params.find_rows({
+          cnstr: contour.cnstr,
+          inset: this,
+          param: {in: sz_prms}
+        }, (row) => {
+          sizes[sz_keys[row.param.ref]] = row.value
+        });
+        if(Object.keys(sizes).length > 0){
+          res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
+          res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
+          res.s = ((res.x * res.y) / 1e6).round(3);
+          res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
+        }
+        else{
+          if(irow.count_calc_method == enm.count_calculating_ways.formulas && !irow.formula.empty()){
+            irow.formula.execute({
+              ox: contour.project.ox,
+              contour: contour,
+              inset: this,
+              row_ins: irow,
+              res: res
+            });
+          }
+          if(irow.count_calc_method == enm.count_calculating_ways.area && this.insert_type == inserts_types.МоскитнаяСетка){
+            const bounds = contour.bounds_inner(irow.sz, this);
+            res.x = bounds.width.round(1);
+            res.y = bounds.height.round(1);
+            res.s = ((res.x * res.y) / 1e6).round(3);
+          }
+          else{
+            res.x = contour.w + irow.sz;
+            res.y = contour.h + irow.sz;
+            res.s = ((res.x * res.y) / 1e6).round(3);
+          }
+        }
+      }
+      return res;
+    }
+    check_prm_restrictions({elm, len_angl, params}) {
+      const {lmin, lmax, hmin, hmax} = this;
+      const {len, height, s} = elm;
+      let name = this.name + ':', err = false;
+      if(lmin && len < lmin) {
+        err = true;
+        name += `\nдлина ${len} < ${lmin}`;
+      }
+      if(lmax && len > lmax) {
+        err = true;
+        name += `\nдлина ${len} > ${lmax}`;
+      }
+      if(hmin && height < hmin) {
+        err = true;
+        name += `\nвысота ${height} < ${hmin}`;
+      }
+      if(hmax && height > hmax) {
+        err = true;
+        name += `\nвысота ${height} > ${hmax}`;
+      }
+      const used_params = this.used_params();
+      params.forEach(({param, value}) => {
+        if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {
+          err = true;
+          name += `\nне заполнен обязательный параметр '${param.name}'`;
+        }
+      });
+      if(err) {
+        throw new Error(name);
+      }
+    }
+    check_restrictions(row, elm, by_perimetr, len_angl) {
+      if(!this.check_base_restrictions(row, elm)) {
+        return false;
+      }
+      const {_row} = elm;
+      const is_row = !utils.is_data_obj(row);
+      if(is_row && row.is_main_elm && !row.quantity){
+        return false;
+      }
+      if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
+        if(!(elm instanceof Filling)) {
+          if(is_row && row.count_calc_method.is('area') && row.lmin) {
+            if(elm.bounds_inner) {
+              const {width, height} = elm.bounds_inner();
+              if(row.lmin > Math.min(width, height)) {
+                return false;
+              }
+              if(row.lmax && row.lmax < Math.max(width, height)) {
+                return false;
+              }
+            }
+            else if(elm.perimeter) {
+            }
+          }
+          else {
+            const len = len_angl ? len_angl.len : (_row.len || elm.length);
+            if (row.lmin > len || (row.lmax < len && row.lmax)) {
+              return false;
+            }
+          }
+        }
+        if (is_row) {
+          const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
+          if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    check_base_restrictions(row, elm) {
+      const {_row} = elm;
+      if(elm instanceof Filling) {
+        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+          return false;
+        }
+        if(row instanceof CatInserts) {
+          const {width, height} = elm.bounds;
+          const {lmin, lmax, hmin, hmax, can_rotate} = row;
+          if (can_rotate) {
+            const w1 = width > lmin && width < lmax;
+            const h1 = height > hmin && height < hmax;
+            const w2 = height > lmin && height < lmax;
+            const h2 = width > hmin && width < hmax;
+            if (!((w1 && h1) || (w2 && h2))) {
+              return false;
+            }
+          }
+          else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
+            return false;
+          }
+        }
+      }
+      else {
+        const is_linear = elm.is_linear ? elm.is_linear() : true;
+        if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
+          return false;
+        }
+      }
+      if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
+        return false;
+      }
+      return true;
+    }
+    check_main_restrictions(row, elm) {
+      if(!this.check_base_restrictions(row, elm)) {
+        return false;
+      }
+      if(elm instanceof ProfileItem) {
+        const {ahmin, ahmax, lmin, lmax} = row;
+        if(ahmin > 0 || (ahmax && ahmax < 360)) {
+          const {angle_hor} = elm;
+          if (ahmin > angle_hor || (ahmax && ahmax < angle_hor)) {
+            return false;
+          }
+        }
+        if (lmin > 0 || (lmax && lmax < 6000)) {
+          const length = elm._row.len;
+          if (lmin > length || (lmax && lmax < length)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {
+      const res = [];
+      if(this.empty()){
+        return res;
+      }
+      const {insert_type, _manager: {_types_filling, _types_main}} = this;
+      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
+      const {check_params} = ProductsBuilding;
+      function fake_row(sub_row, row) {
+        const fakerow = {};
+        if(sub_row._metadata) {
+          for (let fld in sub_row._metadata().fields) {
+            fakerow[fld] = sub_row[fld];
+          }
+        }
+        else {
+          Object.assign(fakerow, sub_row);
+        }
+        fakerow._owner = sub_row._owner;
+        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === parameters) {
+          fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
+            const {rnum} = elm;
+            fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
+            return false;
+          });
+        }
+        if(row) {
+          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === parameters ? 0 : 1)) * (row.quantity || 1);
+          fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
+          if(fakerow.clr.empty()) {
+            fakerow.clr = row.clr;
+          }
+          if(fakerow.angle_calc_method === Основной) {
+            fakerow.angle_calc_method = row.angle_calc_method;
+          }
+          if(!fakerow.sz) {
+            fakerow.sz = row.sz;
+          }
+        }
+        return fakerow;
+      }
+      if(is_high_level_call && _types_filling.includes(insert_type)){
+        const glass_rows = [];
+        ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {
+          glass_rows.push(row);
+        });
+        if(glass_rows.length){
+          glass_rows.forEach((row) => {
+            const relm = elm.region(row);
+            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
+              const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
+              frow.relm = relm;
+              frow.origin = row.inset;
+              res.push(frow);
+            }
+          });
+          return res;
+        }
+      }
+      const {flipped} = elm.layer || {};
+      this.specification.forEach((row) => {
+        if(!this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl)){
+          return;
+        }
+        if(this.insert_type.is('mosquito') && !elm.perimeter 
+            && row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
+          this.mosquito_perimeter(elm, row);
+        }
+        if(own_row && row.clr.empty() && !own_row.clr.empty()){
+          row = fake_row(row);
+          row.clr = own_row.clr;
+        }
+        if(!check_params({
+          params: this.selection_params,
+          ox,
+          elm,
+          elm2,
+          row_spec: row,
+          cnstr: len_angl && len_angl.cnstr,
+          origin: len_angl && len_angl.origin,
+        })){
+          return;
+        }
+        if(row.nom instanceof CatInserts){
+          if(row.nom.insert_type === coloring) {
+            if(!eclr) {
+              eclr = elm.clr;
+            }
+            const selector = {
+              params: this.selection_params,
+              ox,
+              elm,
+              elm2,
+              row_spec: row,
+              cnstr: len_angl && len_angl.cnstr,
+              origin: len_angl && len_angl.origin,
+              eclr,
+            };
+            if(eclr.is_composite()) {
+              let {clr_in, clr_out} = eclr;
+              if(flipped) {
+                [clr_in, clr_out] = [clr_out, clr_in];
+              }
+              selector.eclr = clr_in;
+              if(check_params(selector)) {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                  const fakerow = fake_row(subrow, row);
+                  fakerow._origin = row.nom;
+                  fakerow._clr_side = '_in';
+                  fakerow._clr = clr_in;
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
+                });
+              }
+              selector.eclr = clr_out;
+              if(check_params(selector)) {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                  const fakerow = fake_row(subrow, row);
+                  fakerow._origin = row.nom;
+                  fakerow._clr_side = '_out';
+                  fakerow._clr = clr_out;
+                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                    res.push(fakerow);
+                  }
+                });
+              }
+            }
+            else {
+              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                const fakerow = fake_row(subrow, row);
+                fakerow._origin = row.nom;
+                fakerow._clr = eclr;
+                if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  res.push(fakerow);
+                }
+              });
+            }
+          }
+          else {
+            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+              const fakerow = fake_row(subrow, row);
+              fakerow._origin = row.nom;
+              if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                res.push(fakerow); 
+              }
+            });
+          }
+        }
+        else{
+          res.push(row);
+        }
+      });
+      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl)){
+        elm.err_spec_row(job_prm.nom.critical_error, this);
+      }
+      return res;
+    }
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {
+      const {_row} = elm;
+      const {
+        perim,
+        steps,
+        formulas,
+        element,
+        parameters,
+        area,
+        len_prm,
+        dimensions,
+        cnns,
+        fillings,
+        coloring,
+      } = enm.count_calculating_ways;
+      const {profile_items} = enm.elm_types;
+      const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
+      if(!spec){
+        spec = ox.specification;
+      }
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
+        const origin = row_ins_spec._origin || this;
+        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
+        if(!coefficient) {
+          coefficient = 0.001;
+        }
+        let row_spec;
+        if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
+          if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
+            return;
+          }
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+        }
+        if(count_calc_method === formulas && !formula.empty()){
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+        }
+        else if(count_calc_method === coloring) {
+          count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
+        }
+        else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
+          calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
+          if(count_calc_method == cnns){
+            const {b, e} = elm.rays;
+            for(const node of [b, e]) {
+              const {cnn} = node;
+              if(cnn) {
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
+              }
+            }
+          }
+        }
+        else{
+          if(count_calc_method === area) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
+          }
+          else if(count_calc_method === perim){
+            let {perimeter} = elm;
+            if(!perimeter) {
+              perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
+            }
+            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
+            const {check_params} = ProductsBuilding;
+            perimeter.forEach((rib) => {
+              row_prm._row._mixin(rib);
+              row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
+              if(this.check_restrictions(row_ins_spec, row_prm, true) && check_params({
+                params: (row_ins_spec.origin || this).selection_params,
+                ox,
+                elm: row_prm,
+                row_spec: row_ins_spec,
+                origin: row_ins_spec.origin || this,
+                count_calc_method,
+              })){
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                if (len_angl) {
+                  len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
+                  len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
+                }
+                const fqty = !formula.empty() && formula.execute({
+                  ox,
+                  clr,
+                  row_spec,
+                  elm: rib.profile || rib,
+                  elm2,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
+                  row_ins: row_ins_spec,
+                  len: rib.len,
+                  rib,
+                });
+                if(fqty) {
+                  if(!row_spec.qty) {
+                    row_spec.qty = fqty;
+                  }
+                }
+                else {
+                  calc_qty_len(row_spec, row_ins_spec, rib.len);
+                }
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
+              }
+              row_spec = null;
+            });
+          }
+          else if(count_calc_method === steps){
+            let bounds;
+            if(this.insert_type == enm.inserts_types.mosquito) {
+              if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {
+                bounds = elm.bounds_inner();
+              }
+              else {
+                bounds = elm.layer ? elm.layer.bounds_inner() : (elm.bounds_inner?.() || {});
+              }
+            }
+            else {
+              bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
+            }
+            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
+            const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
+            if(row_ins_spec.step){
+              const prop = cch.properties.predefined('traverse_heights');
+              const aprop = prop ? prop.avalue(
+                prop.extract_pvalue({
+                  ox,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  elm,
+                  origin: len_angl.origin || this,
+                  prm_row: {},
+                })) : [];
+              let qty = Math.floor(h / row_ins_spec.step);
+              if(aprop.length === 1 && aprop[0] === 0) {
+                qty = 0;
+              }
+              else if(aprop.length) {
+                qty = aprop.length;
+              }
+              if(qty){
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                const fqty = !formula.empty() && formula.execute({
+                  ox,
+                  clr,
+                  row_spec,
+                  elm,
+                  elm2,
+                  cnstr: len_angl && len_angl.cnstr || 0,
+                  row_ins: row_ins_spec,
+                  len: len_angl ? len_angl.len : _row.len
+                });
+                calc_qty_len(row_spec, row_ins_spec, w);
+                row_spec.qty *= qty;
+                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
+              }
+              row_spec = null;
+            }
+          }
+          else if(count_calc_method === len_prm) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
+          }
+          else if(count_calc_method === dimensions){
+            let len = 0, width = 0;
+            this.selection_params.find_rows({elm: row_ins_spec.elm}, ({param}) => {
+              if(param.type.digits) {
+                ox.params.find_rows({cnstr: 0, param}, ({value}) => {
+                  if(!len) {
+                    len = value;
+                  }
+                  else if(!width) {
+                    width = value;
+                  }
+                  return false;
+                });
+              }
+              if(len && width) return false;
+            });
+            row_spec.qty = row_ins_spec.quantity;
+            row_spec.len = (len - sz) * coefficient;
+            row_spec.width = (width - sz) * coefficient;
+            row_spec.s = (row_spec.len * row_spec.width).round(3);
+          }
+          else if(count_calc_method === fillings){
+            (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
+              const {bounds} = glass;
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+              row_spec.elm = 11000 + glass.elm;
+              row_spec.qty = row_ins_spec.quantity;
+              row_spec.len = (bounds.height - sz) * coefficient;
+              row_spec.width = (bounds.width - sz) * coefficient;
+              row_spec.s = (row_spec.len * row_spec.width).round(3);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, 0, 0, totqty0);
+              const qty = !formula.empty() && formula.execute({
+                ox: ox,
+                elm: glass,
+                cnstr: len_angl && len_angl.cnstr || 0,
+                inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
+                row_ins: row_ins_spec,
+                row_spec: row_spec,
+                clr,
+              });
+              row_spec = null;
+            });
+          }
+          else{
+            throw new Error(`count_calc_method: ${count_calc_method}`);
+          }
+        }
+        if(row_spec){
+          if(!formula.empty()){
+            const qty = formula.execute({
+              ox: ox,
+              elm: elm,
+              elm2,
+              cnstr: len_angl && len_angl.cnstr || 0,
+              inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
+              row_ins: row_ins_spec,
+              row_spec: row_spec,
+              clr,
+              len: len_angl ? len_angl.len : _row.len
+            });
+            if(count_calc_method == formulas) {
+              row_spec.qty = qty;
+            }
+            else if(formula.condition_formula && !qty) {
+              row_spec.qty = 0;
+            }
+          }
+          calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
+            angle_calc_method, angle_calc_method, 0, 0, totqty0);
+        }
+      });
+      if(spec !== ox.specification) {
+        const {_owner} = spec;
+        switch (this.insert_type) {
+          case enm.inserts_types.mosquito:             
+            if(elm.hasOwnProperty('bounds_inner')) {
+              const bounds = elm.bounds_inner();
+              _owner.x = bounds.width.round(1);
+              _owner.y = bounds.height.round(1);
+              _owner.s = (bounds.area / 1e6).round(3);
+            }
+            break;
+          case enm.inserts_types.jalousie:
+            const bounds = {x: 0, y: 0};
+            spec.forEach(({len, width}) => {
+              if(len && width) {
+                if(bounds.x < len) {
+                  bounds.x = len;
+                }
+                if(bounds.y < width) {
+                  bounds.y = width;
+                }
+              }
+            });
+            _owner.x = bounds.y * 1000;
+            _owner.y = bounds.x * 1000;
+            _owner.s = (bounds.x * bounds.y).round(3);
+        }
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
+      }
+    }
+    region_spec({elm, len_angl, ox, spec, region, totqty0}) {
+      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
+      const relm = elm.region(region);
+      const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
+      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];
+      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, e.profile, e.cnn_types, false, undefined, e)[0];
+      if(cnn1 && cnn2) {
+        const row_cnn_prev = cnn1.main_row(relm);
+        const row_cnn_next = cnn2.main_row(relm);
+        const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
+        const row_base = row_cnn_prev || row_cnn_next;
+        if(row_base) {
+          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, spec, ox});
+          row_spec.qty = row_base.quantity;
+          const k001 = 0.001;
+          const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?
+            elm.generatrix.length : _row.len;
+          row_spec.len = (len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
+          if(!elm.is_linear()) {
+            row_spec.len = row_spec.len + row_spec.nom.arc_elongation * k001;
+          }
+          if(!row_cnn_prev.formula.empty()) {
+            row_cnn_prev.formula.execute({
+              ox,
+              elm: relm,
+              inset: this,
+              row_cnn: row_cnn_prev || row_cnn_next,
+              row_spec
+            });
+          }
+          else if(!row_cnn_next.formula.empty()) {
+            row_cnn_next.formula.execute({
+              ox,
+              elm: relm,
+              inset: this,
+              row_cnn: row_cnn_next|| row_cnn_prev,
+              row_spec
+            });
+          }
+          const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
+          const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
+          calc_count_area_mass(
+            row_spec,
+            spec,
+            _row,
+            angle_calc_method_prev,
+            angle_calc_method_next,
+            angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? b.profile.generatrix.angle_between(elm.generatrix, b.point) : 0,
+            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0,
+            totqty0,
+          );
+          const len_angl = {
+            angle: 0,
+            alp1: b.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+            alp2: e.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
+            len: row_spec ? row_spec.len * 1000 : _row.len,
+            art1: false,
+            art2: true,
+            node: 'e',
+          };
+          len_angl.angle = len_angl.alp2;
+          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, e.profile);
+          len_angl.angle = len_angl.alp1;
+          len_angl.art2 = false;
+          len_angl.art1 = true;
+          len_angl.node = 'b';
+          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, b.profile);
+        }
+      }
+      this.calculate_spec({elm: relm, len_angl, ox, spec});
+    }
+    thickness(elm, strict) {
+      if(elm) {
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
+          return nom.thickness;
+        }
+        const {check_params} = ProductsBuilding;
+        const {_ox} = elm.layer;
+        let thickness = 0;
+        for(const row of this.specification) {
+          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({
+            params: this.selection_params,
+            ox: _ox,
+            elm,
+            row_spec: row,
+            cnstr: 0,
+            origin: elm.fake_origin || 0,
+          })) {
+            const {nom} = row;
+            if(nom) {
+              thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            }
+          }
+        }
+        return thickness;
+      }
+      const {_data} = this;
+      if(!_data.hasOwnProperty('thickness')) {
+        _data.thickness = 0;
+        const nom = this.nom(elm, true);
+        if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
+          _data.thickness = nom.thickness;
+        }
+        else {
+          for(const {nom, quantity} of this.specification) {
+            if(nom && quantity) {
+              _data.thickness += nom instanceof CatInserts ? nom.thickness(elm) : nom.thickness;
+            }
+          }
+        }
+      }
+      return _data.thickness;
+    }
+    used_params() {
+      const {_data, specification} = this;
+      if(_data.used_params) {
+        return _data.used_params;
+      }
+      const sprms = [];
+      const {order, product, nearest} = enm.plan_detailing;
+      const use = cch.properties.predefined('use');
+      this.selection_params.forEach(({param, origin, elm}) => {
+        if(param.empty() || origin === product || origin === order || origin === nearest) {
+          return;
+        }
+        if(param === use) {
+          const {nom} = specification.find({elm}) || {};
+          if(nom) {
+            const prm = cch.properties.get(nom.ref);
+            if(!prm.name) {
+              prm.name = prm.caption = nom.name;
+              prm.type = {types: ['boolean']};
+            }
+            sprms.push(prm);
+          }
+        }
+        else if((!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
+        }
+      });
+      this.product_params.forEach(({param}) => {
+        if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
+          sprms.push(param);
+        }
+      });
+      const {cx_prm} = enm.predefined_formulas;
+      specification.forEach(({nom, algorithm}) => {
+        if(nom instanceof CatInserts) {
+          for(const param of nom.used_params()) {
+            !sprms.includes(param) && sprms.push(param);
+          }
+        }
+        else if(algorithm === cx_prm && !sprms.includes(nom)) {
+          sprms.push(nom);
+        }
+      });
+      return _data.used_params = Object.freeze(sprms);
+    }
+    get split_type(){
+      let {split_type} = this._obj;
+      if(!split_type) {
+        split_type = [];
+      }
+      else if(split_type.startsWith('[')) {
+        split_type = JSON.parse(split_type).map((ref) => enm.lay_split_types.get(ref));
+      }
+      else {
+        split_type = [enm.lay_split_types.get(split_type)];
+      }
+      return split_type;
+    }
+    set split_type(v){this._setter('split_type',v)}
+    mosquito_props() {
+      let sz, nom, imposts;
+      this.specification.forEach((rspec) => {
+        if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
+          sz = rspec.sz;
+          nom = rspec.nom;
+        }
+        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          imposts = rspec;
+        }
+        if(nom && imposts) {
+          return false;
+        }
+      });
+      return {sz, nom, imposts};
+    }
+    mosquito_perimeter(elm, rspec) {
+      const check_cnn = {};
+      const perimeter = elm.layer.perimeter_inner(rspec.sz, rspec.nom, check_cnn);
+      Object.defineProperties(elm, {
+        perimeter: {value: perimeter},
+        bounds_inner: {
+          value(sz = 0) {
+            let start = new paper.Point([0,0]);
+            const path = new paper.Path({insert: false});
+            path.add(start);
+            for(const rib of perimeter) {
+              const tmp = new paper.Point({
+                length: rib.len - 2 * sz,
+                angle: rib.angle
+              });
+              const fin = start.add(tmp);
+              path.add(fin);
+              start = fin.clone();
+            }
+            return path.bounds;
+          }
+        }
+      });
+      if(!check_cnn.cnn) {
+        const {cnn_ii_error: nom} = job_prm.nom;
+        const {_ox, cnstr} = elm.layer;
+        const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
+          elm: {elm: -cnstr, clr: cat.clrs.get()},
+          row_base: {clr: cat.clrs.get(), nom},
+          spec: _ox.specification,
+          ox: _ox,
+          origin: this,
+        });
+      }
+      return perimeter;
+    }
+    get available() {
+      let {available} = this._obj;
+      if(typeof available === 'boolean') {
+        return available;
+      }
+      return cat.parameters_keys.get(available);
+    }
+    set available(v){this._setter('available',v)}
+    offer_insets(elm) {
+      const {inserts, _manager} = this;
+      const res = new Set();
+      const cond = {
+        elm,
+        ox: elm.ox,
+        layer: elm.layer,
+      }
+      _manager.find_rows({insert_type: enm.inserts_types.element}, (o) => {
+        const {available} = o;
+        if(available instanceof CatParameters_keys && !available.empty() && available.check_condition(cond)) {
+          res.add(o);
+        }
+      });
+      for(const row of inserts) {
+        if(row.key.check_condition(cond)) {
+          res.add(row.inset);
+        }
+      }
+      return Array.from(res);
+    }
+    get clr_group() {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
+      return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
+    }
+    set clr_group(v) {
+      this._setter('clr_group',v);
+    }
+    option_clr_group({elm, ...other}) {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
+      return tmp instanceof CatValues_options ? tmp.option_value({elm, ...other}) : tmp;
+    }
+  }
+  $p.CatInserts = CatInserts;
+})($p);
 $p.cat.nom.__define({
 	sql_selection_list_flds: {
 		value(initial_value){

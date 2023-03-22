@@ -119,7 +119,7 @@
                     this.value = drow.value;
                   }
                 }
-                else {
+                if(!drow || !drow.list) {
                   delete mf.list;
                   const links = param.params_links({grid: {selection: {}}, obj: this});
                   const hide = links.some((link) => link.hide);
