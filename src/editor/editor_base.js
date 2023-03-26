@@ -198,11 +198,12 @@ class EditorInvisible extends paper.PaperScope {
   /**
    * Смещает импосты чтобы получить одинаковые размеры заполнений  
    * возвращает массив дельт
-   * @param [name]
-   * @param [glasses]
+   * @param {String} [name]
+   * @param {Array} [glasses]
+   * @param {Boolean} [geometric] - уравнивать геометрически, вместо ширин заполнений
    * @return {Array}
    */
-  do_glass_align(name = 'auto', glasses) {
+  do_glass_align(name = 'auto', glasses, geometric) {
 
     const {project, Point, Key} = this;
 
@@ -258,7 +259,8 @@ class EditorInvisible extends paper.PaperScope {
       });
 
     // признак уравнивания геометрически, а не по заполнению
-    const galign = Key.modifiers.control || Key.modifiers.shift || project.auto_align == enm.align_types.Геометрически;
+    const galign = geometric || Key.modifiers.control || Key.modifiers.shift ||
+      project.auto_align == enm.align_types.Геометрически;
     let medium = 0;
 
     // модифицируем коллекцию заполнений - подклеиваем в неё импосты, одновременно, вычиляем средний размер
@@ -393,12 +395,13 @@ class EditorInvisible extends paper.PaperScope {
   /**
    * Уравнивание по ширинам заполнений  
    * выполняет в цикле до получения приемлемой дельты
-   * @param [name]
-   * @param [glasses]
+   * @param {String} [name]
+   * @param {Array} [glasses]
+   * @param {Boolean} [geometric] - уравнивать геометрически, вместо ширин заполнений
    */
-  glass_align(name = 'auto', glasses) {
+  glass_align(name = 'auto', glasses, geometric) {
 
-    const shift = this.do_glass_align(name, glasses);
+    const shift = this.do_glass_align(name, glasses, geometric);
     if(!shift){
       return;
     }
@@ -417,7 +420,7 @@ class EditorInvisible extends paper.PaperScope {
       for (const layer of contours) {
         layer.redraw();
       }
-      return this.glass_align(name, glasses);
+      return this.glass_align(name, glasses, geometric);
     }
     else {
       _attr._align_counter = 0;
