@@ -651,6 +651,17 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
+   * Произвольный комментарий
+   * @type {String}
+   */
+  get note() {
+    return this.dop.note || '';
+  }
+  set note(v) {
+    this.project.selected_glasses().forEach(elm => elm.dop = {note: v});
+  }
+
+  /**
    * Прочищает паразитные пути
    */
   purge_paths() {
@@ -681,7 +692,10 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @type String
    */
   formula(by_art) {
-    const {elm, inset, ox} = this;
+    const {elm, inset, ox, note} = this;
+    if(note) {
+      return note;
+    }
     const {utils: {blank}, cch: {properties}} = $p;
     let res;
     ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
