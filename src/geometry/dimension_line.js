@@ -125,10 +125,6 @@ class DimensionLine extends paper.Group {
 
   _click(event) {
     event.stop();
-    if(!this.is_disabled() && typeof EditorInvisible.RulerWnd === 'function') {
-      this.wnd = new EditorInvisible.RulerWnd(null, this);
-      this.wnd.size = this.size;
-    }
   }
 
   correct_move_name({event, p1, p2}) {
@@ -220,6 +216,9 @@ class DimensionLine extends paper.Group {
     }
 
     if(delta.length){
+      if(typeof event.divide === 'number') {
+        delta = delta.divide(event.divide);
+      }
       const {project} = this;
       project.deselect_all_points();
       project.getItems({class: ProfileItem})
@@ -238,7 +237,10 @@ class DimensionLine extends paper.Group {
       delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
-      project.register_change(false, () => project.register_change(true));
+      project.register_change(false, () => {
+        project.register_change(true);
+        event.cb?.();
+      });
     }
 
   }
@@ -270,6 +272,30 @@ class DimensionLine extends paper.Group {
       case 'bottom':
         if(this.pos == 'left' || this.pos == 'right') {
           this._move_points(event, 'y');
+        }
+        break;
+        
+      case 'rateably':
+        event.divide = 2;
+        if(this.pos == 'left' || this.pos == 'right') {
+          event.name = 'top';
+          event.cb = () => {
+            delete event.cb;
+            delete event.divide;
+            event.name = 'bottom';
+            this._move_points(event, 'y');
+          }
+          this._move_points(event, 'y');
+        }
+        else if(this.pos == 'top' || this.pos == 'bottom') {
+          event.name = 'left';
+          event.cb = () => {
+            delete event.cb;
+            delete event.divide;
+            event.name = 'right';
+            this._move_points(event, 'x');
+          }
+          this._move_points(event, 'x');
         }
         break;
 
@@ -621,8 +647,7 @@ class DimensionLineCustom extends DimensionLine {
 
   get is_ruler() {
     const {_scope} = this._project;
-    const {constructor: {ToolRuler}, tool} = _scope;
-    return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
+    return _scope?.tool?.options?.name === 'arc';
   }
   
   get is_smart_size() {
@@ -633,14 +658,13 @@ class DimensionLineCustom extends DimensionLine {
   // выделяем подключаем окно к свойствам
   setSelection(selection) {
     super.setSelection(selection);
-    const {project, children, hide_c1, hide_c2, hide_line, is_ruler} = this
+    const {project, children, hide_c1, hide_c2, hide_line} = this;
     const {tool} = project._scope;
     if(selection) {
       hide_c1 && children.callout1.setSelection(false);
       hide_c2 && children.callout2.setSelection(false);
       hide_line && children.scale.setSelection(false);
     }
-    is_ruler && tool.wnd.attach(this);
   }
 
   // выделяем только при активном инструменте

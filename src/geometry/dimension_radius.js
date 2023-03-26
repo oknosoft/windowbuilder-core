@@ -84,7 +84,7 @@ class DimensionRadius extends DimensionLineCustom {
     if(_attr.by_curve) {
       const curv = Math.abs(_attr.elm1.path.getCurvatureAt(_attr.p1));
       if(curv) {
-        children.text.content = `R${(1 / curv).round(0)}`;
+        children.text.content = `Rᶜ${(.5 / curv).round(0)}`;
       }
     }
     else {
