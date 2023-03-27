@@ -644,7 +644,2493 @@ class Compound extends BuilderElement {
   }
 }
 EditorInvisible.Compound = Compound;
-class GlassSegment {  constructor(profile, b, e, outer) {    this.profile = profile;    this.b = b.clone();    this.e = e.clone();    this.outer = outer;    this.segment();  }    segment() {    let gen;    const {profile} = this;    const cond = profile.children.some((addl) => {      if (addl instanceof ProfileAddl && this.outer == addl.outer) {        if (!gen) {          gen = profile.generatrix;        }        const b = profile instanceof ProfileAddl ? profile.b : this.b;        const e = profile instanceof ProfileAddl ? profile.e : this.e;        if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {          this.profile = addl;          this.outer = false;          return true;        }      }    });    if (cond) {      this.segment();    }  }    break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {    const node = nodes.byPoint(point);    if(!node) {      return false;    }    let tangent = curr_profile.generatrix.getTangentAt(offset);    if(this.outer) {      tangent = tangent.negate();    }    const angles = [];    for(const elm of node) {      if(elm.profile === curr_profile) {        continue;      }      const {generatrix} = elm.profile;      const ppoint = generatrix.getNearestPoint(point);      const poffset = generatrix.getOffsetOf(ppoint);      const ptangent = generatrix.getTangentAt(poffset);      for(const segm of segments) {        if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {          angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});        }      }    }    let angle;    for(const elm of angles) {      if(elm.profile === segm_profile && (!angle || elm.angle > angle)) {        angle = elm.angle;      }    }    if(angle < 0) {      return true;    }    for(const elm of angles) {      if(elm.profile !== segm_profile && elm.angle > angle) {        return true;      }    }  }    has_cnn(segm, nodes, segments) {    const point = segm.b;    if(!this.e.is_nearest(point, 0)) {      return false;    }    let curr_profile = this.profile;    let segm_profile = segm.profile;    while (curr_profile instanceof ProfileAddl) {      if(!this.outer) {        this.outer = !curr_profile.is_collinear(curr_profile.parent);      }      curr_profile = curr_profile.parent;    }    while (segm_profile instanceof ProfileAddl) {      if(!segm.outer) {        segm.outer = !segm_profile.is_collinear(segm_profile.parent);      }      segm_profile = segm_profile.parent;    }    if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {      return false;    }    if(curr_profile.gb.is_nearest(point, true)) {      const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);      if(by_angle) {        return false;      }      else if(by_angle === undefined || curr_profile.rays.b.profile === segm_profile) {        return true;      }    }    if(curr_profile.ge.is_nearest(point, true)) {      const by_angle = this.break_by_angle(nodes, segments, point, curr_profile.generatrix.length, curr_profile, segm_profile);      if(by_angle) {        return false;      }      else if(by_angle === undefined || curr_profile.rays.e.profile === segm_profile) {        return true;      }    }    if(segm_profile.gb.is_nearest(point, true)) {      const by_angle = segm.break_by_angle(nodes, segments, point, 0, segm_profile, curr_profile)      if(by_angle) {        return false;      }      else if(by_angle === undefined || segm_profile.rays.b.profile == curr_profile) {        return true;      }    }    if(segm_profile.ge.is_nearest(point, true)) {      const by_angle = segm.break_by_angle(nodes, segments, point, segm_profile.generatrix.length, segm_profile, curr_profile);      if(by_angle) {        return false;      }      else if(by_angle === undefined || segm_profile.rays.e.profile == curr_profile) {        return true;      }    }    return false;  }  get _sub() {    const {sub_path} = this;    return {      get b() {        return sub_path ? sub_path.firstSegment.point : new paper.Point();      },      set b(v) {        sub_path && (sub_path.firstSegment.point = v);      },      get e() {        return sub_path ? sub_path.lastSegment.point : new paper.Point();      },      set e(v) {        sub_path && (sub_path.lastSegment.point = v);      },    };  }}class PointMap extends Map {  byPoint(point) {    for(const [key, value] of this) {      if(point.is_nearest(key, 0)) {        return value.length > 2 && value;      }    }  }}class Contour extends AbstractFilling(paper.Layer) {  constructor(attr) {    super({parent: attr.parent, project: attr.project});    this._attr = {chnom: []};    this._skeleton = new Skeleton(this);    const {project} = this;    this._row = attr.row;    if(attr.direction) {      this.direction = attr.direction;    }    if(attr.furn && typeof attr.furn !== 'string') {      this.furn = attr.furn || this.default_furn;    }    const ox = attr.ox || project.ox;    this.prms = new BuilderPrms({layer: this});    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});    project.l_connective.bringToFront();  }    get ProfileConstructor() {    return Profile;  }    get default_furn() {    let {sys} = this;    let res;    const {job_prm: {builder}, cat} = $p;    while (true) {      res = builder.base_furn[sys.ref];      if(res || sys.empty()) {        break;      }      sys = sys.parent;    }    if(!res) {      res = builder.base_furn.null;    }    if(!res) {      const furns = this.sys.furns(this._ox, this);      if(furns.length) {        const {cache, cnstr, _ox} = this;        for(const {furn} of furns) {          if(furn.is_folder || this.open_restrictions_err({furn, cache, bool: true})) {            continue;          }          const weight_max = furn.furn_set.flap_weight_max;          if(weight_max && weight_max < _ox.elm_weight(-cnstr)) {            continue;          }          res = furn;          break;        }      }    }    if(!res) {      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {        res = row;        return false;      });    }    return res;  }    create_children({coordinates, cnstr}) {    if (!cnstr) {      return;    }    const {elm_types} = $p.enm;    const glasses = [];    coordinates.find_rows({cnstr, region: 0}, (row) => {      const attr = {row, parent: this};      if(row.elm_type === elm_types.attachment) {        new this.ProfileConstructor(attr);      }      else if(elm_types.profiles.includes(row.elm_type)) {        row.elm_type === elm_types.impost ? new Profile(attr) : new this.ProfileConstructor(attr);      }      else if(elm_types.glasses.includes(row.elm_type)) {        glasses.push(row);      }      else if(row.elm_type === elm_types.drainage) {        new Sectional(attr)      }      else if(row.elm_type === elm_types.text) {        new FreeText({row, parent: this.l_text})      }    });    for(const row of glasses) {      new Filling({row, parent: this});    }  }    static create(attr = {}) {    let {kind, row, project, parent} = attr;    if(typeof kind === 'undefined') {      kind = row ? row.kind : 0;    }    let Constructor = Contour;    if(kind === 1) {      Constructor = ContourVirtual;    }    else if(kind === 2) {      Constructor = ContourNested;    }    else if(kind === 3) {      Constructor = ContourParent;    }    else if(kind === 4) {      Constructor = ContourTearing;    }    else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {      Constructor = ContourNestedContent;    }    if (!attr.row) {      const {constructions} = project.ox;      attr.row = constructions.add({parent: parent ? parent.cnstr : 0});      attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;    }    if(kind) {      attr.row.kind = kind;    }    const contour = new Constructor(attr);    project._scope.eve.emit_async('rows', contour._ox, {constructions: true});    return contour;  }  presentation(bounds) {    if(!bounds){      bounds = this.bounds;    }    const {_ox, cnstr, layer} = this;    const weight = _ox.elm_weight(-cnstr);    return (layer ? 'Створка №' : 'Рама №') + cnstr +      (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +      (weight ? `, ${weight.toFixed()}кг` : '');  }    get info() {    return this.presentation();  }    get key() {    return this.cnstr.toFixed();  }    get kind() {    let {kind} = this._row;    let layer = this;    while (kind === 0 && layer) {      layer = layer.layer;      if(!layer) {        break;      }      if([10, 11].includes(layer._row.kind)) {        kind = layer._row.kind;      }    }    return kind;  }    prod_layer() {    let {kind} = this._row;    let layer = this;    while (kind === 0 && layer) {      layer = layer.layer;      if(!layer) {        break;      }      if([10, 11].includes(layer._row.kind)) {        return layer;      }    }    return [10, 11].includes(kind) ? layer : null;  }    get_svg(attr = {}) {    for(const item of this.children) {      item.selected = false;    }    const options = attr.export_options || {};    if(!options.precision) {      options.precision = 1;    }    const svg = this.exportSVG(options);    const bounds = this.strokeBounds.unite(this.l_dimensions.strokeBounds);    svg.setAttribute('x', bounds.x);    svg.setAttribute('y', bounds.y);    svg.setAttribute('width', bounds.width + 40);    svg.setAttribute('height', bounds.height);    svg.querySelector('g').removeAttribute('transform');    return svg.outerHTML;  }    bring(direction = 'up') {    const {layer, project, _row} = this;    const contours = layer ? layer.contours : project.contours;    const index = contours.indexOf(this);    if(contours.length < 2 || (direction === 'down' && index === 0) || (direction === 'up' && index === contours.length - 1) ) {      return;    }    const other = direction === 'up' ? contours[index + 1] : contours[index - 1];    if(direction === 'up') {      this.insertAbove(other);    }    else {      this.insertBelow(other);    }    _row._owner.swap(_row, other._row);  }    activate(custom) {    super.activate();    if (this._row) {      this.notify(this, 'layer_activated', !custom);      this.project.register_update();    }  }    get _ox() {    const {layer, project} = this;    return layer ? layer._ox : project.ox;  }    get prod_ox() {    const layer = this.prod_layer();    if(layer) {      const {project: {ox}, cnstr} = layer;      let cx;      ox.calc_order.production.find_rows({ordn: ox}, ({characteristic}) => {        if(characteristic.leading_elm === -cnstr && characteristic.origin.empty()) {          cx = characteristic;          return false;        }      });      if(cx) {        return cx;      }    }    return this._ox;  }    get branch() {    return this.project.branch;  }    get area() {    return (this.bounds.area/1e6).round(3);  }    get form_area() {    let upath;    this.glasses(false, true).concat(this.profiles).forEach(({path}) => {      if(upath) {        upath = upath.unite(path, {insert: false});      }      else {        upath = path.clone({insert: false});      }    });    return (upath.area/1e6).round(3);  }    get furn() {    return this._row.furn;  }  set furn(v) {    const {_row, profiles, project, sys, level} = this;    if(sys.furn_level > level) {      v = _row.furn._manager.get();    }    if (_row.furn == v) {      return;    }    _row.furn = v;    if (this.direction.empty()) {      sys.furn_params.find_rows({param: $p.job_prm.properties.direction}, ({value}) => {        _row.direction = value;        return false;      });    }    _row.furn.refill_prm(this);    switch(_row.furn.shtulp_kind()) {    case 2:      this.bring('down');      break;    case 1:      this.bring('up');    }    for(const {_attr} of profiles) {      _attr._rays && _attr._rays.clear('with_neighbor');    }    project.register_change(true);    this.notify(this, 'furn_changed');  }    glasses(hide, glass_only) {    return this.children.filter((elm) => {      if(elm instanceof ContourTearing) {        return false;      }      if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {        if (hide) {          elm.visible = false;        }        return true;      }    });  }    get fillings() {    const fillings = [];    for(const glass of this.glasses()){      if(glass instanceof Contour){        fillings.push.apply(fillings, glass.fillings);      }      else{        fillings.push(glass);      }    }    return fillings;  }    get glass_contours() {    const segments = this.glass_segments;    const nodes = this.count_nodes();    const res = [];    let curr, acurr;    function go_go(segm) {      const anext = GlassSegment.next(segm, nodes, segments);      for (const next of anext) {        if (next === curr) {          return anext;        }        else if (acurr.every((el) => el !== next)) {          acurr.push(next);          return go_go(next);        }      }    }    while (segments.length) {      curr = segments[0];      acurr = [curr];      if (go_go(curr) && acurr.length > 1) {        res.push(acurr);      }      acurr.forEach((el) => {        const ind = segments.indexOf(el);        if (ind != -1) {          segments.splice(ind, 1);        }      });    }    return res;  }    glass_nodes(path, nodes, bind) {    const curve_nodes = [];    const path_nodes = [];    const ipoint = path.interiorPoint.negate();    let curve, findedb, findede, d, node1, node2;    if (!nodes) {      nodes = this.nodes;    }    for (let i in path.curves) {      curve = path.curves[i];      let d1 = Infinity;      let d2 = Infinity;      nodes.forEach((n) => {        if ((d = n.getDistance(curve.point1, true)) < d1) {          d1 = d;          node1 = n;        }        if ((d = n.getDistance(curve.point2, true)) < d2) {          d2 = d;          node2 = n;        }      });      if (path_nodes.indexOf(node1) == -1)        path_nodes.push(node1);      if (path_nodes.indexOf(node2) == -1)        path_nodes.push(node2);      if (!bind)        continue;      if(node1 === node2) {        continue;      }      findedb = false;      for (let n in curve_nodes) {        if (curve_nodes[n].node1 == node1 && curve_nodes[n].node2 == node2) {          findedb = true;          break;        }      }      if (!findedb) {        findedb = this.profile_by_nodes(node1, node2);        const loc1 = findedb.generatrix.getNearestLocation(node1);        const loc2 = findedb.generatrix.getNearestLocation(node2);        if (node1.add(ipoint).getDirectedAngle(node2.add(ipoint)) < 0)          curve_nodes.push({            node1: node2,            node2: node1,            profile: findedb,            out: loc2.index == loc1.index ? loc2.parameter > loc1.parameter : loc2.index > loc1.index,          });        else          curve_nodes.push({            node1: node1,            node2: node2,            profile: findedb,            out: loc1.index == loc2.index ? loc1.parameter > loc2.parameter : loc1.index > loc2.index,          });      }    }    this.sort_nodes(curve_nodes);    return path_nodes;  }    calck_rating(glcontour, glass) {    const {outer_profiles} = glass;    let crating = 0;    if (outer_profiles.length) {      for(const cnt of glcontour) {        for(const curr of outer_profiles) {          if(cnt.profile == curr.profile && cnt.b.is_nearest(curr.b) && cnt.e.is_nearest(curr.e)) {            crating++;            break;          }        }        if (crating > 2) {          break;        }      }    }    else {      const {nodes} = glass;      for(const cnt of glcontour) {        for(const node of nodes) {          if (cnt.b.is_nearest(node)) {            crating++;            break;          }        }        if (crating > 2) {          break;        }      }    }    return crating;  }    glass_recalc() {    const {glass_contours} = this;         const glasses = this.glasses(true);    const binded = new Set();    for(const glass of glasses) {      if (glass.visible) {        continue;      }      for(const glcontour of glass_contours) {        if (binded.has(glcontour)) {          continue;        }        if ((glass_contours.length === 1 && !binded.size) || this.calck_rating(glcontour, glass) > 2) {          glass.path = glcontour;          glass.visible = true;          if (glass instanceof Filling) {            glass.redraw();          }          binded.add(glcontour);          break;        }      }    }    for(const glcontour of glass_contours) {      if (binded.has(glcontour)) {        continue;      }      let rating = 0, glass, crating, cglass, glass_center;      for (const g in glasses) {        glass = glasses[g];        if (glass.visible) {          continue;        }        crating = this.calck_rating(glcontour, glass);        if (crating > rating || !cglass) {          rating = crating;          cglass = glass;        }        if (crating == rating && cglass != glass) {          if (!glass_center) {            glass_center = glcontour.reduce((sum, val) => sum.add(val.b), new paper.Point).divide(glcontour.length);          }          if (glass_center.getDistance(glass.bounds.center, true) < glass_center.getDistance(cglass.bounds.center, true)) {            cglass = glass;          }        }      }      if (cglass || (cglass = this.getItem({class: Filling, visible: false}))) {        cglass.path = glcontour;        cglass.visible = true;        if (cglass instanceof Filling) {          cglass.redraw();        }      }      else {        if (glass = this.getItem({class: Filling})) {        }        else if (glass = this.project.getItem({class: Filling})) {        }        else {        }        cglass = new Filling({proto: glass, parent: this, path: glcontour});        cglass.redraw();      }    }  }    get glass_segments() {    const nodes = [];    function push_new(profile, b, e, outer = false) {      if(b.is_nearest(e, 0)){        return;      }      for(const segm of nodes) {        if(segm.profile === profile && segm.b.is_nearest(b, 0) && segm.e.is_nearest(e, 0) && segm.outer == outer){          return;        }      }      nodes.push(new GlassSegment(profile, b, e, outer));    }    for(const p of this.profiles) {      const sort = GlassSegment.fn_sort.bind(p.generatrix);      const ip = p.joined_imposts();      const {b: pb, e: pe} = p.rays;      const pbg = pb.is_t && pb.profile.d0 ? pb.profile.generatrix.getNearestPoint(p.b) : p.b;      const peg = pe.is_t && pe.profile.d0 ? pe.profile.generatrix.getNearestPoint(p.e) : p.e;      if (ip.inner.length) {        ip.inner.sort(sort);        if (!pb.is_i && !pbg.is_nearest(ip.inner[0].point)) {          push_new(p, pbg, ip.inner[0].point);        }        for (let i = 1; i < ip.inner.length; i++) {          push_new(p, ip.inner[i - 1].point, ip.inner[i].point);        }        if (!pe.is_i && !ip.inner[ip.inner.length - 1].point.is_nearest(peg)) {          push_new(p, ip.inner[ip.inner.length - 1].point, peg);        }      }      if (ip.outer.length) {        ip.outer.sort(sort);        if (!pb.is_i && !ip.outer[0].point.is_nearest(pbg)) {          push_new(p, ip.outer[0].point, pbg, true);        }        for (let i = 1; i < ip.outer.length; i++) {          push_new(p, ip.outer[i].point, ip.outer[i - 1].point, true);        }        if (!pe.is_i && !peg.is_nearest(ip.outer[ip.outer.length - 1].point)) {          push_new(p, peg, ip.outer[ip.outer.length - 1].point, true);        }      }      if (!ip.inner.length) {        if (!pb.is_i && !pe.is_i) {          push_new(p, pbg, peg);        }      }      if (!ip.outer.length && (pb.is_cut || pe.is_cut || pb.is_t || pe.is_t)) {        if (!pb.is_i && !pe.is_i) {          push_new(p, peg, pbg, true);        }      }      else if(pb.is_x || pe.is_x) {        push_new(p, peg, pbg, true);      }    }    return nodes;  }    get is_rectangular() {    const {Импост} = $p.enm.elm_types;    const outer = this.profiles.filter((v) => v.elm_type != Импост);    return outer.length === 4 && !outer.some(profile => !(profile.is_linear() && Math.abs(profile.angle_hor % 90) < 0.2));  }  move(delta) {    const {contours, tearings, profiles, project} = this;    const crays = (p) => p.rays.clear();    this.translate(delta);    contours.concat(tearings).forEach((contour) => contour.profiles.forEach(crays));    profiles.forEach(crays);    project.register_change();  }  get tearings() {    return this.children.filter((item) => item instanceof ContourTearing);  }    get nodes() {    const nodes = [];    this.profiles.forEach(({b, e}) => {      let findedb;      let findede;      nodes.forEach((n) => {        if (b && b.is_nearest(n)) {          findedb = true;        }        if (e && e.is_nearest(n)) {          findede = true;        }      });      if (!findedb && b) {        nodes.push(b.clone());      }      if (!findede && e) {        nodes.push(e.clone());      }    });    return nodes;  }    count_nodes() {    const nodes = new PointMap();    this.profiles.forEach((profile) => {      const {b, e} = profile;      let findedb;      let findede;      for(const [key, value] of nodes) {        if (b && b.is_nearest(key)) {          value.push({profile, point: 'b'})          findedb = true;        }        if (e && e.is_nearest(key)) {          value.push({profile, point: 'e'})          findede = true;        }      }      if (!findedb && b) {        nodes.set(b.clone(), [{profile, point: 'b'}]);      }      if (!findede && e) {        nodes.set(e.clone(), [{profile, point: 'e'}]);      }    });    return nodes;  }    notify(obj, type = 'update') {    if (obj.type) {      type = obj.type;    }    this.project._scope.eve.emit_async(type, obj);    type === consts.move_points && this.project.register_change();  }    get outer_nodes() {    return this.outer_profiles.map((v) => v.elm);  }    get outer_profiles() {    const {profiles} = this;    const to_remove = [];    const res = [];    let findedb, findede;    for(const elm of profiles) {      if (elm._attr.simulated) {        continue;      }      findedb = false;      findede = false;      for(const elm2 of profiles) {        if (elm2 === elm) {          continue;        }        if (!findedb && elm.has_cnn(elm2, elm.b) && elm.b.is_nearest(elm2.e)) {          findedb = true;        }        if (!findede && elm.has_cnn(elm2, elm.e) && elm.e.is_nearest(elm2.b)) {          findede = true;        }      }      if (!findedb || !findede) {        to_remove.push(elm);      }    }    for(const elm of profiles) {      if (to_remove.includes(elm)) {        continue;      }      elm._attr.binded = false;      res.push({        elm: elm,        profile: elm.nearest(true),        b: elm.b,        e: elm.e,        angle_hor: elm.angle_hor,      });    }    res.sort(Contour.acompare);    return res;  }    profile_by_furn_side(side, cache) {    if (!cache || !cache.profiles) {      cache = {        profiles: this.outer_nodes,        bottom: this.profiles_by_side('bottom'),      };    }    const profile_node = this.direction == $p.enm.open_directions.Правое ? 'b' : 'e';    const other_node = profile_node == 'b' ? 'e' : 'b';    let profile = cache.bottom;    const next = () => {      side--;      if (side <= 0) {        return profile;      }      cache.profiles.some((curr) => {        if (curr[other_node].is_nearest(profile[profile_node])) {          profile = curr;          return true;        }      });      return next();    };    return next();  }    profile_by_nodes(n1, n2, point) {    const {profiles} = this;    for (let i = 0; i < profiles.length; i++) {      const {generatrix} = profiles[i];      if (generatrix.getNearestPoint(n1).is_nearest(n1) && generatrix.getNearestPoint(n2).is_nearest(n2)) {        if (!point || generatrix.getNearestPoint(point).is_nearest(point))          return profiles[i];      }    }  }    remove() {    for(const elm of this.glasses()) {      elm.remove();    }    for(const elm of this.imposts.reverse()) {      elm.remove();    }    const {children, project, _row, cnstr, _ox} = this;    while (children.length) {      if(children[0].remove() === false) {        return;      }    }    project._scope.eve.emit('elm_removed', this);    if (_row) {      if(!project.ox.empty()) {        if(_ox === _row._owner._owner) {          _ox.coordinates.clear({cnstr});          _ox.params.clear({cnstr});          _ox.inserts.clear({cnstr});        }        _row._owner.del(_row);      }      this._row = null;    }    super.remove();  }    get _manager() {    return this.project._dp._manager;  }    _metadata(fld) {    const {tabular_sections, fields: {sys}} = this._ox._metadata();    const {fields} = tabular_sections.constructions;    if(fld === 'sys') {      return sys;    }    return fld ? (fields[fld] || tabular_sections[fld]) : {      fields: {        furn: fields.furn,        direction: fields.direction,        h_ruch: fields.h_ruch,        flipped: fields.flipped,        sys,      },      tabular_sections: {        params: tabular_sections.params,      },    };  }    get bounds() {    const {_attr, parent} = this;    if (!_attr._bounds || !_attr._bounds.width || !_attr._bounds.height) {      this.profiles.forEach((profile) => {        const path = profile.path && profile.path.segments.length ? profile.path : profile.generatrix;        if (path) {          _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;          if (!parent) {            const {d0} = profile;            if (d0) {              _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);            }          }        }      });      this.sectionals.forEach((sectional) => {        _attr._bounds = _attr._bounds ? _attr._bounds.unite(sectional.bounds) : sectional.bounds;      });      if (!_attr._bounds) {        _attr._bounds = new paper.Rectangle();      }    }    return _attr._bounds;  }    get lbounds() {    const parent = new paper.Group({insert: false});    for (const {generatrix} of this.profiles) {      parent.addChild(generatrix.clone({insert: false}));    }    return parent.bounds;  }    get cnstr() {    return this._row ? this._row.cnstr : 0;  }  set cnstr(v) {    this._row && (this._row.cnstr = v);  }    get dimension_bounds() {    let bounds = super.dimension_bounds;    const ib = this.l_visualization._by_insets.bounds;    if (ib.height && ib.bottom > bounds.bottom) {      const delta = ib.bottom - bounds.bottom + 10;      bounds = bounds.unite(        new paper.Rectangle(bounds.bottomLeft, bounds.bottomRight.add([0, delta < 250 ? delta * 1.1 : delta * 1.2]))      );    }    for(const profile of this.profiles) {      for(const adj of profile.adjoinings) {        bounds = bounds.unite(adj.bounds);      }    }    return bounds;  }    get direction() {    return this._row.direction;  }  set direction(v) {    this._row.direction = v;    this.project.register_change(true);  }    get opening() {    const {enm, cch} = $p;    const param = cch.properties.predefined('opening');    let res = enm.opening.in;    if(param && !param.empty()) {      const {params, cnstr} = this;      params.find_rows({param, cnstr: {in: [0, cnstr]}}, (row)  => {        res = enm.opening.get(row.value);        if(row.cnstr === cnstr) {          return false;        }      });    }    return res;  }  set opening(v) {    const param = $p.cch.properties.predefined('opening');    if(param && !param.empty()) {      const {params, cnstr} = this;      const row = params.find({param, cnstr});      if(row) {        row.value = v;      }      else {        params.add({param, cnstr, value: v});      }      this.project.register_change(true);    }  }    zoom_fit() {    this.project.zoom_fit.call(this, null, true);  }    draw_static_errors() {    const {l_visualization, sys} = this;    if(!sys.check_static) {      return;    }    const {Рама, Импост} = $p.enm.elm_types;    if(l_visualization._static) {      l_visualization._static.removeChildren();    }    else {      l_visualization._static = new paper.Group({parent: l_visualization});    }    for (var i = 0; i < this.profiles.length; i++) {      if([Рама, Импост].includes(this.profiles[i].elm_type) &&        this.profiles[i].static_load().can_use === false) {        new paper.Path.Circle({          center: this.profiles[i].bounds.center,          radius: 20,          strokeColor: 'blue',          strokeWidth: 4,          strokeCap: 'round',          strokeScaling: false,          guide: true,          parent: l_visualization._static,          fillColor: 'red'        });      }    }  }    draw_cnn_errors() {    const {l_visualization, project: {_scope: {eve}}} = this;    const {job_prm: {nom}, msg} = $p;    if (l_visualization._cnn) {      l_visualization._cnn.removeChildren();    }    else {      l_visualization._cnn = new paper.Group({parent: l_visualization});    }    if(eve._async?.move_points?.timer) {      return;    }    const err_attrs = {      strokeColor: 'red',      strokeWidth: 2,      strokeCap: 'round',      strokeScaling: false,      dashOffset: 4,      dashArray: [4, 4],      guide: true,      parent: l_visualization._cnn,    };    this.glasses(false, true).forEach(glass => {      let err;      const {_row, path, profiles, imposts, inset} = glass;      _row.s = glass.form_area;      profiles.forEach(({cnn, sub_path}) => {        if (!cnn) {          glass.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);          Object.assign(sub_path, err_attrs);          err = true;        }      });      if(path.is_self_intersected()) {        glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);        err = true;      }      if(!inset.check_base_restrictions(inset, glass)) {        glass.err_spec_row(nom.info_error, msg.err_sizes, inset);        err = true;      }      if (err) {        glass.fill_error();      }      else {        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr);      }      imposts.forEach((impost) => {        if(impost instanceof Onlay) {          const {b, e} = impost._attr._rays;          const oerr_attrs = Object.assign({radius: 50}, err_attrs);          b.check_err(oerr_attrs);          e.check_err(oerr_attrs);        }      });    });    this.profiles.forEach((elm) => {      const {_corns, _rays} = elm._attr;      _rays.b.check_err(err_attrs);      _rays.e.check_err(err_attrs);      if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {        const subpath = elm.path.get_subpath(_corns[1], _corns[2]);        Object.assign(subpath, err_attrs);        if(elm._attr._nearest instanceof ProfileConnective) {          subpath.parent = elm._attr._nearest.layer._errors;        }      }      elm.addls.forEach((elm) => {        if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {          Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);        }      });      elm.check_err(err_attrs);    });    l_visualization.bringToFront();  }    draw_mosquito() {    const {l_visualization, project, _ox, cnstr} = this;    if(project.builder_props.mosquito === false) {      return;    }    _ox.inserts.find_rows({cnstr}, (row) => {      const {inset: origin} = row;      if (origin.insert_type.is('mosquito')) {        const props = {          parent: new paper.Group({parent: l_visualization._by_insets}),          strokeColor: 'grey',          strokeWidth: 3,          dashArray: [6, 4],          strokeScaling: false,        };        let {sz, nom, imposts} = origin.mosquito_props();        if(!nom) {          return false;        }        if(_ox.specification.find({elm: -cnstr, origin, nom: $p.job_prm.nom.cnn_ii_error})) {          props.strokeColor = '#f00';          props.dashArray = [8, 2, 2];        }        const perimetr = this.perimeter_inner(sz, nom);        const ppath = new paper.Path(props);        for(const {sub_path} of perimetr) {          ppath.addSegments(sub_path.segments);        }        const {elm_font_size, font_family} = consts;        const {bounds} = ppath;        new paper.PointText({          parent: props.parent,          fillColor: 'black',          fontFamily: font_family,          fontSize: elm_font_size,          guide: true,          content: origin.presentation,          point: bounds.bottomLeft.add([elm_font_size * 1.2, -elm_font_size * 0.4]),        });        if (imposts) {          const add_impost = (y) => {            const impost = Object.assign(new paper.Path({              insert: false,              segments: [[bounds.left - 100, y], [bounds.right + 100, y]],            }), props);            const {length} = impost;            for(const {point} of ppath.getIntersections(impost)) {              const l1 = impost.firstSegment.point.getDistance(point);              const l2 = impost.lastSegment.point.getDistance(point);              if (l1 < length / 2) {                impost.firstSegment.point = point;              }              if (l2 < length / 2) {                impost.lastSegment.point = point;              }            }          };          $p.cat.inserts.traverse_steps({            imposts,            bounds,            add_impost,            ox: _ox,            cnstr,            origin,          });        }        return false;      }    });  }    draw_jalousie(glass) {    const {l_visualization, project, _ox} = this;    if(project.builder_props.jalousie === false) {      return;    }    _ox.inserts.find_rows({cnstr: -glass.elm}, ({inset, clr}) => {      if(inset.insert_type.is('jalousie')) {        let control, type, shift, step, steps, pos;        _ox.params.find_rows({inset, cnstr: -glass.elm}, ({param, value}) => {          if(value.css && ['tb_jalousie_horizontal', 'tb_jalousie_vertical', 'tb_jalousie_roller'].includes(value.css)) {            type = value.css.replace('tb_jalousie_', '');          }          if(value.css && ['tb_jalousie_control-side-left', 'tb_jalousie_control-side-right'].includes(value.css)) {            control = value.css.replace('tb_jalousie_control-side-', '');          }        });        if(!type) {          type = 'horizontal';        }        if(!control) {          control = 'left';        }        const props = {          parent: new paper.Group({parent: l_visualization._by_insets}),          fillColor: BuilderElement.clr_by_clr.call(this, clr),          shadowColor: 'lightgray',          shadowBlur: 20,          shadowOffset: [13, 13],          opacity: 0.3,          strokeScaling: false,          closed: true,          guide: true,        };        const bounds = glass.bounds_light();        inset.specification.forEach(({count_calc_method, sz, offsets}) => {          if (count_calc_method == $p.enm.count_calculating_ways.area && sz && offsets) {            bounds.height += offsets;            bounds.width += sz;            bounds.left -= sz * 0.6;            bounds.top -= offsets * 0.6;            return false;          }        });        switch (type) {        case 'roller':          new paper.Path(Object.assign({            segments: [bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft],          }, props));          break;        case 'horizontal':          steps = Math.floor(bounds.height / 60);          step = bounds.height / steps - 0.01;          pos = bounds.top;          while (pos < bounds.bottom - step) {            new paper.Path(Object.assign({              segments: [[bounds.left, pos], [bounds.right, pos], [bounds.right, pos + step - 20], [bounds.left, pos + step - 20]],            }, props));            pos += step;          }          break;        case 'vertical':          steps = Math.floor(bounds.width / 60);          step = bounds.width / steps - 0.01;          pos = bounds.left;          while (pos < bounds.right - step) {            new paper.Path(Object.assign({              segments: [[pos, bounds.top], [pos + step - 20, bounds.top], [pos + step - 20, bounds.bottom], [pos, bounds.bottom]],            }, props));            pos += step;          }          break;        }        pos = control === 'left' ? bounds.left - 10 : bounds.right + 10;        new paper.Path(Object.assign({          segments: [            [pos, bounds.top],            [pos + 10, bounds.top],            [pos + 10, bounds.bottom - 80],            [pos + 20, bounds.bottom - 40],            [pos - 10, bounds.bottom - 40],            [pos, bounds.bottom - 80],          ],        }, props, {          strokeColor: 'lightgray',          strokeOpacity: 0.5,          fillColor: 'gray',          opacity: 0.6,        }));        new paper.Path(Object.assign({          segments: [            bounds.topLeft.add([0, -10]),            bounds.topRight.add([0, -10]),            bounds.topRight.add([0, 20]),            bounds.topLeft.add([0, 20]),          ],        }, props, {          strokeColor: 'lightgray',          strokeOpacity: 0.5,          fillColor: 'lightgray',          opacity: 0.6,        }));        const {elm_font_size} = consts;        new paper.PointText({          parent: props.parent,          fillColor: 'black',          fontFamily: consts.font_family,          fontSize: consts.elm_font_size,          guide: true,          content: inset.presentation,          point: bounds.topLeft.add([elm_font_size/3, 0]),        });        return false;      }    });  }    draw_sill() {    const {l_visualization, cnstr, _ox} = this;    const {properties} = $p.job_prm;    if (!properties) {      return;    }    const {length, width} = properties;    _ox.inserts.find_rows({cnstr}, (row) => {      if (row.inset.insert_type.is('sill')) {        const bottom = this.profiles_by_side('bottom');        let vlen, vwidth;        _ox.params.find_rows({cnstr: cnstr, inset: row.inset}, (prow) => {          if (prow.param == length) {            vlen = prow.value;          }          if (prow.param == width) {            vwidth = prow.value;          }        });        if (!vlen) {          vlen = bottom.length + 160;        }        if (vwidth) {          vwidth = vwidth * 0.7;        }        else {          vwidth = 200;        }        const delta = (vlen - bottom.length) / 2;        new paper.Path({          parent: new paper.Group({parent: l_visualization._by_insets}),          strokeColor: 'grey',          fillColor: BuilderElement.clr_by_clr.call(this, row.clr),          shadowColor: 'grey',          shadowBlur: 20,          shadowOffset: [10, 20],          opacity: 0.7,          strokeScaling: false,          closed: true,          segments: [            bottom.b.add([delta, 0]),            bottom.e.add([-delta, 0]),            bottom.e.add([-delta - vwidth, vwidth]),            bottom.b.add([delta - vwidth, vwidth]),          ],        });        return false;      }    });  }    draw_opening() {    const {l_visualization, furn, opening} = this;    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;    if (!this.parent || !open_types.is_opening(furn.open_type)) {      if (l_visualization?._opening?.visible) {        l_visualization._opening.visible = false;      }      return;    }    const cache = {      profiles: this.outer_nodes,      bottom: this.profiles_by_side('bottom'),    };    const rotary_folding = () => {      const {_opening} = l_visualization;      const {side_count, project: {sketch_view}} = this;      if(side_count < furn.side_count) {        return;      }      furn.open_tunes.forEach((row) => {        if (row.rotation_axis) {          const axis = this.profile_by_furn_side(row.side, cache);          const other = this.profile_by_furn_side(            row.side + 2 <= side_count ? row.side + 2 : row.side - 2, cache);          _opening.moveTo(axis.corns(3));          _opening.lineTo(other.rays.inner.getPointAt(other.rays.inner.length / 2));          _opening.lineTo(axis.corns(4));        }      });      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {        _opening.dashArray = [70, 50];      }      else if(_opening.dashArray.length) {        _opening.dashArray = [];      }      _opening.visible = true;    };    const sliding = () => {      const {center} = this.bounds;      const {_opening} = l_visualization;      if (this.direction == open_directions.Правое) {        _opening.moveTo(center.add([-100, 0]));        _opening.lineTo(center.add([100, 0]));        _opening.moveTo(center.add([30, 30]));        _opening.lineTo(center.add([100, 0]));        _opening.lineTo(center.add([30, -30]));      }      else {        _opening.moveTo(center.add([100, 0]));        _opening.lineTo(center.add([-100, 0]));        _opening.moveTo(center.add([-30, 30]));        _opening.lineTo(center.add([-100, 0]));        _opening.lineTo(center.add([-30, -30]));      }      _opening.visible = true;    };    if (!l_visualization._opening) {      l_visualization._opening = new paper.CompoundPath({        parent: l_visualization,        strokeColor: 'black',      });    }    else {      l_visualization._opening.removeChildren();    }    return furn.is_sliding ? sliding() : rotary_folding();  }    draw_visualization(rows) {    const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;    const glasses = this.glasses(false, true).filter(({visible}) => visible);    l_visualization._by_spec.removeChildren();    const hide_by_spec = _attr._reflected || !builder_props.visualization;    if(!rows && !hide_by_spec) {      rows = [];      this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));    }    function draw(elm) {      if(this.elm === elm.elm && elm.visible) {        this.nom.visualization.draw({          elm,          layer: l_visualization,          offset: this.len * 1000,          offset0: this.width * 1000 * (this.alp1 || 1),          clr: this.clr,        });        return true;      }    };    this.draw_mosquito();    this.draw_sill();    glasses.forEach(this.draw_jalousie.bind(this));    if(!hide_by_spec) {      for (const row of rows) {        if(!profiles.some(draw.bind(row))) {          glasses.some((elm) => {            if(row.elm === elm.elm) {              row.nom.visualization.draw({                elm,                layer: l_visualization,                offset: [row.len * 1000, row.width * 1000],                clr: row.clr,              });              return true;            }            return elm.imposts.some(draw.bind(row));          });        }      }    }    if(builder_props.articles) {      this.draw_articles(profiles, builder_props.articles);    }    if(builder_props.glass_numbers) {      this.draw_glass_numbers();    }    for(const contour of contours){      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));    }  }    draw_articles(profiles, articles = 3) {    const {l_visualization} = this;    for(const profile of profiles) {      const {rays: {outer}, sizeb, inset, nom} = profile;      const p0 = outer.getNearestPoint(profile.corns(1));      const offset = outer.getOffsetOf(p0) + 80;      const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));      const tangent = outer.getTangentAt(offset);      let content = '→ ';      switch (articles) {        case 1:          content += profile.elm.toFixed();          break;        case 2:          content += inset.article || inset.name;          break;        case 3:          content += nom.article || nom.name;          break;        case 4:          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;          break;        case 5:          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;          break;      }      const text = new paper.PointText({        parent: l_visualization._by_spec,        guide: true,        fillColor: 'darkblue',        fontFamily: consts.font_family,        fontSize: consts.font_size,        content,        position,      });      const {width} = text.bounds;      text.rotate(tangent.angle);      text.translate(tangent.multiply(width / 2));    }  }    draw_glass_numbers() {    const {l_visualization} = this;    for(const glass of this.glasses(false, true)) {      const text = new paper.PointText({        parent: l_visualization._by_spec,        guide: true,        fillColor: 'darkgreen',        fontFamily: consts.font_family,        fontSize: consts.font_size * 2,        content: glass.elm,        position: glass.bounds.center,      });    }  }    get hidden() {    return !!this._hidden;  }  set hidden(v) {    if (this.hidden != v) {      this._hidden = v;      const visible = !this._hidden;      this.children.forEach((elm) => {        if (elm instanceof BuilderElement) {          elm.visible = visible;        }      });      this.l_visualization.visible = visible;      this.l_dimensions.visible = visible;    }  }  hide_generatrix() {    this.profiles.forEach((elm) => {      elm.generatrix.visible = false;    });  }    get imposts() {    return this.getItems({class: Profile}).filter((elm) => {      if(elm instanceof ProfileNestedContent || elm instanceof ProfileVirtual) {        return false;      }      const {b, e} = elm.rays;      return b.is_tt || e.is_tt || b.is_i || e.is_i;    });  }    get params() {    return this._ox.params;  }    get path() {    return this.bounds;  }  set path(attr) {    if (!Array.isArray(attr)) {      return;    }    const noti = {type: consts.move_points, profiles: [], points: []};    const {outer_nodes} = this;    let need_bind = attr.length,      available_bind = outer_nodes.length,      elm, curr;    function set_node(n) {      if (!curr[n].is_nearest(elm[n], 0)) {        const {isegments, rays} = elm;        elm[n] = curr[n];        rays.clear(true);        isegments.forEach(({profile, node}) => {          profile.do_sub_bind(elm, node);          profile.rays.clear();        });        if (!noti.profiles.includes(elm)) {          noti.profiles.push(elm);        }        if (!noti.points.some((point) => point.is_nearest(elm[n], 0))) {          noti.points.push(elm[n]);        }      }    }    if (need_bind) {      for (let i = 0; i < attr.length; i++) {        curr = attr[i];                    for (let j = 0; j < outer_nodes.length; j++) {          elm = outer_nodes[j];            if (elm._attr.binded) {            continue;          }          if (curr.profile.is_nearest(elm)) {            elm._attr.binded = true;            curr.binded = true;            need_bind--;            available_bind--;            set_node('b');            set_node('e');            break;          }        }      }    }    if (need_bind) {      for (let i = 0; i < attr.length; i++) {        curr = attr[i];        if (curr.binded)          continue;        for (let j = 0; j < outer_nodes.length; j++) {          elm = outer_nodes[j];          if (elm._attr.binded)            continue;          if (curr.b.is_nearest(elm.b, true) || curr.e.is_nearest(elm.e, true)) {            elm._attr.binded = true;            curr.binded = true;            need_bind--;            available_bind--;            set_node('b');            set_node('e');            break;          }        }      }    }    if (need_bind && available_bind) {      for (let i = 0; i < attr.length; i++) {        curr = attr[i];        if (curr.binded)          continue;        for (let j = 0; j < outer_nodes.length; j++) {          elm = outer_nodes[j];          if (elm._attr.binded)            continue;          elm._attr.binded = true;          curr.binded = true;          need_bind--;          available_bind--;          set_node('b');          set_node('e');          break;        }      }    }    if (need_bind) {      for (let i = 0; i < attr.length; i++) {        curr = attr[i];        if (curr.binded) {          continue;        }        elm = new this.ProfileConstructor({          generatrix: curr.profile.generatrix.get_subpath(curr.b, curr.e),          proto: outer_nodes.length ? outer_nodes[0] : {parent: this, clr: curr.profile.clr},          _nearest: curr.profile,        });        curr.profile = elm;        delete curr.outer;        curr.binded = true;        noti.profiles.push(elm);        noti.points.push(elm.b);        noti.points.push(elm.e);        need_bind--;      }    }    if (available_bind) {      outer_nodes.forEach((elm) => {        if (!elm._attr.binded) {          elm.rays.clear(true);          elm.remove();          available_bind--;        }      });    }    if(!(this instanceof ContourNestedContent)) {      this.profiles.forEach((p) => p.default_inset());    }    if (noti.points.length) {      this.profiles.forEach((p) => p._attr?._rays?.clear());      this.notify(noti);    }    this._attr._bounds = null;  }    get perimeter() {    const res = [];    this.outer_profiles.forEach((curr) => {      const tmp = curr.sub_path ? {        len: curr.sub_path.length,        angle: curr.e.subtract(curr.b).angle,      } : {        len: curr.elm.length,        angle: curr.elm.angle_hor,      };      res.push(tmp);      if (tmp.angle < 0) {        tmp.angle += 360;      }      tmp.angle_hor = tmp.angle;      tmp.profile = curr.profile || curr.elm;    });    return res;  }    perimeter_inner(size = 0, nom, check_cnn) {    const {center} = this.bounds;    const {cat: {cnns}, enm: {cnn_types}, CatInserts} = $p;    if(nom instanceof CatInserts) {      for(const row of nom.specification) {        if(row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {          nom = row.nom;          size = row.sz;          break;        }      }    }    const res = this.outer_profiles.map((curr) => {      const profile = curr.profile || curr.elm;      const {inner, outer} = profile.rays;      const sub_path = inner.getNearestPoint(center).getDistance(center, true) < outer.getNearestPoint(center).getDistance(center, true) ?        inner.get_subpath(inner.getNearestPoint(curr.b), inner.getNearestPoint(curr.e)) : outer.get_subpath(outer.getNearestPoint(curr.b), outer.getNearestPoint(curr.e));      let angle = curr.e.subtract(curr.b).angle.round(1);      if(angle < 0) angle += 360;      const cnn = nom && cnns.nom_cnn(nom, profile, cnn_types.ii, true)[0];      const sz = cnn ? cnn.size(profile, profile) : 0;      const offset = size + sz;      if(check_cnn) {        check_cnn.cnn = cnn;      }      return {        profile,        sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),        angle,        b: curr.b,        e: curr.e,      };    });    const ubound = res.length - 1;    return res.map((curr, index) => {      let {sub_path} = curr;      const prev = !index ? res[ubound] : res[index - 1];      const next = (index == ubound) ? res[0] : res[index + 1];      const b = sub_path.intersect_point(prev.sub_path, curr.b, true);      const e = sub_path.intersect_point(next.sub_path, curr.e, true);      if (b && e) {        sub_path = sub_path.get_subpath(b, e);      }      return {        profile: curr.profile,        angle: curr.angle.round(1),        len: sub_path.length,        sub_path,        angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),        angle_next: 180 - curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),      };    });  }    bounds_inner(size = 0, nom) {    const path = new paper.Path({insert: false});    for (let curr of this.perimeter_inner(size, nom)) {      path.addSegments(curr.sub_path.segments);    }    if (path.segments.length && !path.closed) {      path.closePath(true);    }    path.reduce();    return path.bounds;  }    get pos() {  }    get profiles() {    return this.children.filter((elm) => elm instanceof Profile);  }    get sectionals() {    return this.children.filter((elm) => elm instanceof Sectional);  }    get adjoinings() {    return this.children.filter((elm) => elm instanceof ProfileAdjoining);  }    get onlays() {    const res = [];    this.fillings.forEach((filling) => {      filling.children.forEach((elm) => elm instanceof Onlay && res.push(elm));    })    return res;  }    redraw() {    if (!this.visible || this.hidden) {      return;    }    this._attr._bounds = null;    const {l_visualization: {_by_insets, _by_spec}, project, profiles, _attr: {chnom}} = this;    const {_attr, _scope} = project;    _by_insets.removeChildren();    !_attr._saving && _by_spec.removeChildren();    const imposts = [];    const addls = [];    const other = new Set();    for(const elm of profiles) {      elm.redraw();      for(const addl of elm.addls) {        addls.push(addl);      }      if(elm.elm_type.is('impost')) {        imposts.push(elm);      }      else {        const {b, e} = elm.rays;        if(b.is_short) {          other.add(b.profile);        }        if(e.is_short) {          other.add(e.profile);        }      }    }    for (const elm of imposts.sort(Contour.ecompare)) {      const {_rays: {b, e}, _corns} = elm._attr;      b.profile?.bringToFront?.();      if(b.profile?.e?.is_nearest(b.point, 20000)) {        b.profile.rays.e.profile?.bringToFront?.();      }      else if(b.profile?.b?.is_nearest(b.point, 20000)) {        b.profile.rays.b.profile?.bringToFront?.();      }      e.profile?.bringToFront?.();      if(e.profile?.e?.is_nearest(e.point, 20000)) {        e.profile.rays.e.profile?.bringToFront?.();      }      else if(e.profile?.b?.is_nearest(e.point, 20000)) {        e.profile.rays.b.profile?.bringToFront?.();      }    }    for (const elm of Array.from(other)) {      elm?.bringToFront?.();    }    for (const elm of addls) {      const {b, e} = elm.rays;      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);    }    const changed = chnom.splice(0);    for(const elm of profiles) {      if(!changed.includes(elm)) {        elm.check_nom(changed);      }    }    if (changed.length) {      for(const elm of changed) {        elm._attr._rays.clear('with_neighbor');        _scope.eve.emit('set_inset', elm);      }      project.register_change();      return;    }    this.glass_recalc();    this.draw_opening();    const children = this.contours.concat(this.tearings);    const left = this.children.filter((elm) => !children.includes(elm));    for(const elm of children) {      elm.redraw();      for(const lelm of left) {        if(lelm.isAbove(elm)) {          lelm.insertBelow(elm);        }      }    }    if(!_attr._hide_errors) {      this.draw_cnn_errors();      this.draw_static_errors();    }    for(const elm of this.sectionals) {      elm.redraw();    }    this.notify(this, 'contour_redrawed', this._attr._bounds);  }    params_links(attr, sys, cnstr) {    if(!sys) {      sys = this.sys;      cnstr = this.cnstr;    }    const {prow, meta} = attr;    if(prow.param === sys.base_clr && sys.color_price_groups.count()) {      attr.oselect = true;      const values = sys.color_price_groups.unload_column('base_clr');      if(meta.choice_links?.length) {        meta.choice_links.length = 0;      }      meta.choice_params = [{name: 'ref', path: {in: values}}];      if(values.length && !values.includes(prow.value)) {        prow.value = values[0];      }      return true;    }  }    refresh_prm_links(root) {    const cnstr = root ? 0 : this.cnstr || -9999;    const {project, sys, own_sys, prod_ox, params, layer} = this;    const {_dp, _attr} = project;    const {blank} = $p.utils;    let notify;    params.find_rows({cnstr, inset: blank.guid}, (prow) => {      const {param} = prow;      const links = param.params_links({        grid: {selection: {cnstr}},        obj: prow,        layer: this,      });      let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);      if(!hide) {        const drow = sys.prm_defaults(param, own_sys ? 0 : cnstr);        if(drow && drow.hide) {          hide = true;        }      }      if (links.length && param.linked_values(links, prow)) {        notify = true;      }      else if(param.inheritance === 3 || param.inheritance === 4) {        const bvalue = param.branch_value({project, cnstr, ox: prod_ox});        if((param.inheritance === 3 || _attr._loading) && prow.value !== bvalue) {          prow.value = bvalue;          notify = true;        }        else if(!prow.value || prow.value.empty?.()) {          prow.value = bvalue;          notify = true;        }      }      if (prow.hide !== hide) {        prow.hide = hide;        notify = true;      }    });    if(!root && !layer) {      const {product_params} = this.sys;      for(const filling of this.fillings) {        const {inset, elm} = filling;        const inset_params = inset.used_params();        for(const param of inset_params) {          if(param.inheritance === 2 || (param.inheritance === 1 && !product_params.find({param}))) {            const key = {cnstr: -elm, param, inset: blank.guid, region: 0};            const prow = params.find(key) || params.add(key);            const drow = inset?.product_params?.find({param});            if(drow) {              if (drow.hide) {                prow.hide = true;              }              const {value} = prow;              if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {                prow.value = drow.option_value({elm: filling});              }            }          }        }      }    }    if(notify) {      this.notify(this, 'refresh_prm_links');      if(root) {        _dp._manager.emit_async('rows', _dp, {extra_fields: true});        project.check_clr();      }    }  }    refresh_inset_depends(param) {    const {contours, profiles} = this;    for(const profile of profiles) {      profile.refresh_inset_depends(param, true);    }    for(const glass of this.glasses(false, true)) {      glass.refresh_inset_depends(param);    }    for(const contour of contours) {      contour.refresh_inset_depends(param);    }  }    save_coordinates(short, save, close) {    let res = Promise.resolve();    if(short) {      this._row.by_contour(this);    }    else {      const push = (contour) => {        res = res.then(() => contour.save_coordinates(short, save, close));      };      if(!this.hidden) {        this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());      }      const {l_text, l_dimensions} = this;      for (let elm of this.children) {        if (elm.save_coordinates) {          push(elm);        }        else if (elm === l_text || elm === l_dimensions) {          elm.children.forEach((elm) => elm.save_coordinates && push(elm));        }      }      res = res.then(() => this._row.by_contour(this));    }    return res;  }    sort_nodes(nodes) {    if (!nodes.length) {      return nodes;    }    let prev = nodes[0];    const res = [prev];    let couner = nodes.length + 1;    while (res.length < nodes.length && couner) {      couner--;      for (let i = 0; i < nodes.length; i++) {        const curr = nodes[i];        if (res.indexOf(curr) != -1)          continue;        if (prev.node2 == curr.node1) {          res.push(curr);          prev = curr;          break;        }      }    }    if (couner) {      nodes.length = 0;      for (let i = 0; i < res.length; i++) {        nodes.push(res[i]);      }      res.length = 0;    }  }    get level() {    const {layer} = this;    return layer ? layer.level + 1 : 0;  }    get sys() {    const {layer, project} = this;    return layer ? layer.sys : project._dp.sys;  }  set sys(v) {    const {layer, project} = this;    if(layer) {      layer.sys = v;    }    else {      project._dp.sys = v;    }  }    get own_sys() {    return this.layer ? false : [10, 11].includes(this.kind);  }    extract_pvalue({param, cnstr, elm, origin, prm_row}) {    if(elm?.rnum) {      return elm[param.valueOf()];    }    const {layer, own_sys} = this;    if(!cnstr) {      if(layer && !own_sys && !(layer instanceof ContourParent)) {        return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});      }    }    const {enm: {plan_detailing}, utils, CatInserts} = $p;    let {_ox, prm_ox} = this;    if(prm_ox) {      _ox = prm_ox;    }    if(param.inheritance !== 3 &&        plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {      let prow;      _ox.params.find_rows({        param,        cnstr: {in: [0, this.cnstr]},        inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,      }, (row) => {        if(!prow || row.cnstr) {          prow = row;          return false;        }      });      if(prow) {        return prow.value;      }      else if(cnstr && layer && !own_sys) {        return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});      }      if(param.inheritance === 4) {        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});      }      console.info(`Не задано значение параметра ${param.toString()}`);      return param.fetch_type();    }    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});  }    get furn_cache() {    return {      profiles: this.outer_nodes,      bottom: this.profiles_by_side('bottom'),      ox: this._ox,      w: this.w,      h: this.h,    };  }    open_restrictions_err({furn, cache, bool}) {    if(!furn) {      furn = this.furn;    }    if(!cache) {      cache = this.furn_cache;    }    let err = [];    const {side_count, direction, sys} = this;    const {open_types, open_directions, elm_types} = $p.enm;    if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {      if(bool) {        return true;      }      this.profiles.forEach(err.push.bind(err));    }    if(!err.length) {      if(furn.formula.empty()) {        for(const row of furn.open_tunes) {          const elm = this.profile_by_furn_side(row.side, cache);          const prev = this.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);          const next = this.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);          const len = elm.length - prev.nom.sizefurn - next.nom.sizefurn;          const angle = direction == open_directions.Правое ?            elm.generatrix.angle_between(prev.generatrix, elm.e) :            prev.generatrix.angle_between(elm.generatrix, elm.b);          const {lmin, lmax, amin, amax} = row;          if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {            if(bool) {              return true;            }            !err.includes(elm) && err.push(elm);          }        }      }      else {        try {          const path = furn.formula.execute();          if(!path.contains([cache.w, cache.h])) {            if(bool) {              return true;            }            this.profiles.forEach(err.push.bind(err));          }        }        catch (e) {}      }    }    for(const row of furn.open_tunes) {      const elm = this.profile_by_furn_side(row.side, cache);      const nearest = elm && elm.nearest();      if(nearest) {        if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {          if(row.shtulp_available) {            if(bool) {              return true;            }            !err.includes(elm) && err.push(elm);          }        }        else {          const {elm_type, inset} = nearest;          if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||            (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {            if(bool) {              return true;            }            !err.includes(elm) && err.push(elm);          }        }      }    }    return bool ? false : err;  }    handle_line(elm) {    const {bounds, h_ruch} = this;    const by_side = this.profiles_by_side();    return (elm == by_side.top || elm == by_side.bottom) ?      new paper.Path({        insert: false,        segments: [[bounds.left + h_ruch, bounds.top - 200], [bounds.left + h_ruch, bounds.bottom + 200]],      }) :      new paper.Path({        insert: false,        segments: [[bounds.left - 200, bounds.bottom - h_ruch], [bounds.right + 200, bounds.bottom - h_ruch]],      });  }    update_handle_height(cache, from_setter) {    const {furn, _row, project} = this;    const {furn_set, handle_side} = furn;    if (!handle_side || furn_set.empty()) {      return;    }    if (!cache) {      cache = this.furn_cache;      cache.ignore_formulas = true;    }    const elm = this.profile_by_furn_side(handle_side, cache);    if (!elm) {      return;    }    const {len} = elm._row;    let handle_height;    function set_handle_height(row) {      const {handle_height_base, fix_ruch} = row;      if (handle_height_base < 0) {        if (fix_ruch || _row.fix_ruch != -3) {          _row.fix_ruch = fix_ruch ? -2 : -1;          return handle_height = (len / 2).round();        }      }      else if (handle_height_base > 0) {        if (fix_ruch || _row.fix_ruch != -3) {          _row.fix_ruch = fix_ruch ? -2 : -1          return handle_height = handle_height_base;        }      }    }    furn.furn_set.specification.find_rows({dop: 0}, (row) => {      if (!row.quantity || !row.check_restrictions(this, cache)) {        return;      }      if (set_handle_height(row)) {        return false;      }      const {nom} = row;      if (nom && row.is_set_row) {        let ok = false;        nom.get_spec(this, cache, true).each((sub_row) => {          if (set_handle_height(sub_row)) {            return !(ok = true);          }        });        if (ok) {          return false;        }      }    });    if(handle_height && !from_setter && _row.h_ruch != handle_height){      _row.h_ruch = handle_height;      project._dp._manager.emit('update', this, {h_ruch: true});    }    return handle_height;  }    get h_ruch() {    const {layer, _row} = this;    return layer ? _row.h_ruch : 0;  }  set h_ruch(v) {    const {layer, _row, project} = this;    if (layer) {      const old_fix_ruch = _row.fix_ruch;      if (old_fix_ruch == -3) {        _row.fix_ruch = -1;      }      const h_ruch = this.update_handle_height(null, true);      if(h_ruch && (old_fix_ruch != -3 || v == 0)){        _row.h_ruch = h_ruch;      }      if (v != 0 && [0, -1, -3].indexOf(_row.fix_ruch) != -1) {        _row.h_ruch = v;        if (_row.fix_ruch == -1 && v != h_ruch) {          _row.fix_ruch = -3;        }      }      project.register_change();    }    else {      _row.h_ruch = 0;    }    project._dp._manager.emit('update', this, {h_ruch: true});  }    get dop() {    return this._row.dop;  }  set dop(v) {    this._row.dop = v;  }    get rotation_elm() {    const {dop, project} = this;    return dop.rotation_elm ? project.getItem({class: BuilderElement, elm: dop.rotation_elm}) : null;  }  set rotation_elm(v) {    if(v instanceof BuilderElement) {      this.dop = {rotation_elm: v.elm};    }    else {      this.dop = {rotation_elm: v};    }  }    get angle3d() {    return this.dop.angle3d || 0;  }  set angle3d(v) {    this.dop = {angle3d: v};  }    get flipped() {    const {flipped} = this._row;    if(!flipped) {      return false;    }    return flipped > 0;  }  set flipped(v) {    this._row.flipped = v;    this.project.register_change(true);  }    get side_count() {    const {Импост} = $p.enm.elm_types;    let res = 0;    this.profiles.forEach((v) => v.elm_type != Импост && res++);    return res;  }    get w() {    const {is_rectangular, bounds} = this;    const {left, right} = this.profiles_by_side();    return bounds && left && right ? bounds.width - left.nom.sizefurn - right.nom.sizefurn : 0;  }    get h() {    const {is_rectangular, bounds} = this;    const {top, bottom} = this.profiles_by_side();    return bounds && top && bottom ? bounds.height - top.nom.sizefurn - bottom.nom.sizefurn : 0;  }    get l_text() {    const {_attr} = this;    if(!_attr._txt) {      _attr._txt = new paper.Group({parent: this});      for(const contour of this.contours) {        if(_attr._txt.isAbove(contour)) {          _attr._txt.insertBelow(contour);        }      }    }    return _attr._txt;  }    get l_visualization() {    const {_attr} = this;    if (!_attr._visl) {      _attr._visl = new paper.Group({parent: this, guide: true});      _attr._visl._by_insets = new paper.Group({parent: _attr._visl});      _attr._visl._by_spec = new paper.Group({parent: _attr._visl});      for(const contour of this.contours) {        if(_attr._visl.isAbove(contour)) {          _attr._visl.insertBelow(contour);        }      }    }    return _attr._visl;  }    get opacity() {    return this.children.length ? this.children[0].opacity : 1;  }  set opacity(v) {    this.children.forEach((elm) => {      if (elm instanceof BuilderElement)        elm.opacity = v;    });  }    is_clr() {    const white = $p.cat.clrs.predefined('Белый');    return this.profiles.some(({clr}) => !clr.empty() && clr !== white);  }    on_remove_elm(elm) {    if (this.parent) {      this.parent.on_remove_elm(elm);    }    if (elm instanceof Profile && !this.project._attr._loading) {      this.l_dimensions.clear();    }  }    on_insert_elm(elm) {    if (this.parent) {      this.parent.on_remove_elm(elm);    }    if (elm instanceof Profile && !this.project._attr._loading) {      this.l_dimensions.clear();    }  }    on_sys_changed(refill) {    const {enm: {elm_types, cnn_types}, cat: {cnns, inserts}} = $p;    this.profiles.forEach((elm) => elm.default_inset(true, refill));    this.glasses().forEach((elm) => {      if (elm instanceof Contour) {        elm.on_sys_changed(refill);      }      else {        const {thickness, project, ox} = elm;        if(!refill) {          const {thicknesses, glass_thickness} = this.sys;          if(glass_thickness === 0) {            refill = !thicknesses.includes(thickness);          }          else if(glass_thickness === 1) {            refill = !this.sys.glasses({elm, layer: this}).includes(inserts.get(elm.inset));          }          else if(glass_thickness === 2) {            refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];          }        }        if(refill) {          let {elm_type} = elm.nom;          if(!elm_types.glasses.includes(elm_type)) {            elm_type = elm_types.Стекло;          }          elm.set_inset(project.default_inset({elm_type: [elm_type]}));        }        else {          const {inset} = elm;          if(inset.insert_type.is('composite') && !ox.glass_specification.find({elm: elm.elm})) {            for(const row of inset.specification) {              row.quantity && ox.glass_specification.add({elm: elm.elm, inset: row.nom});            }          }        }        elm.profiles.forEach((curr) => {          if(!curr.cnn || !curr.cnn.check_nom2(curr.profile)) {            curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);          }        });      }    });  }  apply_mirror() {    const {l_visualization, profiles, contours, project: {_attr}} = this;    if(_attr._reflected) {      l_visualization._by_spec.removeChildren();    }    for(const profile of this.profiles) {      const {clr} = profile;      if(clr.is_composite()) {        profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);      }    }    for (const fill of this.fillings) {      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);      for (const onlay of fill.imposts) {        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay, onlay.clr);      }    }    for(const layer of this.contours) {      layer.apply_mirror();      if(_attr._reflected) {        layer.sendToBack();      }      else {        layer.bringToFront();      }    }  }  get sketch_view() {    let {sys: {sketch_view}, project: {_attr}} = this;    const {hinge, out_hinge, inner, outer} = sketch_view._manager;    if(_attr._reflected) {      switch (sketch_view) {      case hinge:        return out_hinge;      case out_hinge:        return hinge;      case inner:        return outer;      case outer:        return inner;      }    }    return sketch_view;  }}Contour.ecompare = (a, b) => b.elm - a.elm;Contour.acompare = (a, b) => b.angle_hor - a.angle_hor;GlassSegment.fn_sort = function fn_sort(a, b) {  const da = this.getOffsetOf(a.point);  const db = this.getOffsetOf(b.point);  if (da < db) {    return -1;  }  else if (da > db) {    return 1;  }  return 0;};GlassSegment.next = function next_segments(curr, nodes, segments) {  if (!curr.anext) {    curr.anext = [];    for(const segm of segments) {      if (segm === curr || segm.profile === curr.profile){        continue;      }      if (curr.has_cnn(segm, nodes, segments)) {        const angle = curr.e.subtract(curr.b).getDirectedAngle(segm.e.subtract(segm.b));        if (segments.length < 3 || angle >= 0 || Math.abs(angle + 180) < 1)          curr.anext.push(segm);      }    }  }  return curr.anext;}EditorInvisible.Contour = Contour;EditorInvisible.GlassSegment = GlassSegment;class ContourNested extends Contour {  constructor(attr) {    super(attr);    const {project, _ox} = this;    const row = _ox.constructions.find({parent: 1});    Contour.create({project, row, parent: this, ox: _ox});  }  get ProfileConstructor() {    return ProfileNested;  }  presentation(bounds) {    const text = super.presentation(bounds);    return text.replace('Створка', 'Вложение');  }    get _ox() {    const {_attr} = this;    if(!_attr._ox) {      const {cat: {templates}, job_prm, utils} = $p;      const {project, cnstr} = this;      const {ox} = project;      for(const {characteristic} of ox.calc_order.production) {        if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {          _attr._ox = characteristic;          break;        }      }      if(!_attr._ox) {        _attr._ox = ox._manager.create({          ref: utils.generate_guid(),          calc_order: ox.calc_order,          leading_product: ox,          leading_elm: -cnstr,          constructions: [            {kind: 3, cnstr: 1},            {parent: 1, cnstr: 2},          ],        }, false, true);        _attr._ox._data._is_new = false;        ox.calc_order.create_product_row({create: true, cx: Promise.resolve(_attr._ox)})          .then((row) => {            _attr._ox.product = row.row;          });        this.subscribe_load_stamp(_attr._ox);        const {sys, params} = templates._select_template;        sys.refill_prm(_attr._ox, 0, 1, this, params);      }    }    return _attr._ox;  }  get prm_ox() {    return this.layer.ox;  }    get own_sys() {    return true;  }    get sys() {    return this._ox.sys;  }  set sys(v) {  }  get hidden() {    return !this.visible;  }  set hidden(v) {    this.visible = !v;  }  get content() {    return this.contours[0];  }  get l_dimensions() {    return ContourNested._dimlns;  }    load_stamp() {    const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;    return Promise.resolve().then(() => {      const {base_block} = templates._select_template;      if(base_block.calc_order === templates._select_template.calc_order) {        const {_ox, project: {_attr}} = this;        _attr._lock = true;        const tx = characteristics.create({calc_order: _ox.calc_order}, false, true);        const teditor = new EditorInvisible();        const tproject = teditor.create_scheme();        const fin = () => {          _attr._lock = false;          const {calc_order_row} = tx;          calc_order_row && tx.calc_order.production.del(calc_order_row);          teditor.unload();          tx.unload();        };        return tproject.load(tx, true, _ox.calc_order)          .then(() => {            return tproject.load_stamp(base_block, false, true, true);          })          .then(() => {            const {lbounds} = this;            const contour = tproject.contours[0];            if(!contour || !contour.contours.length) {              throw new Error(`Нет слоёв в шаблоне ${base_block.name}`);            }            const {bottom, right} = tproject.l_dimensions;            const dx = lbounds.width - bottom.size;            const dy = lbounds.height - right.size;            dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');            dy && right._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');            contour.redraw();            dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');            dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');            contour.redraw();            contour.refresh_prm_links(true);            tproject.zoom_fit();            if(tproject._scope.eve._async?.move_points?.timer) {              clearTimeout(tproject._scope.eve._async.move_points.timer);              delete tproject._scope.eve._async.move_points.timer;            }            while (tproject._ch.length) {              tproject.redraw();            }            return tproject.save_coordinates({svg: false, no_recalc: true});          })          .then(() => {            const {lbounds, content} = this;            while (content.children.length) {              if(content.children[0].remove() === false) {                throw new Error('Ошибка при удалении элемента');              }            }            for (const elm of this.profiles) {              elm.save_coordinates();            }            _ox.specification.clear();            _ox.sys = base_block.sys;            const map = new Map();            const {_row} = content;            const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;            let elm = elm0;            for(const trow of tx.constructions) {              if(trow.parent === 1) {                for(const fld in trow._obj) {                  if(fld !== 'row' && !fld.startsWith('_')) {                    _row[fld] = trow._obj[fld];                  }                }              }              else if(trow.parent > 1) {                _ox.constructions.add(Object.assign({}, trow._obj));              }            }            for(const trow of tx.coordinates) {              if(trow.cnstr > 1) {                elm += 1;                map.set(trow.elm, elm);              }            }            const adel = [];            for(const trow of _ox.cnn_elmnts) {              if(trow.elm1 > elm0 || trow.elm2 > elm0) {                adel.push(trow);              }            }            for(const trow of adel) {              _ox.cnn_elmnts.del(trow);            }            for(const trow of tx.cnn_elmnts) {              const row1 = tx.coordinates.find({elm: trow.elm1});              const row2 = tx.coordinates.find({elm: trow.elm2});              if(row1.cnstr > 1 && row2.cnstr > 1) {                const proto = Object.assign({}, trow._obj);                proto.elm1 = map.get(proto.elm1);                proto.elm2 = map.get(proto.elm2);                _ox.cnn_elmnts.add(proto);              }            }            _ox.params.clear();            for(const trow of tx.params) {              const proto = Object.assign({}, trow._obj);              if(proto.cnstr < 0) {                proto.cnstr = -map.get(-proto.cnstr);              }              _ox.params.add(proto);            }            _ox.inserts.clear();            for(const trow of tx.inserts) {              const proto = Object.assign({}, trow._obj);              if(proto.cnstr < 0) {                proto.cnstr = -map.get(-proto.cnstr);              }              _ox.inserts.add(proto);            }            const contour = tproject.contours[0];            const {lbounds: tlbounds} = contour;            content.load_stamp({              contour: contour.contours[0],              delta: [lbounds.x - tlbounds.x, lbounds.y - tlbounds.y],              map,            });            fin();          })          .catch((err) => {            fin();            $p.record_log(err);            $p.ui.dialogs.alert({title: 'Вставка вложенного изделия', text: err.message});          });      }    });  }    subscribe_load_stamp(_ox) {    const {cat: {templates}, job_prm} = $p;    const {templates_nested} = job_prm.builder;    if(templates_nested && templates_nested.includes(templates._select_template.calc_order)) {      const {eve} = this.project._scope;      const fin = (tx, fields) => {        if(tx === _ox && fields.constructions) {          templates._select_template.refill = false;          eve.off('rows', fin);          this.load_stamp();        }      }      eve.on('rows', fin);    }  }    save_coordinates(short, save, close) {    return Promise.resolve()      .then(() => {        if (!short) {          for (const elm of this.profiles) {            elm.save_coordinates();          }        }        const {bounds, w, h, is_rectangular, content, _row, project} = this;        _row.x = bounds ? bounds.width.round(4) : 0;        _row.y = bounds ? bounds.height.round(4) : 0;        _row.is_rectangular = is_rectangular;        _row.w = w.round(4);        _row.h = h.round(4);        if(content) {          content._row._owner._owner.glasses.clear();          return content.save_coordinates(short)            .then(() => {              return save && this._ox.recalc({save: 'recalc', svg: true, silent: true}, null, project._scope);            })            .then(() => {              return save && !close && content.draw_visualization();            });        }      });  }  set path(attr) {    super.path = attr;    const {content, profiles} = this    if(content) {      content.path = profiles.map((p) => new GlassSegment(p, p.b, p.e, false));    }  }    on_sys_changed() {    this.profiles.forEach((elm) => elm.rays.clear('with_neighbor'));    this.contours.forEach((contour) => contour.on_sys_changed());  }    redraw() {    if(!this.visible || this.hidden) {      return;    }    this._attr._bounds = null;    for(const elm of this.profiles) {      elm.redraw();    }    for(const elm of this.contours) {      elm.redraw();    }  }    remove() {    const {_ox} = this;    super.remove();    const {calc_order_row: row} = _ox;    if(row) {      row._owner.del(row);    }    _ox.unload();  }}ContourNested._dimlns = {  redraw() {  },  clear() {  }};EditorInvisible.ContourNested = ContourNested;class ContourNestedContent extends Contour {  constructor(attr) {    super(attr);    const {_ox: ox, project} = this;    if(ox) {      ox.constructions.find_rows({parent: this.cnstr}, (row) => {        Contour.create({project, row, parent: this, ox});      });    }  }  get ProfileConstructor() {    return ProfileNestedContent;  }    load_stamp({contour, delta, map}) {    const {_ox: ox, project} = this;    project._scope.activate();    for(const proto of contour.profiles) {      const generatrix = proto.generatrix.clone({insert: false});      generatrix.translate(delta);      new ProfileNestedContent({        parent: this,        generatrix,        proto: {inset: proto.inset, clr: proto.clr},        elm: map.get(proto.elm),      });    }    for(const proto of contour.glasses(false, true)) {      const path = proto.generatrix.clone({insert: false});      path.translate(delta);      new Filling({        parent: this,        path,        proto: {inset: proto.inset, clr: proto.clr},        elm: map.get(proto.elm),      });    }    for(const proto of contour.contours) {      const row = ox.constructions.find({cnstr: proto.cnstr});      if(row && row.parent === this.cnstr) {        const sub = Contour.create({project, row, parent: this, ox});        sub.load_stamp({contour: proto, delta, map})      };    }  }  get key() {    return `${this.layer.key}-${this.cnstr}`;  }  get _ox() {    return this.layer._ox;  }  get lbounds() {    return this.layer.lbounds;  }  get l_dimensions() {    return ContourNested._dimlns;  }    on_sys_changed() {    this.profiles.forEach((elm) => elm.rays.clear('with_neighbor'));    this.contours.forEach((contour) => contour.on_sys_changed());  }}EditorInvisible.ContourNestedContent = ContourNestedContent;
+class GlassSegment {
+  constructor(profile, b, e, outer) {
+    this.profile = profile;
+    this.b = b.clone();
+    this.e = e.clone();
+    this.outer = outer;
+    this.segment();
+  }
+  segment() {
+    let gen;
+    const {profile} = this;
+    const cond = profile.children.some((addl) => {
+      if (addl instanceof ProfileAddl && this.outer == addl.outer) {
+        if (!gen) {
+          gen = profile.generatrix;
+        }
+        const b = profile instanceof ProfileAddl ? profile.b : this.b;
+        const e = profile instanceof ProfileAddl ? profile.e : this.e;
+        if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {
+          this.profile = addl;
+          this.outer = false;
+          return true;
+        }
+      }
+    });
+    if (cond) {
+      this.segment();
+    }
+  }
+  break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {
+    const node = nodes.byPoint(point);
+    if(!node) {
+      return false;
+    }
+    let tangent = curr_profile.generatrix.getTangentAt(offset);
+    if(this.outer) {
+      tangent = tangent.negate();
+    }
+    const angles = [];
+    for(const elm of node) {
+      if(elm.profile === curr_profile) {
+        continue;
+      }
+      const {generatrix} = elm.profile;
+      const ppoint = generatrix.getNearestPoint(point);
+      const poffset = generatrix.getOffsetOf(ppoint);
+      const ptangent = generatrix.getTangentAt(poffset);
+      for(const segm of segments) {
+        if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {
+          angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});
+        }
+      }
+    }
+    let angle;
+    for(const elm of angles) {
+      if(elm.profile === segm_profile && (!angle || elm.angle > angle)) {
+        angle = elm.angle;
+      }
+    }
+    if(angle < 0) {
+      return true;
+    }
+    for(const elm of angles) {
+      if(elm.profile !== segm_profile && elm.angle > angle) {
+        return true;
+      }
+    }
+  }
+  has_cnn(segm, nodes, segments) {
+    const point = segm.b;
+    if(!this.e.is_nearest(point, 0)) {
+      return false;
+    }
+    let curr_profile = this.profile;
+    let segm_profile = segm.profile;
+    while (curr_profile instanceof ProfileAddl) {
+      if(!this.outer) {
+        this.outer = !curr_profile.is_collinear(curr_profile.parent);
+      }
+      curr_profile = curr_profile.parent;
+    }
+    while (segm_profile instanceof ProfileAddl) {
+      if(!segm.outer) {
+        segm.outer = !segm_profile.is_collinear(segm_profile.parent);
+      }
+      segm_profile = segm_profile.parent;
+    }
+    if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {
+      return false;
+    }
+    if(curr_profile.gb.is_nearest(point, true)) {
+      const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);
+      if(by_angle) {
+        return false;
+      }
+      else if(by_angle === undefined || curr_profile.rays.b.profile === segm_profile) {
+        return true;
+      }
+    }
+    if(curr_profile.ge.is_nearest(point, true)) {
+      const by_angle = this.break_by_angle(nodes, segments, point, curr_profile.generatrix.length, curr_profile, segm_profile);
+      if(by_angle) {
+        return false;
+      }
+      else if(by_angle === undefined || curr_profile.rays.e.profile === segm_profile) {
+        return true;
+      }
+    }
+    if(segm_profile.gb.is_nearest(point, true)) {
+      const by_angle = segm.break_by_angle(nodes, segments, point, 0, segm_profile, curr_profile)
+      if(by_angle) {
+        return false;
+      }
+      else if(by_angle === undefined || segm_profile.rays.b.profile == curr_profile) {
+        return true;
+      }
+    }
+    if(segm_profile.ge.is_nearest(point, true)) {
+      const by_angle = segm.break_by_angle(nodes, segments, point, segm_profile.generatrix.length, segm_profile, curr_profile);
+      if(by_angle) {
+        return false;
+      }
+      else if(by_angle === undefined || segm_profile.rays.e.profile == curr_profile) {
+        return true;
+      }
+    }
+    return false;
+  }
+  get _sub() {
+    const {sub_path} = this;
+    return {
+      get b() {
+        return sub_path ? sub_path.firstSegment.point : new paper.Point();
+      },
+      set b(v) {
+        sub_path && (sub_path.firstSegment.point = v);
+      },
+      get e() {
+        return sub_path ? sub_path.lastSegment.point : new paper.Point();
+      },
+      set e(v) {
+        sub_path && (sub_path.lastSegment.point = v);
+      },
+    };
+  }
+}
+class PointMap extends Map {
+  byPoint(point) {
+    for(const [key, value] of this) {
+      if(point.is_nearest(key, 0)) {
+        return value.length > 2 && value;
+      }
+    }
+  }
+}
+class Contour extends AbstractFilling(paper.Layer) {
+  constructor(attr) {
+    super({parent: attr.parent, project: attr.project});
+    this._attr = {chnom: []};
+    this._skeleton = new Skeleton(this);
+    const {project} = this;
+    this._row = attr.row;
+    if(attr.direction) {
+      this.direction = attr.direction;
+    }
+    if(attr.furn && typeof attr.furn !== 'string') {
+      this.furn = attr.furn || this.default_furn;
+    }
+    const ox = attr.ox || project.ox;
+    this.prms = new BuilderPrms({layer: this});
+    this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});
+    project.l_connective.bringToFront();
+  }
+  get ProfileConstructor() {
+    return Profile;
+  }
+  get default_furn() {
+    let {sys} = this;
+    let res;
+    const {job_prm: {builder}, cat} = $p;
+    while (true) {
+      res = builder.base_furn[sys.ref];
+      if(res || sys.empty()) {
+        break;
+      }
+      sys = sys.parent;
+    }
+    if(!res) {
+      res = builder.base_furn.null;
+    }
+    if(!res) {
+      const furns = this.sys.furns(this._ox, this);
+      if(furns.length) {
+        const {cache, cnstr, _ox} = this;
+        for(const {furn} of furns) {
+          if(furn.is_folder || this.open_restrictions_err({furn, cache, bool: true})) {
+            continue;
+          }
+          const weight_max = furn.furn_set.flap_weight_max;
+          if(weight_max && weight_max < _ox.elm_weight(-cnstr)) {
+            continue;
+          }
+          res = furn;
+          break;
+        }
+      }
+    }
+    if(!res) {
+      cat.furns.find_rows({is_folder: false, is_set: false, id: {not: ''}}, (row) => {
+        res = row;
+        return false;
+      });
+    }
+    return res;
+  }
+  create_children({coordinates, cnstr}) {
+    if (!cnstr) {
+      return;
+    }
+    const {elm_types} = $p.enm;
+    const glasses = [];
+    coordinates.find_rows({cnstr, region: 0}, (row) => {
+      const attr = {row, parent: this};
+      if(row.elm_type === elm_types.attachment) {
+        new this.ProfileConstructor(attr);
+      }
+      else if(elm_types.profiles.includes(row.elm_type)) {
+        row.elm_type === elm_types.impost ? new Profile(attr) : new this.ProfileConstructor(attr);
+      }
+      else if(elm_types.glasses.includes(row.elm_type)) {
+        glasses.push(row);
+      }
+      else if(row.elm_type === elm_types.drainage) {
+        new Sectional(attr)
+      }
+      else if(row.elm_type === elm_types.text) {
+        new FreeText({row, parent: this.l_text})
+      }
+    });
+    for(const row of glasses) {
+      new Filling({row, parent: this});
+    }
+  }
+  static create(attr = {}) {
+    let {kind, row, project, parent} = attr;
+    if(typeof kind === 'undefined') {
+      kind = row ? row.kind : 0;
+    }
+    let Constructor = Contour;
+    if(kind === 1) {
+      Constructor = ContourVirtual;
+    }
+    else if(kind === 2) {
+      Constructor = ContourNested;
+    }
+    else if(kind === 3) {
+      Constructor = ContourParent;
+    }
+    else if(kind === 4) {
+      Constructor = ContourTearing;
+    }
+    else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
+      Constructor = ContourNestedContent;
+    }
+    if (!attr.row) {
+      const {constructions} = project.ox;
+      attr.row = constructions.add({parent: parent ? parent.cnstr : 0});
+      attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
+    }
+    if(kind) {
+      attr.row.kind = kind;
+    }
+    const contour = new Constructor(attr);
+    project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
+    return contour;
+  }
+  presentation(bounds) {
+    if(!bounds){
+      bounds = this.bounds;
+    }
+    const {_ox, cnstr, layer} = this;
+    const weight = _ox.elm_weight(-cnstr);
+    return (layer ? 'Створка №' : 'Рама №') + cnstr +
+      (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
+      (weight ? `, ${weight.toFixed()}кг` : '');
+  }
+  get info() {
+    return this.presentation();
+  }
+  get key() {
+    return this.cnstr.toFixed();
+  }
+  get kind() {
+    let {kind} = this._row;
+    let layer = this;
+    while (kind === 0 && layer) {
+      layer = layer.layer;
+      if(!layer) {
+        break;
+      }
+      if([10, 11].includes(layer._row.kind)) {
+        kind = layer._row.kind;
+      }
+    }
+    return kind;
+  }
+  prod_layer() {
+    let {kind} = this._row;
+    let layer = this;
+    while (kind === 0 && layer) {
+      layer = layer.layer;
+      if(!layer) {
+        break;
+      }
+      if([10, 11].includes(layer._row.kind)) {
+        return layer;
+      }
+    }
+    return [10, 11].includes(kind) ? layer : null;
+  }
+  get_svg(attr = {}) {
+    for(const item of this.children) {
+      item.selected = false;
+    }
+    const options = attr.export_options || {};
+    if(!options.precision) {
+      options.precision = 1;
+    }
+    const svg = this.exportSVG(options);
+    const bounds = this.strokeBounds.unite(this.l_dimensions.strokeBounds);
+    svg.setAttribute('x', bounds.x);
+    svg.setAttribute('y', bounds.y);
+    svg.setAttribute('width', bounds.width + 40);
+    svg.setAttribute('height', bounds.height);
+    svg.querySelector('g').removeAttribute('transform');
+    return svg.outerHTML;
+  }
+  bring(direction = 'up') {
+    const {layer, project, _row} = this;
+    const contours = layer ? layer.contours : project.contours;
+    const index = contours.indexOf(this);
+    if(contours.length < 2 || (direction === 'down' && index === 0) || (direction === 'up' && index === contours.length - 1) ) {
+      return;
+    }
+    const other = direction === 'up' ? contours[index + 1] : contours[index - 1];
+    if(direction === 'up') {
+      this.insertAbove(other);
+    }
+    else {
+      this.insertBelow(other);
+    }
+    _row._owner.swap(_row, other._row);
+  }
+  activate(custom) {
+    super.activate();
+    if (this._row) {
+      this.notify(this, 'layer_activated', !custom);
+      this.project.register_update();
+    }
+  }
+  get _ox() {
+    const {layer, project} = this;
+    return layer ? layer._ox : project.ox;
+  }
+  get prod_ox() {
+    const layer = this.prod_layer();
+    if(layer) {
+      const {project: {ox}, cnstr} = layer;
+      let cx;
+      ox.calc_order.production.find_rows({ordn: ox}, ({characteristic}) => {
+        if(characteristic.leading_elm === -cnstr && characteristic.origin.empty()) {
+          cx = characteristic;
+          return false;
+        }
+      });
+      if(cx) {
+        return cx;
+      }
+    }
+    return this._ox;
+  }
+  get branch() {
+    return this.project.branch;
+  }
+  get area() {
+    return (this.bounds.area/1e6).round(3);
+  }
+  get form_area() {
+    let upath;
+    this.glasses(false, true).concat(this.profiles).forEach(({path}) => {
+      if(upath) {
+        upath = upath.unite(path, {insert: false});
+      }
+      else {
+        upath = path.clone({insert: false});
+      }
+    });
+    return (upath.area/1e6).round(3);
+  }
+  get furn() {
+    return this._row.furn;
+  }
+  set furn(v) {
+    const {_row, profiles, project, sys, level} = this;
+    if(sys.furn_level > level) {
+      v = _row.furn._manager.get();
+    }
+    if (_row.furn == v) {
+      return;
+    }
+    _row.furn = v;
+    if (this.direction.empty()) {
+      sys.furn_params.find_rows({param: $p.job_prm.properties.direction}, ({value}) => {
+        _row.direction = value;
+        return false;
+      });
+    }
+    _row.furn.refill_prm(this);
+    switch(_row.furn.shtulp_kind()) {
+    case 2:
+      this.bring('down');
+      break;
+    case 1:
+      this.bring('up');
+    }
+    for(const {_attr} of profiles) {
+      _attr._rays && _attr._rays.clear('with_neighbor');
+    }
+    project.register_change(true);
+    this.notify(this, 'furn_changed');
+  }
+  glasses(hide, glass_only) {
+    return this.children.filter((elm) => {
+      if(elm instanceof ContourTearing) {
+        return false;
+      }
+      if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {
+        if (hide) {
+          elm.visible = false;
+        }
+        return true;
+      }
+    });
+  }
+  get fillings() {
+    const fillings = [];
+    for(const glass of this.glasses()){
+      if(glass instanceof Contour){
+        fillings.push.apply(fillings, glass.fillings);
+      }
+      else{
+        fillings.push(glass);
+      }
+    }
+    return fillings;
+  }
+  get glass_contours() {
+    const segments = this.glass_segments;
+    const nodes = this.count_nodes();
+    const res = [];
+    let curr, acurr;
+    function go_go(segm) {
+      const anext = GlassSegment.next(segm, nodes, segments);
+      for (const next of anext) {
+        if (next === curr) {
+          return anext;
+        }
+        else if (acurr.every((el) => el !== next)) {
+          acurr.push(next);
+          return go_go(next);
+        }
+      }
+    }
+    while (segments.length) {
+      curr = segments[0];
+      acurr = [curr];
+      if (go_go(curr) && acurr.length > 1) {
+        res.push(acurr);
+      }
+      acurr.forEach((el) => {
+        const ind = segments.indexOf(el);
+        if (ind != -1) {
+          segments.splice(ind, 1);
+        }
+      });
+    }
+    return res;
+  }
+  glass_nodes(path, nodes, bind) {
+    const curve_nodes = [];
+    const path_nodes = [];
+    const ipoint = path.interiorPoint.negate();
+    let curve, findedb, findede, d, node1, node2;
+    if (!nodes) {
+      nodes = this.nodes;
+    }
+    for (let i in path.curves) {
+      curve = path.curves[i];
+      let d1 = Infinity;
+      let d2 = Infinity;
+      nodes.forEach((n) => {
+        if ((d = n.getDistance(curve.point1, true)) < d1) {
+          d1 = d;
+          node1 = n;
+        }
+        if ((d = n.getDistance(curve.point2, true)) < d2) {
+          d2 = d;
+          node2 = n;
+        }
+      });
+      if (path_nodes.indexOf(node1) == -1)
+        path_nodes.push(node1);
+      if (path_nodes.indexOf(node2) == -1)
+        path_nodes.push(node2);
+      if (!bind)
+        continue;
+      if(node1 === node2) {
+        continue;
+      }
+      findedb = false;
+      for (let n in curve_nodes) {
+        if (curve_nodes[n].node1 == node1 && curve_nodes[n].node2 == node2) {
+          findedb = true;
+          break;
+        }
+      }
+      if (!findedb) {
+        findedb = this.profile_by_nodes(node1, node2);
+        const loc1 = findedb.generatrix.getNearestLocation(node1);
+        const loc2 = findedb.generatrix.getNearestLocation(node2);
+        if (node1.add(ipoint).getDirectedAngle(node2.add(ipoint)) < 0)
+          curve_nodes.push({
+            node1: node2,
+            node2: node1,
+            profile: findedb,
+            out: loc2.index == loc1.index ? loc2.parameter > loc1.parameter : loc2.index > loc1.index,
+          });
+        else
+          curve_nodes.push({
+            node1: node1,
+            node2: node2,
+            profile: findedb,
+            out: loc1.index == loc2.index ? loc1.parameter > loc2.parameter : loc1.index > loc2.index,
+          });
+      }
+    }
+    this.sort_nodes(curve_nodes);
+    return path_nodes;
+  }
+  calck_rating(glcontour, glass) {
+    const {outer_profiles} = glass;
+    let crating = 0;
+    if (outer_profiles.length) {
+      for(const cnt of glcontour) {
+        for(const curr of outer_profiles) {
+          if(cnt.profile == curr.profile && cnt.b.is_nearest(curr.b) && cnt.e.is_nearest(curr.e)) {
+            crating++;
+            break;
+          }
+        }
+        if (crating > 2) {
+          break;
+        }
+      }
+    }
+    else {
+      const {nodes} = glass;
+      for(const cnt of glcontour) {
+        for(const node of nodes) {
+          if (cnt.b.is_nearest(node)) {
+            crating++;
+            break;
+          }
+        }
+        if (crating > 2) {
+          break;
+        }
+      }
+    }
+    return crating;
+  }
+  glass_recalc() {
+    const {glass_contours} = this;     
+    const glasses = this.glasses(true);
+    const binded = new Set();
+    for(const glass of glasses) {
+      if (glass.visible) {
+        continue;
+      }
+      for(const glcontour of glass_contours) {
+        if (binded.has(glcontour)) {
+          continue;
+        }
+        if ((glass_contours.length === 1 && !binded.size) || this.calck_rating(glcontour, glass) > 2) {
+          glass.path = glcontour;
+          glass.visible = true;
+          if (glass instanceof Filling) {
+            glass.redraw();
+          }
+          binded.add(glcontour);
+          break;
+        }
+      }
+    }
+    for(const glcontour of glass_contours) {
+      if (binded.has(glcontour)) {
+        continue;
+      }
+      let rating = 0, glass, crating, cglass, glass_center;
+      for (const g in glasses) {
+        glass = glasses[g];
+        if (glass.visible) {
+          continue;
+        }
+        crating = this.calck_rating(glcontour, glass);
+        if (crating > rating || !cglass) {
+          rating = crating;
+          cglass = glass;
+        }
+        if (crating == rating && cglass != glass) {
+          if (!glass_center) {
+            glass_center = glcontour.reduce((sum, val) => sum.add(val.b), new paper.Point).divide(glcontour.length);
+          }
+          if (glass_center.getDistance(glass.bounds.center, true) < glass_center.getDistance(cglass.bounds.center, true)) {
+            cglass = glass;
+          }
+        }
+      }
+      if (cglass || (cglass = this.getItem({class: Filling, visible: false}))) {
+        cglass.path = glcontour;
+        cglass.visible = true;
+        if (cglass instanceof Filling) {
+          cglass.redraw();
+        }
+      }
+      else {
+        if (glass = this.getItem({class: Filling})) {
+        }
+        else if (glass = this.project.getItem({class: Filling})) {
+        }
+        else {
+        }
+        cglass = new Filling({proto: glass, parent: this, path: glcontour});
+        cglass.redraw();
+      }
+    }
+  }
+  get glass_segments() {
+    const nodes = [];
+    function push_new(profile, b, e, outer = false) {
+      if(b.is_nearest(e, 0)){
+        return;
+      }
+      for(const segm of nodes) {
+        if(segm.profile === profile && segm.b.is_nearest(b, 0) && segm.e.is_nearest(e, 0) && segm.outer == outer){
+          return;
+        }
+      }
+      nodes.push(new GlassSegment(profile, b, e, outer));
+    }
+    for(const p of this.profiles) {
+      const sort = GlassSegment.fn_sort.bind(p.generatrix);
+      const ip = p.joined_imposts();
+      const {b: pb, e: pe} = p.rays;
+      const pbg = pb.is_t && pb.profile.d0 ? pb.profile.generatrix.getNearestPoint(p.b) : p.b;
+      const peg = pe.is_t && pe.profile.d0 ? pe.profile.generatrix.getNearestPoint(p.e) : p.e;
+      if (ip.inner.length) {
+        ip.inner.sort(sort);
+        if (!pb.is_i && !pbg.is_nearest(ip.inner[0].point)) {
+          push_new(p, pbg, ip.inner[0].point);
+        }
+        for (let i = 1; i < ip.inner.length; i++) {
+          push_new(p, ip.inner[i - 1].point, ip.inner[i].point);
+        }
+        if (!pe.is_i && !ip.inner[ip.inner.length - 1].point.is_nearest(peg)) {
+          push_new(p, ip.inner[ip.inner.length - 1].point, peg);
+        }
+      }
+      if (ip.outer.length) {
+        ip.outer.sort(sort);
+        if (!pb.is_i && !ip.outer[0].point.is_nearest(pbg)) {
+          push_new(p, ip.outer[0].point, pbg, true);
+        }
+        for (let i = 1; i < ip.outer.length; i++) {
+          push_new(p, ip.outer[i].point, ip.outer[i - 1].point, true);
+        }
+        if (!pe.is_i && !peg.is_nearest(ip.outer[ip.outer.length - 1].point)) {
+          push_new(p, peg, ip.outer[ip.outer.length - 1].point, true);
+        }
+      }
+      if (!ip.inner.length) {
+        if (!pb.is_i && !pe.is_i) {
+          push_new(p, pbg, peg);
+        }
+      }
+      if (!ip.outer.length && (pb.is_cut || pe.is_cut || pb.is_t || pe.is_t)) {
+        if (!pb.is_i && !pe.is_i) {
+          push_new(p, peg, pbg, true);
+        }
+      }
+      else if(pb.is_x || pe.is_x) {
+        push_new(p, peg, pbg, true);
+      }
+    }
+    return nodes;
+  }
+  get is_rectangular() {
+    const {Импост} = $p.enm.elm_types;
+    const outer = this.profiles.filter((v) => v.elm_type != Импост);
+    return outer.length === 4 && !outer.some(profile => !(profile.is_linear() && Math.abs(profile.angle_hor % 90) < 0.2));
+  }
+  move(delta) {
+    const {contours, tearings, profiles, project} = this;
+    const crays = (p) => p.rays.clear();
+    this.translate(delta);
+    contours.concat(tearings).forEach((contour) => contour.profiles.forEach(crays));
+    profiles.forEach(crays);
+    project.register_change();
+  }
+  get tearings() {
+    return this.children.filter((item) => item instanceof ContourTearing);
+  }
+  get nodes() {
+    const nodes = [];
+    this.profiles.forEach(({b, e}) => {
+      let findedb;
+      let findede;
+      nodes.forEach((n) => {
+        if (b && b.is_nearest(n)) {
+          findedb = true;
+        }
+        if (e && e.is_nearest(n)) {
+          findede = true;
+        }
+      });
+      if (!findedb && b) {
+        nodes.push(b.clone());
+      }
+      if (!findede && e) {
+        nodes.push(e.clone());
+      }
+    });
+    return nodes;
+  }
+  count_nodes() {
+    const nodes = new PointMap();
+    this.profiles.forEach((profile) => {
+      const {b, e} = profile;
+      let findedb;
+      let findede;
+      for(const [key, value] of nodes) {
+        if (b && b.is_nearest(key)) {
+          value.push({profile, point: 'b'})
+          findedb = true;
+        }
+        if (e && e.is_nearest(key)) {
+          value.push({profile, point: 'e'})
+          findede = true;
+        }
+      }
+      if (!findedb && b) {
+        nodes.set(b.clone(), [{profile, point: 'b'}]);
+      }
+      if (!findede && e) {
+        nodes.set(e.clone(), [{profile, point: 'e'}]);
+      }
+    });
+    return nodes;
+  }
+  notify(obj, type = 'update') {
+    if (obj.type) {
+      type = obj.type;
+    }
+    this.project._scope.eve.emit_async(type, obj);
+    type === consts.move_points && this.project.register_change();
+  }
+  get outer_nodes() {
+    return this.outer_profiles.map((v) => v.elm);
+  }
+  get outer_profiles() {
+    const {profiles} = this;
+    const to_remove = [];
+    const res = [];
+    let findedb, findede;
+    for(const elm of profiles) {
+      if (elm._attr.simulated) {
+        continue;
+      }
+      findedb = false;
+      findede = false;
+      for(const elm2 of profiles) {
+        if (elm2 === elm) {
+          continue;
+        }
+        if (!findedb && elm.has_cnn(elm2, elm.b) && elm.b.is_nearest(elm2.e)) {
+          findedb = true;
+        }
+        if (!findede && elm.has_cnn(elm2, elm.e) && elm.e.is_nearest(elm2.b)) {
+          findede = true;
+        }
+      }
+      if (!findedb || !findede) {
+        to_remove.push(elm);
+      }
+    }
+    for(const elm of profiles) {
+      if (to_remove.includes(elm)) {
+        continue;
+      }
+      elm._attr.binded = false;
+      res.push({
+        elm: elm,
+        profile: elm.nearest(true),
+        b: elm.b,
+        e: elm.e,
+        angle_hor: elm.angle_hor,
+      });
+    }
+    res.sort(Contour.acompare);
+    return res;
+  }
+  profile_by_furn_side(side, cache) {
+    if (!cache || !cache.profiles) {
+      cache = {
+        profiles: this.outer_nodes,
+        bottom: this.profiles_by_side('bottom'),
+      };
+    }
+    const profile_node = this.direction == $p.enm.open_directions.Правое ? 'b' : 'e';
+    const other_node = profile_node == 'b' ? 'e' : 'b';
+    let profile = cache.bottom;
+    const next = () => {
+      side--;
+      if (side <= 0) {
+        return profile;
+      }
+      cache.profiles.some((curr) => {
+        if (curr[other_node].is_nearest(profile[profile_node])) {
+          profile = curr;
+          return true;
+        }
+      });
+      return next();
+    };
+    return next();
+  }
+  profile_by_nodes(n1, n2, point) {
+    const {profiles} = this;
+    for (let i = 0; i < profiles.length; i++) {
+      const {generatrix} = profiles[i];
+      if (generatrix.getNearestPoint(n1).is_nearest(n1) && generatrix.getNearestPoint(n2).is_nearest(n2)) {
+        if (!point || generatrix.getNearestPoint(point).is_nearest(point))
+          return profiles[i];
+      }
+    }
+  }
+  remove() {
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+    const {children, project, _row, cnstr, _ox} = this;
+    while (children.length) {
+      if(children[0].remove() === false) {
+        return;
+      }
+    }
+    project._scope.eve.emit('elm_removed', this);
+    if (_row) {
+      if(!project.ox.empty()) {
+        if(_ox === _row._owner._owner) {
+          _ox.coordinates.clear({cnstr});
+          _ox.params.clear({cnstr});
+          _ox.inserts.clear({cnstr});
+        }
+        _row._owner.del(_row);
+      }
+      this._row = null;
+    }
+    super.remove();
+  }
+  get _manager() {
+    return this.project._dp._manager;
+  }
+  _metadata(fld) {
+    const {tabular_sections, fields: {sys}} = this._ox._metadata();
+    const {fields} = tabular_sections.constructions;
+    if(fld === 'sys') {
+      return sys;
+    }
+    return fld ? (fields[fld] || tabular_sections[fld]) : {
+      fields: {
+        furn: fields.furn,
+        direction: fields.direction,
+        h_ruch: fields.h_ruch,
+        flipped: fields.flipped,
+        sys,
+      },
+      tabular_sections: {
+        params: tabular_sections.params,
+      },
+    };
+  }
+  get bounds() {
+    const {_attr, parent} = this;
+    if (!_attr._bounds || !_attr._bounds.width || !_attr._bounds.height) {
+      this.profiles.forEach((profile) => {
+        const path = profile.path && profile.path.segments.length ? profile.path : profile.generatrix;
+        if (path) {
+          _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
+          if (!parent) {
+            const {d0} = profile;
+            if (d0) {
+              _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);
+            }
+          }
+        }
+      });
+      this.sectionals.forEach((sectional) => {
+        _attr._bounds = _attr._bounds ? _attr._bounds.unite(sectional.bounds) : sectional.bounds;
+      });
+      if (!_attr._bounds) {
+        _attr._bounds = new paper.Rectangle();
+      }
+    }
+    return _attr._bounds;
+  }
+  get lbounds() {
+    const parent = new paper.Group({insert: false});
+    for (const {generatrix} of this.profiles) {
+      parent.addChild(generatrix.clone({insert: false}));
+    }
+    return parent.bounds;
+  }
+  get cnstr() {
+    return this._row ? this._row.cnstr : 0;
+  }
+  set cnstr(v) {
+    this._row && (this._row.cnstr = v);
+  }
+  get dimension_bounds() {
+    let bounds = super.dimension_bounds;
+    const ib = this.l_visualization._by_insets.bounds;
+    if (ib.height && ib.bottom > bounds.bottom) {
+      const delta = ib.bottom - bounds.bottom + 10;
+      bounds = bounds.unite(
+        new paper.Rectangle(bounds.bottomLeft, bounds.bottomRight.add([0, delta < 250 ? delta * 1.1 : delta * 1.2]))
+      );
+    }
+    for(const profile of this.profiles) {
+      for(const adj of profile.adjoinings) {
+        bounds = bounds.unite(adj.bounds);
+      }
+    }
+    return bounds;
+  }
+  get direction() {
+    return this._row.direction;
+  }
+  set direction(v) {
+    this._row.direction = v;
+    this.project.register_change(true);
+  }
+  get opening() {
+    const {enm, cch} = $p;
+    const param = cch.properties.predefined('opening');
+    let res = enm.opening.in;
+    if(param && !param.empty()) {
+      const {params, cnstr} = this;
+      params.find_rows({param, cnstr: {in: [0, cnstr]}}, (row)  => {
+        res = enm.opening.get(row.value);
+        if(row.cnstr === cnstr) {
+          return false;
+        }
+      });
+    }
+    return res;
+  }
+  set opening(v) {
+    const param = $p.cch.properties.predefined('opening');
+    if(param && !param.empty()) {
+      const {params, cnstr} = this;
+      const row = params.find({param, cnstr});
+      if(row) {
+        row.value = v;
+      }
+      else {
+        params.add({param, cnstr, value: v});
+      }
+      this.project.register_change(true);
+    }
+  }
+  zoom_fit() {
+    this.project.zoom_fit.call(this, null, true);
+  }
+  draw_static_errors() {
+    const {l_visualization, sys} = this;
+    if(!sys.check_static) {
+      return;
+    }
+    const {Рама, Импост} = $p.enm.elm_types;
+    if(l_visualization._static) {
+      l_visualization._static.removeChildren();
+    }
+    else {
+      l_visualization._static = new paper.Group({parent: l_visualization});
+    }
+    for (let i = 0; i < this.profiles.length; i++) {
+      if([Рама, Импост].includes(this.profiles[i].elm_type) &&
+        this.profiles[i].static_load().can_use === false) {
+        new paper.Path.Circle({
+          center: this.profiles[i].bounds.center,
+          radius: 20,
+          strokeColor: 'blue',
+          strokeWidth: 4,
+          strokeCap: 'round',
+          strokeScaling: false,
+          guide: true,
+          parent: l_visualization._static,
+          fillColor: 'red'
+        });
+      }
+    }
+  }
+  draw_cnn_errors() {
+    const {l_visualization, project: {_scope: {eve}}} = this;
+    const {job_prm: {nom}, msg} = $p;
+    if (l_visualization._cnn) {
+      l_visualization._cnn.removeChildren();
+    }
+    else {
+      l_visualization._cnn = new paper.Group({parent: l_visualization});
+    }
+    if(eve._async?.move_points?.timer) {
+      return;
+    }
+    const err_attrs = {
+      strokeColor: 'red',
+      strokeWidth: 2,
+      strokeCap: 'round',
+      strokeScaling: false,
+      dashOffset: 4,
+      dashArray: [4, 4],
+      guide: true,
+      parent: l_visualization._cnn,
+    };
+    this.glasses(false, true).forEach(glass => {
+      let err;
+      const {_row, path, profiles, imposts, inset} = glass;
+      _row.s = glass.form_area;
+      profiles.forEach(({cnn, sub_path}) => {
+        if (!cnn) {
+          glass.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
+          Object.assign(sub_path, err_attrs);
+          err = true;
+        }
+      });
+      if(path.is_self_intersected()) {
+        glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
+        err = true;
+      }
+      if(!inset.check_base_restrictions(inset, glass)) {
+        glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
+        err = true;
+      }
+      if (err) {
+        glass.fill_error();
+      }
+      else {
+        path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr);
+      }
+      imposts.forEach((impost) => {
+        if(impost instanceof Onlay) {
+          const {b, e} = impost._attr._rays;
+          const oerr_attrs = Object.assign({radius: 50}, err_attrs);
+          b.check_err(oerr_attrs);
+          e.check_err(oerr_attrs);
+        }
+      });
+    });
+    this.profiles.forEach((elm) => {
+      const {_corns, _rays} = elm._attr;
+      _rays.b.check_err(err_attrs);
+      _rays.e.check_err(err_attrs);
+      if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {
+        const subpath = elm.path.get_subpath(_corns[1], _corns[2]);
+        Object.assign(subpath, err_attrs);
+        if(elm._attr._nearest instanceof ProfileConnective) {
+          subpath.parent = elm._attr._nearest.layer._errors;
+        }
+      }
+      elm.addls.forEach((elm) => {
+        if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {
+          Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
+        }
+      });
+      elm.check_err(err_attrs);
+    });
+    l_visualization.bringToFront();
+  }
+  draw_mosquito() {
+    const {l_visualization, project, _ox, cnstr} = this;
+    if(project.builder_props.mosquito === false) {
+      return;
+    }
+    _ox.inserts.find_rows({cnstr}, (row) => {
+      const {inset: origin} = row;
+      if (origin.insert_type.is('mosquito')) {
+        const props = {
+          parent: new paper.Group({parent: l_visualization._by_insets}),
+          strokeColor: 'grey',
+          strokeWidth: 3,
+          dashArray: [6, 4],
+          strokeScaling: false,
+        };
+        let {sz, nom, imposts} = origin.mosquito_props();
+        if(!nom) {
+          return false;
+        }
+        if(_ox.specification.find({elm: -cnstr, origin, nom: $p.job_prm.nom.cnn_ii_error})) {
+          props.strokeColor = '#f00';
+          props.dashArray = [8, 2, 2];
+        }
+        const perimetr = this.perimeter_inner(sz, nom);
+        const ppath = new paper.Path(props);
+        for(const {sub_path} of perimetr) {
+          ppath.addSegments(sub_path.segments);
+        }
+        const {elm_font_size, font_family} = consts;
+        const {bounds} = ppath;
+        new paper.PointText({
+          parent: props.parent,
+          fillColor: 'black',
+          fontFamily: font_family,
+          fontSize: elm_font_size,
+          guide: true,
+          content: origin.presentation,
+          point: bounds.bottomLeft.add([elm_font_size * 1.2, -elm_font_size * 0.4]),
+        });
+        if (imposts) {
+          const add_impost = (y) => {
+            const impost = Object.assign(new paper.Path({
+              insert: false,
+              segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
+            }), props);
+            const {length} = impost;
+            for(const {point} of ppath.getIntersections(impost)) {
+              const l1 = impost.firstSegment.point.getDistance(point);
+              const l2 = impost.lastSegment.point.getDistance(point);
+              if (l1 < length / 2) {
+                impost.firstSegment.point = point;
+              }
+              if (l2 < length / 2) {
+                impost.lastSegment.point = point;
+              }
+            }
+          };
+          $p.cat.inserts.traverse_steps({
+            imposts,
+            bounds,
+            add_impost,
+            ox: _ox,
+            cnstr,
+            origin,
+          });
+        }
+        return false;
+      }
+    });
+  }
+  draw_jalousie(glass) {
+    const {l_visualization, project, _ox} = this;
+    if(project.builder_props.jalousie === false) {
+      return;
+    }
+    _ox.inserts.find_rows({cnstr: -glass.elm}, ({inset, clr}) => {
+      if(inset.insert_type.is('jalousie')) {
+        let control, type, shift, step, steps, pos;
+        _ox.params.find_rows({inset, cnstr: -glass.elm}, ({param, value}) => {
+          if(value.css && ['tb_jalousie_horizontal', 'tb_jalousie_vertical', 'tb_jalousie_roller'].includes(value.css)) {
+            type = value.css.replace('tb_jalousie_', '');
+          }
+          if(value.css && ['tb_jalousie_control-side-left', 'tb_jalousie_control-side-right'].includes(value.css)) {
+            control = value.css.replace('tb_jalousie_control-side-', '');
+          }
+        });
+        if(!type) {
+          type = 'horizontal';
+        }
+        if(!control) {
+          control = 'left';
+        }
+        const props = {
+          parent: new paper.Group({parent: l_visualization._by_insets}),
+          fillColor: BuilderElement.clr_by_clr.call(this, clr),
+          shadowColor: 'lightgray',
+          shadowBlur: 20,
+          shadowOffset: [13, 13],
+          opacity: 0.3,
+          strokeScaling: false,
+          closed: true,
+          guide: true,
+        };
+        const bounds = glass.bounds_light();
+        inset.specification.forEach(({count_calc_method, sz, offsets}) => {
+          if (count_calc_method == $p.enm.count_calculating_ways.area && sz && offsets) {
+            bounds.height += offsets;
+            bounds.width += sz;
+            bounds.left -= sz * 0.6;
+            bounds.top -= offsets * 0.6;
+            return false;
+          }
+        });
+        switch (type) {
+        case 'roller':
+          new paper.Path(Object.assign({
+            segments: [bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft],
+          }, props));
+          break;
+        case 'horizontal':
+          steps = Math.floor(bounds.height / 60);
+          step = bounds.height / steps - 0.01;
+          pos = bounds.top;
+          while (pos < bounds.bottom - step) {
+            new paper.Path(Object.assign({
+              segments: [[bounds.left, pos], [bounds.right, pos], [bounds.right, pos + step - 20], [bounds.left, pos + step - 20]],
+            }, props));
+            pos += step;
+          }
+          break;
+        case 'vertical':
+          steps = Math.floor(bounds.width / 60);
+          step = bounds.width / steps - 0.01;
+          pos = bounds.left;
+          while (pos < bounds.right - step) {
+            new paper.Path(Object.assign({
+              segments: [[pos, bounds.top], [pos + step - 20, bounds.top], [pos + step - 20, bounds.bottom], [pos, bounds.bottom]],
+            }, props));
+            pos += step;
+          }
+          break;
+        }
+        pos = control === 'left' ? bounds.left - 10 : bounds.right + 10;
+        new paper.Path(Object.assign({
+          segments: [
+            [pos, bounds.top],
+            [pos + 10, bounds.top],
+            [pos + 10, bounds.bottom - 80],
+            [pos + 20, bounds.bottom - 40],
+            [pos - 10, bounds.bottom - 40],
+            [pos, bounds.bottom - 80],
+          ],
+        }, props, {
+          strokeColor: 'lightgray',
+          strokeOpacity: 0.5,
+          fillColor: 'gray',
+          opacity: 0.6,
+        }));
+        new paper.Path(Object.assign({
+          segments: [
+            bounds.topLeft.add([0, -10]),
+            bounds.topRight.add([0, -10]),
+            bounds.topRight.add([0, 20]),
+            bounds.topLeft.add([0, 20]),
+          ],
+        }, props, {
+          strokeColor: 'lightgray',
+          strokeOpacity: 0.5,
+          fillColor: 'lightgray',
+          opacity: 0.6,
+        }));
+        const {elm_font_size} = consts;
+        new paper.PointText({
+          parent: props.parent,
+          fillColor: 'black',
+          fontFamily: consts.font_family,
+          fontSize: consts.elm_font_size,
+          guide: true,
+          content: inset.presentation,
+          point: bounds.topLeft.add([elm_font_size/3, 0]),
+        });
+        return false;
+      }
+    });
+  }
+  draw_sill() {
+    const {l_visualization, cnstr, _ox} = this;
+    const {properties} = $p.job_prm;
+    if (!properties) {
+      return;
+    }
+    const {length, width} = properties;
+    _ox.inserts.find_rows({cnstr}, (row) => {
+      if (row.inset.insert_type.is('sill')) {
+        const bottom = this.profiles_by_side('bottom');
+        let vlen, vwidth;
+        _ox.params.find_rows({cnstr: cnstr, inset: row.inset}, (prow) => {
+          if (prow.param == length) {
+            vlen = prow.value;
+          }
+          if (prow.param == width) {
+            vwidth = prow.value;
+          }
+        });
+        if (!vlen) {
+          vlen = bottom.length + 160;
+        }
+        if (vwidth) {
+          vwidth = vwidth * 0.7;
+        }
+        else {
+          vwidth = 200;
+        }
+        const delta = (vlen - bottom.length) / 2;
+        new paper.Path({
+          parent: new paper.Group({parent: l_visualization._by_insets}),
+          strokeColor: 'grey',
+          fillColor: BuilderElement.clr_by_clr.call(this, row.clr),
+          shadowColor: 'grey',
+          shadowBlur: 20,
+          shadowOffset: [10, 20],
+          opacity: 0.7,
+          strokeScaling: false,
+          closed: true,
+          segments: [
+            bottom.b.add([delta, 0]),
+            bottom.e.add([-delta, 0]),
+            bottom.e.add([-delta - vwidth, vwidth]),
+            bottom.b.add([delta - vwidth, vwidth]),
+          ],
+        });
+        return false;
+      }
+    });
+  }
+  draw_opening() {
+    const {l_visualization, furn, opening} = this;
+    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
+    if (!this.parent || !open_types.is_opening(furn.open_type)) {
+      if (l_visualization?._opening?.visible) {
+        l_visualization._opening.visible = false;
+      }
+      return;
+    }
+    const cache = {
+      profiles: this.outer_nodes,
+      bottom: this.profiles_by_side('bottom'),
+    };
+    const rotary_folding = () => {
+      const {_opening} = l_visualization;
+      const {side_count, project: {sketch_view}} = this;
+      if(side_count < furn.side_count) {
+        return;
+      }
+      furn.open_tunes.forEach((row) => {
+        if (row.rotation_axis) {
+          const axis = this.profile_by_furn_side(row.side, cache);
+          const other = this.profile_by_furn_side(
+            row.side + 2 <= side_count ? row.side + 2 : row.side - 2, cache);
+          _opening.moveTo(axis.corns(3));
+          _opening.lineTo(other.rays.inner.getPointAt(other.rays.inner.length / 2));
+          _opening.lineTo(axis.corns(4));
+        }
+      });
+      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
+        _opening.dashArray = [70, 50];
+      }
+      else if(_opening.dashArray.length) {
+        _opening.dashArray = [];
+      }
+      _opening.visible = true;
+    };
+    const sliding = () => {
+      const {center} = this.bounds;
+      const {_opening} = l_visualization;
+      if (this.direction == open_directions.Правое) {
+        _opening.moveTo(center.add([-100, 0]));
+        _opening.lineTo(center.add([100, 0]));
+        _opening.moveTo(center.add([30, 30]));
+        _opening.lineTo(center.add([100, 0]));
+        _opening.lineTo(center.add([30, -30]));
+      }
+      else {
+        _opening.moveTo(center.add([100, 0]));
+        _opening.lineTo(center.add([-100, 0]));
+        _opening.moveTo(center.add([-30, 30]));
+        _opening.lineTo(center.add([-100, 0]));
+        _opening.lineTo(center.add([-30, -30]));
+      }
+      _opening.visible = true;
+    };
+    if (!l_visualization._opening) {
+      l_visualization._opening = new paper.CompoundPath({
+        parent: l_visualization,
+        strokeColor: 'black',
+      });
+    }
+    else {
+      l_visualization._opening.removeChildren();
+    }
+    return furn.is_sliding ? sliding() : rotary_folding();
+  }
+  draw_visualization(rows) {
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
+    const glasses = this.glasses(false, true).filter(({visible}) => visible);
+    l_visualization._by_spec.removeChildren();
+    const hide_by_spec = _attr._reflected || !builder_props.visualization;
+    if(!rows && !hide_by_spec) {
+      rows = [];
+      this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
+    }
+    function draw(elm) {
+      if(this.elm === elm.elm && elm.visible) {
+        this.nom.visualization.draw({
+          elm,
+          layer: l_visualization,
+          offset: this.len * 1000,
+          offset0: this.width * 1000 * (this.alp1 || 1),
+          clr: this.clr,
+        });
+        return true;
+      }
+    };
+    this.draw_mosquito();
+    this.draw_sill();
+    glasses.forEach(this.draw_jalousie.bind(this));
+    if(!hide_by_spec) {
+      for (const row of rows) {
+        if(!profiles.some(draw.bind(row))) {
+          glasses.some((elm) => {
+            if(row.elm === elm.elm) {
+              row.nom.visualization.draw({
+                elm,
+                layer: l_visualization,
+                offset: [row.len * 1000, row.width * 1000],
+                clr: row.clr,
+              });
+              return true;
+            }
+            return elm.imposts.some(draw.bind(row));
+          });
+        }
+      }
+    }
+    if(builder_props.articles) {
+      this.draw_articles(profiles, builder_props.articles);
+    }
+    if(builder_props.glass_numbers) {
+      this.draw_glass_numbers();
+    }
+    for(const contour of contours){
+      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
+    }
+  }
+  draw_articles(profiles, articles = 3) {
+    const {l_visualization} = this;
+    for(const profile of profiles) {
+      const {rays: {outer}, sizeb, inset, nom} = profile;
+      const p0 = outer.getNearestPoint(profile.corns(1));
+      const offset = outer.getOffsetOf(p0) + 80;
+      const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
+      const tangent = outer.getTangentAt(offset);
+      let content = '→ ';
+      switch (articles) {
+        case 1:
+          content += profile.elm.toFixed();
+          break;
+        case 2:
+          content += inset.article || inset.name;
+          break;
+        case 3:
+          content += nom.article || nom.name;
+          break;
+        case 4:
+          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;
+          break;
+        case 5:
+          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
+          break;
+      }
+      const text = new paper.PointText({
+        parent: l_visualization._by_spec,
+        guide: true,
+        fillColor: 'darkblue',
+        fontFamily: consts.font_family,
+        fontSize: consts.font_size,
+        content,
+        position,
+      });
+      const {width} = text.bounds;
+      text.rotate(tangent.angle);
+      text.translate(tangent.multiply(width / 2));
+    }
+  }
+  draw_glass_numbers() {
+    const {l_visualization} = this;
+    for(const glass of this.glasses(false, true)) {
+      const text = new paper.PointText({
+        parent: l_visualization._by_spec,
+        guide: true,
+        fillColor: 'darkgreen',
+        fontFamily: consts.font_family,
+        fontSize: consts.font_size * 2,
+        content: glass.elm,
+        position: glass.bounds.center,
+      });
+    }
+  }
+  get hidden() {
+    return !!this._hidden;
+  }
+  set hidden(v) {
+    if (this.hidden != v) {
+      this._hidden = v;
+      const visible = !this._hidden;
+      this.children.forEach((elm) => {
+        if (elm instanceof BuilderElement) {
+          elm.visible = visible;
+        }
+      });
+      this.l_visualization.visible = visible;
+      this.l_dimensions.visible = visible;
+    }
+  }
+  hide_generatrix() {
+    this.profiles.forEach((elm) => {
+      elm.generatrix.visible = false;
+    });
+  }
+  get imposts() {
+    return this.getItems({class: Profile}).filter((elm) => {
+      if(elm instanceof ProfileNestedContent || elm instanceof ProfileVirtual) {
+        return false;
+      }
+      const {b, e} = elm.rays;
+      return b.is_tt || e.is_tt || b.is_i || e.is_i;
+    });
+  }
+  get params() {
+    return this._ox.params;
+  }
+  get path() {
+    return this.bounds;
+  }
+  set path(attr) {
+    if (!Array.isArray(attr)) {
+      return;
+    }
+    const noti = {type: consts.move_points, profiles: [], points: []};
+    const {outer_nodes} = this;
+    let need_bind = attr.length,
+      available_bind = outer_nodes.length,
+      elm, curr;
+    function set_node(n) {
+      if (!curr[n].is_nearest(elm[n], 0)) {
+        const {isegments, rays} = elm;
+        elm[n] = curr[n];
+        rays.clear(true);
+        isegments.forEach(({profile, node}) => {
+          profile.do_sub_bind(elm, node);
+          profile.rays.clear();
+        });
+        if (!noti.profiles.includes(elm)) {
+          noti.profiles.push(elm);
+        }
+        if (!noti.points.some((point) => point.is_nearest(elm[n], 0))) {
+          noti.points.push(elm[n]);
+        }
+      }
+    }
+    if (need_bind) {
+      for (let i = 0; i < attr.length; i++) {
+        curr = attr[i];            
+        for (let j = 0; j < outer_nodes.length; j++) {
+          elm = outer_nodes[j];  
+          if (elm._attr.binded) {
+            continue;
+          }
+          if (curr.profile.is_nearest(elm)) {
+            elm._attr.binded = true;
+            curr.binded = true;
+            need_bind--;
+            available_bind--;
+            set_node('b');
+            set_node('e');
+            break;
+          }
+        }
+      }
+    }
+    if (need_bind) {
+      for (let i = 0; i < attr.length; i++) {
+        curr = attr[i];
+        if (curr.binded)
+          continue;
+        for (let j = 0; j < outer_nodes.length; j++) {
+          elm = outer_nodes[j];
+          if (elm._attr.binded)
+            continue;
+          if (curr.b.is_nearest(elm.b, true) || curr.e.is_nearest(elm.e, true)) {
+            elm._attr.binded = true;
+            curr.binded = true;
+            need_bind--;
+            available_bind--;
+            set_node('b');
+            set_node('e');
+            break;
+          }
+        }
+      }
+    }
+    if (need_bind && available_bind) {
+      for (let i = 0; i < attr.length; i++) {
+        curr = attr[i];
+        if (curr.binded)
+          continue;
+        for (let j = 0; j < outer_nodes.length; j++) {
+          elm = outer_nodes[j];
+          if (elm._attr.binded)
+            continue;
+          elm._attr.binded = true;
+          curr.binded = true;
+          need_bind--;
+          available_bind--;
+          set_node('b');
+          set_node('e');
+          break;
+        }
+      }
+    }
+    if (need_bind) {
+      for (let i = 0; i < attr.length; i++) {
+        curr = attr[i];
+        if (curr.binded) {
+          continue;
+        }
+        elm = new this.ProfileConstructor({
+          generatrix: curr.profile.generatrix.get_subpath(curr.b, curr.e),
+          proto: outer_nodes.length ? outer_nodes[0] : {parent: this, clr: curr.profile.clr},
+          _nearest: curr.profile,
+        });
+        curr.profile = elm;
+        delete curr.outer;
+        curr.binded = true;
+        noti.profiles.push(elm);
+        noti.points.push(elm.b);
+        noti.points.push(elm.e);
+        need_bind--;
+      }
+    }
+    if (available_bind) {
+      outer_nodes.forEach((elm) => {
+        if (!elm._attr.binded) {
+          elm.rays.clear(true);
+          elm.remove();
+          available_bind--;
+        }
+      });
+    }
+    if(!(this instanceof ContourNestedContent)) {
+      this.profiles.forEach((p) => p.default_inset());
+    }
+    if (noti.points.length) {
+      this.profiles.forEach((p) => p._attr?._rays?.clear());
+      this.notify(noti);
+    }
+    this._attr._bounds = null;
+  }
+  get perimeter() {
+    const res = [];
+    this.outer_profiles.forEach((curr) => {
+      const tmp = curr.sub_path ? {
+        len: curr.sub_path.length,
+        angle: curr.e.subtract(curr.b).angle,
+      } : {
+        len: curr.elm.length,
+        angle: curr.elm.angle_hor,
+      };
+      res.push(tmp);
+      if (tmp.angle < 0) {
+        tmp.angle += 360;
+      }
+      tmp.angle_hor = tmp.angle;
+      tmp.profile = curr.profile || curr.elm;
+    });
+    return res;
+  }
+  perimeter_inner(size = 0, nom, check_cnn) {
+    const {center} = this.bounds;
+    const {cat: {cnns}, enm: {cnn_types}, CatInserts} = $p;
+    if(nom instanceof CatInserts) {
+      for(const row of nom.specification) {
+        if(row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
+          nom = row.nom;
+          size = row.sz;
+          break;
+        }
+      }
+    }
+    const res = this.outer_profiles.map((curr) => {
+      const profile = curr.profile || curr.elm;
+      const {inner, outer} = profile.rays;
+      const sub_path = inner.getNearestPoint(center).getDistance(center, true) < outer.getNearestPoint(center).getDistance(center, true) ?
+        inner.get_subpath(inner.getNearestPoint(curr.b), inner.getNearestPoint(curr.e)) : outer.get_subpath(outer.getNearestPoint(curr.b), outer.getNearestPoint(curr.e));
+      let angle = curr.e.subtract(curr.b).angle.round(1);
+      if(angle < 0) angle += 360;
+      const cnn = nom && cnns.nom_cnn(nom, profile, cnn_types.ii, true)[0];
+      const sz = cnn ? cnn.size(profile, profile) : 0;
+      const offset = size + sz;
+      if(check_cnn) {
+        check_cnn.cnn = cnn;
+      }
+      return {
+        profile,
+        sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
+        angle,
+        b: curr.b,
+        e: curr.e,
+      };
+    });
+    const ubound = res.length - 1;
+    return res.map((curr, index) => {
+      let {sub_path} = curr;
+      const prev = !index ? res[ubound] : res[index - 1];
+      const next = (index == ubound) ? res[0] : res[index + 1];
+      const b = sub_path.intersect_point(prev.sub_path, curr.b, true);
+      const e = sub_path.intersect_point(next.sub_path, curr.e, true);
+      if (b && e) {
+        sub_path = sub_path.get_subpath(b, e);
+      }
+      return {
+        profile: curr.profile,
+        angle: curr.angle.round(1),
+        len: sub_path.length,
+        sub_path,
+        angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),
+        angle_next: 180 - curr.sub_path.angle_to(next.sub_path, e, true, 0).round(1),
+      };
+    });
+  }
+  bounds_inner(size = 0, nom) {
+    const path = new paper.Path({insert: false});
+    for (let curr of this.perimeter_inner(size, nom)) {
+      path.addSegments(curr.sub_path.segments);
+    }
+    if (path.segments.length && !path.closed) {
+      path.closePath(true);
+    }
+    path.reduce();
+    return path.bounds;
+  }
+  get pos() {
+  }
+  get profiles() {
+    return this.children.filter((elm) => elm instanceof Profile);
+  }
+  get sectionals() {
+    return this.children.filter((elm) => elm instanceof Sectional);
+  }
+  get adjoinings() {
+    return this.children.filter((elm) => elm instanceof ProfileAdjoining);
+  }
+  get onlays() {
+    const res = [];
+    this.fillings.forEach((filling) => {
+      filling.children.forEach((elm) => elm instanceof Onlay && res.push(elm));
+    })
+    return res;
+  }
+  redraw() {
+    if (!this.visible || this.hidden) {
+      return;
+    }
+    this._attr._bounds = null;
+    const {l_visualization: {_by_insets, _by_spec}, project, profiles, _attr: {chnom}} = this;
+    const {_attr, _scope} = project;
+    _by_insets.removeChildren();
+    !_attr._saving && _by_spec.removeChildren();
+    const imposts = [];
+    const addls = [];
+    const other = new Set();
+    for(const elm of profiles) {
+      elm.redraw();
+      for(const addl of elm.addls) {
+        addls.push(addl);
+      }
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        const {b, e} = elm.rays;
+        if(b.is_short) {
+          other.add(b.profile);
+        }
+        if(e.is_short) {
+          other.add(e.profile);
+        }
+      }
+    }
+    for (const elm of imposts.sort(Contour.ecompare)) {
+      const {_rays: {b, e}, _corns} = elm._attr;
+      b.profile?.bringToFront?.();
+      if(b.profile?.e?.is_nearest(b.point, 20000)) {
+        b.profile.rays.e.profile?.bringToFront?.();
+      }
+      else if(b.profile?.b?.is_nearest(b.point, 20000)) {
+        b.profile.rays.b.profile?.bringToFront?.();
+      }
+      e.profile?.bringToFront?.();
+      if(e.profile?.e?.is_nearest(e.point, 20000)) {
+        e.profile.rays.e.profile?.bringToFront?.();
+      }
+      else if(e.profile?.b?.is_nearest(e.point, 20000)) {
+        e.profile.rays.b.profile?.bringToFront?.();
+      }
+    }
+    for (const elm of Array.from(other)) {
+      elm?.bringToFront?.();
+    }
+    for (const elm of addls) {
+      const {b, e} = elm.rays;
+      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
+      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
+    }
+    const changed = chnom.splice(0);
+    for(const elm of profiles) {
+      if(!changed.includes(elm)) {
+        elm.check_nom(changed);
+      }
+    }
+    if (changed.length) {
+      for(const elm of changed) {
+        elm._attr._rays.clear('with_neighbor');
+        _scope.eve.emit('set_inset', elm);
+      }
+      project.register_change();
+      return;
+    }
+    this.glass_recalc();
+    this.draw_opening();
+    const children = this.contours.concat(this.tearings);
+    const left = this.children.filter((elm) => !children.includes(elm));
+    for(const elm of children) {
+      elm.redraw();
+      for(const lelm of left) {
+        if(lelm.isAbove(elm)) {
+          lelm.insertBelow(elm);
+        }
+      }
+    }
+    if(!_attr._hide_errors) {
+      this.draw_cnn_errors();
+      this.draw_static_errors();
+    }
+    for(const elm of this.sectionals) {
+      elm.redraw();
+    }
+    this.notify(this, 'contour_redrawed', this._attr._bounds);
+  }
+  params_links(attr, sys, cnstr) {
+    if(!sys) {
+      sys = this.sys;
+      cnstr = this.cnstr;
+    }
+    const {prow, meta} = attr;
+    if(prow.param === sys.base_clr && sys.color_price_groups.count()) {
+      attr.oselect = true;
+      const values = sys.color_price_groups.unload_column('base_clr');
+      if(meta.choice_links?.length) {
+        meta.choice_links.length = 0;
+      }
+      meta.choice_params = [{name: 'ref', path: {in: values}}];
+      if(values.length && !values.includes(prow.value)) {
+        prow.value = values[0];
+      }
+      return true;
+    }
+  }
+  refresh_prm_links(root) {
+    const cnstr = root ? 0 : this.cnstr || -9999;
+    const {project, sys, own_sys, prod_ox, params, layer} = this;
+    const {_dp, _attr} = project;
+    const {blank} = $p.utils;
+    let notify;
+    params.find_rows({cnstr, inset: blank.guid}, (prow) => {
+      const {param} = prow;
+      const links = param.params_links({
+        grid: {selection: {cnstr}},
+        obj: prow,
+        layer: this,
+      });
+      let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);
+      if(!hide) {
+        const drow = sys.prm_defaults(param, own_sys ? 0 : cnstr);
+        if(drow && drow.hide) {
+          hide = true;
+        }
+      }
+      if (links.length && param.linked_values(links, prow)) {
+        notify = true;
+      }
+      else if(param.inheritance === 3 || param.inheritance === 4) {
+        const bvalue = param.branch_value({project, cnstr, ox: prod_ox});
+        if((param.inheritance === 3 || _attr._loading) && prow.value !== bvalue) {
+          prow.value = bvalue;
+          notify = true;
+        }
+        else if(!prow.value || prow.value.empty?.()) {
+          prow.value = bvalue;
+          notify = true;
+        }
+      }
+      if (prow.hide !== hide) {
+        prow.hide = hide;
+        notify = true;
+      }
+    });
+    if(!root && !layer) {
+      const {product_params} = this.sys;
+      for(const filling of this.fillings) {
+        const {inset, elm} = filling;
+        const inset_params = inset.used_params();
+        for(const param of inset_params) {
+          if(param.inheritance === 2 || (param.inheritance === 1 && !product_params.find({param}))) {
+            const key = {cnstr: -elm, param, inset: blank.guid, region: 0};
+            const prow = params.find(key) || params.add(key);
+            const drow = inset?.product_params?.find({param});
+            if(drow) {
+              if (drow.hide) {
+                prow.hide = true;
+              }
+              const {value} = prow;
+              if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {
+                prow.value = drow.option_value({elm: filling});
+              }
+            }
+          }
+        }
+      }
+    }
+    if(notify) {
+      this.notify(this, 'refresh_prm_links');
+      if(root) {
+        _dp._manager.emit_async('rows', _dp, {extra_fields: true});
+        project.check_clr();
+      }
+    }
+  }
+  refresh_inset_depends(param) {
+    const {contours, profiles} = this;
+    for(const profile of profiles) {
+      profile.refresh_inset_depends(param, true);
+    }
+    for(const glass of this.glasses(false, true)) {
+      glass.refresh_inset_depends(param);
+    }
+    for(const contour of contours) {
+      contour.refresh_inset_depends(param);
+    }
+  }
+  save_coordinates(short, save, close) {
+    let res = Promise.resolve();
+    if(short) {
+      this._row.by_contour(this);
+    }
+    else {
+      const push = (contour) => {
+        res = res.then(() => contour.save_coordinates(short, save, close));
+      };
+      if(!this.hidden) {
+        this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());
+      }
+      const {l_text, l_dimensions} = this;
+      for (let elm of this.children) {
+        if (elm.save_coordinates) {
+          push(elm);
+        }
+        else if (elm === l_text || elm === l_dimensions) {
+          elm.children.forEach((elm) => elm.save_coordinates && push(elm));
+        }
+      }
+      res = res.then(() => this._row.by_contour(this));
+    }
+    return res;
+  }
+  sort_nodes(nodes) {
+    if (!nodes.length) {
+      return nodes;
+    }
+    let prev = nodes[0];
+    const res = [prev];
+    let couner = nodes.length + 1;
+    while (res.length < nodes.length && couner) {
+      couner--;
+      for (let i = 0; i < nodes.length; i++) {
+        const curr = nodes[i];
+        if (res.indexOf(curr) != -1)
+          continue;
+        if (prev.node2 == curr.node1) {
+          res.push(curr);
+          prev = curr;
+          break;
+        }
+      }
+    }
+    if (couner) {
+      nodes.length = 0;
+      for (let i = 0; i < res.length; i++) {
+        nodes.push(res[i]);
+      }
+      res.length = 0;
+    }
+  }
+  get level() {
+    const {layer} = this;
+    return layer ? layer.level + 1 : 0;
+  }
+  get sys() {
+    const {layer, project} = this;
+    return layer ? layer.sys : project._dp.sys;
+  }
+  set sys(v) {
+    const {layer, project} = this;
+    if(layer) {
+      layer.sys = v;
+    }
+    else {
+      project._dp.sys = v;
+    }
+  }
+  get own_sys() {
+    return this.layer ? false : [10, 11].includes(this.kind);
+  }
+  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+    if(elm?.rnum) {
+      return elm[param.valueOf()];
+    }
+    const {layer, own_sys} = this;
+    if(!cnstr) {
+      if(layer && !own_sys && !(layer instanceof ContourParent)) {
+        return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+      }
+    }
+    const {enm: {plan_detailing}, utils, CatInserts} = $p;
+    let {_ox, prm_ox} = this;
+    if(prm_ox) {
+      _ox = prm_ox;
+    }
+    if(param.inheritance !== 3 &&
+        plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      let prow;
+      _ox.params.find_rows({
+        param,
+        cnstr: {in: [0, this.cnstr]},
+        inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
+      }, (row) => {
+        if(!prow || row.cnstr) {
+          prow = row;
+          return false;
+        }
+      });
+      if(prow) {
+        return prow.value;
+      }
+      else if(cnstr && layer && !own_sys) {
+        return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
+      }
+      if(param.inheritance === 4) {
+        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+      }
+      console.info(`Не задано значение параметра ${param.toString()}`);
+      return param.fetch_type();
+    }
+    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+  }
+  get furn_cache() {
+    return {
+      profiles: this.outer_nodes,
+      bottom: this.profiles_by_side('bottom'),
+      ox: this._ox,
+      w: this.w,
+      h: this.h,
+    };
+  }
+  open_restrictions_err({furn, cache, bool}) {
+    if(!furn) {
+      furn = this.furn;
+    }
+    if(!cache) {
+      cache = this.furn_cache;
+    }
+    let err = [];
+    const {side_count, direction, sys} = this;
+    const {open_types, open_directions, elm_types} = $p.enm;
+    if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
+      if(bool) {
+        return true;
+      }
+      this.profiles.forEach(err.push.bind(err));
+    }
+    if(!err.length) {
+      if(furn.formula.empty()) {
+        for(const row of furn.open_tunes) {
+          const elm = this.profile_by_furn_side(row.side, cache);
+          const prev = this.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
+          const next = this.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
+          const len = elm.length - prev.nom.sizefurn - next.nom.sizefurn;
+          const angle = direction == open_directions.Правое ?
+            elm.generatrix.angle_between(prev.generatrix, elm.e) :
+            prev.generatrix.angle_between(elm.generatrix, elm.b);
+          const {lmin, lmax, amin, amax} = row;
+          if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
+            if(bool) {
+              return true;
+            }
+            !err.includes(elm) && err.push(elm);
+          }
+        }
+      }
+      else {
+        try {
+          const path = furn.formula.execute();
+          if(!path.contains([cache.w, cache.h])) {
+            if(bool) {
+              return true;
+            }
+            this.profiles.forEach(err.push.bind(err));
+          }
+        }
+        catch (e) {}
+      }
+    }
+    for(const row of furn.open_tunes) {
+      const elm = this.profile_by_furn_side(row.side, cache);
+      const nearest = elm && elm.nearest();
+      if(nearest) {
+        if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {
+          if(row.shtulp_available) {
+            if(bool) {
+              return true;
+            }
+            !err.includes(elm) && err.push(elm);
+          }
+        }
+        else {
+          const {elm_type, inset} = nearest;
+          if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
+            (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
+            if(bool) {
+              return true;
+            }
+            !err.includes(elm) && err.push(elm);
+          }
+        }
+      }
+    }
+    return bool ? false : err;
+  }
+  handle_line(elm) {
+    const {bounds, h_ruch} = this;
+    const by_side = this.profiles_by_side();
+    return (elm == by_side.top || elm == by_side.bottom) ?
+      new paper.Path({
+        insert: false,
+        segments: [[bounds.left + h_ruch, bounds.top - 200], [bounds.left + h_ruch, bounds.bottom + 200]],
+      }) :
+      new paper.Path({
+        insert: false,
+        segments: [[bounds.left - 200, bounds.bottom - h_ruch], [bounds.right + 200, bounds.bottom - h_ruch]],
+      });
+  }
+  update_handle_height(cache, from_setter) {
+    const {furn, _row, project} = this;
+    const {furn_set, handle_side} = furn;
+    if (!handle_side || furn_set.empty()) {
+      return;
+    }
+    if (!cache) {
+      cache = this.furn_cache;
+      cache.ignore_formulas = true;
+    }
+    const elm = this.profile_by_furn_side(handle_side, cache);
+    if (!elm) {
+      return;
+    }
+    const {len} = elm._row;
+    let handle_height;
+    function set_handle_height(row) {
+      const {handle_height_base, fix_ruch} = row;
+      if (handle_height_base < 0) {
+        if (fix_ruch || _row.fix_ruch != -3) {
+          _row.fix_ruch = fix_ruch ? -2 : -1;
+          return handle_height = (len / 2).round();
+        }
+      }
+      else if (handle_height_base > 0) {
+        if (fix_ruch || _row.fix_ruch != -3) {
+          _row.fix_ruch = fix_ruch ? -2 : -1
+          return handle_height = handle_height_base;
+        }
+      }
+    }
+    furn.furn_set.specification.find_rows({dop: 0}, (row) => {
+      if (!row.quantity || !row.check_restrictions(this, cache)) {
+        return;
+      }
+      if (set_handle_height(row)) {
+        return false;
+      }
+      const {nom} = row;
+      if (nom && row.is_set_row) {
+        let ok = false;
+        nom.get_spec(this, cache, true).each((sub_row) => {
+          if (set_handle_height(sub_row)) {
+            return !(ok = true);
+          }
+        });
+        if (ok) {
+          return false;
+        }
+      }
+    });
+    if(handle_height && !from_setter && _row.h_ruch != handle_height){
+      _row.h_ruch = handle_height;
+      project._dp._manager.emit('update', this, {h_ruch: true});
+    }
+    return handle_height;
+  }
+  get h_ruch() {
+    const {layer, _row} = this;
+    return layer ? _row.h_ruch : 0;
+  }
+  set h_ruch(v) {
+    const {layer, _row, project} = this;
+    if (layer) {
+      const old_fix_ruch = _row.fix_ruch;
+      if (old_fix_ruch == -3) {
+        _row.fix_ruch = -1;
+      }
+      const h_ruch = this.update_handle_height(null, true);
+      if(h_ruch && (old_fix_ruch != -3 || v == 0)){
+        _row.h_ruch = h_ruch;
+      }
+      if (v != 0 && [0, -1, -3].indexOf(_row.fix_ruch) != -1) {
+        _row.h_ruch = v;
+        if (_row.fix_ruch == -1 && v != h_ruch) {
+          _row.fix_ruch = -3;
+        }
+      }
+      project.register_change();
+    }
+    else {
+      _row.h_ruch = 0;
+    }
+    project._dp._manager.emit('update', this, {h_ruch: true});
+  }
+  get dop() {
+    return this._row.dop;
+  }
+  set dop(v) {
+    this._row.dop = v;
+  }
+  get rotation_elm() {
+    const {dop, project} = this;
+    return dop.rotation_elm ? project.getItem({class: BuilderElement, elm: dop.rotation_elm}) : null;
+  }
+  set rotation_elm(v) {
+    if(v instanceof BuilderElement) {
+      this.dop = {rotation_elm: v.elm};
+    }
+    else {
+      this.dop = {rotation_elm: v};
+    }
+  }
+  get angle3d() {
+    return this.dop.angle3d || 0;
+  }
+  set angle3d(v) {
+    this.dop = {angle3d: v};
+  }
+  get flipped() {
+    const {flipped} = this._row;
+    if(!flipped) {
+      const {sys, level} = this;
+      const auto_flipped = sys._extra('auto_flipped');
+      return Boolean(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level));
+    }
+    return flipped > 0;
+  }
+  set flipped(v) {
+    this._row.flipped = v;
+    this.project.register_change(true);
+  }
+  get side_count() {
+    const {Импост} = $p.enm.elm_types;
+    let res = 0;
+    this.profiles.forEach((v) => v.elm_type != Импост && res++);
+    return res;
+  }
+  get w() {
+    const {is_rectangular, bounds} = this;
+    const {left, right} = this.profiles_by_side();
+    return bounds && left && right ? bounds.width - left.nom.sizefurn - right.nom.sizefurn : 0;
+  }
+  get h() {
+    const {is_rectangular, bounds} = this;
+    const {top, bottom} = this.profiles_by_side();
+    return bounds && top && bottom ? bounds.height - top.nom.sizefurn - bottom.nom.sizefurn : 0;
+  }
+  get l_text() {
+    const {_attr} = this;
+    if(!_attr._txt) {
+      _attr._txt = new paper.Group({parent: this});
+      for(const contour of this.contours) {
+        if(_attr._txt.isAbove(contour)) {
+          _attr._txt.insertBelow(contour);
+        }
+      }
+    }
+    return _attr._txt;
+  }
+  get l_visualization() {
+    const {_attr} = this;
+    if (!_attr._visl) {
+      _attr._visl = new paper.Group({parent: this, guide: true});
+      _attr._visl._by_insets = new paper.Group({parent: _attr._visl});
+      _attr._visl._by_spec = new paper.Group({parent: _attr._visl});
+      for(const contour of this.contours) {
+        if(_attr._visl.isAbove(contour)) {
+          _attr._visl.insertBelow(contour);
+        }
+      }
+    }
+    return _attr._visl;
+  }
+  get opacity() {
+    return this.children.length ? this.children[0].opacity : 1;
+  }
+  set opacity(v) {
+    this.children.forEach((elm) => {
+      if (elm instanceof BuilderElement)
+        elm.opacity = v;
+    });
+  }
+  is_clr() {
+    const white = $p.cat.clrs.predefined('Белый');
+    return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
+  }
+  on_remove_elm(elm) {
+    if (this.parent) {
+      this.parent.on_remove_elm(elm);
+    }
+    if (elm instanceof Profile && !this.project._attr._loading) {
+      this.l_dimensions.clear();
+    }
+  }
+  on_insert_elm(elm) {
+    if (this.parent) {
+      this.parent.on_remove_elm(elm);
+    }
+    if (elm instanceof Profile && !this.project._attr._loading) {
+      this.l_dimensions.clear();
+    }
+  }
+  on_sys_changed(refill) {
+    const {enm: {elm_types, cnn_types}, cat: {cnns, inserts}} = $p;
+    this.profiles.forEach((elm) => elm.default_inset(true, refill));
+    this.glasses().forEach((elm) => {
+      if (elm instanceof Contour) {
+        elm.on_sys_changed(refill);
+      }
+      else {
+        const {thickness, project, ox} = elm;
+        if(!refill) {
+          const {thicknesses, glass_thickness} = this.sys;
+          if(glass_thickness === 0) {
+            refill = !thicknesses.includes(thickness);
+          }
+          else if(glass_thickness === 1) {
+            refill = !this.sys.glasses({elm, layer: this}).includes(inserts.get(elm.inset));
+          }
+          else if(glass_thickness === 2) {
+            refill = thickness < thicknesses[0] || thickness > thicknesses[thicknesses.length - 1];
+          }
+        }
+        if(refill) {
+          let {elm_type} = elm.nom;
+          if(!elm_types.glasses.includes(elm_type)) {
+            elm_type = elm_types.Стекло;
+          }
+          elm.set_inset(project.default_inset({elm_type: [elm_type]}));
+        }
+        else {
+          const {inset} = elm;
+          if(inset.insert_type.is('composite') && !ox.glass_specification.find({elm: elm.elm})) {
+            for(const row of inset.specification) {
+              row.quantity && ox.glass_specification.add({elm: elm.elm, inset: row.nom});
+            }
+          }
+        }
+        elm.profiles.forEach((curr) => {
+          if(!curr.cnn || !curr.cnn.check_nom2(curr.profile)) {
+            curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);
+          }
+        });
+      }
+    });
+  }
+  apply_mirror() {
+    const {l_visualization, profiles, contours, project: {_attr}} = this;
+    if(_attr._reflected) {
+      l_visualization._by_spec.removeChildren();
+    }
+    for(const profile of this.profiles) {
+      const {clr} = profile;
+      if(clr.is_composite()) {
+        profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+      }
+    }
+    for (const fill of this.fillings) {
+      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);
+      for (const onlay of fill.imposts) {
+        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay, onlay.clr);
+      }
+    }
+    for(const layer of this.contours) {
+      layer.apply_mirror();
+      if(_attr._reflected) {
+        layer.sendToBack();
+      }
+      else {
+        layer.bringToFront();
+      }
+    }
+  }
+  get sketch_view() {
+    let {sys: {sketch_view}, project: {_attr}} = this;
+    const {hinge, out_hinge, inner, outer} = sketch_view._manager;
+    if(_attr._reflected) {
+      switch (sketch_view) {
+      case hinge:
+        return out_hinge;
+      case out_hinge:
+        return hinge;
+      case inner:
+        return outer;
+      case outer:
+        return inner;
+      }
+    }
+    return sketch_view;
+  }
+}
+Contour.ecompare = (a, b) => b.elm - a.elm;
+Contour.acompare = (a, b) => b.angle_hor - a.angle_hor;
+GlassSegment.fn_sort = function fn_sort(a, b) {
+  const da = this.getOffsetOf(a.point);
+  const db = this.getOffsetOf(b.point);
+  if (da < db) {
+    return -1;
+  }
+  else if (da > db) {
+    return 1;
+  }
+  return 0;
+};
+GlassSegment.next = function next_segments(curr, nodes, segments) {
+  if (!curr.anext) {
+    curr.anext = [];
+    for(const segm of segments) {
+      if (segm === curr || segm.profile === curr.profile){
+        continue;
+      }
+      if (curr.has_cnn(segm, nodes, segments)) {
+        const angle = curr.e.subtract(curr.b).getDirectedAngle(segm.e.subtract(segm.b));
+        if (segments.length < 3 || angle >= 0 || Math.abs(angle + 180) < 1)
+          curr.anext.push(segm);
+      }
+    }
+  }
+  return curr.anext;
+}
+EditorInvisible.Contour = Contour;
+EditorInvisible.GlassSegment = GlassSegment;
+class ContourNested extends Contour {  constructor(attr) {    super(attr);    const {project, _ox} = this;    const row = _ox.constructions.find({parent: 1});    Contour.create({project, row, parent: this, ox: _ox});  }  get ProfileConstructor() {    return ProfileNested;  }  presentation(bounds) {    const text = super.presentation(bounds);    return text.replace('Створка', 'Вложение');  }    get _ox() {    const {_attr} = this;    if(!_attr._ox) {      const {cat: {templates}, job_prm, utils} = $p;      const {project, cnstr} = this;      const {ox} = project;      for(const {characteristic} of ox.calc_order.production) {        if(characteristic.leading_product === ox && characteristic.leading_elm === -cnstr) {          _attr._ox = characteristic;          break;        }      }      if(!_attr._ox) {        _attr._ox = ox._manager.create({          ref: utils.generate_guid(),          calc_order: ox.calc_order,          leading_product: ox,          leading_elm: -cnstr,          constructions: [            {kind: 3, cnstr: 1},            {parent: 1, cnstr: 2},          ],        }, false, true);        _attr._ox._data._is_new = false;        ox.calc_order.create_product_row({create: true, cx: Promise.resolve(_attr._ox)})          .then((row) => {            _attr._ox.product = row.row;          });        this.subscribe_load_stamp(_attr._ox);        const {sys, params} = templates._select_template;        sys.refill_prm(_attr._ox, 0, 1, this, params);      }    }    return _attr._ox;  }  get prm_ox() {    return this.layer.ox;  }    get own_sys() {    return true;  }    get sys() {    return this._ox.sys;  }  set sys(v) {  }  get hidden() {    return !this.visible;  }  set hidden(v) {    this.visible = !v;  }  get content() {    return this.contours[0];  }  get l_dimensions() {    return ContourNested._dimlns;  }    load_stamp() {    const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;    return Promise.resolve().then(() => {      const {base_block} = templates._select_template;      if(base_block.calc_order === templates._select_template.calc_order) {        const {_ox, project: {_attr}} = this;        _attr._lock = true;        const tx = characteristics.create({calc_order: _ox.calc_order}, false, true);        const teditor = new EditorInvisible();        const tproject = teditor.create_scheme();        const fin = () => {          _attr._lock = false;          const {calc_order_row} = tx;          calc_order_row && tx.calc_order.production.del(calc_order_row);          teditor.unload();          tx.unload();        };        return tproject.load(tx, true, _ox.calc_order)          .then(() => {            return tproject.load_stamp(base_block, false, true, true);          })          .then(() => {            const {lbounds} = this;            const contour = tproject.contours[0];            if(!contour || !contour.contours.length) {              throw new Error(`Нет слоёв в шаблоне ${base_block.name}`);            }            const {bottom, right} = tproject.l_dimensions;            const dx = lbounds.width - bottom.size;            const dy = lbounds.height - right.size;            dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');            dy && right._move_points({size: lbounds.height - dy / 2, name: 'bottom'}, 'y');            contour.redraw();            dx && bottom._move_points({size: lbounds.width, name: 'right'}, 'x');            dy && right._move_points({size: lbounds.height, name: 'top'}, 'y');            contour.redraw();            contour.refresh_prm_links(true);            tproject.zoom_fit();            if(tproject._scope.eve._async?.move_points?.timer) {              clearTimeout(tproject._scope.eve._async.move_points.timer);              delete tproject._scope.eve._async.move_points.timer;            }            while (tproject._ch.length) {              tproject.redraw();            }            return tproject.save_coordinates({svg: false, no_recalc: true});          })          .then(() => {            const {lbounds, content} = this;            while (content.children.length) {              if(content.children[0].remove() === false) {                throw new Error('Ошибка при удалении элемента');              }            }            for (const elm of this.profiles) {              elm.save_coordinates();            }            _ox.specification.clear();            _ox.sys = base_block.sys;            const map = new Map();            const {_row} = content;            const elm0 = _ox.coordinates.aggregate([], ['elm'], 'max') || 0;            let elm = elm0;            for(const trow of tx.constructions) {              if(trow.parent === 1) {                for(const fld in trow._obj) {                  if(fld !== 'row' && !fld.startsWith('_')) {                    _row[fld] = trow._obj[fld];                  }                }              }              else if(trow.parent > 1) {                _ox.constructions.add(Object.assign({}, trow._obj));              }            }            for(const trow of tx.coordinates) {              if(trow.cnstr > 1) {                elm += 1;                map.set(trow.elm, elm);              }            }            const adel = [];            for(const trow of _ox.cnn_elmnts) {              if(trow.elm1 > elm0 || trow.elm2 > elm0) {                adel.push(trow);              }            }            for(const trow of adel) {              _ox.cnn_elmnts.del(trow);            }            for(const trow of tx.cnn_elmnts) {              const row1 = tx.coordinates.find({elm: trow.elm1});              const row2 = tx.coordinates.find({elm: trow.elm2});              if(row1.cnstr > 1 && row2.cnstr > 1) {                const proto = Object.assign({}, trow._obj);                proto.elm1 = map.get(proto.elm1);                proto.elm2 = map.get(proto.elm2);                _ox.cnn_elmnts.add(proto);              }            }            _ox.params.clear();            for(const trow of tx.params) {              const proto = Object.assign({}, trow._obj);              if(proto.cnstr < 0) {                proto.cnstr = -map.get(-proto.cnstr);              }              _ox.params.add(proto);            }            _ox.inserts.clear();            for(const trow of tx.inserts) {              const proto = Object.assign({}, trow._obj);              if(proto.cnstr < 0) {                proto.cnstr = -map.get(-proto.cnstr);              }              _ox.inserts.add(proto);            }            const contour = tproject.contours[0];            const {lbounds: tlbounds} = contour;            content.load_stamp({              contour: contour.contours[0],              delta: [lbounds.x - tlbounds.x, lbounds.y - tlbounds.y],              map,            });            fin();          })          .catch((err) => {            fin();            $p.record_log(err);            $p.ui.dialogs.alert({title: 'Вставка вложенного изделия', text: err.message});          });      }    });  }    subscribe_load_stamp(_ox) {    const {cat: {templates}, job_prm} = $p;    const {templates_nested} = job_prm.builder;    if(templates_nested && templates_nested.includes(templates._select_template.calc_order)) {      const {eve} = this.project._scope;      const fin = (tx, fields) => {        if(tx === _ox && fields.constructions) {          templates._select_template.refill = false;          eve.off('rows', fin);          this.load_stamp();        }      }      eve.on('rows', fin);    }  }    save_coordinates(short, save, close) {    return Promise.resolve()      .then(() => {        if (!short) {          for (const elm of this.profiles) {            elm.save_coordinates();          }        }        const {bounds, w, h, is_rectangular, content, _row, project} = this;        _row.x = bounds ? bounds.width.round(4) : 0;        _row.y = bounds ? bounds.height.round(4) : 0;        _row.is_rectangular = is_rectangular;        _row.w = w.round(4);        _row.h = h.round(4);        if(content) {          content._row._owner._owner.glasses.clear();          return content.save_coordinates(short)            .then(() => {              return save && this._ox.recalc({save: 'recalc', svg: true, silent: true}, null, project._scope);            })            .then(() => {              return save && !close && content.draw_visualization();            });        }      });  }  set path(attr) {    super.path = attr;    const {content, profiles} = this    if(content) {      content.path = profiles.map((p) => new GlassSegment(p, p.b, p.e, false));    }  }    on_sys_changed() {    this.profiles.forEach((elm) => elm.rays.clear('with_neighbor'));    this.contours.forEach((contour) => contour.on_sys_changed());  }    redraw() {    if(!this.visible || this.hidden) {      return;    }    this._attr._bounds = null;    for(const elm of this.profiles) {      elm.redraw();    }    for(const elm of this.contours) {      elm.redraw();    }  }    remove() {    const {_ox} = this;    super.remove();    const {calc_order_row: row} = _ox;    if(row) {      row._owner.del(row);    }    _ox.unload();  }}ContourNested._dimlns = {  redraw() {  },  clear() {  }};EditorInvisible.ContourNested = ContourNested;class ContourNestedContent extends Contour {  constructor(attr) {    super(attr);    const {_ox: ox, project} = this;    if(ox) {      ox.constructions.find_rows({parent: this.cnstr}, (row) => {        Contour.create({project, row, parent: this, ox});      });    }  }  get ProfileConstructor() {    return ProfileNestedContent;  }    load_stamp({contour, delta, map}) {    const {_ox: ox, project} = this;    project._scope.activate();    for(const proto of contour.profiles) {      const generatrix = proto.generatrix.clone({insert: false});      generatrix.translate(delta);      new ProfileNestedContent({        parent: this,        generatrix,        proto: {inset: proto.inset, clr: proto.clr},        elm: map.get(proto.elm),      });    }    for(const proto of contour.glasses(false, true)) {      const path = proto.generatrix.clone({insert: false});      path.translate(delta);      new Filling({        parent: this,        path,        proto: {inset: proto.inset, clr: proto.clr},        elm: map.get(proto.elm),      });    }    for(const proto of contour.contours) {      const row = ox.constructions.find({cnstr: proto.cnstr});      if(row && row.parent === this.cnstr) {        const sub = Contour.create({project, row, parent: this, ox});        sub.load_stamp({contour: proto, delta, map})      };    }  }  get key() {    return `${this.layer.key}-${this.cnstr}`;  }  get _ox() {    return this.layer._ox;  }  get lbounds() {    return this.layer.lbounds;  }  get l_dimensions() {    return ContourNested._dimlns;  }    on_sys_changed() {    this.profiles.forEach((elm) => elm.rays.clear('with_neighbor'));    this.contours.forEach((contour) => contour.on_sys_changed());  }}EditorInvisible.ContourNestedContent = ContourNestedContent;
 class ContourParent extends Contour {
   get ProfileConstructor() {
     return ProfileParent;

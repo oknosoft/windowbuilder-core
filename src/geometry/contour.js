@@ -58,10 +58,10 @@ class GlassSegment {
   /**
    * Проверяет наличие соединения по углам в узле
    * @param nodes
-   * @param tangent
-   * @param curr_profile
-   * @param segm_profile
-   * @return {boolean}
+   * @param {Array} segments
+   * @param {ProfileItem} curr_profile
+   * @param {ProfileItem} segm_profile
+   * @return {Boolean}
    */
   break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {
 
@@ -1452,7 +1452,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       l_visualization._static = new paper.Group({parent: l_visualization});
     }
 
-    for (var i = 0; i < this.profiles.length; i++) {
+    for (let i = 0; i < this.profiles.length; i++) {
 
       if([Рама, Импост].includes(this.profiles[i].elm_type) &&
         this.profiles[i].static_load().can_use === false) {
@@ -3164,8 +3164,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   get flipped() {
     const {flipped} = this._row;
     if(!flipped) {
-      // TODO: алгоритм расчёта перевёртутости по вставкам и уровню
-      return false;
+      // TODO: алгоритм расчёта перевёртутости по системе и уровню
+      const {sys, level} = this;
+      const auto_flipped = sys._extra('auto_flipped');
+      return Boolean(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level));
     }
     return flipped > 0;
   }
