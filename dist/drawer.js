@@ -5896,7 +5896,20 @@ class Filling extends AbstractFilling(BuilderElement) {
   cnn_side() {
     return $p.enm.cnn_sides.inner;
   }
-  nearest() {}
+  nearest(point) {
+    if(point) {
+      let distance = Infinity;
+      let profile;
+      for(const curr of this.profiles) {
+        const td = curr.sub_path.getNearestPoint(point).getDistance(point, true);
+        if(td < distance) {
+          distance = td;
+          profile = curr.profile;
+        }
+      }
+      return profile;
+    }
+  }
   select_node(v) {
     let point, segm, delta = Infinity;
     if(v === "b"){
