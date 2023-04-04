@@ -451,6 +451,11 @@ class Profile extends ProfileItem {
   region(num) {
     const {_attr, rays, layer: {_ox}, elm} = this;
     const {cat: {cnns, inserts}, utils} = $p;
+    const irow = _ox.inserts.find({cnstr: -elm, region: num});
+    
+    if(!irow) {
+      return this;
+    }
 
     // параметры выбора для ряда
     function cnn_choice_links(elm1, o, cnn_point) {
@@ -504,11 +509,10 @@ class Profile extends ProfileItem {
             return num;
 
           case 'irow':
-            return _ox.inserts.find({cnstr: -elm, region: num});
+            return irow;
 
           case 'inset':
-            const {irow} = receiver;
-            return irow ? irow.inset : inserts.get();
+            return irow.inset;
 
           case 'nom':
             return receiver.inset.nom(receiver);

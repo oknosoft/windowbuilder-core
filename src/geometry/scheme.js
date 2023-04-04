@@ -1175,7 +1175,7 @@ class Scheme extends paper.Project {
     const {cnn_nodes} = ProductsBuilding;
     const {inserts} = ox;
     ox.cnn_elmnts.clear(({elm1, node1}) => {
-      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
 

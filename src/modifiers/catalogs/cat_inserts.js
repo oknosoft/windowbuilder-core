@@ -1409,8 +1409,10 @@
       const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
       const relm = elm.region(region);
       const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
-      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];
-      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, e.profile, e.cnn_types, false, undefined, e)[0];
+      const belm = b?.profile?.region(region);
+      const eelm = e?.profile?.region(region);
+      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, belm, b.cnn_types, false, undefined, b)[0];
+      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, eelm, e.cnn_types, false, undefined, e)[0];
       if(cnn1 && cnn2) {
         const row_cnn_prev = cnn1.main_row(relm);
         const row_cnn_next = cnn2.main_row(relm);
@@ -1468,21 +1470,21 @@
           // добавляем спецификации соединений
           const len_angl = {
             angle: 0,
-            alp1: b.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,
-            alp2: e.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
+            alp1: b?.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+            alp2: e?.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
             len: row_spec ? row_spec.len * 1000 : _row.len,
             art1: false,
             art2: true,
             node: 'e',
           };
           len_angl.angle = len_angl.alp2;
-          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, e.profile);
+          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, eelm);
           // с дрйгой стороны
           len_angl.angle = len_angl.alp1;
           len_angl.art2 = false;
           len_angl.art1 = true;
           len_angl.node = 'b';
-          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, b.profile);
+          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, belm);
         }
       }
       // спецификация вставки

@@ -529,7 +529,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             }
           }
           // формируем пути внешнего заполнения и полосы
-          let strip_path = rpath.children?.[0] || new paper.Path({parent: rpath});
+          let strip_path = new paper.Path({insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -551,11 +551,6 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(strip_path.segments.length){
-            strip_path = rpath.exclude(strip_path);
-            strip_path.parent = rpath;
-            strip_path.fillColor = 'grey';
-          }
           if(row.region > 0) {
             rpath.insertBelow(path);  
           }
@@ -566,6 +561,14 @@ class Filling extends AbstractFilling(BuilderElement) {
             rpath.insertAbove(path);
             _text?.insertAbove(rpath);
             path.opacity = 0.7;
+          }
+          if(strip_path.segments.length){
+            strip_path = rpath.exclude(strip_path);
+            strip_path.fillColor = 'grey';
+          }
+          if(row.region > 0) {
+            strip_path.opacity = 0.08;
+            rpath.opacity = 0.16;
           }
         }
       });
