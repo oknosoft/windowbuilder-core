@@ -1224,7 +1224,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
-          if(!characteristic.empty()) {
+          if(!characteristic.empty() && !characteristic.is_new()) {
             if(forse || (!nom.is_procedure && !nom.is_accessory) || characteristic.specification.count() || characteristic.constructions.count() || characteristic.coordinates.count()){
               prod.push(characteristic);
             }
