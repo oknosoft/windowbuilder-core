@@ -125,7 +125,7 @@ class Scheme extends paper.Project {
     }
     if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? (first || clrs[0]) : default_clr;
+      const clr = (default_clr.empty() || !clr_group.contains(default_clr, clrs)) ? (first || clrs[0]) : default_clr;
       if(clr && !clr.empty()) {
         this.set_clr(clr);
       }

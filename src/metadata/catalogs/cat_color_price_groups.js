@@ -102,10 +102,11 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
     if(!clrs.length) {
       return true;
     }
-    return clr.is_composite() ? (
-      any ? 
-        (clrs.includes(clr.clr_in) || clrs.includes(clr.clr_out)) :
-        clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out)
-    ) : clrs.includes(clr);
+    if(clr.is_composite()) {
+      return any ?
+          (clrs.includes(clr.clr_in) || clrs.includes(clr.clr_out)) :
+          clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out);  
+    }
+    return clrs.includes(clr) && !this.exclude.find({side: 'Любая', clr});
   }
 };
