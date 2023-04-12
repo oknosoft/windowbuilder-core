@@ -10177,6 +10177,9 @@ class Profile extends ProfileItem {
       if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
         return;
       }
+      if(elm.is_linear() !== this.is_linear()) {
+        return;
+      }
       let {generatrix} = elm;
       if(elm.elm_type === $p.enm.elm_types.Импост) {
         const pb = elm.cnn_point('b').profile;
