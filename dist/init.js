@@ -2863,6 +2863,8 @@ get is_main_elm(){return this._getter('is_main_elm')}
 set is_main_elm(v){this._setter('is_main_elm',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
 class CatInsertsInsertsRow extends TabularSectionRow{
@@ -3844,6 +3846,8 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatCnnsSpecificationRow = CatCnnsSpecificationRow;
 class CatCnnsCnn_elmntsRow extends TabularSectionRow{
@@ -4293,6 +4297,8 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatFurnsSpecificationRow = CatFurnsSpecificationRow;
 class CatFurnsSpecification_restrictionsRow extends TabularSectionRow{
@@ -8507,6 +8513,57 @@ set discount(v){this._setter('discount',v)}
 }
 $p.RepSellingDataRow = RepSellingDataRow;
 $p.rep.create('selling');
+class RepMaterials_purchase extends DataProcessorObj{
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get formula(){return this._getter('formula')}
+set formula(v){this._setter('formula',v)}
+get scheme(){return this._getter('scheme')}
+set scheme(v){this._setter('scheme',v)}
+get specification(){return this._getter_ts('specification')}
+set specification(v){this._setter_ts('specification',v)}
+}
+$p.RepMaterials_purchase = RepMaterials_purchase;
+class RepMaterials_purchaseSpecificationRow extends TabularSectionRow{
+get nom(){return this._getter('nom')}
+set nom(v){this._setter('nom',v)}
+get article(){return this._getter('article')}
+set article(v){this._setter('article',v)}
+get id(){return this._getter('id')}
+set id(v){this._setter('id',v)}
+get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+set clr(v){this._setter('clr',v)}
+get characteristic(){return this._getter('characteristic')}
+set characteristic(v){this._setter('characteristic',v)}
+get material(){return this._getter('material')}
+set material(v){this._setter('material',v)}
+get grouping(){return this._getter('grouping')}
+set grouping(v){this._setter('grouping',v)}
+get nom_kind(){return this._getter('nom_kind')}
+set nom_kind(v){this._setter('nom_kind',v)}
+get price_group(){return this._getter('price_group')}
+set price_group(v){this._setter('price_group',v)}
+get nom_group(){return this._getter('nom_group')}
+set nom_group(v){this._setter('nom_group',v)}
+get packing(){return this._getter('packing')}
+set packing(v){this._setter('packing',v)}
+get stick(){return this._getter('stick')}
+set stick(v){this._setter('stick',v)}
+get totqty(){return this._getter('totqty')}
+set totqty(v){this._setter('totqty',v)}
+get totqty1(){return this._getter('totqty1')}
+set totqty1(v){this._setter('totqty1',v)}
+get sz(){return this._getter('sz')}
+set sz(v){this._setter('sz',v)}
+get price(){return this._getter('price')}
+set price(v){this._setter('price',v)}
+get amount(){return this._getter('amount')}
+set amount(v){this._setter('amount',v)}
+get amount_marged(){return this._getter('amount_marged')}
+set amount_marged(v){this._setter('amount_marged',v)}
+}
+$p.RepMaterials_purchaseSpecificationRow = RepMaterials_purchaseSpecificationRow;
+$p.rep.create('materials_purchase');
 
 /*
  * Подмешивается в конец init-файла
