@@ -331,11 +331,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     coordinates.find_rows({cnstr, region: 0}, (row) => {
       const attr = {row, parent: this};
       // профили и доборы
-      if(row.elm_type === elm_types.attachment) {
+      if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
         new this.ProfileConstructor(attr);
-      }
-      else if(elm_types.profiles.includes(row.elm_type)) {
-        row.elm_type === elm_types.impost ? new Profile(attr) : new this.ProfileConstructor(attr);
       }
       // заполнения
       else if(elm_types.glasses.includes(row.elm_type)) {
@@ -2478,12 +2475,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     const addls = [];
     const other = new Set();
     for(const elm of profiles) {
-      elm.redraw();
-      for(const addl of elm.addls) {
-        addls.push(addl);
-      }
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of profiles) {
+      if(imposts.includes(elm)) {
+        elm.redraw();
       }
       else {
         const {b, e} = elm.rays;
@@ -2493,6 +2494,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         if(e.is_short) {
           other.add(e.profile);
         }
+      }
+      for(const addl of elm.addls) {
+        addls.push(addl);
       }
     }
 

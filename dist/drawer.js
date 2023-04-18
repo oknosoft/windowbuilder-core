@@ -1720,11 +1720,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     const glasses = [];
     coordinates.find_rows({cnstr, region: 0}, (row) => {
       const attr = {row, parent: this};
-      if(row.elm_type === elm_types.attachment) {
+      if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
         new this.ProfileConstructor(attr);
-      }
-      else if(elm_types.profiles.includes(row.elm_type)) {
-        row.elm_type === elm_types.impost ? new Profile(attr) : new this.ProfileConstructor(attr);
       }
       else if(elm_types.glasses.includes(row.elm_type)) {
         glasses.push(row);
@@ -3281,12 +3278,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     const addls = [];
     const other = new Set();
     for(const elm of profiles) {
-      elm.redraw();
-      for(const addl of elm.addls) {
-        addls.push(addl);
-      }
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of profiles) {
+      if(imposts.includes(elm)) {
+        elm.redraw();
       }
       else {
         const {b, e} = elm.rays;
@@ -3296,6 +3297,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         if(e.is_short) {
           other.add(e.profile);
         }
+      }
+      for(const addl of elm.addls) {
+        addls.push(addl);
       }
     }
     for (const elm of imposts.sort(Contour.ecompare)) {
@@ -4241,11 +4245,21 @@ class ContourNested extends Contour {
     this.contours.forEach((contour) => contour.on_sys_changed());
   }
   redraw() {
-    if(!this.visible || this.hidden) {
+    const {visible, hidden, _attr, profiles} = this;
+    if(!visible || hidden) {
       return;
     }
-    this._attr._bounds = null;
-    for(const elm of this.profiles) {
+    _attr._bounds = null;
+    const imposts = [];
+    for(const elm of profiles) {
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of imposts) {
       elm.redraw();
     }
     for(const elm of this.contours) {
@@ -4310,7 +4324,7 @@ class ContourNestedContent extends Contour {
       if(row && row.parent === this.cnstr) {
         const sub = Contour.create({project, row, parent: this, ox});
         sub.load_stamp({contour: proto, delta, map})
-      };
+      }
     }
   }
   get key() {
@@ -4360,6 +4374,20 @@ class ContourTearing extends Contour {
     return this.bounds;
   }
   set path(attr) {
+  }
+  get profile_path() {
+    const path = new paper.Path({insert: false});
+    for(const profile of this.profiles) {
+      if(!profile.elm_type.is('impost')) {
+        path.addSegments(profile.generatrix.segments);
+      }
+    }
+    path.simplify(0.8);
+    return path;
+  }
+  get glass_path() {
+    const path = new paper.Path({insert: false});
+    return path;
   }
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileTearing);
@@ -10185,7 +10213,7 @@ class Profile extends ProfileItem {
         const pb = elm.cnn_point('b').profile;
         const pe = elm.cnn_point('e').profile;
         if(pb && pb.nearest(true) || pe && pe.nearest(true)) {
-          generatrix = generatrix.clone({insert: false}).elongation(100);
+          generatrix = generatrix.clone({insert: false}).elongation(200);
         }
       }
       let is_nearest = [];
@@ -10240,7 +10268,7 @@ class Profile extends ProfileItem {
         _attr._nearest = null;
       }
     });
-    if(layer && !check_nearest(_attr._nearest)) {
+    if(layer && (!_attr._nearest || !check_nearest(_attr._nearest))) {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
       }

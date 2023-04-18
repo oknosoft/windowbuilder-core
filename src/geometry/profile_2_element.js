@@ -131,7 +131,7 @@ class Profile extends ProfileItem {
         const pb = elm.cnn_point('b').profile;
         const pe = elm.cnn_point('e').profile;
         if(pb && pb.nearest(true) || pe && pe.nearest(true)) {
-          generatrix = generatrix.clone({insert: false}).elongation(100);
+          generatrix = generatrix.clone({insert: false}).elongation(200);
         }
       }
       let is_nearest = [];
@@ -190,8 +190,7 @@ class Profile extends ProfileItem {
         _attr._nearest = null;
       }
     });
-
-    if(layer && !check_nearest(_attr._nearest)) {
+    if(layer && (!_attr._nearest || !check_nearest(_attr._nearest))) {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
       }

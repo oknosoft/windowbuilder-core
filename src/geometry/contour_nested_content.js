@@ -63,7 +63,7 @@ class ContourNestedContent extends Contour {
       if(row && row.parent === this.cnstr) {
         const sub = Contour.create({project, row, parent: this, ox});
         sub.load_stamp({contour: proto, delta, map})
-      };
+      }
     }
   }
 

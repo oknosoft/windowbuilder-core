@@ -7,7 +7,7 @@
  * Вложенное изделие в родительском  
  * https://github.com/oknosoft/windowbuilder/issues/564
  * 
- * Содержит виртуальные профили, в которые служат внешним, неизменяемым слоев вложенного изделия
+ * Содержит виртуальные профили, которые служат внешним, неизменяемым слоев вложенного изделия
  * 
  * @extends Contour
  */
@@ -355,15 +355,26 @@ class ContourNested extends Contour {
    */
   redraw() {
 
-    if(!this.visible || this.hidden) {
+    const {visible, hidden, _attr, profiles} = this;
+    
+    if(!visible || hidden) {
       return;
     }
 
     // сбрасываем кеш габаритов
-    this._attr._bounds = null;
+    _attr._bounds = null;
 
     // сначала перерисовываем все профили контура
-    for(const elm of this.profiles) {
+    const imposts = [];
+    for(const elm of profiles) {
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of imposts) {
       elm.redraw();
     }
 
