@@ -300,6 +300,10 @@ class GeneratrixElement extends BuilderElement {
           noti_points.start = start_point;
         }
         noti.points.push(noti_points);
+        
+        if(cnn_point?.is_i) {
+          cnn_point.clear('with_neighbor');
+        }
 
         changed = true;
       }
