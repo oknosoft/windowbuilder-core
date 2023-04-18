@@ -8516,6 +8516,8 @@ $p.rep.create('selling');
 class RepMaterials_purchase extends DataProcessorObj{
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
+get purchase_order(){return this._getter('purchase_order')}
+set purchase_order(v){this._setter('purchase_order',v)}
 get formula(){return this._getter('formula')}
 set formula(v){this._setter('formula',v)}
 get scheme(){return this._getter('scheme')}
