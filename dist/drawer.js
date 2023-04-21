@@ -2462,17 +2462,27 @@ class Contour extends AbstractFilling(paper.Layer) {
   get opening() {
     const {enm, cch} = $p;
     const param = cch.properties.predefined('opening');
-    let res = enm.opening.in;
+    let res;
     if(param && !param.empty()) {
-      const {params, cnstr} = this;
-      params.find_rows({param, cnstr: {in: [0, cnstr]}}, (row)  => {
-        res = enm.opening.get(row.value);
+      let {params, cnstr, layer} = this;
+      const cnstrs = [0, cnstr];
+      while (layer) {
+        cnstrs.push(layer.cnstr);
+        if(layer instanceof ContourVirtual) {
+          break;
+        }
+        layer = layer.layer;
+      }
+      params.find_rows({param, cnstr: {in: cnstrs}}, (row)  => {
+        if(!res || row.cnstr) {
+          res = enm.opening.get(row.value);
+        }
         if(row.cnstr === cnstr) {
           return false;
         }
       });
     }
-    return res;
+    return res || enm.opening.in;
   }
   set opening(v) {
     const param = $p.cch.properties.predefined('opening');
@@ -9586,9 +9596,7 @@ class ProfileItem extends GeneratrixElement {
   }
   interiorPoint() {
     const {generatrix, d1, d2} = this;
-    const igen = generatrix.curves.length === 1 ? 
-      generatrix.firstCurve.getPointAt(0.5, true) : 
-      (generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2);
+    const igen = generatrix.getPointAt(generatrix.length / 2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply((d1 + d2) / 2));
   }
