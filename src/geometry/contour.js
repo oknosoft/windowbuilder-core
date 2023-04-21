@@ -1393,17 +1393,28 @@ class Contour extends AbstractFilling(paper.Layer) {
   get opening() {
     const {enm, cch} = $p;
     const param = cch.properties.predefined('opening');
-    let res = enm.opening.in;
+    let res;
     if(param && !param.empty()) {
-      const {params, cnstr} = this;
-      params.find_rows({param, cnstr: {in: [0, cnstr]}}, (row)  => {
-        res = enm.opening.get(row.value);
+      let {params, cnstr, layer} = this;
+      const cnstrs = [0, cnstr];
+      // проверим виртуальный слой над нами
+      while (layer) {
+        cnstrs.push(layer.cnstr);
+        if(layer instanceof ContourVirtual) {
+          break;
+        }
+        layer = layer.layer;
+      }
+      params.find_rows({param, cnstr: {in: cnstrs}}, (row)  => {
+        if(!res || row.cnstr) {
+          res = enm.opening.get(row.value);
+        }
         if(row.cnstr === cnstr) {
           return false;
         }
       });
     }
-    return res;
+    return res || enm.opening.in;
   }
 
   set opening(v) {
