@@ -28,7 +28,6 @@ class ContourTearing extends Contour {
         path.addSegments(profile.generatrix.segments);
       }
     }
-    path.simplify(0.8);
     return path;
   }
 
