@@ -10511,7 +10511,7 @@ class Profile extends ProfileItem {
           case 'inset':
             return irow.inset;
           case 'nom':
-            return receiver.inset.nom(receiver);
+            return receiver.inset.nom(receiver, 0);
           case 'ref':
             const {nom} = receiver;
             return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
@@ -16326,7 +16326,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       else{
         _data.nom = _nom;
       }
-      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+      if(strict !== 0 && elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
         elm._row.nom = _data.nom;
         const chnom = elm.layer?._attr?.chnom;
         if(chnom && !chnom.includes(elm)) {
@@ -16725,9 +16725,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(count_calc_method == cnns){
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
-              const {cnn} = node;
+              const {cnn, profile} = node;
               if(cnn) {
-                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, elm2: profile, len_angl: node.len_angl(), ox}) * coefficient;
               }
             }
           }

@@ -517,7 +517,7 @@ class Profile extends ProfileItem {
             return irow.inset;
 
           case 'nom':
-            return receiver.inset.nom(receiver);
+            return receiver.inset.nom(receiver, 0);
 
           case 'ref':
             const {nom} = receiver;

@@ -624,7 +624,7 @@
         _data.nom = _nom;
       }
       
-      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+      if(strict !== 0 && elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
         elm._row.nom = _data.nom;
         const chnom = elm.layer?._attr?.chnom;
         if(chnom && !chnom.includes(elm)) {
@@ -1161,9 +1161,9 @@
           if(count_calc_method == cnns){
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
-              const {cnn} = node;
+              const {cnn, profile} = node;
               if(cnn) {
-                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, elm2: profile, len_angl: node.len_angl(), ox}) * coefficient;
               }
             }
           }
