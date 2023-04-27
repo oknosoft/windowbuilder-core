@@ -434,18 +434,16 @@ exports.CatCnns = class CatCnns extends Object {
    * Укорочение для конкретной номенклатуры из спецификации
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
-    let sz = 0;
+    let sz = 0;    
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
-      if(rnom === nom) {
+      if(rnom === nom || (rnom instanceof CatInserts && rnom.filtered_spec({elm, elm2, len_angl, ox}).find({nom}))) {
         sz = row.sz;
-        return true;
-      }
-      else if(rnom instanceof CatInserts) {
-        if(rnom.specification.find({nom})) {
-          sz = row.sz;
-          return true;
+        if(row.algorithm.is('w2') && elm2) {
+          const size = this.size(elm, elm2);
+          sz += -elm2.width + size;
         }
+        return true;
       }
     });
     return sz;
@@ -454,6 +452,7 @@ exports.CatCnns = class CatCnns extends Object {
   /**
    * ПолучитьСпецификациюСоединенияСФильтром
    * @param {BuilderElement} elm
+   * @param {BuilderElement} elm2
    * @param {Object} len_angl
    * @param {Object} ox
    * @param {Boolean} [correct]
@@ -511,7 +510,7 @@ exports.CatCnns = class CatCnns extends Object {
       }
 
       // "устанавливать с" проверяем только для соединений профиля
-      if((set_specification == САртикулом1 && len_angl.art2) || (set_specification == САртикулом2 && len_angl.art1)) {
+      if(!correct && ((set_specification == САртикулом1 && len_angl.art2) || (set_specification == САртикулом2 && len_angl.art1))) {
         return;
       }
       // для угловых, разрешаем art2 только явно для art2
