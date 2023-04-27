@@ -1128,6 +1128,7 @@
       if(!spec){
         spec = ox.specification;
       }
+      let alp1, alp2;
 
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
@@ -1162,8 +1163,15 @@
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
               const {cnn, profile} = node;
+              const nlen_angl = node.len_angl();
+              if(node === b) {
+                alp1 = nlen_angl.angle;
+              }
+              else {
+                alp2 = nlen_angl.angle;
+              }
               if(cnn) {
-                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, elm2: profile, len_angl: node.len_angl(), ox}) * coefficient;
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, elm2: profile, len_angl: nlen_angl, ox}) * coefficient;
               }
             }
           }
@@ -1220,7 +1228,7 @@
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
               row_spec = null;
             });
@@ -1279,7 +1287,7 @@
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
               row_spec = null;
             }
@@ -1318,7 +1326,7 @@
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(3);
-              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, 0, 0, totqty0);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, alp1, alp2, totqty0);
 
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
@@ -1359,8 +1367,15 @@
               row_spec.qty = 0;
             }
           }
+          
+          if(alp1 === undefined && alp2 === undefined && (angle_calc_method?.is('Соединение') || angle_calc_method?.is('СоединениеПополам'))) {
+            const {b, e, generatrix} = elm;
+            alp1 = b.profile?.generatrix?.angle_between(generatrix, b.point);
+            alp2 = e.profile?.generatrix?.angle_between(generatrix, e.point);
+          }
+            
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
-            angle_calc_method, angle_calc_method, 0, 0, totqty0);
+            angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
         }
       });
 
