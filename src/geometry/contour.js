@@ -332,7 +332,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       const attr = {row, parent: this};
       // профили и доборы
       if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
-        new this.ProfileConstructor(attr);
+        if(this instanceof ContourVirtual && row.elm_type === elm_types.impost) {
+          new Profile(attr);
+        }
+        else {
+          new this.ProfileConstructor(attr);
+        }        
       }
       // заполнения
       else if(elm_types.glasses.includes(row.elm_type)) {

@@ -3710,7 +3710,7 @@ set priorities(v){this._setter_ts('priorities',v)}
    * Укорочение для конкретной номенклатуры из спецификации
    */
   nom_size({nom, elm, elm2, len_angl, ox}) {
-    let sz = 0;    
+    let sz = 0;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
       if(rnom === nom || (rnom instanceof CatInserts && rnom.filtered_spec({elm, elm2, len_angl, ox}).find({nom}))) {
