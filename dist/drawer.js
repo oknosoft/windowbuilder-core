@@ -1726,7 +1726,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         else {
           new this.ProfileConstructor(attr);
-        }        
+        }
       }
       else if(elm_types.glasses.includes(row.elm_type)) {
         glasses.push(row);
@@ -2917,10 +2917,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     l_visualization._by_spec.removeChildren();
-    const hide_by_spec = _attr._reflected || !builder_props.visualization;
+    const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
-      this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
+      this._ox.specification.find_rows({dop: -1}, (row) => {
+        const {side} = row.nom.visualization; 
+        if(side.empty() && _attr._reflected || side.is('inner') && _attr._reflected || side.is('outer') && !_attr._reflected) {
+          return;
+        }
+        rows.push(row);
+      });
     }
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
@@ -3928,9 +3934,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   apply_mirror() {
     const {l_visualization, profiles, contours, project: {_attr}} = this;
-    if(_attr._reflected) {
-      l_visualization._by_spec.removeChildren();
-    }
+    this.draw_visualization();
     for(const profile of this.profiles) {
       const {clr} = profile;
       if(clr.is_composite()) {

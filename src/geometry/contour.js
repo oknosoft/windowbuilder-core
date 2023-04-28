@@ -337,7 +337,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         else {
           new this.ProfileConstructor(attr);
-        }        
+        }
       }
       // заполнения
       else if(elm_types.glasses.includes(row.elm_type)) {
@@ -1963,10 +1963,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     l_visualization._by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    const hide_by_spec = _attr._reflected || !builder_props.visualization;
+    const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
-      this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
+      this._ox.specification.find_rows({dop: -1}, (row) => {
+        const {side} = row.nom.visualization; 
+        if(side.empty() && _attr._reflected || side.is('inner') && _attr._reflected || side.is('outer') && !_attr._reflected) {
+          return;
+        }
+        rows.push(row);
+      });
     }
 
     function draw(elm) {
@@ -3364,11 +3370,12 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   apply_mirror() {
-    // прячем визуализацию
+    
     const {l_visualization, profiles, contours, project: {_attr}} = this;
-    if(_attr._reflected) {
-      l_visualization._by_spec.removeChildren();
-    }
+    
+    // обновляем визуализацию
+    this.draw_visualization();
+    
     // обновляем отображение составных цветов
     for(const profile of this.profiles) {
       const {clr} = profile;
