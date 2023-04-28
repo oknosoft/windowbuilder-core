@@ -7442,7 +7442,7 @@ class DocCalc_orderManager extends DocManager {
     });
 
     // пересчитываем
-    if(!clone) {
+    if(!clone && dst.recalc) {
       await dst.recalc();
     }
 
