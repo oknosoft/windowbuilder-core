@@ -2859,6 +2859,20 @@ class ProfileItem extends GeneratrixElement {
       });
     }
   }
+
+  remove() {
+    const {b, e} = this.rays;
+    const res = super.remove(); 
+    if(res !== false) {
+      for(const {_profile, profile_point} of [b, e]) {
+        if(_profile && ['b', 'e'].includes(profile_point)) {
+          _profile.rays[profile_point].clear(true);
+          _profile._attr._corns.length = 0;
+        }
+      }
+    }
+    return res;
+  }
 }
 
 ProfileItem.path_attr = {

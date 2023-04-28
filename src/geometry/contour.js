@@ -1980,7 +1980,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         });
         return true;
       }
-    };
+    }
 
     // рисуем москитки
     this.draw_mosquito();

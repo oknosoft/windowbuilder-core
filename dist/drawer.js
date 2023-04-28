@@ -2933,7 +2933,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         });
         return true;
       }
-    };
+    }
     this.draw_mosquito();
     this.draw_sill();
     glasses.forEach(this.draw_jalousie.bind(this));
@@ -9889,6 +9889,19 @@ class ProfileItem extends GeneratrixElement {
         position: this.interiorPoint().add(this.generatrix.getTangentAt(this.generatrix.length / 1).multiply(consts.font_size * 2)),
       });
     }
+  }
+  remove() {
+    const {b, e} = this.rays;
+    const res = super.remove(); 
+    if(res !== false) {
+      for(const {_profile, profile_point} of [b, e]) {
+        if(_profile && ['b', 'e'].includes(profile_point)) {
+          _profile.rays[profile_point].clear(true);
+          _profile._attr._corns.length = 0;
+        }
+      }
+    }
+    return res;
   }
 }
 ProfileItem.path_attr = {
