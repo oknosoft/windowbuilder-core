@@ -1959,6 +1959,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
+    const {inner, outer} = $p.enm.sketch_view;
 
     l_visualization._by_spec.removeChildren();
 
@@ -1967,8 +1968,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!rows && !hide_by_spec) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => {
-        const {side} = row.nom.visualization; 
-        if(side.empty() && _attr._reflected || side.is('inner') && _attr._reflected || side.is('outer') && !_attr._reflected) {
+        const {sketch_view} = row.nom.visualization; 
+        if((_attr._reflected && !sketch_view.find({kind: outer})) ||
+          (!_attr._reflected && sketch_view.count() && !sketch_view.find({kind: inner}))) {
           return;
         }
         rows.push(row);
