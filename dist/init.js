@@ -6253,11 +6253,11 @@ set demand(v){this._setter_ts('demand',v)}
     mosquito: true,
     jalousie: true,
     grid: 50,
-    carcass: false,
     mirror: false,
     articles: 0,
     glass_numbers: false,
     bw: false,
+    mode: 0,
   };}
 $p.CatCharacteristics = CatCharacteristics;
 class CatCharacteristicsConstructionsRow extends TabularSectionRow{
