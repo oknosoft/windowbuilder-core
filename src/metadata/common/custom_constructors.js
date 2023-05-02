@@ -126,6 +126,10 @@ class Payment_detailsRow extends TabularSectionRow{
 class CatFormulasParamsRow extends ParamsRow{}
 
 class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
+  get region(){return this._getter('region')}
+  set region(v){this._setter('region',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
   get hide(){return this._getter('hide')}
   set hide(v){this._setter('hide',v)}
 }
