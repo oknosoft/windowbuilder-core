@@ -437,7 +437,7 @@ exports.CatCnns = class CatCnns extends Object {
     let sz = 0;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
-      if(rnom === nom || (rnom instanceof CatInserts && rnom.filtered_spec({elm, elm2, len_angl, ox}).find({nom}))) {
+      if(rnom === nom || (rnom instanceof CatInserts && rnom.filtered_spec({elm, elm2, len_angl, ox}).find(v => v.nom == nom))) {
         sz = row.sz;
         if(row.algorithm.is('w2') && elm2) {
           const size = this.size(elm, elm2);
