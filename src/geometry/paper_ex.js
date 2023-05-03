@@ -164,6 +164,23 @@ Object.defineProperties(paper.Path.prototype, {
     }
   },
 
+  is_orthogonal: {
+    value: function is_orthogonal(other, point, delta = 1) {
+      const offset1 = this.getOffsetOf(this.getNearestPoint(point));
+      const offset2 = other.getOffsetOf(other.getNearestPoint(point));
+      const v1 = this.getNormalAt(offset1);
+      const v2 = other.getTangentAt(offset2);
+      let angl = v1.getDirectedAngle(v2);
+      if(angl < -170) {
+        angl += 180;
+      }
+      else if(angl > 170) {
+        angl -= 180;
+      }
+      return Math.abs(angl) < delta;
+    }
+  },
+
   /**
    * Выясняет, является ли путь прямым
    * @memberof paper.Path#

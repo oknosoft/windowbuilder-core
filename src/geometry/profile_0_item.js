@@ -2047,7 +2047,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
       // импосты рисуем с учетом стороны примыкания
-      if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
+      if(cnn_point.is_t || (cnn_type == cnn_types.xx && (!cnn_point.profile_point || cnn_point.profile_point === 't'))) {
 
         const {width} = this;
         const w2 = width * width;
@@ -2108,12 +2108,19 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner2, oinner, 5);
             if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
               delete _corns[5];
+              delete _corns[7];
             }
             else {
               // ищем удлинение
               const {width} = this;
               const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
-              intersect_point(l4, rays.outer, 7, interior);
+              const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
+              if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
+                delete _corns[7];
+              }
+              else {
+                intersect_point(l4, rays.outer, 7, interior);
+              }
             }
           }
           else if(is_e) {
@@ -2122,11 +2129,18 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner2, oinner, 6);
             if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
               delete _corns[6];
+              delete _corns[8];
             }
             else {
               // ищем удлинение
               const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
-              intersect_point(l2, rays.inner, 8, interior);
+              const lx = new paper.Path({insert: false, segments: [_corns[6], _corns[3]]}).elongation(width * 6);
+              if(generatrix.is_orthogonal(lx, _corns[3]) || generatrix.is_orthogonal(l2, _corns[2])) {
+                delete _corns[8];
+              }
+              else {
+                intersect_point(l2, rays.inner, 8, interior); 
+              }
             }
           }
         }
@@ -2138,12 +2152,14 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);
             delete _corns[5];
+            delete _corns[7];
           }
           else if(is_e) {
             // в зависимости от стороны соединения
             intersect_point(oinner, rays.outer, 2);
             intersect_point(oinner, rays.inner, 3);
             delete _corns[6];
+            delete _corns[8];
           }
         }
       }
@@ -2531,21 +2547,13 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Выясняет, перпендикулярны ли профили
-   * @param profile {ProfileItem}
-   * @param point {paper.Point}
-   * @param delta {Number}
+   * Выясняет, перпендикулярны ли профили в точке point
+   * @param {ProfileItem} profile
+   * @param {paper.Point} point 
+   * @param {Number} [delta]
    */
   is_orthogonal(profile, point, delta) {
-    const offset1 = this.generatrix.getOffsetOf(this.generatrix.getNearestPoint(point));
-    const offset2 = profile.generatrix.getOffsetOf(profile.generatrix.getNearestPoint(point));
-    const v1 = this.generatrix.getNormalAt(offset1);
-    const v2 = profile.generatrix.getTangentAt(offset2);
-    let angl = v1.getDirectedAngle(v2);
-    if(angl < -180) {
-      angl += 180;
-    }
-    return Math.abs(angl) < (delta || consts.orientation_delta);
+    return this.generatrix.is_orthogonal(profile.generatrix, point, delta || consts.orientation_delta);
   }
 
   /**
