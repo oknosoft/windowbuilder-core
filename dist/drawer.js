@@ -3596,6 +3596,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(param.inheritance === 4) {
         return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
       }
+      if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, origin, layer: this, prm_row});
+      }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
