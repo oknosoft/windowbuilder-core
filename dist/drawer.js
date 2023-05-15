@@ -15552,6 +15552,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
     const aprm = furn.furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
+    const mprm = [];
     aprm.forEach((v) => {
       if(v == direction || v == opening){
         return;
@@ -15570,12 +15571,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         prm_row.value = drow.value;
       }
       prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
+      mprm.push(prm_row);
+    });
+    for(const prm_row of mprm) {
+      const {param} = prm_row;
       param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}},
         layer,
-      }), prm_row);
-    });
+      }), prm_row); 
+    }
     const adel = [];
     fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {
       if(aprm.indexOf(row.param) == -1){

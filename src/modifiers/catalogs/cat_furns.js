@@ -40,6 +40,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     aprm.sort(utils.sort('presentation'));
 
     // дозаполняем и приклеиваем значения по умолчанию
+    const mprm = [];
     aprm.forEach((v) => {
 
       // направления в табчасть не добавляем
@@ -63,15 +64,17 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         prm_row.value = drow.value;
       }
       prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
-
-      // умолчания по связям параметров
+      mprm.push(prm_row);
+    });
+    // умолчания по связям параметров
+    for(const prm_row of mprm) {
+      const {param} = prm_row;
       param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}},
         layer,
-      }), prm_row);
-
-    });
+      }), prm_row); 
+    }
 
     // удаляем лишние строки, сохраняя параметры допвставок
     const adel = [];
