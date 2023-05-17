@@ -602,13 +602,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
         });
+        // чистим возможные строки аксессуаров
         production.find_rows({nom: job_prm.nom.accessories}, (prow) => {
           const cx = prow.characteristic;
           if(cx.specification.find({specify: characteristic})) {
             cx.specification.clear({specify: characteristic});
             cx.weight = cx.elm_weight();
             cx.name = cx.prod_name();
+          }
+          if(cx.specification.count()) {
             prow.value_change('quantity', 'update', 1);
+          }
+          else {
+            production.del(prow);
           }
         });
         orders.forEach(({invoice}) => {
@@ -618,9 +624,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
-        
-        // чистим возможные строки аксессуаров
-        this.accessories('clear', characteristic);
         
         _data._loading = _loading;
       }

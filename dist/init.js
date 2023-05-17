@@ -6524,6 +6524,8 @@ $p.cat.create('abonents', CatAbonentsManager, false);
 class CatInsert_bind extends CatObj{
 get key(){return this._getter('key')}
 set key(v){this._setter('key',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
