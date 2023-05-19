@@ -95,9 +95,7 @@ export default function ({
       conds.forEach(({name, path}) => {
         selection[name] = path;
       });
-      if(this.sys.empty() || !utils._selection(this.sys, selection)) {
-        this.sys = this.base_block.sys;
-      }
+      this.sys = this.base_block.sys;
     }
 
     get refill() {
@@ -123,7 +121,7 @@ export default function ({
     }
     set sys(v) {
       this._setter('sys', v);
-      const {sys, params} = this;
+      const {sys, params, base_block} = this;
       const selection = {};
       clrs.selection_exclude_service(this._meta.fields.clr, sys, this);
       this._meta.fields.clr.choice_params.forEach(({name, path}) => {
@@ -140,22 +138,26 @@ export default function ({
         const {product_params} = sys;
         const adel = [];
         params.forEach((row) => {
-          if(row.hide || !product_params.find({param: row.param})) {
-            adel.push(row);
+          if(base_props.includes(row.param) && product_params.find({param: row.param})) {
+            row.hide = false;
           }
-          else if(!row.hide && !base_props.includes(row.param)) {
-            row.hide = true;
+          else {
+            adel.push(row);
           }
         });
         adel.forEach((row) => params.del(row));
 
-        product_params.forEach(({param, value, hide, by_default, forcibly}) => {
+        product_params.forEach(({param, value, hide, forcibly}) => {
           let prow = params.find({param});
+          const brow = base_block.params.find({cnstr: 0, param});
+          if(brow && !forcibly) {
+            value = brow.value;
+          }
           // если еще не добавлен - добавляем со значением по умолчанию
-          if(!prow) {
+          if(!prow && (brow || base_props.includes(param) || forcibly)) {
             prow = params.add({param, value, hide: hide || !base_props.includes(param)});
           }
-          if(forcibly) {
+          if(forcibly || brow) {
             prow.value = value;
           }
         });

@@ -266,7 +266,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
           }
         }
 
-        if(value !== undefined) {
+        if(value !== undefined && row.value != value) {
           row.value = value;
         }
       }

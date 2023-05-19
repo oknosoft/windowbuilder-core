@@ -3264,7 +3264,7 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
           }
         }
 
-        if(value !== undefined) {
+        if(value !== undefined && row.value != value) {
           row.value = value;
         }
       }
