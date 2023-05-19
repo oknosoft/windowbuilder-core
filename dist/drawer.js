@@ -4409,8 +4409,7 @@ class ContourTearing extends Contour {
     return path;
   }
   get glass_path() {
-    const path = new paper.Path({insert: false});
-    return path;
+    return new paper.Path({insert: false});
   }
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileTearing);
@@ -4539,432 +4538,6 @@ class ContourVirtual extends Contour {
   }
 }
 EditorInvisible.ContourVirtual = ContourVirtual;
-class DimensionGroup {
-  clear() {
-    for (let key in this) {
-      this[key].removeChildren();
-      this[key].remove();
-      delete this[key];
-    }
-  }
-  has_size(size) {
-    for (let key in this) {
-      const {path} = this[key];
-      if(path && Math.abs(path.length - size) < 1) {
-        return true;
-      }
-    }
-  }
-  sizes() {
-    const res = [];
-    for (let key in this) {
-      if(this[key].visible) {
-        res.push(this[key]);
-      }
-    }
-    return res;
-  }
-}
-class DimensionLayer extends paper.Layer {
-  get bounds() {
-    return this.project.bounds;
-  }
-  get owner_bounds() {
-    return this.bounds;
-  }
-  get dimension_bounds() {
-    return this.project.dimension_bounds;
-  }
-}
-class DimensionDrawer extends paper.Group {
-  constructor(attr) {
-    super(attr);
-    this.bringToFront();
-  }
-  clear() {
-    this.ihor && this.ihor.clear();
-    this.ivert && this.ivert.clear();
-    for (let pos of ['bottom', 'top', 'right', 'left']) {
-      if(this[pos]) {
-        this[pos].removeChildren();
-        this[pos].remove();
-        this[pos] = null;
-      }
-    }
-    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
-  }
-  redraw(forse) {
-    const {parent, project: {builder_props}} = this;
-    if(forse || !builder_props.auto_lines) {
-      this.clear();
-    }
-    for (let chld of parent.contours) {
-      chld.l_dimensions.redraw();
-    }
-    if(builder_props.auto_lines && (!parent.parent || forse)) {
-      const {ihor, ivert, by_side} = this.imposts();
-      if(!Object.keys(by_side).length) {
-        return this.clear();
-      }
-      const profiles = new Set(parent.profiles);
-      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
-      for (let elm of profiles) {
-        const our = !elm.parent || elm.parent === parent;
-        const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
-        const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
-        this.push_by_point({ihor, ivert, eb, ee, elm});
-      }
-      if(ihor.length > 2) {
-        ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
-          this.by_imposts(ihor, this.ihor, 'right');
-        }
-        else if(parent.is_pos('left')) {
-          this.by_imposts(ihor, this.ihor, 'left');
-        }
-      }
-      else {
-        ihor.length = 0;
-      }
-      if(ivert.length > 2) {
-        ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
-          this.by_imposts(ivert, this.ivert, 'bottom');
-        }
-        else if(parent.is_pos('top')) {
-          this.by_imposts(ivert, this.ivert, 'top');
-        }
-      }
-      else {
-        ivert.length = 0;
-      }
-      this.by_contour(ihor, ivert, forse, by_side);
-    }
-    for (let dl of this.children) {
-      dl.redraw && dl.redraw();
-    }
-  }
-  push_by_point({ihor, ivert, eb, ee, elm}) {
-    if(eb && ihor.every((v) => v.point != eb.y.round())) {
-      ihor.push({
-        point: eb.y.round(),
-        elm: elm,
-        p: 'b'
-      });
-    }
-    if(ee && ihor.every((v) => v.point != ee.y.round())) {
-      ihor.push({
-        point: ee.y.round(),
-        elm: elm,
-        p: 'e'
-      });
-    }
-    if(eb && ivert.every((v) => v.point != eb.x.round())) {
-      ivert.push({
-        point: eb.x.round(),
-        elm: elm,
-        p: 'b'
-      });
-    }
-    if(ee && ivert.every((v) => v.point != ee.x.round())) {
-      ivert.push({
-        point: ee.x.round(),
-        elm: elm,
-        p: 'e'
-      });
-    }
-  }
-  draw_by_imposts() {
-    const {parent} = this;
-    this.clear();
-    let index = 0;
-    for (let elm of parent.profiles) {
-      const {inner, outer} = elm.joined_imposts();
-      const {generatrix, angle_hor} = elm;
-      generatrix.visible = false;
-      const imposts = inner.concat(outer);
-      if(!imposts.length) {
-        continue;
-      }
-      elm.mark_direction();
-      let invert = angle_hor > 135 && angle_hor < 315;
-      for(const impost of imposts) {
-        const {point, profile: {rays, nom}} = impost;
-        const pi = generatrix.intersect_point(rays.inner, point);
-        const po = generatrix.intersect_point(rays.outer, point);
-        const dx = generatrix.getOffsetOf(point);
-        const dxi = generatrix.getOffsetOf(pi);
-        const dxo = generatrix.getOffsetOf(po);
-        let dx1, dx2;
-        if(dx > dxi) {
-          dx1 = dxi + nom.sizefaltz;
-          dx2 = dxo - nom.sizefaltz;
-        }
-        else {
-          dx1 = dxo + nom.sizefaltz;
-          dx2 = dxi - nom.sizefaltz;
-        }
-        this.ihor[`i${++index}`] = new DimensionLineImpost({
-          elm1: elm,
-          elm2: elm,
-          p1: invert ? dx : 'b',
-          p2: invert ? 'b' : dx,
-          dx1,
-          dx2,
-          parent: this,
-          offset: invert ? -150 : 150,
-          outer: outer.includes(impost),
-        });
-      }
-    }
-    this.by_contour([], [], true);
-    for (let dl of this.children) {
-      dl.redraw && dl.redraw();
-    }
-  }
-  draw_by_falsebinding() {
-    const {parent} = this;
-    this.clear();
-    const {ihor, ivert, by_side} = this.imposts();
-    for(const filling of parent.fillings) {
-      if(!filling.visible) {
-        continue;
-      }
-      const {path} = filling;
-      for(const elm of filling.imposts) {
-        let {b: eb, e: ee} = elm;
-        if(path.is_nearest(eb)) {
-          eb = null;
-        }
-        if(path.is_nearest(ee)) {
-          ee = null;
-        }
-        if(eb || ee) {
-          this.push_by_point({ihor, ivert, eb, ee, elm});
-        }
-      }
-    }
-    this.by_contour([], [], true, by_side);
-    if(ihor.length > 2) {
-      ihor.sort((a, b) => b.point - a.point);
-      this.by_base(ihor, this.ihor, 'left');
-    }
-    else {
-      ihor.length = 0;
-    }
-    if(ivert.length > 2) {
-      ivert.sort((a, b) => a.point - b.point);
-      this.by_base(ivert, this.ivert, 'top');
-    }
-    else {
-      ivert.length = 0;
-    }
-    for (let dl of this.children) {
-      dl.redraw && dl.redraw();
-    }
-  }
-  by_imposts(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
-    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
-    for (let i = 0; i < arr.length - 1; i++) {
-      if(!collection[i]) {
-        let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
-        if(shift && collection[i - 1] && collection[i - 1].offset !== offset) {
-          shift += 70;
-        }
-        collection[i] = new DimensionLine({
-          pos: pos,
-          elm1: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
-          p1: arr[i].p,
-          elm2: arr[i + 1].elm instanceof GlassSegment ? arr[i + 1].elm._sub : arr[i + 1].elm,
-          p2: arr[i + 1].p,
-          parent: this,
-          offset: offset - shift,
-          impost: true
-        });
-      }
-    }
-  }
-  by_base(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
-    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
-    for (let i = 1; i < arr.length - 1; i++) {
-      if(!collection[i - 1]) {
-        collection[i - 1] = new DimensionLine({
-          pos: pos,
-          elm1: arr[0].elm instanceof GlassSegment ? arr[0].elm._sub : arr[0].elm,
-          p1: arr[0].p,
-          elm2: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
-          p2: arr[i].p,
-          parent: this,
-          offset: offset,
-          impost: true
-        });
-        offset += base_offset;
-      }
-    }
-  }
-  by_contour(ihor, ivert, forse, by_side) {
-    const {project, parent} = this;
-    const {bounds} = parent;
-    const {base_offset, dop_offset} = consts;
-    if(project.contours.length > 1 || forse) {
-      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
-        if(!this.ihor.has_size(bounds.height)) {
-          if(!this.left) {
-            this.left = new DimensionLine({
-              pos: 'left',
-              parent: this,
-              offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
-              contour: true
-            });
-          }
-          else {
-            this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
-          }
-        }
-      }
-      else {
-        if(this.left) {
-          this.left.remove();
-          this.left = null;
-        }
-      }
-      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
-        if(!this.ihor.has_size(bounds.height)) {
-          if(!this.right) {
-            this.right = new DimensionLine({
-              pos: 'right',
-              parent: this,
-              offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
-              contour: true
-            });
-          }
-          else {
-            this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
-          }
-        }
-      }
-      else {
-        if(this.right) {
-          this.right.remove();
-          this.right = null;
-        }
-      }
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
-        if(!this.ivert.has_size(bounds.width)) {
-          if(!this.top) {
-            this.top = new DimensionLine({
-              pos: 'top',
-              parent: this,
-              offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
-              contour: true
-            });
-          }
-          else {
-            this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
-          }
-        }
-      }
-      else {
-        if(this.top) {
-          this.top.remove();
-          this.top = null;
-        }
-      }
-      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
-        if(!this.ivert.has_size(bounds.width)) {
-          if(!this.bottom) {
-            this.bottom = new DimensionLine({
-              pos: 'bottom',
-              parent: this,
-              offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
-              contour: true
-            });
-          }
-          else {
-            this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
-          }
-        }
-      }
-      else {
-        if(this.bottom) {
-          this.bottom.remove();
-          this.bottom = null;
-        }
-      }
-    }
-    if(forse === 'faltz') {
-      this.by_faltz(ihor, ivert, by_side);
-    }
-  }
-  by_faltz(ihor, ivert, by_side) {
-    const {base_offset} = consts;
-    if (!this.left) {
-      this.left = new DimensionLine({
-        pos: 'left',
-        parent: this,
-        offset: base_offset,
-        contour: true,
-        faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
-      });
-    }
-    if(!this.top) {
-      this.top = new DimensionLine({
-        pos: 'top',
-        parent: this,
-        offset: base_offset,
-        contour: true,
-        faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
-      });
-    }
-  }
-  imposts() {
-    const {parent} = this;
-    const {bounds} = parent;
-    const by_side = parent.profiles_by_side();
-    if(!Object.keys(by_side).length) {
-      return {ihor: [], ivert: [], by_side: {}};
-    }
-    const ihor = [
-      {
-        point: bounds.top.round(),
-        elm: by_side.top,
-        p: by_side.top.b.y < by_side.top.e.y ? 'b' : 'e'
-      },
-      {
-        point: bounds.bottom.round(),
-        elm: by_side.bottom,
-        p: by_side.bottom.b.y > by_side.bottom.e.y ? 'b' : 'e'
-      }];
-    const ivert = [
-      {
-        point: bounds.left.round(),
-        elm: by_side.left,
-        p: by_side.left.b.x < by_side.left.e.x ? 'b' : 'e'
-      },
-      {
-        point: bounds.right.round(),
-        elm: by_side.right,
-        p: by_side.right.b.x > by_side.right.e.x ? 'b' : 'e'
-      }];
-    return {ihor, ivert, by_side};
-  }
-  get owner_bounds() {
-    return this.parent.bounds;
-  }
-  get dimension_bounds() {
-    return this.parent.dimension_bounds;
-  }
-  get ihor() {
-    return this._ihor || (this._ihor = new DimensionGroup());
-  }
-  get ivert() {
-    return this._ivert || (this._ivert = new DimensionGroup());
-  }
-}
-EditorInvisible.DimensionDrawer = DimensionDrawer;
-EditorInvisible.DimensionLayer = DimensionLayer;
 class DimensionLine extends paper.Group {
   constructor(attr) {
     super({parent: attr.parent, project: attr.project});
@@ -5543,6 +5116,502 @@ class DimensionLineCustom extends DimensionLine {
 }
 EditorInvisible.DimensionLine = DimensionLine;
 EditorInvisible.DimensionLineCustom = DimensionLineCustom;
+class DimensionGroup {
+  clear() {
+    for (let key in this) {
+      this[key].removeChildren();
+      this[key].remove();
+      delete this[key];
+    }
+  }
+  has_size(size) {
+    for (let key in this) {
+      const {path} = this[key];
+      if(path && Math.abs(path.length - size) < 1) {
+        return true;
+      }
+    }
+  }
+  sizes() {
+    const res = [];
+    for (let key in this) {
+      if(this[key].visible) {
+        res.push(this[key]);
+      }
+    }
+    return res;
+  }
+}
+class DimensionLayer extends paper.Layer {
+  get bounds() {
+    return this.project.bounds;
+  }
+  get owner_bounds() {
+    return this.bounds;
+  }
+  get dimension_bounds() {
+    return this.project.dimension_bounds;
+  }
+}
+class DimensionDrawer extends paper.Group {
+  constructor(attr) {
+    super(attr);
+    this.bringToFront();
+  }
+  clear() {
+    this.ihor && this.ihor.clear();
+    this.ivert && this.ivert.clear();
+    for (let pos of ['bottom', 'top', 'right', 'left']) {
+      if(this[pos]) {
+        this[pos].removeChildren();
+        this[pos].remove();
+        this[pos] = null;
+      }
+    }
+    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
+  }
+  redraw(forse) {
+    const {parent, project: {builder_props}} = this;
+    if(forse || !builder_props.auto_lines) {
+      this.clear();
+    }
+    for (let chld of parent.contours) {
+      chld.l_dimensions.redraw();
+    }
+    if(builder_props.auto_lines && (!parent.parent || forse)) {
+      const {ihor, ivert, by_side} = this.imposts();
+      if(!Object.keys(by_side).length) {
+        return this.clear();
+      }
+      const profiles = new Set(parent.profiles);
+      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
+      for (let elm of profiles) {
+        const our = !elm.parent || elm.parent === parent;
+        const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
+        const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
+        this.push_by_point({ihor, ivert, eb, ee, elm});
+      }
+      if(ihor.length > 2) {
+        ihor.sort((a, b) => b.point - a.point);
+        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+          this.by_imposts(ihor, this.ihor, 'right');
+        }
+        else if(parent.is_pos('left')) {
+          this.by_imposts(ihor, this.ihor, 'left');
+        }
+      }
+      else {
+        ihor.length = 0;
+      }
+      if(ivert.length > 2) {
+        ivert.sort((a, b) => a.point - b.point);
+        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+          this.by_imposts(ivert, this.ivert, 'bottom');
+        }
+        else if(parent.is_pos('top')) {
+          this.by_imposts(ivert, this.ivert, 'top');
+        }
+      }
+      else {
+        ivert.length = 0;
+      }
+      this.by_contour(ihor, ivert, forse, by_side);
+    }
+    for (let dl of this.children) {
+      dl.redraw && dl.redraw();
+    }
+  }
+  push_by_point({ihor, ivert, eb, ee, elm}) {
+    if(eb && ihor.every((v) => v.point != eb.y.round())) {
+      ihor.push({
+        point: eb.y.round(),
+        elm: elm,
+        p: 'b'
+      });
+    }
+    if(ee && ihor.every((v) => v.point != ee.y.round())) {
+      ihor.push({
+        point: ee.y.round(),
+        elm: elm,
+        p: 'e'
+      });
+    }
+    if(eb && ivert.every((v) => v.point != eb.x.round())) {
+      ivert.push({
+        point: eb.x.round(),
+        elm: elm,
+        p: 'b'
+      });
+    }
+    if(ee && ivert.every((v) => v.point != ee.x.round())) {
+      ivert.push({
+        point: ee.x.round(),
+        elm: elm,
+        p: 'e'
+      });
+    }
+  }
+  draw_by_imposts() {
+    const {parent} = this;
+    this.clear();
+    let index = 0;
+    for (let elm of parent.profiles) {
+      const {inner, outer} = elm.joined_imposts();
+      const {generatrix, angle_hor} = elm;
+      generatrix.visible = false;
+      const imposts = inner.concat(outer);
+      if(!imposts.length) {
+        continue;
+      }
+      elm.mark_direction();
+      let invert = angle_hor > 135 && angle_hor < 315;
+      for(const impost of imposts) {
+        const {point, profile: {rays, nom}} = impost;
+        const pi = generatrix.intersect_point(rays.inner, point);
+        const po = generatrix.intersect_point(rays.outer, point);
+        const dx = generatrix.getOffsetOf(point);
+        const dxi = generatrix.getOffsetOf(pi);
+        const dxo = generatrix.getOffsetOf(po);
+        let dx1, dx2;
+        if(dx > dxi) {
+          dx1 = dxi + nom.sizefaltz;
+          dx2 = dxo - nom.sizefaltz;
+        }
+        else {
+          dx1 = dxo + nom.sizefaltz;
+          dx2 = dxi - nom.sizefaltz;
+        }
+        this.ihor[`i${++index}`] = new DimensionLineImpost({
+          elm1: elm,
+          elm2: elm,
+          p1: invert ? dx : 'b',
+          p2: invert ? 'b' : dx,
+          dx1,
+          dx2,
+          parent: this,
+          offset: invert ? -150 : 150,
+          outer: outer.includes(impost),
+        });
+      }
+    }
+    this.by_contour([], [], true);
+    for (let dl of this.children) {
+      dl.redraw && dl.redraw();
+    }
+  }
+  draw_by_falsebinding() {
+    const {parent} = this;
+    this.clear();
+    const {ihor, ivert, by_side} = this.imposts();
+    for(const filling of parent.fillings) {
+      if(!filling.visible) {
+        continue;
+      }
+      const {path} = filling;
+      for(const elm of filling.imposts) {
+        let {b: eb, e: ee} = elm;
+        if(path.is_nearest(eb)) {
+          eb = null;
+        }
+        if(path.is_nearest(ee)) {
+          ee = null;
+        }
+        if(eb || ee) {
+          this.push_by_point({ihor, ivert, eb, ee, elm});
+        }
+      }
+    }
+    this.by_contour([], [], true, by_side);
+    if(ihor.length > 2) {
+      ihor.sort((a, b) => b.point - a.point);
+      this.by_base(ihor, this.ihor, 'left');
+    }
+    else {
+      ihor.length = 0;
+    }
+    if(ivert.length > 2) {
+      ivert.sort((a, b) => a.point - b.point);
+      this.by_base(ivert, this.ivert, 'top');
+    }
+    else {
+      ivert.length = 0;
+    }
+    for (let dl of this.children) {
+      dl.redraw && dl.redraw();
+    }
+  }
+  by_imposts(arr, collection, pos) {
+    const {base_offset, dop_offset} = consts;
+    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
+    for (let i = 0; i < arr.length - 1; i++) {
+      if(!collection[i]) {
+        let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
+        if(shift && collection[i - 1] && collection[i - 1].offset !== offset) {
+          shift += 70;
+        }
+        collection[i] = new DimensionLine({
+          pos: pos,
+          elm1: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
+          p1: arr[i].p,
+          elm2: arr[i + 1].elm instanceof GlassSegment ? arr[i + 1].elm._sub : arr[i + 1].elm,
+          p2: arr[i + 1].p,
+          parent: this,
+          offset: offset - shift,
+          impost: true
+        });
+      }
+    }
+  }
+  by_base(arr, collection, pos) {
+    const {base_offset, dop_offset} = consts;
+    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
+    for (let i = 1; i < arr.length - 1; i++) {
+      if(!collection[i - 1]) {
+        collection[i - 1] = new DimensionLine({
+          pos: pos,
+          elm1: arr[0].elm instanceof GlassSegment ? arr[0].elm._sub : arr[0].elm,
+          p1: arr[0].p,
+          elm2: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
+          p2: arr[i].p,
+          parent: this,
+          offset: offset,
+          impost: true
+        });
+        offset += base_offset;
+      }
+    }
+  }
+  by_contour(ihor, ivert, forse, by_side) {
+    const {project, parent} = this;
+    const {bounds} = parent;
+    const {base_offset, dop_offset} = consts;
+    if(project.contours.length > 1 || forse) {
+      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
+        if(!this.ihor.has_size(bounds.height)) {
+          if(!this.left) {
+            this.left = new DimensionLine({
+              pos: 'left',
+              parent: this,
+              offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
+              contour: true
+            });
+          }
+          else {
+            this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
+          }
+        }
+      }
+      else {
+        if(this.left) {
+          this.left.remove();
+          this.left = null;
+        }
+      }
+      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+        if(!this.ihor.has_size(bounds.height)) {
+          if(!this.right) {
+            this.right = new DimensionLine({
+              pos: 'right',
+              parent: this,
+              offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
+              contour: true
+            });
+          }
+          else {
+            this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
+          }
+        }
+      }
+      else {
+        if(this.right) {
+          this.right.remove();
+          this.right = null;
+        }
+      }
+      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
+        if(!this.ivert.has_size(bounds.width)) {
+          if(!this.top) {
+            this.top = new DimensionLine({
+              pos: 'top',
+              parent: this,
+              offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
+              contour: true
+            });
+          }
+          else {
+            this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
+          }
+        }
+      }
+      else {
+        if(this.top) {
+          this.top.remove();
+          this.top = null;
+        }
+      }
+      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+        if(!this.ivert.has_size(bounds.width)) {
+          if(!this.bottom) {
+            this.bottom = new DimensionLine({
+              pos: 'bottom',
+              parent: this,
+              offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
+              contour: true
+            });
+          }
+          else {
+            this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
+          }
+        }
+      }
+      else {
+        if(this.bottom) {
+          this.bottom.remove();
+          this.bottom = null;
+        }
+      }
+    }
+    if(forse === 'faltz') {
+      this.by_faltz(ihor, ivert, by_side);
+    }
+  }
+  by_faltz(ihor, ivert, by_side) {
+    const {base_offset} = consts;
+    if (!this.left) {
+      this.left = new DimensionLine({
+        pos: 'left',
+        parent: this,
+        offset: base_offset,
+        contour: true,
+        faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
+      });
+    }
+    if(!this.top) {
+      this.top = new DimensionLine({
+        pos: 'top',
+        parent: this,
+        offset: base_offset,
+        contour: true,
+        faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
+      });
+    }
+  }
+  imposts() {
+    const {parent} = this;
+    const {bounds} = parent;
+    const by_side = parent.profiles_by_side();
+    if(!Object.keys(by_side).length) {
+      return {ihor: [], ivert: [], by_side: {}};
+    }
+    const ihor = [
+      {
+        point: bounds.top.round(),
+        elm: by_side.top,
+        p: by_side.top.b.y < by_side.top.e.y ? 'b' : 'e'
+      },
+      {
+        point: bounds.bottom.round(),
+        elm: by_side.bottom,
+        p: by_side.bottom.b.y > by_side.bottom.e.y ? 'b' : 'e'
+      }];
+    const ivert = [
+      {
+        point: bounds.left.round(),
+        elm: by_side.left,
+        p: by_side.left.b.x < by_side.left.e.x ? 'b' : 'e'
+      },
+      {
+        point: bounds.right.round(),
+        elm: by_side.right,
+        p: by_side.right.b.x > by_side.right.e.x ? 'b' : 'e'
+      }];
+    return {ihor, ivert, by_side};
+  }
+  get owner_bounds() {
+    return this.parent.bounds;
+  }
+  get dimension_bounds() {
+    return this.parent.dimension_bounds;
+  }
+  get ihor() {
+    return this._ihor || (this._ihor = new DimensionGroup());
+  }
+  get ivert() {
+    return this._ivert || (this._ivert = new DimensionGroup());
+  }
+}
+EditorInvisible.DimensionDrawer = DimensionDrawer;
+EditorInvisible.DimensionLayer = DimensionLayer;
+class DimensionAngle extends DimensionLineCustom {
+  get elm_type() {
+    return $p.enm.elm_types.Угол;
+  }
+  get path() {
+    const {children, _attr} = this;
+    if(!children.length){
+      return;
+    }
+    const {path} = _attr.elm1;
+    if(!path){
+      return;
+    }
+    let b = path.getPointAt(_attr.p1);
+    const n = path.getNormalAt(_attr.p1).normalize(100);
+    const res = new paper.Path({insert: false, segments: [b, b.add(n)]});
+    res.offset = 0;
+    return res;
+  }
+  redraw() {
+    const {children, _attr, path, align} = this;
+    if(!path){
+      this.visible = false;
+      return;
+    }
+    this.visible = true;
+    const b = path.firstSegment.point;
+    const e = path.lastSegment.point;
+    const c = path.getPointAt(50);
+    const n = path.getNormalAt(0).multiply(10);
+    const c1 = c.add(n);
+    const c2 = c.subtract(n);
+    if(children.callout1.segments.length){
+      children.callout1.firstSegment.point = b;
+      children.callout1.lastSegment.point = c1;
+    }
+    else{
+      children.callout1.addSegments([b, c1]);
+    }
+    if(children.callout2.segments.length){
+      children.callout2.firstSegment.point = b;
+      children.callout2.lastSegment.point = c2;
+    }
+    else{
+      children.callout2.addSegments([b, c2]);
+    }
+    if(children.scale.segments.length){
+      children.scale.firstSegment.point = b;
+      children.scale.lastSegment.point = e;
+    }
+    else{
+      children.scale.addSegments([b, e]);
+    }
+    children.text.rotation = e.subtract(b).angle;
+    children.text.justification = 'left';
+    if(_attr.by_curve) {
+      const curv = Math.abs(_attr.elm1.path.getCurvatureAt(_attr.p1));
+      if(curv) {
+        children.text.content = `Rᶜ${(.5 / curv).round(0)}`;
+      }
+    }
+    else {
+      const {path, _attr: {_corns}} = _attr.elm1;
+      const sub = _attr.p1 > _attr.elm1.length ? path.get_subpath(_corns[3], _corns[4]) : path.get_subpath(_corns[1], _corns[2])
+      children.text.content = `R${sub.ravg().round(0)}`;
+    }
+    children.text.position = e.add(path.getTangentAt(0).multiply(consts.font_size * 1.4));
+  }
+}
+EditorInvisible.DimensionAngle = DimensionAngle;
 class DimensionLineImpost extends DimensionLineCustom {
   constructor(attr) {
     attr.row = {
@@ -6723,7 +6792,7 @@ class FreeText extends paper.PointText {
       this.clr = _row.clr;
       this.angle = _row.angle_hor;
       if(_row.path_data){
-        var path_data = JSON.parse(_row.path_data);
+        const path_data = JSON.parse(_row.path_data);
         this.x = _row.x1 + path_data.bounds_x || 0;
         this.y = _row.y1 - path_data.bounds_y || 0;
         this._mixin(path_data, null, ["bounds_x","bounds_y"]);
@@ -9847,8 +9916,8 @@ class ProfileItem extends GeneratrixElement {
       return res;
     }
     else {
-      const index = corn.substr(corn.length - 1, 1);
-      const axis = corn.substr(corn.length - 2, 1);
+      const index = corn.substring(corn.length - 1, 1);
+      const axis = corn.substring(corn.length - 2, 1);
       return _corns[index][axis];
     }
   }

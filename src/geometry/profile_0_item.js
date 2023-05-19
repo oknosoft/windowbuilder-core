@@ -2765,8 +2765,8 @@ class ProfileItem extends GeneratrixElement {
       return res;
     }
     else {
-      const index = corn.substr(corn.length - 1, 1);
-      const axis = corn.substr(corn.length - 2, 1);
+      const index = corn.substring(corn.length - 1, 1);
+      const axis = corn.substring(corn.length - 2, 1);
       return _corns[index][axis];
     }
   }

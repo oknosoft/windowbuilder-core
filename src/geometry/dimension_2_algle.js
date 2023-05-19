@@ -1,0 +1,98 @@
+
+/*
+ * ### Размерная линия угла между лучами
+ * Created 19.05.2023
+ */
+
+class DimensionAngle extends DimensionLineCustom {
+
+  /**
+   * Возвращает тип элемента (размерная линия угла)
+   */
+  get elm_type() {
+    return $p.enm.elm_types.Угол;
+  }
+
+  get path() {
+    // ищем точку 1 на пути профиля
+    // строим нормаль - это и будет наш путь
+
+    const {children, _attr} = this;
+    if(!children.length){
+      return;
+    }
+    const {path} = _attr.elm1;
+    // если точки профиля еще не нарисованы - выходим
+    if(!path){
+      return;
+    }
+
+    // точка начала
+    let b = path.getPointAt(_attr.p1);
+    // нормаль
+    const n = path.getNormalAt(_attr.p1).normalize(100);
+    // путь
+    const res = new paper.Path({insert: false, segments: [b, b.add(n)]});
+    res.offset = 0;
+    return res;
+  }
+
+  redraw() {
+    const {children, _attr, path, align} = this;
+    if(!path){
+      this.visible = false;
+      return;
+    }
+    this.visible = true;
+
+    const b = path.firstSegment.point;
+    const e = path.lastSegment.point;
+    const c = path.getPointAt(50);
+    const n = path.getNormalAt(0).multiply(10);
+    const c1 = c.add(n);
+    const c2 = c.subtract(n);
+
+    if(children.callout1.segments.length){
+      children.callout1.firstSegment.point = b;
+      children.callout1.lastSegment.point = c1;
+    }
+    else{
+      children.callout1.addSegments([b, c1]);
+    }
+
+    if(children.callout2.segments.length){
+      children.callout2.firstSegment.point = b;
+      children.callout2.lastSegment.point = c2;
+    }
+    else{
+      children.callout2.addSegments([b, c2]);
+    }
+
+    if(children.scale.segments.length){
+      children.scale.firstSegment.point = b;
+      children.scale.lastSegment.point = e;
+    }
+    else{
+      children.scale.addSegments([b, e]);
+    }
+
+    children.text.rotation = e.subtract(b).angle;
+    children.text.justification = 'left';
+    if(_attr.by_curve) {
+      const curv = Math.abs(_attr.elm1.path.getCurvatureAt(_attr.p1));
+      if(curv) {
+        children.text.content = `Rᶜ${(.5 / curv).round(0)}`;
+      }
+    }
+    else {
+      const {path, _attr: {_corns}} = _attr.elm1;
+      const sub = _attr.p1 > _attr.elm1.length ? path.get_subpath(_corns[3], _corns[4]) : path.get_subpath(_corns[1], _corns[2])
+      children.text.content = `R${sub.ravg().round(0)}`;
+    }
+
+    children.text.position = e.add(path.getTangentAt(0).multiply(consts.font_size * 1.4));
+  }
+
+}
+
+EditorInvisible.DimensionAngle = DimensionAngle;

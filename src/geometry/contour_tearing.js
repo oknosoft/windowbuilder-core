@@ -32,8 +32,7 @@ class ContourTearing extends Contour {
   }
 
   get glass_path() {
-    const path = new paper.Path({insert: false});
-    return path;
+    return new paper.Path({insert: false});
   }
 
   get profiles() {
