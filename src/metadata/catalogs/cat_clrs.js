@@ -7,8 +7,8 @@ exports.CatClrsManager = class CatClrsManager extends Object {
    */
   getter(ref) {
     if(ref && ref.length === 72) {
-      const clr_in = ref.substr(0, 36);
-      const clr_out = ref.substr(36);
+      const clr_in = ref.substring(0, 36);
+      const clr_out = ref.substring(36);
       let in_out = this.get(ref);
       if(in_out.is_new()) {
         Object.assign(in_out._obj, {clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder.valueOf()});

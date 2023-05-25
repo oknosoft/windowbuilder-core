@@ -9339,11 +9339,11 @@ class ProfileItem extends GeneratrixElement {
     const is_b = profile_point === 'b';
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
+    const delta = cnn_point?.cnn?.size(this) || 0;
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
       let oinner = prays[side];
       let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
-      const delta = cnn_point?.cnn?.size(this);
       if(delta || cnn_point?.cnn?.sd2) {
         let base = cnn_point.cnn.sd2 ? oouter : oinner;
         const pt = base.getNearestPoint(cnn_point.point);
@@ -9507,16 +9507,6 @@ class ProfileItem extends GeneratrixElement {
               delete _corns[3];
             }
           }
-        }
-      }
-      else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type === cnn_types.i) {
-        if(is_b) {
-          delete _corns[1];
-          delete _corns[4];
-        }
-        else if(is_e) {
-          delete _corns[2];
-          delete _corns[3];
         }
       }
       else {
@@ -9690,20 +9680,38 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
+    else {
+      if(is_b) {
+        delete _corns[1];
+        delete _corns[4];
+        delete _corns[5];
+        delete _corns[7];
+      }
+      else if(is_e) {
+        delete _corns[2];
+        delete _corns[3];
+        delete _corns[6];
+        delete _corns[8];
+      }
+    }
     if(is_b) {
+      const tangent = generatrix.firstCurve.getTangentAt(0, true).normalize(-delta);
+      const pt = this.b.add(tangent);
       if(!_corns[1]) {
-        _corns[1] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
+        _corns[1] = pt.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
       }
       if(!_corns[4]) {
-        _corns[4] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
+        _corns[4] = pt.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
       }
     }
     else if(is_e) {
+      const tangent = generatrix.lastCurve.getTangentAt(1, true).normalize(delta);
+      const pt = this.e.add(tangent);
       if(!_corns[2]) {
-        _corns[2] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
+        _corns[2] = pt.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
       }
       if(!_corns[3]) {
-        _corns[3] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
+        _corns[3] = pt.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
       }
     }
     return cnn_point;
