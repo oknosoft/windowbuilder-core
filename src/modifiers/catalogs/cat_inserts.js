@@ -1123,7 +1123,9 @@
         coloring,
       } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
+      const {Основной, Соединение, СоединениеПополам} = enm.angle_calculating_ways;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
+      const own_angle_calc_method = own_row?.angle_calc_method;
 
       if(!spec){
         spec = ox.specification;
@@ -1136,6 +1138,9 @@
         let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
         if(!coefficient) {
           coefficient = 0.001;
+        }
+        if(own_angle_calc_method && angle_calc_method == Основной) {
+          angle_calc_method = own_angle_calc_method;
         }
 
         let row_spec;
@@ -1368,10 +1373,17 @@
             }
           }
           
-          if(alp1 === undefined && alp2 === undefined && (angle_calc_method?.is('Соединение') || angle_calc_method?.is('СоединениеПополам'))) {
-            const {b, e, generatrix} = elm;
-            alp1 = b.profile?.generatrix?.angle_between(generatrix, b.point);
-            alp2 = e.profile?.generatrix?.angle_between(generatrix, e.point);
+          if(alp1 === undefined && alp2 === undefined && (angle_calc_method == Соединение || angle_calc_method == СоединениеПополам)) {
+            if(elm2 instanceof EditorInvisible.Filling && len_angl?.curr) {
+              const {curr, next, prev} = len_angl;
+              alp1 = prev.sub_path.angle_between(curr.sub_path, curr.b);
+              alp2 = curr.sub_path.angle_between(next.sub_path, curr.e);
+            }
+            else {
+              const {b, e, generatrix} = elm;
+              alp1 = b.profile?.generatrix?.angle_between(generatrix, b.point);
+              alp2 = e.profile?.generatrix?.angle_between(generatrix, e.point); 
+            }
           }
             
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
