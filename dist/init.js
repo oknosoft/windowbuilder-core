@@ -2782,6 +2782,8 @@ get pair(){return this._getter('pair')}
 set pair(v){this._setter('pair',v)}
 get lay_split_types(){return this._getter('lay_split_types')}
 set lay_split_types(v){this._setter('lay_split_types',v)}
+get css(){return this._getter('css')}
+set css(v){this._setter('css',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -4425,8 +4427,8 @@ class CatClrsManager extends CatManager {
    */
   getter(ref) {
     if(ref && ref.length === 72) {
-      const clr_in = ref.substr(0, 36);
-      const clr_out = ref.substr(36);
+      const clr_in = ref.substring(0, 36);
+      const clr_out = ref.substring(36);
       let in_out = this.get(ref);
       if(in_out.is_new()) {
         Object.assign(in_out._obj, {clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder.valueOf()});
