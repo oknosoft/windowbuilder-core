@@ -452,10 +452,17 @@ class Scheme extends paper.Project {
    * @desc Этот код нельзя выполнить внутри load_contour, т.к. линия может ссылаться на элементы разных контуров
    */
   load_dimension_lines() {
-    const {Размер, Радиус} = $p.enm.elm_types;
-    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус]}}, (row) => {
-      const layer = this.getItem({cnstr: row.cnstr});
-      const Constructor = row.elm_type === Размер ? DimensionLineCustom : DimensionRadius;
+    const {Размер, Радиус, Угол} = $p.enm.elm_types;
+    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус, Угол]}}, (row) => {
+      let layer = this.getItem({cnstr: row.cnstr});
+      let Constructor = DimensionLineCustom;
+      if(row.elm_type === Радиус) {
+        Constructor = DimensionRadius;
+      }
+      else if(row.elm_type === Угол) {
+        Constructor = DimensionAngle;
+        layer = this.l_connective;
+      }
       layer && new Constructor({
         parent: layer.l_dimensions,
         row: row
@@ -1684,12 +1691,15 @@ class Scheme extends paper.Project {
     }
 
     // если подходит текущая, возвращаем текущую
-    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+    if(pos_array && Array.isArray(attr.elm_type) &&
+      attr.pos.includes(positions.ЦентрВертикаль) &&
+      rows.find(({pos}) => pos === positions.ЦентрВертикаль) &&
+      attr.elm_type.includes(elm_types.СтворкаБИ)) {
       if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
         return attr.inset;
       }
     }
-    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (row.pos === positions.any || check_pos(row.pos)))) {
       return attr.inset;
     }
 

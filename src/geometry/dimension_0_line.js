@@ -582,7 +582,7 @@ class DimensionLineCustom extends DimensionLine {
     }
 
     // слой, которому принадлежит размерная линия
-    if(!attr.row.cnstr){
+    if(!attr.row.cnstr && attr.parent.layer){
       attr.row.cnstr = attr.parent.layer.cnstr;
     }
 

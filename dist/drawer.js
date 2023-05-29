@@ -5003,7 +5003,7 @@ class DimensionLineCustom extends DimensionLine {
     if(!attr.row){
       attr.row = attr.parent.project.ox.coordinates.add();
     }
-    if(!attr.row.cnstr){
+    if(!attr.row.cnstr && attr.parent.layer){
       attr.row.cnstr = attr.parent.layer.cnstr;
     }
     if(!attr.row.elm){
@@ -5543,23 +5543,45 @@ class DimensionDrawer extends paper.Group {
 EditorInvisible.DimensionDrawer = DimensionDrawer;
 EditorInvisible.DimensionLayer = DimensionLayer;
 class DimensionAngle extends DimensionLineCustom {
+  constructor(attr) {
+    super(attr);
+    const {p1, p2, o, through, pos, content} = attr;
+    const {callout1, callout2, scale, text} = this.children;
+    text.position = pos;
+    text.content = content;
+    callout1.addSegments([o, p1]);
+    callout2.addSegments([o, p2]);
+    const tmp = new paper.Path.Arc({
+      from: p1,
+      through: through,
+      to: p2,
+      insert: false,
+    });
+    scale.addSegments(tmp.segments);
+  }
   get elm_type() {
     return $p.enm.elm_types.Угол;
   }
+  save_coordinates() {
+    const {_row, _attr, elm_type, children: {callout1, callout2, scale, text}} = this;
+    _row.len = parseFloat(text.content);
+    _row.elm_type = elm_type;
+    const through = scale.getPointAt(scale.length / 2);
+    const path_data = {
+      o: [callout1.firstSegment.point.x, callout1.firstSegment.point.y],
+      p1: [callout1.lastSegment.point.x, callout1.lastSegment.point.y],
+      p2: [callout2.lastSegment.point.x, callout2.lastSegment.point.y],
+      through: [through.x, through.y],
+      pos: [text.position.x, text.position.y],
+      content: text.content,
+    };
+    _row.path_data = JSON.stringify(path_data);
+  }
+  is_disabled() {
+    return true;
+  }
   get path() {
-    const {children, _attr} = this;
-    if(!children.length){
-      return;
-    }
-    const {path} = _attr.elm1;
-    if(!path){
-      return;
-    }
-    let b = path.getPointAt(_attr.p1);
-    const n = path.getNormalAt(_attr.p1).normalize(100);
-    const res = new paper.Path({insert: false, segments: [b, b.add(n)]});
-    res.offset = 0;
-    return res;
+    return this.children.scale;
   }
   redraw() {
     const {children, _attr, path, align} = this;
@@ -5568,47 +5590,6 @@ class DimensionAngle extends DimensionLineCustom {
       return;
     }
     this.visible = true;
-    const b = path.firstSegment.point;
-    const e = path.lastSegment.point;
-    const c = path.getPointAt(50);
-    const n = path.getNormalAt(0).multiply(10);
-    const c1 = c.add(n);
-    const c2 = c.subtract(n);
-    if(children.callout1.segments.length){
-      children.callout1.firstSegment.point = b;
-      children.callout1.lastSegment.point = c1;
-    }
-    else{
-      children.callout1.addSegments([b, c1]);
-    }
-    if(children.callout2.segments.length){
-      children.callout2.firstSegment.point = b;
-      children.callout2.lastSegment.point = c2;
-    }
-    else{
-      children.callout2.addSegments([b, c2]);
-    }
-    if(children.scale.segments.length){
-      children.scale.firstSegment.point = b;
-      children.scale.lastSegment.point = e;
-    }
-    else{
-      children.scale.addSegments([b, e]);
-    }
-    children.text.rotation = e.subtract(b).angle;
-    children.text.justification = 'left';
-    if(_attr.by_curve) {
-      const curv = Math.abs(_attr.elm1.path.getCurvatureAt(_attr.p1));
-      if(curv) {
-        children.text.content = `Rᶜ${(.5 / curv).round(0)}`;
-      }
-    }
-    else {
-      const {path, _attr: {_corns}} = _attr.elm1;
-      const sub = _attr.p1 > _attr.elm1.length ? path.get_subpath(_corns[3], _corns[4]) : path.get_subpath(_corns[1], _corns[2])
-      children.text.content = `R${sub.ravg().round(0)}`;
-    }
-    children.text.position = e.add(path.getTangentAt(0).multiply(consts.font_size * 1.4));
   }
 }
 EditorInvisible.DimensionAngle = DimensionAngle;
@@ -12319,10 +12300,17 @@ class Scheme extends paper.Project {
     this.redraw();
   }
   load_dimension_lines() {
-    const {Размер, Радиус} = $p.enm.elm_types;
-    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус]}}, (row) => {
-      const layer = this.getItem({cnstr: row.cnstr});
-      const Constructor = row.elm_type === Размер ? DimensionLineCustom : DimensionRadius;
+    const {Размер, Радиус, Угол} = $p.enm.elm_types;
+    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус, Угол]}}, (row) => {
+      let layer = this.getItem({cnstr: row.cnstr});
+      let Constructor = DimensionLineCustom;
+      if(row.elm_type === Радиус) {
+        Constructor = DimensionRadius;
+      }
+      else if(row.elm_type === Угол) {
+        Constructor = DimensionAngle;
+        layer = this.l_connective;
+      }
       layer && new Constructor({
         parent: layer.l_dimensions,
         row: row
@@ -13142,12 +13130,15 @@ class Scheme extends paper.Project {
       }
       return attr.pos == pos;
     }
-    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+    if(pos_array && Array.isArray(attr.elm_type) &&
+      attr.pos.includes(positions.ЦентрВертикаль) &&
+      rows.find(({pos}) => pos === positions.ЦентрВертикаль) &&
+      attr.elm_type.includes(elm_types.СтворкаБИ)) {
       if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
         return attr.inset;
       }
     }
-    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (row.pos === positions.any || check_pos(row.pos)))) {
       return attr.inset;
     }
     let inset;
