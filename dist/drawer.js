@@ -9311,6 +9311,21 @@ class ProfileItem extends GeneratrixElement {
       }
       return delta;
     }
+    const inner2 = (profile2) => {
+      const interior = generatrix.getPointAt(generatrix.length/2)
+      const {rays: prays2} = profile2;
+      const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
+      let oinner2 = prays2[side2];
+      if(delta) {
+        const pt = oinner2.getNearestPoint(cnn_point.point);
+        const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
+          .normalize(profile2 instanceof ProfileItem ? -delta : delta);
+        const tmp = oinner2.clone({insert: false});
+        tmp.translate(normal);
+        oinner2 = tmp;
+      }
+      return [interior, oinner2];
+    };
     const other = cnn_point.profile;
     const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {inner: other.path, outer: other.path} : undefined);
     const is_b = profile_point === 'b';
@@ -9364,18 +9379,7 @@ class ProfileItem extends GeneratrixElement {
           }
         });
         if(profile2) {
-          const interior = generatrix.getPointAt(generatrix.length/2)
-          const {rays: prays2} = profile2;
-          const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
-          let oinner2 = prays2[side2];
-          if(delta) {
-            const pt = oinner2.getNearestPoint(cnn_point.point);
-            const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
-              .normalize(profile2 instanceof ProfileItem ? -delta : delta);
-            const tmp = oinner2.clone({insert: false});
-            tmp.translate(normal);
-            oinner2 = tmp;
-          }
+          const [interior, oinner2] = inner2(profile2);
           const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
           const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
@@ -9389,7 +9393,6 @@ class ProfileItem extends GeneratrixElement {
               delete _corns[7];
             }
             else {
-              const {width} = this;
               const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
               const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
               if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
@@ -9436,8 +9439,9 @@ class ProfileItem extends GeneratrixElement {
         }
       }
       else if(cnn_type === cnn_types.xx) {
+        let {width} = this;
         if(other instanceof Onlay) {
-          const width = this.width * 0.7;
+          width *= 0.7;
           const l = is_b ? width : generatrix.length - width;
           const p = generatrix.getPointAt(l);
           const n = generatrix.getNormalAt(l).normalize(width);
@@ -9458,20 +9462,61 @@ class ProfileItem extends GeneratrixElement {
           const cnn_point2 = other.cnn_point(cnn_point.profile_point);
           const profile2 = cnn_point2 && cnn_point2.profile;
           if(profile2) {
-            const prays2 = profile2 && profile2.rays;
-            const pt1 = intersect_point(oinner, rays.outer);
-            const pt2 = intersect_point(oinner, rays.inner);
-            const pt3 = intersect_point(prays2.inner, rays.outer);
-            const pt4 = intersect_point(prays2.inner, rays.inner);
+            const [interior, oinner2] = inner2(profile2);
+            const pt1 = intersect_point(oinner, rays.outer, 0, interior);
+            const pt2 = intersect_point(oinner, rays.inner, 0, interior);
+            const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
+            const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
+            const pti = intersect_point(oinner2, oinner, 0, interior);
             if(is_b) {
-              intersect_point(prays2.inner, oinner, 5);
-              pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2.inner, rays.outer, 1);
-              pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2.inner, rays.inner, 4);
+              if(pti < pt1 && pti < pt4) {
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+              }
+              else {
+                pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+                pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+              }
+              intersect_point(oinner2, oinner, 5);
+              if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
+                delete _corns[5];
+                delete _corns[7];
+              }
+              else {
+                const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
+                const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
+                if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
+                  delete _corns[7];
+                }
+                else {
+                  intersect_point(l4, rays.outer, 7, interior);
+                }
+              }
             }
             else if(is_e) {
-              pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2.inner, rays.outer, 2);
-              pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2.inner, rays.inner, 3);
-              intersect_point(prays2.inner, oinner, 6);
+              if(pti > pt1 && pti > pt4) {
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);                
+              }
+              else {
+                pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+                pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+              }
+              intersect_point(oinner2, oinner, 6);
+              if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
+                delete _corns[6];
+                delete _corns[8];
+              }
+              else {
+                const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
+                const lx = new paper.Path({insert: false, segments: [_corns[6], _corns[3]]}).elongation(width * 6);
+                if(generatrix.is_orthogonal(lx, _corns[3]) || generatrix.is_orthogonal(l2, _corns[2])) {
+                  delete _corns[8];
+                }
+                else {
+                  intersect_point(l2, rays.inner, 8, interior);
+                }
+              }
             }
           }
           else{
