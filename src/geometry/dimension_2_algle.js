@@ -10,8 +10,8 @@ class DimensionAngle extends DimensionLineCustom {
     super(attr);
     const {p1, p2, o, through, pos, content} = attr;
     const {callout1, callout2, scale, text} = this.children;
-    text.position = pos;
     text.content = content;
+    text.position = pos;
     callout1.addSegments([o, p1]);
     callout2.addSegments([o, p2]);
     const tmp = new paper.Path.Arc({
