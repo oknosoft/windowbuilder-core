@@ -4183,6 +4183,20 @@ class ContourNested extends Contour {
                 _ox.cnn_elmnts.add(proto);
               }
             }
+            adel.length = 0;
+            for(const trow of _ox.glass_specification) {
+              if(trow.elm > elm0) {
+                adel.push(trow);
+              }
+            }
+            for(const trow of adel) {
+              _ox.glass_specification.del(trow);
+            }
+            for(const trow of tx.glass_specification) {
+              const proto = Object.assign({}, trow._obj);
+              proto.elm = map.get(proto.elm);
+              _ox.glass_specification.add(proto);
+            }
             _ox.params.clear();
             for(const trow of tx.params) {
               const proto = Object.assign({}, trow._obj);
@@ -4322,6 +4336,7 @@ class ContourNestedContent extends Contour {
   }
   load_stamp({contour, delta, map}) {
     const {_ox: ox, project} = this;
+    const {glass_specification} = contour._ox;
     project._scope.activate();
     for(const proto of contour.profiles) {
       const generatrix = proto.generatrix.clone({insert: false});
@@ -4336,11 +4351,18 @@ class ContourNestedContent extends Contour {
     for(const proto of contour.glasses(false, true)) {
       const path = proto.generatrix.clone({insert: false});
       path.translate(delta);
+      const elm = map.get(proto.elm);
       new Filling({
         parent: this,
         path,
         proto: {inset: proto.inset, clr: proto.clr},
-        elm: map.get(proto.elm),
+        elm,
+      });
+      ox.glass_specification.clear({elm});
+      glass_specification.find_rows({elm: proto.elm}, (trow) => {
+        const gproto = Object.assign({}, trow._obj);
+        gproto.elm = elm;
+        ox.glass_specification.add(gproto);
       });
     }
     for(const proto of contour.contours) {

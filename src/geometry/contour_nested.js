@@ -211,6 +211,7 @@ class ContourNested extends Contour {
                 _ox.constructions.add(Object.assign({}, trow._obj));
               }
             }
+            
             // заполняем соответствие номенов элементов
             for(const trow of tx.coordinates) {
               if(trow.cnstr > 1) {
@@ -239,6 +240,23 @@ class ContourNested extends Contour {
                 _ox.cnn_elmnts.add(proto);
               }
             }
+
+            // грузим glass_specification;
+            adel.length = 0;
+            for(const trow of _ox.glass_specification) {
+              if(trow.elm > elm0) {
+                adel.push(trow);
+              }
+            }
+            for(const trow of adel) {
+              _ox.glass_specification.del(trow);
+            }
+            for(const trow of tx.glass_specification) {
+              const proto = Object.assign({}, trow._obj);
+              proto.elm = map.get(proto.elm);
+              _ox.glass_specification.add(proto);
+            }
+            
             // грузим params;
             _ox.params.clear();
             for(const trow of tx.params) {
@@ -248,6 +266,7 @@ class ContourNested extends Contour {
               }
               _ox.params.add(proto);
             }
+            
             // грузим inserts;
             _ox.inserts.clear();
             for(const trow of tx.inserts) {
