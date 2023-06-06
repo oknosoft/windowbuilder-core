@@ -82,6 +82,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+
+        case 'is_composite':
+          _data._formula = function ({elm}) {
+            return elm?.clr?.is_composite();
+          };
+          break;          
           
         case 'elm_type':
           _data._formula = function ({elm}) {
@@ -155,6 +161,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
     'region',           // ряд
+    'is_composite',     // у элемента составной цвет
   ]) {
     formulate(name);
   }

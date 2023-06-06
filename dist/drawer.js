@@ -17557,6 +17557,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+        case 'is_composite':
+          _data._formula = function ({elm}) {
+            return elm?.clr?.is_composite();
+          };
+          break;          
         case 'elm_type':
           _data._formula = function ({elm}) {
             return elm?.elm_type || elm_types.get();
@@ -17621,6 +17626,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'clr_inset',       
     'handle_height',   
     'region',          
+    'is_composite',    
   ]) {
     formulate(name);
   }
