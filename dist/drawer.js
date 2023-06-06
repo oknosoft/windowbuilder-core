@@ -3564,6 +3564,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       return elm[param.valueOf()];
     }
     const {layer, own_sys} = this;
+    if(!cnstr && prm_row.origin.is('layer')) {
+      cnstr = this.cnstr;
+    }
     if(!cnstr) {
       if(layer && !own_sys && !(layer instanceof ContourParent)) {
         return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
