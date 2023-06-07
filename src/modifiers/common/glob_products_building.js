@@ -1067,7 +1067,7 @@ class ProductsBuilding {
       row_spec.dop = -2;
     }
 
-    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec);
+    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
     if(origin) {
       row_spec.origin = origin;

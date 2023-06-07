@@ -1721,7 +1721,7 @@ class Scheme extends paper.Project {
     // ищем по умолчанию + любое
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == positions.Любое && row.by_default) {
+        if(row.pos == positions.any && row.by_default) {
           return inset = row.nom;
         }
       });
@@ -1734,7 +1734,7 @@ class Scheme extends paper.Project {
         return this.default_inset(attr);
       }
       rows.some((row) => {
-        if(row.pos == positions.Любое) {
+        if(row.pos == positions.any) {
           return inset = row.nom;
         }
       });

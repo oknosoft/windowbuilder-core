@@ -699,7 +699,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
     const curr = new Date();
     const tmp = curr > fin ? curr : new Date(date.valueOf());
-    tmp.setHours(23, 59, 59);
+    tmp.setHours(23, 59, 59, 999);
     return tmp;
   }
 

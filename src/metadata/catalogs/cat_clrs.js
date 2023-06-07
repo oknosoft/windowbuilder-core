@@ -95,15 +95,16 @@ exports.CatClrsManager = class CatClrsManager extends Object {
 
   /**
    * Возвращает цвет по предопределенному цвету при формировании спецификации
-   * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
-   * @param clr_elm {CatClrs} - цвет элемента
-   * @param clr_sch {CatClrs} - цвет изделия
-   * @param [elm] {BuilderElement} - элемент рисовалки
-   * @param [spec] {TabularSection} - табчасть спецификации для поиска ведущих
-   * @param [row] {TabularSectionRow} - строка спецификации, где есть `nom`
+   * @param {CatClrs} clr - цвет исходной строки соединения, фурнитуры или вставки
+   * @param {CatClrs} clr_elm - цвет элемента
+   * @param {CatClrs} clr_sch - цвет изделия
+   * @param {BuilderElement} [elm] - элемент рисовалки
+   * @param {TabularSection} [spec] - табчасть спецификации для поиска ведущих
+   * @param {CatCharacteristicsSpecificationRow} [row] - строка спецификации, где есть `nom`
+   * @param {CatInsertsSpecificationRow|CatFurnsSpecificationRow|CatCnnsSpecificationRow} [row_base] - исходная строка вставки, соединения или фурнитуры
    * @return {CatClrs}
    */
-  by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
+  by_predefined(clr, clr_elm, clr_sch, elm, spec, row, row_base) {
     const {predefined_name} = clr;
     const flipped = elm?.layer?.flipped;
     const {clr_by_main_row} = $p.job_prm.builder;
@@ -132,7 +133,36 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         return flipped ?
           this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm) :
           clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
-
+        
+      case 'КакЭлИзнутриПлюсКонст': {
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
+        const row_cond = row_base?._owner?._owner?.selection_params?.find({
+          elm: row_base.elm,
+          origin: $p.enm.plan_detailing.algorithm,
+        });
+        if(row_cond) {
+          clr_elm = this.getter(`${clr_elm.ref}${row_cond.value.ref}`);
+        }
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+      } 
+      
+      case 'КакЭлСнаружиПлюсКонст': {
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
+        const row_cond = row_base?._owner?._owner?.selection_params?.find({
+          elm: row_base.elm,
+          origin: $p.enm.plan_detailing.algorithm,
+        });
+        if(row_cond) {
+          clr_elm = this.getter(`${row_cond.value.ref}${clr_elm.ref}`);
+        }
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+      }       
       case 'БезЦветаИзнутри':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
@@ -179,7 +209,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         const main_rows = inset.main_rows(elm);
         if(main_rows.length) {
           const row_base = main_rows[0];
-          const row_spec = {clr: this.by_predefined(row_base.clr, clr_elm, clr_sch, elm, spec)};
+          const row_spec = {clr: this.by_predefined(row_base.clr, clr_elm, clr_sch, elm, spec, row, row_base)};
           this.clr_prm({row_base, row_spec, elm, origin: inset});
           return row_spec.clr;
         }
@@ -208,7 +238,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       }
     }
     else if (clr instanceof $p.CatColor_price_groups) {
-      const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row);
+      const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row, row_base);
       for(const row of clr.clr_conformity) {
         if(row.clr1.contains(tmp)) {
           return row.clr2;

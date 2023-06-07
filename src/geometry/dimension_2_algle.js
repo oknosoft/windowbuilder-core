@@ -24,7 +24,7 @@ class DimensionAngle extends DimensionLineCustom {
   }
 
   /**
-   * Возвращает тип элемента (сечение)
+   * Возвращает тип элемента (Угол)
    * @type {EnmElm_types}
    */
   get elm_type() {

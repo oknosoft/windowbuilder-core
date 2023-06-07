@@ -16,6 +16,8 @@
 class Pricing {
 
   constructor({md, adapters, job_prm}) {
+    
+    this.loading = [];
 
     // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
     md.once('predefined_elmnts_inited', () => {
@@ -49,35 +51,88 @@ class Pricing {
    * индекс в этом случае, надо пересчитывать один наз, а не на каждый документ
    * @param [force] {Boolean}
    */
-  deffered_load_prices(log, force) {
-    const {job_prm: {server}, cat: {nom}, adapters: {pouch}} = $p;
+  deffered_load_prices(log, force, price_type) {
+    const {job_prm: {server}, adapters: {pouch}} = $p;
     if(this.prices_timeout) {
       clearTimeout(this.prices_timeout);
       this.prices_timeout = 0;
     }
-    if(!force) {
+    
+    if(!force && !price_type) {
       const defer = (server ? server.defer : 180000) + Math.random() * 10000;
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
 
+    // если указан price_type, строим очередь
+    if(price_type) {
+      this.loading.push(price_type);
+      // loading.length > 1 - значит, идёт пересчёт по предыдущему типу - выходим и не мешаем, нас вызовут позже
+      if(!force && this.loading.length > 1) {
+        return;
+      }
+    }
+
+    if(force) {
+      this.loading.length = 0;
+      price_type = undefined;
+    }
+
     // новые цены пишем в кеш, чтобы на время загрузки не портить номенклатуру
     const cache = new Map();
-    return this.by_range({log, cache})
+    return this.by_range({log, cache, price_type})
+      .then(() => this.update_nom_price(price_type, cache))
+      .then(() => pouch.emit('nom_price', {price_type}))
       .then(() => {
-        // заменяем старые цены новыми
-        for(const onom of nom) {
-          if (onom._data) {
-            if(onom._data._price) {
-              for(const cx in onom._data._price) {
-                delete onom._data._price[cx];
-              }
-            }
-            onom._data._price = cache.get(onom);
+        if(price_type) {
+          this.loading.shift();
+          if(this.loading.length) {
+            price_type = this.loading.shift();
+            return this.deffered_load_prices(log, true, price_type);
           }
         }
-      })
-      .then(() => pouch.emit('nom_price'));
+      });
+  }
+
+  /**
+   * заменяет старые цены новыми
+   * @param price_type
+   * @param cache
+   */
+  update_nom_price(price_type, cache) {
+    if(price_type) {
+      for(const onom of $p.cat.nom) {
+        for(const onom of $p.cat.nom) {
+          const price = cache.get(onom);
+          if (onom._data && price) {
+            if(onom._data._price) {
+              for(const cx in onom._data._price) {
+                if(price[cx]) {
+                  for(const pt in price[cx]) {
+                    onom._data._price[cx][pt] = price[cx][pt];
+                  }
+                }
+              }
+            }
+            else {
+              onom._data._price = price;
+            }
+          }
+        }
+      }
+    }
+    else {
+      for(const onom of $p.cat.nom) {
+        if (onom._data) {
+          if(onom._data._price) {
+            for(const cx in onom._data._price) {
+              delete onom._data._price[cx];
+            }
+          }
+          onom._data._price = cache.get(onom);
+        }
+      }
+    }
   }
 
   /**
@@ -85,7 +140,7 @@ class Pricing {
    * @param startkey
    * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=40, log=null, cache=null}) {
+  by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     
     (log || console.log)(`load prices: page №${step}`);
@@ -95,8 +150,9 @@ class Pricing {
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
-          price_type: {$in: abonents.price_types.map(v => v.valueOf())},
+          price_type: price_type || {$in: abonents.price_types.map(v => v.valueOf())},
         },
+        use_index: 'nom_prices_setup',
         limit,
         bookmark,
       }))
@@ -106,7 +162,7 @@ class Pricing {
         for (const doc of res.docs) {
           this.by_doc(doc, cache);
         }
-        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache}) : 'done';
+        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache, price_type}) : 'done';
       });
   }
 
