@@ -683,7 +683,7 @@ class BuilderElement extends paper.Group {
       attr.row = this.layer._ox.coordinates.add();
     }
     this._row = attr.row;
-    this._attr = {};
+    this._attr = {paths: new Map()};
     if(!this._row.elm){
       this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
@@ -709,7 +709,7 @@ class BuilderElement extends paper.Group {
       this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
     }
     this.project.register_change();
-    if(this.getView()._countItemEvent) {
+    if(this.getView()?._countItemEvent) {
       this.on('doubleclick', this.elm_dblclick);
     }
   }
@@ -1008,7 +1008,7 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-  get sizeb() {
+  get_sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
       const {nom} = this;
@@ -1031,6 +1031,9 @@ class BuilderElement extends paper.Group {
       return parseFloat(p2);
     }
     return sizeb || 0;
+  }
+  get sizeb() {
+    return this.get_sizeb();
   }
   get sizefurn() {
     return this.nom.sizefurn || 20;
@@ -5850,7 +5853,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.closePath(true);
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
-    _attr.paths = new Map();
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
       _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
@@ -6118,7 +6120,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
-    this.draw_regions();
+    return this.draw_regions();
   }
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts} = this;
@@ -6258,6 +6260,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
       paths.clear();
     }
+    return this;
   }
   reset_fragment() {
     const {_attr, layer, path} = this;
@@ -9301,7 +9304,7 @@ class ProfileItem extends GeneratrixElement {
       _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn || project.elm_cnn(this, nearest));
     }
   }
-  path_points(cnn_point, profile_point) {
+  path_points(cnn_point, profile_point, profiles) {
     const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const {_attr, rays, generatrix} = this;
     if(!generatrix.curves.length) {
@@ -9375,7 +9378,7 @@ class ProfileItem extends GeneratrixElement {
         const w2 = width * width;
         const nodes = new Set();
         let profile2;
-        cnn_point.point && !(this instanceof Onlay) && this.layer.profiles.forEach((profile) => {
+        cnn_point.point && !(this instanceof Onlay) && (profiles || this.layer.profiles).forEach((profile) => {
           if(profile !== this){
             if(cnn_point.point.is_nearest(profile.b, w2)) {
               const cp = profile.rays.b.profile;
@@ -9896,6 +9899,38 @@ class ProfileItem extends GeneratrixElement {
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.observer?.(this);
       chld.redraw();
+    }
+    return this.draw_regions();
+  }
+  draw_regions() {
+    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}} = this;
+    if([0, 1].includes(builder_props.mode)) {
+      generatrix.opacity = 1;
+      path.opacity = 1;
+      for(const [region, elm] of paths) {
+        elm?.remove?.();
+      }
+      paths.clear();
+    }
+    else {
+      generatrix.opacity = 0.06;
+      path.opacity = 0.06;
+      let region;
+      switch (builder_props.mode) {
+        case 2:
+          region = -1;
+          break;
+        case 3:
+          region = 1;
+          break;
+        case 4:
+          region = 2;
+          break;
+      }
+      region = region && this.region(region);
+      if(region && region !== this) {
+        region.path;
+      }
     }
     return this;
   }
@@ -10660,54 +10695,98 @@ class Profile extends ProfileItem {
       _attr._ranges = new Map();
     }
     if(!_attr._ranges.get(num)) {
+      const __attr = {_corns: []};
       _attr._ranges.set(num, new Proxy(this, {
         get(target, prop, receiver) {
           switch (prop){
-          case 'cnn1':
-          case 'cnn2':
-          case 'cnn3':
-            if(!_attr._ranges.get(`cnns${num}`)) {
-              _attr._ranges.set(`cnns${num}`, {});
+            case '_attr':
+              return __attr;
+            case 'cnn1':
+            case 'cnn2':
+            case 'cnn3':
+              if (!_attr._ranges.get(`cnns${num}`)) {
+                _attr._ranges.set(`cnns${num}`, {});
+              }
+              const cn = _attr._ranges.get(`cnns${num}`);
+              if (!cn[prop]) {
+                const row = cn_row(prop);
+                cn[prop] = row ? row.cnn : cnns.get();
+              }
+              return cn[prop];
+            case 'cnn1_row':
+            case 'cnn2_row':
+            case 'cnn3_row':
+              return cn_row(prop.substr(0, 4), 0);
+            case 'rnum':
+              return num;
+            case 'irow':
+              return irow;
+            case 'inset':
+              return irow.inset;
+            case 'nom':
+              return receiver.inset.nom(receiver, 0);
+            case 'ref': {
+              const {nom} = receiver;
+              return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
             }
-            const cn = _attr._ranges.get(`cnns${num}`);
-            if(!cn[prop]) {
-              const row = cn_row(prop);
-              cn[prop] = row ? row.cnn : cnns.get();
+            case 'sizeb':
+              return BuilderElement.prototype.get_sizeb.call(receiver);
+            case 'd1':
+              return -(target.d0 - receiver.sizeb);
+            case 'd2':
+              return receiver.d1 - receiver.width;
+            case 'width':
+              return receiver.nom?.width || target.width;
+            case 'rays': {
+              if(!__attr._rays) {
+                __attr._rays = new ProfileRays(receiver);
+              }
+              const {_rays} = __attr;
+              if(!_rays.inner.segments.length || !_rays.outer.segments.length) {
+                _rays.recalc();
+              }
+              _rays.b._profile = rays.b._profile?.region?.(num);
+              _rays.e._profile = rays.e._profile?.region?.(num);
+              _rays.b.cnn = receiver.cnn1;
+              _rays.e.cnn = receiver.cnn2;
+              return _rays;
             }
-            return cn[prop];
-          case 'cnn1_row':
-          case 'cnn2_row':
-          case 'cnn3_row':
-            return cn_row(prop.substr(0, 4), 0);
-          case 'rnum':
-            return num;
-          case 'irow':
-            return irow;
-          case 'inset':
-            return irow.inset;
-          case 'nom':
-            return receiver.inset.nom(receiver, 0);
-          case 'ref':
-            const {nom} = receiver;
-            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
-          case '_metadata':
-            const meta = target.__metadata(false);
-            const {fields} = meta;
-            const {cnn1, cnn2} = fields;
-            const {b, e} = rays;
-            delete cnn1.choice_links;
-            delete cnn2.choice_links;
-            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
-            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
-            return meta;
-          case 'parent_elm':
-            return target;
-          default:
-            let prow;
-            if(utils.is_guid(prop)) {
-              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+            case 'path': {
+              const {generatrix, rays} = receiver;
+              ProfileItem.prototype.path_points.call(receiver, rays.b, 'b', []);
+              ProfileItem.prototype.path_points.call(receiver, rays.e, 'e', []);
+              const {paths} = _attr;
+              if(!paths.has(num)) {
+                paths.set(num, Object.assign(new paper.Path({parent: target}), ProfileItem.path_attr));
+              }
+              const path = paths.get(num);
+              const {_corns} = __attr;
+              path.removeSegments();
+              path.addSegments([_corns[1], _corns[2], _corns[3], _corns[4]]);
+              path.closePath();
+              path.fillColor = BuilderElement.clr_by_clr.call(target, irow.clr)
             }
-            return prow ? prow.value : target[prop];
+            case 'clr':
+              return irow.clr; 
+            case '_metadata': {
+              const meta = target.__metadata(false);
+              const {fields} = meta;
+              const {cnn1, cnn2} = fields;
+              const {b, e} = rays;
+              delete cnn1.choice_links;
+              delete cnn2.choice_links;
+              cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+              cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+              return meta;
+            }
+            case 'parent_elm':
+              return target;
+            default:
+              let prow;
+              if (utils.is_guid(prop)) {
+                prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+              }
+              return prow ? prow.value : target[prop];
           }
         },
         set(target, prop, val, receiver) {
@@ -10721,6 +10800,9 @@ class Profile extends ProfileItem {
             if(row.cnn !== cn[prop]) {
               row.cnn = cn[prop];
             }
+            break;
+          case 'clr':
+            irow.clr = val;
             break;
           default:
             if(utils.is_guid(prop)) {

@@ -486,63 +486,116 @@ class Profile extends ProfileItem {
       _attr._ranges = new Map();
     }
     if(!_attr._ranges.get(num)) {
+      const __attr = {_corns: []};
       _attr._ranges.set(num, new Proxy(this, {
         get(target, prop, receiver) {
           switch (prop){
-          case 'cnn1':
-          case 'cnn2':
-          case 'cnn3':
-            if(!_attr._ranges.get(`cnns${num}`)) {
-              _attr._ranges.set(`cnns${num}`, {});
+            case '_attr':
+              return __attr;
+            case 'cnn1':
+            case 'cnn2':
+            case 'cnn3':
+              if (!_attr._ranges.get(`cnns${num}`)) {
+                _attr._ranges.set(`cnns${num}`, {});
+              }
+              const cn = _attr._ranges.get(`cnns${num}`);
+              if (!cn[prop]) {
+                const row = cn_row(prop);
+                cn[prop] = row ? row.cnn : cnns.get();
+              }
+              return cn[prop];
+
+            case 'cnn1_row':
+            case 'cnn2_row':
+            case 'cnn3_row':
+              return cn_row(prop.substr(0, 4), 0);
+
+            case 'rnum':
+              return num;
+
+            case 'irow':
+              return irow;
+
+            case 'inset':
+              return irow.inset;
+
+            case 'nom':
+              return receiver.inset.nom(receiver, 0);
+
+            case 'ref': {
+              const {nom} = receiver;
+              return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
             }
-            const cn = _attr._ranges.get(`cnns${num}`);
-            if(!cn[prop]) {
-              const row = cn_row(prop);
-              cn[prop] = row ? row.cnn : cnns.get();
+
+            case 'sizeb':
+              return BuilderElement.prototype.get_sizeb.call(receiver);
+              
+            case 'd1':
+              return -(target.d0 - receiver.sizeb);
+              
+            case 'd2':
+              return receiver.d1 - receiver.width;
+              
+            case 'width':
+              return receiver.nom?.width || target.width;
+              
+            case 'rays': {
+              if(!__attr._rays) {
+                __attr._rays = new ProfileRays(receiver);
+              }
+              const {_rays} = __attr;
+              if(!_rays.inner.segments.length || !_rays.outer.segments.length) {
+                _rays.recalc();
+              }
+              _rays.b._profile = rays.b._profile?.region?.(num);
+              _rays.e._profile = rays.e._profile?.region?.(num);
+              _rays.b.cnn = receiver.cnn1;
+              _rays.e.cnn = receiver.cnn2;
+              return _rays;
             }
-            return cn[prop];
 
-          case 'cnn1_row':
-          case 'cnn2_row':
-          case 'cnn3_row':
-            return cn_row(prop.substr(0, 4), 0);
-
-          case 'rnum':
-            return num;
-
-          case 'irow':
-            return irow;
-
-          case 'inset':
-            return irow.inset;
-
-          case 'nom':
-            return receiver.inset.nom(receiver, 0);
-
-          case 'ref':
-            const {nom} = receiver;
-            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
-
-          case '_metadata':
-            const meta = target.__metadata(false);
-            const {fields} = meta;
-            const {cnn1, cnn2} = fields;
-            const {b, e} = rays;
-            delete cnn1.choice_links;
-            delete cnn2.choice_links;
-            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
-            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
-            return meta;
-
-          case 'parent_elm':
-            return target;
-
-          default:
-            let prow;
-            if(utils.is_guid(prop)) {
-              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+            case 'path': {
+              // получаем узлы
+              const {generatrix, rays} = receiver;
+              // получаем соединения концов профиля и точки пересечения с соседями
+              ProfileItem.prototype.path_points.call(receiver, rays.b, 'b', []);
+              ProfileItem.prototype.path_points.call(receiver, rays.e, 'e', []);
+              const {paths} = _attr;
+              if(!paths.has(num)) {
+                paths.set(num, Object.assign(new paper.Path({parent: target}), ProfileItem.path_attr));
+              }
+              const path = paths.get(num);
+              const {_corns} = __attr;
+              path.removeSegments();
+              path.addSegments([_corns[1], _corns[2], _corns[3], _corns[4]]);
+              path.closePath();
+              path.fillColor = BuilderElement.clr_by_clr.call(target, irow.clr)
             }
-            return prow ? prow.value : target[prop];
+            
+            case 'clr':
+              return irow.clr; 
+            
+            case '_metadata': {
+              const meta = target.__metadata(false);
+              const {fields} = meta;
+              const {cnn1, cnn2} = fields;
+              const {b, e} = rays;
+              delete cnn1.choice_links;
+              delete cnn2.choice_links;
+              cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+              cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+              return meta;
+            }
+
+            case 'parent_elm':
+              return target;
+
+            default:
+              let prow;
+              if (utils.is_guid(prop)) {
+                prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+              }
+              return prow ? prow.value : target[prop];
           }
         },
 
@@ -557,6 +610,10 @@ class Profile extends ProfileItem {
             if(row.cnn !== cn[prop]) {
               row.cnn = cn[prop];
             }
+            break;
+
+          case 'clr':
+            irow.clr = val;
             break;
 
           default:

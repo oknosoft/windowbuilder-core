@@ -37,7 +37,7 @@ class BuilderElement extends paper.Group {
 
     this._row = attr.row;
 
-    this._attr = {};
+    this._attr = {paths: new Map()};
 
     if(!this._row.elm){
       this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
@@ -74,7 +74,7 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
-    if(this.getView()._countItemEvent) {
+    if(this.getView()?._countItemEvent) {
       this.on('doubleclick', this.elm_dblclick);
     }
 
@@ -480,13 +480,12 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-  
+
   /**
-   * @summary Опорный размер  
-   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
-   * @type {Number}
+   * @summary вспомогательный метод для sizeb
+   * @return {Number}
    */
-  get sizeb() {
+  get_sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
       const {nom} = this;
@@ -509,6 +508,15 @@ class BuilderElement extends paper.Group {
       return parseFloat(p2);
     }
     return sizeb || 0;
+  }
+
+  /**
+   * @summary Опорный размер
+   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @type {Number}
+   */
+  get sizeb() {
+    return this.get_sizeb();
   }
 
   // размер до фурнитурного паза

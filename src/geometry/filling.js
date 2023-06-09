@@ -70,8 +70,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
 
-    _attr.paths = new Map();
-
     // для нового устанавливаем вставку по умолчанию
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
@@ -429,7 +427,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
     
-    this.draw_regions();
+    return this.draw_regions();
   }
 
   /**
@@ -579,6 +577,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
       paths.clear();
     }
+    return this;
   }
   
   reset_fragment() {

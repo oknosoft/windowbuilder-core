@@ -1980,8 +1980,9 @@ class ProfileItem extends GeneratrixElement {
    *
    * @param {CnnPoint} cnn_point 
    * @param {NodeBE} [profile_point]
+   * @param {Array.<ProfileItem>} [profiles]
    */
-  path_points(cnn_point, profile_point) {
+  path_points(cnn_point, profile_point, profiles) {
 
     const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const {_attr, rays, generatrix} = this;
@@ -2070,7 +2071,7 @@ class ProfileItem extends GeneratrixElement {
         const w2 = width * width;
         const nodes = new Set();
         let profile2;
-        cnn_point.point && !(this instanceof Onlay) && this.layer.profiles.forEach((profile) => {
+        cnn_point.point && !(this instanceof Onlay) && (profiles || this.layer.profiles).forEach((profile) => {
           if(profile !== this){
             if(cnn_point.point.is_nearest(profile.b, w2)) {
               const cp = profile.rays.b.profile;
@@ -2731,6 +2732,43 @@ class ProfileItem extends GeneratrixElement {
       chld.redraw();
     }
     
+    return this.draw_regions();
+  }
+
+  /**
+   * В зависимости от builder_props.mode, прячет основные пути и дорисовывает пути рядов 
+   * @return {ProfileItem}
+   */
+  draw_regions() {
+    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}} = this;
+    if([0, 1].includes(builder_props.mode)) {
+      generatrix.opacity = 1;
+      path.opacity = 1;
+      for(const [region, elm] of paths) {
+        elm?.remove?.();
+      }
+      paths.clear();
+    }
+    else {
+      generatrix.opacity = 0.06;
+      path.opacity = 0.06;
+      let region;
+      switch (builder_props.mode) {
+        case 2:
+          region = -1;
+          break;
+        case 3:
+          region = 1;
+          break;
+        case 4:
+          region = 2;
+          break;
+      }
+      region = region && this.region(region);
+      if(region && region !== this) {
+        region.path;
+      }
+    }
     return this;
   }
 
