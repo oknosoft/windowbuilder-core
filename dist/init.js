@@ -3141,7 +3141,7 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
 
     for(const row of this.elmnts) {
       const {key, nom, elm_type, pos, by_default} = row;
-      if(!nom.empty() && elm_types.includes(elm_type) &&
+      if(nom && !nom.empty() && elm_types.includes(elm_type) &&
           (rows === 'rows' || !noms.some((e) => nom == e.nom)) &&
           (!elm || key.check_condition({elm}))) {
         if(nom instanceof CchPredefined_elmnts) {
