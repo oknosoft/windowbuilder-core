@@ -1,6 +1,6 @@
 /*!
  * Движок графического построителя
- * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2022
+ * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2023
  */
  
 module.exports = function({$p, paper}) {const consts = {
@@ -10377,14 +10377,17 @@ class Profile extends ProfileItem {
         const {cnstr, elm, _owner} = attr.row;
         const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          if(row.elm_type === elm_types.addition) {
+          if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
-          else if(row.elm_type === elm_types.adjoining) {
+          else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});
           }
-          else if(row.elm_type === elm_types.bundle) {
+          else if(row.elm_type.is('bundle')) {
             new ProfileSegment({row, parent: this});
+          }
+          else if(row.elm_type.is('glbead')) {
+            new ProfileGlBead({row, parent: this});
           }
         });
       }
@@ -11223,7 +11226,7 @@ class ProfileAddl extends ProfileItem {
     }
     if(fromCoordinates){
       const {cnstr, elm} = attr.row;
-      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition}, (row) => new ProfileAddl({row, parent: this}));
     }
   }
   get d0() {
@@ -11234,7 +11237,7 @@ class ProfileAddl extends ProfileItem {
     return this._attr.side == 'outer';
   }
   get elm_type() {
-    return $p.enm.elm_types.Добор;
+    return $p.enm.elm_types.addition;
   }
   nearest() {
     const {_attr, parent, project} = this;
@@ -11305,6 +11308,79 @@ class ProfileAddl extends ProfileItem {
   }
 }
 EditorInvisible.ProfileAddl = ProfileAddl;
+class ProfileGlBead extends ProfileItem {
+  constructor(attr) {
+    super(attr);
+    const {project, _attr, _row} = this;
+    _attr.generatrix.strokeWidth = 0;
+    if(!attr.side && _row.parent < 0) {
+      attr.side = 'outer';
+    }
+    _attr.side = attr.side || 'inner';
+    if(!_row.parent){
+      _row.parent = this.parent.elm;
+      if(this.outer){
+        _row.parent = -_row.parent;
+      }
+    }
+  }
+  get d0() {
+    const nearest = this.nearest();
+    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
+  }
+  joined_imposts(check_only) {
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
+  }
+  get outer() {
+    return this._attr.side == 'outer';
+  }
+  get elm_type() {
+    return $p.enm.elm_types.glbead;
+  }
+  get glass() {
+    return this.project.getItem({class: Filling});
+  }
+  get brothers() {
+    return this.project.getItems({class: ProfileGlBead});
+  }
+  nearest() {
+    const {_attr, parent, project} = this;
+    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    return parent;
+  }
+  cnn_point(node, point) {
+    const res = this.rays[node];
+    const check_distance = (elm) => {
+        if(elm == this){
+          return;
+        }
+        const gp = elm.generatrix.getNearestPoint(point);
+        let distance;
+        if(gp && (distance = gp.getDistance(point)) < consts.sticking){
+          if(distance <= res.distance){
+            res.point = gp;
+            res.distance = distance;
+            res.profile = elm;
+          }
+        }
+      };
+    if(!point){
+      point = this[node];
+    }
+    if(res.profile && res.profile.children.length){
+      check_distance(res.profile);
+      if(res.distance < consts.sticking){
+        return res;
+      }
+    }
+    res.clear();
+    res.cnn_types = $p.enm.cnn_types.acn.a;
+    this.brothers.forEach(check_distance);
+    return res;
+  }
+}
+EditorInvisible.ProfileGlBead = ProfileGlBead;
 class ProfileConnective extends ProfileItem {
   get elm_type() {
     return $p.enm.elm_types.Соединитель;

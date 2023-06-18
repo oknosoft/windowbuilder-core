@@ -85,7 +85,7 @@ class ProfileConnective extends ProfileItem {
   }
 
   /**
-   * К соединителям ипосты не крепятся
+   * К соединителям импосты не крепятся
    * @override
    */
   joined_imposts(check_only) {

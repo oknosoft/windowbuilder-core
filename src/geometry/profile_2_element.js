@@ -49,16 +49,20 @@ class Profile extends ProfileItem {
         const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
           // добор
-          if(row.elm_type === elm_types.addition) {
+          if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
           // примыкание
-          else if(row.elm_type === elm_types.adjoining) {
+          else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});
           }
           // связка (чулок)
-          else if(row.elm_type === elm_types.bundle) {
+          else if(row.elm_type.is('bundle')) {
             new ProfileSegment({row, parent: this});
+          }
+          // штапик
+          else if(row.elm_type.is('glbead')) {
+            new ProfileGlBead({row, parent: this});
           }
         });
       }

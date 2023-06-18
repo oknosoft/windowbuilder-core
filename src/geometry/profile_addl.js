@@ -53,7 +53,7 @@ class ProfileAddl extends ProfileItem {
     // ищем и добавляем доборы к доборам
     if(fromCoordinates){
       const {cnstr, elm} = attr.row;
-      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition}, (row) => new ProfileAddl({row, parent: this}));
     }
 
   }
@@ -75,7 +75,7 @@ class ProfileAddl extends ProfileItem {
    * Возвращает тип элемента (Добор)
    */
   get elm_type() {
-    return $p.enm.elm_types.Добор;
+    return $p.enm.elm_types.addition;
   }
 
   /**
