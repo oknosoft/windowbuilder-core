@@ -500,7 +500,7 @@ set hide(v){this._setter_ts('hide',v)}
         elm0 = elm;
         elm = {};
         const crow = ox.constructions.find({cnstr});
-        crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+        crow && ox.constructions.find_rows({parent: crow.parent || cnstr0}, (row) => {
           if(row !== crow) {
             cnstr = row.cnstr;
             return false;
@@ -8578,6 +8578,8 @@ get totqty(){return this._getter('totqty')}
 set totqty(v){this._setter('totqty',v)}
 get totqty1(){return this._getter('totqty1')}
 set totqty1(v){this._setter('totqty1',v)}
+get s(){return this._getter('s')}
+set s(v){this._setter('s',v)}
 get sz(){return this._getter('sz')}
 set sz(v){this._setter('sz',v)}
 get price(){return this._getter('price')}

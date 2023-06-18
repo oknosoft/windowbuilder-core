@@ -214,7 +214,7 @@ exports.CchProperties = class CchProperties extends Object {
         elm0 = elm;
         elm = {};
         const crow = ox.constructions.find({cnstr});
-        crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+        crow && ox.constructions.find_rows({parent: crow.parent || cnstr0}, (row) => {
           if(row !== crow) {
             cnstr = row.cnstr;
             return false;

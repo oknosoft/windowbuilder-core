@@ -2864,7 +2864,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       return elm[param.valueOf()];
     }
     const {layer, own_sys} = this;
-    if(!cnstr && prm_row.origin.is('layer')) {
+    if(!cnstr && (prm_row.origin.is('layer') || (prm_row.origin.is('nearest') && !layer))) {
       cnstr = this.cnstr;
     }
     if(!cnstr) {
