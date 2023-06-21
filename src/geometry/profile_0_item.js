@@ -2770,7 +2770,7 @@ class ProfileItem extends GeneratrixElement {
           region = 2;
           break;
       }
-      region = region && this.region(region);
+      region = region && this.region?.(region);
       if(region && region !== this) {
         region.path;
       }

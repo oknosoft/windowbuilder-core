@@ -9941,7 +9941,7 @@ class ProfileItem extends GeneratrixElement {
           region = 2;
           break;
       }
-      region = region && this.region(region);
+      region = region && this.region?.(region);
       if(region && region !== this) {
         region.path;
       }
@@ -10404,6 +10404,7 @@ class Profile extends ProfileItem {
           }
         });
       }
+      this.auto_insets();
     }
   }
   get d0() {
@@ -10680,6 +10681,18 @@ class Profile extends ProfileItem {
     if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of?.(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
+  }
+  auto_insets() {
+    const {inset, elm, layer, ox} = this;
+    ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
+      if(row.key.check_condition({elm: this, ox, layer})) {
+        const key = {cnstr: -elm, inset: row.inset, region: row.inset.region};
+        if(!ox.inserts.find(key)) {
+          const irow = ox.inserts.add(key);
+          row.inset.clr_group.default_clr(irow);
+        }
+      }
+    });
   }
   region(num) {
     const {_attr, rays, layer: {_ox}, elm} = this;

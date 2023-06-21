@@ -65,6 +65,7 @@ class Profile extends ProfileItem {
           }
         });
       }
+      this.auto_insets();
     }
   }
 
@@ -445,6 +446,23 @@ class Profile extends ProfileItem {
     if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of?.(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
+  }
+
+  /**
+   * @summary Добавляет автовставки
+   * @desc обычные и вставки рядов
+   */
+  auto_insets() {
+    const {inset, elm, layer, ox} = this;
+    ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
+      if(row.key.check_condition({elm: this, ox, layer})) {
+        const key = {cnstr: -elm, inset: row.inset, region: row.inset.region};
+        if(!ox.inserts.find(key)) {
+          const irow = ox.inserts.add(key);
+          row.inset.clr_group.default_clr(irow);
+        }
+      }
+    });
   }
 
   /**
