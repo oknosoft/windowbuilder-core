@@ -34,7 +34,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope}, observer} = this;
+      const {project: {_scope}, observer, layer} = this;
 
       // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
       this.observer = observer.bind(this);
@@ -46,7 +46,6 @@ class Profile extends ProfileItem {
       // ищем и добавляем доборные профили
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
-        const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
           // добор
           if(row.elm_type.is('addition')) {
@@ -62,7 +61,7 @@ class Profile extends ProfileItem {
           }
           // штапик
           else if(row.elm_type.is('glbead')) {
-            new ProfileGlBead({row, parent: this});
+            new ProfileGlBead({row, parent: layer, profile: this});
           }
         });
       }

@@ -1106,8 +1106,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Опорные точки и лучи
-   *
+   * @summary Опорные точки и лучи
    * @type ProfileRays
    * @final
    */
@@ -1120,8 +1119,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Доборы текущего профиля
-   *
+   * @summary Доборы текущего профиля
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -1130,8 +1128,16 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Сегменты текущей связки
-   *
+   * @summary Штапики текущего профиля
+   * @type Array.<ProfileGlBead>
+   * @final
+   */
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, profile: this});
+  }
+
+  /**
+   * @summary Сегменты текущей связки
    * @type Array.<ProfileSegment>
    * @final
    */
@@ -1140,8 +1146,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Примыкания текущего профиля
-   *
+   * @summary Примыкания текущего профиля
    * @type Array.<ProfileAddl>
    * @final
    */
@@ -1257,10 +1262,7 @@ class ProfileItem extends GeneratrixElement {
       }
 
       path.setSelection(0);
-      for(const item of this.segms) {
-        item.setSelection(0);
-      }
-      for(const item of this.addls) {
+      for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
 
@@ -1410,7 +1412,7 @@ class ProfileItem extends GeneratrixElement {
    * @param {Array} arr
    */
   check_nom(arr) {
-    const {_row, _attr, length, angle_hor} = this;
+    const {_row, _attr, length, glbeads, angle_hor} = this;
     // сохраняем угол к горизонту и длину профиля в _row
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
       _row.len = length;
@@ -1427,6 +1429,9 @@ class ProfileItem extends GeneratrixElement {
     }
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.check_nom(arr);
+    }
+    for(const glbead of glbeads) {
+      glbead.check_nom(arr);
     }
   }
 
@@ -1567,7 +1572,7 @@ class ProfileItem extends GeneratrixElement {
     _row.pos = this.pos;
 
     // координаты доборов и прочих детей
-    this.children.forEach((addl) => addl.save_coordinates && addl.save_coordinates());
+    this.children.forEach((addl) => addl.save_coordinates?.());
   }
 
   /**
@@ -2727,6 +2732,7 @@ class ProfileItem extends GeneratrixElement {
       }
     } 
 
+    // перерисовываем всех детей
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.observer?.(this);
       chld.redraw();

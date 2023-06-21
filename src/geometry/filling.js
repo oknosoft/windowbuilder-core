@@ -362,7 +362,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     this.sendToBack();
 
-    const {path, imposts, _attr, is_rectangular} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
     const fontSize = elm_font_size * (2 / 3);
     const maxTextWidth = 600;
@@ -426,7 +426,11 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
-    
+
+    for(const glbead of glbeads) {
+      glbead.redraw();
+    }
+
     return this.draw_regions();
   }
 
@@ -784,6 +788,10 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   get profiles() {
     return this._attr._profiles || [];
+  }
+  
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, glass: this}); 
   }
 
   /**

@@ -780,6 +780,10 @@ class ProductsBuilding {
             // для всех заполнений контура
             base_spec_glass(elm);
           }
+          if(elm instanceof ProfileGlBead) {
+            // для всех штапиков
+            base_spec_profile(elm);
+          }
           else if(elm instanceof Sectional) {
             // для всех разрезов (водоотливов)
             base_spec_sectional(elm);
@@ -1061,9 +1065,12 @@ class ProductsBuilding {
     }
 
     if(!row_spec.nom.visualization.empty()) {
-      row_spec.dop = -1;
+      const {cutting_optimization_type} = row_spec.nom;
+      if(cutting_optimization_type.empty() || cutting_optimization_type.is('no')) {
+        row_spec.dop = -1;
+      }
     }
-    else if(row_spec.nom.is_procedure) {
+    if(!row_spec.dop && row_spec.nom.is_procedure) {
       row_spec.dop = -2;
     }
 

@@ -2784,6 +2784,8 @@ get lay_split_types(){return this._getter('lay_split_types')}
 set lay_split_types(v){this._setter('lay_split_types',v)}
 get css(){return this._getter('css')}
 set css(v){this._setter('css',v)}
+get flipped(){return this._getter('flipped')}
+set flipped(v){this._setter('flipped',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -2896,7 +2898,7 @@ set params(v){this._setter_ts('params',v)}
       return true;
     }
     if(!ox && elm) {
-      ox = elm.ox;
+      ox = elm.ox || elm.project.ox;
     }
     if(!layer && elm) {
       layer = elm.layer;

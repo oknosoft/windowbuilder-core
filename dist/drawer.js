@@ -1802,8 +1802,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         break;
       }
-      if([10, 11].includes(layer._row.kind)) {
-        kind = layer._row.kind;
+      if([10, 11].includes(layer._row?.kind)) {
+        kind = layer._row?.kind;
       }
     }
     return kind;
@@ -1816,7 +1816,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         break;
       }
-      if([10, 11].includes(layer._row.kind)) {
+      if([10, 11].includes(layer._row?.kind)) {
         return layer;
       }
     }
@@ -3352,6 +3352,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {b, e} = elm.rays;
       b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
       e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
+    }
+    for (const elm of this.getItems({class: ProfileGlBead})) {
+      const {b, e} = elm.rays;
+      b?.profile?.profile && elm.isBelow(b.profile.profile) && elm.insertAbove(b.profile.profile);
+      e?.profile?.profile && elm.isBelow(e.profile.profile) && elm.insertAbove(e.profile.profile);
     }
     const changed = chnom.splice(0);
     for(const elm of profiles) {
@@ -6066,7 +6071,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   redraw() {
     this.sendToBack();
-    const {path, imposts, _attr, is_rectangular} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
     const fontSize = elm_font_size * (2 / 3);
     const maxTextWidth = 600;
@@ -6119,6 +6124,9 @@ class Filling extends AbstractFilling(BuilderElement) {
           _attr._text.rotation += 180;
         }
       }
+    }
+    for(const glbead of glbeads) {
+      glbead.redraw();
     }
     return this.draw_regions();
   }
@@ -6406,6 +6414,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   get profiles() {
     return this._attr._profiles || [];
+  }
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, glass: this}); 
   }
   remove_onlays() {
     for(let onlay of this.imposts){
@@ -8660,6 +8671,9 @@ class ProfileItem extends GeneratrixElement {
   get addls() {
     return this.children.filter((elm) => elm instanceof ProfileAddl);
   }
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, profile: this});
+  }
   get segms() {
     return this.children.filter((elm) => elm instanceof ProfileSegment);
   }
@@ -8747,10 +8761,7 @@ class ProfileItem extends GeneratrixElement {
         });
       }
       path.setSelection(0);
-      for(const item of this.segms) {
-        item.setSelection(0);
-      }
-      for(const item of this.addls) {
+      for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
       for (let t = 0; t < inner.length; t += 50) {
@@ -8879,7 +8890,7 @@ class ProfileItem extends GeneratrixElement {
     }
   }
   check_nom(arr) {
-    const {_row, _attr, length, angle_hor} = this;
+    const {_row, _attr, length, glbeads, angle_hor} = this;
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
       _row.len = length;
       _row.angle_hor = angle_hor;
@@ -8894,6 +8905,9 @@ class ProfileItem extends GeneratrixElement {
     }
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.check_nom(arr);
+    }
+    for(const glbead of glbeads) {
+      glbead.check_nom(arr);
     }
   }
   save_coordinates() {
@@ -9006,7 +9020,7 @@ class ProfileItem extends GeneratrixElement {
     _row.elm_type = this.elm_type;
     _row.orientation = this.orientation;
     _row.pos = this.pos;
-    this.children.forEach((addl) => addl.save_coordinates && addl.save_coordinates());
+    this.children.forEach((addl) => addl.save_coordinates?.());
   }
   initialize(attr) {
     const {project, _attr, _row} = this;
@@ -10369,13 +10383,12 @@ class Profile extends ProfileItem {
     const fromCoordinates = attr.row && attr.row.elm;
     super(attr);
     if(this.parent) {
-      const {project: {_scope}, observer} = this;
+      const {project: {_scope}, observer, layer} = this;
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
       this.layer.on_insert_elm(this);
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
-        const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
           if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
@@ -10387,7 +10400,7 @@ class Profile extends ProfileItem {
             new ProfileSegment({row, parent: this});
           }
           else if(row.elm_type.is('glbead')) {
-            new ProfileGlBead({row, parent: this});
+            new ProfileGlBead({row, parent: layer, profile: this});
           }
         });
       }
@@ -11308,79 +11321,6 @@ class ProfileAddl extends ProfileItem {
   }
 }
 EditorInvisible.ProfileAddl = ProfileAddl;
-class ProfileGlBead extends ProfileItem {
-  constructor(attr) {
-    super(attr);
-    const {project, _attr, _row} = this;
-    _attr.generatrix.strokeWidth = 0;
-    if(!attr.side && _row.parent < 0) {
-      attr.side = 'outer';
-    }
-    _attr.side = attr.side || 'inner';
-    if(!_row.parent){
-      _row.parent = this.parent.elm;
-      if(this.outer){
-        _row.parent = -_row.parent;
-      }
-    }
-  }
-  get d0() {
-    const nearest = this.nearest();
-    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
-  }
-  joined_imposts(check_only) {
-    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
-  }
-  get outer() {
-    return this._attr.side == 'outer';
-  }
-  get elm_type() {
-    return $p.enm.elm_types.glbead;
-  }
-  get glass() {
-    return this.project.getItem({class: Filling});
-  }
-  get brothers() {
-    return this.project.getItems({class: ProfileGlBead});
-  }
-  nearest() {
-    const {_attr, parent, project} = this;
-    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
-    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
-    return parent;
-  }
-  cnn_point(node, point) {
-    const res = this.rays[node];
-    const check_distance = (elm) => {
-        if(elm == this){
-          return;
-        }
-        const gp = elm.generatrix.getNearestPoint(point);
-        let distance;
-        if(gp && (distance = gp.getDistance(point)) < consts.sticking){
-          if(distance <= res.distance){
-            res.point = gp;
-            res.distance = distance;
-            res.profile = elm;
-          }
-        }
-      };
-    if(!point){
-      point = this[node];
-    }
-    if(res.profile && res.profile.children.length){
-      check_distance(res.profile);
-      if(res.distance < consts.sticking){
-        return res;
-      }
-    }
-    res.clear();
-    res.cnn_types = $p.enm.cnn_types.acn.a;
-    this.brothers.forEach(check_distance);
-    return res;
-  }
-}
-EditorInvisible.ProfileGlBead = ProfileGlBead;
 class ProfileConnective extends ProfileItem {
   get elm_type() {
     return $p.enm.elm_types.Соединитель;
@@ -11680,6 +11620,94 @@ class ProfileCut extends BaseLine {
   }
 }
 EditorInvisible.ProfileCut = ProfileCut;
+class ProfileGlBead extends ProfileItem {
+  constructor(attr) {
+    super(attr);
+    const {layer, _attr, _row} = this;
+    _attr.generatrix.strokeWidth = 0;
+    if(!_row.parent && attr.profile){
+      _row.parent = (this.outer ? -1 : 1) * attr.profile.elm;
+      _attr.profile = attr.profile;
+    }
+    if(!attr.side && _row.parent < 0) {
+      attr.side = 'outer';
+    }
+    _attr.side = attr.side || 'inner';
+    _attr.profile = attr.profile || layer.getItem({elm: Math.abs(_row.parent)});
+  }
+  get d0() {
+    const nearest = this.nearest();
+    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
+  }
+  joined_imposts(check_only) {
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
+  }
+  get outer() {
+    return this._attr.side == 'outer';
+  }
+  get elm_type() {
+    return $p.enm.elm_types.glbead;
+  }
+  get glass() {
+    const {_attr} = this;
+    if(!_attr.glass) {
+      for(const filling of this.layer.glasses(false, true)) {
+        if(filling.profiles.some(({sub_path}) => {
+          if(sub_path.firstSegment.point.is_nearest(this.b, 600) && sub_path.lastSegment.point.is_nearest(this.e, 600)) {
+            _attr.glass = filling;
+            return true;
+          }
+        })) {
+          break;
+        }
+      }
+    }
+    return _attr.glass || this.layer.getItem({class: Filling});
+  }
+  get profile() {
+    return this._attr.profile;
+  }
+  get brothers() {
+    return this.layer.getItems({class: ProfileGlBead});
+  }
+  nearest() {
+    const {_attr, profile, project} = this;
+    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, profile);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, profile, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    return profile;
+  }
+  cnn_point(node, point) {
+    const res = this.rays[node];
+    const check_distance = (elm) => {
+        if(elm == this){
+          return;
+        }
+        const gp = elm.generatrix.getNearestPoint(point);
+        let distance;
+        if(gp && (distance = gp.getDistance(point)) < consts.sticking){
+          if(distance <= res.distance){
+            res.point = gp;
+            res.distance = distance;
+            res.profile = elm;
+          }
+        }
+      };
+    if(!point){
+      point = this[node];
+    }
+    if(res.profile && res.profile.children.length){
+      check_distance(res.profile);
+      if(res.distance < consts.sticking){
+        return res;
+      }
+    }
+    res.clear();
+    res.cnn_types = $p.enm.cnn_types.acn.a;
+    this.brothers.forEach(check_distance);
+    return res;
+  }
+}
+EditorInvisible.ProfileGlBead = ProfileGlBead;
 class ProfileAdjoining extends BaseLine {
   constructor({row, parent, proto, b, e, side, project}) {
     const generatrix = b && e && parent.rays[side].get_subpath(e.elm[e.point], b.elm[b.point]);
@@ -15048,6 +15076,9 @@ class ProductsBuilding {
           if(elm instanceof Filling) {
             base_spec_glass(elm);
           }
+          if(elm instanceof ProfileGlBead) {
+            base_spec_profile(elm);
+          }
           else if(elm instanceof Sectional) {
             base_spec_sectional(elm);
           }
@@ -15232,9 +15263,12 @@ class ProductsBuilding {
       elm = row_base.relm;
     }
     if(!row_spec.nom.visualization.empty()) {
-      row_spec.dop = -1;
+      const {cutting_optimization_type} = row_spec.nom;
+      if(cutting_optimization_type.empty() || cutting_optimization_type.is('no')) {
+        row_spec.dop = -1;
+      }
     }
-    else if(row_spec.nom.is_procedure) {
+    if(!row_spec.dop && row_spec.nom.is_procedure) {
       row_spec.dop = -2;
     }
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);

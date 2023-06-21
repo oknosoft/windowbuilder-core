@@ -14,7 +14,7 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
       return true;
     }
     if(!ox && elm) {
-      ox = elm.ox;
+      ox = elm.ox || elm.project.ox;
     }
     if(!layer && elm) {
       layer = elm.layer;

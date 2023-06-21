@@ -18,23 +18,25 @@ class ProfileGlBead extends ProfileItem {
 
     super(attr);
 
-    const {project, _attr, _row} = this;
+    const {layer, _attr, _row} = this;
 
     _attr.generatrix.strokeWidth = 0;
 
+    // parent
+    if(!_row.parent && attr.profile){
+      _row.parent = (this.outer ? -1 : 1) * attr.profile.elm;
+      _attr.profile = attr.profile;
+    }
+    
+    // side
     if(!attr.side && _row.parent < 0) {
       attr.side = 'outer';
     }
-
     _attr.side = attr.side || 'inner';
-
-    if(!_row.parent){
-      _row.parent = this.parent.elm;
-      if(this.outer){
-        _row.parent = -_row.parent;
-      }
-    }
-
+    
+    // profile
+    _attr.profile = attr.profile || layer.getItem({elm: Math.abs(_row.parent)});
+    
   }
 
   /** @override */
@@ -70,7 +72,24 @@ class ProfileGlBead extends ProfileItem {
    * @type Filling
    */
   get glass() {
-    return this.project.getItem({class: Filling});
+    const {_attr} = this;
+    if(!_attr.glass) {
+      for(const filling of this.layer.glasses(false, true)) {
+        if(filling.profiles.some(({sub_path}) => {
+          if(sub_path.firstSegment.point.is_nearest(this.b, 600) && sub_path.lastSegment.point.is_nearest(this.e, 600)) {
+            _attr.glass = filling;
+            return true;
+          }
+        })) {
+          break;
+        }
+      }
+    }
+    return _attr.glass || this.layer.getItem({class: Filling});
+  }
+  
+  get profile() {
+    return this._attr.profile;
   }
 
   /**
@@ -78,7 +97,7 @@ class ProfileGlBead extends ProfileItem {
    * @type Array.<ProfileGlBead>
    */
   get brothers() {
-    return this.project.getItems({class: ProfileGlBead});
+    return this.layer.getItems({class: ProfileGlBead});
   }
 
   /**
@@ -87,10 +106,10 @@ class ProfileGlBead extends ProfileItem {
    * @override
    */
   nearest() {
-    const {_attr, parent, project} = this;
-    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
-    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
-    return parent;
+    const {_attr, profile, project} = this;
+    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, profile);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, profile, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    return profile;
   }
 
   /**

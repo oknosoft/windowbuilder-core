@@ -438,8 +438,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         break;
       }
-      if([10, 11].includes(layer._row.kind)) {
-        kind = layer._row.kind;
+      if([10, 11].includes(layer._row?.kind)) {
+        kind = layer._row?.kind;
       }
     }
     return kind;
@@ -457,7 +457,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         break;
       }
-      if([10, 11].includes(layer._row.kind)) {
+      if([10, 11].includes(layer._row?.kind)) {
         return layer;
       }
     }
@@ -2524,7 +2524,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-    // упорядочиваем по z
+    // упорядочиваем по z TODO: оптимизировать
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       b.profile?.bringToFront?.();
@@ -2550,6 +2550,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {b, e} = elm.rays;
       b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
       e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
+    }
+    // z-index штапиков
+    for (const elm of this.getItems({class: ProfileGlBead})) {
+      const {b, e} = elm.rays;
+      b?.profile?.profile && elm.isBelow(b.profile.profile) && elm.insertAbove(b.profile.profile);
+      e?.profile?.profile && elm.isBelow(e.profile.profile) && elm.insertAbove(e.profile.profile);
     }
     
     // уточняем номенклатуры и соединения для новой геометрии профилей
