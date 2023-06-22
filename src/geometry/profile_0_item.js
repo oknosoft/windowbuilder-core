@@ -1427,11 +1427,8 @@ class ProfileItem extends GeneratrixElement {
         }
       }      
     }
-    for(const chld of this.getItems({class: ProfileItem})) {
+    for(const chld of this.getItems({class: ProfileItem}).concat(glbeads)) {
       chld.check_nom(arr);
-    }
-    for(const glbead of glbeads) {
-      glbead.check_nom(arr);
     }
   }
 

@@ -87,9 +87,26 @@ class ProfileGlBead extends ProfileItem {
     }
     return _attr.glass || this.layer.getItem({class: Filling});
   }
-  
+
+  /**
+   * Ведущий профиль
+   * @type Profile
+   */
   get profile() {
     return this._attr.profile;
+  }
+
+  /**
+   * Ребро заполнения
+   * @type GlassSegment
+   */
+  get rib() {
+    const {glass, profile} = this;
+    for(const rib of glass.profiles) {
+      if(rib.profile === profile) {
+        return rib;
+      }
+    }
   }
 
   /**
@@ -97,7 +114,7 @@ class ProfileGlBead extends ProfileItem {
    * @type Array.<ProfileGlBead>
    */
   get brothers() {
-    return this.layer.getItems({class: ProfileGlBead});
+    return this.glass.glbeads;
   }
 
   /**
@@ -110,6 +127,54 @@ class ProfileGlBead extends ProfileItem {
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, profile);
     _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, profile, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return profile;
+  }
+
+  get glbeads() {
+    return [];
+  }
+
+  observer() {
+    
+  }
+
+  do_bind() {
+    const {rib, glass, profile, b, e, generatrix, _attr: {side, _rays}} = this;
+    const {profiles} = glass;
+    const index = profiles.indexOf(rib);
+    const prev = index === 0 ? profiles[profiles.length - 1] : profiles[index - 1]; 
+    const next = index === (profiles.length - 1) ? profiles[0] : profiles[index + 1]; 
+    const ray = profile.rays[side];
+    const pray = prev.profile.rays[prev.outer ? 'outer' : 'inner'];
+    const nray = next.profile.rays[next.outer ? 'outer' : 'inner'];
+    const rb = pray.intersect_point(ray, b);
+    const re = nray.intersect_point(ray, e);
+
+    if(!rb.is_nearest(b, 0) || !re.is_nearest(e, 0)) {
+      const sub_path = ray.get_subpath(rb, re);
+      if(sub_path.length) {
+        generatrix.removeSegments();
+        generatrix.addSegments(sub_path.segments);
+        _rays.clear();
+        const {brothers} = this;
+        const pglb = brothers.find(({profile}) => profile === prev.profile);
+        const nglb = brothers.find(({profile}) => profile === next.profile);
+        pglb?.do_bind();
+        nglb?.do_bind();
+      }
+    }
+  }
+
+  draw_regions() {
+    return this;
+  }
+
+  /**
+   * @override
+   * @return {ProfileGlBead}
+   */
+  redraw() {
+    this.do_bind();
+    return super.redraw();
   }
 
   /**
