@@ -8580,6 +8580,8 @@ get totqty(){return this._getter('totqty')}
 set totqty(v){this._setter('totqty',v)}
 get totqty1(){return this._getter('totqty1')}
 set totqty1(v){this._setter('totqty1',v)}
+get totqty2(){return this._getter('totqty2')}
+set totqty2(v){this._setter('totqty2',v)}
 get s(){return this._getter('s')}
 set s(v){this._setter('s',v)}
 get sz(){return this._getter('sz')}
@@ -8590,6 +8592,8 @@ get amount(){return this._getter('amount')}
 set amount(v){this._setter('amount',v)}
 get amount_marged(){return this._getter('amount_marged')}
 set amount_marged(v){this._setter('amount_marged',v)}
+get amount_internal(){return this._getter('amount_internal')}
+set amount_internal(v){this._setter('amount_internal',v)}
 }
 $p.RepMaterials_purchaseSpecificationRow = RepMaterials_purchaseSpecificationRow;
 $p.rep.create('materials_purchase');

@@ -1866,7 +1866,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_opening() {
 
     const {l_visualization, furn, opening} = this;
-    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
+    const {open_types, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
 
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization?._opening?.visible) {
@@ -1919,15 +1919,27 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {center} = this.bounds;
       const {_opening} = l_visualization;
 
-      if (this.direction == open_directions.Правое) {
-        _opening.moveTo(center.add([-100, 0]));
+      if (this.direction.is('right')) {
+        if(furn.open_type.is('up_sliding')) {
+          _opening.moveTo(center.add([-100, 70]));
+          _opening.lineTo(center.add([-100, 0]));
+        }
+        else {
+          _opening.moveTo(center.add([-100, 0]));
+        }
         _opening.lineTo(center.add([100, 0]));
         _opening.moveTo(center.add([30, 30]));
         _opening.lineTo(center.add([100, 0]));
         _opening.lineTo(center.add([30, -30]));
       }
       else {
-        _opening.moveTo(center.add([100, 0]));
+        if(furn.open_type.is('up_sliding')) {
+          _opening.moveTo(center.add([100, 70]));
+          _opening.lineTo(center.add([100, 0]));
+        }
+        else {
+          _opening.moveTo(center.add([100, 0]));
+        }
         _opening.lineTo(center.add([-100, 0]));
         _opening.moveTo(center.add([-30, 30]));
         _opening.lineTo(center.add([-100, 0]));

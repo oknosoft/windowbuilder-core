@@ -2851,7 +2851,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   draw_opening() {
     const {l_visualization, furn, opening} = this;
-    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
+    const {open_types, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
@@ -2889,15 +2889,27 @@ class Contour extends AbstractFilling(paper.Layer) {
     const sliding = () => {
       const {center} = this.bounds;
       const {_opening} = l_visualization;
-      if (this.direction == open_directions.Правое) {
-        _opening.moveTo(center.add([-100, 0]));
+      if (this.direction.is('right')) {
+        if(furn.open_type.is('up_sliding')) {
+          _opening.moveTo(center.add([-100, 70]));
+          _opening.lineTo(center.add([-100, 0]));
+        }
+        else {
+          _opening.moveTo(center.add([-100, 0]));
+        }
         _opening.lineTo(center.add([100, 0]));
         _opening.moveTo(center.add([30, 30]));
         _opening.lineTo(center.add([100, 0]));
         _opening.lineTo(center.add([30, -30]));
       }
       else {
-        _opening.moveTo(center.add([100, 0]));
+        if(furn.open_type.is('up_sliding')) {
+          _opening.moveTo(center.add([100, 70]));
+          _opening.lineTo(center.add([100, 0]));
+        }
+        else {
+          _opening.moveTo(center.add([100, 0]));
+        }
         _opening.lineTo(center.add([-100, 0]));
         _opening.moveTo(center.add([-30, 30]));
         _opening.lineTo(center.add([-100, 0]));
@@ -8903,11 +8915,8 @@ class ProfileItem extends GeneratrixElement {
         }
       }      
     }
-    for(const chld of this.getItems({class: ProfileItem})) {
+    for(const chld of this.getItems({class: ProfileItem}).concat(glbeads)) {
       chld.check_nom(arr);
-    }
-    for(const glbead of glbeads) {
-      glbead.check_nom(arr);
     }
   }
   save_coordinates() {
@@ -11680,14 +11689,59 @@ class ProfileGlBead extends ProfileItem {
   get profile() {
     return this._attr.profile;
   }
+  get rib() {
+    const {glass, profile} = this;
+    for(const rib of glass.profiles) {
+      if(rib.profile === profile) {
+        return rib;
+      }
+    }
+  }
   get brothers() {
-    return this.layer.getItems({class: ProfileGlBead});
+    return this.glass.glbeads;
   }
   nearest() {
     const {_attr, profile, project} = this;
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, profile);
     _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, profile, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return profile;
+  }
+  get glbeads() {
+    return [];
+  }
+  observer() {
+  }
+  do_bind() {
+    const {rib, glass, profile, b, e, generatrix, _attr: {side, _rays}} = this;
+    const {profiles} = glass;
+    const index = profiles.indexOf(rib);
+    const prev = index === 0 ? profiles[profiles.length - 1] : profiles[index - 1]; 
+    const next = index === (profiles.length - 1) ? profiles[0] : profiles[index + 1]; 
+    const ray = profile.rays[side];
+    const pray = prev.profile.rays[prev.outer ? 'outer' : 'inner'];
+    const nray = next.profile.rays[next.outer ? 'outer' : 'inner'];
+    const rb = pray.intersect_point(ray, b);
+    const re = nray.intersect_point(ray, e);
+    if(!rb.is_nearest(b, 0) || !re.is_nearest(e, 0)) {
+      const sub_path = ray.get_subpath(rb, re);
+      if(sub_path.length) {
+        generatrix.removeSegments();
+        generatrix.addSegments(sub_path.segments);
+        _rays.clear();
+        const {brothers} = this;
+        const pglb = brothers.find(({profile}) => profile === prev.profile);
+        const nglb = brothers.find(({profile}) => profile === next.profile);
+        pglb?.do_bind();
+        nglb?.do_bind();
+      }
+    }
+  }
+  draw_regions() {
+    return this;
+  }
+  redraw() {
+    this.do_bind();
+    return super.redraw();
   }
   cnn_point(node, point) {
     const res = this.rays[node];
