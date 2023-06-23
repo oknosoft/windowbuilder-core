@@ -97,7 +97,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
 
     // если оба элемента - профили, определяем сторону
     let side = is_outer ? cnn_sides.outer :
-      (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
+      (!ign_side && elm1 instanceof ProfileItem && !elm1.rnum && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
     if(!side && !ign_side && is_outer === false) {
       side = cnn_sides.inner;
     }
@@ -216,13 +216,13 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
 
   /**
    * Возвращает соединение между элементами
-   * @param elm1 {BuilderElement}
-   * @param elm2 {BuilderElement}
-   * @param [cnn_types] {Array}
-   * @param [curr_cnn] {CatCnns}
-   * @param [ign_side] {Boolean}
-   * @param [is_outer] {Boolean}
-   * @param [cnn_point] {CnnPoint}
+   * @param {BuilderElement} elm1
+   * @param {BuilderElement} elm2
+   * @param {Array} [cnn_types]
+   * @param {CatCnns} [curr_cnn]
+   * @param {Boolean} [ign_side]
+   * @param {Boolean} [is_outer]
+   * @param {CnnPoint} [cnn_point]
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 

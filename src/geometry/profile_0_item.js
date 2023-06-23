@@ -380,7 +380,10 @@ class CnnPoint {
 
   initialize() {
 
-    const {_parent, node} = this;
+    let {_parent, node} = this;
+    if(_parent.rnum) {
+      node += _parent.rnum.toFixed();
+    }
 
     //  массив ошибок соединения
     this._err = [];
@@ -410,7 +413,7 @@ class CnnPoint {
        * @type CatCnns
        */
       this.cnn = this._row.cnn;
-      this.profile_point = this._row.node2;
+      this.profile_point = this._row.node2.substring(0, 1);
       if(['b', 'e', 't'].includes(this.profile_point)) {
         this.distance = 0;
       }
@@ -432,7 +435,7 @@ class CnnPoint {
     }
     else {
       this.cnn = null;
-      this.cnn_types = acn.i;
+      this.cnn_types = (_parent.rnum && _parent.parent_elm) ? _parent.parent_elm.rays[this.node]?.cnn_types : acn.i;
       this.profile_point = '';
     }
 

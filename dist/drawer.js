@@ -8227,7 +8227,10 @@ class CnnPoint {
     };
   }
   initialize() {
-    const {_parent, node} = this;
+    let {_parent, node} = this;
+    if(_parent.rnum) {
+      node += _parent.rnum.toFixed();
+    }
     this._err = [];
     _parent.ox.cnn_elmnts.find_rows({elm1: _parent.elm, node1: node}, (row) => {
       if(this._row) {
@@ -8245,7 +8248,7 @@ class CnnPoint {
     const {acn} = $p.enm.cnn_types;
     if(this._row) {
       this.cnn = this._row.cnn;
-      this.profile_point = this._row.node2;
+      this.profile_point = this._row.node2.substring(0, 1);
       if(['b', 'e', 't'].includes(this.profile_point)) {
         this.distance = 0;
       }
@@ -8261,7 +8264,7 @@ class CnnPoint {
     }
     else {
       this.cnn = null;
-      this.cnn_types = acn.i;
+      this.cnn_types = (_parent.rnum && _parent.parent_elm) ? _parent.parent_elm.rays[this.node]?.cnn_types : acn.i;
       this.profile_point = '';
     }
     if(!this.hasOwnProperty('distance')) {
@@ -10718,7 +10721,7 @@ class Profile extends ProfileItem {
     }
     function cn_row(prop, add) {
       let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
-      const cnn_point = rays[node1] || {};
+      const cnn_point = rays?.[node1] || {};
       const {profile, profile_point} = cnn_point;
       node1 += num;
       const node2 = profile_point ? (profile_point + num) : `t${num}`;
@@ -10747,14 +10750,24 @@ class Profile extends ProfileItem {
               }
               const cn = _attr._ranges.get(`cnns${num}`);
               if (!cn[prop]) {
-                const row = cn_row(prop);
-                cn[prop] = row ? row.cnn : cnns.get();
+                const {row, cnn_point} = cn_row(prop, 0);
+                if(row) {
+                  cn[prop] = row.cnn;  
+                }
+                else if(prop !== 'cnn3' && __attr._rays) {
+                  const proxy_point = __attr._rays[prop === 'cnn1' ? 'b' : 'e'];
+                  proxy_point.profile_point = cnn_point?.profile_point || '';
+                  proxy_point.cnn_types = cnn_point?.cnn_types;
+                  proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
+                    proxy_point.cnn, false, proxy_point.profile.parent_elm.cnn_side(target).is('outer'), proxy_point);
+                  cn[prop] = cnns.get();
+                }
               }
               return cn[prop];
             case 'cnn1_row':
             case 'cnn2_row':
             case 'cnn3_row':
-              return cn_row(prop.substr(0, 4), 0);
+              return cn_row(prop.substring(0, 4), 0);
             case 'rnum':
               return num;
             case 'irow':
@@ -10785,12 +10798,14 @@ class Profile extends ProfileItem {
               }
               _rays.b._profile = rays.b._profile?.region?.(num);
               _rays.e._profile = rays.e._profile?.region?.(num);
-              _rays.b.cnn = receiver.cnn1;
-              _rays.e.cnn = receiver.cnn2;
+              receiver.cnn1;
+              receiver.cnn2;
               return _rays;
             }
             case 'path': {
               const {generatrix, rays} = receiver;
+              const {_corns} = __attr;
+              _corns.length = 0;
               ProfileItem.prototype.path_points.call(receiver, rays.b, 'b', []);
               ProfileItem.prototype.path_points.call(receiver, rays.e, 'e', []);
               const {paths} = _attr;
@@ -10798,11 +10813,11 @@ class Profile extends ProfileItem {
                 paths.set(num, Object.assign(new paper.Path({parent: target}), ProfileItem.path_attr));
               }
               const path = paths.get(num);
-              const {_corns} = __attr;
               path.removeSegments();
               path.addSegments([_corns[1], _corns[2], _corns[3], _corns[4]]);
               path.closePath();
-              path.fillColor = BuilderElement.clr_by_clr.call(target, irow.clr)
+              path.fillColor = BuilderElement.clr_by_clr.call(target, irow.clr);
+              return path;
             }
             case 'clr':
               return irow.clr; 
