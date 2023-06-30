@@ -948,7 +948,7 @@ class BuilderElement extends paper.Group {
       region: _xfields.region,
       note: fields.note,
       price: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Цена продажи'}),
-      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость план'}),
+      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость, шт.'}),
     };
     return {
       fields: new Proxy(mfields, {
@@ -11040,8 +11040,8 @@ ProfileNested.nearest_cnn = {
 }
 EditorInvisible.ProfileNested = ProfileNested;
 class ProfileVirtual extends Profile {
-  constructor(attr) {
-    super(attr);
+  initialize(attr) {
+    super.initialize(attr);
     const nearest = super.nearest(true);
     Object.defineProperties(this._attr, {
       _nearest: {
