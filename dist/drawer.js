@@ -14264,7 +14264,7 @@ class Pricing {
   }
   load_prices() {
     const {adapters: {pouch}, job_prm} = $p;
-    if(job_prm.use_ram === false) {
+    if(job_prm.use_ram === false || job_prm.skip_prices) {
       return Promise.resolve();
     }
     return this.by_range({})
@@ -14273,7 +14273,10 @@ class Pricing {
       });
   }
   deffered_load_prices(log, force, price_type) {
-    const {job_prm: {server}, adapters: {pouch}} = $p;
+    const {job_prm: {skip_prices, server}, adapters: {pouch}} = $p;
+    if(skip_prices) {
+      return Promise.resolve();
+    }
     if(this.prices_timeout) {
       clearTimeout(this.prices_timeout);
       this.prices_timeout = 0;
