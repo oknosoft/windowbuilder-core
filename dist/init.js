@@ -2782,6 +2782,10 @@ get pair(){return this._getter('pair')}
 set pair(v){this._setter('pair',v)}
 get lay_split_types(){return this._getter('lay_split_types')}
 set lay_split_types(v){this._setter('lay_split_types',v)}
+get css(){return this._getter('css')}
+set css(v){this._setter('css',v)}
+get flipped(){return this._getter('flipped')}
+set flipped(v){this._setter('flipped',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -2853,6 +2857,8 @@ get is_main_elm(){return this._getter('is_main_elm')}
 set is_main_elm(v){this._setter('is_main_elm',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
 class CatInsertsInsertsRow extends TabularSectionRow{
@@ -3833,6 +3839,8 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatCnnsSpecificationRow = CatCnnsSpecificationRow;
 class CatCnnsCnn_elmntsRow extends TabularSectionRow{
@@ -4282,6 +4290,8 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatFurnsSpecificationRow = CatFurnsSpecificationRow;
 class CatFurnsSpecification_restrictionsRow extends TabularSectionRow{
@@ -6548,6 +6558,8 @@ $p.cat.create('abonents', CatAbonentsManager, false);
 class CatInsert_bind extends CatObj{
 get key(){return this._getter('key')}
 set key(v){this._setter('key',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
