@@ -893,14 +893,14 @@ class Filling extends AbstractFilling(BuilderElement) {
           next = i === length-1 ? attr[0] : attr[i+1];
         };
         const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
-        // получам эквидистанты сегментов, смещенные на размер соединения
+        // получаем эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
           nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
-        // получам пересечения
+        // получаем пересечения
         for (let i = 0; i < length; i++) {
           nominate(i);
           if(!curr.pb) {

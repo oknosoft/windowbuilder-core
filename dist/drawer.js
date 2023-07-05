@@ -7561,8 +7561,14 @@ Object.defineProperties(paper.Path.prototype, {
               tmp.splitAt(offset2);
               tmp = tmp.splitAt(offset1);                
             }
-            const fs = tmp.divideAt(tmp.length * 0.99);
-            tmp.lastSegment.clearHandles();
+            if(tmp.lastSegment.handleIn.length > 0.1 || tmp.lastSegment.handleOut.length > 0.1) {
+              tmp.divideAt(tmp.length * 0.99);
+              tmp.lastSegment.clearHandles();
+            }
+            if(tmp.firstSegment.handleIn.length > 0.1 || tmp.firstSegment.handleOut.length > 0.1) {
+              tmp.divideAt(tmp.length * 0.01);
+              tmp.firstSegment.clearHandles();
+            }
           }
           if(offset1 > offset2){
             tmp._reversed = true;
