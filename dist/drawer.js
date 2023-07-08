@@ -17874,8 +17874,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'elm_weight':
           _data._formula = function (obj) {
-            const {elm} = obj || {};
-            return elm ? elm.weight : 0;
+            const {elm, prm_row, ox} = obj || {};
+            let weight = elm.weight || 0;
+            if(!weight && prm_row.origin.is('product') && ox) {
+              weight = ox.elm_weight();
+            }
+            return weight;
           };
           break;
         case 'elm_orientation':
@@ -18021,7 +18025,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return true;
           }
         }
-        const bounds = elm ? elm.bounds : layer?.bounds;
+        let bounds = elm ? elm.bounds : layer?.bounds;
+        if(!bounds && prm_row.origin.is('product') && elm?.project) {
+          bounds = elm.project.bounds;
+        }
         if(!bounds) {
           return true;
         }
