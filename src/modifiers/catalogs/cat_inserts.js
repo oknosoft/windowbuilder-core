@@ -1716,6 +1716,15 @@
     }
     set available(v){this._setter('available',v)}
 
+    get flipped() {
+      let {flipped} = this._obj;
+      if(typeof flipped === 'boolean') {
+        return flipped;
+      }
+      return cat.parameters_keys.get(flipped);
+    }
+    set flipped(v){this._setter('flipped',v)}
+
     /**
      * Возвращает массив рекомендуемых для элемента вставок
      * @param {BuilderElement} elm

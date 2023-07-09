@@ -14839,7 +14839,7 @@ class ProductsBuilding {
       }
     }
     function base_spec_profile(elm, totqty0) {
-      const {_row, _attr, rays, layer, segms} = elm;
+      const {_row, _attr, rays, layer, segms, inset} = elm;
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -14926,14 +14926,26 @@ class ProductsBuilding {
         const acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
         const acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
         const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
+        let {alp1, alp2} = _row;
+        if(acmethod_prev == s2 || acmethod_prev == s1) {
+          alp1 = prev.generatrix.angle_between(elm.generatrix, b.point);
+        }
+        if(acmethod_next == s2 || acmethod_next == s1) {
+          alp2 = elm.generatrix.angle_between(next.generatrix, e.point);
+        }
+        if(inset.flipped === true) {
+          alp1 = 180 - alp1;
+          alp2 = 180 - alp2;
+          [alp1, alp2] = [alp2, alp1];
+        }
         calc_count_area_mass(
           row_spec,
           spec,
-          _row,
+          {alp1, alp2},
           acmethod_prev,
           acmethod_next,
-          acmethod_prev == s2 || acmethod_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
-          acmethod_next == s2 || acmethod_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
+          alp1,
+          alp2,
           totqty0,
         );
         len_angl.len = row_spec.len * 1000;
@@ -14964,7 +14976,7 @@ class ProductsBuilding {
           len_angl.node = 'b';
           cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
         }
-        elm.inset.calculate_spec({elm, ox, spec});
+        inset.calculate_spec({elm, ox, spec});
       }
       cnn_spec_nearest(elm);
       elm.addls.forEach(base_spec_profile);
@@ -17719,6 +17731,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return cat.parameters_keys.get(available);
     }
     set available(v){this._setter('available',v)}
+    get flipped() {
+      let {flipped} = this._obj;
+      if(typeof flipped === 'boolean') {
+        return flipped;
+      }
+      return cat.parameters_keys.get(flipped);
+    }
+    set flipped(v){this._setter('flipped',v)}
     offer_insets(elm) {
       const {inserts, _manager} = this;
       const res = new Set();
