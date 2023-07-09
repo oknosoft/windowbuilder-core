@@ -436,6 +436,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       return rev.then(() => db.bulkDocs(sobjs));
     };
+    let fin = Promise.resolve();
 
     return !sobjs.length ? unused() : bulk()
       .then((bres) => {
@@ -447,10 +448,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           if(row.ok) {
             if(mgr) {
               if(o) {
-                o._obj._rev = row.rev;
+                const {_data, _obj} = o;
+                _obj._rev = row.rev;
                 o.after_save();
-                mgr.emit_promise('after_save', o)
-                  .then(() => o._modified = false);
+                _data._modified = false;
+                _data._saving = 0;
+                _data._saving_trans = false;
+                fin = fin.then(() => mgr.emit_promise('after_save', o));
               }
             }
           }
@@ -466,7 +470,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
         }
         // null из before_save, прерывает стандартную обработку
-        return unused();
+        return fin.then(unused);
       })
       .catch((err) => {
         if(err.obj) {
