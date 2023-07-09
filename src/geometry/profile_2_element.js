@@ -602,12 +602,12 @@ class Profile extends ProfileItem {
               path.removeSegments();
               path.addSegments([_corns[1], _corns[2], _corns[3], _corns[4]]);
               path.closePath();
-              path.fillColor = BuilderElement.clr_by_clr.call(target, irow.clr);
+              path.fillColor = BuilderElement.clr_by_clr.call(target, receiver.clr);
               return path;
             }
             
             case 'clr':
-              return irow.clr; 
+              return irow.clr.empty() ? target.clr : irow.clr; 
             
             case '_metadata': {
               const meta = target.__metadata(false);
