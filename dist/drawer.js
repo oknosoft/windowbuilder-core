@@ -14933,9 +14933,11 @@ class ProductsBuilding {
         if(acmethod_next == s2 || acmethod_next == s1) {
           alp2 = elm.generatrix.angle_between(next.generatrix, e.point);
         }
-        if(inset.flipped === true) {
+        if([1, 3].includes(inset.flipped)) {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
+        }
+        if([2, 3].includes(inset.flipped)) {
           [alp1, alp2] = [alp2, alp1];
         }
         calc_count_area_mass(
@@ -17731,14 +17733,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return cat.parameters_keys.get(available);
     }
     set available(v){this._setter('available',v)}
-    get flipped() {
-      let {flipped} = this._obj;
-      if(typeof flipped === 'boolean') {
-        return flipped;
-      }
-      return cat.parameters_keys.get(flipped);
-    }
-    set flipped(v){this._setter('flipped',v)}
     offer_insets(elm) {
       const {inserts, _manager} = this;
       const res = new Set();

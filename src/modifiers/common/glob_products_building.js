@@ -436,9 +436,11 @@ class ProductsBuilding {
         if(acmethod_next == s2 || acmethod_next == s1) {
           alp2 = elm.generatrix.angle_between(next.generatrix, e.point);
         }
-        if(inset.flipped === true) {
+        if([1, 3].includes(inset.flipped)) {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
+        }
+        if([2, 3].includes(inset.flipped)) {
           [alp1, alp2] = [alp2, alp1];
         }
         calc_count_area_mass(
