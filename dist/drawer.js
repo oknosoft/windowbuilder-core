@@ -42,10 +42,10 @@ module.exports = function({$p, paper}) {const consts = {
 	move_shapes: 'move-shapes',
   get base_offset() {
 	  const {font_size} = this;
-    return font_size < 80 ? 90 : font_size + 12;
+    return font_size < 80 ? 90 : font_size + 18;
   },
   get dop_offset() {
-	  return this.base_offset + 40;
+	  return this.base_offset + 44;
   }
 };
 class EditorInvisible extends paper.PaperScope {
@@ -5386,9 +5386,13 @@ class DimensionDrawer extends paper.Group {
     const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
-        let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
-        if(shift && collection[i - 1] && collection[i - 1].offset !== offset) {
-          shift += 70;
+        const prev = collection[i - 1];
+        let shift = 0;
+        if(prev && prev._attr.shift !== base_offset * 2) {
+          shift = Math.abs(arr[i].point - arr[i + 1].point) < base_offset ? base_offset : 0;
+          if(shift && prev._attr.shift) {
+            shift += base_offset;
+          }
         }
         collection[i] = new DimensionLine({
           pos: pos,
@@ -5400,6 +5404,7 @@ class DimensionDrawer extends paper.Group {
           offset: offset - shift,
           impost: true
         });
+        collection[i]._attr.shift = shift;
       }
     }
   }
