@@ -12149,7 +12149,7 @@ class Onlay extends ProfileItem {
     }
     res.clear();
     if(this.parent){
-      const res_bind = this.bind_node(point);
+      const res_bind = this.bind_node(point, [this.parent], node);
       if(res_bind.binded){
         res._mixin(res_bind, ["point","profile","cnn_types","profile_point"]);
         if(!this[res.node].is_nearest(res.point, 0)) {
@@ -12159,46 +12159,57 @@ class Onlay extends ProfileItem {
     }
     return res;
   }
-  bind_node(point, glasses) {
+  bind_node(point, glasses, node) {
+    let res = {distance: Infinity, is_l: true};
+    if(!this.is_linear()) {
+      return res;
+    }
     if(!glasses){
       glasses = [this.parent];
     }
-    let res = {distance: Infinity, is_l: true};
-    glasses.some((glass) => {
-      const np = glass.path.getNearestPoint(point);
-      let distance = np.getDistance(point);
-      if(distance < res.distance){
-        res.distance = distance;
-        res.point = np;
-        res.profile = glass;
-        res.cnn_types = $p.enm.cnn_types.acn.t;
-      }
-      if(distance < consts.sticking_l){
-        res.binded = true;
-        return true;
-      }
-      res.cnn_types = $p.enm.cnn_types.acn.t;
-      const ares = [];
-      for(let elm of glass.imposts){
-        if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
-          ares.push({
-            profile_point: res.profile_point,
-            profile: res.profile,
-            cnn_types: res.cnn_types,
-            point: res.point});
+    for(const glass of glasses) {
+      const {b, e, generatrix } = this;
+      const other = node === 'b' ? e : b;
+      const line = generatrix.clone({insert: false}).elongation(3000);
+      for(const {sub_path} of glass.profiles) {
+        const np = sub_path.intersect_point(line);
+        const angle = np && Math.abs(np.subtract(other).angle - point.subtract(other).angle);
+        if(np && (angle < consts.epsilon || Math.abs(angle - 360) < consts.epsilon)) {
+          let distance = np.getDistance(point);
+          if(distance < res.distance){
+            res.distance = distance;
+            res.point = np;
+            res.profile = glass;
+            res.cnn_types = $p.enm.cnn_types.acn.t;
+          }
+          if(distance < consts.sticking_l){
+            res.binded = true;
+            return res;
+          }
+          res.cnn_types = $p.enm.cnn_types.acn.t;
+          const ares = [];
+          for(let elm of glass.imposts){
+            if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
+              ares.push({
+                profile_point: res.profile_point,
+                profile: res.profile,
+                cnn_types: res.cnn_types,
+                point: res.point});
+            }
+          }
+          if(ares.length == 1){
+            res._mixin(ares[0]);
+          }
+          else if(ares.length >= 2){
+            if(this.max_right_angle(ares)){
+              res._mixin(ares[0]);
+            }
+            res.is_cut = true;
+          }
         }
       }
-      if(ares.length == 1){
-        res._mixin(ares[0]);
-      }
-      else if(ares.length >= 2){
-        if(this.max_right_angle(ares)){
-          res._mixin(ares[0]);
-        }
-        res.is_cut = true;
-      }
-    });
-    if(!res.binded && res.point && res.distance < consts.sticking){
+    }
+    if(!res.binded && res.point && res.distance < Infinity){
       res.binded = true;
     }
     return res;
