@@ -4260,6 +4260,8 @@ get handle_height_min(){return this._getter('handle_height_min')}
 set handle_height_min(v){this._setter('handle_height_min',v)}
 get handle_height_max(){return this._getter('handle_height_max')}
 set handle_height_max(v){this._setter('handle_height_max',v)}
+get handle_base_filter(){return this._getter('handle_base_filter')}
+set handle_base_filter(v){this._setter('handle_base_filter',v)}
 get contraction(){return this._getter('contraction')}
 set contraction(v){this._setter('contraction',v)}
 get contraction_option(){return this._getter('contraction_option')}

@@ -376,11 +376,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    * @param cache {Object}
    */
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
+    const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
+      side, flap_weight_min: mmin, flap_weight_max: mmax, fix_ruch} = this;
     const {direction, h_ruch, cnstr} = contour;
 
     // проверка по высоте ручки
-    if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
+    if((handle_base_filter === 1 && fix_ruch !== -1) ||
+      (handle_base_filter === 2 && fix_ruch === -1) ||
+      h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
       return false;
     }
 
