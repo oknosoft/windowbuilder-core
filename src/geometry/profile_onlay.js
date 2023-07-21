@@ -252,7 +252,7 @@ class Onlay extends ProfileItem {
       }
     }
 
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
+    
     res.clear();
     if(this.parent){
       const res_bind = this.bind_node(point, [this.parent], node);
@@ -269,8 +269,8 @@ class Onlay extends ProfileItem {
   /**
    * Пытается привязать точку к рёбрам и раскладкам
    * @param {paper.Point} point
-   * @param {Array.<Filling>} glasses
-   * @param {NodeBE} node
+   * @param {Array.<Filling>} [glasses]
+   * @param {NodeBE} [node]
    * @return {Object}
    */
   bind_node(point, glasses, node) {
@@ -335,8 +335,8 @@ class Onlay extends ProfileItem {
       }
     }
 
-    //if(!res.binded && res.point && res.distance < consts.sticking){
-    if(!res.binded && res.point && res.distance < Infinity){
+    if(!res.binded && res.point && res.distance < consts.sticking){
+    //if(!res.binded && res.point && res.distance < Infinity){
       res.binded = true;
     }
 

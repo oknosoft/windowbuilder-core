@@ -6043,7 +6043,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return $p.enm.cnn_sides.inner;
   }
   nearest(point) {
-    if(point) {
+    if(point && point !== true) {
       let distance = Infinity;
       let profile;
       for(const curr of this.profiles) {
@@ -7096,22 +7096,27 @@ class GeneratrixElement extends BuilderElement {
           else{
             const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
             const {bounds} = ppath;
-            if(Math.abs(delta.y) < consts.epsilon){
-              const ray = new paper.Path({
-                insert: false,
-                segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
-              });
-              segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
-            }
-            else if(Math.abs(delta.x) < consts.epsilon){
-              const ray = new paper.Path({
-                insert: false,
-                segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
-              });
-              segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+            if(profile instanceof Filling) {
+              segm.point = free_point;
             }
             else {
-              segm.point = free_point;
+              if(Math.abs(delta.y) < consts.epsilon){
+                const ray = new paper.Path({
+                  insert: false,
+                  segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
+                });
+                segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+              }
+              else if(Math.abs(delta.x) < consts.epsilon){
+                const ray = new paper.Path({
+                  insert: false,
+                  segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
+                });
+                segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+              }
+              else {
+                segm.point = free_point;
+              }
             }
           }
         }
@@ -12209,7 +12214,7 @@ class Onlay extends ProfileItem {
         }
       }
     }
-    if(!res.binded && res.point && res.distance < Infinity){
+    if(!res.binded && res.point && res.distance < consts.sticking){
       res.binded = true;
     }
     return res;

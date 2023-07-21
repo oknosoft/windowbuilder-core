@@ -309,7 +309,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @return {void|BuilderElement}
    */
   nearest(point) {
-    if(point) {
+    if(point && point !== true) {
       let distance = Infinity;
       let profile;
       for(const curr of this.profiles) {
