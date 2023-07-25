@@ -968,12 +968,18 @@
 
         // если спецификация верхнего уровня задана в изделии, используем её, параллельно формируем формулу
         if(glass_rows.length){
-          glass_rows.forEach((row) => {
+          glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               frow.origin = row.inset;
+              for(const {kind} of srow.nom.demand) {
+                if(kind.applying.is('region')) {
+                  frow.specify = index + 1;
+                  break;
+                }
+              }
               res.push(frow);
             }
           });
@@ -1135,7 +1141,7 @@
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
-        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
+        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = row_ins_spec;
         if(!coefficient) {
           coefficient = 0.001;
         }
@@ -1150,12 +1156,12 @@
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
 
         if(count_calc_method === formulas && !formula.empty()){
           // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
@@ -1204,7 +1210,7 @@
                 origin: row_ins_spec.origin || this,
                 count_calc_method,
               })){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
                 // обогащаем len_angl информацией об углах
                 if (len_angl) {
                   len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
@@ -1276,7 +1282,7 @@
                 qty = aprop.length;
               }
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
 
                 const fqty = !formula.empty() && formula.execute({
                   ox,
@@ -1324,7 +1330,7 @@
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
               // виртуальный номер элемента для данного способа расчета количества
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
@@ -1446,7 +1452,7 @@
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
         const row_base = row_cnn_prev || row_cnn_next;
         if(row_base) {
-          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, spec, ox});
+          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, specify: region, spec, ox});
           row_spec.qty = row_base.quantity;
 
           // длина с учетом соединений

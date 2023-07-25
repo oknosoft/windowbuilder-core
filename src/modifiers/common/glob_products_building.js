@@ -1054,6 +1054,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
+      job_prm: {debug},
       enm: {
         predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
@@ -1090,7 +1091,7 @@ class ProductsBuilding {
 
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(origin) {
+    if(origin && debug) {
       row_spec.origin = origin;
     }
     if(specify) {

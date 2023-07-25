@@ -15366,6 +15366,7 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
+      job_prm: {debug},
       enm: {
         predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
@@ -15399,7 +15400,7 @@ class ProductsBuilding {
     }
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(origin) {
+    if(origin && debug) {
       row_spec.origin = origin;
     }
     if(specify) {
@@ -17126,12 +17127,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           glass_rows.push(row);
         });
         if(glass_rows.length){
-          glass_rows.forEach((row) => {
+          glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               frow.origin = row.inset;
+              for(const {kind} of srow.nom.demand) {
+                if(kind.applying.is('region')) {
+                  frow.specify = index + 1;
+                  break;
+                }
+              }
               res.push(frow);
             }
           });
@@ -17262,7 +17269,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       let alp1, alp2;
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
         const origin = row_ins_spec._origin || this;
-        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
+        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = row_ins_spec;
         if(!coefficient) {
           coefficient = 0.001;
         }
@@ -17274,10 +17281,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
         if(count_calc_method === formulas && !formula.empty()){
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
@@ -17323,7 +17330,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 origin: row_ins_spec.origin || this,
                 count_calc_method,
               })){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
                 if (len_angl) {
                   len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
                   len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
@@ -17387,7 +17394,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 qty = aprop.length;
               }
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
@@ -17433,7 +17440,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
@@ -17536,7 +17543,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
         const row_base = row_cnn_prev || row_cnn_next;
         if(row_base) {
-          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, spec, ox});
+          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, specify: region, spec, ox});
           row_spec.qty = row_base.quantity;
           const k001 = 0.001;
           const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?
