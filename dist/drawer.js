@@ -15368,12 +15368,14 @@ class ProductsBuilding {
       cat: {clrs, characteristics},
       job_prm: {debug},
       enm: {
-        predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
+        predefined_formulas: {cx_clr, cx_prm, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
         plan_detailing: {algorithm},
         specification_order_row_types: {kit}
       },
       cch: {properties},
+      CatCharacteristics,
+      CatProperty_values
     } = $p;
     if(!row_spec) {
       if(row_base?.is_order_row === kit) {
@@ -15412,6 +15414,23 @@ class ProductsBuilding {
         row_spec.characteristic = cx;
         return false;
       });
+    }
+    else if(row_base?.algorithm === cx_prm && row_base._owner) {
+      const prm_row = row_base._owner._owner.selection_params.find({elm: row_base.elm, origin: algorithm});
+      if(prm_row) {
+        const pv = prm_row.param.extract_pvalue({ox, elm, prm_row});
+        if(pv instanceof CatCharacteristics && pv.owner === row_spec.nom) {
+          row_spec.characteristic = pv;
+        }
+        else if(pv instanceof CatProperty_values) {
+          characteristics.find_rows({owner: row_spec.nom}, (cx) => {
+            if(cx.params.find({param: prm_row.param, value: pv})) {
+              row_spec.characteristic = cx;
+              return false;
+            }
+          });
+        }
+      }
     }
     else {
       if(row_base) {
