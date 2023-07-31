@@ -314,7 +314,7 @@ exports.CatCnns = class CatCnns extends Object {
 
     // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
     if(enm.cnn_types.acn.a.includes(cnn_type)){
-      let art12 = elm.orientation == enm.orientations.vert ? job_prm.nom.art1 : job_prm.nom.art2;
+      let art12 = elm.orientation.is('vert') ? job_prm.nom.art1 : job_prm.nom.art2;
       ares = specification.find_rows({nom: art12});
     }
     // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы

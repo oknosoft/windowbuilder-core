@@ -530,7 +530,7 @@ class Profile extends ProfileItem {
                   proxy_point.profile_point = cnn_point?.profile_point || '';
                   proxy_point.cnn_types = cnn_point?.cnn_types;
                   proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                    proxy_point.cnn, false, proxy_point.profile.parent_elm.cnn_side(target).is('outer'), proxy_point);
+                    proxy_point.cnn, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
                   cn[prop] = cnns.get();
                 }
               }

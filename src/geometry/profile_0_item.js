@@ -686,8 +686,8 @@ class ProfileItem extends GeneratrixElement {
       return ;
     }
     const {h_ruch, furn} = layer;
-    const {furn_set, handle_side} = furn;
-    if(!h_ruch || !handle_side || furn_set.empty()) {
+    const {handle_side} = furn;
+    if(!h_ruch || !handle_side) {
       return;
     }
     // получаем элемент, на котором ручка и длину элемента
@@ -862,6 +862,22 @@ class ProfileItem extends GeneratrixElement {
       return profile.generatrix.getNearestPoint(this[n]);
     }
     return this[n];
+  }
+  
+  get c1() {
+    const pt = this.corns(1);
+    if(pt) {
+      pt._name = 'c1';
+    }
+    return pt;
+  }
+
+  get c2() {
+    const pt = this.corns(2);
+    if(pt) {
+      pt._name = 'c2';
+    }
+    return pt;
   }
 
   /**

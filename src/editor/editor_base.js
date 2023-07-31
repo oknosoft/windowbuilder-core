@@ -287,7 +287,7 @@ class EditorInvisible extends paper.PaperScope {
       profiles.forEach((curr) => {
         const profile = curr.profile.nearest() || curr.profile;
 
-        if(shift.indexOf(profile) != -1){
+        if(shift.includes(profile)){
 
           if(!glmap.has(profile)){
             glmap.set(profile, {dx: new Set, dy: new Set});
@@ -334,16 +334,30 @@ class EditorInvisible extends paper.PaperScope {
         return;
       }
       gl.ok = (gl.is_inner && gl.is_outer);
-      gl.dx.forEach((glass) => {
-        if(glass.left == impost && !glass.right){
-          gl.delta = (glass.width - medium);
-          gl.ok = true;
-        }
-        if(glass.right == impost && !glass.left){
-          gl.delta = (medium - glass.width);
-          gl.ok = true;
-        }
-      });
+      if(name == 'width'){
+        gl.dx.forEach((glass) => {
+          if(glass.left == impost && !glass.right){
+            gl.delta = (glass.width - medium);
+            gl.ok = true;
+          }
+          if(glass.right == impost && !glass.left){
+            gl.delta = (medium - glass.width);
+            gl.ok = true;
+          }
+        }); 
+      }
+      else {
+        gl.dy.forEach((glass) => {
+          if(glass.top == impost && !glass.bottom){
+            gl.delta = (glass.height - medium);
+            gl.ok = true;
+          }
+          if(glass.bottom == impost && !glass.top){
+            gl.delta = (medium - glass.height);
+            gl.ok = true;
+          }
+        });
+      }
     });
 
     // рассчитываем, на сколько и в какую сторону двигать
@@ -373,6 +387,17 @@ class EditorInvisible extends paper.PaperScope {
         delta = new Point([delta,0]);
       }
       else {
+        if(!gl.hasOwnProperty('delta')){
+          gl.dy.forEach((glass) => {
+            const double = 1.1 * gl.dy.size;
+            if(glass.top == impost){
+              delta += (medium - glass.height) / double;
+            }
+            else if(glass.bottom == impost){
+              delta += (glass.height - medium) / double;
+            }
+          });
+        }
         delta = new Point([0, delta]);
       }
 

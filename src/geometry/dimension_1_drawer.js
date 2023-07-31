@@ -130,6 +130,11 @@ class DimensionDrawer extends paper.Group {
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
 
         this.push_by_point({ihor, ivert, eb, ee, elm});
+
+        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+          this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
+        }
+        
       }
 
       // для ihor добавляем по вертикали
@@ -177,28 +182,28 @@ class DimensionDrawer extends paper.Group {
       ihor.push({
         point: eb.y.round(),
         elm: elm,
-        p: 'b'
+        p: eb._name || 'b'
       });
     }
     if(ee && ihor.every((v) => v.point != ee.y.round())) {
       ihor.push({
         point: ee.y.round(),
         elm: elm,
-        p: 'e'
+        p: ee._name || 'e'
       });
     }
     if(eb && ivert.every((v) => v.point != eb.x.round())) {
       ivert.push({
         point: eb.x.round(),
         elm: elm,
-        p: 'b'
+        p: eb._name || 'b'
       });
     }
     if(ee && ivert.every((v) => v.point != ee.x.round())) {
       ivert.push({
         point: ee.x.round(),
         elm: elm,
-        p: 'e'
+        p: ee._name || 'e'
       });
     }
   }

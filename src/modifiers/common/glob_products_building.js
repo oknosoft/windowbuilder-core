@@ -208,8 +208,8 @@ class ProductsBuilding {
 
       // получаем спецификацию фурнитуры и переносим её в спецификацию изделия
       const blank_clr = $p.cat.clrs.get();
-      const {cnstr} = contour;
-      furn.furn_set.get_spec(contour, furn_cache).forEach((row) => {
+      const {cnstr, furn_set, weight} = contour;
+      furn_set.get_spec(contour, furn_cache).forEach((row) => {
         const elm = {elm: -cnstr, clr: blank_clr};
         const row_spec = new_spec_row({elm, row_base: row, origin: row.origin, specify: row.specify, spec, ox});
 
@@ -263,7 +263,7 @@ class ProductsBuilding {
       });
 
       // если задано ограничение по массе - проверяем
-      if(furn.furn_set.flap_weight_max && ox.elm_weight(-cnstr) > furn.furn_set.flap_weight_max) {
+      if(furn_set.flap_weight_max && weight > furn_set.flap_weight_max) {
         // Визуализируем все стороны
         const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
         contour.profiles.forEach(elm => {
@@ -305,14 +305,25 @@ class ProductsBuilding {
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
       const {_attr} = elm;
-      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && _attr._nearest_cnn) {
-        cnn_add_spec(_attr._nearest_cnn, elm, {
-          angle: 0,
-          alp1: 0,
-          alp2: 0,
-          len: elm._row.len,
-          origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
-        }, null, nearest);
+      const {cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
+      if(nearest && nearest._row.clr != clrs.ignored()) {
+        if(_attr._nearest_cnn) {
+          cnn_add_spec(_attr._nearest_cnn, elm, {
+            angle: 0,
+            alp1: 0,
+            alp2: 0,
+            len: elm._row.len,
+            origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
+          }, null, nearest);
+        }
+        else {
+          let enom = nom.cnn_ii_error || nom.info_error;
+          if(nearest instanceof ProfileVirtual && nom.cnn_vii_error) {
+            enom = nom.cnn_vii_error;
+          }          
+          elm.err_spec_row(enom, `${msg.err_no_cnn} элементов №${elm.elm} ${elm.nom.article} и №${
+            nearest.elm} ${nearest.nom.article}`, elm.inset);
+        }        
       }
     }
 
@@ -593,8 +604,8 @@ class ProductsBuilding {
      */
     function base_spec_glass(elm) {
 
-      const {profiles, imposts, _row} = elm;
-      const {utils: {blank}, cat: {clrs}, cch} = $p;
+      const {profiles, imposts, inset, _row} = elm;
+      const {utils: {blank}, cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
 
       if(_row.clr == clrs.ignored()) {
         return;
@@ -634,12 +645,17 @@ class ProductsBuilding {
         // добавляем спецификацию соединения рёбер заполнения с профилем
         (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, null, elm);
 
+        // строка ошибки ii соединения
+        if(!row_cnn) {
+          elm.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
+        }
+
       }
 
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp0 = spec;
       let spec_tmp = spec;
-      if(elm.inset.is_order_row_prod({ox, elm})) {
+      if(inset.is_order_row_prod({ox, elm})) {
         const {bounds} = elm;
         const attrs = {
           calc_order: ox.calc_order,
@@ -659,7 +675,7 @@ class ProductsBuilding {
       const totqty0 = Boolean(param && ox.params.find({param, value: true}));
 
       // добавляем спецификацию вставки в заполнение
-      elm.inset.calculate_spec({elm, ox, spec, totqty0});
+      inset.calculate_spec({elm, ox, spec, totqty0});
 
       // для всех раскладок заполнения
       for(const lay of imposts) {
