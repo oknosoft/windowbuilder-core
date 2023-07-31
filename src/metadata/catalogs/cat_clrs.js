@@ -63,7 +63,10 @@ exports.CatClrsManager = class CatClrsManager extends Object {
 
   clr_prm({row_base, row_spec, elm, origin, ox}) {
     const {enm: {predefined_formulas: {clr_prm}, comparison_types: ct}} = $p;
-    if(row_base?.algorithm === clr_prm && elm?.elm > 0) {
+    if(!ox && elm) {
+      ox = elm.ox;
+    }
+    if(row_base?.algorithm === clr_prm && ox) {
       let param;
       if(row_base._or) {
         for(const grp of row_base._or.values()) {
@@ -87,7 +90,8 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         });
       }
       if(param) {
-        row_spec.clr = (ox || elm.ox).extract_value({cnstr: [0, -elm.elm], param});
+        const cnstr = elm?.elm ? [0, -elm.elm] : 0;
+        row_spec.clr = (ox || elm.ox).extract_value({cnstr, param});
       }
     }
     return row_spec.clr;
