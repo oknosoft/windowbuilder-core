@@ -237,7 +237,7 @@ class EditorInvisible extends paper.PaperScope {
       }
       profiles.forEach((curr) => {
         const profile = curr.profile.nearest() || curr.profile;
-        if(shift.indexOf(profile) != -1){
+        if(shift.includes(profile)){
           if(!glmap.has(profile)){
             glmap.set(profile, {dx: new Set, dy: new Set});
           }
@@ -278,16 +278,30 @@ class EditorInvisible extends paper.PaperScope {
         return;
       }
       gl.ok = (gl.is_inner && gl.is_outer);
-      gl.dx.forEach((glass) => {
-        if(glass.left == impost && !glass.right){
-          gl.delta = (glass.width - medium);
-          gl.ok = true;
-        }
-        if(glass.right == impost && !glass.left){
-          gl.delta = (medium - glass.width);
-          gl.ok = true;
-        }
-      });
+      if(name == 'width'){
+        gl.dx.forEach((glass) => {
+          if(glass.left == impost && !glass.right){
+            gl.delta = (glass.width - medium);
+            gl.ok = true;
+          }
+          if(glass.right == impost && !glass.left){
+            gl.delta = (medium - glass.width);
+            gl.ok = true;
+          }
+        }); 
+      }
+      else {
+        gl.dy.forEach((glass) => {
+          if(glass.top == impost && !glass.bottom){
+            gl.delta = (glass.height - medium);
+            gl.ok = true;
+          }
+          if(glass.bottom == impost && !glass.top){
+            gl.delta = (medium - glass.height);
+            gl.ok = true;
+          }
+        });
+      }
     });
     const res = [];
     shift.forEach((impost) => {
@@ -311,6 +325,17 @@ class EditorInvisible extends paper.PaperScope {
         delta = new Point([delta,0]);
       }
       else {
+        if(!gl.hasOwnProperty('delta')){
+          gl.dy.forEach((glass) => {
+            const double = 1.1 * gl.dy.size;
+            if(glass.top == impost){
+              delta += (medium - glass.height) / double;
+            }
+            else if(glass.bottom == impost){
+              delta += (glass.height - medium) / double;
+            }
+          });
+        }
         delta = new Point([0, delta]);
       }
       if(delta.length > consts.epsilon){
@@ -1693,13 +1718,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!res) {
       const furns = this.sys.furns(this._ox, this);
       if(furns.length) {
-        const {cache, cnstr, _ox} = this;
+        const {cache, weight} = this;
         for(const {furn} of furns) {
           if(furn.is_folder || this.open_restrictions_err({furn, cache, bool: true})) {
             continue;
           }
-          const weight_max = furn.furn_set.flap_weight_max;
-          if(weight_max && weight_max < _ox.elm_weight(-cnstr)) {
+          const weight_max = furn.find_set(this).flap_weight_max;
+          if(weight_max && weight_max < weight) {
             continue;
           }
           res = furn;
@@ -1782,8 +1807,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {_ox, cnstr, layer} = this;
-    const weight = _ox.elm_weight(-cnstr);
+    const {cnstr, layer, weight} = this;
     return (layer ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
@@ -1901,6 +1925,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return (upath.area/1e6).round(3);
   }
+  get weight() {
+    const {_ox, cnstr} = this;
+    return _ox.elm_weight(-cnstr);
+  }
   get furn() {
     return this._row.furn;
   }
@@ -1932,6 +1960,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     project.register_change(true);
     this.notify(this, 'furn_changed');
+  }
+  get furn_set() {
+    return this.furn.find_set(this);
   }
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
@@ -3724,8 +3755,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
   }
   update_handle_height(cache, from_setter) {
-    const {furn, _row, project} = this;
-    const {furn_set, handle_side} = furn;
+    const {furn, _row, project, furn_set} = this;
+    const {handle_side} = furn;
     if (!handle_side || furn_set.empty()) {
       return;
     }
@@ -3754,7 +3785,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-    furn.furn_set.specification.find_rows({dop: 0}, (row) => {
+    furn_set.specification.find_rows({dop: 0}, (row) => {
       if (!row.quantity || !row.check_restrictions(this, cache)) {
         return;
       }
@@ -5231,6 +5262,9 @@ class DimensionDrawer extends paper.Group {
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
         this.push_by_point({ihor, ivert, eb, ee, elm});
+        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+          this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
+        }
       }
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
@@ -5267,28 +5301,28 @@ class DimensionDrawer extends paper.Group {
       ihor.push({
         point: eb.y.round(),
         elm: elm,
-        p: 'b'
+        p: eb._name || 'b'
       });
     }
     if(ee && ihor.every((v) => v.point != ee.y.round())) {
       ihor.push({
         point: ee.y.round(),
         elm: elm,
-        p: 'e'
+        p: ee._name || 'e'
       });
     }
     if(eb && ivert.every((v) => v.point != eb.x.round())) {
       ivert.push({
         point: eb.x.round(),
         elm: elm,
-        p: 'b'
+        p: eb._name || 'b'
       });
     }
     if(ee && ivert.every((v) => v.point != ee.x.round())) {
       ivert.push({
         point: ee.x.round(),
         elm: elm,
-        p: 'e'
+        p: ee._name || 'e'
       });
     }
   }
@@ -8440,8 +8474,8 @@ class ProfileItem extends GeneratrixElement {
       return ;
     }
     const {h_ruch, furn} = layer;
-    const {furn_set, handle_side} = furn;
-    if(!h_ruch || !handle_side || furn_set.empty()) {
+    const {handle_side} = furn;
+    if(!h_ruch || !handle_side) {
       return;
     }
     if(layer.profile_by_furn_side(handle_side) == this) {
@@ -8534,6 +8568,20 @@ class ProfileItem extends GeneratrixElement {
       return profile.generatrix.getNearestPoint(this[n]);
     }
     return this[n];
+  }
+  get c1() {
+    const pt = this.corns(1);
+    if(pt) {
+      pt._name = 'c1';
+    }
+    return pt;
+  }
+  get c2() {
+    const pt = this.corns(2);
+    if(pt) {
+      pt._name = 'c2';
+    }
+    return pt;
   }
   angle_at(node) {
     const {profile, point} = this.rays[node] || this.cnn_point(node);
@@ -10775,7 +10823,7 @@ class Profile extends ProfileItem {
                   proxy_point.profile_point = cnn_point?.profile_point || '';
                   proxy_point.cnn_types = cnn_point?.cnn_types;
                   proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                    proxy_point.cnn, false, proxy_point.profile.parent_elm.cnn_side(target).is('outer'), proxy_point);
+                    proxy_point.cnn, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
                   cn[prop] = cnns.get();
                 }
               }
@@ -14775,8 +14823,8 @@ class ProductsBuilding {
       }
       contour.update_handle_height(furn_cache);
       const blank_clr = $p.cat.clrs.get();
-      const {cnstr} = contour;
-      furn.furn_set.get_spec(contour, furn_cache).forEach((row) => {
+      const {cnstr, furn_set, weight} = contour;
+      furn_set.get_spec(contour, furn_cache).forEach((row) => {
         const elm = {elm: -cnstr, clr: blank_clr};
         const row_spec = new_spec_row({elm, row_base: row, origin: row.origin, specify: row.specify, spec, ox});
         if(row.is_procedure_row) {
@@ -14826,7 +14874,7 @@ class ProductsBuilding {
           calc_count_area_mass(row_spec, spec);
         }
       });
-      if(furn.furn_set.flap_weight_max && ox.elm_weight(-cnstr) > furn.furn_set.flap_weight_max) {
+      if(furn_set.flap_weight_max && weight > furn_set.flap_weight_max) {
         const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
         contour.profiles.forEach(elm => {
           new_spec_row({elm, row_base, origin: furn, spec, ox});
@@ -14849,14 +14897,25 @@ class ProductsBuilding {
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
       const {_attr} = elm;
-      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && _attr._nearest_cnn) {
-        cnn_add_spec(_attr._nearest_cnn, elm, {
-          angle: 0,
-          alp1: 0,
-          alp2: 0,
-          len: elm._row.len,
-          origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
-        }, null, nearest);
+      const {cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
+      if(nearest && nearest._row.clr != clrs.ignored()) {
+        if(_attr._nearest_cnn) {
+          cnn_add_spec(_attr._nearest_cnn, elm, {
+            angle: 0,
+            alp1: 0,
+            alp2: 0,
+            len: elm._row.len,
+            origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
+          }, null, nearest);
+        }
+        else {
+          let enom = nom.cnn_ii_error || nom.info_error;
+          if(nearest instanceof ProfileVirtual && nom.cnn_vii_error) {
+            enom = nom.cnn_vii_error;
+          }          
+          elm.err_spec_row(enom, `${msg.err_no_cnn} элементов №${elm.elm} ${elm.nom.article} и №${
+            nearest.elm} ${nearest.nom.article}`, elm.inset);
+        }        
       }
     }
     function base_spec_profile(elm, totqty0) {
@@ -15061,8 +15120,8 @@ class ProductsBuilding {
       spec = spec_tmp;
     }
     function base_spec_glass(elm) {
-      const {profiles, imposts, _row} = elm;
-      const {utils: {blank}, cat: {clrs}, cch} = $p;
+      const {profiles, imposts, inset, _row} = elm;
+      const {utils: {blank}, cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
       if(_row.clr == clrs.ignored()) {
         return;
       }
@@ -15091,10 +15150,13 @@ class ProductsBuilding {
           curr,
         };
         (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, null, elm);
+        if(!row_cnn) {
+          elm.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
+        }
       }
       const spec_tmp0 = spec;
       let spec_tmp = spec;
-      if(elm.inset.is_order_row_prod({ox, elm})) {
+      if(inset.is_order_row_prod({ox, elm})) {
         const {bounds} = elm;
         const attrs = {
           calc_order: ox.calc_order,
@@ -15110,7 +15172,7 @@ class ProductsBuilding {
       }
       const param = cch.properties.predefined('without_glasses');
       const totqty0 = Boolean(param && ox.params.find({param, value: true}));
-      elm.inset.calculate_spec({elm, ox, spec, totqty0});
+      inset.calculate_spec({elm, ox, spec, totqty0});
       for(const lay of imposts) {
         base_spec_profile(lay, totqty0)
       }
@@ -16064,10 +16126,10 @@ $p.cat.contracts.__define({
 })($p);
 $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm(layer, force=false) {
-    const {project, furn, cnstr, sys} = layer;
+    const {project, furn_set, cnstr, sys} = layer;
     const fprms = project.ox.params;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
-    const aprm = furn.furn_set.used_params();
+    const aprm = furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
     const mprm = [];
     aprm.forEach((v) => {
@@ -16105,6 +16167,23 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
     });
     adel.forEach((row) => fprms.del(row, true));
+  }
+  find_set(layer) {
+    const {weight, w, h} = layer;
+    const {furn_set, attrs_option} = this;
+    for(const row of attrs_option) {
+      if(row.mmin > weight || (row.mmax && row.mmax < weight)) {
+        continue;
+      }
+      try {
+        const path = row.formula.execute();
+        if(path.contains([w, h])) {
+          return row.furn_set;
+        }
+      }
+      catch (e) {}
+    }
+    return furn_set;
   }
   used_params() {
     const {_data} = this;

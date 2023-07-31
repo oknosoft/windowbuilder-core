@@ -3584,7 +3584,7 @@ set priorities(v){this._setter_ts('priorities',v)}
 
     // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
     if(enm.cnn_types.acn.a.includes(cnn_type)){
-      let art12 = elm.orientation == enm.orientations.vert ? job_prm.nom.art1 : job_prm.nom.art2;
+      let art12 = elm.orientation.is('vert') ? job_prm.nom.art1 : job_prm.nom.art2;
       ares = specification.find_rows({nom: art12});
     }
     // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
@@ -4487,7 +4487,10 @@ class CatClrsManager extends CatManager {
 
   clr_prm({row_base, row_spec, elm, origin, ox}) {
     const {enm: {predefined_formulas: {clr_prm}, comparison_types: ct}} = $p;
-    if(row_base?.algorithm === clr_prm && elm?.elm > 0) {
+    if(!ox && elm) {
+      ox = elm.ox;
+    }
+    if(row_base?.algorithm === clr_prm && ox) {
       let param;
       if(row_base._or) {
         for(const grp of row_base._or.values()) {
@@ -4511,7 +4514,8 @@ class CatClrsManager extends CatManager {
         });
       }
       if(param) {
-        row_spec.clr = (ox || elm.ox).extract_value({cnstr: [0, -elm.elm], param});
+        const cnstr = elm?.elm ? [0, -elm.elm] : 0;
+        row_spec.clr = (ox || elm.ox).extract_value({cnstr, param});
       }
     }
     return row_spec.clr;

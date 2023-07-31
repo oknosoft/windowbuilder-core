@@ -31,12 +31,12 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    */
   refill_prm(layer, force=false) {
 
-    const {project, furn, cnstr, sys} = layer;
+    const {project, furn_set, cnstr, sys} = layer;
     const fprms = project.ox.params;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
-    // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
-    const aprm = furn.furn_set.used_params();
+    // формируем массив требуемых параметров по задействованным в contour.furn_set
+    const aprm = furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
 
     // дозаполняем и приклеиваем значения по умолчанию
@@ -85,6 +85,24 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     });
     adel.forEach((row) => fprms.del(row, true));
 
+  }
+  
+  find_set(layer) {
+    const {weight, w, h} = layer;
+    const {furn_set, attrs_option} = this;
+    for(const row of attrs_option) {
+      if(row.mmin > weight || (row.mmax && row.mmax < weight)) {
+        continue;
+      }
+      try {
+        const path = row.formula.execute();
+        if(path.contains([w, h])) {
+          return row.furn_set;
+        }
+      }
+      catch (e) {}
+    }
+    return furn_set;
   }
 
   /**

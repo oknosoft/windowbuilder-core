@@ -292,13 +292,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!res) {
       const furns = this.sys.furns(this._ox, this);
       if(furns.length) {
-        const {cache, cnstr, _ox} = this;
+        const {cache, weight} = this;
         for(const {furn} of furns) {
           if(furn.is_folder || this.open_restrictions_err({furn, cache, bool: true})) {
             continue;
           }
-          const weight_max = furn.furn_set.flap_weight_max;
-          if(weight_max && weight_max < _ox.elm_weight(-cnstr)) {
+          const weight_max = furn.find_set(this).flap_weight_max;
+          if(weight_max && weight_max < weight) {
             continue;
           }
           res = furn;
@@ -403,8 +403,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {_ox, cnstr, layer} = this;
-    const weight = _ox.elm_weight(-cnstr);
+    const {cnstr, layer, weight} = this;
     return (layer ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
@@ -590,12 +589,20 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Масса слоя
+   * @return {Number}
+   */
+  get weight() {
+    const {_ox, cnstr} = this;
+    return _ox.elm_weight(-cnstr);
+  }
+  
+  /**
    * указатель на фурнитуру
    */
   get furn() {
     return this._row.furn;
   }
-
   set furn(v) {
     const {_row, profiles, project, sys, level} = this;
 
@@ -637,6 +644,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     project.register_change(true);
 
     this.notify(this, 'furn_changed');
+  }
+
+  /**
+   * Набор фурнитуры с учётом фильтра по размерам и графику
+   * @return {*}
+   */
+  get furn_set() {
+    return this.furn.find_set(this);
   }
 
   /**
@@ -3061,8 +3076,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   update_handle_height(cache, from_setter) {
 
-    const {furn, _row, project} = this;
-    const {furn_set, handle_side} = furn;
+    const {furn, _row, project, furn_set} = this;
+    const {handle_side} = furn;
     if (!handle_side || furn_set.empty()) {
       return;
     }
@@ -3100,7 +3115,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // бежим по спецификации набора в поисках строки про ручку
-    furn.furn_set.specification.find_rows({dop: 0}, (row) => {
+    furn_set.specification.find_rows({dop: 0}, (row) => {
 
       // проверяем, проходит ли строка
       if (!row.quantity || !row.check_restrictions(this, cache)) {
@@ -3240,6 +3255,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Ширина контура по фальцу
+   * @type {Number}
    */
   get w() {
     const {is_rectangular, bounds} = this;
