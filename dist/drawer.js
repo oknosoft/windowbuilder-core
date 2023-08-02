@@ -15310,7 +15310,7 @@ class ProductsBuilding {
       ox.calc_order.accessories('clear', ox);
       ox._order_rows = [];
       base_spec(scheme);
-      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
+      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
       scheme.draw_visualization();
       Promise.resolve()
         .then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
@@ -15469,6 +15469,9 @@ class ProductsBuilding {
     }
     if(specify) {
       row_spec.specify = specify;
+    }
+    if(row_base && !row_base.stage.empty()) {
+      row_spec.stage = row_base.stage;
     }
     if(row_base?.algorithm === cx_clr) {
       const clr = row_base?._clr || row_spec.clr;

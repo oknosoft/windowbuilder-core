@@ -890,7 +890,7 @@ class ProductsBuilding {
       base_spec(scheme);
 
       // сворачиваем
-      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
+      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
 
 
       // console.timeEnd('base_spec');
@@ -1114,6 +1114,9 @@ class ProductsBuilding {
     }
     if(specify) {
       row_spec.specify = specify;
+    }
+    if(row_base && !row_base.stage.empty()) {
+      row_spec.stage = row_base.stage;
     }
 
     // если алгоритм = характеристика по цвету

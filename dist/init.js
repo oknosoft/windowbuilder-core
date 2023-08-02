@@ -8175,6 +8175,8 @@ get origin(){return this._getter('origin')}
 set origin(v){this._setter('origin',v)}
 get specify(){return this._getter('specify')}
 set specify(v){this._setter('specify',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 }
 $p.DpBuyers_orderSpecificationRow = DpBuyers_orderSpecificationRow;
 class DpBuyers_orderCharges_discountsRow extends TabularSectionRow{
