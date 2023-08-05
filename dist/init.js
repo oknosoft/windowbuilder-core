@@ -3958,7 +3958,7 @@ class CatCnnsManager extends CatManager {
 
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
-      enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii}, cnn_sides},
+      enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii, i}, cnn_sides},
       cat: {nom}, utils} = $p;
 
     // если оба элемента - профили, определяем сторону
@@ -4072,6 +4072,11 @@ class CatCnnsManager extends CatManager {
       if(!res.length && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem &&
         cnn_types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
         return this.nom_cnn(elm2, elm1, cnn_types);
+      }
+
+      if(cnn_types.includes(i) && elm2 && !elm2.empty?.()) {
+        const tmp = this.nom_cnn(elm1, null, acn.i, ign_side, is_outer, cnn_point);
+        return res.concat(tmp).sort(this.sort_cnns(elm1, elm2));
       }
 
       return res.sort(this.sort_cnns(elm1, elm2));

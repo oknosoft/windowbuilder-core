@@ -520,19 +520,25 @@ class Profile extends ProfileItem {
                 _attr._ranges.set(`cnns${num}`, {});
               }
               const cn = _attr._ranges.get(`cnns${num}`);
-              if (!cn[prop]) {
+              const proxy_point = __attr?._rays?.[prop === 'cnn1' ? 'b' : 'e'];
+              if (!cn[prop] || cn[prop].empty()) {
                 const {row, cnn_point} = cn_row(prop, 0);
                 if(row) {
-                  cn[prop] = row.cnn;  
+                  cn[prop] = row.cnn;
+                  if(proxy_point) {
+                    proxy_point.cnn = row.cnn;
+                  }
                 }
-                else if(prop !== 'cnn3' && __attr._rays) {
-                  const proxy_point = __attr._rays[prop === 'cnn1' ? 'b' : 'e'];
+                else if(prop !== 'cnn3' && proxy_point) {
                   proxy_point.profile_point = cnn_point?.profile_point || '';
                   proxy_point.cnn_types = cnn_point?.cnn_types;
                   proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                    proxy_point.cnn, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
+                    null, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
                   cn[prop] = cnns.get();
                 }
+              }
+              else {
+                proxy_point.cnn = cn[prop];
               }
               return cn[prop];
 

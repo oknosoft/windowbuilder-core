@@ -158,7 +158,7 @@ class CnnPoint {
     }
     if(_attr._corns.length > 5) {
       _attr._corns.length = 5;
-    };
+    }
   }
 
   /**
@@ -256,7 +256,10 @@ class CnnPoint {
    */
   find_other() {
 
-    const {parent, profile, point}  = this;
+    let {parent, profile, point}  = this;
+    if(!point) {
+      point = parent[this.node];
+    }
     const {rays, layer} = parent;
     const {outer} = $p.enm.cnn_sides;
 
@@ -527,6 +530,16 @@ class ProfileRays {
       parent.layer.glasses(false, true).forEach((glass) => {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
+    }
+    
+    // чистим лучи рядов
+    const {_ranges} = this.parent._attr;
+    if(_ranges) {
+      for(const [key, region] of _ranges) {
+        if(typeof key === 'number') {
+          region._attr?._rays?.clear(with_cnn);
+        }
+      }
     }
   }
 
@@ -1255,7 +1268,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    const {generatrix, path} = this._attr;
+    const {_attr: {generatrix, path, paths}, project} = this;
     if(!generatrix || !path) {
       return;
     }
@@ -1284,37 +1297,44 @@ class ProfileItem extends GeneratrixElement {
       for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
+      for(const [key, item] of paths) {
+        if(typeof key === 'number') {
+          item.setSelection(0);
+        }
+      }      
 
-      for (let t = 0; t < inner.length; t += 50) {
-        const ip = inner.getPointAt(t);
-        const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
-        const fp = new paper.Path({
-          insert: false,
-          segments: [ip, ip.add(np)]
-        });
-        const op = fp.intersect_point(outer, ip);
+      if([0, 1].includes(project.builder_props.mode)) {
+        for (let t = 0; t < inner.length; t += 50) {
+          const ip = inner.getPointAt(t);
+          const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
+          const fp = new paper.Path({
+            insert: false,
+            segments: [ip, ip.add(np)]
+          });
+          const op = fp.intersect_point(outer, ip);
 
-        if(ip && op) {
-          const cip = path.getNearestPoint(ip);
-          const cop = path.getNearestPoint(op);
-          const nip = cip.is_nearest(ip);
-          const nop = cop.is_nearest(op);
-          if(nip && nop) {
-            this._hatching.moveTo(cip);
-            this._hatching.lineTo(cop);
-          }
-          else if(nip && !nop) {
-            const pp = fp.intersect_point(path, op);
-            if(pp) {
+          if(ip && op) {
+            const cip = path.getNearestPoint(ip);
+            const cop = path.getNearestPoint(op);
+            const nip = cip.is_nearest(ip);
+            const nop = cop.is_nearest(op);
+            if(nip && nop) {
               this._hatching.moveTo(cip);
-              this._hatching.lineTo(pp);
-            }
-          }
-          else if(!nip && nop) {
-            const pp = fp.intersect_point(path, ip);
-            if(pp) {
-              this._hatching.moveTo(pp);
               this._hatching.lineTo(cop);
+            }
+            else if(nip && !nop) {
+              const pp = fp.intersect_point(path, op);
+              if(pp) {
+                this._hatching.moveTo(cip);
+                this._hatching.lineTo(pp);
+              }
+            }
+            else if(!nip && nop) {
+              const pp = fp.intersect_point(path, ip);
+              if(pp) {
+                this._hatching.moveTo(pp);
+                this._hatching.lineTo(cop);
+              }
             }
           }
         }
@@ -2987,13 +3007,14 @@ class ProfileItem extends GeneratrixElement {
   }
 
   remove() {
-    const {b, e} = this.rays;
+    const {layer} = this;
     const res = super.remove(); 
     if(res !== false) {
-      for(const {_profile, profile_point} of [b, e]) {
-        if(_profile && ['b', 'e'].includes(profile_point)) {
-          _profile.rays[profile_point].clear(true);
-          _profile._attr._corns.length = 0;
+      for(const {rays} of layer?.profiles || []) {
+        for(const node of ['b', 'e']) {
+          if(rays[node].profile === this) {
+            rays[node].clear(true);
+          }
         }
       }
     }

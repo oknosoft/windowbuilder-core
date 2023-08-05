@@ -1115,7 +1115,7 @@ class ProductsBuilding {
     if(specify) {
       row_spec.specify = specify;
     }
-    if(row_base && !row_base.stage.empty()) {
+    if(row_base?.stage && !row_base.stage.empty()) {
       row_spec.stage = row_base.stage;
     }
 

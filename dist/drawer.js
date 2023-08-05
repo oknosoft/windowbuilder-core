@@ -8106,7 +8106,7 @@ class CnnPoint {
     }
     if(_attr._corns.length > 5) {
       _attr._corns.length = 5;
-    };
+    }
   }
   get err() {
     return this._err;
@@ -8180,7 +8180,10 @@ class CnnPoint {
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
   find_other() {
-    const {parent, profile, point}  = this;
+    let {parent, profile, point}  = this;
+    if(!point) {
+      point = parent[this.node];
+    }
     const {rays, layer} = parent;
     const {outer} = $p.enm.cnn_sides;
     for(const elm of layer.profiles) {
@@ -8385,6 +8388,14 @@ class ProfileRays {
       parent.layer.glasses(false, true).forEach((glass) => {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
+    }
+    const {_ranges} = this.parent._attr;
+    if(_ranges) {
+      for(const [key, region] of _ranges) {
+        if(typeof key === 'number') {
+          region._attr?._rays?.clear(with_cnn);
+        }
+      }
     }
   }
   recalc() {
@@ -8819,7 +8830,7 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
   setSelection(selection) {
-    const {generatrix, path} = this._attr;
+    const {_attr: {generatrix, path, paths}, project} = this;
     if(!generatrix || !path) {
       return;
     }
@@ -8843,35 +8854,42 @@ class ProfileItem extends GeneratrixElement {
       for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
-      for (let t = 0; t < inner.length; t += 50) {
-        const ip = inner.getPointAt(t);
-        const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
-        const fp = new paper.Path({
-          insert: false,
-          segments: [ip, ip.add(np)]
-        });
-        const op = fp.intersect_point(outer, ip);
-        if(ip && op) {
-          const cip = path.getNearestPoint(ip);
-          const cop = path.getNearestPoint(op);
-          const nip = cip.is_nearest(ip);
-          const nop = cop.is_nearest(op);
-          if(nip && nop) {
-            this._hatching.moveTo(cip);
-            this._hatching.lineTo(cop);
-          }
-          else if(nip && !nop) {
-            const pp = fp.intersect_point(path, op);
-            if(pp) {
+      for(const [key, item] of paths) {
+        if(typeof key === 'number') {
+          item.setSelection(0);
+        }
+      }      
+      if([0, 1].includes(project.builder_props.mode)) {
+        for (let t = 0; t < inner.length; t += 50) {
+          const ip = inner.getPointAt(t);
+          const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
+          const fp = new paper.Path({
+            insert: false,
+            segments: [ip, ip.add(np)]
+          });
+          const op = fp.intersect_point(outer, ip);
+          if(ip && op) {
+            const cip = path.getNearestPoint(ip);
+            const cop = path.getNearestPoint(op);
+            const nip = cip.is_nearest(ip);
+            const nop = cop.is_nearest(op);
+            if(nip && nop) {
               this._hatching.moveTo(cip);
-              this._hatching.lineTo(pp);
-            }
-          }
-          else if(!nip && nop) {
-            const pp = fp.intersect_point(path, ip);
-            if(pp) {
-              this._hatching.moveTo(pp);
               this._hatching.lineTo(cop);
+            }
+            else if(nip && !nop) {
+              const pp = fp.intersect_point(path, op);
+              if(pp) {
+                this._hatching.moveTo(cip);
+                this._hatching.lineTo(pp);
+              }
+            }
+            else if(!nip && nop) {
+              const pp = fp.intersect_point(path, ip);
+              if(pp) {
+                this._hatching.moveTo(pp);
+                this._hatching.lineTo(cop);
+              }
             }
           }
         }
@@ -10173,13 +10191,14 @@ class ProfileItem extends GeneratrixElement {
     }
   }
   remove() {
-    const {b, e} = this.rays;
+    const {layer} = this;
     const res = super.remove(); 
     if(res !== false) {
-      for(const {_profile, profile_point} of [b, e]) {
-        if(_profile && ['b', 'e'].includes(profile_point)) {
-          _profile.rays[profile_point].clear(true);
-          _profile._attr._corns.length = 0;
+      for(const {rays} of layer?.profiles || []) {
+        for(const node of ['b', 'e']) {
+          if(rays[node].profile === this) {
+            rays[node].clear(true);
+          }
         }
       }
     }
@@ -10813,19 +10832,25 @@ class Profile extends ProfileItem {
                 _attr._ranges.set(`cnns${num}`, {});
               }
               const cn = _attr._ranges.get(`cnns${num}`);
-              if (!cn[prop]) {
+              const proxy_point = __attr?._rays?.[prop === 'cnn1' ? 'b' : 'e'];
+              if (!cn[prop] || cn[prop].empty()) {
                 const {row, cnn_point} = cn_row(prop, 0);
                 if(row) {
-                  cn[prop] = row.cnn;  
+                  cn[prop] = row.cnn;
+                  if(proxy_point) {
+                    proxy_point.cnn = row.cnn;
+                  }
                 }
-                else if(prop !== 'cnn3' && __attr._rays) {
-                  const proxy_point = __attr._rays[prop === 'cnn1' ? 'b' : 'e'];
+                else if(prop !== 'cnn3' && proxy_point) {
                   proxy_point.profile_point = cnn_point?.profile_point || '';
                   proxy_point.cnn_types = cnn_point?.cnn_types;
                   proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                    proxy_point.cnn, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
+                    null, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
                   cn[prop] = cnns.get();
                 }
+              }
+              else {
+                proxy_point.cnn = cn[prop];
               }
               return cn[prop];
             case 'cnn1_row':
@@ -15470,7 +15495,7 @@ class ProductsBuilding {
     if(specify) {
       row_spec.specify = specify;
     }
-    if(row_base && !row_base.stage.empty()) {
+    if(row_base?.stage && !row_base.stage.empty()) {
       row_spec.stage = row_base.stage;
     }
     if(row_base?.algorithm === cx_clr) {
