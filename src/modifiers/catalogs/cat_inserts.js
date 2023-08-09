@@ -629,6 +629,7 @@
         const chnom = elm.layer?._attr?.chnom;
         if(chnom && !chnom.includes(elm)) {
           chnom.push(elm);
+          elm.project.register_change();
         }
       }
 
