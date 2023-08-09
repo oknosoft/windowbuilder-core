@@ -234,11 +234,13 @@ class Onlay extends ProfileItem {
     if(!point){
       point = this[node];
     }
+    
+    const is_filling = res.profile instanceof Filling;
 
     // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile && res.profile.children.length){
 
-      if(res.profile instanceof Filling){
+      if(is_filling){
         const np = res.profile.path.getNearestPoint(point);
         if(np.getDistance(point) < consts.sticking_l){
           res.point = np;
@@ -255,7 +257,7 @@ class Onlay extends ProfileItem {
     
     res.clear();
     if(this.parent){
-      const res_bind = this.bind_node(point, [this.parent], node);
+      const res_bind = this.bind_node(point, [this.parent], node, is_filling);
       if(res_bind.binded){
         res._mixin(res_bind, ["point","profile","cnn_types","profile_point"]);
         if(!this[res.node].is_nearest(res.point, 0)) {
@@ -271,9 +273,10 @@ class Onlay extends ProfileItem {
    * @param {paper.Point} point
    * @param {Array.<Filling>} [glasses]
    * @param {NodeBE} [node]
+   * @param {Boolean} [is_filling]
    * @return {Object}
    */
-  bind_node(point, glasses, node) {
+  bind_node(point, glasses, node, is_filling) {
 
     let res = {distance: Infinity, is_l: true};
     
@@ -303,7 +306,7 @@ class Onlay extends ProfileItem {
             res.cnn_types = $p.enm.cnn_types.acn.t;
           }
 
-          if(distance < consts.sticking_l){
+          if((is_filling && res.point) || distance < consts.sticking_l){
             res.binded = true;
             return res;
           }
