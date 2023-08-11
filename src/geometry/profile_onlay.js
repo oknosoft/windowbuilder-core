@@ -338,8 +338,7 @@ class Onlay extends ProfileItem {
       }
     }
 
-    if(!res.binded && res.point && res.distance < consts.sticking){
-    //if(!res.binded && res.point && res.distance < Infinity){
+    if (!res.binded && res.point && res.distance < consts.sticking_l) {
       res.binded = true;
     }
 

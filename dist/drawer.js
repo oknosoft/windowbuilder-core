@@ -8353,7 +8353,7 @@ class ProfileRays {
       const {parent} = this;
       const nodes = ['b', 'e'];
       for(const node of nodes) {
-        const {profile, profile_point} = parent.cnn_point(node);
+        const {profile, profile_point} = parent._attr._rays[node];
         const other = node === 'b' ? 'e' : 'b';
         if(profile && profile_point == other) {
           const {_rays, _corns} = profile._attr;
@@ -8593,6 +8593,21 @@ class ProfileItem extends GeneratrixElement {
       pt._name = 'c2';
     }
     return pt;
+  }
+  unlink() {
+    const {generatrix, b, e, rays} = this;
+    const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking_l + 1) : (
+      e.selected ? generatrix.getTangentAt(generatrix.length).multiply(consts.sticking_l + 1).negate() : null
+    );
+    if(tg) {
+      if(b.selected) {
+        rays.b.clear(true);
+      }
+      else {
+        rays.e.clear(true);
+      }
+      this.move_points(tg);
+    }
   }
   angle_at(node) {
     const {profile, point} = this.rays[node] || this.cnn_point(node);
@@ -10508,7 +10523,7 @@ class Profile extends ProfileItem {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 -= nearest.d2 + (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 20);
+        _attr.d0 = this.offset - nearest.d2 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
@@ -12288,7 +12303,7 @@ class Onlay extends ProfileItem {
         }
       }
     }
-    if(!res.binded && res.point && res.distance < consts.sticking){
+    if (!res.binded && res.point && res.distance < consts.sticking_l) {
       res.binded = true;
     }
     return res;
@@ -18095,6 +18110,17 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer ? layer.h_ruch : 0;
           };
           break;
+        case 'height':
+            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              if(!prm_row?.origin || prm_row.origin.is('product')) {
+                return ox?.y || 0;
+              }
+              return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
+            };
+            break;
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
@@ -18133,6 +18159,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'inset',           
     'clr_inset',       
     'handle_height',   
+    'height',          
     'region',          
     'is_composite',    
   ]) {

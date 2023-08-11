@@ -121,6 +121,18 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer ? layer.h_ruch : 0;
           };
           break;
+          
+        case 'height':
+            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              if(!prm_row?.origin || prm_row.origin.is('product')) {
+                return ox?.y || 0;
+              }
+              return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
+            };
+            break;
 
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
@@ -164,6 +176,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'inset',            // вставка текущего элемента
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
+    'height',           // высота слоя или изделия
     'region',           // ряд
     'is_composite',     // у элемента составной цвет
   ]) {

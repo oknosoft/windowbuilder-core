@@ -489,7 +489,7 @@ class ProfileRays {
       // прибиваем соединения в точках b и e
       const nodes = ['b', 'e'];
       for(const node of nodes) {
-        const {profile, profile_point} = parent.cnn_point(node);
+        const {profile, profile_point} = parent._attr._rays[node];
         const other = node === 'b' ? 'e' : 'b';
         if(profile && profile_point == other) {
           const {_rays, _corns} = profile._attr;
@@ -876,7 +876,11 @@ class ProfileItem extends GeneratrixElement {
     }
     return this[n];
   }
-  
+
+  /**
+   * Точка для размерных линий
+   * @return {paper.Point}
+   */
   get c1() {
     const pt = this.corns(1);
     if(pt) {
@@ -885,12 +889,35 @@ class ProfileItem extends GeneratrixElement {
     return pt;
   }
 
+  /**
+   * Точка для размерных линий
+   * @return {paper.Point}
+   */
   get c2() {
     const pt = this.corns(2);
     if(pt) {
       pt._name = 'c2';
     }
     return pt;
+  }
+
+  /**
+   * Отрывает точку от соседнего профиля
+   */
+  unlink() {
+    const {generatrix, b, e, rays} = this;
+    const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking_l + 1) : (
+      e.selected ? generatrix.getTangentAt(generatrix.length).multiply(consts.sticking_l + 1).negate() : null
+    );
+    if(tg) {
+      if(b.selected) {
+        rays.b.clear(true);
+      }
+      else {
+        rays.e.clear(true);
+      }
+      this.move_points(tg);
+    }
   }
 
   /**
