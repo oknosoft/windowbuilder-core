@@ -955,7 +955,14 @@ class ProductsBuilding {
               delete ox._data._err;
             }
 
-            !attr.silent && $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
+            if(!attr.silent) {
+              if(err.type && err.text && err.title) {
+                $p.md.emit('alert', err);
+              }
+              else {
+                $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
+              }
+            }
 
           });
       }

@@ -1534,7 +1534,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.glasses(false, true).forEach(glass => {
       let err;
       const {_row, path, profiles, imposts, inset} = glass;
-      _row.s = glass.form_area;
 
       profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {

@@ -1481,9 +1481,10 @@ class ProfileItem extends GeneratrixElement {
     const {_row, _attr, length, glbeads, angle_hor} = this;
     // сохраняем угол к горизонту и длину профиля в _row
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
-      _row.len = length;
-      _row.angle_hor = angle_hor;
-
+      if(!this.project._attr._loading) {
+        _row.len = length;
+        _row.angle_hor = angle_hor;
+      }
       if(_attr && _attr._rays) {
         const {nom: old} = _attr;
         delete _attr.nom;

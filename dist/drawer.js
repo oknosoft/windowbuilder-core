@@ -2594,7 +2594,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.glasses(false, true).forEach(glass => {
       let err;
       const {_row, path, profiles, imposts, inset} = glass;
-      _row.s = glass.form_area;
       profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {
           glass.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
@@ -9004,8 +9003,10 @@ class ProfileItem extends GeneratrixElement {
   check_nom(arr) {
     const {_row, _attr, length, glbeads, angle_hor} = this;
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
-      _row.len = length;
-      _row.angle_hor = angle_hor;
+      if(!this.project._attr._loading) {
+        _row.len = length;
+        _row.angle_hor = angle_hor;
+      }
       if(_attr && _attr._rays) {
         const {nom: old} = _attr;
         delete _attr.nom;
@@ -15393,7 +15394,14 @@ class ProductsBuilding {
               text += `\n${ox._data._err}`;
               delete ox._data._err;
             }
-            !attr.silent && $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
+            if(!attr.silent) {
+              if(err.type && err.text && err.title) {
+                $p.md.emit('alert', err);
+              }
+              else {
+                $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
+              }
+            }
           });
       }
       else {
@@ -17171,7 +17179,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     check_base_restrictions(row, elm) {
       const {_row} = elm;
       if(elm instanceof Filling) {
-        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+        const {form_area} = elm
+        if(row.smin > form_area || (form_area && row.smax && row.smax < form_area)){
           return false;
         }
         if(row instanceof CatInserts) {

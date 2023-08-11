@@ -834,7 +834,8 @@
 
       if(elm instanceof Filling) {
         // проверяем площадь
-        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+        const {form_area} = elm
+        if(row.smin > form_area || (form_area && row.smax && row.smax < form_area)){
           return false;
         }
         // и фильтр по габаритам
