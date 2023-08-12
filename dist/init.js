@@ -3968,6 +3968,8 @@ class CatCnnsManager extends CatManager {
       side = cnn_sides.inner;
     }
 
+    const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
+
     let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
 
     if(!elm2 || (utils.is_data_obj(elm2) && elm2.empty())){
@@ -4030,7 +4032,7 @@ class CatCnnsManager extends CatManager {
     }
 
     if(cnn_types){
-      const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.indexOf(cnn_types) != -1 ? acn.a : [cnn_types]);
+      
       const res = a1[ref2]
         .filter((cnn) => {
           if(types.includes(cnn.cnn_type)){
@@ -4070,11 +4072,11 @@ class CatCnnsManager extends CatManager {
 
       // если не нашлось подходящих и это угловое соединение и второй элемент вертикальный - меняем местами эл 1-2 при поиске
       if(!res.length && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem &&
-        cnn_types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
-        return this.nom_cnn(elm2, elm1, cnn_types);
+        types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
+        return this.nom_cnn(elm2, elm1, types);
       }
 
-      if(cnn_types.includes(i) && elm2 && !elm2.empty?.()) {
+      if(types.includes(i) && elm2 && !elm2.empty?.()) {
         const tmp = this.nom_cnn(elm1, null, acn.i, ign_side, is_outer, cnn_point);
         return res.concat(tmp).sort(this.sort_cnns(elm1, elm2));
       }
