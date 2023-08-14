@@ -7802,6 +7802,8 @@ get contract(){return this._getter('contract')}
 set contract(v){this._setter('contract',v)}
 get basis(){return this._getter('basis')}
 set basis(v){this._setter('basis',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 get responsible(){return this._getter('responsible')}
 set responsible(v){this._setter('responsible',v)}
 get shipping_date(){return this._getter('shipping_date')}
