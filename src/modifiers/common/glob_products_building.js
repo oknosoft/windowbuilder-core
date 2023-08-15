@@ -1110,8 +1110,13 @@ class ProductsBuilding {
         row_spec.dop = -1;
       }
     }
-    if(!row_spec.dop && row_spec.nom.is_procedure) {
-      row_spec.dop = -2;
+    if(row_spec.nom.is_procedure) {
+      if(!row_spec.dop) {
+        row_spec.dop = -2;
+      }
+      if(!specify && elm && (row_spec.nom.elm_type.is('info') || row_spec.nom.elm_type.is('error'))) {
+        specify = elm?.nom?.article;
+      }
     }
 
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);

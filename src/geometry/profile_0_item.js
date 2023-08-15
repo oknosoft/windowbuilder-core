@@ -217,7 +217,7 @@ class CnnPoint {
       else {
         const {job_prm: {nom}, msg} = $p;
         const nom_error = nom.cnn_node_error || nom.critical_error;
-        _parent.err_spec_row(nom_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
+        _parent.err_spec_row(nom_error, `${cnn ? msg.err_seam_len : msg.err_no_cnn} ${_parent.nom.article}`, cnn || _parent.inset);
       }
     }
   }

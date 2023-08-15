@@ -8153,7 +8153,7 @@ class CnnPoint {
       else {
         const {job_prm: {nom}, msg} = $p;
         const nom_error = nom.cnn_node_error || nom.critical_error;
-        _parent.err_spec_row(nom_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
+        _parent.err_spec_row(nom_error, `${cnn ? msg.err_seam_len : msg.err_no_cnn} ${_parent.nom.article}`, cnn || _parent.inset);
       }
     }
   }
@@ -11040,6 +11040,8 @@ class ProfileNested extends Profile {
   }
   get info() {
     return `влож ${super.info}`;
+  }
+  auto_insets() {
   }
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
@@ -15508,8 +15510,13 @@ class ProductsBuilding {
         row_spec.dop = -1;
       }
     }
-    if(!row_spec.dop && row_spec.nom.is_procedure) {
-      row_spec.dop = -2;
+    if(row_spec.nom.is_procedure) {
+      if(!row_spec.dop) {
+        row_spec.dop = -2;
+      }
+      if(!specify && elm && (row_spec.nom.elm_type.is('info') || row_spec.nom.elm_type.is('error'))) {
+        specify = elm?.nom?.article;
+      }
     }
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
