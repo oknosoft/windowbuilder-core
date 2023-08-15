@@ -921,6 +921,33 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
+   * Привязывает точку к соседнему профилю
+   */
+  link() {
+    const {generatrix, b, e, rays, parent} = this;
+    const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking).negate() : (
+      e.selected ? generatrix.getTangentAt(generatrix.length).multiply(consts.sticking) : null
+    );
+    if(tg && parent instanceof Filling) {
+      const node = rays[b.selected ? 'b' : 'e'];
+      const point = this[node.node];
+      const path = new paper.Path([point, point.add(tg)]);
+      const crossings = path.getCrossings(parent.path);
+      if(crossings.length === 1) {
+        node.profile = parent;
+        node.distance = 0;
+        node.cnn_types = $p.enm.cnn_types.acn.t;
+        const delta = crossings[0].point.subtract(point);
+        this.move_points(delta);
+        this.postcalc_cnn(node.node);
+      }
+      else {
+        throw new Error('Нет подходящего ребра в окрестности точки привязки');
+      }
+    }
+  }
+
+  /**
    * Угол к соседнему элементу
    * @param node {NodeBE}
    * @return {number}

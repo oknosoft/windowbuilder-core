@@ -398,7 +398,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @param {Boolean|Number} [elongate] - если истина, пути будут продолжены до пересечения
    * @param {paper.Point} [other_point] - если указано, контролируем вектор пересечения
    * @param {Boolean} [clone] - если указано, не удлиняем текущие пути
-   * @return {paper.Path}
+   * @return {paper.Point}
    */
   intersect_point: {
       value: function intersect_point(path, point, elongate, other_point, clone) {
