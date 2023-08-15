@@ -931,14 +931,15 @@ class ProfileItem extends GeneratrixElement {
     if(tg && parent instanceof Filling) {
       const node = rays[b.selected ? 'b' : 'e'];
       const point = this[node.node];
-      const path = new paper.Path([point, point.add(tg)]);
+      const path = new paper.Path([point.subtract(tg), point.add(tg)]);
       const crossings = path.getCrossings(parent.path);
       if(crossings.length === 1) {
+        const delta = crossings[0].point.subtract(point);
+        this.move_points(delta);
         node.profile = parent;
         node.distance = 0;
         node.cnn_types = $p.enm.cnn_types.acn.t;
-        const delta = crossings[0].point.subtract(point);
-        this.move_points(delta);
+        node.point = crossings[0].point;
         this.postcalc_cnn(node.node);
       }
       else {
