@@ -931,7 +931,7 @@ class ProfileItem extends GeneratrixElement {
     if(tg && parent instanceof Filling) {
       const node = rays[b.selected ? 'b' : 'e'];
       const point = this[node.node];
-      const path = new paper.Path([point.subtract(tg), point.add(tg)]);
+      const path = new paper.Path({insert: false, segments: [point.subtract(tg), point.add(tg)]});
       const crossings = path.getCrossings(parent.path);
       if(crossings.length === 1) {
         const delta = crossings[0].point.subtract(point);

@@ -8616,7 +8616,7 @@ class ProfileItem extends GeneratrixElement {
     if(tg && parent instanceof Filling) {
       const node = rays[b.selected ? 'b' : 'e'];
       const point = this[node.node];
-      const path = new paper.Path([point.subtract(tg), point.add(tg)]);
+      const path = new paper.Path({insert: false, segments: [point.subtract(tg), point.add(tg)]});
       const crossings = path.getCrossings(parent.path);
       if(crossings.length === 1) {
         const delta = crossings[0].point.subtract(point);
@@ -12282,16 +12282,22 @@ class Onlay extends ProfileItem {
   }
   bind_node(point, glasses, node, is_filling) {
     let res = {distance: Infinity, is_l: true};
-    if(!this.is_linear()) {
-      return res;
-    }
     if(!glasses){
       glasses = [this.parent];
     }
     for(const glass of glasses) {
       const {b, e, generatrix } = this;
       const other = node === 'b' ? e : b;
-      const line = generatrix.clone({insert: false}).elongation(3000);
+      let line;
+      if(this.is_linear()) {
+        line = generatrix.clone({insert: false}).elongation(3000);
+      }
+      else {
+        const tg = node === 'b' ? generatrix.getTangentAt(0).multiply(consts.sticking).negate() : 
+          generatrix.getTangentAt(generatrix.length).multiply(consts.sticking);
+        const point = node === 'b' ? b : e;
+        line = new paper.Path({insert: false, segments: [point.subtract(tg), point.add(tg)]}).elongation(300);
+      }
       for(const {sub_path} of glass.profiles) {
         const np = sub_path.intersect_point(line);
         const angle = np && Math.abs(np.subtract(other).angle - point.subtract(other).angle);
