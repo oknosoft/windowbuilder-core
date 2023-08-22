@@ -14462,21 +14462,19 @@ class Pricing {
   update_nom_price(price_type, cache) {
     if(price_type) {
       for(const onom of $p.cat.nom) {
-        for(const onom of $p.cat.nom) {
-          const price = cache.get(onom);
-          if (onom._data && price) {
-            if(onom._data._price) {
-              for(const cx in onom._data._price) {
-                if(price[cx]) {
-                  for(const pt in price[cx]) {
-                    onom._data._price[cx][pt] = price[cx][pt];
-                  }
+        const price = cache.get(onom);
+        if (onom._data && price) {
+          if(onom._data._price) {
+            for(const cx in onom._data._price) {
+              if(price[cx]) {
+                for(const pt in price[cx]) {
+                  onom._data._price[cx][pt] = price[cx][pt];
                 }
               }
             }
-            else {
-              onom._data._price = price;
-            }
+          }
+          else {
+            onom._data._price = price;
           }
         }
       }
