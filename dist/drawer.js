@@ -14497,7 +14497,7 @@ class Pricing {
   by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     (log || console.log)(`load prices: page №${step}`);
-    return utils.sleep(40)
+    return utils.sleep(100)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
@@ -14508,10 +14508,11 @@ class Pricing {
         limit,
         bookmark,
       }))
-      .then((res) => {
+      .then(async (res) => {
         step++;
         bookmark = res.bookmark;
         for (const doc of res.docs) {
+          await utils.sleep(20);
           this.by_doc(doc, cache);
         }
         return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache, price_type}) : 'done';
