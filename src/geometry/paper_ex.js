@@ -547,7 +547,7 @@ Object.defineProperties(paper.Path.prototype, {
    */
   rmin: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -559,7 +559,7 @@ Object.defineProperties(paper.Path.prototype, {
           max = curv;
         }
       }
-      return max === 0 ? 0 : 1 / max;
+      return (max === 0 ? 0 : 1 / max).round(2);
     }
   },
 
@@ -572,7 +572,7 @@ Object.defineProperties(paper.Path.prototype, {
    */
   rmax: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -584,7 +584,7 @@ Object.defineProperties(paper.Path.prototype, {
           min = curv;
         }
       }
-      return min === 0 ? 0 : 1 / min;
+      return (min === 0 ? 0 : 1 / min).round(2);
     }
   },
 
@@ -596,7 +596,7 @@ Object.defineProperties(paper.Path.prototype, {
    */
   ravg: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const b = this.firstSegment.point;
@@ -767,7 +767,7 @@ Object.defineProperties(paper.Point.prototype, {
         return 0;
       }
       const [dx, dy] = [(x1 - x2), (y1 - y2)];
-      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(3);
+      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(2);
     }
   },
 

@@ -1253,16 +1253,6 @@ set owner(v){this._setter('owner',v)}
 }
 $p.CatOrganization_bank_accounts = CatOrganization_bank_accounts;
 $p.cat.create('organization_bank_accounts');
-class CatWork_center_kinds extends CatObj{
-get applying(){return this._getter('applying')}
-set applying(v){this._setter('applying',v)}
-get available(){return this._getter('available')}
-set available(v){this._setter('available',v)}
-get predefined_name(){return this._getter('predefined_name')}
-set predefined_name(v){this._setter('predefined_name',v)}
-}
-$p.CatWork_center_kinds = CatWork_center_kinds;
-$p.cat.create('work_center_kinds');
 class CatProperty_values_hierarchy extends CatObj{
 get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
@@ -6920,6 +6910,16 @@ set value(v){this._setter('value',v)}
 }
 $p.CatValues_optionsValuesRow = CatValues_optionsValuesRow;
 $p.cat.create('values_options');
+class CatWork_center_kinds extends CatObj{
+get applying(){return this._getter('applying')}
+set applying(v){this._setter('applying',v)}
+get available(){return this._getter('available')}
+set available(v){this._setter('available',v)}
+get predefined_name(){return this._getter('predefined_name')}
+set predefined_name(v){this._setter('predefined_name',v)}
+}
+$p.CatWork_center_kinds = CatWork_center_kinds;
+$p.cat.create('work_center_kinds');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}

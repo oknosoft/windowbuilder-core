@@ -7796,7 +7796,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
   rmin: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -7808,12 +7808,12 @@ Object.defineProperties(paper.Path.prototype, {
           max = curv;
         }
       }
-      return max === 0 ? 0 : 1 / max;
+      return (max === 0 ? 0 : 1 / max).round(2);
     }
   },
   rmax: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -7825,12 +7825,12 @@ Object.defineProperties(paper.Path.prototype, {
           min = curv;
         }
       }
-      return min === 0 ? 0 : 1 / min;
+      return (min === 0 ? 0 : 1 / min).round(2);
     }
   },
   ravg: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const b = this.firstSegment.point;
@@ -7930,7 +7930,7 @@ Object.defineProperties(paper.Point.prototype, {
         return 0;
       }
       const [dx, dy] = [(x1 - x2), (y1 - y2)];
-      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(3);
+      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(2);
     }
   },
 	snap_to_angle: {
@@ -8673,9 +8673,15 @@ class ProfileItem extends GeneratrixElement {
   }
   set r(v) {
     const {_row, _attr} = this;
-    if(_row.r != v) {
+    if(typeof v !== 'number') {
+      v = parseFloat(v);
+    }
+    if(!v) {
+      v = 0;
+    }
+    if(!v || Math.abs(_row.r - v) > 0.2) {
       _attr._rays.clear();
-      _row.r = v;
+      _row.r = v.round(2);
       this.set_generatrix_radius();
       this.project.notify(this, 'update', {r: true, arc_h: true, arc_ccw: true});
     }
@@ -8712,7 +8718,10 @@ class ProfileItem extends GeneratrixElement {
   set arc_h(v) {
     const {_row, _attr, b, e, arc_h} = this;
     v = parseFloat(v);
-    if(arc_h != v) {
+    if(!v) {
+      v = 0;
+    }
+    if(!v || Math.abs(arc_h - v) > 0.2) {
       _attr._rays.clear();
       if(v < 0) {
         v = -v;
@@ -9045,7 +9054,7 @@ class ProfileItem extends GeneratrixElement {
     }
   }
   save_coordinates() {
-    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e}, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix} = this;
     if(!generatrix) {
       return;
     }
@@ -9062,9 +9071,8 @@ class ProfileItem extends GeneratrixElement {
       _row.r = 0;
     }
     else {
-      const {path} = this;
-      const r1 = path.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
-      const r2 = path.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
+      const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
+      const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
       _row.r = Math.max(r1, r2);
     }
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
@@ -12534,7 +12542,9 @@ class Scheme extends paper.Project {
   }
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    contour.save_coordinates(true);
+    if(!this._attr._loading) {
+      contour.save_coordinates(true);
+    }
     isBrowser && contour.refresh_prm_links();
     !layer && l_dimensions.redraw();
     for(const curr of contours) {
