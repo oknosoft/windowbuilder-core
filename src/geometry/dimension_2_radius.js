@@ -88,9 +88,9 @@ class DimensionRadius extends DimensionLineCustom {
       }
     }
     else {
-      const {path, _attr: {_corns}} = _attr.elm1;
-      const sub = _attr.p1 > _attr.elm1.length ? path.get_subpath(_corns[3], _corns[4]) : path.get_subpath(_corns[1], _corns[2])
-      children.text.content = `R${sub.ravg().round(0)}`;
+      const {rays, _attr: {_corns}} = _attr.elm1;
+      const sub = _attr.p1 > _attr.elm1.length ? rays.inner.get_subpath(_corns[3], _corns[4]) : rays.outer.get_subpath(_corns[1], _corns[2])
+      children.text.content = `R${sub.ravg().round()}`;
     }
 
     children.text.position = e.add(path.getTangentAt(0).multiply(consts.font_size * 1.4));
