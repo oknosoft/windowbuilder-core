@@ -271,7 +271,7 @@ class Pricing {
     // Рез = Новый Структура("КМарж, КМаржМин, КМаржВнутр, Скидка, СкидкаВнешн, НаценкаВнешн, ТипЦенСебестоимость, ТипЦенПрайс, ТипЦенВнутр,
     // 				|Формула, ФормулаПродажа, ФормулаВнутр, ФормулаВнешн",
     // 				1.9, 1.2, 1.5, 0, 10, 0, ТипЦенПоУмолчанию, ТипЦенПоУмолчанию, ТипЦенПоУмолчанию, "", "", "",);
-    const {utils, job_prm, enm, ireg, cat} = $p;
+    const {utils, job_prm, enm, ireg, cat, CatNom_prices_types} = $p;
     const empty_formula = cat.formulas.get();
     const empty_price_type = cat.nom_prices_types.get();
 
@@ -332,12 +332,18 @@ class Pricing {
     }
 
     // если для контрагента установлена индивидуальная наценка, подмешиваем её в prm
-    partner.extra_fields.find_rows({
-      property: job_prm.pricing.dealer_surcharge
-    }, (row) => {
+    partner.extra_fields.find_rows({property: job_prm.pricing.dealer_surcharge}, (row) => {
       const val = parseFloat(row.value);
       if(val){
         prm.price_type.extra_charge_external = val;
+      }
+      return false;
+    });
+
+    // если для контрагента задан индивидуальный тип цен продажи, подмешиваем его в prm
+    partner.extra_fields.find_rows({property: job_prm.pricing.partner_price_group}, (row) => {
+      if(row.value instanceof CatNom_prices_types){
+        prm.price_type.price_type_sale = row.value;
       }
       return false;
     });

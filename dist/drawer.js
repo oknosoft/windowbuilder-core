@@ -5852,7 +5852,7 @@ class DimensionRadius extends DimensionLineCustom {
     if(_attr.by_curve) {
       const curv = Math.abs(_attr.elm1.path.getCurvatureAt(_attr.p1));
       if(curv) {
-        children.text.content = `Rᶜ${(.5 / curv).round(0)}`;
+        children.text.content = `Rᶜ${(1 / curv).round(0)}`;
       }
     }
     else {
@@ -14585,7 +14585,7 @@ class Pricing {
     }
   }
   price_type(prm) {
-    const {utils, job_prm, enm, ireg, cat} = $p;
+    const {utils, job_prm, enm, ireg, cat, CatNom_prices_types} = $p;
     const empty_formula = cat.formulas.get();
     const empty_price_type = cat.nom_prices_types.get();
     prm.price_type = {
@@ -14635,12 +14635,16 @@ class Pricing {
         prm.price_type[key] = ares[0][key];
       });
     }
-    partner.extra_fields.find_rows({
-      property: job_prm.pricing.dealer_surcharge
-    }, (row) => {
+    partner.extra_fields.find_rows({property: job_prm.pricing.dealer_surcharge}, (row) => {
       const val = parseFloat(row.value);
       if(val){
         prm.price_type.extra_charge_external = val;
+      }
+      return false;
+    });
+    partner.extra_fields.find_rows({property: job_prm.pricing.partner_price_group}, (row) => {
+      if(row.value instanceof CatNom_prices_types){
+        prm.price_type.price_type_sale = row.value;
       }
       return false;
     });
