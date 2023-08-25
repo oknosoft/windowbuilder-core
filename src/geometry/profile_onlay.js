@@ -300,7 +300,7 @@ class Onlay extends ProfileItem {
       }
       
       for(const {sub_path} of glass.profiles) {
-        const np = sub_path.intersect_point(line);
+        const np = sub_path.intersect_point(line, point);
         const angle = np && Math.abs(np.subtract(other).angle - point.subtract(other).angle);
         if(np && (angle < consts.epsilon || Math.abs(angle - 360) < consts.epsilon)) {
           let distance = np.getDistance(point);
