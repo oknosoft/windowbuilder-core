@@ -1253,6 +1253,16 @@ set owner(v){this._setter('owner',v)}
 }
 $p.CatOrganization_bank_accounts = CatOrganization_bank_accounts;
 $p.cat.create('organization_bank_accounts');
+class CatWork_center_kinds extends CatObj{
+get applying(){return this._getter('applying')}
+set applying(v){this._setter('applying',v)}
+get available(){return this._getter('available')}
+set available(v){this._setter('available',v)}
+get predefined_name(){return this._getter('predefined_name')}
+set predefined_name(v){this._setter('predefined_name',v)}
+}
+$p.CatWork_center_kinds = CatWork_center_kinds;
+$p.cat.create('work_center_kinds');
 class CatProperty_values_hierarchy extends CatObj{
 get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
@@ -1749,6 +1759,8 @@ get no_partners(){return this._getter('no_partners')}
 set no_partners(v){this._setter('no_partners',v)}
 get no_divisions(){return this._getter('no_divisions')}
 set no_divisions(v){this._setter('no_divisions',v)}
+get filter(){return this._getter('filter')}
+set filter(v){this._setter('filter',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get organizations(){return this._getter_ts('organizations')}
@@ -2043,25 +2055,6 @@ set parent(v){this._setter('parent',v)}
 }
 $p.CatProperty_values = CatProperty_values;
 $p.cat.create('property_values');
-class CatDivisions extends CatObj{
-get main_project(){return this._getter('main_project')}
-set main_project(v){this._setter('main_project',v)}
-get sorting_field(){return this._getter('sorting_field')}
-set sorting_field(v){this._setter('sorting_field',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get extra_fields(){return this._getter_ts('extra_fields')}
-set extra_fields(v){this._setter_ts('extra_fields',v)}
-get keys(){return this._getter_ts('keys')}
-set keys(v){this._setter_ts('keys',v)}
-}
-$p.CatDivisions = CatDivisions;
-class CatDivisionsKeysRow extends TabularSectionRow{
-get acl_obj(){return this._getter('acl_obj')}
-set acl_obj(v){this._setter('acl_obj',v)}
-}
-$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
-$p.cat.create('divisions');
 class CatMeta_ids extends CatObj{
 get full_moniker(){return this._getter('full_moniker')}
 set full_moniker(v){this._setter('full_moniker',v)}
@@ -4995,6 +4988,25 @@ set clr(v){this._setter('clr',v)}
 }
 $p.CatColor_price_groupsExcludeRow = CatColor_price_groupsExcludeRow;
 $p.cat.create('color_price_groups');
+class CatDivisions extends CatObj{
+get main_project(){return this._getter('main_project')}
+set main_project(v){this._setter('main_project',v)}
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get extra_fields(){return this._getter_ts('extra_fields')}
+set extra_fields(v){this._setter_ts('extra_fields',v)}
+get keys(){return this._getter_ts('keys')}
+set keys(v){this._setter_ts('keys',v)}
+}
+$p.CatDivisions = CatDivisions;
+class CatDivisionsKeysRow extends TabularSectionRow{
+get acl_obj(){return this._getter('acl_obj')}
+set acl_obj(v){this._setter('acl_obj',v)}
+}
+$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
+$p.cat.create('divisions');
 class CatUsers extends CatObj{
 get invalid(){return this._getter('invalid')}
 set invalid(v){this._setter('invalid',v)}
@@ -6862,26 +6874,6 @@ set stage(v){this._setter('stage',v)}
 }
 $p.CatProduction_kindsStagesRow = CatProduction_kindsStagesRow;
 $p.cat.create('production_kinds');
-class CatLead_src extends CatObj{
-get type(){return this._getter('type')}
-set type(v){this._setter('type',v)}
-}
-$p.CatLead_src = CatLead_src;
-$p.cat.create('lead_src');
-class CatLeads extends CatObj{
-get date(){return this._getter('date')}
-set date(v){this._setter('date',v)}
-get origin(){return this._getter('origin')}
-set origin(v){this._setter('origin',v)}
-get responsible(){return this._getter('responsible')}
-set responsible(v){this._setter('responsible',v)}
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get dop(){return this._getter('dop')}
-set dop(v){this._setter('dop',v)}
-}
-$p.CatLeads = CatLeads;
-$p.cat.create('leads');
 class CatValues_options extends CatObj{
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
@@ -6910,16 +6902,26 @@ set value(v){this._setter('value',v)}
 }
 $p.CatValues_optionsValuesRow = CatValues_optionsValuesRow;
 $p.cat.create('values_options');
-class CatWork_center_kinds extends CatObj{
-get applying(){return this._getter('applying')}
-set applying(v){this._setter('applying',v)}
-get available(){return this._getter('available')}
-set available(v){this._setter('available',v)}
-get predefined_name(){return this._getter('predefined_name')}
-set predefined_name(v){this._setter('predefined_name',v)}
+class CatLead_src extends CatObj{
+get type(){return this._getter('type')}
+set type(v){this._setter('type',v)}
 }
-$p.CatWork_center_kinds = CatWork_center_kinds;
-$p.cat.create('work_center_kinds');
+$p.CatLead_src = CatLead_src;
+$p.cat.create('lead_src');
+class CatLeads extends CatObj{
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
+get origin(){return this._getter('origin')}
+set origin(v){this._setter('origin',v)}
+get responsible(){return this._getter('responsible')}
+set responsible(v){this._setter('responsible',v)}
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
+}
+$p.CatLeads = CatLeads;
+$p.cat.create('leads');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
