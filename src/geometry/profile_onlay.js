@@ -316,30 +316,31 @@ class Onlay extends ProfileItem {
             res.binded = true;
             return res;
           }
-
-          // затем, если не привязалось - к сегментам раскладок текущего заполнения
-          res.cnn_types = $p.enm.cnn_types.acn.t;
-          const ares = [];
-          for(let elm of glass.imposts){
-            if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
-              ares.push({
-                profile_point: res.profile_point,
-                profile: res.profile,
-                cnn_types: res.cnn_types,
-                point: res.point});
-            }
+        }
+      }
+      // затем, если не привязалось - к сегментам раскладок текущего заполнения
+      if(!res.point || res.distance > consts.sticking_l) {
+        res.cnn_types = $p.enm.cnn_types.acn.t;
+        const ares = [];
+        for(let elm of glass.imposts){
+          if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
+            ares.push({
+              profile_point: res.profile_point,
+              profile: res.profile,
+              cnn_types: res.cnn_types,
+              point: res.point});
           }
+        }
 
-          if(ares.length == 1){
+        if(ares.length == 1){
+          res._mixin(ares[0]);
+        }
+        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
+        else if(ares.length >= 2){
+          if(this.max_right_angle(ares)){
             res._mixin(ares[0]);
           }
-          // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
-          else if(ares.length >= 2){
-            if(this.max_right_angle(ares)){
-              res._mixin(ares[0]);
-            }
-            res.is_cut = true;
-          }
+          res.is_cut = true;
         }
       }
     }
