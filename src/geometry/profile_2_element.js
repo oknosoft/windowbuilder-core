@@ -473,7 +473,7 @@ class Profile extends ProfileItem {
    */
   region(num) {
     const {_attr, rays, layer: {_ox}, elm} = this;
-    const {cat: {cnns, inserts}, utils} = $p;
+    const {cat: {cnns, inserts}, utils, enm} = $p;
     const irow = _ox.inserts.find({cnstr: -elm, region: num});
     
     if(!irow) {
@@ -530,10 +530,20 @@ class Profile extends ProfileItem {
                   }
                 }
                 else if(prop !== 'cnn3' && proxy_point) {
-                  proxy_point.profile_point = cnn_point?.profile_point || '';
-                  proxy_point.cnn_types = cnn_point?.cnn_types;
-                  proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                    null, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
+                  
+                  const pregion = cnn_point?.profile?._attr?._ranges?.get(num);
+                  if(pregion) {
+                    proxy_point.profile_point = cnn_point?.profile_point || '';
+                    proxy_point.cnn_types = cnn_point?.cnn_types;
+                    proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
+                      null, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
+                  }
+                  else {
+                    proxy_point.profile = null;
+                    proxy_point.profile_point = '';
+                    proxy_point.cnn_types = enm.cnn_types.acn.i;
+                    proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
+                  }
                   cn[prop] = cnns.get();
                 }
               }
