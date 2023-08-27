@@ -1,0 +1,48 @@
+{
+  "name": "windowbuilder-core",
+  "version": "3.0.0",
+  "description": "Order dealer core library",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oknosoft/windowbuilder-core.git"
+  },
+  "engines": {
+    "node": ">=20.0",
+    "yarn": "^1.22"
+  },
+  "keywords": [
+    "metadata",
+    "order dealer",
+    "cad",
+    "crm",
+    "window builder",
+    "windows calculator"
+  ],
+  "author": "Evgeniy Malyarov <info@oknosoft.ru> (http://www.oknosoft.ru)",
+  "license": "SEE LICENSE IN LICENSE.en.md",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/oknosoft/windowbuilder/issues"
+  },
+  "homepage": "http://www.oknosoft.ru/zd/",
+  "dependencies": {
+    "metadata-core": "2.0.34-beta.1",
+    "metadata-pouchdb": "2.0.34-beta.1",
+    "paper-jsdom-canvas": "0.12.17"
+  },
+  "devDependencies": {
+    "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
+    "md5-file": "^5.0"
+  },
+  "packageManager": "^yarn@1.22",
+  "files": [
+    "dist/**",
+    "LICENSE",
+    "LICENSE.ru.md"
+  ],
+  "scripts": {
+    "meta:prebuild": "node scripts/meta.prebuild.js",
+    "meta:link": "node scripts/meta.link.js",
+    "jsdoc": "jsdoc -c jsdoc/conf.json"
+  }
+}
