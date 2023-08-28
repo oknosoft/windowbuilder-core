@@ -9396,6 +9396,15 @@ class ProfileItem extends GeneratrixElement {
       });
       for(const row of rm) {
         _owner.inserts.del(row);
+        const {region} = row;
+        if(region) {
+          _attr._ranges.delete(region);
+          _attr._ranges.delete(`cnns${region}`);
+          if(_attr.paths.get(region)) {
+            _attr.paths.get(region).remove();
+            _attr.paths.delete(region);
+          }
+        }
       }
       project.register_change();
       project._scope.eve.emit('set_inset', this);
@@ -10258,24 +10267,28 @@ ProfileItem.path_attr = {
   strokeWidth: 1,
   strokeScaling: false,
   onMouseEnter(event) {
-    const {fillColor, parent: {_attr}, project} = this;
-    if(project._attr._from_service || !fillColor) {
-      return;
+    if(this.isInserted()) {
+      const {fillColor, parent: {_attr}, project} = this;
+      if(project._attr._from_service || !fillColor) {
+        return;
+      }
+      _attr.fillColor = fillColor.clone();
+      const {red, green, blue, alpha} = fillColor;
+      fillColor.alpha = 0.86;
+      fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
+      fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
+      fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
     }
-    _attr.fillColor = fillColor.clone();
-    const {red, green, blue, alpha} = fillColor;
-    fillColor.alpha = 0.86;
-    fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
-    fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
-    fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
   },
   onMouseLeave(event) {
-    const {_attr, project} = this.parent;
-    if(project._attr._from_service) {
-      return;
+    if(this.isInserted()) {
+      const {_attr, project} = this.parent;
+      if(project._attr._from_service) {
+        return;
+      }
+      this.fillColor = _attr.fillColor;
+      delete _attr.fillColor;
     }
-    this.fillColor = _attr.fillColor;
-    delete _attr.fillColor;
   }
 };
 EditorInvisible.ProfileItem = ProfileItem;
@@ -10883,14 +10896,23 @@ class Profile extends ProfileItem {
               const proxy_point = __attr?._rays?.[prop === 'cnn1' ? 'b' : 'e'];
               if (!cn[prop] || cn[prop].empty()) {
                 const {row, cnn_point} = cn_row(prop, 0);
-                if(row) {
+                const pregion = cnn_point?.profile?._attr?._ranges?.get(num);
+                if(row && prop !== 'cnn3' && proxy_point && !pregion) {
+                  proxy_point.profile = null;
+                  proxy_point.profile_point = '';
+                  proxy_point.cnn_types = enm.cnn_types.acn.i;
+                  if(!proxy_point.cnn_types.includes(row.cnn.cnn_type)) {
+                    row.cnn = $p.cat.cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
+                  }
+                  proxy_point.cnn = row.cnn;
+                }
+                else if(row) {
                   cn[prop] = row.cnn;
                   if(proxy_point) {
                     proxy_point.cnn = row.cnn;
                   }
                 }
                 else if(prop !== 'cnn3' && proxy_point) {
-                  const pregion = cnn_point?.profile?._attr?._ranges?.get(num);
                   if(pregion) {
                     proxy_point.profile_point = cnn_point?.profile_point || '';
                     proxy_point.cnn_types = cnn_point?.cnn_types;
