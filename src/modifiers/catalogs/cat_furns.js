@@ -353,6 +353,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           prm_row.param.type.types.includes('cat.clrs') &&
           (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
           row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
+          row_spec.algorithm = null;
         }
       });
     }

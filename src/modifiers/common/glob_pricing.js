@@ -148,7 +148,7 @@ class Pricing {
     
     (log || console.log)(`load prices: page №${step}`);
 
-    return utils.sleep(100)
+    return utils.sleep(limit)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
@@ -163,7 +163,7 @@ class Pricing {
         step++;
         bookmark = res.bookmark;
         for (const doc of res.docs) {
-          await utils.sleep(20);
+          await utils.sleep(limit / 2);
           this.by_doc(doc, cache);
         }
         return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache, price_type}) : 'done';

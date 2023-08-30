@@ -14538,7 +14538,7 @@ class Pricing {
   by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     (log || console.log)(`load prices: page №${step}`);
-    return utils.sleep(100)
+    return utils.sleep(limit)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
@@ -14553,7 +14553,7 @@ class Pricing {
         step++;
         bookmark = res.bookmark;
         for (const doc of res.docs) {
-          await utils.sleep(20);
+          await utils.sleep(limit / 2);
           this.by_doc(doc, cache);
         }
         return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache, price_type}) : 'done';
@@ -16508,6 +16508,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           prm_row.param.type.types.includes('cat.clrs') &&
           (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
           row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
+          row_spec.algorithm = null;
         }
       });
     }
@@ -17765,14 +17766,17 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
     }
     region_spec({elm, len_angl, ox, spec, region, totqty0}) {
-      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
+      const {
+        enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}},
+        job_prm, products_building} = $p;
       const relm = elm.region(region);
-      const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
-      const belm = b?.profile?.region(region);
-      const eelm = e?.profile?.region(region);
-      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, belm, b.cnn_types, false, undefined, b)[0];
-      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, eelm, e.cnn_types, false, undefined, e)[0];
-      if(cnn1 && cnn2) {
+      let {cnn1, cnn2, nom, _row, rays} = relm;
+      const {b, e} = rays;
+      const belm = b?.profile === elm.rays.b.profile ? null : b?.profile;
+      const eelm = e?.profile === elm.rays.e.profile ? null : e?.profile;
+      cnn1 = b?.cnn;
+      cnn2 = e?.cnn;
+      if(cnn1 && !cnn1.empty() && cnn2 && !cnn2.empty()) {
         const row_cnn_prev = cnn1.main_row(relm);
         const row_cnn_next = cnn2.main_row(relm);
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
@@ -17819,8 +17823,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           );
           const len_angl = {
             angle: 0,
-            alp1: b?.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,
-            alp2: e?.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
+            alp1: belm ? belm.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+            alp2: eelm ? eelm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
             len: row_spec ? row_spec.len * 1000 : _row.len,
             art1: false,
             art2: true,
@@ -17834,6 +17838,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           len_angl.node = 'b';
           products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, belm);
         }
+      }
+      else {
+        elm.err_spec_row(job_prm.nom.cnn_node_error, `ряд №${region}, ${relm.nom.name}`, relm.inset);
       }
       this.calculate_spec({elm: relm, len_angl, ox, spec});
     }
