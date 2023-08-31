@@ -567,6 +567,11 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length){
             strip_path = rpath.exclude(strip_path);
             strip_path.fillColor = 'grey';
+            const old = paths.get(`s${row.region}`); 
+            if(old && old !== strip_path) {
+              old.remove();
+            }
+            paths.set(`s${row.region}`, strip_path);
           }
           if(row.region > 0) {
             strip_path.opacity = 0.08;
