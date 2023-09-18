@@ -12014,7 +12014,7 @@ class ProfileAdjoining extends BaseLine {
     return {elm: parent, row};
   }
   save_coordinates() {
-    super.save_coordinates();
+    ProfileItem.prototype.save_coordinates.call(this);
     const {_row, parent} = this;
     const {row} = this.selected_cnn_ii();
     _row.parent = parent.elm;
@@ -12029,14 +12029,40 @@ class ProfileAdjoining extends BaseLine {
       }
     }
   }
+  get length() {
+    return Object.getOwnPropertyDescriptor(ProfileItem.prototype, 'length').get.call(this);
+  }
+  corns(n) {
+    const {_attr} = this;
+    if([1, 4, 5, 7].includes(n)) {
+      return _attr._corns[1];
+    }
+    else {
+      return _attr._corns[2];
+    }
+  }
   redraw(mode) {
-    const {generatrix, path, children} = this;
+    const {cat: {cnns}, enm: {cnn_types}} = $p;
+    const {generatrix, path, children, _attr, _row, rays, project} = this;
     for(const child of [].concat(children)) {
       if(child !== generatrix && child !== path) {
         child.remove();
       }
     }
     const {length} = generatrix;
+    if(!rays.b.cnn) {
+      const elm2 = {elm: 0, _row};
+      rays.b.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+    }
+    if(!rays.e.cnn) {
+      const elm2 = {elm: 0, _row};
+      rays.e.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+    }    
+    _attr._corns.length = 0;
+    const szb = rays.b.cnn?.size(this) || 0;
+    const sze = rays.e.cnn?.size(this) || 0;
+    _attr._corns[1] = this.b.add(generatrix.getTangentAt(0).negate().normalize(szb));
+    _attr._corns[2] = this.e.add(generatrix.getTangentAt(length).normalize(sze));    
     for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
       const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
