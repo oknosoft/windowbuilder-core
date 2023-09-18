@@ -5351,6 +5351,8 @@ get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
 set editor(v){this._setter('editor',v)}
+get branch(){return this._getter('branch')}
+set branch(v){this._setter('branch',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get constructions(){return this._getter_ts('constructions')}
@@ -7142,6 +7144,8 @@ get quantity(){return this._getter('quantity')}
 set quantity(v){this._setter('quantity',v)}
 get cell(){return this._getter('cell')}
 set cell(v){this._setter('cell',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.DocWork_centers_taskCutsRow = DocWork_centers_taskCutsRow;
 class DocWork_centers_taskCuttingRow extends TabularSectionRow{
@@ -7255,6 +7259,8 @@ get lead(){return this._getter('lead')}
 set lead(v){this._setter('lead',v)}
 get approval(){return this._getter('approval')}
 set approval(v){this._setter('approval',v)}
+get branch(){return this._getter('branch')}
+set branch(v){this._setter('branch',v)}
 get production(){return this._getter_ts('production')}
 set production(v){this._setter_ts('production',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
@@ -8378,6 +8384,8 @@ get amount(){return this._getter('amount')}
 set amount(v){this._setter('amount',v)}
 get amount_marged(){return this._getter('amount_marged')}
 set amount_marged(v){this._setter('amount_marged',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.RepMaterials_demandSpecificationRow = RepMaterials_demandSpecificationRow;
 $p.rep.create('materials_demand');
