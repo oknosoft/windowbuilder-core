@@ -512,10 +512,7 @@ class ProductsBuilding {
       elm.addls.forEach(base_spec_profile);
 
       // если у профиля есть примыкания, добавляем их спецификации
-      elm.adjoinings.forEach((elm) => {
-        elm.inset.calculate_spec({elm, ox, spec});
-        cnn_spec_nearest(elm);
-      });
+      elm.adjoinings.forEach(base_spec_profile);
 
       // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации

@@ -15213,10 +15213,7 @@ class ProductsBuilding {
       }
       cnn_spec_nearest(elm);
       elm.addls.forEach(base_spec_profile);
-      elm.adjoinings.forEach((elm) => {
-        elm.inset.calculate_spec({elm, ox, spec});
-        cnn_spec_nearest(elm);
-      });
+      elm.adjoinings.forEach(base_spec_profile);
       const spec_tmp = spec;
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
         if(inset.is_order_row_prod({ox, elm})) {
