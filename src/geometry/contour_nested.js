@@ -374,7 +374,16 @@ class ContourNested extends Contour {
    */
   redraw() {
 
-    const {visible, hidden, _attr, profiles} = this;
+    const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
+    const reflect = _reflected && !flipped || !_reflected && flipped;
+    
+    function sendToBack(elm) {
+      elm.sendToBack();
+      elm.l_visualization._by_spec.clear();
+      for(const chld of elm.contours) {
+        sendToBack(chld);
+      }
+    }
     
     if(!visible || hidden) {
       return;
@@ -400,6 +409,16 @@ class ContourNested extends Contour {
     // затем - вложенное изделие
     for(const elm of this.contours) {
       elm.redraw();
+    }
+    
+    if(reflect) {
+      this.scaling = [-1, 1];
+      sendToBack(this);
+    }
+    else {
+      if(this.scaling.x < 0) {
+        this.scaling = [1, 1];
+      }
     }
   }
 

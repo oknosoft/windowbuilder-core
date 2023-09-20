@@ -2613,9 +2613,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     const left = this.children.filter((elm) => !children.includes(elm));
     for(const elm of children) {
       elm.redraw();
-      for(const lelm of left) {
-        if(lelm.isAbove(elm)) {
-          lelm.insertBelow(elm);
+      if(!elm.flipped) {
+        for(const lelm of left) {
+          if(lelm.isAbove(elm)) {
+            lelm.insertBelow(elm);
+          }
         }
       }
     }
@@ -3228,17 +3230,20 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {boolean}
    */
   get flipped() {
-    const {flipped} = this._row;
+    const {_row: {flipped}} = this;
     if(!flipped) {
       // TODO: алгоритм расчёта перевёртутости по системе и уровню
-      const {sys, level} = this;
+      const {sys, layer, level} = this;
       const auto_flipped = sys._extra('auto_flipped');
+      if(!auto_flipped && layer) {
+        return layer.flipped;
+      }
       return Boolean(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level));
     }
     return flipped > 0;
   }
   set flipped(v) {
-    this._row.flipped = v;
+    this._row.flipped = typeof v !== 'number' && v ? 1 : v;
     this.project.register_change(true);
   }
 
@@ -3409,10 +3414,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
   }
-
+  
   apply_mirror() {
     
-    const {l_visualization, profiles, contours, project: {_attr}} = this;
+    const {l_visualization, profiles, contours, project: {_attr}, flipped} = this;
     
     // обновляем визуализацию
     this.draw_visualization();
@@ -3436,7 +3441,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     for(const layer of this.contours) {
       layer.apply_mirror();
-      if(_attr._reflected) {
+      if(_attr._reflected || flipped) {
         layer.sendToBack();
       }
       else {

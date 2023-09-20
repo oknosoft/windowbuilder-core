@@ -1362,11 +1362,11 @@ class BuilderElement extends paper.Group {
   }
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
-    const {_attr: {_reflected}, builder_props} = this.project;
+    const {project: {_attr, builder_props}, layer}  = this;
     if(builder_props.bw) {
       return new paper.Color(1, 1, 1, 0.92);
     }
-    if(_reflected){
+    if(_attr._reflected && !layer.flipped || !_attr._reflected && layer.flipped){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
@@ -3420,9 +3420,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     const left = this.children.filter((elm) => !children.includes(elm));
     for(const elm of children) {
       elm.redraw();
-      for(const lelm of left) {
-        if(lelm.isAbove(elm)) {
-          lelm.insertBelow(elm);
+      if(!elm.flipped) {
+        for(const lelm of left) {
+          if(lelm.isAbove(elm)) {
+            lelm.insertBelow(elm);
+          }
         }
       }
     }
@@ -3863,16 +3865,19 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.dop = {angle3d: v};
   }
   get flipped() {
-    const {flipped} = this._row;
+    const {_row: {flipped}} = this;
     if(!flipped) {
-      const {sys, level} = this;
+      const {sys, layer, level} = this;
       const auto_flipped = sys._extra('auto_flipped');
+      if(!auto_flipped && layer) {
+        return layer.flipped;
+      }
       return Boolean(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level));
     }
     return flipped > 0;
   }
   set flipped(v) {
-    this._row.flipped = v;
+    this._row.flipped = typeof v !== 'number' && v ? 1 : v;
     this.project.register_change(true);
   }
   get side_count() {
@@ -3991,7 +3996,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
   apply_mirror() {
-    const {l_visualization, profiles, contours, project: {_attr}} = this;
+    const {l_visualization, profiles, contours, project: {_attr}, flipped} = this;
     this.draw_visualization();
     for(const profile of this.profiles) {
       const {clr} = profile;
@@ -4007,7 +4012,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     for(const layer of this.contours) {
       layer.apply_mirror();
-      if(_attr._reflected) {
+      if(_attr._reflected || flipped) {
         layer.sendToBack();
       }
       else {
@@ -4336,7 +4341,15 @@ class ContourNested extends Contour {
     this.contours.forEach((contour) => contour.on_sys_changed());
   }
   redraw() {
-    const {visible, hidden, _attr, profiles} = this;
+    const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
+    const reflect = _reflected && !flipped || !_reflected && flipped;
+    function sendToBack(elm) {
+      elm.sendToBack();
+      elm.l_visualization._by_spec.clear();
+      for(const chld of elm.contours) {
+        sendToBack(chld);
+      }
+    }
     if(!visible || hidden) {
       return;
     }
@@ -4355,6 +4368,15 @@ class ContourNested extends Contour {
     }
     for(const elm of this.contours) {
       elm.redraw();
+    }
+    if(reflect) {
+      this.scaling = [-1, 1];
+      sendToBack(this);
+    }
+    else {
+      if(this.scaling.x < 0) {
+        this.scaling = [1, 1];
+      }
     }
   }
   remove() {

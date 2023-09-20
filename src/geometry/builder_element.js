@@ -911,13 +911,13 @@ class BuilderElement extends paper.Group {
 
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
-    const {_attr: {_reflected}, builder_props} = this.project;
+    const {project: {_attr, builder_props}, layer}  = this;
     
     if(builder_props.bw) {
       return new paper.Color(1, 1, 1, 0.92);
     }
 
-    if(_reflected){
+    if(_attr._reflected && !layer.flipped || !_attr._reflected && layer.flipped){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
