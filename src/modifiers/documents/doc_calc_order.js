@@ -692,6 +692,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return branch;
   }
+  set branch(v) {
+    
+  }
 
   /**
    * Дата прайса с учётом константы valid_days (Счет действителен N дней)

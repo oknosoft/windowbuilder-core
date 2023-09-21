@@ -19010,6 +19010,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return branch;
   }
+  set branch(v) {
+  }
   get price_date() {
     const {utils, job_prm: {pricing}} = $p;
     const {date} = this;
