@@ -1983,14 +1983,14 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_visualization(rows) {
 
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {inner, outer} = $p.enm.sketch_view;
 
     l_visualization._by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    const hide_by_spec = !builder_props.visualization;
+    const hide_by_spec = !builder_props.visualization || flipped;
     if(!rows && !hide_by_spec) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => {
@@ -3244,7 +3244,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set flipped(v) {
     this._row.flipped = typeof v !== 'number' && v ? 1 : v;
-    this.project.register_change(true);
+    this.redraw();
+    //this.project.register_change(true);
   }
 
   /**

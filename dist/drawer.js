@@ -589,6 +589,20 @@ class ToolElement extends paper.Tool {
   }
 };
 EditorInvisible.ToolElement = ToolElement;
+(() => {
+  function getZoom() {
+    const scaling = this._decompose().scaling;
+    return (Math.abs(scaling.x) + Math.abs(scaling.y)) / 2;
+  }
+  const {prototype} = paper.View;
+  prototype.getZoom = getZoom
+  const setZoom = Object.getOwnPropertyDescriptor(prototype, 'zoom').set;
+  delete prototype.zoom;
+  Object.defineProperty(prototype, 'zoom', {
+    get: getZoom,
+    set: setZoom,
+  })  
+})();
 const AbstractFilling = (superclass) => class extends superclass {
   is_pos(pos) {
     if(this.project.contours.count == 1 || this.parent){
@@ -2959,11 +2973,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows) {
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {inner, outer} = $p.enm.sketch_view;
     l_visualization._by_spec.removeChildren();
-    const hide_by_spec = !builder_props.visualization;
+    const hide_by_spec = !builder_props.visualization || flipped;
     if(!rows && !hide_by_spec) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => {
@@ -3878,7 +3892,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set flipped(v) {
     this._row.flipped = typeof v !== 'number' && v ? 1 : v;
-    this.project.register_change(true);
+    this.redraw();
   }
   get side_count() {
     const {Импост} = $p.enm.elm_types;
@@ -4343,9 +4357,9 @@ class ContourNested extends Contour {
   redraw() {
     const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
     const reflect = _reflected && !flipped || !_reflected && flipped;
+    this.scaling = [1, 1];
     function sendToBack(elm) {
       elm.sendToBack();
-      elm.l_visualization._by_spec.clear();
       for(const chld of elm.contours) {
         sendToBack(chld);
       }
@@ -4372,11 +4386,6 @@ class ContourNested extends Contour {
     if(reflect) {
       this.scaling = [-1, 1];
       sendToBack(this);
-    }
-    else {
-      if(this.scaling.x < 0) {
-        this.scaling = [1, 1];
-      }
     }
   }
   remove() {
@@ -8235,13 +8244,20 @@ class CnnPoint {
         if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) !== outer) {
           this._profile = elm;
           this.profile_point = node;
-          this._row = parent.ox.cnn_elmnts.add({
-            elm1: parent.elm,
-            node1: this.node,
-            elm2: elm.elm,
-            node2: node,
-            cnn,
-          });
+          const _row = parent.ox.cnn_elmnts.find({elm1: parent.elm, node1: this.node, elm2: elm.elm, node2: node});
+          if(_row) {
+            this._row = _row;
+            _row.cnn = cnn;
+          }
+          else {
+            this._row = parent.ox.cnn_elmnts.add({
+              elm1: parent.elm,
+              node1: this.node,
+              elm2: elm.elm,
+              node2: node,
+              cnn,
+            });
+          }
           return;
         }
       }
@@ -15181,10 +15197,10 @@ class ProductsBuilding {
         const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
         let {alp1, alp2} = _row;
         if(acmethod_prev == s2 || acmethod_prev == s1) {
-          alp1 = prev.generatrix.angle_between(elm.generatrix, b.point);
+          alp1 = prev?.generatrix?.angle_between(elm.generatrix, b.point);
         }
         if(acmethod_next == s2 || acmethod_next == s1) {
-          alp2 = elm.generatrix.angle_between(next.generatrix, e.point);
+          alp2 = elm.generatrix.angle_between(next?.generatrix, e.point);
         }
         if([1, 3].includes(inset.flipped)) {
           alp1 = 180 - alp1;
