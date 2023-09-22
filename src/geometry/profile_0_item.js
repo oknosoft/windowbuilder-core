@@ -295,13 +295,20 @@ class CnnPoint {
         if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) !== outer) {
           this._profile = elm;
           this.profile_point = node;
-          this._row = parent.ox.cnn_elmnts.add({
-            elm1: parent.elm,
-            node1: this.node,
-            elm2: elm.elm,
-            node2: node,
-            cnn,
-          });
+          const _row = parent.ox.cnn_elmnts.find({elm1: parent.elm, node1: this.node, elm2: elm.elm, node2: node});
+          if(_row) {
+            this._row = _row;
+            _row.cnn = cnn;
+          }
+          else {
+            this._row = parent.ox.cnn_elmnts.add({
+              elm1: parent.elm,
+              node1: this.node,
+              elm2: elm.elm,
+              node2: node,
+              cnn,
+            });
+          }
           return;
         }
       }
