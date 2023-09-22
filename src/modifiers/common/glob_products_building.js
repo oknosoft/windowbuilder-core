@@ -442,10 +442,10 @@ class ProductsBuilding {
         const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
         let {alp1, alp2} = _row;
         if(acmethod_prev == s2 || acmethod_prev == s1) {
-          alp1 = prev.generatrix.angle_between(elm.generatrix, b.point);
+          alp1 = prev?.generatrix?.angle_between(elm.generatrix, b.point);
         }
         if(acmethod_next == s2 || acmethod_next == s1) {
-          alp2 = elm.generatrix.angle_between(next.generatrix, e.point);
+          alp2 = elm.generatrix.angle_between(next?.generatrix, e.point);
         }
         if([1, 3].includes(inset.flipped)) {
           alp1 = 180 - alp1;
