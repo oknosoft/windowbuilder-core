@@ -1376,11 +1376,14 @@ class BuilderElement extends paper.Group {
   }
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
-    const {project: {_attr, builder_props}, layer}  = this;
+    let {project: {_attr, builder_props}, layer}  = this;
     if(builder_props.bw) {
       return new paper.Color(1, 1, 1, 0.92);
     }
-    if(_attr._reflected && !layer.flipped || !_attr._reflected && layer.flipped){
+    if(!layer) {
+      layer = this.project.activeLayer;
+    }
+    if(_attr._reflected && !layer?.flipped || !_attr._reflected && layer?.flipped){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
@@ -4357,7 +4360,7 @@ class ContourNested extends Contour {
   redraw() {
     const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
     const reflect = _reflected && !flipped || !_reflected && flipped;
-    this.scaling = [1, 1];
+    this.content.scaling = [1, 1];
     function sendToBack(elm) {
       elm.sendToBack();
       for(const chld of elm.contours) {
@@ -4384,7 +4387,7 @@ class ContourNested extends Contour {
       elm.redraw();
     }
     if(reflect) {
-      this.scaling = [-1, 1];
+      this.content.scaling = [-1, 1];
       sendToBack(this);
     }
   }

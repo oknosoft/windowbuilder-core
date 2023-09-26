@@ -376,7 +376,7 @@ class ContourNested extends Contour {
 
     const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
     const reflect = _reflected && !flipped || !_reflected && flipped;
-    this.scaling = [1, 1];
+    this.content.scaling = [1, 1];
     
     function sendToBack(elm) {
       elm.sendToBack();
@@ -412,7 +412,7 @@ class ContourNested extends Contour {
     }
     
     if(reflect) {
-      this.scaling = [-1, 1];
+      this.content.scaling = [-1, 1];
       sendToBack(this);
     }
   }
