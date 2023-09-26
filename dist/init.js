@@ -27,6 +27,7 @@ $p.enm.create('sketch_view');
 $p.enm.create('debit_credit_kinds');
 $p.enm.create('contract_kinds');
 $p.enm.create('inventory_kinds');
+$p.enm.create('elm_visualization');
 $p.enm.create('predefined_formulas');
 $p.enm.create('text_aligns');
 $p.enm.create('obj_delivery_states');
