@@ -1091,7 +1091,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       const next = (index == ubound) ? res[0] : res[index + 1];
       const b = sub_path.intersect_point(prev.sub_path.equidistant(size), curr.b, true);
       const e = sub_path.intersect_point(next.sub_path.equidistant(size), curr.e, true);
-      if (b && e) {
+      if (b && e && !b.equals(e)) {
         sub_path = sub_path.get_subpath(b, e);
       }
       return {
