@@ -1985,18 +1985,18 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
-    const {inner, outer} = $p.enm.sketch_view;
+    const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
 
     l_visualization._by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    const hide_by_spec = !builder_props.visualization || flipped;
+    const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => {
         const {sketch_view} = row.nom.visualization; 
-        if((_attr._reflected && !sketch_view.find({kind: outer})) ||
-          (!_attr._reflected && sketch_view.count() && !sketch_view.find({kind: inner}))) {
+        if((_attr._reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
+          (!_attr._reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
           return;
         }
         rows.push(row);
@@ -2049,68 +2049,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // подписи профилей
-    if(builder_props.articles) {
-      this.draw_articles(profiles, builder_props.articles);
-    }
     if(builder_props.glass_numbers) {
       this.draw_glass_numbers();
     }
     
-
     // перерисовываем вложенные контуры
     for(const contour of contours){
       contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
     }
 
-  }
-
-  /**
-   * Подписи профилей в отдельном методе
-   * @param {Array.<Profile>} profiles
-   * @param {Number} articles
-   */
-  draw_articles(profiles, articles = 3) {
-    const {l_visualization} = this;
-    for(const profile of profiles) {
-      const {rays: {outer}, sizeb, inset, nom} = profile;
-      const p0 = outer.getNearestPoint(profile.corns(1));
-      const offset = outer.getOffsetOf(p0) + 80;
-      const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
-      const tangent = outer.getTangentAt(offset);
-
-      let content = '→ ';
-      switch (articles) {
-        case 1:
-          content += profile.elm.toFixed();
-          break;
-        case 2:
-          content += inset.article || inset.name;
-          break;
-        case 3:
-          content += nom.article || nom.name;
-          break;
-        case 4:
-          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;
-          break;
-        case 5:
-          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
-          break;
-      }
-
-      const text = new paper.PointText({
-        parent: l_visualization._by_spec,
-        guide: true,
-        //justification: 'left',
-        fillColor: 'darkblue',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size,
-        content,
-        position,
-      });
-      const {width} = text.bounds;
-      text.rotate(tangent.angle);
-      text.translate(tangent.multiply(width / 2));
-    }
   }
 
   /**

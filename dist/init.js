@@ -1230,30 +1230,6 @@ set owner(v){this._setter('owner',v)}
 }
 $p.CatPartner_bank_accounts = CatPartner_bank_accounts;
 $p.cat.create('partner_bank_accounts');
-class CatOrganization_bank_accounts extends CatObj{
-get bank(){return this._getter('bank')}
-set bank(v){this._setter('bank',v)}
-get bank_bic(){return this._getter('bank_bic')}
-set bank_bic(v){this._setter('bank_bic',v)}
-get funds_currency(){return this._getter('funds_currency')}
-set funds_currency(v){this._setter('funds_currency',v)}
-get account_number(){return this._getter('account_number')}
-set account_number(v){this._setter('account_number',v)}
-get settlements_bank(){return this._getter('settlements_bank')}
-set settlements_bank(v){this._setter('settlements_bank',v)}
-get settlements_bank_bic(){return this._getter('settlements_bank_bic')}
-set settlements_bank_bic(v){this._setter('settlements_bank_bic',v)}
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get captured(){return this._getter('captured')}
-set captured(v){this._setter('captured',v)}
-get editor(){return this._getter('editor')}
-set editor(v){this._setter('editor',v)}
-get owner(){return this._getter('owner')}
-set owner(v){this._setter('owner',v)}
-}
-$p.CatOrganization_bank_accounts = CatOrganization_bank_accounts;
-$p.cat.create('organization_bank_accounts');
 class CatWork_center_kinds extends CatObj{
 get applying(){return this._getter('applying')}
 set applying(v){this._setter('applying',v)}
@@ -2056,6 +2032,23 @@ set parent(v){this._setter('parent',v)}
 }
 $p.CatProperty_values = CatProperty_values;
 $p.cat.create('property_values');
+class CatDivisions extends CatObj{
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get extra_fields(){return this._getter_ts('extra_fields')}
+set extra_fields(v){this._setter_ts('extra_fields',v)}
+get keys(){return this._getter_ts('keys')}
+set keys(v){this._setter_ts('keys',v)}
+}
+$p.CatDivisions = CatDivisions;
+class CatDivisionsKeysRow extends TabularSectionRow{
+get acl_obj(){return this._getter('acl_obj')}
+set acl_obj(v){this._setter('acl_obj',v)}
+}
+$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
+$p.cat.create('divisions');
 class CatMeta_ids extends CatObj{
 get full_moniker(){return this._getter('full_moniker')}
 set full_moniker(v){this._setter('full_moniker',v)}
@@ -4989,25 +4982,6 @@ set clr(v){this._setter('clr',v)}
 }
 $p.CatColor_price_groupsExcludeRow = CatColor_price_groupsExcludeRow;
 $p.cat.create('color_price_groups');
-class CatDivisions extends CatObj{
-get main_project(){return this._getter('main_project')}
-set main_project(v){this._setter('main_project',v)}
-get sorting_field(){return this._getter('sorting_field')}
-set sorting_field(v){this._setter('sorting_field',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get extra_fields(){return this._getter_ts('extra_fields')}
-set extra_fields(v){this._setter_ts('extra_fields',v)}
-get keys(){return this._getter_ts('keys')}
-set keys(v){this._setter_ts('keys',v)}
-}
-$p.CatDivisions = CatDivisions;
-class CatDivisionsKeysRow extends TabularSectionRow{
-get acl_obj(){return this._getter('acl_obj')}
-set acl_obj(v){this._setter('acl_obj',v)}
-}
-$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
-$p.cat.create('divisions');
 class CatUsers extends CatObj{
 get invalid(){return this._getter('invalid')}
 set invalid(v){this._setter('invalid',v)}
@@ -6925,6 +6899,18 @@ set dop(v){this._setter('dop',v)}
 }
 $p.CatLeads = CatLeads;
 $p.cat.create('leads');
+class CatAccounts extends CatObj{
+get prefix(){return this._getter('prefix')}
+set prefix(v){this._setter('prefix',v)}
+get push_only(){return this._getter('push_only')}
+set push_only(v){this._setter('push_only',v)}
+get ips(){return this._getter('ips')}
+set ips(v){this._setter('ips',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+}
+$p.CatAccounts = CatAccounts;
+$p.cat.create('accounts');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -7972,6 +7958,26 @@ set y(v){this._setter('y',v)}
 }
 $p.DpBuilder_coordinatesCoordinatesRow = DpBuilder_coordinatesCoordinatesRow;
 $p.dp.create('builder_coordinates');
+class DpBuilder_pen extends DataProcessorObj{
+get elm_type(){return this._getter('elm_type')}
+set elm_type(v){this._setter('elm_type',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
+get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+set clr(v){this._setter('clr',v)}
+get bind_generatrix(){return this._getter('bind_generatrix')}
+set bind_generatrix(v){this._setter('bind_generatrix',v)}
+get bind_node(){return this._getter('bind_node')}
+set bind_node(v){this._setter('bind_node',v)}
+get bind_sys(){return this._getter('bind_sys')}
+set bind_sys(v){this._setter('bind_sys',v)}
+get grid(){return this._getter('grid')}
+set grid(v){this._setter('grid',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+}
+$p.DpBuilder_pen = DpBuilder_pen;
+$p.dp.create('builder_pen');
 class DpBuilder_price extends DataProcessorObj{
 get nom(){return this._getter('nom')}
 set nom(v){this._setter('nom',v)}
@@ -8215,6 +8221,28 @@ set sys(v){this._setter('sys',v)}
 }
 $p.DpBuyers_orderSys_profileRow = DpBuyers_orderSys_profileRow;
 $p.dp.create('buyers_order');
+class DpBuilder_text extends DataProcessorObj{
+get text(){return this._getter('text')}
+set text(v){this._setter('text',v)}
+get font_family(){return this._getter('font_family')}
+set font_family(v){this._setter('font_family',v)}
+get bold(){return this._getter('bold')}
+set bold(v){this._setter('bold',v)}
+get font_size(){return this._getter('font_size')}
+set font_size(v){this._setter('font_size',v)}
+get angle(){return this._getter('angle')}
+set angle(v){this._setter('angle',v)}
+get align(){return this._getter('align')}
+set align(v){this._setter('align',v)}
+get clr(){return this._getter('clr')}
+set clr(v){this._setter('clr',v)}
+get x(){return this._getter('x')}
+set x(v){this._setter('x',v)}
+get y(){return this._getter('y')}
+set y(v){this._setter('y',v)}
+}
+$p.DpBuilder_text = DpBuilder_text;
+$p.dp.create('builder_text');
 class DpBuilder_lay_impost extends DataProcessorObj{
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
@@ -8258,48 +8286,6 @@ set changed(v){this._setter('changed',v)}
 }
 $p.DpBuilder_lay_impostSizesRow = DpBuilder_lay_impostSizesRow;
 $p.dp.create('builder_lay_impost');
-class DpBuilder_pen extends DataProcessorObj{
-get elm_type(){return this._getter('elm_type')}
-set elm_type(v){this._setter('elm_type',v)}
-get inset(){return this._getter('inset')}
-set inset(v){this._setter('inset',v)}
-get clr(){return $p.cat.clrs.getter(this._obj.clr)}
-set clr(v){this._setter('clr',v)}
-get bind_generatrix(){return this._getter('bind_generatrix')}
-set bind_generatrix(v){this._setter('bind_generatrix',v)}
-get bind_node(){return this._getter('bind_node')}
-set bind_node(v){this._setter('bind_node',v)}
-get bind_sys(){return this._getter('bind_sys')}
-set bind_sys(v){this._setter('bind_sys',v)}
-get grid(){return this._getter('grid')}
-set grid(v){this._setter('grid',v)}
-get region(){return this._getter('region')}
-set region(v){this._setter('region',v)}
-}
-$p.DpBuilder_pen = DpBuilder_pen;
-$p.dp.create('builder_pen');
-class DpBuilder_text extends DataProcessorObj{
-get text(){return this._getter('text')}
-set text(v){this._setter('text',v)}
-get font_family(){return this._getter('font_family')}
-set font_family(v){this._setter('font_family',v)}
-get bold(){return this._getter('bold')}
-set bold(v){this._setter('bold',v)}
-get font_size(){return this._getter('font_size')}
-set font_size(v){this._setter('font_size',v)}
-get angle(){return this._getter('angle')}
-set angle(v){this._setter('angle',v)}
-get align(){return this._getter('align')}
-set align(v){this._setter('align',v)}
-get clr(){return this._getter('clr')}
-set clr(v){this._setter('clr',v)}
-get x(){return this._getter('x')}
-set x(v){this._setter('x',v)}
-get y(){return this._getter('y')}
-set y(v){this._setter('y',v)}
-}
-$p.DpBuilder_text = DpBuilder_text;
-$p.dp.create('builder_text');
 class RepMaterials_demand extends DataProcessorObj{
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
