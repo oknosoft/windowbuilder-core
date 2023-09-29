@@ -1401,7 +1401,10 @@ class Scheme extends paper.Project {
       }
 
       return this.load(ox, from_service)
-        .then(() => ox._data._modified = true);
+        .then(() => {
+          ox._data._modified = true;
+          this.notify(this, 'scheme_changed');
+        });
 
     };
 
@@ -2171,30 +2174,16 @@ class Scheme extends paper.Project {
    * @param animate {boolean} признак выполнять ли анимацию зеркалирования
    * @return {boolean}
    */
-  async mirror(v, animate) {
+  async mirror(v) {
     const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
-    if(_from_service) {
-      animate = false;
-    }
     v = Boolean(v);
     if(v !== Boolean(_reflected)) {
-      const {utils} = $p;
-      const {scaling} = view._decompose();
-      if(animate) {
-        for(let i=0.8; i>0; i-=0.3) {
-          view.scaling = [scaling.x * i, scaling.y];
-          await utils.sleep(30);
-        }
-      }
+      const {scaling} = view;
       view.scaling = [-scaling.x, scaling.y];
-      for(const txt of this.getItems({class: paper.PointText})) {
-        const {scaling} = txt._decompose();
-        txt.scaling = [-scaling.x, scaling.y];
-      }
       _attr._reflected = v;
       for(const layer of this.contours) {
         layer.apply_mirror();
@@ -2205,6 +2194,10 @@ class Scheme extends paper.Project {
           profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
         }
       }
+      for(const txt of this.getItems({class: paper.PointText})) {
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
+      }
       if(v) {
         this._scope.select_tool?.('pan');
       }
@@ -2212,6 +2205,7 @@ class Scheme extends paper.Project {
         this.register_change(true);
       }
     }
+    this.zoom_fit();
     return _attr._reflected;
   }
 

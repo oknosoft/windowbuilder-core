@@ -1986,6 +1986,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
+    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
 
     l_visualization._by_spec.removeChildren();
 
@@ -1995,8 +1996,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => {
         const {sketch_view} = row.nom.visualization; 
-        if((_attr._reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
-          (!_attr._reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
+        if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
+          (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
           return;
         }
         rows.push(row);
@@ -2011,6 +2012,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           offset: this.len * 1000,
           offset0: this.width * 1000 * (this.alp1 || 1),
           clr: this.clr,
+          reflected,
         });
         return true;
       }
@@ -2038,6 +2040,7 @@ class Contour extends AbstractFilling(paper.Layer) {
                 layer: l_visualization,
                 offset: [row.len * 1000, row.width * 1000],
                 clr: row.clr,
+                reflected,
               });
               return true;
             }

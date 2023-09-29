@@ -413,7 +413,7 @@ class ContourNested extends Contour {
     
     if(reflect) {
       this.content.scaling = [-1, 1];
-      sendToBack(this);
+      sendToBack(this.content);
     }
   }
 
