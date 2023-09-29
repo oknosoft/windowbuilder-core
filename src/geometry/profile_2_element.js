@@ -690,6 +690,102 @@ class Profile extends ProfileItem {
     }
     return _attr._ranges.get(num);
   }
+
+  /**
+   * Подписи профилей в отдельном методе
+   * @return {Profile}
+   */
+  draw_articles() {
+    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, sizeb, inset, nom} = this;
+    if(articles && nom.width > 2) {
+      const ray = layer.layer ? inner : outer;
+      const offset = ray.length / 2;
+      const p0 = ray.getPointAt(offset);
+      const font_move = nom.width > 30 ? consts.font_size / 2 : consts.font_size / 1.2;
+      const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
+      const tangent = ray.getTangentAt(offset);
+      let {angle} = tangent;
+      let flip = false;
+      if(Math.abs(angle - 180) < 1) {
+        angle = 0;
+        flip = true;
+      }
+      else if(Math.abs(angle - 90) < 1) {
+        angle = -90;
+        flip = true;
+      }
+      let content = '→ ', c2 = ' ←';
+      switch (articles) {
+        case 1:
+          if(flip) {
+            content = elm.toFixed() + c2;
+          }
+          else {
+            content += elm.toFixed();
+          }
+          break;
+        case 2:
+          if(flip) {
+            content = (inset.article || inset.name) + c2;
+          }
+          else {
+            content += inset.article || inset.name;
+          }
+          break;
+        case 3:
+          if(flip) {
+            content = (nom.article || nom.name) + c2;
+          }
+          else {
+            content += nom.article || nom.name;
+          }
+          break;
+        case 4:
+          if(flip) {
+            content = `${elm.toFixed()} ${inset.article || inset.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${inset.article || inset.name}`;
+          }
+          break;
+        case 5:
+          if(flip) {
+            content = `${elm.toFixed()} ${nom.article || nom.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${nom.article || nom.name}`;
+          }
+          break;
+      }
+
+      if(!children.articles) {
+        children.articles = new TextUnselectable({
+          parent: this,
+          guide: true,
+          fillColor: 'black',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * .9,
+          justification: 'center',
+        });
+      }
+      children.articles.content = content;
+      children.articles.position = position;
+      children.articles.rotation = angle;
+    }
+    else {
+      if(children.articles) {
+        children.articles.remove();
+        children.articles = null;
+      }
+    }
+    return this;
+  }
+  
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
+  }
+  
 }
 
 EditorInvisible.Profile = Profile;
