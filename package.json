@@ -1,5 +1,5 @@
 {
-  "name": "windowbuilder-core",
+  "name": "@oknosoft/wb/core",
   "version": "3.0.0",
   "description": "Order dealer core library",
   "repository": {
