@@ -1,26 +1,24 @@
 
 import paper from 'paper/dist/paper-core';
+import Scheme from './Scheme';
 
 class EditorInvisible extends paper.PaperScope {
-
-  #canvas = null;
   
   /**
    * Создаёт проект с заданным типом канваса
    * @param format
    */
-  create_scheme() {
-    const {Scheme, projects} = this;
-    if(!this.#canvas) {
-      this.#canvas = document.createElement('CANVAS');
-      this.#canvas.height = 480;
-      this.#canvas.width = 480;
-      this.setup(this.#canvas);
+  createScheme(canvas) {
+    const {view, projects} = this;
+    if(!canvas) {
+      canvas = document.createElement('CANVAS');
+      canvas.height = 480;
+      canvas.width = 480;
     }
-    if(projects.length && !(projects[0] instanceof Scheme)) {
+    while(projects.length && !(projects[0] instanceof Scheme)) {
       projects[0].remove();
     }
-    return new Scheme(this.#canvas, this, true);
+    return projects.length ? projects[0] : new Scheme(canvas);
   }
 }
 
