@@ -492,6 +492,9 @@ set hide(v){this._setter_ts('hide',v)}
     if(this.inheritance === 3) {
       return this.branch_value({project: elm.project, cnstr, ox});
     }
+    else if(this.inheritance === 5) {
+      return this.template_value({project: elm.project, cnstr, ox});
+    }
 
     let prow, cnstr0, elm0;
     const {product_params, params} = ox;
@@ -869,6 +872,26 @@ set hide(v){this._setter_ts('hide',v)}
       }
     }
     return brow ? brow.value : this.fetch_type();
+  }
+
+  /**
+   * Значение из шаблона
+   * @param [project] {Scheme}
+   * @param [cnstr] {Number}
+   * @param [ox] {CatCharacteristics}
+   */
+  template_value({project, cnstr = 0, ox}) {
+    const {params} = ox.base_block;
+    let prow;
+    params.find_rows({
+      param: this,
+      cnstr: cnstr ? {in: [0, cnstr]} : 0,
+    }, (row) => {
+      if(!prow || row.cnstr) {
+        prow = row;
+      }
+    });
+    return prow ? prow.value : this.fetch_type();
   }
 
   /**
@@ -1538,15 +1561,40 @@ set params(v){this._setter_ts('params',v)}
   /**
    * Рисует визуализацию
    * @param elm {BuilderElement} элемент, к которому привязана визуализация
-   * @param layer {Contour} слой, в котороый помещаем путь
+   * @param layer {Contour} слой, в который помещаем путь
    * @param offset {Number|Array.<Number>}
-   * @param [offset0] {Number}
    * @param clr {CatClrs}
+   * @param [offset0] {Number}
+   * @param [reflected] {Boolean}
    */
-  draw({elm, layer, offset, offset0, clr}) {
+  draw({elm, layer, offset, clr, offset0, reflected}) {
     if(!layer.isInserted()) {
       return;
     }
+    // проверим, надо ли рисовать для текущего `reflected`
+    let dashArray = undefined;
+    let exit = this.sketch_view.count();
+    for(const {kind} of this.sketch_view) {
+      if(reflected) {
+        if(kind.is('outer')) {
+          exit = 0;
+        }
+        if(kind.is('outer1')) {
+          exit = 0;
+          dashArray = [3, 4];
+        }        
+      }
+      else {
+        if((kind.is('inner'))) {
+          exit = 0;
+        }
+        if((kind.is('inner1'))) {
+          exit = 0;
+          dashArray = [3, 4];
+        }
+      }
+    }
+    
 
     try {
       const {project} = layer;
@@ -1557,6 +1605,9 @@ set params(v){this._setter_ts('params',v)}
       if(this.svg_path.indexOf('{"method":') == 0){
 
         const attr = JSON.parse(this.svg_path);
+        if(attr.dashArray){
+          dashArray = attr.dashArray;
+        }
 
         if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
           const {rays} = elm;
@@ -1573,6 +1624,7 @@ set params(v){this._setter_ts('params',v)}
             if(elm.is_linear()) {
               subpath = new Path({
                 project,
+                dashArray,
                 segments: [elm.corns(1).add(elm.corns(4)).divide(2), elm.corns(2).add(elm.corns(3)).divide(2)]
               })
                 .equidistant(attr.offset || 0);
@@ -1583,7 +1635,7 @@ set params(v){this._setter_ts('params',v)}
               const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
               const li = inner.length / 50;
               const lo = outer.length / 50;
-              subpath = new Path({project});
+              subpath = new Path({project, dashArray});
               for(let i = 0; i < 50; i++) {
                 subpath.add(inner.getPointAt(li * i).add(outer.getPointAt(lo * i)).divide(2));
               }
@@ -1613,9 +1665,6 @@ set params(v){this._setter_ts('params',v)}
           subpath.strokeWidth = attr.strokeWidth || 4;
           subpath.strokeColor = attr.strokeColor || 'red';
           subpath.strokeCap = attr.strokeCap || 'round';
-          if(attr.dashArray){
-            subpath.dashArray = attr.dashArray
-          }
         }
       }
       else if(this.svg_path){
@@ -1627,6 +1676,7 @@ set params(v){this._setter_ts('params',v)}
             layer,
             parent: layer._by_spec,
             fillColor: 'black',
+            dashArray,
             fontFamily: $p.job_prm.builder.font_family,
             fontSize: attr.fontSize || 60,
             content: this.svg_path,
@@ -1641,6 +1691,7 @@ set params(v){this._setter_ts('params',v)}
             strokeColor: 'black',
             fillColor: elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr),
             strokeScaling: false,
+            dashArray,
             pivot: [0, 0],
             opacity: elm.opacity
           }, this.origin.empty() ? null : {_visualization: true, guide: false}));
@@ -1653,12 +1704,15 @@ set params(v){this._setter_ts('params',v)}
           const {generatrix, rays: {inner, outer}} = elm;
           // угол касательной
           let angle_hor;
-          if(elm.is_linear() || offset < 0)
+          if(elm.is_linear() || offset < 0) {
             angle_hor = generatrix.getTangentAt(0).angle;
-          else if(offset > generatrix.length)
+          }           
+          else if(offset > generatrix.length) {
             angle_hor = generatrix.getTangentAt(generatrix.length).angle;
-          else
+          }
+          else {
             angle_hor = generatrix.getTangentAt(offset).angle;
+          }
 
           if((this.rotate != -1 || elm.orientation == $p.enm.orientations.Горизонтальная) && angle_hor != this.angle_hor){
             subpath.rotation = angle_hor - this.angle_hor;

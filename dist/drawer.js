@@ -2978,15 +2978,16 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_visualization(rows) {
     const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
-    const {inner, outer} = $p.enm.sketch_view;
+    const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
+    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
     l_visualization._by_spec.removeChildren();
-    const hide_by_spec = !builder_props.visualization || flipped;
+    const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
       this._ox.specification.find_rows({dop: -1}, (row) => {
         const {sketch_view} = row.nom.visualization; 
-        if((_attr._reflected && !sketch_view.find({kind: outer})) ||
-          (!_attr._reflected && sketch_view.count() && !sketch_view.find({kind: inner}))) {
+        if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
+          (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
           return;
         }
         rows.push(row);
@@ -3000,6 +3001,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           offset: this.len * 1000,
           offset0: this.width * 1000 * (this.alp1 || 1),
           clr: this.clr,
+          reflected,
         });
         return true;
       }
@@ -3017,6 +3019,7 @@ class Contour extends AbstractFilling(paper.Layer) {
                 layer: l_visualization,
                 offset: [row.len * 1000, row.width * 1000],
                 clr: row.clr,
+                reflected,
               });
               return true;
             }
@@ -3025,54 +3028,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-    if(builder_props.articles) {
-      this.draw_articles(profiles, builder_props.articles);
-    }
     if(builder_props.glass_numbers) {
       this.draw_glass_numbers();
     }
     for(const contour of contours){
       contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
-    }
-  }
-  draw_articles(profiles, articles = 3) {
-    const {l_visualization} = this;
-    for(const profile of profiles) {
-      const {rays: {outer}, sizeb, inset, nom} = profile;
-      const p0 = outer.getNearestPoint(profile.corns(1));
-      const offset = outer.getOffsetOf(p0) + 80;
-      const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
-      const tangent = outer.getTangentAt(offset);
-      let content = '→ ';
-      switch (articles) {
-        case 1:
-          content += profile.elm.toFixed();
-          break;
-        case 2:
-          content += inset.article || inset.name;
-          break;
-        case 3:
-          content += nom.article || nom.name;
-          break;
-        case 4:
-          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;
-          break;
-        case 5:
-          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
-          break;
-      }
-      const text = new paper.PointText({
-        parent: l_visualization._by_spec,
-        guide: true,
-        fillColor: 'darkblue',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size,
-        content,
-        position,
-      });
-      const {width} = text.bounds;
-      text.rotate(tangent.angle);
-      text.translate(tangent.multiply(width / 2));
     }
   }
   draw_glass_numbers() {
@@ -4388,7 +4348,7 @@ class ContourNested extends Contour {
     }
     if(reflect) {
       this.content.scaling = [-1, 1];
-      sendToBack(this);
+      sendToBack(this.content);
     }
   }
   remove() {
@@ -11087,6 +11047,94 @@ class Profile extends ProfileItem {
     }
     return _attr._ranges.get(num);
   }
+  draw_articles() {
+    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, sizeb, inset, nom} = this;
+    if(articles && nom.width > 2) {
+      const ray = layer.layer ? inner : outer;
+      const offset = ray.length / 2;
+      const p0 = ray.getPointAt(offset);
+      const font_move = nom.width > 30 ? consts.font_size / 2 : consts.font_size / 1.2;
+      const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
+      const tangent = ray.getTangentAt(offset);
+      let {angle} = tangent;
+      let flip = false;
+      if(Math.abs(angle - 180) < 1) {
+        angle = 0;
+        flip = true;
+      }
+      else if(Math.abs(angle - 90) < 1) {
+        angle = -90;
+        flip = true;
+      }
+      let content = '→ ', c2 = ' ←';
+      switch (articles) {
+        case 1:
+          if(flip) {
+            content = elm.toFixed() + c2;
+          }
+          else {
+            content += elm.toFixed();
+          }
+          break;
+        case 2:
+          if(flip) {
+            content = (inset.article || inset.name) + c2;
+          }
+          else {
+            content += inset.article || inset.name;
+          }
+          break;
+        case 3:
+          if(flip) {
+            content = (nom.article || nom.name) + c2;
+          }
+          else {
+            content += nom.article || nom.name;
+          }
+          break;
+        case 4:
+          if(flip) {
+            content = `${elm.toFixed()} ${inset.article || inset.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${inset.article || inset.name}`;
+          }
+          break;
+        case 5:
+          if(flip) {
+            content = `${elm.toFixed()} ${nom.article || nom.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${nom.article || nom.name}`;
+          }
+          break;
+      }
+      if(!children.articles) {
+        children.articles = new TextUnselectable({
+          parent: this,
+          guide: true,
+          fillColor: 'black',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * .9,
+          justification: 'center',
+        });
+      }
+      children.articles.content = content;
+      children.articles.position = position;
+      children.articles.rotation = angle;
+    }
+    else {
+      if(children.articles) {
+        children.articles.remove();
+        children.articles = null;
+      }
+    }
+    return this;
+  }
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
+  }
 }
 EditorInvisible.Profile = Profile;
 class ProfileNested extends Profile {
@@ -13556,7 +13604,10 @@ class Scheme extends paper.Project {
         }
       }
       return this.load(ox, from_service)
-        .then(() => ox._data._modified = true);
+        .then(() => {
+          ox._data._modified = true;
+          this.notify(this, 'scheme_changed');
+        });
     };
     this._attr._loading = true;
     if(is_snapshot) {
@@ -14023,30 +14074,16 @@ class Scheme extends paper.Project {
     const {_skeleton} = this;
     _skeleton.skeleton = !!v;
   }
-  async mirror(v, animate) {
+  async mirror(v) {
     const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
-    if(_from_service) {
-      animate = false;
-    }
     v = Boolean(v);
     if(v !== Boolean(_reflected)) {
-      const {utils} = $p;
-      const {scaling} = view._decompose();
-      if(animate) {
-        for(let i=0.8; i>0; i-=0.3) {
-          view.scaling = [scaling.x * i, scaling.y];
-          await utils.sleep(30);
-        }
-      }
+      const {scaling} = view;
       view.scaling = [-scaling.x, scaling.y];
-      for(const txt of this.getItems({class: paper.PointText})) {
-        const {scaling} = txt._decompose();
-        txt.scaling = [-scaling.x, scaling.y];
-      }
       _attr._reflected = v;
       for(const layer of this.contours) {
         layer.apply_mirror();
@@ -14057,6 +14094,10 @@ class Scheme extends paper.Project {
           profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
         }
       }
+      for(const txt of this.getItems({class: paper.PointText})) {
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
+      }
       if(v) {
         this._scope.select_tool?.('pan');
       }
@@ -14064,6 +14105,7 @@ class Scheme extends paper.Project {
         this.register_change(true);
       }
     }
+    this.zoom_fit();
     return _attr._reflected;
   }
   get sketch_view() {
@@ -15330,8 +15372,8 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.profile.generatrix.angle_between(curr.profile.generatrix, curr.b),
-          alp2: curr.profile.generatrix.angle_between(next.profile.generatrix, curr.e),
+          alp1: prev.sub_path.angle_between(curr.sub_path, curr.b),
+          alp2: curr.sub_path.angle_between(next.sub_path, curr.e),
           len: row_cnn ? row_cnn.aperture_len : 0,
           origin: cnn_row(_row.elm, curr.profile.elm),
           prev,
@@ -16604,9 +16646,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
       side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
     const {direction, h_ruch, cnstr, _row: {fix_ruch}} = contour;
-    if((handle_base_filter === 1 && fix_ruch !== -1) ||
-      (handle_base_filter === 2 && fix_ruch === -1) ||
-      h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
+    if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
+      ((handle_height_min !== -1 && handle_height_max === -1) && 
+        ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
+      ){
+      return false;
+    }
+    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.h - handle_height_max)) {
+      return false;
+    }
+    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.h - handle_height_min)) {
       return false;
     }
     if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {

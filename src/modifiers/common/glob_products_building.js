@@ -630,8 +630,8 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.profile.generatrix.angle_between(curr.profile.generatrix, curr.b),
-          alp2: curr.profile.generatrix.angle_between(next.profile.generatrix, curr.e),
+          alp1: prev.sub_path.angle_between(curr.sub_path, curr.b),
+          alp2: curr.sub_path.angle_between(next.sub_path, curr.e),
           len: row_cnn ? row_cnn.aperture_len : 0,
           origin: cnn_row(_row.elm, curr.profile.elm),
           prev,
