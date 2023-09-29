@@ -1,14 +1,10 @@
 .DS_Store
 .idea
-build
 config
-data
-doc
-localstorage
 node_modules
-public
 scripts
-zarchive
+src
 
 /package-lock.json
 *.log
+*.lock

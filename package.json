@@ -15,6 +15,7 @@
     "order dealer",
     "cad",
     "crm",
+    "mes",
     "window builder",
     "windows calculator"
   ],
@@ -26,8 +27,6 @@
   },
   "homepage": "http://www.oknosoft.ru/zd/",
   "dependencies": {
-    "metadata-core": "2.0.34-beta.1",
-    "metadata-pouchdb": "2.0.34-beta.1",
     "paper-jsdom-canvas": "0.12.17"
   },
   "devDependencies": {
@@ -40,6 +39,7 @@
     "LICENSE",
     "LICENSE.ru.md"
   ],
+  "main": "dist",
   "scripts": {
     "meta:prebuild": "node scripts/meta.prebuild.js",
     "meta:link": "node scripts/meta.link.js",
