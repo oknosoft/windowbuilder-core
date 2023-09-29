@@ -205,6 +205,9 @@ exports.CchProperties = class CchProperties extends Object {
     if(this.inheritance === 3) {
       return this.branch_value({project: elm.project, cnstr, ox});
     }
+    else if(this.inheritance === 5) {
+      return this.template_value({project: elm.project, cnstr, ox});
+    }
 
     let prow, cnstr0, elm0;
     const {product_params, params} = ox;
@@ -582,6 +585,26 @@ exports.CchProperties = class CchProperties extends Object {
       }
     }
     return brow ? brow.value : this.fetch_type();
+  }
+
+  /**
+   * Значение из шаблона
+   * @param [project] {Scheme}
+   * @param [cnstr] {Number}
+   * @param [ox] {CatCharacteristics}
+   */
+  template_value({project, cnstr = 0, ox}) {
+    const {params} = ox.base_block;
+    let prow;
+    params.find_rows({
+      param: this,
+      cnstr: cnstr ? {in: [0, cnstr]} : 0,
+    }, (row) => {
+      if(!prow || row.cnstr) {
+        prow = row;
+      }
+    });
+    return prow ? prow.value : this.fetch_type();
   }
 
   /**
