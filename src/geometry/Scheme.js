@@ -1,7 +1,18 @@
 
 import paper from 'paper/dist/paper-core';
+import {BuilderProps} from './BuilderProps';
+import {Contour} from './Contour';
 
-class Scheme extends paper.Project {
+export class Scheme extends paper.Project {
+  
+  constructor(...attr) {
+    super(...attr);
+    Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
+  }
+
+  get activeLayer() {
+    return this._activeLayer || new Contour({project: this, insert: true});
+  }
 
   /**
    * @summary Вписывает канвас в указанные размеры
@@ -17,5 +28,3 @@ class Scheme extends paper.Project {
   }
   
 }
-
-export default Scheme;

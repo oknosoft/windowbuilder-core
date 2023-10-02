@@ -1,12 +1,12 @@
-/**
- *
- *
- * @module Skeleton
- *
- * Created by Evgeniy Malyarov on 02.05.2020.
+/*
+ * Created 02.05.2020.
  */
 
-class Skeleton extends Graph {
+import {Graph} from './Graph';
+import {GraphEdge} from './Edge';
+import {GraphVertex} from './Vertex';
+
+export class Skeleton extends Graph {
 
   /**
    * Ищет узел по координатам точки
@@ -267,15 +267,6 @@ class Skeleton extends Graph {
     }
   }
 
-  get carcass() {
-    return Boolean(this._carcass);
-  }
-
-  set carcass(v) {
-    this._carcass = Boolean(v);
-    this.getAllEdges().forEach(({profile}) => profile.carcass = v);
-  }
-
   /**
    * Detect cycle in directed graph using Depth First Search.
    *
@@ -347,7 +338,7 @@ class Skeleton extends Graph {
         // If cycle was detected we must forbid all further traversing since it will
         // cause infinite traversal loop.
         if(cycle) {
-          cycles.push(Skeleton.reorder_cycle(cycle, blackSet, graySet));
+          cycles.push(Skeleton.reorderCycle(cycle, blackSet, graySet));
           cycle = null;
           return false;
         }
@@ -402,38 +393,41 @@ class Skeleton extends Graph {
 
     return cycles;
   }
-};
 
-/**
- * Ищет нижнее ребро и упорядочивает цикл
- * @param cycle
- * @param blackSet
- * @param graySet
- * @return {[]}
- */
-Skeleton.reorder_cycle = function reorder_cycle(cycle, blackSet, graySet) {
-  let delta = Infinity;
-  let bottom = -1;
-  const sorted = [];
-  for (let i = 0; i < cycle.length; i++) {
-    const edge = cycle[i];
-    blackSet.add(edge);
-    graySet.delete(edge);
-    let {angle} = edge.endVertex.point.subtract(edge.startVertex.point);
-    if(angle < 0) {
-      angle += 360;
+  /**
+   * Ищет нижнее ребро и упорядочивает цикл
+   * @param cycle
+   * @param blackSet
+   * @param graySet
+   * @return {[]}
+   */
+  static reorderCycle(cycle, blackSet, graySet) {
+    let delta = Infinity;
+    let bottom = -1;
+    const sorted = [];
+    for (let i = 0; i < cycle.length; i++) {
+      const edge = cycle[i];
+      blackSet.add(edge);
+      graySet.delete(edge);
+      let {angle} = edge.endVertex.point.subtract(edge.startVertex.point);
+      if(angle < 0) {
+        angle += 360;
+      }
+      const cdelta = Math.abs(angle - 180);
+      if(cdelta < delta) {
+        bottom = i;
+        delta = cdelta;
+      }
     }
-    const cdelta = Math.abs(angle - 180);
-    if(cdelta < delta) {
-      bottom = i;
-      delta = cdelta;
+    for (let i = bottom; i < cycle.length; i++) {
+      sorted.push(cycle[i]);
     }
+    for (let i = 0; i < bottom; i++) {
+      sorted.push(cycle[i]);
+    }
+    return sorted;
   }
-  for (let i = bottom; i < cycle.length; i++) {
-    sorted.push(cycle[i]);
-  }
-  for (let i = 0; i < bottom; i++) {
-    sorted.push(cycle[i]);
-  }
-  return sorted;
-};
+}
+
+
+

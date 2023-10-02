@@ -2,7 +2,7 @@
  * Class representing a dot.
  * @extends Point
  */
-class GraphEdge {
+export class GraphEdge {
   /**
    * @param {GraphVertex} startVertex
    * @param {GraphVertex} endVertex
@@ -155,3 +155,4 @@ class GraphEdge {
     return this.key;
   }
 }
+

@@ -1,5 +1,7 @@
 
-class LinkedListNode {
+import {Comparator} from './Comparator';
+
+export class LinkedListNode {
   constructor(value, next = null) {
     this.value = value;
     this.next = next;
@@ -10,7 +12,7 @@ class LinkedListNode {
   }
 }
 
-class LinkedList {
+export class LinkedList {
   /**
    * @param {Function} [comparatorFunction]
    */

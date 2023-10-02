@@ -1,3 +1,6 @@
+
+import {LinkedList} from './LinkedList';
+
 /**
  * Точка (вектор) Paper.js
  * @external Point
@@ -7,7 +10,7 @@
 /**
  * Узел Графа
  */
-class GraphVertex {
+export class GraphVertex {
   /**
    * @param {String} value
    * @param {Point} point
@@ -173,15 +176,16 @@ class GraphVertex {
   toString(callback) {
     return callback ? callback(this.value) : `${this.value}`;
   }
+
+  /**
+   * @param {GraphEdge} edgeA
+   * @param {GraphEdge} edgeB
+   */
+  static edgeComparator(edgeA, edgeB) {
+    if (edgeA.key === edgeB.key) {
+      return 0;
+    }
+    return edgeA.key < edgeB.key ? -1 : 1;
+  }
 }
 
-/**
- * @param {GraphEdge} edgeA
- * @param {GraphEdge} edgeB
- */
-GraphVertex.edgeComparator = (edgeA, edgeB) => {
-  if (edgeA.key === edgeB.key) {
-    return 0;
-  }
-  return edgeA.key < edgeB.key ? -1 : 1;
-};

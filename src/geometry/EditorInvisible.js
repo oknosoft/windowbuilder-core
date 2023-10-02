@@ -1,8 +1,9 @@
 
 import paper from 'paper/dist/paper-core';
-import Scheme from './Scheme';
+import {Scheme} from './Scheme';
+import {ToolSelect} from './tools/ToolSelect';
 
-class EditorInvisible extends paper.PaperScope {
+export class EditorInvisible extends paper.PaperScope {
   
   /**
    * Создаёт проект с заданным типом канваса
@@ -18,8 +19,11 @@ class EditorInvisible extends paper.PaperScope {
     while(projects.length && !(projects[0] instanceof Scheme)) {
       projects[0].remove();
     }
-    return projects.length ? projects[0] : new Scheme(canvas);
+    const project = projects.length ? projects[0] : new Scheme(canvas);
+    if(!this.tool) {
+      const tool = new ToolSelect();
+      tool.activate();
+    }
+    return project;
   }
 }
-
-export default EditorInvisible;

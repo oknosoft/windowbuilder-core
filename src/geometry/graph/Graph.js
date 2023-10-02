@@ -1,7 +1,7 @@
 // https://github.com/trekhleb/javascript-algorithms
 
 
-class Graph {
+export class Graph {
   /**
    * @param {Object} owner
    */
