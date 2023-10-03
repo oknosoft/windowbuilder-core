@@ -16647,8 +16647,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
     const {direction, h_ruch, cnstr, _row: {fix_ruch}} = contour;
     if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
-      ((handle_height_min !== -1 && handle_height_max === -1) && 
-        ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
+      ((handle_height_min !== -1 && handle_height_max !== -1) && ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
       ){
       return false;
     }
@@ -18338,6 +18337,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
             };
             break;
+          case 'rotation_axis':
+            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+              return Bollean((layer || elm?.layer)?.furn?.open_tunes.find({rotation_axis: true}));
+            };
+            break;
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
@@ -18379,6 +18383,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'height',          
     'region',          
     'is_composite',    
+    'rotation_axis',   
   ]) {
     formulate(name);
   }

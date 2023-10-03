@@ -134,6 +134,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             };
             break;
 
+          case 'rotation_axis':
+            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+              return Bollean((layer || elm?.layer)?.furn?.open_tunes.find({rotation_axis: true}));
+            };
+            break;
+
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
@@ -179,6 +185,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'height',           // высота слоя или изделия
     'region',           // ряд
     'is_composite',     // у элемента составной цвет
+    'rotation_axis',    // у слоя есть ось поворота
   ]) {
     formulate(name);
   }
