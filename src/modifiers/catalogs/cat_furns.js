@@ -401,8 +401,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
 
     // проверка по высоте ручки
     if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
-      ((handle_height_min !== -1 && handle_height_max === -1) && 
-        ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
+      ((handle_height_min !== -1 && handle_height_max !== -1) && ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
       ){
       return false;
     }
