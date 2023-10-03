@@ -1,6 +1,5 @@
 /**
- * Class representing a dot.
- * @extends Point
+ * Узел графа
  */
 export class GraphEdge {
   /**
@@ -66,7 +65,7 @@ export class GraphEdge {
     }
 
     const {profile, startVertex: {point: b}, endVertex: {point: e}} = this;
-    if(profile.b.is_nearest(b) || profile.e.is_nearest(e)) {
+    if(profile.b.isNearest(b) || profile.e.isNearest(e)) {
       return false;
     }
     const {generatrix} = profile;

@@ -21,32 +21,30 @@ export class BuilderElement extends paper.Group {
    *  @param {BuilderElement} [attr.parent] - родительский элемент, которому принадлежит текущий
    *  @param {BuilderElement} [attr.owner] - элемент - владелец, которому принадлежит текущий
    *  @param {CatInserts} [attr.inset]- вставка элемента. если не указано, будет вычислена по типу элемента
-   *  @param {paper.Path|Array} [attr.path] (r && arc_ccw && more_180)
-   *  @param {paper.Point} [attr.b] - координата узла начала элемента
-   *  @param {paper.Point} [attr.e] - координата узла конца элемента
+   *  @param {paper.Path} [attr.generatrix] (r && arc_ccw && more_180)
    *  @param {EnmElmTypes} [attr.elmType]  может измениться при конструировании. например, импост -> рама
    */
-  constructor(attr) {
+  constructor({generatrix, owner, inset, ...attr}) {
     super(attr);
-    if(attr.owner) {
-      this.#raw.owner = attr.owner;
+    if(owner) {
+      this.#raw.owner = owner;
     }
-    if(this.layer.layer) {
-      this.#raw.nearest = null;
+    if(inset) {
+      this.#raw.inset = inset;
     }
-    
-    if(Array.isArray(attr.path)) {
-      
+  }
+
+  /**
+   * @summary Доступ к сырым данным
+   * @param {String} name
+   * @param {Any} [value]
+   * @return {Any}
+   */
+  raw(name, value) {
+    if(arguments.length > 1) {
+      this.#raw[name] = value;
     }
-    else if(attr.b && attr.e) {
-      this.#raw.generatrix = new paper.Path({
-        parent: this,
-        segments: [attr.b, attr.e],
-        //guide: true,
-        strokeColor: 'grey',
-        strokeScaling: false,
-      })
-    } 
+    return this.#raw[name];
   }
 
   /**

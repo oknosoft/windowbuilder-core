@@ -1,4 +1,6 @@
-
+/**
+ * Методы сравнения значений
+ */
 export class Comparator {
   /**
    * @param {function(a: *, b: *)} [compareFunction] - It may be custom compare function that, let's
@@ -18,7 +20,6 @@ export class Comparator {
     if (a === b) {
       return 0;
     }
-
     return a < b ? -1 : 1;
   }
 

@@ -99,7 +99,8 @@ export class Graph {
     // Check if edge has been already added.
     if (this.edges[edge.key]) {
       throw new Error('Edge has already been added before');
-    } else {
+    } 
+    else {
       this.edges[edge.key] = edge;
     }
 
@@ -145,11 +146,9 @@ export class Graph {
    */
   findEdge(startVertex, endVertex) {
     const vertex = this.getVertexByKey(startVertex.key);
-
     if (!vertex) {
       return null;
     }
-
     return vertex.findEdge(endVertex);
   }
 

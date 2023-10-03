@@ -5,18 +5,23 @@
 import {Graph} from './Graph';
 import {GraphEdge} from './Edge';
 import {GraphVertex} from './Vertex';
+import {CnnPoint} from '../ProfileCnnPoint';
 
 export class Skeleton extends Graph {
 
   /**
    * Ищет узел по координатам точки
-   * @param point
-   * @param {GraphVertex[]} vertices
+   * @param {paper.Point|CnnPoint} point
+   * @param {GraphVertex[]} [vertices]
+   * @param {Number} [delta]
    * @return {GraphVertex}
    */
-  vertexByPoint(point, vertices) {
+  vertexByPoint(point, vertices, delta = 0) {
+    if(point instanceof CnnPoint) {
+      point = point.point;
+    }
     return (vertices || this.getAllVertices())
-      .find((vertex) => vertex.point.is_nearest(point, 0));
+      .find((vertex) => vertex.point.isNearest(point, delta));
   }
 
   /**
@@ -77,12 +82,12 @@ export class Skeleton extends Graph {
 
   /**
    * Создаёт при необходимости узел в точке
-   * @param point
+   * @param {paper.Point|CnnPoint} point
    * @return {GraphVertex}
    */
   createVertexByPoint(point) {
     const vertices = this.getAllVertices();
-    let vertex = this.vertexByPoint(point, vertices);
+    let vertex = this.vertexByPoint(point, vertices, 1);
     if(!vertex) {
       vertex = new GraphVertex((vertices.length + 1).toString(), point);
       this.addVertex(vertex);
@@ -152,51 +157,49 @@ export class Skeleton extends Graph {
     this.addEdge(new GraphEdge({startVertex, endVertex: vertex, profile}));
     this.addEdge(new GraphEdge({startVertex: vertex, endVertex, profile}));
   }
+  
+  checkNodes(b, e) {
+    const startVertex = this.createVertexByPoint(b);
+    const endVertex = this.createVertexByPoint(e);
+    const res = Boolean(this.findEdge(startVertex, endVertex));
+    for(const vertex of [startVertex, endVertex]) {
+      if(!vertex.edges.head && !vertex.endEdges.head) {
+        this.deleteVertex(vertex);
+      }
+    }
+    return res;
+  }
 
   /**
    * Добавляет профиль в граф
    * @param profile
    */
   addProfile(profile) {
-    // заглушка
-    if(!this.project._use_skeleton) {
-      return;
-    }
-
-    const b = this.createVertexByPoint(profile.b);
-    const e = this.createVertexByPoint(profile.e);
-    if(this.findEdge(b, e)) {
-      throw new Error('Edge has already been added before');
-    }
-    this.addEdge(new GraphEdge({startVertex: b, endVertex: e, profile}));
-
-    // заглушка для раскладок
-    if(profile instanceof Onlay) {
-      return;
-    }
+    const {b, e} = profile;
+    const startVertex = this.createVertexByPoint(b);
+    const endVertex = this.createVertexByPoint(e);
+    this.addEdge(new GraphEdge({startVertex, endVertex, profile}));
 
     // если импост, добавляем ребро в обратную сторону
-    const {ab, ae} = profile.is_corner();
-    const {_rays} = profile._attr;
-    if(!ab || !ae) {
+    if(b.isT || e.isT) {
       // рвём элемент, к которому примыкает импост
       let add;
-      if(_rays.b.profile && !_rays.b.profile.e.is_nearest(profile.b) && !_rays.b.profile.b.is_nearest(profile.b)) {
-        this.addImpostEdges(_rays.b, b);
+      if(b.profile && !b.profile.e.isNearest(profile.b) && !_rays.b.profile.b.isNearest(profile.b)) {
+        this.addImpostEdges(b, startVertex);
         add = true;
       }
-      if(_rays.e.profile && !_rays.e.profile.b.is_nearest(profile.e) && !_rays.e.profile.e.is_nearest(profile.e)) {
-        this.addImpostEdges(_rays.e, e);
+      if(e.profile && !e.profile.b.isNearest(profile.e) && !_rays.e.profile.e.isNearest(profile.e)) {
+        this.addImpostEdges(e, endVertex);
         add = true;
       }
       if(add) {
-        this.addEdge(new GraphEdge({startVertex: e, endVertex: b, profile}));
+        this.addEdge(new GraphEdge({startVertex, endVertex, profile}));
       }
     }
 
     // проверим соседей. возможно, им нужно обратное ребро
     const checked = new Set();
-    for(const vertex of [b, e]) {
+    for(const vertex of [startVertex, endVertex]) {
       for(const edge of vertex.getEdges()) {
         if(edge.profile === profile || checked.has(edge.profile)) {
           continue;
@@ -210,17 +213,17 @@ export class Skeleton extends Graph {
         if(checked.has(edge.profile)) {
           continue;
         }
-        for(const corn of [ab, ae]) {
-          if((corn.elm1 === profile.elm && corn.elm2 === edge.profile.elm) || (corn.elm2 === profile.elm || corn.elm1 === edge.profile.elm)) {
-            if(edge.startVertex.point.is_nearest(edge.profile.b)) {
-              const startVertex = this.createVertexByPoint(edge.profile.e);
-              const outer_adge = new GraphEdge({startVertex, endVertex: edge.startVertex, profile: edge.profile});
-              this.addEdge(outer_adge);
-              console.log(edge.profile);
-              checked.add(edge.profile);
-            }
-          }
-        }
+        // for(const corn of [ab, ae]) {
+        //   if((corn.elm1 === profile.elm && corn.elm2 === edge.profile.elm) || (corn.elm2 === profile.elm || corn.elm1 === edge.profile.elm)) {
+        //     if(edge.startVertex.point.isNearest(edge.profile.b)) {
+        //       const startVertex = this.createVertexByPoint(edge.profile.e);
+        //       const outer_adge = new GraphEdge({startVertex, endVertex: edge.startVertex, profile: edge.profile});
+        //       this.addEdge(outer_adge);
+        //       console.log(edge.profile);
+        //       checked.add(edge.profile);
+        //     }
+        //   }
+        // }
       }
     }
 

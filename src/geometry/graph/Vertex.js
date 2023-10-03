@@ -1,11 +1,6 @@
 
 import {LinkedList} from './LinkedList';
-
-/**
- * Точка (вектор) Paper.js
- * @external Point
- * @see {@link http://paperjs.org/reference/point/|Point}
- */
+import paper from 'paper/dist/paper-core';
 
 /**
  * Узел Графа
@@ -13,14 +8,27 @@ import {LinkedList} from './LinkedList';
 export class GraphVertex {
   /**
    * @param {String} value
-   * @param {Point} point
+   * @param {paper.Point|CnnPoint} point
    */
   constructor(value, point) {
     this.value = value;
-    this.point = point;
     this.edges = new LinkedList(GraphVertex.edgeComparator);
     this.endEdges = new LinkedList(GraphVertex.edgeComparator);
     this.neighborsConverter = this.neighborsConverter.bind(this);
+    if(point instanceof paper.Point) {
+      this._point = point;
+    }
+    else {
+      this._point = point.point;
+      point.vertex = this;
+    }
+  }
+  
+  get point() {
+    if(this._point && (this.edges.head || this.endEdges.head)) {
+      delete this._point;
+    }
+    return this._point || this.edges.head?.value?.profile?.b.point || this.endEdges.head?.value?.profile?.e.point;
   }
 
   /**
@@ -102,7 +110,7 @@ export class GraphVertex {
     const check_edge = ({profile}) => {
       if(profile !== parent) {
         const {b, e} = profile;
-        return b.selected && b.is_nearest(point) || e.selected && e.is_nearest(point);
+        return b.selected && b.isNearest(point) || e.selected && e.isNearest(point);
       }
     };
     return this.getEdges().some(check_edge) || this.getEndEdges().some(check_edge);
@@ -144,12 +152,8 @@ export class GraphVertex {
    * @returns {(GraphEdge|null)}
    */
   findEdge(vertex) {
-    const edgeFinder = (edge) => {
-      return edge.startVertex === vertex || edge.endVertex === vertex;
-    };
-
-    const edge = this.edges.find({ callback: edgeFinder });
-
+    const callback = (edge) => edge.startVertex === vertex || edge.endVertex === vertex;
+    const edge = this.edges.find({ callback });
     return edge ? edge.value : null;
   }
 

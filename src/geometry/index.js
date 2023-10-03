@@ -1,6 +1,7 @@
 
 import paper from 'paper/dist/paper-core';
 
+import './paper';
 import {Scheme} from './Scheme';
 import {EditorInvisible} from './EditorInvisible';
 import {BuilderElement} from './BuilderElement';
