@@ -24,7 +24,9 @@ export class GeneratrixElement extends BuilderElement {
     }
     this.raw('b', new CnnPoint({owner: this, name: 'b', cnn: cnns?.b, cnnOuter: cnns?.bOuter}));
     this.raw('e', new CnnPoint({owner: this, name: 'e', cnn: cnns?.e, cnnOuter: cnns?.eOuter}));
-    this.skeleton.addProfile(this);
+    if(!this.project.props.loading) {
+      this.skeleton.addProfile(this);
+    }
   }
   
   get skeleton() {
@@ -46,5 +48,12 @@ export class GeneratrixElement extends BuilderElement {
   get edge() {
     const {b, e} = this;
     return b.vertex.findEdge(e.vertex);
+  }
+
+  cnnSide(profile, interior) {
+    if(!interior) {
+      interior = profile.generatrix.interiorPoint;
+    }
+    return this.generatrix.pointPos(interior, interior);
   }
 }

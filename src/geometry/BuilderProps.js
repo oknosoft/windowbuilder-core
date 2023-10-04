@@ -4,6 +4,14 @@ export class BuilderProps  {
   
   constructor(scheme) {
     this.#raw.scheme = scheme;
+    this.#raw.stamp = Date.now();
+  }
+  
+  get stamp() {
+    return this.#raw.stamp;
+  }
+  registerChange() {
+    this.#raw.stamp = Date.now();
   }
   
   get flipped() {

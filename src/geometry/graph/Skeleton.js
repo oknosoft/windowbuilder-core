@@ -7,6 +7,8 @@ import {GraphEdge} from './Edge';
 import {GraphVertex} from './Vertex';
 import {CnnPoint} from '../ProfileCnnPoint';
 
+const offsetSort = (a, b) => a.offset - b.offset;
+
 export class Skeleton extends Graph {
 
   /**
@@ -74,9 +76,8 @@ export class Skeleton extends Graph {
         //throw new Error('Пересечение узлов');
       }
     }
-    const sort = (a, b) => a.offset - b.offset;
-    res.left.sort(sort);
-    res.right.sort(sort);
+    res.left.sort(offsetSort);
+    res.right.sort(offsetSort);
     return res;
   }
 
@@ -127,18 +128,18 @@ export class Skeleton extends Graph {
    * @param vertex
    */
   addImpostEdges(cnn, vertex) {
-    if(cnn.profile && (!cnn.profile_point || cnn.profile_point === 't')) {
-      // находим точки на ведущем профиле
-      const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
-      if(left.length && right.length) {
-        // Если сторона соединения изнутри, делим в прямом направлении
-        const inner = cnn.profile.cnn_side(cnn.parent, cnn.parent.generatrix.interiorPoint) === $p.enm.cnn_sides.Изнутри;
-        const edge = inner ? this.findShortest({left, right}) : this.findShortest({left: right.reverse(), right: left.reverse()});
-        this.addFragment({startVertex: edge.startVertex, endVertex: edge.endVertex, vertex, profile: cnn.profile});
-      }
-      else {
-        //throw new Error('Пересечение узлов');
-      }
+    // находим точки на ведущем профиле
+    const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
+    if(left.length && right.length) {
+      // Если сторона соединения изнутри, делим в прямом направлении
+      const inner = cnn.profile.cnnSide(cnn.owner) > 0;
+      const edge = inner ?
+        this.findShortest({left, right}) : 
+        this.findShortest({left: right.reverse(), right: left.reverse()});
+      this.addFragment({startVertex: edge.startVertex, endVertex: edge.endVertex, vertex, profile: cnn.profile});
+    }
+    else {
+      //throw new Error('Пересечение узлов');
     }
   }
 
@@ -180,21 +181,20 @@ export class Skeleton extends Graph {
     const endVertex = this.createVertexByPoint(e);
     this.addEdge(new GraphEdge({startVertex, endVertex, profile}));
 
-    // если импост, добавляем ребро в обратную сторону
-    if(b.isT || e.isT) {
+    
+    let add;
+    if(b.isT) {
       // рвём элемент, к которому примыкает импост
-      let add;
-      if(b.profile && !b.profile.e.isNearest(profile.b) && !_rays.b.profile.b.isNearest(profile.b)) {
-        this.addImpostEdges(b, startVertex);
-        add = true;
-      }
-      if(e.profile && !e.profile.b.isNearest(profile.e) && !_rays.e.profile.e.isNearest(profile.e)) {
-        this.addImpostEdges(e, endVertex);
-        add = true;
-      }
-      if(add) {
-        this.addEdge(new GraphEdge({startVertex, endVertex, profile}));
-      }
+      this.addImpostEdges(b, startVertex);
+      add = true;
+    }
+    if(e.isT) {
+      this.addImpostEdges(e, endVertex);
+      add = true;
+    }
+    // если импост, добавляем ребро в обратную сторону
+    if(add) {
+      this.addEdge(new GraphEdge({startVertex: endVertex, endVertex: startVertex, profile}));
     }
 
     // проверим соседей. возможно, им нужно обратное ребро
@@ -278,7 +278,7 @@ export class Skeleton extends Graph {
     const cycles = [];
     let cycle = null;
 
-    $p.job_prm.debug ? console.profile() : console.time();
+    $p.jobPrm.debug ? console.profile() : console.time();
 
     // Will store parents (previous vertices) for all visited nodes.
     // This will be needed in order to specify what path exactly is a cycle.
@@ -351,7 +351,7 @@ export class Skeleton extends Graph {
         }
 
         // если на одном и том же профиле, не допускаем перевёртыш
-        if(currentEdge.is_profile_outer(nextEdge)) {
+        if(currentEdge.isProfileOuter(nextEdge)) {
           return false;
         }
 
@@ -360,7 +360,7 @@ export class Skeleton extends Graph {
           let maxAngle = 0;
           let currentAngle;
           for(const edge of edges) {
-            if(currentEdge.is_profile_outer(edge) || nextEdge.is_profile_outer(edge)) {
+            if(currentEdge.isProfileOuter(edge) || nextEdge.isProfileOuter(edge)) {
               continue;
             }
             const ntangent = edge.getTangentAt(edge.startVertex);
@@ -392,7 +392,7 @@ export class Skeleton extends Graph {
       this.depthFirstSearch(Array.from(whiteSet)[0], callbacks);
     }
 
-    $p.job_prm.debug ? console.profileEnd() : console.timeEnd();
+    $p.jobPrm.debug ? console.profileEnd() : console.timeEnd();
 
     return cycles;
   }

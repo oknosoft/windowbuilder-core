@@ -69,22 +69,22 @@ export class GraphEdge {
    * Признак перевёрнуторсти ребра относительно профиля
    * @return {boolean}
    */
-  is_outer() {
+  isOuter() {
     const {cache} = this;
     if(cache.has(null)) {
-      return cache.get(null).is_outer;
+      return cache.get(null).isOuter;
     }
 
     const {profile, startVertex: {point: b}, endVertex: {point: e}} = this;
-    if(profile.b.isNearest(b) || profile.e.isNearest(e)) {
+    if(profile.b.point.isNearest(b) || profile.e.point.isNearest(e)) {
       return false;
     }
     const {generatrix} = profile;
     const nb = generatrix.getNearestPoint(b);
     const ne = generatrix.getNearestPoint(e);
-    const is_outer = generatrix.getOffsetOf(nb) > generatrix.getOffsetOf(ne);
-    cache.set(null, {is_outer});
-    return is_outer;
+    const isOuter = generatrix.getOffsetOf(nb) > generatrix.getOffsetOf(ne);
+    cache.set(null, {isOuter});
+    return isOuter;
   }
 
   /**
@@ -92,14 +92,14 @@ export class GraphEdge {
    * @param egde
    * @return {boolean}
    */
-  is_profile_outer(egde) {
+  isProfileOuter(egde) {
     const {cache} = this;
     if(cache.has(egde)) {
-      return cache.get(egde).is_outer;
+      return cache.get(egde).isOuter;
     }
-    const is_outer = this.profile === egde.profile && this.is_outer() !== egde.is_outer();
-    cache.set(egde, {is_outer});
-    return is_outer;
+    const isOuter = this.profile === egde.profile && this.isOuter() !== egde.isOuter();
+    cache.set(egde, {isOuter});
+    return isOuter;
   }
 
 
@@ -109,7 +109,7 @@ export class GraphEdge {
    * @param {GraphVertex} vertex
    * @return {boolean}
    */
-  is_some_side(profile, vertex) {
+  isSomeSide(profile, vertex) {
     if(this.profile === profile) {
       return true;
     }
@@ -130,7 +130,7 @@ export class GraphEdge {
       }
 
       const profile_outer = this.profile.generatrix.point_pos(pt, vertex.point) < 0;
-      some_side = Boolean(this.is_outer() ^ profile_outer);
+      some_side = Boolean(this.isOuter() ^ profile_outer);
     }
     cache.set(profile, {some_side});
 
@@ -151,7 +151,7 @@ export class GraphEdge {
     const {generatrix} = this.profile;
     const offset = generatrix.getOffsetOf(generatrix.getNearestPoint(point));
     let tangent = generatrix.getTangentAt(offset);
-    if(this.is_outer()) {
+    if(this.isOuter()) {
       tangent = tangent.negate();
     }
     cache.set(vertex, {tangent});
