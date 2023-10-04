@@ -34,6 +34,15 @@ export class EditorInvisible extends paper.PaperScope {
     return project;
   }
   
+  createTestProduct() {
+    const {activeLayer} = this.project;
+    activeLayer.createProfile({b: [1100, -1000], e: [100, -1000]});
+    activeLayer.createProfile({b: [100, -1000], e: [100, 0]});
+    activeLayer.createProfile({b: [100, 0], e: [1100, 0]});
+    activeLayer.createProfile({b: [1100, 0], e: [1100, -1000]});
+    this.project.zoomFit(activeLayer.bounds);
+  }
+  
   cmd(name, attr) {
     this.history[name](attr);
   }

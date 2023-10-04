@@ -9,7 +9,9 @@ export class Mover {
   
   prepareMovePoints() {
     if(!this.#raw.edges) {
-      this.#raw.edges = this.#raw.owner.skeleton.getAllEdges();
+      this.#raw.edges = this.#raw.owner.skeleton
+        .getAllEdges()
+        .filter((edge) => edge.selected || edge.startVertex.selected || edge.endVertex.selected);
     }
   }
 
@@ -24,7 +26,24 @@ export class Mover {
   }
   
   applyMovePoints() {
-
+    const {delta} = this.#raw;
+    if(delta?.length) {
+      for(const edge of this.#raw.edges) {
+        const {selected, profile, startVertex, endVertex} = edge;
+        // if(selected && !profile.isLinear()) {
+        //  
+        // }
+        if (selected || startVertex.selected) {
+          const {b} = profile; 
+          b.point = b.point.add(delta);
+        }
+        if (selected || endVertex.selected) {
+          const {e} = edge.profile;
+          e.point = e.point.add(delta);
+        }
+      }  
+    }
+    
     for(const profile of this.#raw.owner.profiles) {
       profile.opacity = 1;
     }

@@ -107,8 +107,8 @@ export class GraphVertex {
    * @type Boolean
    */
   get selected() {
-    return this.getEdges().some(({profile}) => profile.b.selected) || 
-      this.getEndEdges().some(({profile}) => profile.e.selected);
+    return this.getEdges().some(({profile: {selected, b, e}}) => selected && (!b.selected && !e.selected || b.selected)) || 
+      this.getEndEdges().some(({profile: {selected, b, e}}) => selected && (!e.selected && !b.selected || e.selected));
   }
 
   /**

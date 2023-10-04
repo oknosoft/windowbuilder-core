@@ -120,10 +120,8 @@ export class ToolSelect extends ToolElement {
             select.push({item, node, shift});
           }
         }
-        if(select.length) {
-          this.mode = 'move-points';
-          this.mouseStartPos = event.point.clone();
-        }
+        this.mode = 'move-points';
+        this.mouseStartPos = event.point.clone();
       }
       else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
         this.mode = 'move-handle';

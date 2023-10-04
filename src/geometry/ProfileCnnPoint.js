@@ -12,6 +12,10 @@ export class CnnPoint {
     const {owner, sname} = this.#raw; 
     return owner.generatrix[sname].point;
   }
+  set point(v) {
+    const {owner, sname} = this.#raw;
+    owner.generatrix[sname].point = v;
+  }
   
   get selected() {
     return this.point.selected;
