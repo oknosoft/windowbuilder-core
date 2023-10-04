@@ -101,19 +101,14 @@ export class GraphVertex {
     return Array.from(profiles);
   }
 
+  /**
+   * @summary Узел выделен
+   * @desc Истина, если выделен хотя бы один из сегментов профилей узла
+   * @type Boolean
+   */
   get selected() {
-    const {point} = this;
-    if(point.selected) {
-      return true;
-    }
-    const {parent} = point._owner.path;
-    const check_edge = ({profile}) => {
-      if(profile !== parent) {
-        const {b, e} = profile;
-        return b.selected && b.isNearest(point) || e.selected && e.isNearest(point);
-      }
-    };
-    return this.getEdges().some(check_edge) || this.getEndEdges().some(check_edge);
+    return this.getEdges().some(({profile}) => profile.b.selected) || 
+      this.getEndEdges().some(({profile}) => profile.e.selected);
   }
 
   /**

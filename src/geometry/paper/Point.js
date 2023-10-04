@@ -10,6 +10,23 @@ export default function (proto) {
       }
       return this.getDistance(point, true) < (typeof sticking === 'number' ? sticking : 64);
     },
+
+    snapToAngle(snapAngle, shift) {
+      if(!snapAngle){
+        snapAngle = Math.PI*2/8;
+      }
+
+      let angle = Math.atan2(this.y, this.x);
+      angle = Math.round(angle/snapAngle) * snapAngle;
+
+      const dirx = Math.cos(angle),
+        diry = Math.sin(angle),
+        d = dirx*this.x + diry*this.y;
+
+      return shift ?
+        new paper.Point(dirx*d, diry*d) :
+        new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
+    },
     
   });  
 }

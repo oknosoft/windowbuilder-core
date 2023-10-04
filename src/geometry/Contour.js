@@ -1,5 +1,6 @@
 import paper from 'paper/dist/paper-core';
 import {Skeleton} from './graph/Skeleton';
+import {Mover} from './graph/Mover';
 
 import {GeneratrixElement} from './GeneratrixElement';
 
@@ -10,8 +11,13 @@ export class Contour extends paper.Layer {
   constructor(attr) {
     super(attr);
     this.#raw.skeleton = new Skeleton(this);
+    this.#raw.mover = new Mover(this);
   }
 
+  get skeleton() {
+    return this.#raw.skeleton;
+  }
+  
   /**
    * Возвращает массив вложенных контуров текущего контура
    * @memberOf AbstractFilling
@@ -22,8 +28,8 @@ export class Contour extends paper.Layer {
     return this.children.filter((elm) => elm instanceof Contour);
   }
 
-  get skeleton() {
-    return this.#raw.skeleton;
+  get profiles() {
+    return this.children.filter((elm) => elm instanceof GeneratrixElement);
   }
 
   /**
@@ -65,5 +71,15 @@ export class Contour extends paper.Layer {
     // TODO: defaultInset
     const profile = new GeneratrixElement({layer: this, generatrix, ...other});
     return profile;
+  }
+  
+  
+  
+  tryMovePoints(delta, interactive) {
+    this.#raw.mover.tryMovePoints(delta, interactive);
+  }
+  
+  applyMovePoints() {
+    this.#raw.mover.applyMovePoints();
   }
 }

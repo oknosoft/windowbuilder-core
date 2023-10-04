@@ -1,5 +1,6 @@
 
 import {ToolElement} from './ToolElement';
+import {GeneratrixElement} from '../GeneratrixElement';
 
 export class ToolSelect extends ToolElement {
 
@@ -28,25 +29,162 @@ export class ToolSelect extends ToolElement {
     });
   }
 
-  mousedown() {
+  mousedown(event) {
+    const {body, activeElement} = document;
+    const {project, view, hitItem} = this;
+    if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
+      activeElement.blur();
+    }
+    const {shift, space, control, alt} = event.modifiers;
+
+    this.mode = null;
+    this.changed = false;
+    const select = [];
+    const deselect = [];
     
+
+    if(hitItem && !alt) {
+      
+
+      let item = hitItem.item.parent;
+      if(space && item?.nearest?.()) {
+        item = item.nearest();
+      }
+
+      if(item && (hitItem.type == 'fill' || hitItem.type == 'stroke')) {
+        if(shift) {
+          if(item.selected) {
+            deselect.push({item, node: null, shift});
+          }
+          else {
+            select.push({item, node: null, shift});
+          }
+        }
+        else {
+          deselect.push({item: null, shift});
+          select.push({item, node: null, shift});
+        }
+        if(select.length) {
+          // при зажатом {Ctrl}, выделяем группу
+          if(control) {
+            if(item instanceof GeneratrixElement) {
+              for(const profile of item.layer.profiles) {
+                if(profile !== item) {
+                  select.push({item: profile, node: null, shift});
+                }
+              }
+            }
+            // else if (item instanceof Filling) {
+            //   for(const glass of project.glasses) {
+            //     if(glass !== item) {
+            //       select.push({elm: glass.elm, node: null, shift});
+            //     }
+            //   }
+            // }
+          }
+          this.mode = 'move-shapes';
+          this.mouseStartPos = event.point.clone();
+        }
+        else if(deselect.length) {
+          if(control) {
+            if(item instanceof GeneratrixElement) {
+              for(const profile of item.layer.profiles) {
+                if(profile !== item) {
+                  deselect.push({item: profile, node: null, shift});
+                }
+              }
+            }
+            // else if (item instanceof Filling) {
+            //   for(const glass of project.glasses) {
+            //     if(glass !== item) {
+            //       deselect.push({elm: glass.elm, node: null, shift});
+            //     }
+            //   }
+            // }
+          }
+        }
+      }
+      else if(hitItem.type == 'segment') {
+        const node = item.generatrix.firstSegment.point.isNearest(event.point, true) ? 'b' : 'e';
+        if(shift) {
+          if(hitItem.segment.selected) {
+            deselect.push({item, node, shift});
+          }
+          else {
+            select.push({item, node, shift});
+          }
+        }
+        else {
+          if(!hitItem.segment.selected) {
+            deselect.push({item: null, shift});
+            select.push({item, node, shift});
+          }
+        }
+        if(select.length) {
+          this.mode = 'move-points';
+          this.mouseStartPos = event.point.clone();
+        }
+      }
+      else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
+        this.mode = 'move-handle';
+        this.mouseStartPos = event.point.clone();
+        this.originalHandleIn = hitItem.segment.handleIn.clone();
+        this.originalHandleOut = hitItem.segment.handleOut.clone();
+      }
+
+      // подключаем диалог свойств элемента
+      // if(item instanceof ProfileItem || item instanceof Filling) {
+      //   eve.emit_async('elm_activated', item);
+      //   this.profile = item;
+      // }
+
+      //this._scope.clear_selection_bounds();
+
+    }
+    else if(hitItem && alt) {
+      this._scope.cmd('deselect', [{item: null, shift}]);
+      this._scope.cmd('select', [{item: hitItem.item.layer}]);
+    }
+    else {
+      // Clicked on and empty area, engage box select.
+      this.mouseStartPos = event.point.clone();
+      this.mode = 'box-select';
+      
+      if(!control && !shift) {
+        this._scope.cmd('deselect', [{item: null, shift}]);
+      }
+
+      if(!shift && this.profile) {
+        delete this.profile;
+      }
+
+    }
+
+    deselect.length && this._scope.cmd('deselect', deselect);
+    select.length && this._scope.cmd('select', select);
+    //this.originalContent = this._scope.capture_selection_state();
   }
 
-  mouseup() {
-    
+  mouseup(event) {
+    if (this.mode === 'move-shapes' || this.mode === 'move-points') {
+      this.project.activeLayer.applyMovePoints();
+    }
+    this.mode = null;
   }
 
-  mousedrag() {
-    
-  }
-
-  mousemove() {
-    
+  mousedrag(event) {
+    if (this.mode === 'move-shapes' || this.mode === 'move-points') {
+      let delta = event.point.subtract(this.mouseStartPos);
+      if (!event.modifiers.shift) {
+        delta = delta.snapToAngle();
+      }
+      this.project.activeLayer.tryMovePoints(delta, true);
+    }
   }
 
   hitTest({point}) {
 
-    const tolerance = 16;
+    const tolerance = 10;
     const {project, canvasCursor} = this;
     this.hitItem = null;
 
@@ -61,7 +199,7 @@ export class ToolSelect extends ToolElement {
       }
 
       // если мышь около сегмента - ему предпочтение
-      let hit = project.hitTest(point, {handles: true, tolerance});
+      let hit = project.hitTest(point, {ends: true, tolerance});
       if (hit) {
         this.hitItem = hit;
       }

@@ -13,6 +13,10 @@ export class CnnPoint {
     return owner.generatrix[sname].point;
   }
   
+  get selected() {
+    return this.point.selected;
+  }
+  
   get vertex() {
     return this.#raw.vertex;
   }
@@ -43,6 +47,10 @@ export class CnnPoint {
   }
   
   get isT() {
+    return false;
+  }
+  
+  get hasOuter() {
     return false;
   }
 }

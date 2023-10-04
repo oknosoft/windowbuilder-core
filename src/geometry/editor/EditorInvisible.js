@@ -1,9 +1,16 @@
 
 import paper from 'paper/dist/paper-core';
-import {Scheme} from './Scheme';
-import {ToolSelect} from './tools/ToolSelect';
+import {Scheme} from '../Scheme';
+import {ToolSelect} from '../tools/ToolSelect';
+import {History} from './History';
 
 export class EditorInvisible extends paper.PaperScope {
+  
+  constructor(...attr) {
+    super(...attr);
+    this.settings.handleSize = 10;
+    this.history = new History(this);
+  }
   
   /**
    * Создаёт проект с заданным типом канваса
@@ -25,5 +32,9 @@ export class EditorInvisible extends paper.PaperScope {
       tool.activate();
     }
     return project;
+  }
+  
+  cmd(name, attr) {
+    this.history[name](attr);
   }
 }

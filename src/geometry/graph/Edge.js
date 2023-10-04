@@ -55,6 +55,17 @@ export class GraphEdge {
   }
 
   /**
+   * @summary Ребро выделено
+   * @desc Истина, если выделены начальный и конечный сегменты
+   * @type Boolean
+   */
+  get selected() {
+    const {profile} = this;
+    const {b, e} = profile;
+    return (profile.selected && !b.selected && !e.selected) || (b.selected && e.selected);
+  }
+
+  /**
    * Признак перевёрнуторсти ребра относительно профиля
    * @return {boolean}
    */
