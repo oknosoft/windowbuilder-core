@@ -12,6 +12,11 @@ export class Contour extends paper.Layer {
     super(attr);
     this.#raw.skeleton = new Skeleton(this);
     this.#raw.mover = new Mover(this);
+    new paper.Group({parent: this, name: 'visualization', guide: true});
+    new paper.Group({parent: this, name: 'topLayers'});
+    new paper.Group({parent: this, name: 'profiles'});
+    new paper.Group({parent: this, name: 'fillings'});
+    new paper.Group({parent: this, name: 'bottomLayers'});
   }
 
   get skeleton() {
@@ -69,7 +74,12 @@ export class Contour extends paper.Layer {
       strokeScaling: false,
     });
     // TODO: defaultInset
-    const profile = new GeneratrixElement({layer: this, generatrix, ...other});
+    const profile = new GeneratrixElement({
+      layer: this,
+      parent: this.children.profiles,
+      generatrix,
+      ...other
+    });
     return profile;
   }
   
