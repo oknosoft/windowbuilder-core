@@ -3,6 +3,7 @@ import {Skeleton} from './graph/Skeleton';
 import {Mover} from './graph/Mover';
 
 import {GeneratrixElement} from './GeneratrixElement';
+import {contourGroups} from './ContourGroups';
 
 export class Contour extends paper.Layer {
 
@@ -12,11 +13,7 @@ export class Contour extends paper.Layer {
     super(attr);
     this.#raw.skeleton = new Skeleton(this);
     this.#raw.mover = new Mover(this);
-    new paper.Group({parent: this, name: 'visualization', guide: true});
-    new paper.Group({parent: this, name: 'topLayers'});
-    new paper.Group({parent: this, name: 'profiles'});
-    new paper.Group({parent: this, name: 'fillings'});
-    new paper.Group({parent: this, name: 'bottomLayers'});
+    contourGroups(this);
   }
 
   get skeleton() {
