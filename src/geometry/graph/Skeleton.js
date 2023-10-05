@@ -365,9 +365,9 @@ export class Skeleton extends Graph {
             }
             const ntangent = edge.getTangentAt(edge.startVertex);
             let angle = tangent.getDirectedAngle(ntangent);
-            // if(angle < 0) {
-            //   angle += 360;
-            // }
+            if(angle < 0) {
+              angle += 360;
+            }
             if(angle > maxAngle) {
               maxAngle = angle;
             }
