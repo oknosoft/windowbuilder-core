@@ -27,11 +27,15 @@ export class Contour extends paper.Layer {
    * @type Array.<Contour>
    */
   get contours() {
-    return this.children.filter((elm) => elm instanceof Contour);
+    return this.children.topLayers.children.concat(this.children.bottomLayers.children);
   }
 
   get profiles() {
-    return this.children.filter((elm) => elm instanceof GeneratrixElement);
+    return [...this.children.profiles.children];
+  }
+
+  get fillings() {
+    return [...this.children.fillings.children];
   }
 
   /**
