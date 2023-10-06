@@ -14,6 +14,10 @@ export class Scheme extends paper.Project {
     return this._activeLayer || new Contour({project: this, insert: true});
   }
 
+  get strokeBounds() {
+    return this.layers.reduce((sum, curr) => sum.unite(curr.strokeBounds), new paper.Rectangle);
+  }
+
   /**
    * @summary Вписывает канвас в указанные размеры
    * @desc Используется при создании проекта и при изменении размеров области редактирования
@@ -34,7 +38,7 @@ export class Scheme extends paper.Project {
     if(!bounds) {
       bounds = this.strokeBounds;
     }
-    const space = 160;
+    const space = 180;
     const min = 900;
     let {width, height, center} = bounds;
     if (width < min) {
@@ -46,12 +50,12 @@ export class Scheme extends paper.Project {
     width += space;
     height += space;
     const {view} = this;
-    const zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
+    const zoom = (Math.min(view.viewSize.height / height, view.viewSize.width / width)) * 0.9;
     const {scaling} = view._decompose();
     view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
 
     const dx = view.viewSize.width - width * zoom;
-    const dy = view.viewSize.height - height * zoom;
+    const dy = view.viewSize.height - height * zoom * 1.2;
     view.center = center.add([Math.sign(scaling.x) * dx, -Math.sign(scaling.y) * dy]);
   }
   
