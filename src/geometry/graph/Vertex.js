@@ -15,20 +15,11 @@ export class GraphVertex {
     this.edges = new LinkedList(GraphVertex.edgeComparator);
     this.endEdges = new LinkedList(GraphVertex.edgeComparator);
     this.neighborsConverter = this.neighborsConverter.bind(this);
-    if(point instanceof paper.Point) {
-      this._point = point;
-    }
-    else {
-      this._point = point.point;
-      point.vertex = this;
-    }
+    this.cnnPoints = [point instanceof paper.Point ? {point} : point];
   }
   
   get point() {
-    if(this._point && (this.edges.head || this.endEdges.head)) {
-      delete this._point;
-    }
-    return this._point || this.edges.head?.value?.profile?.b.point || this.endEdges.head?.value?.profile?.e.point;
+    return this.cnnPoints[0]?.point;
   }
 
   /**

@@ -45,9 +45,42 @@ export class GeneratrixElement extends BuilderElement {
     return this.raw('e');
   }
 
-  get edge() {
+  get imposts() {
     const {b, e} = this;
-    return b.vertex.findEdge(e.vertex);
+    const inner = [], outer = [];
+    let vertices = b.vertex.getNeighbors();
+    while (vertices.length) {
+      const tmp = new Set();
+      for(const vertex of vertices) {
+        for(const cnnPoint of vertex.cnnPoints) {
+          if(cnnPoint.isT && cnnPoint.profile === this) {
+            inner.push(cnnPoint);
+            tmp.add(vertex);
+          }          
+        }
+      }
+      vertices.length = 0;
+      for(const vertex of Array.from(tmp)) {
+        vertices.push(...vertex.getAncestors());
+      }      
+    }
+    // vertices = e.vertex.getAncestors();
+    // while (vertices.length) {
+    //   const tmp = new Set();
+    //   for(const vertex of vertices) {
+    //     for(const cnnPoint of vertex.cnnPoints) {
+    //       if(cnnPoint.isT && cnnPoint.profile === this) {
+    //         outer.push(cnnPoint);
+    //         tmp.add(vertex);
+    //       }
+    //     }
+    //   }
+    //   vertices.length = 0;
+    //   for(const vertex of Array.from(tmp)) {
+    //     vertices.push(...vertex.getAncestors());
+    //   }
+    // }
+    return {inner, outer};
   }
 
   cnnSide(profile, interior) {

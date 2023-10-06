@@ -38,11 +38,11 @@ export class EditorInvisible extends paper.PaperScope {
     const {activeLayer, props} = this.project;
     props.loading = true;
     const profiles = [
-        activeLayer.createProfile({b: [1100, -1000], e: [100, -1000]}),
-        activeLayer.createProfile({b: [100, -1000], e: [100, 0]}),
+        activeLayer.createProfile({b: [1100, 1000], e: [100, 1000]}),
+        activeLayer.createProfile({b: [100, 1000], e: [100, 0]}),
         activeLayer.createProfile({b: [100, 0], e: [1100, 0]}),
-        activeLayer.createProfile({b: [1100, 0], e: [1100, -1000]}),
-        activeLayer.createProfile({b: [500, -1000], e: [500, 0]}),  
+        activeLayer.createProfile({b: [1100, 0], e: [1100, 1000]}),
+        activeLayer.createProfile({b: [500, 1000], e: [500, 0]}),  
     ];
     for(const profile of profiles) {
       activeLayer.skeleton.addProfile(profile);

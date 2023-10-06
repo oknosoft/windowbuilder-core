@@ -27,7 +27,8 @@ export class Contour extends paper.Layer {
    * @type Array.<Contour>
    */
   get contours() {
-    return this.children.topLayers.children.concat(this.children.bottomLayers.children);
+    const {topLayers, bottomLayers} = this.children; 
+    return topLayers.children.concat(bottomLayers.children);
   }
 
   get profiles() {

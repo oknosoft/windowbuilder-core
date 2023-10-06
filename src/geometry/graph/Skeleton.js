@@ -93,6 +93,9 @@ export class Skeleton extends Graph {
       vertex = new GraphVertex((vertices.length + 1).toString(), point);
       this.addVertex(vertex);
     }
+    if(point instanceof CnnPoint) {
+      point.vertex = vertex;
+    }
     return vertex;
   }
 
@@ -124,19 +127,19 @@ export class Skeleton extends Graph {
 
   /**
    * Делит элемент, к которому примыкает импост на два ребра
-   * @param cnn
+   * @param cnnPoint
    * @param vertex
    */
-  addImpostEdges(cnn, vertex) {
+  addImpostEdges(cnnPoint, vertex) {
     // находим точки на ведущем профиле
-    const {left, right, offset} = this.splitVertexes(cnn.profile, vertex.point);
+    const {left, right, offset} = this.splitVertexes(cnnPoint.profile, vertex.point);
     if(left.length && right.length) {
       // Если сторона соединения изнутри, делим в прямом направлении
-      const inner = cnn.profile.cnnSide(cnn.owner) > 0;
+      const inner = cnnPoint.profile.cnnSide(cnnPoint.owner) < 0;
       const edge = inner ?
         this.findShortest({left, right}) : 
         this.findShortest({left: right.reverse(), right: left.reverse()});
-      this.addFragment({startVertex: edge.startVertex, endVertex: edge.endVertex, vertex, profile: cnn.profile});
+      this.addFragment({startVertex: edge.startVertex, endVertex: edge.endVertex, vertex, profile: cnnPoint.profile});
     }
     else {
       //throw new Error('Пересечение узлов');
@@ -180,7 +183,6 @@ export class Skeleton extends Graph {
     const startVertex = this.createVertexByPoint(b);
     const endVertex = this.createVertexByPoint(e);
     this.addEdge(new GraphEdge({startVertex, endVertex, profile}));
-
     
     let add;
     if(b.isT) {
