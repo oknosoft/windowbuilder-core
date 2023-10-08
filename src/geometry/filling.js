@@ -477,9 +477,26 @@ class Filling extends AbstractFilling(BuilderElement) {
           // получаем периметр ряда
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
           const outer_profiles = profiles.map((v) => {
-            const profile = v.profile.nearest() || v.profile;
-            const side = profile.cnn_side(this, interior);
-            const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
+            let profile = v.profile.nearest() || v.profile;
+            let side = profile.cnn_side(this, interior);
+            const elm2 = [{profile, side}];
+            if(v.profile !== profile) {
+              elm2.push({profile: v.profile, side: v.profile.cnn_side(this, interior)});              
+            }
+            const cnn = cnns.region_cnn({
+              region: row.region,
+              elm1: this,
+              nom1: nom,
+              elm2,
+              art1glass: true,
+              cnn_types: cnn_types.acn.ii,
+            });
+            if(cnn.sd2) {
+              if(!side.is('outer')) {
+                side = side._manager.outer;
+              }
+              profile = v.profile;
+            }
             const size = cnn?.size(this, profile, row.region) || 0;
             const sub_path = profile
               .rays[side.is('outer') ? 'outer' : 'inner']

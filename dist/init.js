@@ -3653,7 +3653,12 @@ set priorities(v){this._setter_ts('priorities',v)}
    */
   check_nom2(nom) {
     const ref = nom.valueOf();
-    return this.cnn_elmnts._obj.some((row) => row.nom == ref);
+    return this.cnn_elmnts._obj.some((row) => row.nom2 == ref);
+  }
+
+  check_nom1(nom) {
+    const ref = nom.valueOf();
+    return this.cnn_elmnts._obj.some((row) => row.nom1 == ref);
   }
 
   /**
@@ -3901,6 +3906,7 @@ class CatCnnsManager extends CatManager {
   constructor(owner, class_name) {
     super(owner, class_name);
     this._nomcache = {};
+    this._region_cache = new Map();
   }
 
   sort_cnns(elm1, elm2) {
@@ -4041,23 +4047,26 @@ class CatCnnsManager extends CatManager {
       a2 = (a1[ref2] = []);
       // для всех элементов справочника соединения
       this.forEach((cnn) => {
-        // если в строках соединяемых элементов есть наша - добавляем
-        let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
-          is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
+        // не рассматриваем соединения рядов
+        if(!cnn.region) {
+          // если в строках соединяемых элементов есть наша - добавляем
+          let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
+            is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
 
-        cnn.cnn_elmnts.forEach((row) => {
+          cnn.cnn_elmnts.forEach((row) => {
+            if(is_nom1 && is_nom2){
+              return false;
+            }
+            if(!is_nom1) {
+              is_nom1 = row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2);
+            }
+            if(!is_nom2) {
+              is_nom2 = row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1);
+            }
+          });
           if(is_nom1 && is_nom2){
-            return false;
+            a2.push(cnn);
           }
-          if(!is_nom1) {
-            is_nom1 = row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2);
-          }
-          if(!is_nom2) {
-            is_nom2 = row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1);
-          }
-        });
-        if(is_nom1 && is_nom2){
-          a2.push(cnn);
         }
       });
     }
@@ -4116,6 +4125,46 @@ class CatCnnsManager extends CatManager {
     }
 
     return a1[ref2];
+  }
+  
+  region_cnn({region, elm1, nom1, elm2, art1glass, cnn_types}) {
+    if(!nom1) {
+      nom1 = elm1.nom;
+    }
+    if(!Array.isArray(elm2)) {
+      elm2 = [elm2];
+    }
+    for(const elm of elm2) {
+      if(!elm.nom) {
+        elm.nom = elm.profile.nom;
+      }
+    }
+    if(!this._region_cache.has(region)) {
+      this._region_cache.set(region, new Map());
+    }
+    const region_cache = this._region_cache.get(region);
+    for(const {nom} of elm2) {
+      if(!region_cache.has(nom)) {
+        const cnns = [];
+        this.find_rows({region}, (cnn) => {
+          cnn.check_nom2(nom) && cnns.push(cnn);
+        });
+        region_cache.set(nom, cnns);
+      }
+    }
+    const all = [];
+    elm2.forEach(({nom, side}, index) => {
+      for(const cnn of region_cache.get(nom)) {
+        if(cnn_types.includes(cnn.cnn_type) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
+          const is_nom = cnn.check_nom1(nom1);
+          if(is_nom || art1glass) {
+            all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + (cnn.sd2 === index ? 10000 : 0)});
+          }
+        }
+      }
+    });
+    all.sort((a, b) => b.priority - a.priority);
+    return all[0]?.cnn;
   }
 
   /**
