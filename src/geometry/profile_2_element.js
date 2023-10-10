@@ -506,8 +506,9 @@ class Profile extends ProfileItem {
     if(!_attr._ranges) {
       _attr._ranges = new Map();
     }
-    if(!_attr._ranges.get(num)) {
+    if(!_attr._ranges.has(num)) {
       const __attr = {_corns: []};
+      const nearest = () => this;
       _attr._ranges.set(num, new Proxy(this, {
         get(target, prop, receiver) {
           switch (prop){
@@ -529,7 +530,7 @@ class Profile extends ProfileItem {
                   proxy_point.profile_point = '';
                   proxy_point.cnn_types = enm.cnn_types.acn.i;
                   if(!proxy_point.cnn_types.includes(row.cnn.cnn_type)) {
-                    row.cnn = $p.cat.cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
+                    row.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
                   }
                   proxy_point.cnn = row.cnn;
                 }
@@ -541,16 +542,17 @@ class Profile extends ProfileItem {
                 }
                 else if(prop !== 'cnn3' && proxy_point) {
                   if(pregion) {
+                    const {profile} = proxy_point;
                     proxy_point.profile_point = cnn_point?.profile_point || '';
                     proxy_point.cnn_types = cnn_point?.cnn_types;
-                    proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                      null, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
+                    const side = profile?.parent_elm?.cnn_side?.(target);
+                    proxy_point.cnn = cnns.region_cnn({region: num, elm1: receiver, elm2: [{profile, side}], cnn_types: proxy_point.cnn_types});
                   }
                   else {
                     proxy_point.profile = null;
                     proxy_point.profile_point = '';
                     proxy_point.cnn_types = enm.cnn_types.acn.i;
-                    proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
+                    proxy_point.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
                   }
                   cn[prop] = cnns.get();
                 }
@@ -585,8 +587,22 @@ class Profile extends ProfileItem {
             case 'sizeb':
               return BuilderElement.prototype.get_sizeb.call(receiver);
               
+            case 'd0': {
+              let {_nearest_cnn} = __attr;
+              if(!_nearest_cnn?.check_nom1(receiver.nom) || !_nearest_cnn?.check_nom2(target.nom)) {
+                const {cnn3} = receiver;
+                if(cnn3?.check_nom1(receiver.nom) && cnn3?.check_nom2(target.nom)) {
+                  __attr._nearest_cnn = _nearest_cnn = cnn3;
+                }
+                else {
+                  __attr._nearest_cnn = _nearest_cnn = cnns.elm_cnn(receiver, target, enm.cnn_types.acn.ii, null, true);
+                }
+              }
+              return target.d0 + (_nearest_cnn?.size(receiver, target, num) || 0);
+            }
+              
             case 'd1':
-              return -(target.d0 - receiver.sizeb);
+              return -(receiver.d0 - receiver.sizeb);
               
             case 'd2':
               return receiver.d1 - receiver.width;
@@ -647,6 +663,9 @@ class Profile extends ProfileItem {
 
             case 'parent_elm':
               return target;
+              
+            case 'nearest':
+              return nearest;             
 
             default:
               let prow;
@@ -696,22 +715,24 @@ class Profile extends ProfileItem {
    * @return {Profile}
    */
   draw_articles() {
-    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, sizeb, inset, nom} = this;
+    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, inset, nom, angle_hor} = this;
     if(articles && nom.width > 2) {
       const ray = layer.layer ? inner : outer;
       const offset = ray.length / 2;
       const p0 = ray.getPointAt(offset);
-      const font_move = nom.width > 30 ? consts.font_size / 2 : consts.font_size / 1.2;
+      const font_move = nom.width > 30 ? consts.font_size / 2.2 : -consts.font_size / 1.3;
       const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
-      const tangent = ray.getTangentAt(offset);
-      let {angle} = tangent;
       let flip = false;
+      let angle = angle_hor;
       if(Math.abs(angle - 180) < 1) {
         angle = 0;
         flip = true;
       }
       else if(Math.abs(angle - 90) < 1) {
         angle = -90;
+        //flip = true;
+      }
+      else if(Math.abs(angle - 270) < 1) {
         flip = true;
       }
       let content = '→ ', c2 = ' ←';

@@ -3691,7 +3691,7 @@ set priorities(v){this._setter_ts('priorities',v)}
    * Параметрический размер соединения 
    * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
    * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
-   * @param {Number} [region] - Соседний элемент, если доступно в контексте вызова
+   * @param {Number} [region] - номер ряда
    * @return Number
    */
   size(elm0, elm2, region=0) {
@@ -3998,14 +3998,24 @@ class CatCnnsManager extends CatManager {
       enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii, i}, cnn_sides},
       cat: {nom}, utils} = $p;
 
+    const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
+    
+    if(elm1.rnum && !types.includes(i)) {
+      const side = elm2?.parent_elm ? elm2?.parent_elm?.cnn_side?.(elm1?.parent_elm) : cnn_sides.inner;
+      return this.region_cnn({
+        region: elm1.rnum, 
+        elm1,
+        elm2: [{profile: elm2, side}],
+        cnn_types,
+        array: true});
+    }
+
     // если оба элемента - профили, определяем сторону
     let side = is_outer ? cnn_sides.outer :
       (!ign_side && elm1 instanceof ProfileItem && !elm1.rnum && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
     if(!side && !ign_side && is_outer === false) {
       side = cnn_sides.inner;
     }
-
-    const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
 
     let onom2, a1, a2, thickness1, thickness2, is_i = false, art1glass = false, art2glass = false;
 
@@ -4048,7 +4058,7 @@ class CatCnnsManager extends CatManager {
       // для всех элементов справочника соединения
       this.forEach((cnn) => {
         // не рассматриваем соединения рядов
-        if(!cnn.region) {
+        if(!cnn.region || cnn.cnn_type === i) {
           // если в строках соединяемых элементов есть наша - добавляем
           let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
             is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
@@ -4127,7 +4137,7 @@ class CatCnnsManager extends CatManager {
     return a1[ref2];
   }
   
-  region_cnn({region, elm1, nom1, elm2, art1glass, cnn_types}) {
+  region_cnn({region, elm1, nom1, elm2, art1glass, cnn_types, array}) {
     if(!nom1) {
       nom1 = elm1.nom;
     }
@@ -4137,6 +4147,9 @@ class CatCnnsManager extends CatManager {
     for(const elm of elm2) {
       if(!elm.nom) {
         elm.nom = elm.profile.nom;
+      }
+      if(!elm.side) {
+        throw new Error(`region_cnn no side elm:${elm.elm}, region:${region}`);
       }
     }
     if(!this._region_cache.has(region)) {
@@ -4158,13 +4171,13 @@ class CatCnnsManager extends CatManager {
         if(cnn_types.includes(cnn.cnn_type) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
           const is_nom = cnn.check_nom1(nom1);
           if(is_nom || art1glass) {
-            all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + (cnn.sd2 === index ? 10000 : 0)});
+            all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + ((art1glass && cnn.sd2 === index) ? 10000 : 0)});
           }
         }
       }
     });
     all.sort((a, b) => b.priority - a.priority);
-    return all[0]?.cnn;
+    return array ? all.map(v => v.cnn) : all[0]?.cnn;
   }
 
   /**

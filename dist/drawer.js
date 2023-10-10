@@ -595,13 +595,13 @@ EditorInvisible.ToolElement = ToolElement;
     return (Math.abs(scaling.x) + Math.abs(scaling.y)) / 2;
   }
   const {prototype} = paper.View;
-  prototype.getZoom = getZoom
+  prototype.getZoom = getZoom;
   const setZoom = Object.getOwnPropertyDescriptor(prototype, 'zoom').set;
   delete prototype.zoom;
   Object.defineProperty(prototype, 'zoom', {
     get: getZoom,
     set: setZoom,
-  })  
+  });
 })();
 const AbstractFilling = (superclass) => class extends superclass {
   is_pos(pos) {
@@ -987,7 +987,11 @@ class BuilderElement extends paper.Group {
       region: _xfields.region,
       note: fields.note,
       price: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Цена продажи'}),
-      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость, шт.'}),
+      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость'}),
+      price_pieces: {
+        synonym: 'Цена за штуку?',
+        type: {types: ['boolean']},
+      }
     };
     return {
       fields: new Proxy(mfields, {
@@ -10886,6 +10890,8 @@ class Profile extends ProfileItem {
         return o.ref == cnn;
       });
     }
+    function set_i() {
+    }
     function cn_row(prop, add) {
       let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
       const cnn_point = rays?.[node1] || {};
@@ -10902,8 +10908,9 @@ class Profile extends ProfileItem {
     if(!_attr._ranges) {
       _attr._ranges = new Map();
     }
-    if(!_attr._ranges.get(num)) {
+    if(!_attr._ranges.has(num)) {
       const __attr = {_corns: []};
+      const nearest = () => this;
       _attr._ranges.set(num, new Proxy(this, {
         get(target, prop, receiver) {
           switch (prop){
@@ -10925,7 +10932,7 @@ class Profile extends ProfileItem {
                   proxy_point.profile_point = '';
                   proxy_point.cnn_types = enm.cnn_types.acn.i;
                   if(!proxy_point.cnn_types.includes(row.cnn.cnn_type)) {
-                    row.cnn = $p.cat.cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
+                    row.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
                   }
                   proxy_point.cnn = row.cnn;
                 }
@@ -10937,16 +10944,17 @@ class Profile extends ProfileItem {
                 }
                 else if(prop !== 'cnn3' && proxy_point) {
                   if(pregion) {
+                    const {profile} = proxy_point;
                     proxy_point.profile_point = cnn_point?.profile_point || '';
                     proxy_point.cnn_types = cnn_point?.cnn_types;
-                    proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, proxy_point.profile, proxy_point.cnn_types,
-                      null, false, proxy_point.profile?.parent_elm?.cnn_side?.(target)?.is('outer'), proxy_point);
+                    const side = profile?.parent_elm?.cnn_side?.(target);
+                    proxy_point.cnn = cnns.region_cnn({region: num, elm1: receiver, elm2: [{profile, side}], cnn_types: proxy_point.cnn_types});
                   }
                   else {
                     proxy_point.profile = null;
                     proxy_point.profile_point = '';
                     proxy_point.cnn_types = enm.cnn_types.acn.i;
-                    proxy_point.cnn = $p.cat.cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
+                    proxy_point.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
                   }
                   cn[prop] = cnns.get();
                 }
@@ -10973,8 +10981,21 @@ class Profile extends ProfileItem {
             }
             case 'sizeb':
               return BuilderElement.prototype.get_sizeb.call(receiver);
+            case 'd0': {
+              let {_nearest_cnn} = __attr;
+              if(!_nearest_cnn?.check_nom1(receiver.nom) || !_nearest_cnn?.check_nom2(target.nom)) {
+                const {cnn3} = receiver;
+                if(cnn3?.check_nom1(receiver.nom) && cnn3?.check_nom2(target.nom)) {
+                  __attr._nearest_cnn = _nearest_cnn = cnn3;
+                }
+                else {
+                  __attr._nearest_cnn = _nearest_cnn = cnns.elm_cnn(receiver, target, enm.cnn_types.acn.ii, null, true);
+                }
+              }
+              return target.d0 + (_nearest_cnn?.size(receiver, target, num) || 0);
+            }
             case 'd1':
-              return -(target.d0 - receiver.sizeb);
+              return -(receiver.d0 - receiver.sizeb);
             case 'd2':
               return receiver.d1 - receiver.width;
             case 'width':
@@ -11025,6 +11046,8 @@ class Profile extends ProfileItem {
             }
             case 'parent_elm':
               return target;
+            case 'nearest':
+              return nearest;             
             default:
               let prow;
               if (utils.is_guid(prop)) {
@@ -11065,22 +11088,23 @@ class Profile extends ProfileItem {
     return _attr._ranges.get(num);
   }
   draw_articles() {
-    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, sizeb, inset, nom} = this;
+    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, inset, nom, angle_hor} = this;
     if(articles && nom.width > 2) {
       const ray = layer.layer ? inner : outer;
       const offset = ray.length / 2;
       const p0 = ray.getPointAt(offset);
-      const font_move = nom.width > 30 ? consts.font_size / 2 : consts.font_size / 1.2;
+      const font_move = nom.width > 30 ? consts.font_size / 2.2 : -consts.font_size / 1.3;
       const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
-      const tangent = ray.getTangentAt(offset);
-      let {angle} = tangent;
       let flip = false;
+      let angle = angle_hor;
       if(Math.abs(angle - 180) < 1) {
         angle = 0;
         flip = true;
       }
       else if(Math.abs(angle - 90) < 1) {
         angle = -90;
+      }
+      else if(Math.abs(angle - 270) < 1) {
         flip = true;
       }
       let content = '→ ', c2 = ' ←';
@@ -16482,11 +16506,19 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},
       open_directions, offset_options} = $p.enm;
     this.specification.find_rows({dop: 0}, (row_furn) => {
+      if(!row_furn.nom && row_furn._obj.nom) {
+        throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
+             Не найден объект с uid ${row_furn._obj.nom}`);
+      }
       if(!row_furn.check_restrictions(contour, cache)){
         return;
       }
       if(!exclude_dop){
         this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
+          if(!dop_row.nom && dop_row._obj.nom) {
+            throw new Error(`Фурнитура ${this.name} ${this.id} elm ${dop_row.elm} dop ${dop_row.dop} \n
+             Не найден объект с uid ${dop_row._obj.nom}`);
+          }
           if(!dop_row.check_restrictions(contour, cache)){
             return;
           }
