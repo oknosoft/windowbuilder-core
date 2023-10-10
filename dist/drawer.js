@@ -10890,8 +10890,6 @@ class Profile extends ProfileItem {
         return o.ref == cnn;
       });
     }
-    function set_i() {
-    }
     function cn_row(prop, add) {
       let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
       const cnn_point = rays?.[node1] || {};
@@ -18278,7 +18276,10 @@ $p.CatPartners.prototype.__define({
 	}
 });
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
+  const {
+    enm: {orientations, positions, elm_types, comparison_types: ect},
+    cch: {properties},
+    cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils} = $p;
   function formulate(name) {
     const prm = properties.predefined(name);
@@ -18386,28 +18387,28 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
             };
             break;
-          case 'rotation_axis':
-            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
-              if(!layer && elm?.layer) {
-                layer = elm?.layer;
-              }
-              if(!layer) {
+        case 'rotation_axis':
+          _data._formula = function ({elm, layer, prm_row}) {
+            if(!layer && elm?.layer) {
+              layer = elm?.layer;
+            }
+            if(!layer) {
+              return false;
+            }
+            if(prm_row.origin.is('layer') || prm_row.origin.is('nearest')) {
+              return Boolean(layer.furn.open_tunes.find({rotation_axis: true})); 
+            }
+            let res = false;
+            layer.furn.open_tunes.find_rows({rotation_axis: true}, ({side}) => {
+              const profile = layer.profile_by_furn_side(side);
+              if(profile === elm) {
+                res = true;
                 return false;
               }
-              if(prm_row.origin.is('layer') || prm_row.origin.is('nearest')) {
-                return Boolean(layer.furn.open_tunes.find({rotation_axis: true})); 
-              }
-              let res = false;
-              layer.furn.open_tunes.find_rows({rotation_axis: true}, ({side}) => {
-                const profile = layer.profiles_by_side(side);
-                if(profile === elm) {
-                  res = true;
-                  return false;
-                }
-              });
-              return res;
-            };
-            break;
+            });
+            return res;
+          };
+          break;
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {

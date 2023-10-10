@@ -6,7 +6,10 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
+  const {
+    enm: {orientations, positions, elm_types, comparison_types: ect},
+    cch: {properties},
+    cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
@@ -134,28 +137,28 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             };
             break;
 
-          case 'rotation_axis':
-            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
-              if(!layer && elm?.layer) {
-                layer = elm?.layer;
-              }
-              if(!layer) {
+        case 'rotation_axis':
+          _data._formula = function ({elm, layer, prm_row}) {
+            if(!layer && elm?.layer) {
+              layer = elm?.layer;
+            }
+            if(!layer) {
+              return false;
+            }
+            if(prm_row.origin.is('layer') || prm_row.origin.is('nearest')) {
+              return Boolean(layer.furn.open_tunes.find({rotation_axis: true})); 
+            }
+            let res = false;
+            layer.furn.open_tunes.find_rows({rotation_axis: true}, ({side}) => {
+              const profile = layer.profile_by_furn_side(side);
+              if(profile === elm) {
+                res = true;
                 return false;
               }
-              if(prm_row.origin.is('layer') || prm_row.origin.is('nearest')) {
-                return Boolean(layer.furn.open_tunes.find({rotation_axis: true})); 
-              }
-              let res = false;
-              layer.furn.open_tunes.find_rows({rotation_axis: true}, ({side}) => {
-                const profile = layer.profiles_by_side(side);
-                if(profile === elm) {
-                  res = true;
-                  return false;
-                }
-              });
-              return res;
-            };
-            break;
+            });
+            return res;
+          };
+          break;
 
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
