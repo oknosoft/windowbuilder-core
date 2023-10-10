@@ -382,7 +382,11 @@ class BuilderElement extends paper.Group {
       region: _xfields.region,
       note: fields.note,
       price: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Цена продажи'}),
-      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость, шт.'}),
+      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость'}),
+      price_pieces: {
+        synonym: 'Цена за штуку?',
+        type: {types: ['boolean']},
+      }
     };
 
     return {

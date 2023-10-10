@@ -162,6 +162,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     // бежим по всем строкам набора
     this.specification.find_rows({dop: 0}, (row_furn) => {
 
+      if(!row_furn.nom && row_furn._obj.nom) {
+        throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
+             Не найден объект с uid ${row_furn._obj.nom}`);
+      }
+
       // проверяем, проходит ли строка
       if(!row_furn.check_restrictions(contour, cache)){
         return;
@@ -170,6 +175,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       // ищем строки дополнительной спецификации
       if(!exclude_dop){
         this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
+
+          if(!dop_row.nom && dop_row._obj.nom) {
+            throw new Error(`Фурнитура ${this.name} ${this.id} elm ${dop_row.elm} dop ${dop_row.dop} \n
+             Не найден объект с uid ${dop_row._obj.nom}`);
+          }
 
           if(!dop_row.check_restrictions(contour, cache)){
             return;
