@@ -6227,7 +6227,7 @@ class Filling extends AbstractFilling(BuilderElement) {
               art1glass: true,
               cnn_types: cnn_types.acn.ii,
             });
-            if(cnn.sd2) {
+            if(cnn?.sd2) {
               if(!side.is('outer')) {
                 side = side._manager.outer;
               }
