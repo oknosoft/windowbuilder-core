@@ -1250,6 +1250,7 @@
               row_spec = null;
               if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
                 row_prm.nom = row_ins_spec.nom;
+                row_prm.inset = row_ins_spec.inset;
                 const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
                 row_ins_spec.inset.calculate_spec({
                   elm: row_prm,
@@ -1259,6 +1260,7 @@
                   clr: clr || elm.clr,
                   own_row: row_ins_spec});
                 row_prm.nom = null;
+                row_prm.inset = null;
               }
             });
 
