@@ -4000,14 +4000,20 @@ class CatCnnsManager extends CatManager {
 
     const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
     
-    if(elm1.rnum && !types.includes(i)) {
-      const side = elm2?.parent_elm ? elm2?.parent_elm?.cnn_side?.(elm1?.parent_elm) : cnn_sides.inner;
-      return this.region_cnn({
+    if(elm1.rnum && (!types.includes(i) || types.length > 1)) {
+      const parent_elm = elm2?.parent_elm || elm2; 
+      const side = parent_elm ? parent_elm.cnn_side?.(elm1?.parent_elm) : cnn_sides.inner;
+      const res = this.region_cnn({
         region: elm1.rnum, 
         elm1,
         elm2: [{profile: elm2, side}],
         cnn_types,
         array: true});
+      if(types.includes(i)) {
+        const ri = this.nom_cnn(elm1, elm2, [i], ign_side, is_outer, cnn_point);
+        res.push(...ri);
+      }
+      return res;
     }
 
     // если оба элемента - профили, определяем сторону

@@ -474,6 +474,11 @@ class Profile extends ProfileItem {
   region(num) {
     const {_attr, rays, layer: {_ox}, elm} = this;
     const {cat: {cnns, inserts}, utils, enm} = $p;
+    const trunc = Math.trunc(num);
+    let fraction = Math.abs(num - trunc);
+    if(fraction) {
+      
+    }    
     const irow = _ox.inserts.find({cnstr: -elm, region: num});
     
     if(!irow) {
@@ -546,7 +551,7 @@ class Profile extends ProfileItem {
                     proxy_point.profile_point = cnn_point?.profile_point || '';
                     proxy_point.cnn_types = cnn_point?.cnn_types;
                     const side = profile?.parent_elm?.cnn_side?.(target);
-                    proxy_point.cnn = cnns.region_cnn({region: num, elm1: receiver, elm2: [{profile, side}], cnn_types: proxy_point.cnn_types});
+                    proxy_point.cnn = cnns.region_cnn({region: trunc, elm1: receiver, elm2: [{profile, side}], cnn_types: proxy_point.cnn_types});
                   }
                   else {
                     proxy_point.profile = null;
@@ -568,8 +573,8 @@ class Profile extends ProfileItem {
               return cn_row(prop.substring(0, 4), 0);
 
             case 'rnum':
-              return num;
-
+              return trunc;
+              
             case 'irow':
               return irow;
 
@@ -598,7 +603,7 @@ class Profile extends ProfileItem {
                   __attr._nearest_cnn = _nearest_cnn = cnns.elm_cnn(receiver, target, enm.cnn_types.acn.ii, null, true);
                 }
               }
-              return target.d0 + (_nearest_cnn?.size(receiver, target, num) || 0);
+              return target.d0 + (_nearest_cnn?.size(receiver, target, trunc) || 0);
             }
               
             case 'd1':
@@ -653,7 +658,7 @@ class Profile extends ProfileItem {
               const meta = target.__metadata(false);
               const {fields} = meta;
               const {cnn1, cnn2} = fields;
-              const {b, e} = rays;
+              const {b, e} = receiver.rays;
               delete cnn1.choice_links;
               delete cnn2.choice_links;
               cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
@@ -665,7 +670,7 @@ class Profile extends ProfileItem {
               return target;
               
             case 'nearest':
-              return nearest;             
+              return nearest;
 
             default:
               let prow;

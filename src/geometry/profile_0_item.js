@@ -2859,7 +2859,7 @@ class ProfileItem extends GeneratrixElement {
    * @return {ProfileItem}
    */
   draw_regions() {
-    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}} = this;
+    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}, elm, ox} = this;
     if([0, 1].includes(builder_props.mode)) {
       generatrix.opacity = 1;
       path.opacity = 1;
@@ -2871,22 +2871,26 @@ class ProfileItem extends GeneratrixElement {
     else {
       generatrix.opacity = 0.06;
       path.opacity = 0.06;
-      let region;
+      let filter;
       switch (builder_props.mode) {
         case 2:
-          region = -1;
+          filter = (v) => v <= -1;
           break;
         case 3:
-          region = 1;
+          filter = (v) => v >= 1 && v < 2;
           break;
         case 4:
-          region = 2;
+          filter = (v) => v >= 2;
           break;
       }
-      region = region && this.region?.(region);
-      if(region && region !== this) {
-        region.path;
-      }
+      filter && ox.inserts.find_rows({cnstr: -elm}, (row) => {
+        if(filter(row.region)) {
+          const r = this.region?.(row.region);
+          if(r && r !== this) {
+            r.path;
+          }
+        }
+      });
     }
     return this;
   }
