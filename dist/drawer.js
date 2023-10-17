@@ -15497,7 +15497,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: contour.cnstr
         };
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        inset.calculate_spec({elm, len_angl, ox, spec, clr});
       });
       spec = spec_tmp;
     }
@@ -17752,6 +17752,20 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
               row_spec = null;
+              if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
+                row_prm.nom = row_ins_spec.nom;
+                row_prm.clr = elm.clr;
+                row_prm.layer = elm.layer;
+                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
+                row_ins_spec.inset.calculate_spec({
+                  elm: row_prm,
+                  len_angl: tmp_len_angl,
+                  ox,
+                  spec,
+                  clr: clr || elm.clr,
+                  own_row: row_ins_spec});
+                row_prm.nom = null;
+              }
             });
           }
           else if(count_calc_method === steps){

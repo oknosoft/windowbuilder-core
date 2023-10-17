@@ -1199,7 +1199,11 @@
             if(!perimeter) {
               perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }
-            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
+            const row_prm = {
+              clr: elm.clr,
+              layer: elm.layer,
+              _row: {len: 0, angle_hor: 0, s: _row.s}
+            };
             const {check_params} = ProductsBuilding;
             perimeter.forEach((rib) => {
               row_prm._row._mixin(rib);
@@ -1244,6 +1248,18 @@
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
               row_spec = null;
+              if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
+                row_prm.nom = row_ins_spec.nom;
+                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
+                row_ins_spec.inset.calculate_spec({
+                  elm: row_prm,
+                  len_angl: tmp_len_angl,
+                  ox,
+                  spec,
+                  clr: clr || elm.clr,
+                  own_row: row_ins_spec});
+                row_prm.nom = null;
+              }
             });
 
           }

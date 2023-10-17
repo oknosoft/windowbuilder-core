@@ -742,7 +742,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: contour.cnstr
         };
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        inset.calculate_spec({elm, len_angl, ox, spec, clr});
 
       });
 
