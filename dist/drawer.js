@@ -17710,7 +17710,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             if(!perimeter) {
               perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }
-            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
+            const row_prm = {
+              clr: elm.clr,
+              layer: elm.layer,
+              _row: {len: 0, angle_hor: 0, s: _row.s}
+            };
             const {check_params} = ProductsBuilding;
             perimeter.forEach((rib) => {
               row_prm._row._mixin(rib);
@@ -17754,8 +17758,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec = null;
               if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
                 row_prm.nom = row_ins_spec.nom;
-                row_prm.clr = elm.clr;
-                row_prm.layer = elm.layer;
                 const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
                 row_ins_spec.inset.calculate_spec({
                   elm: row_prm,
