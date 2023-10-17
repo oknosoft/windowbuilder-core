@@ -2898,12 +2898,15 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Object}
    */
   get furn_cache() {
+    const {bounds: {height, width}, w, h} = this;
     return {
       profiles: this.outer_nodes,
       bottom: this.profiles_by_side('bottom'),
       ox: this._ox,
-      w: this.w,
-      h: this.h,
+      width,
+      height,
+      w,
+      h,
     };
   }
 

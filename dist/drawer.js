@@ -3641,12 +3641,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
   }
   get furn_cache() {
+    const {bounds: {height, width}, w, h} = this;
     return {
       profiles: this.outer_nodes,
       bottom: this.profiles_by_side('bottom'),
       ox: this._ox,
-      w: this.w,
-      h: this.h,
+      width,
+      height,
+      w,
+      h,
     };
   }
   open_restrictions_err({furn, cache, bool}) {
@@ -16210,18 +16213,6 @@ $p.spec_building = new SpecBuilding($p);
   ];
 })($p.enm.inserts_types);
 (function({enm}){
-  enm.debit_credit_kinds.__define({
-    debit: {
-      get() {
-        return this.Приход;
-      }
-    },
-    credit: {
-      get() {
-        return this.Расход;
-      }
-    },
-  });
 	enm.open_types.__define({
     is_opening: {
       value(v) {
@@ -16700,10 +16691,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       ){
       return false;
     }
-    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.h - handle_height_max)) {
+    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.height - handle_height_max)) {
       return false;
     }
-    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.h - handle_height_min)) {
+    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
     if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {

@@ -415,10 +415,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       ){
       return false;
     }
-    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.h - handle_height_max)) {
+    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.height - handle_height_max)) {
       return false;
     }
-    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.h - handle_height_min)) {
+    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
 
