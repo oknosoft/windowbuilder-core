@@ -11,22 +11,6 @@
 
 (function({enm}){
 
-  /**
-   * Синонимы в приход/расход
-   */
-  enm.debit_credit_kinds.__define({
-    debit: {
-      get() {
-        return this.Приход;
-      }
-    },
-    credit: {
-      get() {
-        return this.Расход;
-      }
-    },
-  });
-
 	/**
 	 * Дополнительные методы перечисления Типы открывания
 	 */

@@ -5329,16 +5329,16 @@ $p.cat.create('nom_prices_types');
 class CatIndividuals extends CatObj{
 get birth_date(){return this._getter('birth_date')}
 set birth_date(v){this._setter('birth_date',v)}
-get inn(){return this._getter('inn')}
-set inn(v){this._setter('inn',v)}
+get sex(){return this._getter('sex')}
+set sex(v){this._setter('sex',v)}
 get imns_code(){return this._getter('imns_code')}
 set imns_code(v){this._setter('imns_code',v)}
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
+get inn(){return this._getter('inn')}
+set inn(v){this._setter('inn',v)}
 get pfr_number(){return this._getter('pfr_number')}
 set pfr_number(v){this._setter('pfr_number',v)}
-get sex(){return this._getter('sex')}
-set sex(v){this._setter('sex',v)}
 get birth_place(){return this._getter('birth_place')}
 set birth_place(v){this._setter('birth_place',v)}
 get Фамилия(){return this._getter('Фамилия')}
@@ -6552,14 +6552,6 @@ set editor(v){this._setter('editor',v)}
 }
 $p.CatPrice_groups = CatPrice_groups;
 $p.cat.create('price_groups');
-class CatStages extends CatObj{
-get note(){return this._getter('note')}
-set note(v){this._setter('note',v)}
-get grouping(){return this._getter('grouping')}
-set grouping(v){this._setter('grouping',v)}
-}
-$p.CatStages = CatStages;
-$p.cat.create('stages');
 class CatProject_categories extends CatObj{
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
@@ -6861,21 +6853,6 @@ set grouping(v){this._setter('grouping',v)}
 }
 $p.CatTemplatesTemplatesRow = CatTemplatesTemplatesRow;
 $p.cat.create('templates');
-class CatWork_centers extends CatObj{
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get work_center_kinds(){return this._getter_ts('work_center_kinds')}
-set work_center_kinds(v){this._setter_ts('work_center_kinds',v)}
-}
-$p.CatWork_centers = CatWork_centers;
-class CatWork_centersWork_center_kindsRow extends TabularSectionRow{
-get kind(){return this._getter('kind')}
-set kind(v){this._setter('kind',v)}
-}
-$p.CatWork_centersWork_center_kindsRow = CatWork_centersWork_center_kindsRow;
-$p.cat.create('work_centers');
 class CatDelivery_directions extends CatObj{
 get composition(){return this._getter_ts('composition')}
 set composition(v){this._setter_ts('composition',v)}
@@ -7002,8 +6979,8 @@ set type(v){this._setter('type',v)}
 $p.CatLead_src = CatLead_src;
 $p.cat.create('lead_src');
 class CatLeads extends CatObj{
-get date(){return this._getter('date')}
-set date(v){this._setter('date',v)}
+get create_date(){return this._getter('create_date')}
+set create_date(v){this._setter('create_date',v)}
 get origin(){return this._getter('origin')}
 set origin(v){this._setter('origin',v)}
 get responsible(){return this._getter('responsible')}
@@ -7027,6 +7004,31 @@ set owner(v){this._setter('owner',v)}
 }
 $p.CatAccounts = CatAccounts;
 $p.cat.create('accounts');
+class CatWork_centers extends CatObj{
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
+get plan_multiplicity(){return this._getter('plan_multiplicity')}
+set plan_multiplicity(v){this._setter('plan_multiplicity',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get work_center_kinds(){return this._getter_ts('work_center_kinds')}
+set work_center_kinds(v){this._setter_ts('work_center_kinds',v)}
+}
+$p.CatWork_centers = CatWork_centers;
+class CatWork_centersWork_center_kindsRow extends TabularSectionRow{
+get kind(){return this._getter('kind')}
+set kind(v){this._setter('kind',v)}
+}
+$p.CatWork_centersWork_center_kindsRow = CatWork_centersWork_center_kindsRow;
+$p.cat.create('work_centers');
+class CatProject_stages extends CatObj{
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
+get grouping(){return this._getter('grouping')}
+set grouping(v){this._setter('grouping',v)}
+}
+$p.CatProject_stages = CatProject_stages;
+$p.cat.create('project_stages');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -7662,8 +7664,10 @@ $p.DocWork_centers_performance = DocWork_centers_performance;
 class DocWork_centers_performancePlanningRow extends TabularSectionRow{
 get date(){return this._getter('date')}
 set date(v){this._setter('date',v)}
-get key(){return this._getter('key')}
-set key(v){this._setter('key',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
 get power(){return this._getter('power')}
 set power(v){this._setter('power',v)}
 }
