@@ -1319,6 +1319,27 @@
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
+
+                if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
+                  const row_prm = {
+                    clr: elm.clr,
+                    layer: elm.layer,
+                    nom: row_ins_spec.nom,
+                    inset: row_ins_spec.inset,
+                    is_linear() {
+                      return true;
+                    },
+                    _row: {len: len_angl?.len || _row.len, angle_hor: 0, s: _row.s}
+                  };
+                  const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len})
+                  row_ins_spec.inset.calculate_spec({
+                    elm: row_prm,
+                    len_angl: tmp_len_angl,
+                    ox,
+                    spec,
+                    clr: clr || elm.clr,
+                    own_row: row_ins_spec});
+                }
               }
               row_spec = null;
             }

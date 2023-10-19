@@ -328,7 +328,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(eclr.area_src.empty()) {
           return false;
         }
-        if(no_eclr) {
+        if(no_eclr && elm.layer?.sys) {
           const {colors} = elm.layer.sys;
           if(colors.count()) {
             if(colors.find({clr: eclr})) {
