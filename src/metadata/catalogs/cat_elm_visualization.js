@@ -113,7 +113,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
               subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
             }
           }
-          subpath.parent = layer._by_spec;
+          subpath.parent = layer.by_spec;
           subpath.strokeWidth = attr.strokeWidth || 4;
           subpath.strokeColor = attr.strokeColor || 'red';
           subpath.strokeCap = attr.strokeCap || 'round';
@@ -126,7 +126,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
           subpath = new PointText(Object.assign({
             project,
             layer,
-            parent: layer._by_spec,
+            parent: layer.by_spec,
             fillColor: 'black',
             dashArray,
             fontFamily: $p.job_prm.builder.font_family,
@@ -138,7 +138,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
           subpath = new CompoundPath(Object.assign({
             project,
             layer,
-            parent: layer._by_spec,
+            parent: layer.by_spec,
             pathData: this.svg_path,
             strokeColor: 'black',
             fillColor: elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr),

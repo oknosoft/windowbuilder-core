@@ -624,6 +624,9 @@ Object.defineProperties(paper.Point.prototype, {
 	 */
 	is_nearest: {
 		value: function is_nearest(point, sticking) {
+      if(!point) {
+        return false;
+      }
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }

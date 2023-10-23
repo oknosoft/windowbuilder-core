@@ -10,219 +10,6 @@
 
 
 /**
- * Сегмент заполнения
- *
- * содержит информацию о примыкающем профиле и координатах начала и конца
- */
-class GlassSegment {
-
-  constructor(profile, b, e, outer) {
-    this.profile = profile;
-    this.b = b.clone();
-    this.e = e.clone();
-    this.outer = outer;
-    this.segment();
-  }
-
-  /**
-   * часть конструктора оформлена отдельным методом из-за рекурсии
-   */
-  segment() {
-
-    let gen;
-    const {profile} = this;
-    const cond = profile.children.some((addl) => {
-
-      if (addl instanceof ProfileAddl && this.outer == addl.outer) {
-        if (!gen) {
-          gen = profile.generatrix;
-        }
-        const b = profile instanceof ProfileAddl ? profile.b : this.b;
-        const e = profile instanceof ProfileAddl ? profile.e : this.e;
-        
-        // TODO: учесть импосты, привязанные к добору
-
-        if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {
-          this.profile = addl;
-          this.outer = false;
-          return true;
-        }
-      }
-    });
-
-    if (cond) {
-      this.segment();
-    }
-  }
-
-  /**
-   * Проверяет наличие соединения по углам в узле
-   * @param nodes
-   * @param {Array} segments
-   * @param {ProfileItem} curr_profile
-   * @param {ProfileItem} segm_profile
-   * @return {Boolean}
-   */
-  break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {
-
-    const node = nodes.byPoint(point);
-    if(!node) {
-      return false;
-    }
-
-    let tangent = curr_profile.generatrix.getTangentAt(offset);
-    if(this.outer) {
-      tangent = tangent.negate();
-    }
-
-    const angles = [];
-    for(const elm of node) {
-      if(elm.profile === curr_profile) {
-        continue;
-      }
-      // сравним углы между образующими в точке
-      const {generatrix} = elm.profile;
-      const ppoint = generatrix.getNearestPoint(point);
-      const poffset = generatrix.getOffsetOf(ppoint);
-      const ptangent = generatrix.getTangentAt(poffset);
-      for(const segm of segments) {
-        if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {
-          angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});
-        }
-      }
-    }
-    let angle;
-    for(const elm of angles) {
-      if(elm.profile === segm_profile && (!angle || elm.angle > angle)) {
-        angle = elm.angle;
-      }
-    }
-    if(angle < 0) {
-      return true;
-    }
-    for(const elm of angles) {
-      if(elm.profile !== segm_profile && elm.angle > angle) {
-        return true;
-      }
-    }
-  }
-
-  /**
-   * Выясняет, есть ли у текущего сегмента соединение с соседним
-   * @param segm
-   * @param point
-   * @param nodes
-   */
-  has_cnn(segm, nodes, segments) {
-
-    // если узлы не совпадают - дальше не смотрим
-    const point = segm.b;
-    if(!this.e.is_nearest(point, 0)) {
-      return false;
-    }
-
-    // идём вверх по доборным профилям
-    let curr_profile = this.profile;
-    let segm_profile = segm.profile;
-    while (curr_profile instanceof ProfileAddl) {
-      if(!this.outer) {
-        this.outer = !curr_profile.is_collinear(curr_profile.parent);
-      }
-      curr_profile = curr_profile.parent;
-    }
-    while (segm_profile instanceof ProfileAddl) {
-      if(!segm.outer) {
-        segm.outer = !segm_profile.is_collinear(segm_profile.parent);
-      }
-      segm_profile = segm_profile.parent;
-    }
-
-    if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {
-      return false;
-    }
-    if(curr_profile.gb.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || curr_profile.rays.b.profile === segm_profile) {
-        return true;
-      }
-    }
-
-    if(curr_profile.ge.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = this.break_by_angle(nodes, segments, point, curr_profile.generatrix.length, curr_profile, segm_profile);
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || curr_profile.rays.e.profile === segm_profile) {
-        return true;
-      }
-    }
-
-    if(segm_profile.gb.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = segm.break_by_angle(nodes, segments, point, 0, segm_profile, curr_profile)
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || segm_profile.rays.b.profile == curr_profile) {
-        return true;
-      }
-    }
-
-    if(segm_profile.ge.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = segm.break_by_angle(nodes, segments, point, segm_profile.generatrix.length, segm_profile, curr_profile);
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || segm_profile.rays.e.profile == curr_profile) {
-        return true;
-      }
-    }
-
-    return false;
-
-  }
-
-  get _sub() {
-    const {sub_path} = this;
-    return {
-      get b() {
-        return sub_path ? sub_path.firstSegment.point : new paper.Point();
-      },
-      set b(v) {
-        sub_path && (sub_path.firstSegment.point = v);
-      },
-      get e() {
-        return sub_path ? sub_path.lastSegment.point : new paper.Point();
-      },
-      set e(v) {
-        sub_path && (sub_path.lastSegment.point = v);
-      },
-    };
-  }
-}
-
-class PointMap extends Map {
-
-  byPoint(point) {
-    for(const [key, value] of this) {
-      if(point.is_nearest(key, 0)) {
-        return value.length > 2 && value;
-      }
-    }
-  }
-}
-
-/**
  * Контур (слой) изделия
  *
  * Новые элементы попадают в активный слой-контур и не могут его покинуть
@@ -235,9 +22,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     super({parent: attr.parent, project: attr.project});
 
     this._attr = {chnom: []};
-
+    
     // узлы и рёбра текущего слоя
     this._skeleton = new Skeleton(this);
+    this.create_groups();
 
     const {project} = this;
 
@@ -258,6 +46,16 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     project.l_connective.bringToFront();
 
+  }
+
+  create_groups() {
+    new GroupLayers({parent: this, name: 'bottomLayers'});
+    new GroupFillings({parent: this, name: 'fillings'});
+    new GroupProfiles({parent: this, name: 'profiles'});
+    new GroupLayers({parent: this, name: 'topLayers'});    
+    new GroupVisualization({parent: this, name: 'visualization', guide: true});
+    super.create_groups();
+    new GroupText({parent: this, name: 'text'});    
   }
 
   /**
@@ -329,7 +127,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {elm_types} = $p.enm;
     const glasses = [];
     coordinates.find_rows({cnstr, region: 0}, (row) => {
-      const attr = {row, parent: this};
+      const attr = {row, parent: this.children.profiles};
       // профили и доборы
       if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
         if(this instanceof ContourVirtual && row.elm_type === elm_types.impost) {
@@ -353,7 +151,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
     for(const row of glasses) {
-      new Filling({row, parent: this});
+      new Filling({row, parent: this.children.fillings});
     }
   }
 
@@ -1380,7 +1178,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get dimension_bounds() {
     let bounds = super.dimension_bounds;
-    const ib = this.l_visualization._by_insets.bounds;
+    const ib = this.l_visualization.by_insets.bounds;
     if (ib.height && ib.bottom > bounds.bottom) {
       const delta = ib.bottom - bounds.bottom + 10;
       bounds = bounds.unite(
@@ -1611,7 +1409,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {inset: origin} = row;
       if (origin.insert_type.is('mosquito')) {
         const props = {
-          parent: new paper.Group({parent: l_visualization._by_insets}),
+          parent: new paper.Group({parent: l_visualization.by_insets}),
           strokeColor: 'grey',
           strokeWidth: 3,
           dashArray: [6, 4],
@@ -1713,7 +1511,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
 
         const props = {
-          parent: new paper.Group({parent: l_visualization._by_insets}),
+          parent: new paper.Group({parent: l_visualization.by_insets}),
           fillColor: BuilderElement.clr_by_clr.call(this, clr),
           shadowColor: 'lightgray',
           shadowBlur: 20,
@@ -1852,7 +1650,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const delta = (vlen - bottom.length) / 2;
 
         new paper.Path({
-          parent: new paper.Group({parent: l_visualization._by_insets}),
+          parent: new paper.Group({parent: l_visualization.by_insets}),
           strokeColor: 'grey',
           fillColor: BuilderElement.clr_by_clr.call(this, row.clr),
           shadowColor: 'grey',
@@ -1988,7 +1786,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
     const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
 
-    l_visualization._by_spec.removeChildren();
+    l_visualization.by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
     const hide_by_spec = !builder_props.visualization;
@@ -2070,7 +1868,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {l_visualization} = this;
     for(const glass of this.glasses(false, true)) {
       const text = new paper.PointText({
-        parent: l_visualization._by_spec,
+        parent: l_visualization.by_spec,
         guide: true,
         //justification: 'left',
         fillColor: 'darkgreen',
@@ -2093,11 +1891,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (this.hidden != v) {
       this._hidden = v;
       const visible = !this._hidden;
-      this.children.forEach((elm) => {
-        if (elm instanceof BuilderElement) {
-          elm.visible = visible;
-        }
-      });
+      for(const elm of this.children.profiles.children.concat(this.children.fillings.children)) {
+        elm.visible = visible;
+      }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
     }
@@ -2417,7 +2213,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {Array.<Profile>}
    */
   get profiles() {
-    return this.children.filter((elm) => elm instanceof Profile);
+    return [...this.children.profiles.children];
   }
 
   /**
@@ -2463,10 +2259,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization: {_by_insets, _by_spec}, project, profiles, _attr: {chnom}} = this;
+    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
-    _by_insets.removeChildren();
-    !_attr._saving && _by_spec.removeChildren();
+    by_insets.removeChildren();
+    !_attr._saving && by_spec.removeChildren();
 
     //$p.job_prm.debug && console.profile();
 
@@ -3236,16 +3032,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {paper.Group}
    */
   get l_text() {
-    const {_attr} = this;
-    if(!_attr._txt) {
-      _attr._txt = new paper.Group({parent: this});
-      for(const contour of this.contours) {
-        if(_attr._txt.isAbove(contour)) {
-          _attr._txt.insertBelow(contour);
-        }
-      }
-    }
-    return _attr._txt;
+    return this.children.text;
   }
 
   /**
@@ -3253,18 +3040,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {paper.Group}
    */
   get l_visualization() {
-    const {_attr} = this;
-    if (!_attr._visl) {
-      _attr._visl = new paper.Group({parent: this, guide: true});
-      _attr._visl._by_insets = new paper.Group({parent: _attr._visl});
-      _attr._visl._by_spec = new paper.Group({parent: _attr._visl});
-      for(const contour of this.contours) {
-        if(_attr._visl.isAbove(contour)) {
-          _attr._visl.insertBelow(contour);
-        }
-      }
-    }
-    return _attr._visl;
+    return this.children.visualization;
   }
 
   /**

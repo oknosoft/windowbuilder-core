@@ -25,6 +25,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(path){
       attr.path = path;
     }
+    
+    this.create_groups();
 
     // initialize
     this.initialize(attr);
@@ -250,7 +252,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         kind = 1;
       }
     }
-    const cattr = {project, kind, parent: this.parent};
+    const cattr = {project, kind, parent: layer.children.topLayers};
     // фурнитура и параметры по умолчанию
     if(direction) {
       cattr.direction = direction;
@@ -450,7 +452,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     l_dimensions.redraw(true);
     layer.draw_visualization();
     const {l_visualization: lv} = layer;
-    lv._by_insets && lv._by_insets.removeChildren();
+    lv.by_insets && lv.by_insets.removeChildren();
     lv._cnn && lv._cnn.removeChildren();
     lv._opening && lv._opening.removeChildren();
     lv.visible = true;

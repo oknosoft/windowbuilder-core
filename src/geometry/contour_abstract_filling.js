@@ -130,6 +130,10 @@ const AbstractFilling = (superclass) => class extends superclass {
   get skeleton() {
     return this._skeleton;
   }
+  
+  create_groups() {
+    new DimensionDrawer({parent: this, name: 'dimlns'});
+  }
 
   /**
    * Cлужебная группа размерных линий
@@ -138,16 +142,7 @@ const AbstractFilling = (superclass) => class extends superclass {
    * @type DimensionDrawer
    */
   get l_dimensions() {
-    const {_attr} = this;
-    if(!_attr._dimlns) {
-      _attr._dimlns = new DimensionDrawer({parent: this});
-      for(const contour of this.contours) {
-       if(_attr._dimlns.isAbove(contour)) {
-         _attr._dimlns.insertBelow(contour);
-       } 
-      }
-    }
-    return _attr._dimlns;
+    return this.children.dimlns;
   }
 
   /**

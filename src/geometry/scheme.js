@@ -904,7 +904,7 @@ class Scheme extends paper.Project {
       }
     });
     this.contours.forEach(({l_visualization}) => {
-      const ib = l_visualization._by_insets.bounds;
+      const ib = l_visualization.by_insets.bounds;
       if(ib.height && ib.bottom > bounds.bottom) {
         const delta = ib.bottom - bounds.bottom + 10;
         bounds = bounds.unite(
@@ -1305,7 +1305,7 @@ class Scheme extends paper.Project {
         if(el.l_visualization._opening) {
           el.l_visualization._opening.strokeScaling = false;
           el.l_visualization._opening.opacity = 0.8;
-          el.l_visualization._by_spec.opacity = 0.5;
+          el.l_visualization.by_spec.opacity = 0.5;
         }
       }
       this.zoom_fit();
@@ -1337,7 +1337,7 @@ class Scheme extends paper.Project {
         if(el.l_visualization._opening) {
           el.l_visualization._opening.strokeScaling = true;
           el.l_visualization._opening.opacity = 1;
-          el.l_visualization._by_spec.opacity = 1;
+          el.l_visualization.by_spec.opacity = 1;
         }
       }
       this.zoom_fit();
