@@ -228,7 +228,11 @@ class GroupVisualization extends paper.Group {
   }
 }
 class GroupLayers extends paper.Group {}
-class GroupProfiles extends paper.Group {}
+class GroupProfiles extends paper.Group {
+  get profiles() {
+    return this.children;
+  }
+}
 class GroupFillings extends paper.Group {}
 class GroupText extends paper.Group {}
 

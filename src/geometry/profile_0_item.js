@@ -538,16 +538,6 @@ class ProfileRays {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
     }
-    
-    // чистим лучи рядов
-    const {_ranges} = this.parent._attr;
-    if(_ranges) {
-      for(const [key, region] of _ranges) {
-        if(typeof key === 'number') {
-          region._attr?._rays?.clear(with_cnn);
-        }
-      }
-    }
   }
 
   recalc() {
@@ -1339,7 +1329,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    const {_attr: {generatrix, path, paths}, project} = this;
+    const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {
       return;
     }
@@ -1368,11 +1358,6 @@ class ProfileItem extends GeneratrixElement {
       for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
-      for(const [key, item] of paths) {
-        if(typeof key === 'number') {
-          item.setSelection(0);
-        }
-      }      
 
       if([0, 1].includes(project.builder_props.mode)) {
         for (let t = 0; t < inner.length; t += 50) {
@@ -1986,15 +1971,6 @@ class ProfileItem extends GeneratrixElement {
       });
       for(const row of rm) {
         _owner.inserts.del(row);
-        const {region} = row;
-        if(region) {
-          _attr._ranges.delete(region);
-          _attr._ranges.delete(`cnns${region}`);
-          if(_attr.paths.get(region)) {
-            _attr.paths.get(region).remove();
-            _attr.paths.delete(region);
-          }
-        }
       }
 
       project.register_change();
@@ -2851,47 +2827,6 @@ class ProfileItem extends GeneratrixElement {
       chld.redraw();
     }
     
-    return this.draw_regions();
-  }
-
-  /**
-   * В зависимости от builder_props.mode, прячет основные пути и дорисовывает пути рядов 
-   * @return {ProfileItem}
-   */
-  draw_regions() {
-    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}, elm, ox} = this;
-    if([0, 1].includes(builder_props.mode)) {
-      generatrix.opacity = 1;
-      path.opacity = 1;
-      for(const [region, elm] of paths) {
-        elm?.remove?.();
-      }
-      paths.clear();
-    }
-    else {
-      generatrix.opacity = 0.06;
-      path.opacity = 0.06;
-      let filter;
-      switch (builder_props.mode) {
-        case 2:
-          filter = (v) => v <= -1;
-          break;
-        case 3:
-          filter = (v) => v >= 1 && v < 2;
-          break;
-        case 4:
-          filter = (v) => v >= 2;
-          break;
-      }
-      filter && ox.inserts.find_rows({cnstr: -elm}, (row) => {
-        if(filter(row.region)) {
-          const r = this.region?.(row.region);
-          if(r && r !== this) {
-            r.path;
-          }
-        }
-      });
-    }
     return this;
   }
 

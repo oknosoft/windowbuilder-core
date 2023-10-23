@@ -517,7 +517,7 @@ class ProductsBuilding {
       // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
+      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
@@ -535,14 +535,7 @@ class ProductsBuilding {
         delete len_angl.art1;
         delete len_angl.art2;
         delete len_angl.node;
-        if(region) {
-          inset.region_spec({elm, len_angl, ox, spec, region});
-        }
-        else {
-          inset.calculate_spec({elm, len_angl, ox, spec});
-        }
-
-
+        inset.calculate_spec({elm, clr, len_angl, ox, spec});
       });
       spec = spec_tmp;
     }
