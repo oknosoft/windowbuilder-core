@@ -1417,6 +1417,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
+            this.accessories('clear', row_prod.characteristic);
             // рассчитываем спецификацию
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
             // сворачиваем
