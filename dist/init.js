@@ -5304,6 +5304,21 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 }
 $p.CatStores = CatStores;
 $p.cat.create('stores');
+class CatWork_shifts extends CatObj{
+get predefined_name(){return this._getter('predefined_name')}
+set predefined_name(v){this._setter('predefined_name',v)}
+get work_shift_periodes(){return this._getter_ts('work_shift_periodes')}
+set work_shift_periodes(v){this._setter_ts('work_shift_periodes',v)}
+}
+$p.CatWork_shifts = CatWork_shifts;
+class CatWork_shiftsWork_shift_periodesRow extends TabularSectionRow{
+get begin_time(){return this._getter('begin_time')}
+set begin_time(v){this._setter('begin_time',v)}
+get end_time(){return this._getter('end_time')}
+set end_time(v){this._setter('end_time',v)}
+}
+$p.CatWork_shiftsWork_shift_periodesRow = CatWork_shiftsWork_shift_periodesRow;
+$p.cat.create('work_shifts');
 class CatCash_flow_articles extends CatObj{
 get definition(){return this._getter('definition')}
 set definition(v){this._setter('definition',v)}
