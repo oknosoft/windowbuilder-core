@@ -96,7 +96,7 @@ class Profile extends ProfileItem {
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer?.parent instanceof Contour) {
+    if(this.layer?.layer instanceof Contour) {
       return elm_types.flap;
     }
 
@@ -450,13 +450,13 @@ class Profile extends ProfileItem {
 
   /**
    * @summary Добавляет автовставки
-   * @desc обычные и вставки рядов
+   * @desc Только обычные. Вставки рядов игнорируем
    */
   auto_insets() {
     const {inset, elm, layer, ox} = this;
     ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
-      if(row.key.check_condition({elm: this, ox, layer})) {
-        const key = {cnstr: -elm, inset: row.inset, region: row.inset.region};
+      if(!row.inset.region && row.key.check_condition({elm: this, ox, layer})) {
+        const key = {cnstr: -elm, inset: row.inset, region: 0};
         if(!ox.inserts.find(key)) {
           const irow = ox.inserts.add(key);
           row.inset.clr_group.default_clr(irow);

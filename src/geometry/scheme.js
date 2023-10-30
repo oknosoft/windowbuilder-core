@@ -64,6 +64,21 @@ class Scheme extends paper.Project {
 
   }
 
+  _insertItem(index, item, _created) {
+    if(index === undefined && !_created && (
+      item instanceof Contour || item instanceof ConnectiveLayer || item instanceof DimensionLayer 
+    )) {
+      const {layers} = this;
+      const index = layers.indexOf(item);
+      if(index > -1 && index < layers.length - 1) {
+        layers.splice(index, 1);
+        layers.push(item);
+        return;
+      }
+    }
+    return super._insertItem(index, item, _created);
+  }
+
   /**
    * Обновляет связи параметров в иерархии слоёв
    * @param contour {Contour}
@@ -1969,7 +1984,7 @@ class Scheme extends paper.Project {
     for(const item of selectedItems) {
       const {parent} = item;
       if(parent instanceof ProfileItem) {
-        if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
+        if(all || !item.layer.layer || !parent.nearest || !parent.nearest(true)) {
           if(res.includes(parent)) {
             continue;
           }
@@ -2104,8 +2119,8 @@ class Scheme extends paper.Project {
     if(!layer) {
       layer = this.activeLayer;
     }
-    while (layer.parent) {
-      layer = layer.parent;
+    while (layer.layer) {
+      layer = layer.layer;
     }
     return layer;
   }

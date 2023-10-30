@@ -116,17 +116,7 @@ const AbstractFilling = (superclass) => class extends superclass {
 
     return res;
   }
-
-  /**
-   * Возвращает массив вложенных контуров текущего контура
-   * @memberOf AbstractFilling
-   * @instance
-   * @type Array.<Contour>
-   */
-  get contours() {
-    return this.children.filter((elm) => (elm instanceof Contour) && !(elm instanceof ContourTearing));
-  }
-
+  
   get skeleton() {
     return this._skeleton;
   }

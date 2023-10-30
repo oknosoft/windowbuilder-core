@@ -232,6 +232,9 @@ class GroupProfiles extends paper.Group {
   get profiles() {
     return this.children;
   }
+  on_remove_elm(elm) {
+    this.layer.on_remove_elm(elm);
+  }
 }
 class GroupFillings extends paper.Group {}
 class GroupText extends paper.Group {}

@@ -74,8 +74,6 @@ class FreeText extends paper.PointText {
       this.visible = false;
     }
 
-    this.bringToFront();
-
   }
 
   /**

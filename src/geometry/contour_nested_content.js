@@ -53,7 +53,7 @@ class ContourNestedContent extends Contour {
       path.translate(delta);
       const elm = map.get(proto.elm);
       new Filling({
-        parent: this,
+        parent: this.children.fillings,
         path,
         proto: {inset: proto.inset, clr: proto.clr},
         elm,

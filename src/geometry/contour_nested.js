@@ -378,12 +378,12 @@ class ContourNested extends Contour {
     const reflect = _reflected && !flipped || !_reflected && flipped;
     this.content.scaling = [1, 1];
     
-    function sendToBack(elm) {
-      elm.sendToBack();
-      for(const chld of elm.contours) {
-        sendToBack(chld);
-      }
-    }
+    // function sendToBack(elm) {
+    //   elm.sendToBack();
+    //   for(const chld of elm.contours) {
+    //     sendToBack(chld);
+    //   }
+    // }
     
     if(!visible || hidden) {
       return;
@@ -413,7 +413,7 @@ class ContourNested extends Contour {
     
     if(reflect) {
       this.content.scaling = [-1, 1];
-      sendToBack(this.content);
+      //sendToBack(this.content);
     }
   }
 

@@ -72,7 +72,6 @@ class DimensionDrawer extends paper.Group {
 
   constructor(attr) {
     super(attr);
-    this.bringToFront();
   }
 
   /**
@@ -91,7 +90,7 @@ class DimensionDrawer extends paper.Group {
       }
     }
 
-    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
+    this.layer?.layer?.l_dimensions?.clear();
   }
 
   /**

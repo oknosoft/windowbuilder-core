@@ -8,7 +8,12 @@ class ContourRegion extends Contour {
 
   constructor(attr) {
     super(attr);
+    this.dop = {region: attr.region};
     this.hidden = true;
+  }
+
+  get key() {
+    return `r${this.cnstr.toFixed()}`;
   }
 
   glasses(hide, glass_only) {

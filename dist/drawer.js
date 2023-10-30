@@ -689,7 +689,7 @@ class BuilderElement extends paper.Group {
       generatrix.remove();
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
-      if(this.layer && this.layer.parent){
+      if(this.layer?.layer){
         _attr.generatrix.guide = true;
       }
     }
@@ -1613,6 +1613,9 @@ class GroupProfiles extends paper.Group {
   get profiles() {
     return this.children;
   }
+  on_remove_elm(elm) {
+    this.layer.on_remove_elm(elm);
+  }
 }
 class GroupFillings extends paper.Group {}
 class GroupText extends paper.Group {}
@@ -1695,9 +1698,6 @@ const AbstractFilling = (superclass) => class extends superclass {
     }
     return res;
   }
-  get contours() {
-    return this.children.filter((elm) => (elm instanceof Contour) && !(elm instanceof ContourTearing));
-  }
   get skeleton() {
     return this._skeleton;
   }
@@ -1733,7 +1733,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     const ox = attr.ox || project.ox;
     this.prms = new BuilderPrms({layer: this});
     this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});
-    project.l_connective.bringToFront();
   }
   create_groups() {
     new GroupLayers({parent: this, name: 'bottomLayers'});
@@ -1817,9 +1816,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
   static create(attr = {}) {
-    let {kind, row, project, parent} = attr;
+    let {kind, row, project, parent, layer} = attr;
     if(typeof kind === 'undefined') {
       kind = row ? row.kind : 0;
+    }
+    if(parent instanceof Contour) {
+      if(!layer) {
+        layer = parent;
+      }
+      parent = layer.children.topLayers;
+    }
+    else if(!layer && parent) {
+      layer = parent.layer;
     }
     let Constructor = Contour;
     if(kind === 1) {
@@ -1834,18 +1842,21 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 4) {
       Constructor = ContourTearing;
     }
-    else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
+    else if(kind === 5) {
+      Constructor = ContourRegion;
+    }
+    else if(layer instanceof ContourNestedContent || layer instanceof ContourNested) {
       Constructor = ContourNestedContent;
     }
     if (!attr.row) {
       const {constructions} = project.ox;
-      attr.row = constructions.add({parent: parent ? parent.cnstr : 0});
+      attr.row = constructions.add({parent: layer ? layer.cnstr : 0});
       attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
     if(kind) {
       attr.row.kind = kind;
     }
-    const contour = new Constructor(attr);
+    const contour = new Constructor(Object.assign(attr, {layer, parent}));
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }
@@ -2010,17 +2021,29 @@ class Contour extends AbstractFilling(paper.Layer) {
   get furn_set() {
     return this.furn.find_set(this);
   }
+  get contours() {
+    const {topLayers, bottomLayers} = this.children;
+    return [...bottomLayers.children, ...topLayers.children];
+  }
+  get tearings() {
+    const res = [];
+    for(const {children} of this.children.fillings.children) {
+      for(const tearing of children.tearings.children) {
+        res.push(tearing);
+      }
+    }
+    return res;
+  }
   glasses(hide, glass_only) {
-    return this.children.filter((elm) => {
-      if(elm instanceof ContourTearing) {
-        return false;
+    const {topLayers, bottomLayers, fillings} = this.children;
+    const res = glass_only ? [...fillings.children] : 
+      [...bottomLayers.children, ...fillings.children, ...topLayers.children]
+        .filter(v => !(v instanceof ContourRegion));
+    return res.filter((elm) => {
+      if (hide) {
+        elm.visible = false;
       }
-      if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {
-        if (hide) {
-          elm.visible = false;
-        }
-        return true;
-      }
+      return true;
     });
   }
   get fillings() {
@@ -2221,7 +2244,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         else {
         }
-        cglass = new Filling({proto: glass, parent: this, path: glcontour});
+        cglass = new Filling({proto: glass, parent: this.children.fillings, path: glcontour});
         cglass.redraw();
       }
     }
@@ -2297,9 +2320,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     contours.concat(tearings).forEach((contour) => contour.profiles.forEach(crays));
     profiles.forEach(crays);
     project.register_change();
-  }
-  get tearings() {
-    return this.children.filter((item) => item instanceof ContourTearing);
   }
   get nodes() {
     const nodes = [];
@@ -2688,7 +2708,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
       elm.check_err(err_attrs);
     });
-    l_visualization.bringToFront();
   }
   draw_mosquito() {
     const {l_visualization, project, _ox, cnstr} = this;
@@ -3392,7 +3411,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     for (const elm of Array.from(other)) {
-      elm?.bringToFront?.();
     }
     for (const elm of addls) {
       const {b, e} = elm.rays;
@@ -3421,16 +3439,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.glass_recalc();
     this.draw_opening();
     const children = this.contours.concat(this.tearings);
-    const left = this.children.filter((elm) => !children.includes(elm));
     for(const elm of children) {
       elm.redraw();
-      if(!elm.flipped) {
-        for(const lelm of left) {
-          if(lelm.isAbove(elm)) {
-            lelm.insertBelow(elm);
-          }
-        }
-      }
     }
     if(!_attr._hide_errors) {
       this.draw_cnn_errors();
@@ -3923,16 +3933,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
   }
   on_remove_elm(elm) {
-    if (this.parent) {
-      this.parent.on_remove_elm(elm);
+    if (this.layer) {
+      this.layer.on_remove_elm(elm);
     }
     if (elm instanceof Profile && !this.project._attr._loading) {
       this.l_dimensions.clear();
     }
   }
   on_insert_elm(elm) {
-    if (this.parent) {
-      this.parent.on_remove_elm(elm);
+    if (this.layer) {
+      this.layer.on_insert_elm(elm);
     }
     if (elm instanceof Profile && !this.project._attr._loading) {
       this.l_dimensions.clear();
@@ -3999,12 +4009,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     for(const layer of this.contours) {
       layer.apply_mirror();
-      if(_attr._reflected || flipped) {
-        layer.sendToBack();
-      }
-      else {
-        layer.bringToFront();
-      }
     }
   }
   get sketch_view() {
@@ -4331,12 +4335,6 @@ class ContourNested extends Contour {
     const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
     const reflect = _reflected && !flipped || !_reflected && flipped;
     this.content.scaling = [1, 1];
-    function sendToBack(elm) {
-      elm.sendToBack();
-      for(const chld of elm.contours) {
-        sendToBack(chld);
-      }
-    }
     if(!visible || hidden) {
       return;
     }
@@ -4358,7 +4356,6 @@ class ContourNested extends Contour {
     }
     if(reflect) {
       this.content.scaling = [-1, 1];
-      sendToBack(this.content);
     }
   }
   remove() {
@@ -4410,7 +4407,7 @@ class ContourNestedContent extends Contour {
       path.translate(delta);
       const elm = map.get(proto.elm);
       new Filling({
-        parent: this,
+        parent: this.children.fillings,
         path,
         proto: {inset: proto.inset, clr: proto.clr},
         elm,
@@ -4472,7 +4469,11 @@ EditorInvisible.ContourParent = ContourParent;
 class ContourRegion extends Contour {
   constructor(attr) {
     super(attr);
+    this.dop = {region: attr.region};
     this.hidden = true;
+  }
+  get key() {
+    return `r${this.cnstr.toFixed()}`;
   }
   glasses(hide, glass_only) {
     return [];
@@ -5256,7 +5257,6 @@ class DimensionLayer extends paper.Layer {
 class DimensionDrawer extends paper.Group {
   constructor(attr) {
     super(attr);
-    this.bringToFront();
   }
   clear() {
     this.ihor && this.ihor.clear();
@@ -5268,7 +5268,7 @@ class DimensionDrawer extends paper.Group {
         this[pos] = null;
       }
     }
-    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
+    this.layer?.layer?.l_dimensions?.clear();
   }
   redraw(forse) {
     const {parent, project: {builder_props}} = this;
@@ -5908,6 +5908,11 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.create_groups();
     this.initialize(attr);
   }
+  create_groups() {
+    new GroupLayers({parent: this, name: 'tearings'});
+    super.create_groups();
+    new GroupText({parent: this, name: 'text'});
+  }
   initialize(attr) {
     this._skeleton = new Skeleton(this);
     const _row = attr.row;
@@ -6091,7 +6096,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.remove();
     }
     else {
-      this.parent = contour;
+      this.parent = contour.children.fillings;
       _row.cnstr = contour.cnstr;
       this.set_inset(project.default_inset({
         inset: this.inset,
@@ -6152,7 +6157,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
   redraw() {
-    this.sendToBack();
     const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
     const fontSize = elm_font_size * (2 / 3);
@@ -6678,9 +6682,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   get nodes() {
     let res = this.profiles.map((curr) => curr.b);
     if(!res.length){
-      const {path, parent} = this;
+      const {path, layer} = this;
       if(path){
-        res = parent.glass_nodes(path);
+        res = layer.glass_nodes(path);
       }
     }
     return res;
@@ -6924,7 +6928,6 @@ class FreeText extends paper.PointText {
     if(project.builder_props.txts === false) {
       this.visible = false;
     }
-    this.bringToFront();
   }
   remove() {
     if(this._row) {
@@ -10590,7 +10593,7 @@ class Profile extends ProfileItem {
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
       return elm_types.impost;
     }
-    if(this.layer?.parent instanceof Contour) {
+    if(this.layer?.layer instanceof Contour) {
       return elm_types.flap;
     }
     return elm_types.rama;
@@ -10851,8 +10854,8 @@ class Profile extends ProfileItem {
   auto_insets() {
     const {inset, elm, layer, ox} = this;
     ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
-      if(row.key.check_condition({elm: this, ox, layer})) {
-        const key = {cnstr: -elm, inset: row.inset, region: row.inset.region};
+      if(!row.inset.region && row.key.check_condition({elm: this, ox, layer})) {
+        const key = {cnstr: -elm, inset: row.inset, region: 0};
         if(!ox.inserts.find(key)) {
           const irow = ox.inserts.add(key);
           row.inset.clr_group.default_clr(irow);
@@ -11606,7 +11609,6 @@ class ConnectiveLayer extends paper.Layer {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());
     _errors.removeChildren();
-    _errors.bringToFront();
   }
   save_coordinates() {
     return this.children.reduce((accumulator, elm) => {
@@ -12506,6 +12508,20 @@ class Scheme extends paper.Project {
       clearTimeout(_attr._vis_timer);
       _attr._vis_timer = setTimeout(this.draw_visualization.bind(this), 300);
     });
+  }
+  _insertItem(index, item, _created) {
+    if(index === undefined && !_created && (
+      item instanceof Contour || item instanceof ConnectiveLayer || item instanceof DimensionLayer 
+    )) {
+      const {layers} = this;
+      const index = layers.indexOf(item);
+      if(index > -1 && index < layers.length - 1) {
+        layers.splice(index, 1);
+        layers.push(item);
+        return;
+      }
+    }
+    return super._insertItem(index, item, _created);
   }
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
@@ -13761,7 +13777,7 @@ class Scheme extends paper.Project {
     for(const item of selectedItems) {
       const {parent} = item;
       if(parent instanceof ProfileItem) {
-        if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
+        if(all || !item.layer.layer || !parent.nearest || !parent.nearest(true)) {
           if(res.includes(parent)) {
             continue;
           }
@@ -13848,8 +13864,8 @@ class Scheme extends paper.Project {
     if(!layer) {
       layer = this.activeLayer;
     }
-    while (layer.parent) {
-      layer = layer.parent;
+    while (layer.layer) {
+      layer = layer.layer;
     }
     return layer;
   }
@@ -19444,6 +19460,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
+            this.accessories('clear', row_prod.characteristic);
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
             row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,dop', 'qty,totqty,totqty1');
             row_dp.characteristic = row_prod.characteristic;

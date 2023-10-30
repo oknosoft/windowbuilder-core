@@ -151,7 +151,7 @@ class BuilderElement extends paper.Group {
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
 
-      if(this.layer && this.layer.parent){
+      if(this.layer?.layer){
         _attr.generatrix.guide = true;
       }
     }

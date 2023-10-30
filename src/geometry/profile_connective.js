@@ -300,7 +300,7 @@ class ConnectiveLayer extends paper.Layer {
     const {_errors, children} = this;
     children.forEach((elm) => elm !== _errors && elm.redraw());
     _errors.removeChildren();
-    _errors.bringToFront();
+    //_errors.bringToFront();
   }
   
   save_coordinates() {

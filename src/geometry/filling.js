@@ -33,6 +33,12 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   }
 
+  create_groups() {
+    new GroupLayers({parent: this, name: 'tearings'});
+    super.create_groups();
+    new GroupText({parent: this, name: 'text'});
+  }
+
   initialize(attr) {
 
     // узлы и рёбра раскладок заполнения
@@ -276,7 +282,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.remove();
     }
     else {
-      this.parent = contour;
+      this.parent = contour.children.fillings;
       _row.cnstr = contour.cnstr;
       // проверим вставку
       this.set_inset(project.default_inset({
@@ -362,7 +368,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   redraw() {
 
-    this.sendToBack();
+    //this.sendToBack();
 
     const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
@@ -1035,9 +1041,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   get nodes() {
     let res = this.profiles.map((curr) => curr.b);
     if(!res.length){
-      const {path, parent} = this;
+      const {path, layer} = this;
       if(path){
-        res = parent.glass_nodes(path);
+        res = layer.glass_nodes(path);
       }
     }
     return res;
