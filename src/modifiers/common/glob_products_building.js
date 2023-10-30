@@ -437,9 +437,9 @@ class ProductsBuilding {
         }
 
         // РассчитатьКоличествоПлощадьМассу
-        const acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
-        const acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
         const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
+        let acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
+        let acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
         let {alp1, alp2} = _row;
         if(acmethod_prev == s2 || acmethod_prev == s1) {
           alp1 = prev?.generatrix?.angle_between(elm.generatrix, b.point);
@@ -453,6 +453,7 @@ class ProductsBuilding {
         }
         if([2, 3].includes(inset.flipped)) {
           [alp1, alp2] = [alp2, alp1];
+          [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
         }
         calc_count_area_mass(
           row_spec,
