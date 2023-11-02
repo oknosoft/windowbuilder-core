@@ -18635,6 +18635,57 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('direction');
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      prm.glasses = function ({elm, ox}) {
+        const res = [];
+        if(!ox) {
+          ox = elm?.ox;
+        }
+        const calc_order = ox?.calc_order;
+        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
+          const parts = key.split(':');
+          const row = calc_order.production.find({characteristic: parts[0]});
+          for(const glrow of row?.characteristic?.glasses || []) {
+            res.push({
+              formula: glrow.formula,
+              thickness: glrow.thickness,
+              width: glrow.width.round(1),
+              height: glrow.height.round(1),
+              area: glrow.s,
+              is_rectangular: glrow.is_rectangular,
+              is_sandwich: glrow.is_sandwich,
+            });
+          }
+        });
+        return res;
+      };
+      prm.products = function ({elm, ox}) {
+        const res = [];
+        if(!ox) {
+          ox = elm?.ox;
+        }
+        const calc_order = ox?.calc_order;
+        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
+          const parts = key.split(':');
+          const row = calc_order.production.find({characteristic: parts[0]});
+          if(row) {
+            res.push(row.characteristic);
+          }
+        });
+        return res.map((cx) => {
+          const weight = cx.elm_weight(elmno);
+          return {
+            width: cx.x,
+            height: cx.y,
+            area: cx.s,
+            weight,
+          };
+        });
+      };
+    }
+  })('compound');
 });
 class FakeLenAngl {
   constructor({len, inset}) {
