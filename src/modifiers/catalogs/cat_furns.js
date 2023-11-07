@@ -244,7 +244,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
             }
 
-            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row);
+            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache);
             proc_row.origin = this;
             proc_row.specify = row_furn.nom;
             proc_row.handle_height_max = contour.cnstr;
@@ -299,13 +299,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 res.add(sub_row);
               }
               else if(sub_row.quantity) {
-                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
                 row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache);
             row_spec.specify = row_furn.nom;
           }
         });
@@ -319,14 +319,14 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             res.add(sub_row);
           }
           else if(sub_row.quantity) {
-            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
             row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
         if(row_furn.quantity) {
-          this.add_with_algorithm(res, ox, contour, row_furn);
+          this.add_with_algorithm(res, ox, contour, row_furn, cache);
         }
       }
     });
@@ -336,15 +336,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Добавляет строку в спецификацию с учетом алгоритма
-   * @param res {TabularSection}
-   * @param ox {CatCharacteristics}
-   * @param contour {Contour}
-   * @param row_furn {CatFurnsSpecificationRow}
+   * @param {TabularSection} res
+   * @param {CatCharacteristics} ox
+   * @param {Contour} contour
+   * @param {CatFurnsSpecificationRow} row_furn
+   * @param {Object} cache
    * @return {DpBuyers_orderSpecificationRow}
    */
-  add_with_algorithm(res, ox, contour, row_furn) {
+  add_with_algorithm(res, ox, contour, row_furn, cache) {
     const {algorithm, formula, elm, dop, offset_option} = row_furn;
-    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;
+    const {CatNom, enm: {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}}} = $p;
     let cx;
     if(algorithm === cx_prm) {
       cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
@@ -359,16 +360,50 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     else if(algorithm === clr_prm) {
       this.selection_params.find_rows({elm, dop}, (prm_row) => {
-        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&
-          prm_row.param.type.types.includes('cat.clrs') &&
-          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
+        if((prm_row.origin.is('algotithm') && prm_row.param.type.types.includes('cat.clrs')) ||
+          ((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+            prm_row.param.type.types.includes('cat.clrs') &&
+            (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name))
+        ) {
           row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
           row_spec.algorithm = null;
+          return !prm_row.origin.is('algotithm');
         }
       });
     }
+
+    if(row_furn.inset && !row_furn.inset.empty() && row_spec.nom instanceof CatNom) {
+      let len = 1000;
+      if(!row_spec.nom.is_pieces && row_furn.side) {
+        const profile = contour.profile_by_furn_side(side, cache);
+        if(profile) {
+          len = profile._row.len;
+        }
+      }      
+      const row_prm = {
+        clr: row_spec.clr,
+        elm: -contour.cnstr,
+        layer: contour,
+        nom: row_spec.nom,
+        inset: row_furn.inset,
+        is_linear() {
+          return true;
+        },
+        length: len,
+        _row: {len, angle_hor: 0, s: 0, r: 0}
+      };
+      row_furn.inset.calculate_spec({
+        elm: row_prm,
+        len_angl: {len, cnstr: contour.cnstr, alp1: 0, alp2: 0, angle: 0, origin: this},
+        ox,
+        //spec: res,
+        clr: row_spec.clr,
+        own_row: row_furn
+      });
+    }
+    
     if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){
-      // для offset_option = Формула, вызов уже состоялся. Повторно не выполняем
+      // Для offset_option = Формула, вызов уже состоялся. Повторно не выполняем
       formula.execute({ox, contour, row_furn, row_spec});
     }
     return row_spec;

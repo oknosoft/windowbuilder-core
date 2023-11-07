@@ -386,6 +386,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
+      // данный параметр не используется для фильтрации
+      prm.check_condition = function () {
+        return true;
+      };
       // состав заполнений
       prm.glasses = function ({elm, ox}) {
         const res = [];
@@ -405,6 +409,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               area: glrow.s,
               is_rectangular: glrow.is_rectangular,
               is_sandwich: glrow.is_sandwich,
+              weight: ox.elm_weight(glrow.elm),
             });
           }
         });
@@ -428,7 +433,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         });
 
         return res.map((cx) => {
-          const weight = cx.elm_weight(elmno);
+          const weight = cx.elm_weight();
           return {
             width: cx.x,
             height: cx.y,

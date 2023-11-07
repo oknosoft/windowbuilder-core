@@ -1331,7 +1331,7 @@
                     },
                     _row: {len: len_angl?.len || _row.len, angle_hor: 0, s: _row.s}
                   };
-                  const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len})
+                  const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len});
                   row_ins_spec.inset.calculate_spec({
                     elm: row_prm,
                     len_angl: tmp_len_angl,
