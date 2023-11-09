@@ -409,7 +409,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               area: glrow.s,
               is_rectangular: glrow.is_rectangular,
               is_sandwich: glrow.is_sandwich,
-              weight: ox.elm_weight(glrow.elm),
+              weight: row.characteristic.elm_weight(glrow.elm),
             });
           }
         });
@@ -446,3 +446,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   })('compound');
 
 });
+
+function n1 (obj, $p) {
+  
+}
