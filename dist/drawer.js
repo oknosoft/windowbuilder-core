@@ -16019,7 +16019,13 @@ class SpecBuilding {
     });
     const kit = calc_order.accessories('clear');
     if(kit) {
-      order_rows.set(kit, kit.calc_order_row);
+      if(kit.specification.count()) {
+        order_rows.set(kit, kit.calc_order_row);
+        kit.before_save({});
+      }
+      else if(kit.calc_order_row) {
+        calc_order.production.del(kit.calc_order_row);
+      }
     }
     if(order_rows.size){
       attr.order_rows = order_rows;
@@ -19169,7 +19175,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(crow?.characteristic && ox) {
         crow.characteristic.specification.clear({specify: ox});
       }
-      return crow?.characteristic;
+      if(crow?.characteristic && !crow.characteristic.empty()) {
+        crow.characteristic.calc_order = this;
+        return crow.characteristic;
+      }
+      return;
     }
     let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
     if(!cx) {
@@ -19177,6 +19187,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         calc_order: this,
         owner: nom.accessories,
       }, false, true);
+    }
+    if(cx._deleted) {
+      cx._obj._deleted = false;
     }
     if(!crow) {
       crow = production.add({
@@ -19193,7 +19206,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {nom, characteristic} = row;
       const {ui, job_prm} = $p;
-      if(nom === job_prm.nom.accessories) {
+      if(nom === job_prm.nom.accessories && characteristic.specification.count()) {
         ui?.dialogs?.alert({
           html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
           title: this.presentation,

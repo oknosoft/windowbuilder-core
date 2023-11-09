@@ -546,7 +546,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(crow?.characteristic && ox) {
         crow.characteristic.specification.clear({specify: ox});
       }
-      return crow?.characteristic;
+      if(crow?.characteristic && !crow.characteristic.empty()) {
+        crow.characteristic.calc_order = this;
+        return crow.characteristic;
+      }
+      return;
     }
 
     let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
@@ -555,6 +559,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         calc_order: this,
         owner: nom.accessories,
       }, false, true);
+    }
+    if(cx._deleted) {
+      cx._obj._deleted = false;
     }
     if(!crow) {
       crow = production.add({
@@ -573,7 +580,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {nom, characteristic} = row;
       const {ui, job_prm} = $p;
-      if(nom === job_prm.nom.accessories) {
+      if(nom === job_prm.nom.accessories && characteristic.specification.count()) {
         ui?.dialogs?.alert({
           html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
           title: this.presentation,

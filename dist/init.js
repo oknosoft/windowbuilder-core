@@ -5682,7 +5682,7 @@ set demand(v){this._setter_ts('demand',v)}
           name += '/s:' + this.s.toFixed(3);
         }
         
-        if(this.weight && !this.s){
+        if(this.weight){
           name += `/m:${this.weight.toFixed(3)}kg`;
         }
 
