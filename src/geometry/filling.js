@@ -177,13 +177,17 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       curr = profiles[i];
 
-      if(!curr.profile || !curr.profile._row || !curr.cnn){
+      if(!curr.profile || !curr.profile._row){
         if($p.job_prm.debug) {
-          throw new ReferenceError('Не найдено ребро заполнения');
+          console.error('Не найдено ребро заполнения');
         }
-        else {
-          return;
+        return;
+      }
+      if(!curr.cnn){
+        if($p.job_prm.debug) {
+          console.error(`Не найдено примыкающее соединение для заполнения №${_row.elm}`);
         }
+        return;
       }
 
       curr.aperture_path = curr.profile.generatrix.get_subpath(curr.b, curr.e)._reversed ?
