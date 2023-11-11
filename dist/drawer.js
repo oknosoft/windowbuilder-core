@@ -15735,8 +15735,7 @@ class ProductsBuilding {
       },
       cch: {properties},
       CatCharacteristics,
-      CatProperty_values,
-      DpBuyers_order,
+      CatProperty_values
     } = $p;
     if(!row_spec) {
       if(row_base?.is_order_row === kit) {
@@ -18736,8 +18735,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('compound');
 });
-function n1 (obj, $p) {
-}
 class FakeLenAngl {
   constructor({len, inset}) {
     this.len = len;

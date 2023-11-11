@@ -446,7 +446,3 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   })('compound');
 
 });
-
-function n1 (obj, $p) {
-  
-}

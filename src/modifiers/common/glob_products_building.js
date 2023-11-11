@@ -1084,11 +1084,9 @@ class ProductsBuilding {
       },
       cch: {properties},
       CatCharacteristics,
-      CatProperty_values,
-      DpBuyers_order,
+      CatProperty_values
     } = $p;
-
-        
+    
     if(!row_spec) {
       if(row_base?.is_order_row === kit) {
         specify = ox || spec._owner;

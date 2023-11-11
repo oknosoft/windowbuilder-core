@@ -5684,7 +5684,7 @@ set demand(v){this._setter_ts('demand',v)}
         }
         
         if(this.weight){
-          name += `/m:${this.weight.toFixed(3)}kg`;
+          name += `/m:${this.weight.toFixed(3)}`;
         }
 
         // подмешиваем значения параметров
