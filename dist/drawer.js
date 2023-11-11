@@ -18741,8 +18741,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('has_region_elm');
 });
-function n1 (obj, $p) {
-}
 class FakeLenAngl {
   constructor({len, inset}) {
     this.len = len;
