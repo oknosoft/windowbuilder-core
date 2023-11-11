@@ -122,7 +122,8 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
       else if(this.svg_path){
 
         if(this.mode === 1) {
-          const attr = JSON.parse(this.attributes || '{}');
+          //const attr = JSON.parse(this.attributes || '{}');
+          const {attributes} = this;
           subpath = new PointText(Object.assign({
             project,
             layer,
@@ -130,9 +131,9 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             fillColor: 'black',
             dashArray,
             fontFamily: $p.job_prm.builder.font_family,
-            fontSize: attr.fontSize || 60,
+            fontSize: attributes.fontSize || 60,
             content: this.svg_path,
-          }, attr, this.origin.empty() ? null : {_visualization: true, guide: false}));
+          }, attributes, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
           subpath = new CompoundPath(Object.assign({
