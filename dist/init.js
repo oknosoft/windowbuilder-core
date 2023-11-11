@@ -1670,7 +1670,8 @@ set params(v){this._setter_ts('params',v)}
       else if(this.svg_path){
 
         if(this.mode === 1) {
-          const attr = JSON.parse(this.attributes || '{}');
+          //const attr = JSON.parse(this.attributes || '{}');
+          const {attributes} = this;
           subpath = new PointText(Object.assign({
             project,
             layer,
@@ -1678,9 +1679,9 @@ set params(v){this._setter_ts('params',v)}
             fillColor: 'black',
             dashArray,
             fontFamily: $p.job_prm.builder.font_family,
-            fontSize: attr.fontSize || 60,
+            fontSize: attributes.fontSize || 60,
             content: this.svg_path,
-          }, attr, this.origin.empty() ? null : {_visualization: true, guide: false}));
+          }, attributes, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
           subpath = new CompoundPath(Object.assign({
@@ -5682,8 +5683,8 @@ set demand(v){this._setter_ts('demand',v)}
           name += '/s:' + this.s.toFixed(3);
         }
         
-        if(this.weight && !this.s){
-          name += `/m:${this.weight.toFixed(3)}kg`;
+        if(this.weight){
+          name += `/m:${this.weight.toFixed(3)}`;
         }
 
         // подмешиваем значения параметров
