@@ -442,7 +442,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
       side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr, _row: {fix_ruch}} = contour;
+    const {direction, h_ruch, cnstr, _row: {fix_ruch}, project: {_scope}} = contour;
 
     // проверка по высоте ручки
     if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
@@ -458,8 +458,17 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     }
 
     // проверка по формуле
-    if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
-      return false;
+    if(!formula.empty()) {
+      const res = formula.execute({ox: cache.ox, contour, row_furn: this});
+      if(formula.condition_formula && !res) {
+        return false;
+      }
+      if(res instanceof _scope.Path || res instanceof _scope.CompoundPath) {
+        const {w, h} = contour;
+        if(!res.contains([w, h])) {
+          return false;
+        }
+      }
     }
 
     // по моменту на петлях (в текущей реализации - просто по массе)
