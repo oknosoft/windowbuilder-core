@@ -4469,8 +4469,13 @@ EditorInvisible.ContourParent = ContourParent;
 class ContourRegion extends Contour {
   constructor(attr) {
     super(attr);
-    this.dop = {region: attr.region};
-    this.hidden = true;
+    this.hidden = !attr.show;
+    if(attr.region) {
+      this.dop = {region: attr.region};
+    }
+  }
+  get ProfileConstructor() {
+    return ProfileRegion;
   }
   get key() {
     return `r${this.cnstr.toFixed()}`;
@@ -4489,7 +4494,7 @@ class ContourRegion extends Contour {
       bounds = this.bounds;
     }
     const {cnstr, layer, dop, weight} = this;
-    return `Ряд №${dop.region} (${cnstr}) к ${layer.cnstr}`  +
+    return `Ряд (${cnstr}) №${dop.region} к ${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
@@ -12341,7 +12346,7 @@ class ProfileParent extends Profile {
   default_inset(all) {
   }
   get elm_type() {
-    return $p.enm.elm_types.Вложение;
+    return $p.enm.elm_types.attachment;
   }
   set_inset(v) {
   }
@@ -12446,6 +12451,12 @@ class ProfileParent extends Profile {
   }
 }
 EditorInvisible.ProfileParent = ProfileParent;
+class ProfileRegion extends Profile {
+  get elm_type() {
+    return $p.enm.elm_types.region;
+  }
+}
+EditorInvisible.ProfileRegion = ProfileRegion;
 class ProfileTearing extends ProfileItem {
   constructor(attr) {
     super(attr);
@@ -15945,23 +15956,13 @@ $p.spec_building = new SpecBuilding($p);
 	mgr.__define({
 		profiles: {
 			get(){
-				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing]);
+				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing, mgr.region]);
 			}
 		},
 		profile_items: {
 			get(){
 				return cache.profile_items
-					|| ( cache.profile_items = [
-						mgr.Рама,
-						mgr.Створка,
-						mgr.Импост,
-						mgr.Штульп,
-						mgr.Добор,
-						mgr.Соединитель,
-						mgr.Раскладка,
-            mgr.Связка,
-            mgr.Разрыв,
-					] );
+					|| ( cache.profile_items = [...this.profiles, mgr.addition, mgr.linking, mgr.layout, mgr.bundle]);
 			}
 		},
 		rama_impost: {
@@ -15971,17 +15972,17 @@ $p.spec_building = new SpecBuilding($p);
 		},
 		impost_lay: {
 			get(){
-        return cache.impost_lay || (cache.impost_lay = [mgr.Импост, mgr.Раскладка]);
+        return cache.impost_lay || (cache.impost_lay = [mgr.impost, mgr.layout]);
 			}
 		},
 		stvs: {
 			get(){
-        return cache.stvs || (cache.stvs = [mgr.Створка]);
+        return cache.stvs || (cache.stvs = [mgr.flap]);
 			}
 		},
 		glasses: {
 			get(){
-        return cache.glasses || (cache.glasses = [mgr.Стекло, mgr.Заполнение]);
+        return cache.glasses || (cache.glasses = [mgr.glass, mgr.sandwich]);
 			}
 		}
 	});
@@ -16504,7 +16505,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
       side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr, _row: {fix_ruch}} = contour;
+    const {direction, h_ruch, cnstr, _row: {fix_ruch}, project: {_scope}} = contour;
     if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
       ((handle_height_min !== -1 && handle_height_max !== -1) && ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
       ){
@@ -16516,8 +16517,17 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
-    if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
-      return false;
+    if(!formula.empty()) {
+      const res = formula.execute({ox: cache.ox, contour, row_furn: this});
+      if(formula.condition_formula && !res) {
+        return false;
+      }
+      if(res instanceof _scope.Path || res instanceof _scope.CompoundPath) {
+        const {w, h} = contour;
+        if(!res.contains([w, h])) {
+          return false;
+        }
+      }
     }
     if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {

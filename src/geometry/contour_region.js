@@ -8,8 +8,14 @@ class ContourRegion extends Contour {
 
   constructor(attr) {
     super(attr);
-    this.dop = {region: attr.region};
-    this.hidden = true;
+    this.hidden = !attr.show;
+    if(attr.region) {
+      this.dop = {region: attr.region};
+    }
+  }
+
+  get ProfileConstructor() {
+    return ProfileRegion;
   }
 
   get key() {
@@ -33,7 +39,7 @@ class ContourRegion extends Contour {
       bounds = this.bounds;
     }
     const {cnstr, layer, dop, weight} = this;
-    return `Ряд №${dop.region} (${cnstr}) к ${layer.cnstr}`  +
+    return `Ряд (${cnstr}) №${dop.region} к ${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }

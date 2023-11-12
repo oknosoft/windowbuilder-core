@@ -2,9 +2,7 @@
 /*
  * Виртуальный родительский профиль для вложенных слоёв
  *
- * @module profile_parent
- *
- * Created by Evgeniy Malyarov on 21.04.2020.
+ * Created 21.04.2020.
  */
 
 class ProfileParent extends Profile {
@@ -23,7 +21,7 @@ class ProfileParent extends Profile {
    * Возвращает тип элемента (Вложение)
    */
   get elm_type() {
-    return $p.enm.elm_types.Вложение;
+    return $p.enm.elm_types.attachment;
   }
 
   // вставка - внешний профиль
