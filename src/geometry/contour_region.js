@@ -44,6 +44,18 @@ class ContourRegion extends Contour {
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
 
+  /**
+   * Признак сокрытия слоя
+   * @return {boolean}
+   */
+  get hidden() {
+    return super.hidden;
+  }
+  set hidden(v) {
+    super.hidden = v;
+    this.redraw();
+  }
+
 }
 
 EditorInvisible.ContourRegion = ContourRegion;

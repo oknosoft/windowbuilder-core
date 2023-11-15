@@ -24,10 +24,10 @@ class BuilderElement extends paper.Group {
   constructor(attr) {
 
     super(attr);
-    if(attr.parent){
+    if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent){
+    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
       this.parent = attr.proto.parent;
     }
 

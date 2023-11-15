@@ -606,10 +606,10 @@ EditorInvisible.ToolElement = ToolElement;
 class BuilderElement extends paper.Group {
   constructor(attr) {
     super(attr);
-    if(attr.parent){
+    if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent){
+    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
       this.parent = attr.proto.parent;
     }
     if(!attr.row){
@@ -4497,6 +4497,13 @@ class ContourRegion extends Contour {
     return `Ряд (${cnstr}) №${dop.region} к ${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
+  }
+  get hidden() {
+    return super.hidden;
+  }
+  set hidden(v) {
+    super.hidden = v;
+    this.redraw();
   }
 }
 EditorInvisible.ContourRegion = ContourRegion;
@@ -8965,7 +8972,7 @@ class ProfileItem extends GeneratrixElement {
       for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
-      if([0, 1].includes(project.builder_props.mode)) {
+      if([0, 1].includes(project.builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
           const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();

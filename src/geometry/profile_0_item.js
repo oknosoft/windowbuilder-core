@@ -1359,7 +1359,7 @@ class ProfileItem extends GeneratrixElement {
         item.setSelection(0);
       }
 
-      if([0, 1].includes(project.builder_props.mode)) {
+      if([0, 1].includes(project.builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
           const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
