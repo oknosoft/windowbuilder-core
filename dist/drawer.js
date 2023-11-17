@@ -16750,7 +16750,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
-    if(!formula.empty()) {
+    if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
       const res = formula.execute({ox: cache.ox, contour, row_furn: this});
       if(formula.condition_formula && !res) {
         return false;
