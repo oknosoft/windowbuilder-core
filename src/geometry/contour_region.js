@@ -38,10 +38,23 @@ class ContourRegion extends Contour {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, dop, weight} = this;
-    return `Ряд (${cnstr}) №${dop.region} к ${layer.cnstr}`  +
+    const {cnstr, layer, region, weight} = this;
+    return `Ряд (${cnstr}) №${region} к ${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
+  }
+  
+  get region() {
+    return this.dop.region || 0;
+  }
+
+  /**
+   * Надо ли строить авторазмерные линии
+   * @return {Boolean}
+   */
+  get show_dimensions() {
+    const {visible, hidden} = this.layer;
+    return !visible || hidden;
   }
 
   /**

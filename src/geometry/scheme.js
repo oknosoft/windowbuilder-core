@@ -1601,60 +1601,7 @@ class Scheme extends paper.Project {
    *
    */
   draw_sizes() {
-
-    const {bounds, l_dimensions, builder_props} = this;
-
-    if(bounds && builder_props.auto_lines) {
-
-      if(!l_dimensions.bottom) {
-        l_dimensions.bottom = new DimensionLine({
-          pos: 'bottom',
-          parent: l_dimensions,
-          offset: -120
-        });
-      }
-      else {
-        l_dimensions.bottom.offset = -120;
-      }
-
-      if(!l_dimensions.right) {
-        l_dimensions.right = new DimensionLine({
-          pos: 'right',
-          parent: l_dimensions,
-          offset: -120
-        });
-      }
-      else {
-        l_dimensions.right.offset = -120;
-      }
-
-
-      // если среди размеров, сформированных контурами есть габарит - второй раз не выводим
-
-      if(this.contours.some((l) => l.l_dimensions.children.some((dl) =>
-          dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
-        l_dimensions.right.visible = false;
-      }
-      else {
-        l_dimensions.right.redraw();
-      }
-
-      if(this.contours.some((l) => l.l_dimensions.children.some((dl) =>
-          dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
-        l_dimensions.bottom.visible = false;
-      }
-      else {
-        l_dimensions.bottom.redraw();
-      }
-    }
-    else {
-      if(l_dimensions.bottom) {
-        l_dimensions.bottom.visible = false;
-      }
-      if(l_dimensions.right) {
-        l_dimensions.right.visible = false;
-      }
-    }
+    this.l_dimensions.draw_sizes();
   }
 
   /**

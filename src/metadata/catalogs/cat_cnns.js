@@ -99,8 +99,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
     
     if(elm1.rnum && (!types.includes(i) || types.length > 1)) {
-      const parent_elm = elm2?.parent_elm || elm2; 
-      const side = parent_elm ? parent_elm.cnn_side?.(elm1?.parent_elm) : cnn_sides.inner;
+      const side = elm2?.cnn_side?.(elm1) || cnn_sides.inner;
       const res = this.region_cnn({
         region: elm1.rnum, 
         elm1,

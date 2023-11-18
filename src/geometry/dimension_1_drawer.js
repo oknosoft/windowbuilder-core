@@ -59,6 +59,69 @@ class DimensionLayer extends paper.Layer {
     return this.project.dimension_bounds;
   }
 
+  /**
+   * @summary Создаёт и перерисовавает габаритные линии изделия
+   * @desc Отвечает только за габариты изделия
+   * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
+   *
+   */
+  draw_sizes() {
+
+    const {bounds, builder_props, contours} = this.project;
+
+    if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
+
+      if(!this.bottom) {
+        this.bottom = new DimensionLine({
+          pos: 'bottom',
+          parent: this,
+          offset: -120
+        });
+      }
+      else {
+        this.bottom.offset = -120;
+      }
+
+      if(!this.right) {
+        this.right = new DimensionLine({
+          pos: 'right',
+          parent: this,
+          offset: -120
+        });
+      }
+      else {
+        this.right.offset = -120;
+      }
+
+
+      // если среди размеров, сформированных контурами есть габарит - второй раз не выводим
+
+      if(contours.some((l) => l.l_dimensions.children.some((dl) =>
+        dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
+        this.right.visible = false;
+      }
+      else {
+        this.right.redraw();
+      }
+
+      if(contours.some((l) => l.l_dimensions.children.some((dl) =>
+        dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
+        this.bottom.visible = false;
+      }
+      else {
+        this.bottom.redraw();
+      }
+    }
+    else {
+      if(this.bottom) {
+        this.bottom.visible = false;
+      }
+      if(this.right) {
+        this.right.visible = false;
+      }
+    }
+  }
+
 }
 
 /**
@@ -98,19 +161,23 @@ class DimensionDrawer extends paper.Group {
    */
   redraw(forse) {
 
-    const {parent, project: {builder_props}} = this;
+    const {layer, project: {builder_props}} = this;
+    
+    if(!forse) {
+      forse = layer.show_dimensions;
+    }
 
     if(forse || !builder_props.auto_lines) {
       this.clear();
     }
 
     // сначала, перерисовываем размерные линии вложенных контуров, чтобы получить отступы
-    for (let chld of parent.contours) {
+    for (let chld of layer.contours) {
       chld.l_dimensions.redraw();
     }
 
     // для внешних контуров строим авторазмерные линии
-    if(builder_props.auto_lines && (!parent.parent || forse)) {
+    if(builder_props.auto_lines && forse) {
 
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
@@ -118,19 +185,19 @@ class DimensionDrawer extends paper.Group {
       }
 
       // подмешиваем импосты вложенных контуров
-      const profiles = new Set(parent.profiles);
-      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
+      const profiles = new Set(layer.profiles);
+      layer.imposts.forEach((elm) => elm.visible && profiles.add(elm));
 
       for (let elm of profiles) {
 
         // получаем точки начала и конца элемента
-        const our = !elm.parent || elm.parent === parent;
+        const our = !elm.layer || elm.layer === layer;
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
 
         this.push_by_point({ihor, ivert, eb, ee, elm});
 
-        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+        if(!layer.layer && elm.nearest() instanceof ProfileConnective) {
           this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
         }
         
@@ -139,10 +206,10 @@ class DimensionDrawer extends paper.Group {
       // для ihor добавляем по вертикали
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+        if(layer.is_pos('right') || (forse && !layer.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
-        else if(parent.is_pos('left')) {
+        else if(layer.is_pos('left')) {
           this.by_imposts(ihor, this.ihor, 'left');
         }
       }
@@ -153,10 +220,10 @@ class DimensionDrawer extends paper.Group {
       // для ivert добавляем по горизонтали
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+        if(layer.is_pos('bottom') || (forse && !layer.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
-        else if(parent.is_pos('top')) {
+        else if(layer.is_pos('top')) {
           this.by_imposts(ivert, this.ivert, 'top');
         }
       }
@@ -211,13 +278,13 @@ class DimensionDrawer extends paper.Group {
    * Формирует пользовательские линии по импостам
    */
   draw_by_imposts() {
-    const {parent} = this;
+    const {layer} = this;
     this.clear();
 
     // для всех палок контура
     // если на палке есть импосты, добавляем точки
     let index = 0;
-    for (let elm of parent.profiles) {
+    for (let elm of layer.profiles) {
 
       const {inner, outer} = elm.joined_imposts();
       const {generatrix, angle_hor} = elm;
@@ -273,12 +340,12 @@ class DimensionDrawer extends paper.Group {
    * Формирует линии по импостам по раскладкам
    */
   draw_by_falsebinding() {
-    const {parent} = this;
+    const {layer} = this;
     this.clear();
 
     const {ihor, ivert, by_side} = this.imposts();
 
-    for(const filling of parent.fillings) {
+    for(const filling of layer.fillings) {
       if(!filling.visible) {
         continue;
       }
@@ -385,13 +452,13 @@ class DimensionDrawer extends paper.Group {
    */
   by_contour(ihor, ivert, forse, by_side) {
 
-    const {project, parent} = this;
-    const {bounds} = parent;
+    const {project, layer} = this;
+    const {bounds} = layer;
     const {base_offset, dop_offset} = consts;
 
     if(project.contours.length > 1 || forse) {
 
-      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
+      if(layer.is_pos('left') && !layer.is_pos('right') && project.bounds.height != bounds.height) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -413,7 +480,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+      if(layer.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -435,7 +502,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
+      if(layer.is_pos('top') && !layer.is_pos('bottom') && project.bounds.width != bounds.width) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
@@ -457,7 +524,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+      if(layer.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -513,10 +580,10 @@ class DimensionDrawer extends paper.Group {
 
   imposts() {
 
-    const {parent} = this;
-    const {bounds} = parent;
+    const {layer} = this;
+    const {bounds} = layer;
 
-    const by_side = parent.profiles_by_side();
+    const by_side = layer.profiles_by_side();
     if(!Object.keys(by_side).length) {
       return {ihor: [], ivert: [], by_side: {}};
     }
@@ -550,11 +617,11 @@ class DimensionDrawer extends paper.Group {
   }
 
   get owner_bounds() {
-    return this.parent.bounds;
+    return this.layer.bounds;
   }
 
   get dimension_bounds() {
-    return this.parent.dimension_bounds;
+    return this.layer.dimension_bounds;
   }
 
   get ihor() {

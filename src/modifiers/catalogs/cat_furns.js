@@ -458,7 +458,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     }
 
     // проверка по формуле
-    if(!formula.empty()) {
+    if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
       const res = formula.execute({ox: cache.ox, contour, row_furn: this});
       if(formula.condition_formula && !res) {
         return false;

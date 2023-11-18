@@ -1914,6 +1914,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
     }
   }
+
+  /**
+   * Надо ли строить авторазмерные линии
+   * @return {Boolean}
+   */
+  get show_dimensions() {
+    return !this.layer;
+  }
   
   /**
    * Признак сокрытия слоя
@@ -1931,6 +1939,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
+      this.l_dimensions.redraw();
+      this.project.draw_sizes();
     }
   }
 

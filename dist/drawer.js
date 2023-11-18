@@ -3097,6 +3097,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
     }
   }
+  get show_dimensions() {
+    return !this.layer;
+  }
   get hidden() {
     return !!this._hidden;
   }
@@ -3109,6 +3112,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
+      this.l_dimensions.redraw();
+      this.project.draw_sizes();
     }
   }
   hide_generatrix() {
@@ -4493,10 +4498,17 @@ class ContourRegion extends Contour {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, dop, weight} = this;
-    return `Ряд (${cnstr}) №${dop.region} к ${layer.cnstr}`  +
+    const {cnstr, layer, region, weight} = this;
+    return `Ряд (${cnstr}) №${region} к ${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
+  }
+  get region() {
+    return this.dop.region || 0;
+  }
+  get show_dimensions() {
+    const {visible, hidden} = this.layer;
+    return !visible || hidden;
   }
   get hidden() {
     return super.hidden;
@@ -5265,6 +5277,53 @@ class DimensionLayer extends paper.Layer {
   get dimension_bounds() {
     return this.project.dimension_bounds;
   }
+  draw_sizes() {
+    const {bounds, builder_props, contours} = this.project;
+    if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
+      if(!this.bottom) {
+        this.bottom = new DimensionLine({
+          pos: 'bottom',
+          parent: this,
+          offset: -120
+        });
+      }
+      else {
+        this.bottom.offset = -120;
+      }
+      if(!this.right) {
+        this.right = new DimensionLine({
+          pos: 'right',
+          parent: this,
+          offset: -120
+        });
+      }
+      else {
+        this.right.offset = -120;
+      }
+      if(contours.some((l) => l.l_dimensions.children.some((dl) =>
+        dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
+        this.right.visible = false;
+      }
+      else {
+        this.right.redraw();
+      }
+      if(contours.some((l) => l.l_dimensions.children.some((dl) =>
+        dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
+        this.bottom.visible = false;
+      }
+      else {
+        this.bottom.redraw();
+      }
+    }
+    else {
+      if(this.bottom) {
+        this.bottom.visible = false;
+      }
+      if(this.right) {
+        this.right.visible = false;
+      }
+    }
+  }
 }
 class DimensionDrawer extends paper.Group {
   constructor(attr) {
@@ -5283,35 +5342,38 @@ class DimensionDrawer extends paper.Group {
     this.layer?.layer?.l_dimensions?.clear();
   }
   redraw(forse) {
-    const {parent, project: {builder_props}} = this;
+    const {layer, project: {builder_props}} = this;
+    if(!forse) {
+      forse = layer.show_dimensions;
+    }
     if(forse || !builder_props.auto_lines) {
       this.clear();
     }
-    for (let chld of parent.contours) {
+    for (let chld of layer.contours) {
       chld.l_dimensions.redraw();
     }
-    if(builder_props.auto_lines && (!parent.parent || forse)) {
+    if(builder_props.auto_lines && forse) {
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
         return this.clear();
       }
-      const profiles = new Set(parent.profiles);
-      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
+      const profiles = new Set(layer.profiles);
+      layer.imposts.forEach((elm) => elm.visible && profiles.add(elm));
       for (let elm of profiles) {
-        const our = !elm.parent || elm.parent === parent;
+        const our = !elm.layer || elm.layer === layer;
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
         this.push_by_point({ihor, ivert, eb, ee, elm});
-        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+        if(!layer.layer && elm.nearest() instanceof ProfileConnective) {
           this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
         }
       }
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+        if(layer.is_pos('right') || (forse && !layer.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
-        else if(parent.is_pos('left')) {
+        else if(layer.is_pos('left')) {
           this.by_imposts(ihor, this.ihor, 'left');
         }
       }
@@ -5320,10 +5382,10 @@ class DimensionDrawer extends paper.Group {
       }
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+        if(layer.is_pos('bottom') || (forse && !layer.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
-        else if(parent.is_pos('top')) {
+        else if(layer.is_pos('top')) {
           this.by_imposts(ivert, this.ivert, 'top');
         }
       }
@@ -5367,10 +5429,10 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_imposts() {
-    const {parent} = this;
+    const {layer} = this;
     this.clear();
     let index = 0;
-    for (let elm of parent.profiles) {
+    for (let elm of layer.profiles) {
       const {inner, outer} = elm.joined_imposts();
       const {generatrix, angle_hor} = elm;
       generatrix.visible = false;
@@ -5415,10 +5477,10 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_falsebinding() {
-    const {parent} = this;
+    const {layer} = this;
     this.clear();
     const {ihor, ivert, by_side} = this.imposts();
-    for(const filling of parent.fillings) {
+    for(const filling of layer.fillings) {
       if(!filling.visible) {
         continue;
       }
@@ -5502,11 +5564,11 @@ class DimensionDrawer extends paper.Group {
     }
   }
   by_contour(ihor, ivert, forse, by_side) {
-    const {project, parent} = this;
-    const {bounds} = parent;
+    const {project, layer} = this;
+    const {bounds} = layer;
     const {base_offset, dop_offset} = consts;
     if(project.contours.length > 1 || forse) {
-      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
+      if(layer.is_pos('left') && !layer.is_pos('right') && project.bounds.height != bounds.height) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -5527,7 +5589,7 @@ class DimensionDrawer extends paper.Group {
           this.left = null;
         }
       }
-      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+      if(layer.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -5548,7 +5610,7 @@ class DimensionDrawer extends paper.Group {
           this.right = null;
         }
       }
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
+      if(layer.is_pos('top') && !layer.is_pos('bottom') && project.bounds.width != bounds.width) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
@@ -5569,7 +5631,7 @@ class DimensionDrawer extends paper.Group {
           this.top = null;
         }
       }
-      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+      if(layer.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -5617,9 +5679,9 @@ class DimensionDrawer extends paper.Group {
     }
   }
   imposts() {
-    const {parent} = this;
-    const {bounds} = parent;
-    const by_side = parent.profiles_by_side();
+    const {layer} = this;
+    const {bounds} = layer;
+    const by_side = layer.profiles_by_side();
     if(!Object.keys(by_side).length) {
       return {ihor: [], ivert: [], by_side: {}};
     }
@@ -5648,10 +5710,10 @@ class DimensionDrawer extends paper.Group {
     return {ihor, ivert, by_side};
   }
   get owner_bounds() {
-    return this.parent.bounds;
+    return this.layer.bounds;
   }
   get dimension_bounds() {
-    return this.parent.dimension_bounds;
+    return this.layer.dimension_bounds;
   }
   get ihor() {
     return this._ihor || (this._ihor = new DimensionGroup());
@@ -12462,6 +12524,41 @@ class ProfileRegion extends Profile {
   get elm_type() {
     return $p.enm.elm_types.region;
   }
+  get rnum() {
+    return this.layer.region;
+  }
+  get d0() {
+    const {_attr} = this;
+    if(!_attr.hasOwnProperty('d0')) {
+      _attr.d0 = this.offset;
+      const nearest = this.nearest();
+      if(nearest) {
+        _attr.d0 = this.offset - nearest.d0 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
+      }
+    }
+    return _attr.d0;
+  }
+  selected_cnn_ii() {
+    const {elm, ox, _attr} = this;
+    const parent = this.nearest();
+    if(parent) {
+      const find = {elm1: parent.elm, elm2: elm, node1: '', node2: ''};
+      const row = ox.cnn_elmnts.find(find) || ox.cnn_elmnts.add(find);
+      if(!_attr._nearest_cnn || _attr._nearest_cnn.empty()) {
+        if(row.cnn.empty()) {
+          const {enm: {cnn_types}, cat: {cnns}} = $p;
+          _attr._nearest_cnn = cnns.elm_cnn(parent, this, cnn_types.acn.ii, null, true);
+        }
+        else {
+          _attr._nearest_cnn = row.cnn;
+        }
+      }
+      if(row.cnn.empty() && _attr._nearest_cnn) {
+        row.cnn = _attr._nearest_cnn;
+      }
+      return {elm: parent, row};
+    }
+  }
 }
 EditorInvisible.ProfileRegion = ProfileRegion;
 class ProfileTearing extends ProfileItem {
@@ -13550,51 +13647,7 @@ class Scheme extends paper.Project {
     return _attr.l_connective;
   }
   draw_sizes() {
-    const {bounds, l_dimensions, builder_props} = this;
-    if(bounds && builder_props.auto_lines) {
-      if(!l_dimensions.bottom) {
-        l_dimensions.bottom = new DimensionLine({
-          pos: 'bottom',
-          parent: l_dimensions,
-          offset: -120
-        });
-      }
-      else {
-        l_dimensions.bottom.offset = -120;
-      }
-      if(!l_dimensions.right) {
-        l_dimensions.right = new DimensionLine({
-          pos: 'right',
-          parent: l_dimensions,
-          offset: -120
-        });
-      }
-      else {
-        l_dimensions.right.offset = -120;
-      }
-      if(this.contours.some((l) => l.l_dimensions.children.some((dl) =>
-          dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
-        l_dimensions.right.visible = false;
-      }
-      else {
-        l_dimensions.right.redraw();
-      }
-      if(this.contours.some((l) => l.l_dimensions.children.some((dl) =>
-          dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
-        l_dimensions.bottom.visible = false;
-      }
-      else {
-        l_dimensions.bottom.redraw();
-      }
-    }
-    else {
-      if(l_dimensions.bottom) {
-        l_dimensions.bottom.visible = false;
-      }
-      if(l_dimensions.right) {
-        l_dimensions.right.visible = false;
-      }
-    }
+    this.l_dimensions.draw_sizes();
   }
   draw_visualization() {
     if(this.view){
@@ -16524,7 +16577,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
-    if(!formula.empty()) {
+    if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
       const res = formula.execute({ox: cache.ox, contour, row_furn: this});
       if(formula.condition_formula && !res) {
         return false;
