@@ -7499,7 +7499,7 @@ class GeneratrixElement extends BuilderElement {
 EditorInvisible.GeneratrixElement = GeneratrixElement;
 class GridCoordinates extends paper.Group {
   constructor(attr) {
-    super(attr);
+    super();
     this.parent = this.project.l_dimensions;
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
     const sel_color = new paper.Color(0.1, 0.4, 0, 0.9);
