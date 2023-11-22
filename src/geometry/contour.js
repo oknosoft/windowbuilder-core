@@ -3104,8 +3104,18 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {Number}
    */
   get h_ruch() {
-    const {layer, _row} = this;
-    return layer ? _row.h_ruch : 0;
+    const {layer, furn, _row} = this;
+    if(!layer) {
+      return 0;  
+    }
+    if(!furn.handle_side && furn.shtulp_kind() === 2) {
+      for(const contour of layer.contours) {
+        if(contour !== this && contour.furn.shtulp_kind() === 1) {
+          return contour.h_ruch;
+        }
+      }      
+    }
+    return _row.h_ruch;
   }
   set h_ruch(v) {
     const {layer, _row, project} = this;
