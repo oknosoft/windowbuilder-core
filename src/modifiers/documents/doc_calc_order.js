@@ -1473,6 +1473,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // получаем массив продукций в озу
     return this.load_linked_refs()
       .then(() => {
+        // чистим аксессуары
+        const accessories = this.accessories('clear');
+        if(accessories) {
+          accessories.specification.clear();
+        }
         // бежим по табчасти, если продукция, пересчитываем в рисовалке, если материал или paramrtric - пересчитываем строку
         this.production.forEach((row) => {
           const {characteristic: cx} = row;
