@@ -236,24 +236,29 @@ class GeneratrixElement extends BuilderElement {
             // при сдвигах примыканий к наклонным элементам, ищем точку на луче
             const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
             const {bounds} = ppath;
-            if(Math.abs(delta.y) < consts.epsilon){
-              // режем вертикальным лучом
-              const ray = new paper.Path({
-                insert: false,
-                segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
-              });
-              segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
-            }
-            else if(Math.abs(delta.x) < consts.epsilon){
-              // режем горизонтальным лучом
-              const ray = new paper.Path({
-                insert: false,
-                segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
-              });
-              segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+            if(profile instanceof Filling) {
+              segm.point = free_point;
             }
             else {
-              segm.point = free_point;
+              if(Math.abs(delta.y) < consts.epsilon){
+                // режем вертикальным лучом
+                const ray = new paper.Path({
+                  insert: false,
+                  segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
+                });
+                segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+              }
+              else if(Math.abs(delta.x) < consts.epsilon){
+                // режем горизонтальным лучом
+                const ray = new paper.Path({
+                  insert: false,
+                  segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
+                });
+                segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+              }
+              else {
+                segm.point = free_point;
+              }
             }
           }
         }
@@ -300,6 +305,10 @@ class GeneratrixElement extends BuilderElement {
           noti_points.start = start_point;
         }
         noti.points.push(noti_points);
+        
+        if(cnn_point?.is_i) {
+          cnn_point.clear('with_neighbor');
+        }
 
         changed = true;
       }

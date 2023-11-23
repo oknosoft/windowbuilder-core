@@ -130,6 +130,11 @@ class DimensionDrawer extends paper.Group {
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
 
         this.push_by_point({ihor, ivert, eb, ee, elm});
+
+        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+          this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
+        }
+        
       }
 
       // для ihor добавляем по вертикали
@@ -177,28 +182,28 @@ class DimensionDrawer extends paper.Group {
       ihor.push({
         point: eb.y.round(),
         elm: elm,
-        p: 'b'
+        p: eb._name || 'b'
       });
     }
     if(ee && ihor.every((v) => v.point != ee.y.round())) {
       ihor.push({
         point: ee.y.round(),
         elm: elm,
-        p: 'e'
+        p: ee._name || 'e'
       });
     }
     if(eb && ivert.every((v) => v.point != eb.x.round())) {
       ivert.push({
         point: eb.x.round(),
         elm: elm,
-        p: 'b'
+        p: eb._name || 'b'
       });
     }
     if(ee && ivert.every((v) => v.point != ee.x.round())) {
       ivert.push({
         point: ee.x.round(),
         elm: elm,
-        p: 'e'
+        p: ee._name || 'e'
       });
     }
   }
@@ -330,9 +335,13 @@ class DimensionDrawer extends paper.Group {
     const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
-        let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
-        if(shift && collection[i - 1] && collection[i - 1].offset !== offset) {
-          shift += 70;
+        const prev = collection[i - 1];
+        let shift = 0;
+        if(prev && prev._attr.shift !== base_offset * 2) {
+          shift = Math.abs(arr[i].point - arr[i + 1].point) < base_offset ? base_offset : 0;
+          if(shift && prev._attr.shift) {
+            shift += base_offset;
+          }
         }
         collection[i] = new DimensionLine({
           pos: pos,
@@ -344,6 +353,7 @@ class DimensionDrawer extends paper.Group {
           offset: offset - shift,
           impost: true
         });
+        collection[i]._attr.shift = shift;
       }
     }
   }

@@ -198,11 +198,12 @@ class EditorInvisible extends paper.PaperScope {
   /**
    * Смещает импосты чтобы получить одинаковые размеры заполнений  
    * возвращает массив дельт
-   * @param [name]
-   * @param [glasses]
+   * @param {String} [name]
+   * @param {Array} [glasses]
+   * @param {Boolean} [geometric] - уравнивать геометрически, вместо ширин заполнений
    * @return {Array}
    */
-  do_glass_align(name = 'auto', glasses) {
+  do_glass_align(name = 'auto', glasses, geometric) {
 
     const {project, Point, Key} = this;
 
@@ -258,7 +259,8 @@ class EditorInvisible extends paper.PaperScope {
       });
 
     // признак уравнивания геометрически, а не по заполнению
-    const galign = Key.modifiers.control || Key.modifiers.shift || project.auto_align == enm.align_types.Геометрически;
+    const galign = geometric || Key.modifiers.control || Key.modifiers.shift ||
+      project.auto_align == enm.align_types.Геометрически;
     let medium = 0;
 
     // модифицируем коллекцию заполнений - подклеиваем в неё импосты, одновременно, вычиляем средний размер
@@ -285,7 +287,7 @@ class EditorInvisible extends paper.PaperScope {
       profiles.forEach((curr) => {
         const profile = curr.profile.nearest() || curr.profile;
 
-        if(shift.indexOf(profile) != -1){
+        if(shift.includes(profile)){
 
           if(!glmap.has(profile)){
             glmap.set(profile, {dx: new Set, dy: new Set});
@@ -332,16 +334,30 @@ class EditorInvisible extends paper.PaperScope {
         return;
       }
       gl.ok = (gl.is_inner && gl.is_outer);
-      gl.dx.forEach((glass) => {
-        if(glass.left == impost && !glass.right){
-          gl.delta = (glass.width - medium);
-          gl.ok = true;
-        }
-        if(glass.right == impost && !glass.left){
-          gl.delta = (medium - glass.width);
-          gl.ok = true;
-        }
-      });
+      if(name == 'width'){
+        gl.dx.forEach((glass) => {
+          if(glass.left == impost && !glass.right){
+            gl.delta = (glass.width - medium);
+            gl.ok = true;
+          }
+          if(glass.right == impost && !glass.left){
+            gl.delta = (medium - glass.width);
+            gl.ok = true;
+          }
+        }); 
+      }
+      else {
+        gl.dy.forEach((glass) => {
+          if(glass.top == impost && !glass.bottom){
+            gl.delta = (glass.height - medium);
+            gl.ok = true;
+          }
+          if(glass.bottom == impost && !glass.top){
+            gl.delta = (medium - glass.height);
+            gl.ok = true;
+          }
+        });
+      }
     });
 
     // рассчитываем, на сколько и в какую сторону двигать
@@ -371,6 +387,17 @@ class EditorInvisible extends paper.PaperScope {
         delta = new Point([delta,0]);
       }
       else {
+        if(!gl.hasOwnProperty('delta')){
+          gl.dy.forEach((glass) => {
+            const double = 1.1 * gl.dy.size;
+            if(glass.top == impost){
+              delta += (medium - glass.height) / double;
+            }
+            else if(glass.bottom == impost){
+              delta += (glass.height - medium) / double;
+            }
+          });
+        }
         delta = new Point([0, delta]);
       }
 
@@ -393,12 +420,13 @@ class EditorInvisible extends paper.PaperScope {
   /**
    * Уравнивание по ширинам заполнений  
    * выполняет в цикле до получения приемлемой дельты
-   * @param [name]
-   * @param [glasses]
+   * @param {String} [name]
+   * @param {Array} [glasses]
+   * @param {Boolean} [geometric] - уравнивать геометрически, вместо ширин заполнений
    */
-  glass_align(name = 'auto', glasses) {
+  glass_align(name = 'auto', glasses, geometric) {
 
-    const shift = this.do_glass_align(name, glasses);
+    const shift = this.do_glass_align(name, glasses, geometric);
     if(!shift){
       return;
     }
@@ -417,7 +445,7 @@ class EditorInvisible extends paper.PaperScope {
       for (const layer of contours) {
         layer.redraw();
       }
-      return this.glass_align(name, glasses);
+      return this.glass_align(name, glasses, geometric);
     }
     else {
       _attr._align_counter = 0;

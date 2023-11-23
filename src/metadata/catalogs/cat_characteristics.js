@@ -192,8 +192,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           name += '/s:' + this.s.toFixed(3);
         }
         
-        if(this.weight && !this.s){
-          name += `/m:${this.weight.toFixed(3)}kg`;
+        if(this.weight){
+          name += `/m:${this.weight.toFixed(3)}`;
         }
 
         // подмешиваем значения параметров
@@ -916,10 +916,10 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     mosquito: true,
     jalousie: true,
     grid: 50,
-    carcass: false,
     mirror: false,
     articles: 0,
     glass_numbers: false,
     bw: false,
+    mode: 0,
   };
 }

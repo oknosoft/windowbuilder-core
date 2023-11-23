@@ -106,10 +106,10 @@ class DimensionLine extends paper.Group {
   }
 
   _mouseenter() {
-    const {children: {text}, project: {_scope}} = this;
+    const {children: {text}, project: {_scope}, is_smart_size} = this;
     const dis = this.is_disabled();
     _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
-    if(!dis) {
+    if(!dis || is_smart_size) {
       text.fontWeight = 'bold';
       text.shadowBlur = 10;
       text.shadowOffset = 10;
@@ -125,10 +125,6 @@ class DimensionLine extends paper.Group {
 
   _click(event) {
     event.stop();
-    if(!this.is_disabled() && typeof EditorInvisible.RulerWnd === 'function') {
-      this.wnd = new EditorInvisible.RulerWnd(null, this);
-      this.wnd.size = this.size;
-    }
   }
 
   correct_move_name({event, p1, p2}) {
@@ -220,6 +216,9 @@ class DimensionLine extends paper.Group {
     }
 
     if(delta.length){
+      if(typeof event.divide === 'number') {
+        delta = delta.divide(event.divide);
+      }
       const {project} = this;
       project.deselect_all_points();
       project.getItems({class: ProfileItem})
@@ -238,7 +237,10 @@ class DimensionLine extends paper.Group {
       delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
-      project.register_change(false, () => project.register_change(true));
+      project.register_change(false, () => {
+        project.register_change(true);
+        event.cb?.();
+      });
     }
 
   }
@@ -270,6 +272,30 @@ class DimensionLine extends paper.Group {
       case 'bottom':
         if(this.pos == 'left' || this.pos == 'right') {
           this._move_points(event, 'y');
+        }
+        break;
+        
+      case 'rateably':
+        event.divide = 2;
+        if(this.pos == 'left' || this.pos == 'right') {
+          event.name = 'top';
+          event.cb = () => {
+            delete event.cb;
+            delete event.divide;
+            event.name = 'bottom';
+            this._move_points(event, 'y');
+          }
+          this._move_points(event, 'y');
+        }
+        else if(this.pos == 'top' || this.pos == 'bottom') {
+          event.name = 'left';
+          event.cb = () => {
+            delete event.cb;
+            delete event.divide;
+            event.name = 'right';
+            this._move_points(event, 'x');
+          }
+          this._move_points(event, 'x');
         }
         break;
 
@@ -556,7 +582,7 @@ class DimensionLineCustom extends DimensionLine {
     }
 
     // слой, которому принадлежит размерная линия
-    if(!attr.row.cnstr){
+    if(!attr.row.cnstr && attr.parent.layer){
       attr.row.cnstr = attr.parent.layer.cnstr;
     }
 
@@ -618,41 +644,29 @@ class DimensionLineCustom extends DimensionLine {
     }
     _row.path_data = JSON.stringify(path_data);
   }
-
-  get is_ruler() {
+  
+  get is_smart_size() {
     const {_scope} = this._project;
-    const {constructor: {ToolRuler}, tool} = _scope;
-    return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
+    return _scope?.tool?.is_smart_size;
   }
 
   // выделяем подключаем окно к свойствам
   setSelection(selection) {
     super.setSelection(selection);
-    const {project, children, hide_c1, hide_c2, hide_line, is_ruler} = this
+    const {project, children, hide_c1, hide_c2, hide_line} = this;
     const {tool} = project._scope;
     if(selection) {
       hide_c1 && children.callout1.setSelection(false);
       hide_c2 && children.callout2.setSelection(false);
       hide_line && children.scale.setSelection(false);
     }
-    is_ruler && tool.wnd.attach(this);
   }
 
   // выделяем только при активном инструменте
   _click(event) {
     event.stop();
-    if(this.is_ruler){
+    if(this.is_smart_size){
       this.selected = true;
-    }
-  }
-
-  _mouseenter() {
-    const {project: {_scope}, is_ruler} = this;
-    if(is_ruler){
-      _scope.canvas_cursor('cursor-arrow-ruler');
-    }
-    else{
-      _scope.canvas_cursor('cursor-arrow-ruler-dis');
     }
   }
 

@@ -71,8 +71,10 @@ class Scheme extends paper.Project {
    */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    contour.save_coordinates(true);
-    isBrowser && layer && contour.refresh_prm_links();
+    if(!this._attr._loading) {
+      contour.save_coordinates(true);
+    }
+    isBrowser && contour.refresh_prm_links();
     !layer && l_dimensions.redraw();
     for(const curr of contours) {
       this.refresh_recursive(curr, isBrowser);
@@ -125,7 +127,7 @@ class Scheme extends paper.Project {
     }
     if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? (first || clrs[0]) : default_clr;
+      const clr = (default_clr.empty() || !clr_group.contains(default_clr, clrs)) ? (first || clrs[0]) : default_clr;
       if(clr && !clr.empty()) {
         this.set_clr(clr);
       }
@@ -452,10 +454,17 @@ class Scheme extends paper.Project {
    * @desc Этот код нельзя выполнить внутри load_contour, т.к. линия может ссылаться на элементы разных контуров
    */
   load_dimension_lines() {
-    const {Размер, Радиус} = $p.enm.elm_types;
-    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус]}}, (row) => {
-      const layer = this.getItem({cnstr: row.cnstr});
-      const Constructor = row.elm_type === Размер ? DimensionLineCustom : DimensionRadius;
+    const {Размер, Радиус, Угол} = $p.enm.elm_types;
+    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус, Угол]}}, (row) => {
+      let layer = this.getItem({cnstr: row.cnstr});
+      let Constructor = DimensionLineCustom;
+      if(row.elm_type === Радиус) {
+        Constructor = DimensionRadius;
+      }
+      else if(row.elm_type === Угол) {
+        Constructor = DimensionAngle;
+        layer = this.l_connective;
+      }
       layer && new Constructor({
         parent: layer.l_dimensions,
         row: row
@@ -1175,7 +1184,7 @@ class Scheme extends paper.Project {
     const {cnn_nodes} = ProductsBuilding;
     const {inserts} = ox;
     ox.cnn_elmnts.clear(({elm1, node1}) => {
-      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
 
@@ -1385,14 +1394,17 @@ class Scheme extends paper.Project {
           }
           else {
             ox.glass_specification.find_rows({elm}, (grow) => {
-              grow.default_params();
+              grow.default_params({elm, ox, project: {ox}, inset: grow.inset});
             });
           }
         }
       }
 
       return this.load(ox, from_service)
-        .then(() => ox._data._modified = true);
+        .then(() => {
+          ox._data._modified = true;
+          this.notify(this, 'scheme_changed');
+        });
 
     };
 
@@ -1684,12 +1696,15 @@ class Scheme extends paper.Project {
     }
 
     // если подходит текущая, возвращаем текущую
-    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+    if(pos_array && Array.isArray(attr.elm_type) &&
+      attr.pos.includes(positions.ЦентрВертикаль) &&
+      rows.find(({pos}) => pos === positions.ЦентрВертикаль) &&
+      attr.elm_type.includes(elm_types.СтворкаБИ)) {
       if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
         return attr.inset;
       }
     }
-    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (row.pos === positions.any || check_pos(row.pos)))) {
       return attr.inset;
     }
 
@@ -1711,7 +1726,7 @@ class Scheme extends paper.Project {
     // ищем по умолчанию + любое
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == positions.Любое && row.by_default) {
+        if(row.pos == positions.any && row.by_default) {
           return inset = row.nom;
         }
       });
@@ -1724,7 +1739,7 @@ class Scheme extends paper.Project {
         return this.default_inset(attr);
       }
       rows.some((row) => {
-        if(row.pos == positions.Любое) {
+        if(row.pos == positions.any) {
           return inset = row.nom;
         }
       });
@@ -2159,30 +2174,16 @@ class Scheme extends paper.Project {
    * @param animate {boolean} признак выполнять ли анимацию зеркалирования
    * @return {boolean}
    */
-  async mirror(v, animate) {
+  async mirror(v) {
     const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
-    if(_from_service) {
-      animate = false;
-    }
     v = Boolean(v);
     if(v !== Boolean(_reflected)) {
-      const {utils} = $p;
-      const {scaling} = view._decompose();
-      if(animate) {
-        for(let i=0.8; i>0; i-=0.3) {
-          view.scaling = [scaling.x * i, scaling.y];
-          await utils.sleep(30);
-        }
-      }
+      const {scaling} = view;
       view.scaling = [-scaling.x, scaling.y];
-      for(const txt of this.getItems({class: paper.PointText})) {
-        const {scaling} = txt._decompose();
-        txt.scaling = [-scaling.x, scaling.y];
-      }
       _attr._reflected = v;
       for(const layer of this.contours) {
         layer.apply_mirror();
@@ -2193,6 +2194,10 @@ class Scheme extends paper.Project {
           profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
         }
       }
+      for(const txt of this.getItems({class: paper.PointText})) {
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
+      }
       if(v) {
         this._scope.select_tool?.('pan');
       }
@@ -2200,6 +2205,7 @@ class Scheme extends paper.Project {
         this.register_change(true);
       }
     }
+    this.zoom_fit();
     return _attr._reflected;
   }
 

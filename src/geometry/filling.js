@@ -70,8 +70,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
 
-    _attr.paths = new Map();
-
     // для нового устанавливаем вставку по умолчанию
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
@@ -179,13 +177,17 @@ class Filling extends AbstractFilling(BuilderElement) {
 
       curr = profiles[i];
 
-      if(!curr.profile || !curr.profile._row || !curr.cnn){
+      if(!curr.profile || !curr.profile._row){
         if($p.job_prm.debug) {
-          throw new ReferenceError('Не найдено ребро заполнения');
+          console.error('Не найдено ребро заполнения');
         }
-        else {
-          return;
+        return;
+      }
+      if(!curr.cnn){
+        if($p.job_prm.debug) {
+          console.error(`Не найдено примыкающее соединение для заполнения №${_row.elm}`);
         }
+        return;
       }
 
       curr.aperture_path = curr.profile.generatrix.get_subpath(curr.b, curr.e)._reversed ?
@@ -304,11 +306,26 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
-   * Примыкающий внешний элемент - для заполнений всегда пусто
+   * @summary Примыкающий внешний элемент
+   * @description если указан point, ищет ближайшее ребро, иначе - пусто
    * @override
-   * @return {void}
+   * @param {paper.Point} [point]
+   * @return {void|BuilderElement}
    */
-  nearest() {}
+  nearest(point) {
+    if(point && point !== true) {
+      let distance = Infinity;
+      let profile;
+      for(const curr of this.profiles) {
+        const td = curr.sub_path.getNearestPoint(point).getDistance(point, true);
+        if(td < distance) {
+          distance = td;
+          profile = curr.profile;
+        }
+      }
+      return profile;
+    }
+  }
 
   select_node(v) {
     let point, segm, delta = Infinity;
@@ -349,7 +366,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     this.sendToBack();
 
-    const {path, imposts, _attr, is_rectangular} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
     const fontSize = elm_font_size * (2 / 3);
     const maxTextWidth = 600;
@@ -413,8 +430,12 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
-    
-    this.draw_regions();
+
+    for(const glbead of glbeads) {
+      glbead.redraw();
+    }
+
+    return this.draw_regions();
   }
 
   /**
@@ -460,9 +481,26 @@ class Filling extends AbstractFilling(BuilderElement) {
           // получаем периметр ряда
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
           const outer_profiles = profiles.map((v) => {
-            const profile = v.profile.nearest() || v.profile;
-            const side = profile.cnn_side(this, interior);
-            const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
+            let profile = v.profile.nearest() || v.profile;
+            let side = profile.cnn_side(this, interior);
+            const elm2 = [{profile, side}];
+            if(v.profile !== profile) {
+              elm2.push({profile: v.profile, side: v.profile.cnn_side(this, interior)});              
+            }
+            const cnn = cnns.region_cnn({
+              region: row.region,
+              elm1: this,
+              nom1: nom,
+              elm2,
+              art1glass: true,
+              cnn_types: cnn_types.acn.ii,
+            });
+            if(cnn?.sd2) {
+              if(!side.is('outer')) {
+                side = side._manager.outer;
+              }
+              profile = v.profile;
+            }
             const size = cnn?.size(this, profile, row.region) || 0;
             const sub_path = profile
               .rays[side.is('outer') ? 'outer' : 'inner']
@@ -514,7 +552,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             }
           }
           // формируем пути внешнего заполнения и полосы
-          let strip_path = rpath.children?.[0] || new paper.Path({parent: rpath});
+          let strip_path = new paper.Path({insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -536,11 +574,6 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(strip_path.segments.length){
-            strip_path = rpath.exclude(strip_path);
-            strip_path.parent = rpath;
-            strip_path.fillColor = 'grey';
-          }
           if(row.region > 0) {
             rpath.insertBelow(path);  
           }
@@ -552,6 +585,19 @@ class Filling extends AbstractFilling(BuilderElement) {
             _text?.insertAbove(rpath);
             path.opacity = 0.7;
           }
+          if(strip_path.segments.length){
+            strip_path = rpath.exclude(strip_path);
+            strip_path.fillColor = 'grey';
+            const old = paths.get(`s${row.region}`); 
+            if(old && old !== strip_path) {
+              old.remove();
+            }
+            paths.set(`s${row.region}`, strip_path);
+          }
+          if(row.region > 0) {
+            strip_path.opacity = 0.08;
+            rpath.opacity = 0.16;
+          }
         }
       });
     }
@@ -561,6 +607,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
       paths.clear();
     }
+    return this;
   }
   
   reset_fragment() {
@@ -651,6 +698,17 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
+   * Произвольный комментарий
+   * @type {String}
+   */
+  get note() {
+    return this.dop.note || '';
+  }
+  set note(v) {
+    this.project.selected_glasses().forEach(elm => elm.dop = {note: v});
+  }
+
+  /**
    * Прочищает паразитные пути
    */
   purge_paths() {
@@ -681,7 +739,10 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @type String
    */
   formula(by_art) {
-    const {elm, inset, ox} = this;
+    const {elm, inset, ox, note} = this;
+    if(note) {
+      return note;
+    }
     const {utils: {blank}, cch: {properties}} = $p;
     let res;
     ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
@@ -753,6 +814,10 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   get profiles() {
     return this._attr._profiles || [];
+  }
+  
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, glass: this}); 
   }
 
   /**
@@ -848,29 +913,31 @@ class Filling extends AbstractFilling(BuilderElement) {
       let {length} = attr;
       if(length > 1) {
         let prev, curr, next;
-        const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
-        // получам эквидистанты сегментов, смещенные на размер соединения
-        for (let i = 0; i < length; i++) {
+        const nominate = (i) => {
+          prev = i === 0 ? attr[length-1] : attr[i-1];
           curr = attr[i];
-          next = i === length - 1 ? attr[0] : attr[i + 1];
+          next = i === length-1 ? attr[0] : attr[i+1];
+        };
+        const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
+        // получаем эквидистанты сегментов, смещенные на размер соединения
+        for (let i = 0; i < length; i++) {
+          nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
-        // получам пересечения
+        // получаем пересечения
         for (let i = 0; i < length; i++) {
-          prev = i === 0 ? attr[length-1] : attr[i-1];
-          curr = attr[i];
-          next = i === length-1 ? attr[0] : attr[i+1];
+          nominate(i);
           if(!curr.pb) {
             curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
-            if(prev !== next) {
+            if(prev !== curr && !prev.pe) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
             curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
-            if(prev !== next) {
+            if(next !== curr && !next.pb) {
               next.pb = curr.pe;
             }
           }
@@ -889,8 +956,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         if(length > 2) {
           const remove = [];
           for (let i = 0; i < length; i++) {
-            prev = i === 0 ? attr[length-1] : attr[i-1];
-            next = i === length-1 ? attr[0] : attr[i+1];
+            nominate(i);
             const crossings =  prev.sub_path.getCrossings(next.sub_path);
             if(crossings.length){
               if((prev.e.getDistance(crossings[0].point) < prev.profile.width * 2) ||  (next.b.getDistance(crossings[0].point) < next.profile.width * 2)) {
@@ -910,12 +976,13 @@ class Filling extends AbstractFilling(BuilderElement) {
         // формируем путь
         for (let i = 0; i < length; i++) {
           curr = attr[i];
-          path.addSegments(curr.sub_path.segments.filter((v, index) => {
+          const segments = curr.sub_path.segments.filter((v, index) => {
             if(index || !path.segments.length || v.hasHandles()) {
               return true;
             }
-            return !path.lastSegment.point.is_nearest(v.point, 1);
-          }));
+            return !path.lastSegment.point.is_nearest(v.point, .5);
+          });
+          path.addSegments(segments);
           ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
           _attr._profiles.push(curr);
         }
@@ -1045,7 +1112,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       const next = (index == ubound) ? res[0] : res[index + 1];
       const b = sub_path.intersect_point(prev.sub_path.equidistant(size), curr.b, true);
       const e = sub_path.intersect_point(next.sub_path.equidistant(size), curr.e, true);
-      if (b && e) {
+      if (b && e && !b.equals(e)) {
         sub_path = sub_path.get_subpath(b, e);
       }
       return {
@@ -1200,7 +1267,13 @@ class Filling extends AbstractFilling(BuilderElement) {
               if(!params) {
                 params = {};
               }
-              params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              const {type} = param;
+              if(param.type.digits) {
+                params[prop] = parseFloat(val || 0);  
+              }
+              else {
+                params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              }
               row.dop = {params};
             }
           }

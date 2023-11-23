@@ -60,7 +60,7 @@ class FreeText extends paper.PointText {
       this.angle = _row.angle_hor;
 
       if(_row.path_data){
-        var path_data = JSON.parse(_row.path_data);
+        const path_data = JSON.parse(_row.path_data);
         this.x = _row.x1 + path_data.bounds_x || 0;
         this.y = _row.y1 - path_data.bounds_y || 0;
         this._mixin(path_data, null, ["bounds_x","bounds_y"]);

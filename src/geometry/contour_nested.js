@@ -7,7 +7,7 @@
  * Вложенное изделие в родительском  
  * https://github.com/oknosoft/windowbuilder/issues/564
  * 
- * Содержит виртуальные профили, в которые служат внешним, неизменяемым слоев вложенного изделия
+ * Содержит виртуальные профили, которые служат внешним, неизменяемым слоев вложенного изделия
  * 
  * @extends Contour
  */
@@ -211,6 +211,7 @@ class ContourNested extends Contour {
                 _ox.constructions.add(Object.assign({}, trow._obj));
               }
             }
+            
             // заполняем соответствие номенов элементов
             for(const trow of tx.coordinates) {
               if(trow.cnstr > 1) {
@@ -239,6 +240,23 @@ class ContourNested extends Contour {
                 _ox.cnn_elmnts.add(proto);
               }
             }
+
+            // грузим glass_specification;
+            adel.length = 0;
+            for(const trow of _ox.glass_specification) {
+              if(trow.elm > elm0) {
+                adel.push(trow);
+              }
+            }
+            for(const trow of adel) {
+              _ox.glass_specification.del(trow);
+            }
+            for(const trow of tx.glass_specification) {
+              const proto = Object.assign({}, trow._obj);
+              proto.elm = map.get(proto.elm);
+              _ox.glass_specification.add(proto);
+            }
+            
             // грузим params;
             _ox.params.clear();
             for(const trow of tx.params) {
@@ -248,6 +266,7 @@ class ContourNested extends Contour {
               }
               _ox.params.add(proto);
             }
+            
             // грузим inserts;
             _ox.inserts.clear();
             for(const trow of tx.inserts) {
@@ -355,21 +374,46 @@ class ContourNested extends Contour {
    */
   redraw() {
 
-    if(!this.visible || this.hidden) {
+    const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
+    const reflect = _reflected && !flipped || !_reflected && flipped;
+    this.content.scaling = [1, 1];
+    
+    function sendToBack(elm) {
+      elm.sendToBack();
+      for(const chld of elm.contours) {
+        sendToBack(chld);
+      }
+    }
+    
+    if(!visible || hidden) {
       return;
     }
 
     // сбрасываем кеш габаритов
-    this._attr._bounds = null;
+    _attr._bounds = null;
 
     // сначала перерисовываем все профили контура
-    for(const elm of this.profiles) {
+    const imposts = [];
+    for(const elm of profiles) {
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of imposts) {
       elm.redraw();
     }
 
     // затем - вложенное изделие
     for(const elm of this.contours) {
       elm.redraw();
+    }
+    
+    if(reflect) {
+      this.content.scaling = [-1, 1];
+      sendToBack(this.content);
     }
   }
 

@@ -267,7 +267,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
-    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.date).round(rounding);
+    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.price_date).round(rounding);
 
     if (errors.size) {
       let critical, text = '';
@@ -436,6 +436,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
       return rev.then(() => db.bulkDocs(sobjs));
     };
+    let fin = Promise.resolve();
 
     return !sobjs.length ? unused() : bulk()
       .then((bres) => {
@@ -447,10 +448,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           if(row.ok) {
             if(mgr) {
               if(o) {
-                o._obj._rev = row.rev;
+                const {_data, _obj} = o;
+                _obj._rev = row.rev;
                 o.after_save();
-                mgr.emit_promise('after_save', o)
-                  .then(() => o._modified = false);
+                _data._modified = false;
+                _data._saving = 0;
+                _data._saving_trans = false;
+                fin = fin.then(() => mgr.emit_promise('after_save', o));
               }
             }
           }
@@ -466,7 +470,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
         }
         // null из before_save, прерывает стандартную обработку
-        return unused();
+        return fin.then(unused);
       })
       .catch((err) => {
         if(err.obj) {
@@ -542,7 +546,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(crow?.characteristic && ox) {
         crow.characteristic.specification.clear({specify: ox});
       }
-      return crow?.characteristic;
+      if(crow?.characteristic && !crow.characteristic.empty()) {
+        crow.characteristic.calc_order = this;
+        return crow.characteristic;
+      }
+      return;
     }
 
     let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
@@ -551,6 +559,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         calc_order: this,
         owner: nom.accessories,
       }, false, true);
+    }
+    if(cx._deleted) {
+      cx._obj._deleted = false;
     }
     if(!crow) {
       crow = production.add({
@@ -569,7 +580,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {nom, characteristic} = row;
       const {ui, job_prm} = $p;
-      if(nom === job_prm.nom.accessories) {
+      if(nom === job_prm.nom.accessories && characteristic.specification.count()) {
         ui?.dialogs?.alert({
           html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
           title: this.presentation,
@@ -602,13 +613,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
         });
+        // чистим возможные строки аксессуаров
         production.find_rows({nom: job_prm.nom.accessories}, (prow) => {
           const cx = prow.characteristic;
           if(cx.specification.find({specify: characteristic})) {
             cx.specification.clear({specify: characteristic});
             cx.weight = cx.elm_weight();
             cx.name = cx.prod_name();
+          }
+          if(cx.specification.count()) {
             prow.value_change('quantity', 'update', 1);
+          }
+          else {
+            production.del(prow);
           }
         });
         orders.forEach(({invoice}) => {
@@ -618,9 +635,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
-        
-        // чистим возможные строки аксессуаров
-        this.accessories('clear', characteristic);
         
         _data._loading = _loading;
       }
@@ -685,6 +699,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return branch;
   }
+  set branch(v) {
+    
+  }
 
   /**
    * Дата прайса с учётом константы valid_days (Счет действителен N дней)
@@ -696,7 +713,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
     const curr = new Date();
     const tmp = curr > fin ? curr : new Date(date.valueOf());
-    tmp.setHours(23, 59, 59);
+    tmp.setHours(23, 59, 59, 999);
     return tmp;
   }
 
@@ -715,7 +732,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   /**
    * Пересчитывает номера изделий в продукциях,
    * обновляет контрагента, состояние транспорта и подразделение
-   * @param [save] {Boolean} - если указано, выполняет before_save характеристик
+   * @param {Boolean} [save] - если указано, выполняет before_save характеристик
+   * @param {Object} [attr] - дополнительные атрибуты
    * @return {Array<Object>}
    */
   product_rows(save, attr) {
@@ -1223,8 +1241,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
-          if(!characteristic.empty()) {
-            if((!nom.is_procedure && !nom.is_accessory) || characteristic.specification.count() || characteristic.constructions.count() || characteristic.coordinates.count()){
+          if(!characteristic.empty() && !characteristic.is_new()) {
+            if(forse || (!nom.is_procedure && !nom.is_accessory) || characteristic.specification.count() || characteristic.constructions.count() || characteristic.coordinates.count()){
               prod.push(characteristic);
             }
           }
@@ -1406,6 +1424,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
+            this.accessories('clear', row_prod.characteristic);
             // рассчитываем спецификацию
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
             // сворачиваем
@@ -1454,6 +1473,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // получаем массив продукций в озу
     return this.load_linked_refs()
       .then(() => {
+        // чистим аксессуары
+        const accessories = this.accessories('clear');
+        if(accessories) {
+          accessories.specification.clear();
+        }
         // бежим по табчасти, если продукция, пересчитываем в рисовалке, если материал или paramrtric - пересчитываем строку
         this.production.forEach((row) => {
           const {characteristic: cx} = row;

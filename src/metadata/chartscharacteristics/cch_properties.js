@@ -205,6 +205,9 @@ exports.CchProperties = class CchProperties extends Object {
     if(this.inheritance === 3) {
       return this.branch_value({project: elm.project, cnstr, ox});
     }
+    else if(this.inheritance === 5) {
+      return this.template_value({project: elm.project, cnstr, ox});
+    }
 
     let prow, cnstr0, elm0;
     const {product_params, params} = ox;
@@ -214,7 +217,7 @@ exports.CchProperties = class CchProperties extends Object {
         elm0 = elm;
         elm = {};
         const crow = ox.constructions.find({cnstr});
-        crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+        crow && ox.constructions.find_rows({parent: crow.parent || cnstr0}, (row) => {
           if(row !== crow) {
             cnstr = row.cnstr;
             return false;
@@ -400,8 +403,11 @@ exports.CchProperties = class CchProperties extends Object {
           (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
         return v;
       }
+      if(type.digits && !v && type.types.includes('cat.values_options')) {
+        return 0;
+      }
 
-      const mgr = _manager.value_mgr({v}, 'v', type);
+      const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
           const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';
@@ -579,6 +585,26 @@ exports.CchProperties = class CchProperties extends Object {
       }
     }
     return brow ? brow.value : this.fetch_type();
+  }
+
+  /**
+   * Значение из шаблона
+   * @param [project] {Scheme}
+   * @param [cnstr] {Number}
+   * @param [ox] {CatCharacteristics}
+   */
+  template_value({project, cnstr = 0, ox}) {
+    const {params} = ox.base_block;
+    let prow;
+    params.find_rows({
+      param: this,
+      cnstr: cnstr ? {in: [0, cnstr]} : 0,
+    }, (row) => {
+      if(!prow || row.cnstr) {
+        prow = row;
+      }
+    });
+    return prow ? prow.value : this.fetch_type();
   }
 
   /**

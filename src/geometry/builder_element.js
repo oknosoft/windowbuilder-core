@@ -37,7 +37,7 @@ class BuilderElement extends paper.Group {
 
     this._row = attr.row;
 
-    this._attr = {};
+    this._attr = {paths: new Map()};
 
     if(!this._row.elm){
       this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
@@ -74,7 +74,7 @@ class BuilderElement extends paper.Group {
 
     this.project.register_change();
 
-    if(this.getView()._countItemEvent) {
+    if(this.getView()?._countItemEvent) {
       this.on('doubleclick', this.elm_dblclick);
     }
 
@@ -382,7 +382,11 @@ class BuilderElement extends paper.Group {
       region: _xfields.region,
       note: fields.note,
       price: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Цена продажи'}),
-      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость план'}),
+      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость'}),
+      price_pieces: {
+        synonym: 'Цена за штуку?',
+        type: {types: ['boolean']},
+      }
     };
 
     return {
@@ -480,13 +484,12 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-  
+
   /**
-   * @summary Опорный размер  
-   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
-   * @type {Number}
+   * @summary вспомогательный метод для sizeb
+   * @return {Number}
    */
-  get sizeb() {
+  get_sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
       const {nom} = this;
@@ -509,6 +512,15 @@ class BuilderElement extends paper.Group {
       return parseFloat(p2);
     }
     return sizeb || 0;
+  }
+
+  /**
+   * @summary Опорный размер
+   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
+   * @type {Number}
+   */
+  get sizeb() {
+    return this.get_sizeb();
   }
 
   // размер до фурнитурного паза
@@ -641,7 +653,22 @@ class BuilderElement extends paper.Group {
     if(this.isInserted()) {
       // свойства, нужные вставке текущего элемента
       const inset_params = inset.used_params();
-      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      const product_params = [];
+      if(concat) {
+        for(const param of inset_params) {
+          product_params.push({param, elm: true});
+        }
+      }
+      else {
+        for(const row of layer.sys.product_params) {
+          product_params.push(row);
+        }
+        for(const param of inset_params) {
+          if([1, 2].includes(param.inheritance) && !product_params.find(v => v.param === param)) {
+            product_params.push({param, elm: false});
+          }
+        }
+      }
       for(const {param, elm} of product_params) {
         if (!inset_params.includes(param)) {
           continue;
@@ -888,13 +915,16 @@ class BuilderElement extends paper.Group {
 
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
-    const {_attr: {_reflected}, builder_props} = this.project;
+    let {project: {_attr, builder_props}, layer}  = this;
     
     if(builder_props.bw) {
       return new paper.Color(1, 1, 1, 0.92);
     }
+    if(!layer) {
+      layer = this.project.activeLayer;
+    }
 
-    if(_reflected){
+    if(_attr._reflected && !layer?.flipped || !_attr._reflected && layer?.flipped){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }

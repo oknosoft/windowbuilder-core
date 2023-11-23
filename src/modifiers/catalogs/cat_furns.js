@@ -31,15 +31,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    */
   refill_prm(layer, force=false) {
 
-    const {project, furn, cnstr, sys} = layer;
+    const {project, furn_set, cnstr, sys} = layer;
     const fprms = project.ox.params;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
-    // формируем массив требуемых параметров по задействованным в contour.furn.furn_set
-    const aprm = furn.furn_set.used_params();
+    // формируем массив требуемых параметров по задействованным в contour.furn_set
+    const aprm = furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
 
     // дозаполняем и приклеиваем значения по умолчанию
+    const mprm = [];
     aprm.forEach((v) => {
 
       // направления в табчасть не добавляем
@@ -63,15 +64,17 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         prm_row.value = drow.value;
       }
       prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
-
-      // умолчания по связям параметров
+      mprm.push(prm_row);
+    });
+    // умолчания по связям параметров
+    for(const prm_row of mprm) {
+      const {param} = prm_row;
       param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}},
         layer,
-      }), prm_row);
-
-    });
+      }), prm_row); 
+    }
 
     // удаляем лишние строки, сохраняя параметры допвставок
     const adel = [];
@@ -82,6 +85,24 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     });
     adel.forEach((row) => fprms.del(row, true));
 
+  }
+  
+  find_set(layer) {
+    const {weight, w, h} = layer;
+    const {furn_set, attrs_option} = this;
+    for(const row of attrs_option) {
+      if(row.mmin > weight || (row.mmax && row.mmax < weight)) {
+        continue;
+      }
+      try {
+        const path = row.formula.execute();
+        if(path.contains([w, h])) {
+          return row.furn_set;
+        }
+      }
+      catch (e) {}
+    }
+    return furn_set;
   }
 
   /**
@@ -141,6 +162,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     // бежим по всем строкам набора
     this.specification.find_rows({dop: 0}, (row_furn) => {
 
+      if(!row_furn.nom && row_furn._obj.nom) {
+        throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
+             Не найден объект с uid ${row_furn._obj.nom}`);
+      }
+
       // проверяем, проходит ли строка
       if(!row_furn.check_restrictions(contour, cache)){
         return;
@@ -149,6 +175,11 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       // ищем строки дополнительной спецификации
       if(!exclude_dop){
         this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
+
+          if(!dop_row.nom && dop_row._obj.nom) {
+            throw new Error(`Фурнитура ${this.name} ${this.id} elm ${dop_row.elm} dop ${dop_row.dop} \n
+             Не найден объект с uid ${dop_row._obj.nom}`);
+          }
 
           if(!dop_row.check_restrictions(contour, cache)){
             return;
@@ -213,7 +244,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
             }
 
-            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row);
+            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache);
             proc_row.origin = this;
             proc_row.specify = row_furn.nom;
             proc_row.handle_height_max = contour.cnstr;
@@ -268,13 +299,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 res.add(sub_row);
               }
               else if(sub_row.quantity) {
-                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
                 row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache);
             row_spec.specify = row_furn.nom;
           }
         });
@@ -288,14 +319,14 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             res.add(sub_row);
           }
           else if(sub_row.quantity) {
-            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
             row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
         if(row_furn.quantity) {
-          this.add_with_algorithm(res, ox, contour, row_furn);
+          this.add_with_algorithm(res, ox, contour, row_furn, cache);
         }
       }
     });
@@ -305,15 +336,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Добавляет строку в спецификацию с учетом алгоритма
-   * @param res {TabularSection}
-   * @param ox {CatCharacteristics}
-   * @param contour {Contour}
-   * @param row_furn {CatFurnsSpecificationRow}
+   * @param {TabularSection} res
+   * @param {CatCharacteristics} ox
+   * @param {Contour} contour
+   * @param {CatFurnsSpecificationRow} row_furn
+   * @param {Object} cache
    * @return {DpBuyers_orderSpecificationRow}
    */
-  add_with_algorithm(res, ox, contour, row_furn) {
+  add_with_algorithm(res, ox, contour, row_furn, cache) {
     const {algorithm, formula, elm, dop, offset_option} = row_furn;
-    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;
+    const {CatNom, enm: {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}}} = $p;
     let cx;
     if(algorithm === cx_prm) {
       cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
@@ -328,15 +360,50 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     else if(algorithm === clr_prm) {
       this.selection_params.find_rows({elm, dop}, (prm_row) => {
-        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&
-          prm_row.param.type.types.includes('cat.clrs') &&
-          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
+        if((prm_row.origin.is('algotithm') && prm_row.param.type.types.includes('cat.clrs')) ||
+          ((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+            prm_row.param.type.types.includes('cat.clrs') &&
+            (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name))
+        ) {
           row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
+          row_spec.algorithm = null;
+          return !prm_row.origin.is('algotithm');
         }
       });
     }
+
+    if(row_furn.inset && !row_furn.inset.empty() && row_spec.nom instanceof CatNom) {
+      let len = 1000;
+      if(!row_spec.nom.is_pieces && row_furn.side) {
+        const profile = contour.profile_by_furn_side(side, cache);
+        if(profile) {
+          len = profile._row.len;
+        }
+      }      
+      const row_prm = {
+        clr: row_spec.clr,
+        elm: -contour.cnstr,
+        layer: contour,
+        nom: row_spec.nom,
+        inset: row_furn.inset,
+        is_linear() {
+          return true;
+        },
+        length: len,
+        _row: {len, angle_hor: 0, s: 0, r: 0}
+      };
+      row_furn.inset.calculate_spec({
+        elm: row_prm,
+        len_angl: {len, cnstr: contour.cnstr, alp1: 0, alp2: 0, angle: 0, origin: this},
+        ox,
+        //spec: res,
+        clr: row_spec.clr,
+        own_row: row_furn
+      });
+    }
+    
     if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){
-      // для offset_option = Формула, вызов уже состоялся. Повторно не выполняем
+      // Для offset_option = Формула, вызов уже состоялся. Повторно не выполняем
       formula.execute({ox, contour, row_furn, row_spec});
     }
     return row_spec;
@@ -373,17 +440,35 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
    * @param cache {Object}
    */
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr} = contour;
+    const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
+      side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
+    const {direction, h_ruch, cnstr, _row: {fix_ruch}, project: {_scope}} = contour;
 
     // проверка по высоте ручки
-    if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
+    if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
+      ((handle_height_min !== -1 && handle_height_max !== -1) && ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
+      ){
+      return false;
+    }
+    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.height - handle_height_max)) {
+      return false;
+    }
+    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
 
     // проверка по формуле
-    if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
-      return false;
+    if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
+      const res = formula.execute({ox: cache.ox, contour, row_furn: this});
+      if(formula.condition_formula && !res) {
+        return false;
+      }
+      if(res instanceof _scope.Path || res instanceof _scope.CompoundPath) {
+        const {w, h} = contour;
+        if(!res.contains([w, h])) {
+          return false;
+        }
+      }
     }
 
     // по моменту на петлях (в текущей реализации - просто по массе)

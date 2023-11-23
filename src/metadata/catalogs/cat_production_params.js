@@ -141,7 +141,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
     for(const row of this.elmnts) {
       const {key, nom, elm_type, pos, by_default} = row;
-      if(!nom.empty() && elm_types.includes(elm_type) &&
+      if(nom && !nom.empty() && elm_types.includes(elm_type) &&
           (rows === 'rows' || !noms.some((e) => nom == e.nom)) &&
           (!elm || key.check_condition({elm}))) {
         if(nom instanceof CchPredefined_elmnts) {
@@ -266,7 +266,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
           }
         }
 
-        if(value !== undefined) {
+        if(value !== undefined && row.value != value) {
           row.value = value;
         }
       }

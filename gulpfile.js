@@ -31,7 +31,7 @@ gulp.task('build-drawer', function () {
       // },
       templateSource: `/*!
  * Движок графического построителя
- * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2022
+ * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2023
  */
  
 module.exports = function({$p, paper}) {<%= contents %> \nreturn EditorInvisible;\n}`,

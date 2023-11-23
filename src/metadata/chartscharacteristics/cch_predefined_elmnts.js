@@ -32,7 +32,9 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
   job_prms() {
 
     // создаём константы из alatable
-    this.forEach((row) => this.job_prm(row));
+    for(const o of this) {
+      this.job_prm(o);
+    }
 
     // дополним автовычисляемыми свойствами, если им не назначены формулы
     const {job_prm: {properties}} = this._owner.$p;
@@ -54,8 +56,11 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
    * @param row
    */
   job_prm(row) {
-    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = this._owner.$p;
-    const {parents} = this;
+    if(row.is_folder || row._obj?.is_folder) {
+      return;
+    }
+    const {parents, _owner} = this;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
     const parent = job_prm[parents[row.parent.valueOf()]];
     const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
 
@@ -170,33 +175,18 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
    * @override
    */
   load_array(aattr, forse) {
-    const {job_prm} = this._owner.$p;
-    const {parents} = this;
+    const {parents, _owner} = this;
+    const {job_prm} = _owner.$p;
     const elmnts = [];
+    // метод по умолчанию
+    super.load_array(aattr, forse);
     for (const row of aattr) {
       // если элемент является папкой, создаём раздел в job_prm
       if(row.is_folder && row.synonym) {
         parents[row.ref] = row.synonym;
         !job_prm[row.synonym] && job_prm.__define(row.synonym, {value: {}});
       }
-      // если не задан синоним - пропускаем
-      else if(row.synonym) {
-        const parent = parents[row.parent];
-        // если есть подходящая папка, стразу делаем константу
-        if(parent && parent.synonym !== 'lists') {
-          !job_prm[parents[row.parent]][row.synonym] && this.job_prm(row);
-        }
-        // если папки нет - сохраним элемент в alatable
-        else {
-          elmnts.push(row);
-        }
-      }
-      else {
-        elmnts.push(row);
-      }
     }
-    // метод по умолчанию
-    elmnts.length && super.load_array(elmnts, forse);
   }
 
 };

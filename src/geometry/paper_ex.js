@@ -164,6 +164,23 @@ Object.defineProperties(paper.Path.prototype, {
     }
   },
 
+  is_orthogonal: {
+    value: function is_orthogonal(other, point, delta = 1) {
+      const offset1 = this.getOffsetOf(this.getNearestPoint(point));
+      const offset2 = other.getOffsetOf(other.getNearestPoint(point));
+      const v1 = this.getNormalAt(offset1);
+      const v2 = other.getTangentAt(offset2);
+      let angl = v1.getDirectedAngle(v2);
+      if(angl < -170) {
+        angl += 180;
+      }
+      else if(angl > 170) {
+        angl -= 180;
+      }
+      return Math.abs(angl) < delta;
+    }
+  },
+
   /**
    * Выясняет, является ли путь прямым
    * @memberof paper.Path#
@@ -246,28 +263,27 @@ Object.defineProperties(paper.Path.prototype, {
             });
           }
           else{
-            // для кривого строим по точкам, наподобие эквидистанты
-            const step = (offset2 - offset1) * 0.02;
-
-            tmp = new paper.Path({
-              project,
-              segments: [loc1.point],
-              insert: false
-            });
-
-            if(step < 0){
-              tmp._reversed = true;
-              for(let i = offset1 + step; i > offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            // для кривого, создаём клон, вырезаем и добавляем плоский хвостик
+            
+            if(offset1 > offset2){
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset1);
+              tmp = tmp.splitAt(offset2);
+              tmp.reverse();
             }
-            else if(step > 0){
-              for(let i = offset1 + step; i < offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            else {
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset2);
+              tmp = tmp.splitAt(offset1);                
             }
-            tmp.add(loc2.point);
-            tmp.simplify(0.8);
+            if(tmp.lastSegment.handleIn.length > 0.1 || tmp.lastSegment.handleOut.length > 0.1) {
+              tmp.divideAt(tmp.length * 0.99);
+              tmp.lastSegment.clearHandles();
+            }
+            if(tmp.firstSegment.handleIn.length > 0.1 || tmp.firstSegment.handleOut.length > 0.1) {
+              tmp.divideAt(tmp.length * 0.01);
+              tmp.firstSegment.clearHandles();
+            }
           }
 
           if(offset1 > offset2){
@@ -382,7 +398,7 @@ Object.defineProperties(paper.Path.prototype, {
    * @param {Boolean|Number} [elongate] - если истина, пути будут продолжены до пересечения
    * @param {paper.Point} [other_point] - если указано, контролируем вектор пересечения
    * @param {Boolean} [clone] - если указано, не удлиняем текущие пути
-   * @return {paper.Path}
+   * @return {paper.Point}
    */
   intersect_point: {
       value: function intersect_point(path, point, elongate, other_point, clone) {
@@ -531,7 +547,7 @@ Object.defineProperties(paper.Path.prototype, {
    */
   rmin: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -543,7 +559,7 @@ Object.defineProperties(paper.Path.prototype, {
           max = curv;
         }
       }
-      return max === 0 ? 0 : 1 / max;
+      return (max === 0 ? 0 : 1 / max).round(2);
     }
   },
 
@@ -556,7 +572,7 @@ Object.defineProperties(paper.Path.prototype, {
    */
   rmax: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -568,7 +584,7 @@ Object.defineProperties(paper.Path.prototype, {
           min = curv;
         }
       }
-      return min === 0 ? 0 : 1 / min;
+      return (min === 0 ? 0 : 1 / min).round(2);
     }
   },
 
@@ -580,7 +596,7 @@ Object.defineProperties(paper.Path.prototype, {
    */
   ravg: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const b = this.firstSegment.point;
@@ -608,6 +624,9 @@ Object.defineProperties(paper.Point.prototype, {
 	 */
 	is_nearest: {
 		value: function is_nearest(point, sticking) {
+      if(!point) {
+        return false;
+      }
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }
@@ -751,7 +770,7 @@ Object.defineProperties(paper.Point.prototype, {
         return 0;
       }
       const [dx, dy] = [(x1 - x2), (y1 - y2)];
-      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(3);
+      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(2);
     }
   },
 
@@ -831,8 +850,8 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
   const {Line, Point} = paper;
   const res = {rib: null, parallel: null, pos: ''};
   if(x > right && y > top && y < bottom) {
-    res.rib = new Line(new Point(right, top), new Point(right, bottom));
-    res.parallel = new Line(new Point(x, top), new Point(x, bottom));
+    res.rib = new Line(new Point(right, bottom), new Point(right, top));
+    res.parallel = new Line(new Point(x, bottom), new Point(x, top));
     res.pos = 'right';
   }
   else if(x < left && y > top && y < bottom) {
@@ -846,8 +865,8 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
     res.pos = 'top';
   }
   else if(y > bottom && x > left && x < right) {
-    res.rib = new Line(new Point(right, bottom), new Point(left, bottom));
-    res.parallel = new Line(new Point(right, y), new Point(left, y));
+    res.rib = new Line(new Point(left, bottom), new Point(right, bottom));
+    res.parallel = new Line(new Point(left, y), new Point(right, y));
     res.pos = 'bottom';
   }
   return res;

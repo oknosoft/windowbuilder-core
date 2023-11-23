@@ -114,7 +114,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     });
 
     // пересчитываем
-    if(!clone) {
+    if(!clone && dst.recalc) {
       await dst.recalc();
     }
 

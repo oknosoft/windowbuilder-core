@@ -12,9 +12,27 @@ class ContourTearing extends Contour {
   get path() {
     return this.bounds;
   }
-
   set path(attr) {
     
+  }
+
+  /**
+   * Путь внешних рёбер профилей разрыва
+   * @return {paper.Path}
+   */
+  get profile_path() {
+    const path = new paper.Path({insert: false});
+    for(const profile of this.profiles) {
+      if(!profile.elm_type.is('impost')) {
+        // добавляем сегменты образующей
+        path.addSegments(profile.generatrix.segments);
+      }
+    }
+    return path;
+  }
+
+  get glass_path() {
+    return new paper.Path({insert: false});
   }
 
   get profiles() {

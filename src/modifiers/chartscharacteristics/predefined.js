@@ -6,7 +6,10 @@
  */
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
+  const {
+    enm: {orientations, positions, elm_types, comparison_types: ect},
+    cch: {properties},
+    cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils} = $p;
 
   // стандартная часть создания fake-формулы
@@ -66,8 +69,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
         case 'elm_weight':
           _data._formula = function (obj) {
-            const {elm} = obj || {};
-            return elm ? elm.weight : 0;
+            const {elm, prm_row, ox} = obj || {};
+            let weight = elm.weight || 0;
+            if(!weight && prm_row.origin.is('product') && ox) {
+              weight = ox.elm_weight();
+            }
+            return weight;
           };
           break;
 
@@ -82,6 +89,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+
+        case 'is_composite':
+          _data._formula = function ({elm}) {
+            return elm?.clr?.is_composite();
+          };
+          break;          
           
         case 'elm_type':
           _data._formula = function ({elm}) {
@@ -109,6 +122,41 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               layer = elm.layer;
             }
             return layer ? layer.h_ruch : 0;
+          };
+          break;
+          
+        case 'height':
+            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              if(!prm_row?.origin || prm_row.origin.is('product')) {
+                return ox?.y || 0;
+              }
+              return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
+            };
+            break;
+
+        case 'rotation_axis':
+          _data._formula = function ({elm, layer, prm_row}) {
+            if(!layer && elm?.layer) {
+              layer = elm?.layer;
+            }
+            if(!layer) {
+              return false;
+            }
+            if(prm_row.origin.is('layer') || prm_row.origin.is('nearest')) {
+              return Boolean(layer.furn.open_tunes.find({rotation_axis: true})); 
+            }
+            let res = false;
+            layer.furn.open_tunes.find_rows({rotation_axis: true}, ({side}) => {
+              const profile = layer.profile_by_furn_side(side);
+              if(profile === elm) {
+                res = true;
+                return false;
+              }
+            });
+            return res;
           };
           break;
 
@@ -154,7 +202,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'inset',            // вставка текущего элемента
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
+    'height',           // высота слоя или изделия
     'region',           // ряд
+    'is_composite',     // у элемента составной цвет
+    'rotation_axis',    // у слоя есть ось поворота
   ]) {
     formulate(name);
   }
@@ -234,7 +285,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return true;
           }
         }
-        const bounds = elm ? elm.bounds : layer?.bounds;
+        let bounds = elm ? elm.bounds : layer?.bounds;
+        if(!bounds && prm_row.origin.is('product') && elm?.project) {
+          bounds = elm.project.bounds;
+        }
         if(!bounds) {
           return true;
         }
@@ -274,7 +328,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(eclr.area_src.empty()) {
           return false;
         }
-        if(no_eclr) {
+        if(no_eclr && elm.layer?.sys) {
           const {colors} = elm.layer.sys;
           if(colors.count()) {
             if(colors.find({clr: eclr})) {
@@ -327,5 +381,68 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('direction');
+
+  // "состав" - позволяет обратиться к массиву экземпляров изделий или элементов заказа
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // данный параметр не используется для фильтрации
+      prm.check_condition = function () {
+        return true;
+      };
+      // состав заполнений
+      prm.glasses = function ({elm, ox}) {
+        const res = [];
+        if(!ox) {
+          ox = elm?.ox;
+        }
+        const calc_order = ox?.calc_order;
+        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
+          const parts = key.split(':'); // ref:specimen:cnstr
+          const row = calc_order.production.find({characteristic: parts[0]});
+          for(const glrow of row?.characteristic?.glasses || []) {
+            res.push({
+              formula: glrow.formula,
+              thickness: glrow.thickness,
+              width: glrow.width.round(1),
+              height: glrow.height.round(1),
+              area: glrow.s,
+              is_rectangular: glrow.is_rectangular,
+              is_sandwich: glrow.is_sandwich,
+              weight: row.characteristic.elm_weight(glrow.elm),
+            });
+          }
+        });
+
+        return res;
+      };
+
+      // состав изделий
+      prm.products = function ({elm, ox}) {
+        const res = [];
+        if(!ox) {
+          ox = elm?.ox;
+        }
+        const calc_order = ox?.calc_order;
+        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
+          const parts = key.split(':'); // ref:specimen:cnstr
+          const row = calc_order.production.find({characteristic: parts[0]});
+          if(row) {
+            res.push(row.characteristic);
+          }
+        });
+
+        return res.map((cx) => {
+          const weight = cx.elm_weight();
+          return {
+            width: cx.x,
+            height: cx.y,
+            area: cx.s,
+            weight,
+          };
+        });
+      };
+    }
+  })('compound');
 
 });

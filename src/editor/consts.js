@@ -59,10 +59,10 @@ const consts = {
 
   get base_offset() {
 	  const {font_size} = this;
-    return font_size < 80 ? 90 : font_size + 12;
+    return font_size < 80 ? 90 : font_size + 18;
   },
   get dop_offset() {
-	  return this.base_offset + 40;
+	  return this.base_offset + 44;
   }
 
 };

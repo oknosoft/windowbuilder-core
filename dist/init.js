@@ -27,6 +27,7 @@ $p.enm.create('sketch_view');
 $p.enm.create('debit_credit_kinds');
 $p.enm.create('contract_kinds');
 $p.enm.create('inventory_kinds');
+$p.enm.create('elm_visualization');
 $p.enm.create('predefined_formulas');
 $p.enm.create('text_aligns');
 $p.enm.create('obj_delivery_states');
@@ -175,7 +176,9 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
   job_prms() {
 
     // создаём константы из alatable
-    this.forEach((row) => this.job_prm(row));
+    for(const o of this) {
+      this.job_prm(o);
+    }
 
     // дополним автовычисляемыми свойствами, если им не назначены формулы
     const {job_prm: {properties}} = this._owner.$p;
@@ -197,8 +200,11 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
    * @param row
    */
   job_prm(row) {
-    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = this._owner.$p;
-    const {parents} = this;
+    if(row.is_folder || row._obj?.is_folder) {
+      return;
+    }
+    const {parents, _owner} = this;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
     const parent = job_prm[parents[row.parent.valueOf()]];
     const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
 
@@ -313,33 +319,18 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
    * @override
    */
   load_array(aattr, forse) {
-    const {job_prm} = this._owner.$p;
-    const {parents} = this;
+    const {parents, _owner} = this;
+    const {job_prm} = _owner.$p;
     const elmnts = [];
+    // метод по умолчанию
+    super.load_array(aattr, forse);
     for (const row of aattr) {
       // если элемент является папкой, создаём раздел в job_prm
       if(row.is_folder && row.synonym) {
         parents[row.ref] = row.synonym;
         !job_prm[row.synonym] && job_prm.__define(row.synonym, {value: {}});
       }
-      // если не задан синоним - пропускаем
-      else if(row.synonym) {
-        const parent = parents[row.parent];
-        // если есть подходящая папка, стразу делаем константу
-        if(parent && parent.synonym !== 'lists') {
-          !job_prm[parents[row.parent]][row.synonym] && this.job_prm(row);
-        }
-        // если папки нет - сохраним элемент в alatable
-        else {
-          elmnts.push(row);
-        }
-      }
-      else {
-        elmnts.push(row);
-      }
     }
-    // метод по умолчанию
-    elmnts.length && super.load_array(elmnts, forse);
   }
 
 }
@@ -501,6 +492,9 @@ set hide(v){this._setter_ts('hide',v)}
     if(this.inheritance === 3) {
       return this.branch_value({project: elm.project, cnstr, ox});
     }
+    else if(this.inheritance === 5) {
+      return this.template_value({project: elm.project, cnstr, ox});
+    }
 
     let prow, cnstr0, elm0;
     const {product_params, params} = ox;
@@ -510,7 +504,7 @@ set hide(v){this._setter_ts('hide',v)}
         elm0 = elm;
         elm = {};
         const crow = ox.constructions.find({cnstr});
-        crow && ox.constructions.find_rows({parent: crow.parent}, (row) => {
+        crow && ox.constructions.find_rows({parent: crow.parent || cnstr0}, (row) => {
           if(row !== crow) {
             cnstr = row.cnstr;
             return false;
@@ -696,8 +690,11 @@ set hide(v){this._setter_ts('hide',v)}
           (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
         return v;
       }
+      if(type.digits && !v && type.types.includes('cat.values_options')) {
+        return 0;
+      }
 
-      const mgr = _manager.value_mgr({v}, 'v', type);
+      const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
           const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';
@@ -875,6 +872,26 @@ set hide(v){this._setter_ts('hide',v)}
       }
     }
     return brow ? brow.value : this.fetch_type();
+  }
+
+  /**
+   * Значение из шаблона
+   * @param [project] {Scheme}
+   * @param [cnstr] {Number}
+   * @param [ox] {CatCharacteristics}
+   */
+  template_value({project, cnstr = 0, ox}) {
+    const {params} = ox.base_block;
+    let prow;
+    params.find_rows({
+      param: this,
+      cnstr: cnstr ? {in: [0, cnstr]} : 0,
+    }, (row) => {
+      if(!prow || row.cnstr) {
+        prow = row;
+      }
+    });
+    return prow ? prow.value : this.fetch_type();
   }
 
   /**
@@ -1236,30 +1253,6 @@ set owner(v){this._setter('owner',v)}
 }
 $p.CatPartner_bank_accounts = CatPartner_bank_accounts;
 $p.cat.create('partner_bank_accounts');
-class CatOrganization_bank_accounts extends CatObj{
-get bank(){return this._getter('bank')}
-set bank(v){this._setter('bank',v)}
-get bank_bic(){return this._getter('bank_bic')}
-set bank_bic(v){this._setter('bank_bic',v)}
-get funds_currency(){return this._getter('funds_currency')}
-set funds_currency(v){this._setter('funds_currency',v)}
-get account_number(){return this._getter('account_number')}
-set account_number(v){this._setter('account_number',v)}
-get settlements_bank(){return this._getter('settlements_bank')}
-set settlements_bank(v){this._setter('settlements_bank',v)}
-get settlements_bank_bic(){return this._getter('settlements_bank_bic')}
-set settlements_bank_bic(v){this._setter('settlements_bank_bic',v)}
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get captured(){return this._getter('captured')}
-set captured(v){this._setter('captured',v)}
-get editor(){return this._getter('editor')}
-set editor(v){this._setter('editor',v)}
-get owner(){return this._getter('owner')}
-set owner(v){this._setter('owner',v)}
-}
-$p.CatOrganization_bank_accounts = CatOrganization_bank_accounts;
-$p.cat.create('organization_bank_accounts');
 class CatWork_center_kinds extends CatObj{
 get applying(){return this._getter('applying')}
 set applying(v){this._setter('applying',v)}
@@ -1568,15 +1561,40 @@ set params(v){this._setter_ts('params',v)}
   /**
    * Рисует визуализацию
    * @param elm {BuilderElement} элемент, к которому привязана визуализация
-   * @param layer {Contour} слой, в котороый помещаем путь
+   * @param layer {Contour} слой, в который помещаем путь
    * @param offset {Number|Array.<Number>}
-   * @param [offset0] {Number}
    * @param clr {CatClrs}
+   * @param [offset0] {Number}
+   * @param [reflected] {Boolean}
    */
-  draw({elm, layer, offset, offset0, clr}) {
+  draw({elm, layer, offset, clr, offset0, reflected}) {
     if(!layer.isInserted()) {
       return;
     }
+    // проверим, надо ли рисовать для текущего `reflected`
+    let dashArray = undefined;
+    let exit = this.sketch_view.count();
+    for(const {kind} of this.sketch_view) {
+      if(reflected) {
+        if(kind.is('outer')) {
+          exit = 0;
+        }
+        if(kind.is('outer1')) {
+          exit = 0;
+          dashArray = [3, 4];
+        }        
+      }
+      else {
+        if((kind.is('inner'))) {
+          exit = 0;
+        }
+        if((kind.is('inner1'))) {
+          exit = 0;
+          dashArray = [3, 4];
+        }
+      }
+    }
+    
 
     try {
       const {project} = layer;
@@ -1587,6 +1605,9 @@ set params(v){this._setter_ts('params',v)}
       if(this.svg_path.indexOf('{"method":') == 0){
 
         const attr = JSON.parse(this.svg_path);
+        if(attr.dashArray){
+          dashArray = attr.dashArray;
+        }
 
         if(['subpath_inner', 'subpath_outer', 'subpath_generatrix', 'subpath_median'].includes(attr.method)) {
           const {rays} = elm;
@@ -1603,6 +1624,7 @@ set params(v){this._setter_ts('params',v)}
             if(elm.is_linear()) {
               subpath = new Path({
                 project,
+                dashArray,
                 segments: [elm.corns(1).add(elm.corns(4)).divide(2), elm.corns(2).add(elm.corns(3)).divide(2)]
               })
                 .equidistant(attr.offset || 0);
@@ -1613,7 +1635,7 @@ set params(v){this._setter_ts('params',v)}
               const outer = rays.outer.get_subpath(elm.corns(1), elm.corns(2));
               const li = inner.length / 50;
               const lo = outer.length / 50;
-              subpath = new Path({project});
+              subpath = new Path({project, dashArray});
               for(let i = 0; i < 50; i++) {
                 subpath.add(inner.getPointAt(li * i).add(outer.getPointAt(lo * i)).divide(2));
               }
@@ -1643,24 +1665,23 @@ set params(v){this._setter_ts('params',v)}
           subpath.strokeWidth = attr.strokeWidth || 4;
           subpath.strokeColor = attr.strokeColor || 'red';
           subpath.strokeCap = attr.strokeCap || 'round';
-          if(attr.dashArray){
-            subpath.dashArray = attr.dashArray
-          }
         }
       }
       else if(this.svg_path){
 
         if(this.mode === 1) {
-          const attr = JSON.parse(this.attributes || '{}');
+          //const attr = JSON.parse(this.attributes || '{}');
+          const {attributes} = this;
           subpath = new PointText(Object.assign({
             project,
             layer,
             parent: layer._by_spec,
             fillColor: 'black',
+            dashArray,
             fontFamily: $p.job_prm.builder.font_family,
-            fontSize: attr.fontSize || 60,
+            fontSize: attributes.fontSize || 60,
             content: this.svg_path,
-          }, attr, this.origin.empty() ? null : {_visualization: true, guide: false}));
+          }, attributes, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
           subpath = new CompoundPath(Object.assign({
@@ -1671,6 +1692,7 @@ set params(v){this._setter_ts('params',v)}
             strokeColor: 'black',
             fillColor: elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr),
             strokeScaling: false,
+            dashArray,
             pivot: [0, 0],
             opacity: elm.opacity
           }, this.origin.empty() ? null : {_visualization: true, guide: false}));
@@ -1683,12 +1705,15 @@ set params(v){this._setter_ts('params',v)}
           const {generatrix, rays: {inner, outer}} = elm;
           // угол касательной
           let angle_hor;
-          if(elm.is_linear() || offset < 0)
+          if(elm.is_linear() || offset < 0) {
             angle_hor = generatrix.getTangentAt(0).angle;
-          else if(offset > generatrix.length)
+          }           
+          else if(offset > generatrix.length) {
             angle_hor = generatrix.getTangentAt(generatrix.length).angle;
-          else
+          }
+          else {
             angle_hor = generatrix.getTangentAt(offset).angle;
+          }
 
           if((this.rotate != -1 || elm.orientation == $p.enm.orientations.Горизонтальная) && angle_hor != this.angle_hor){
             subpath.rotation = angle_hor - this.angle_hor;
@@ -1766,6 +1791,8 @@ get no_partners(){return this._getter('no_partners')}
 set no_partners(v){this._setter('no_partners',v)}
 get no_divisions(){return this._getter('no_divisions')}
 set no_divisions(v){this._setter('no_divisions',v)}
+get filter(){return this._getter('filter')}
+set filter(v){this._setter('filter',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get organizations(){return this._getter_ts('organizations')}
@@ -2060,6 +2087,23 @@ set parent(v){this._setter('parent',v)}
 }
 $p.CatProperty_values = CatProperty_values;
 $p.cat.create('property_values');
+class CatDivisions extends CatObj{
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get extra_fields(){return this._getter_ts('extra_fields')}
+set extra_fields(v){this._setter_ts('extra_fields',v)}
+get keys(){return this._getter_ts('keys')}
+set keys(v){this._setter_ts('keys',v)}
+}
+$p.CatDivisions = CatDivisions;
+class CatDivisionsKeysRow extends TabularSectionRow{
+get acl_obj(){return this._getter('acl_obj')}
+set acl_obj(v){this._setter('acl_obj',v)}
+}
+$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
+$p.cat.create('divisions');
 class CatMeta_ids extends CatObj{
 get full_moniker(){return this._getter('full_moniker')}
 set full_moniker(v){this._setter('full_moniker',v)}
@@ -2770,6 +2814,10 @@ get pair(){return this._getter('pair')}
 set pair(v){this._setter('pair',v)}
 get lay_split_types(){return this._getter('lay_split_types')}
 set lay_split_types(v){this._setter('lay_split_types',v)}
+get css(){return this._getter('css')}
+set css(v){this._setter('css',v)}
+get flipped(){return this._getter('flipped')}
+set flipped(v){this._setter('flipped',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -2841,6 +2889,8 @@ get is_main_elm(){return this._getter('is_main_elm')}
 set is_main_elm(v){this._setter('is_main_elm',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
 class CatInsertsInsertsRow extends TabularSectionRow{
@@ -2880,27 +2930,49 @@ set params(v){this._setter_ts('params',v)}
       return true;
     }
     if(!ox && elm) {
-      ox = elm.ox;
+      ox = elm.ox || elm.project.ox;
     }
     if(!layer && elm) {
       layer = elm.layer;
     }
+    if(!calc_order_row) {
+      calc_order_row = ox?.calc_order_row;
+    }
     const {calc_order} = ox;
 
-    for(const prm_row of this.params) {
-      const {property, origin} = prm_row;
-      if(!property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other})) {
-        return false;
+    // по таблице параметров сначала строим Map ИЛИ
+    let {_or} = this;
+    if(!_or) {
+      _or = new Map();
+      for(const prm_row of this.params) {
+        if(!_or.has(prm_row.area)) {
+          _or.set(prm_row.area, []);
+        }
+        _or.get(prm_row.area).push(prm_row);
       }
+      this._or = _or;
     }
 
-    return true;
+    let res = true;
+    for(const grp of _or.values()) {
+      let grp_ok = true;
+      for(const prm_row of grp) {
+        const {property, origin} = prm_row;
+        grp_ok = property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other});
+      }
+      res = grp_ok;
+      if(res) {
+        break;
+      }
+    }
+    
+    return res;
   }
 }
 $p.CatParameters_keys = CatParameters_keys;
 $p.cat.create('parameters_keys');
 class CatProduction_params extends CatObj{
-get default_clr(){return this._getter('default_clr')}
+get default_clr(){return $p.cat.clrs.getter(this._obj.default_clr)}
 set default_clr(v){this._setter('default_clr',v)}
 get clr_group(){return this._getter('clr_group')}
 set clr_group(v){this._setter('clr_group',v)}
@@ -3103,7 +3175,7 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
 
     for(const row of this.elmnts) {
       const {key, nom, elm_type, pos, by_default} = row;
-      if(!nom.empty() && elm_types.includes(elm_type) &&
+      if(nom && !nom.empty() && elm_types.includes(elm_type) &&
           (rows === 'rows' || !noms.some((e) => nom == e.nom)) &&
           (!elm || key.check_condition({elm}))) {
         if(nom instanceof CchPredefined_elmnts) {
@@ -3228,7 +3300,7 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
           }
         }
 
-        if(value !== undefined) {
+        if(value !== undefined && row.value != value) {
           row.value = value;
         }
       }
@@ -3544,7 +3616,7 @@ set priorities(v){this._setter_ts('priorities',v)}
 
     // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
     if(enm.cnn_types.acn.a.includes(cnn_type)){
-      let art12 = elm.orientation == enm.orientations.vert ? job_prm.nom.art1 : job_prm.nom.art2;
+      let art12 = elm.orientation.is('vert') ? job_prm.nom.art1 : job_prm.nom.art2;
       ares = specification.find_rows({nom: art12});
     }
     // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
@@ -3582,7 +3654,12 @@ set priorities(v){this._setter_ts('priorities',v)}
    */
   check_nom2(nom) {
     const ref = nom.valueOf();
-    return this.cnn_elmnts._obj.some((row) => row.nom == ref);
+    return this.cnn_elmnts._obj.some((row) => row.nom2 == ref);
+  }
+
+  check_nom1(nom) {
+    const ref = nom.valueOf();
+    return this.cnn_elmnts._obj.some((row) => row.nom1 == ref);
   }
 
   /**
@@ -3615,7 +3692,7 @@ set priorities(v){this._setter_ts('priorities',v)}
    * Параметрический размер соединения 
    * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
    * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
-   * @param {Number} [region] - Соседний элемент, если доступно в контексте вызова
+   * @param {Number} [region] - номер ряда
    * @return Number
    */
   size(elm0, elm2, region=0) {
@@ -3667,15 +3744,13 @@ set priorities(v){this._setter_ts('priorities',v)}
     let sz = 0;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
       const {nom: rnom} = row;
-      if(rnom === nom) {
+      if(rnom === nom || (rnom instanceof CatInserts && rnom.filtered_spec({elm, elm2, len_angl, ox}).find(v => v.nom == nom))) {
         sz = row.sz;
-        return true;
-      }
-      else if(rnom instanceof CatInserts) {
-        if(rnom.specification.find({nom})) {
-          sz = row.sz;
-          return true;
+        if(row.algorithm.is('w2') && elm2) {
+          const size = this.size(elm, elm2);
+          sz += -elm2.width + size;
         }
+        return true;
       }
     });
     return sz;
@@ -3684,6 +3759,7 @@ set priorities(v){this._setter_ts('priorities',v)}
   /**
    * ПолучитьСпецификациюСоединенияСФильтром
    * @param {BuilderElement} elm
+   * @param {BuilderElement} elm2
    * @param {Object} len_angl
    * @param {Object} ox
    * @param {Boolean} [correct]
@@ -3741,7 +3817,7 @@ set priorities(v){this._setter_ts('priorities',v)}
       }
 
       // "устанавливать с" проверяем только для соединений профиля
-      if((set_specification == САртикулом1 && len_angl.art2) || (set_specification == САртикулом2 && len_angl.art1)) {
+      if(!correct && ((set_specification == САртикулом1 && len_angl.art2) || (set_specification == САртикулом2 && len_angl.art1))) {
         return;
       }
       // для угловых, разрешаем art2 только явно для art2
@@ -3800,6 +3876,8 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatCnnsSpecificationRow = CatCnnsSpecificationRow;
 class CatCnnsCnn_elmntsRow extends TabularSectionRow{
@@ -3829,6 +3907,7 @@ class CatCnnsManager extends CatManager {
   constructor(owner, class_name) {
     super(owner, class_name);
     this._nomcache = {};
+    this._region_cache = new Map();
   }
 
   sort_cnns(elm1, elm2) {
@@ -3917,12 +3996,30 @@ class CatCnnsManager extends CatManager {
 
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
-      enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii}, cnn_sides},
+      enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii, i}, cnn_sides},
       cat: {nom}, utils} = $p;
+
+    const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
+    
+    if(elm1.rnum && (!types.includes(i) || types.length > 1)) {
+      const parent_elm = elm2?.parent_elm || elm2; 
+      const side = parent_elm ? parent_elm.cnn_side?.(elm1?.parent_elm) : cnn_sides.inner;
+      const res = this.region_cnn({
+        region: elm1.rnum, 
+        elm1,
+        elm2: [{profile: elm2, side}],
+        cnn_types,
+        array: true});
+      if(types.includes(i)) {
+        const ri = this.nom_cnn(elm1, elm2, [i], ign_side, is_outer, cnn_point);
+        res.push(...ri);
+      }
+      return res;
+    }
 
     // если оба элемента - профили, определяем сторону
     let side = is_outer ? cnn_sides.outer :
-      (!ign_side && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
+      (!ign_side && elm1 instanceof ProfileItem && !elm1.rnum && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
     if(!side && !ign_side && is_outer === false) {
       side = cnn_sides.inner;
     }
@@ -3967,29 +4064,32 @@ class CatCnnsManager extends CatManager {
       a2 = (a1[ref2] = []);
       // для всех элементов справочника соединения
       this.forEach((cnn) => {
-        // если в строках соединяемых элементов есть наша - добавляем
-        let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
-          is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
+        // не рассматриваем соединения рядов
+        if(!cnn.region || cnn.cnn_type === i) {
+          // если в строках соединяемых элементов есть наша - добавляем
+          let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
+            is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
 
-        cnn.cnn_elmnts.forEach((row) => {
+          cnn.cnn_elmnts.forEach((row) => {
+            if(is_nom1 && is_nom2){
+              return false;
+            }
+            if(!is_nom1) {
+              is_nom1 = row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2);
+            }
+            if(!is_nom2) {
+              is_nom2 = row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1);
+            }
+          });
           if(is_nom1 && is_nom2){
-            return false;
+            a2.push(cnn);
           }
-          if(!is_nom1) {
-            is_nom1 = row.nom1 == ref1 && (row.nom2.empty() || row.nom2 == onom2);
-          }
-          if(!is_nom2) {
-            is_nom2 = row.nom2 == onom2 && (row.nom1.empty() || row.nom1 == ref1);
-          }
-        });
-        if(is_nom1 && is_nom2){
-          a2.push(cnn);
         }
       });
     }
 
     if(cnn_types){
-      const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.indexOf(cnn_types) != -1 ? acn.a : [cnn_types]);
+      
       const res = a1[ref2]
         .filter((cnn) => {
           if(types.includes(cnn.cnn_type)){
@@ -4029,8 +4129,13 @@ class CatCnnsManager extends CatManager {
 
       // если не нашлось подходящих и это угловое соединение и второй элемент вертикальный - меняем местами эл 1-2 при поиске
       if(!res.length && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem &&
-        cnn_types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
-        return this.nom_cnn(elm2, elm1, cnn_types);
+        types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
+        return this.nom_cnn(elm2, elm1, types);
+      }
+
+      if(types.includes(i) && elm2 && !elm2.empty?.()) {
+        const tmp = this.nom_cnn(elm1, null, acn.i, ign_side, is_outer, cnn_point);
+        return res.concat(tmp).sort(this.sort_cnns(elm1, elm2));
       }
 
       return res.sort(this.sort_cnns(elm1, elm2));
@@ -4038,16 +4143,59 @@ class CatCnnsManager extends CatManager {
 
     return a1[ref2];
   }
+  
+  region_cnn({region, elm1, nom1, elm2, art1glass, cnn_types, array}) {
+    if(!nom1) {
+      nom1 = elm1.nom;
+    }
+    if(!Array.isArray(elm2)) {
+      elm2 = [elm2];
+    }
+    for(const elm of elm2) {
+      if(!elm.nom) {
+        elm.nom = elm.profile.nom;
+      }
+      if(!elm.side) {
+        throw new Error(`region_cnn no side elm:${elm.elm}, region:${region}`);
+      }
+    }
+    if(!this._region_cache.has(region)) {
+      this._region_cache.set(region, new Map());
+    }
+    const region_cache = this._region_cache.get(region);
+    for(const {nom} of elm2) {
+      if(!region_cache.has(nom)) {
+        const cnns = [];
+        this.find_rows({region}, (cnn) => {
+          cnn.check_nom2(nom) && cnns.push(cnn);
+        });
+        region_cache.set(nom, cnns);
+      }
+    }
+    const all = [];
+    elm2.forEach(({nom, side}, index) => {
+      for(const cnn of region_cache.get(nom)) {
+        if(cnn_types.includes(cnn.cnn_type) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
+          const is_nom = cnn.check_nom1(nom1);
+          if(is_nom || art1glass) {
+            all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + ((art1glass && cnn.sd2 === index) ? 10000 : 0)});
+          }
+        }
+      }
+    });
+    all.sort((a, b) => b.priority - a.priority);
+    return array ? all.map(v => v.cnn) : all[0]?.cnn;
+  }
 
   /**
    * Возвращает соединение между элементами
-   * @param elm1 {BuilderElement}
-   * @param elm2 {BuilderElement}
-   * @param [cnn_types] {Array}
-   * @param [curr_cnn] {CatCnns}
-   * @param [ign_side] {Boolean}
-   * @param [is_outer] {Boolean}
-   * @param [cnn_point] {CnnPoint}
+   * @param {BuilderElement} elm1
+   * @param {BuilderElement} elm2
+   * @param {Array} [cnn_types]
+   * @param {CatCnns} [curr_cnn]
+   * @param {Boolean} [ign_side]
+   * @param {Boolean} [is_outer]
+   * @param {CnnPoint} [cnn_point]
    */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
@@ -4219,6 +4367,8 @@ get handle_height_min(){return this._getter('handle_height_min')}
 set handle_height_min(v){this._setter('handle_height_min',v)}
 get handle_height_max(){return this._getter('handle_height_max')}
 set handle_height_max(v){this._setter('handle_height_max',v)}
+get handle_base_filter(){return this._getter('handle_base_filter')}
+set handle_base_filter(v){this._setter('handle_base_filter',v)}
 get contraction(){return this._getter('contraction')}
 set contraction(v){this._setter('contraction',v)}
 get contraction_option(){return this._getter('contraction_option')}
@@ -4249,6 +4399,8 @@ get is_order_row(){return this._getter('is_order_row')}
 set is_order_row(v){this._setter('is_order_row',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 }
 $p.CatFurnsSpecificationRow = CatFurnsSpecificationRow;
 class CatFurnsSpecification_restrictionsRow extends TabularSectionRow{
@@ -4386,8 +4538,8 @@ class CatClrsManager extends CatManager {
    */
   getter(ref) {
     if(ref && ref.length === 72) {
-      const clr_in = ref.substr(0, 36);
-      const clr_out = ref.substr(36);
+      const clr_in = ref.substring(0, 36);
+      const clr_out = ref.substring(36);
       let in_out = this.get(ref);
       if(in_out.is_new()) {
         Object.assign(in_out._obj, {clr_in, clr_out, parent: $p.job_prm.builder.composite_clr_folder.valueOf()});
@@ -4442,7 +4594,10 @@ class CatClrsManager extends CatManager {
 
   clr_prm({row_base, row_spec, elm, origin, ox}) {
     const {enm: {predefined_formulas: {clr_prm}, comparison_types: ct}} = $p;
-    if(row_base?.algorithm === clr_prm && elm?.elm > 0) {
+    if(!ox && elm) {
+      ox = elm.ox;
+    }
+    if(row_base?.algorithm === clr_prm && ox) {
       let param;
       if(row_base._or) {
         for(const grp of row_base._or.values()) {
@@ -4466,7 +4621,8 @@ class CatClrsManager extends CatManager {
         });
       }
       if(param) {
-        row_spec.clr = (ox || elm.ox).extract_value({cnstr: [0, -elm.elm], param});
+        const cnstr = elm?.elm ? [0, -elm.elm] : 0;
+        row_spec.clr = (ox || elm.ox).extract_value({cnstr, param});
       }
     }
     return row_spec.clr;
@@ -4474,15 +4630,16 @@ class CatClrsManager extends CatManager {
 
   /**
    * Возвращает цвет по предопределенному цвету при формировании спецификации
-   * @param clr {CatClrs} - цвет исходной строки соединения, фурнитуры или вставки
-   * @param clr_elm {CatClrs} - цвет элемента
-   * @param clr_sch {CatClrs} - цвет изделия
-   * @param [elm] {BuilderElement} - элемент рисовалки
-   * @param [spec] {TabularSection} - табчасть спецификации для поиска ведущих
-   * @param [row] {TabularSectionRow} - строка спецификации, где есть `nom`
+   * @param {CatClrs} clr - цвет исходной строки соединения, фурнитуры или вставки
+   * @param {CatClrs} clr_elm - цвет элемента
+   * @param {CatClrs} clr_sch - цвет изделия
+   * @param {BuilderElement} [elm] - элемент рисовалки
+   * @param {TabularSection} [spec] - табчасть спецификации для поиска ведущих
+   * @param {CatCharacteristicsSpecificationRow} [row] - строка спецификации, где есть `nom`
+   * @param {CatInsertsSpecificationRow|CatFurnsSpecificationRow|CatCnnsSpecificationRow} [row_base] - исходная строка вставки, соединения или фурнитуры
    * @return {CatClrs}
    */
-  by_predefined(clr, clr_elm, clr_sch, elm, spec, row) {
+  by_predefined(clr, clr_elm, clr_sch, elm, spec, row, row_base) {
     const {predefined_name} = clr;
     const flipped = elm?.layer?.flipped;
     const {clr_by_main_row} = $p.job_prm.builder;
@@ -4511,7 +4668,36 @@ class CatClrsManager extends CatManager {
         return flipped ?
           this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm) :
           clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
-
+        
+      case 'КакЭлИзнутриПлюсКонст': {
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
+        const row_cond = row_base?._owner?._owner?.selection_params?.find({
+          elm: row_base.elm,
+          origin: $p.enm.plan_detailing.algorithm,
+        });
+        if(row_cond) {
+          clr_elm = this.getter(`${clr_elm.ref}${row_cond.value.ref}`);
+        }
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+      } 
+      
+      case 'КакЭлСнаружиПлюсКонст': {
+        if(clr_by_main_row && elm?._attr?.row_spec) {
+          clr_elm = elm?._attr?.row_spec.clr;
+        }
+        clr_elm = clr_elm.clr_out.empty() ? clr_elm : clr_elm.clr_out;
+        const row_cond = row_base?._owner?._owner?.selection_params?.find({
+          elm: row_base.elm,
+          origin: $p.enm.plan_detailing.algorithm,
+        });
+        if(row_cond) {
+          clr_elm = this.getter(`${row_cond.value.ref}${clr_elm.ref}`);
+        }
+        return flipped ? this.inverted(clr_elm) : clr_elm;
+      }       
       case 'БезЦветаИзнутри':
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
@@ -4558,7 +4744,7 @@ class CatClrsManager extends CatManager {
         const main_rows = inset.main_rows(elm);
         if(main_rows.length) {
           const row_base = main_rows[0];
-          const row_spec = {clr: this.by_predefined(row_base.clr, clr_elm, clr_sch, elm, spec)};
+          const row_spec = {clr: this.by_predefined(row_base.clr, clr_elm, clr_sch, elm, spec, row, row_base)};
           this.clr_prm({row_base, row_spec, elm, origin: inset});
           return row_spec.clr;
         }
@@ -4587,7 +4773,7 @@ class CatClrsManager extends CatManager {
       }
     }
     else if (clr instanceof $p.CatColor_price_groups) {
-      const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row);
+      const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row, row_base);
       for(const row of clr.clr_conformity) {
         if(row.clr1.contains(tmp)) {
           return row.clr2;
@@ -4891,11 +5077,12 @@ set exclude(v){this._setter_ts('exclude',v)}
     if(!clrs.length) {
       return true;
     }
-    return clr.is_composite() ? (
-      any ? 
-        (clrs.includes(clr.clr_in) || clrs.includes(clr.clr_out)) :
-        clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out)
-    ) : clrs.includes(clr);
+    if(clr.is_composite()) {
+      return any ?
+          (clrs.includes(clr.clr_in) || clrs.includes(clr.clr_out)) :
+          clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out);  
+    }
+    return clrs.includes(clr) && !this.exclude.find({side: 'Любая', clr});
   }}
 $p.CatColor_price_groups = CatColor_price_groups;
 class CatColor_price_groupsPrice_groupsRow extends TabularSectionRow{
@@ -4918,25 +5105,6 @@ set clr(v){this._setter('clr',v)}
 }
 $p.CatColor_price_groupsExcludeRow = CatColor_price_groupsExcludeRow;
 $p.cat.create('color_price_groups');
-class CatDivisions extends CatObj{
-get main_project(){return this._getter('main_project')}
-set main_project(v){this._setter('main_project',v)}
-get sorting_field(){return this._getter('sorting_field')}
-set sorting_field(v){this._setter('sorting_field',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get extra_fields(){return this._getter_ts('extra_fields')}
-set extra_fields(v){this._setter_ts('extra_fields',v)}
-get keys(){return this._getter_ts('keys')}
-set keys(v){this._setter_ts('keys',v)}
-}
-$p.CatDivisions = CatDivisions;
-class CatDivisionsKeysRow extends TabularSectionRow{
-get acl_obj(){return this._getter('acl_obj')}
-set acl_obj(v){this._setter('acl_obj',v)}
-}
-$p.CatDivisionsKeysRow = CatDivisionsKeysRow;
-$p.cat.create('divisions');
 class CatUsers extends CatObj{
 get invalid(){return this._getter('invalid')}
 set invalid(v){this._setter('invalid',v)}
@@ -5137,6 +5305,21 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 }
 $p.CatStores = CatStores;
 $p.cat.create('stores');
+class CatWork_shifts extends CatObj{
+get predefined_name(){return this._getter('predefined_name')}
+set predefined_name(v){this._setter('predefined_name',v)}
+get work_shift_periodes(){return this._getter_ts('work_shift_periodes')}
+set work_shift_periodes(v){this._setter_ts('work_shift_periodes',v)}
+}
+$p.CatWork_shifts = CatWork_shifts;
+class CatWork_shiftsWork_shift_periodesRow extends TabularSectionRow{
+get begin_time(){return this._getter('begin_time')}
+set begin_time(v){this._setter('begin_time',v)}
+get end_time(){return this._getter('end_time')}
+set end_time(v){this._setter('end_time',v)}
+}
+$p.CatWork_shiftsWork_shift_periodesRow = CatWork_shiftsWork_shift_periodesRow;
+$p.cat.create('work_shifts');
 class CatCash_flow_articles extends CatObj{
 get definition(){return this._getter('definition')}
 set definition(v){this._setter('definition',v)}
@@ -5168,16 +5351,16 @@ $p.cat.create('nom_prices_types');
 class CatIndividuals extends CatObj{
 get birth_date(){return this._getter('birth_date')}
 set birth_date(v){this._setter('birth_date',v)}
-get inn(){return this._getter('inn')}
-set inn(v){this._setter('inn',v)}
+get sex(){return this._getter('sex')}
+set sex(v){this._setter('sex',v)}
 get imns_code(){return this._getter('imns_code')}
 set imns_code(v){this._setter('imns_code',v)}
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
+get inn(){return this._getter('inn')}
+set inn(v){this._setter('inn',v)}
 get pfr_number(){return this._getter('pfr_number')}
 set pfr_number(v){this._setter('pfr_number',v)}
-get sex(){return this._getter('sex')}
-set sex(v){this._setter('sex',v)}
 get birth_place(){return this._getter('birth_place')}
 set birth_place(v){this._setter('birth_place',v)}
 get Фамилия(){return this._getter('Фамилия')}
@@ -5281,6 +5464,8 @@ get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
 set editor(v){this._setter('editor',v)}
+get branch(){return this._getter('branch')}
+set branch(v){this._setter('branch',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get constructions(){return this._getter_ts('constructions')}
@@ -5498,8 +5683,8 @@ set demand(v){this._setter_ts('demand',v)}
           name += '/s:' + this.s.toFixed(3);
         }
         
-        if(this.weight && !this.s){
-          name += `/m:${this.weight.toFixed(3)}kg`;
+        if(this.weight){
+          name += `/m:${this.weight.toFixed(3)}`;
         }
 
         // подмешиваем значения параметров
@@ -6222,11 +6407,11 @@ set demand(v){this._setter_ts('demand',v)}
     mosquito: true,
     jalousie: true,
     grid: 50,
-    carcass: false,
     mirror: false,
     articles: 0,
     glass_numbers: false,
     bw: false,
+    mode: 0,
   };}
 $p.CatCharacteristics = CatCharacteristics;
 class CatCharacteristicsConstructionsRow extends TabularSectionRow{
@@ -6389,14 +6574,6 @@ set editor(v){this._setter('editor',v)}
 }
 $p.CatPrice_groups = CatPrice_groups;
 $p.cat.create('price_groups');
-class CatStages extends CatObj{
-get note(){return this._getter('note')}
-set note(v){this._setter('note',v)}
-get grouping(){return this._getter('grouping')}
-set grouping(v){this._setter('grouping',v)}
-}
-$p.CatStages = CatStages;
-$p.cat.create('stages');
 class CatProject_categories extends CatObj{
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
@@ -6492,8 +6669,8 @@ class CatAbonentsManager extends CatManager {
     const {server} = $p.job_prm;
     const price_types = new Set();
     for(const id of server.abonents) {
-      for(const {acl_obj} of this.by_id(id)?.price_types) {
-        price_types.add(acl_obj);
+      for(const price_type of this.by_id(id)?.price_types) {
+        price_types.add(price_type);
       }
     }
     return Array.from(price_types);
@@ -6503,6 +6680,8 @@ $p.cat.create('abonents', CatAbonentsManager, false);
 class CatInsert_bind extends CatObj{
 get key(){return this._getter('key')}
 set key(v){this._setter('key',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -6696,21 +6875,6 @@ set grouping(v){this._setter('grouping',v)}
 }
 $p.CatTemplatesTemplatesRow = CatTemplatesTemplatesRow;
 $p.cat.create('templates');
-class CatWork_centers extends CatObj{
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get parent(){return this._getter('parent')}
-set parent(v){this._setter('parent',v)}
-get work_center_kinds(){return this._getter_ts('work_center_kinds')}
-set work_center_kinds(v){this._setter_ts('work_center_kinds',v)}
-}
-$p.CatWork_centers = CatWork_centers;
-class CatWork_centersWork_center_kindsRow extends TabularSectionRow{
-get kind(){return this._getter('kind')}
-set kind(v){this._setter('kind',v)}
-}
-$p.CatWork_centersWork_center_kindsRow = CatWork_centersWork_center_kindsRow;
-$p.cat.create('work_centers');
 class CatDelivery_directions extends CatObj{
 get composition(){return this._getter_ts('composition')}
 set composition(v){this._setter_ts('composition',v)}
@@ -6807,7 +6971,20 @@ get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
-}
+
+  
+  
+  option_value({elm, ...other}) {
+    const {values} = this;
+    for(const {key, value} of values) {
+      if(key.check_condition({elm, ...other})) {
+        return value;
+      }
+    }
+    if(values.length) {
+      return values[values.length-1];
+    }
+  }}
 $p.CatValues_options = CatValues_options;
 class CatValues_optionsValuesRow extends TabularSectionRow{
 get key(){return this._getter('key')}
@@ -6824,8 +7001,8 @@ set type(v){this._setter('type',v)}
 $p.CatLead_src = CatLead_src;
 $p.cat.create('lead_src');
 class CatLeads extends CatObj{
-get date(){return this._getter('date')}
-set date(v){this._setter('date',v)}
+get create_date(){return this._getter('create_date')}
+set create_date(v){this._setter('create_date',v)}
 get origin(){return this._getter('origin')}
 set origin(v){this._setter('origin',v)}
 get responsible(){return this._getter('responsible')}
@@ -6837,6 +7014,43 @@ set dop(v){this._setter('dop',v)}
 }
 $p.CatLeads = CatLeads;
 $p.cat.create('leads');
+class CatAccounts extends CatObj{
+get prefix(){return this._getter('prefix')}
+set prefix(v){this._setter('prefix',v)}
+get push_only(){return this._getter('push_only')}
+set push_only(v){this._setter('push_only',v)}
+get ips(){return this._getter('ips')}
+set ips(v){this._setter('ips',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+}
+$p.CatAccounts = CatAccounts;
+$p.cat.create('accounts');
+class CatWork_centers extends CatObj{
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
+get plan_multiplicity(){return this._getter('plan_multiplicity')}
+set plan_multiplicity(v){this._setter('plan_multiplicity',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get work_center_kinds(){return this._getter_ts('work_center_kinds')}
+set work_center_kinds(v){this._setter_ts('work_center_kinds',v)}
+}
+$p.CatWork_centers = CatWork_centers;
+class CatWork_centersWork_center_kindsRow extends TabularSectionRow{
+get kind(){return this._getter('kind')}
+set kind(v){this._setter('kind',v)}
+}
+$p.CatWork_centersWork_center_kindsRow = CatWork_centersWork_center_kindsRow;
+$p.cat.create('work_centers');
+class CatProject_stages extends CatObj{
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
+get grouping(){return this._getter('grouping')}
+set grouping(v){this._setter('grouping',v)}
+}
+$p.CatProject_stages = CatProject_stages;
+$p.cat.create('project_stages');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -7057,6 +7271,8 @@ get quantity(){return this._getter('quantity')}
 set quantity(v){this._setter('quantity',v)}
 get cell(){return this._getter('cell')}
 set cell(v){this._setter('cell',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.DocWork_centers_taskCutsRow = DocWork_centers_taskCutsRow;
 class DocWork_centers_taskCuttingRow extends TabularSectionRow{
@@ -7170,6 +7386,8 @@ get lead(){return this._getter('lead')}
 set lead(v){this._setter('lead',v)}
 get approval(){return this._getter('approval')}
 set approval(v){this._setter('approval',v)}
+get branch(){return this._getter('branch')}
+set branch(v){this._setter('branch',v)}
 get production(){return this._getter_ts('production')}
 set production(v){this._setter_ts('production',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
@@ -7203,8 +7421,6 @@ get s(){return this._getter('s')}
 set s(v){this._setter('s',v)}
 get first_cost(){return this._getter('first_cost')}
 set first_cost(v){this._setter('first_cost',v)}
-get specify(){return this._getter('specify')}
-set specify(v){this._setter('specify',v)}
 get marginality(){return this._getter('marginality')}
 set marginality(v){this._setter('marginality',v)}
 get price(){return this._getter('price')}
@@ -7398,7 +7614,7 @@ class DocCalc_orderManager extends DocManager {
     });
 
     // пересчитываем
-    if(!clone) {
+    if(!clone && dst.recalc) {
       await dst.recalc();
     }
 
@@ -7470,8 +7686,10 @@ $p.DocWork_centers_performance = DocWork_centers_performance;
 class DocWork_centers_performancePlanningRow extends TabularSectionRow{
 get date(){return this._getter('date')}
 set date(v){this._setter('date',v)}
-get key(){return this._getter('key')}
-set key(v){this._setter('key',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
 get power(){return this._getter('power')}
 set power(v){this._setter('power',v)}
 }
@@ -7719,6 +7937,8 @@ get contract(){return this._getter('contract')}
 set contract(v){this._setter('contract',v)}
 get basis(){return this._getter('basis')}
 set basis(v){this._setter('basis',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 get responsible(){return this._getter('responsible')}
 set responsible(v){this._setter('responsible',v)}
 get shipping_date(){return this._getter('shipping_date')}
@@ -7880,6 +8100,26 @@ set y(v){this._setter('y',v)}
 }
 $p.DpBuilder_coordinatesCoordinatesRow = DpBuilder_coordinatesCoordinatesRow;
 $p.dp.create('builder_coordinates');
+class DpBuilder_pen extends DataProcessorObj{
+get elm_type(){return this._getter('elm_type')}
+set elm_type(v){this._setter('elm_type',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
+get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+set clr(v){this._setter('clr',v)}
+get bind_generatrix(){return this._getter('bind_generatrix')}
+set bind_generatrix(v){this._setter('bind_generatrix',v)}
+get bind_node(){return this._getter('bind_node')}
+set bind_node(v){this._setter('bind_node',v)}
+get bind_sys(){return this._getter('bind_sys')}
+set bind_sys(v){this._setter('bind_sys',v)}
+get grid(){return this._getter('grid')}
+set grid(v){this._setter('grid',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+}
+$p.DpBuilder_pen = DpBuilder_pen;
+$p.dp.create('builder_pen');
 class DpBuilder_price extends DataProcessorObj{
 get nom(){return this._getter('nom')}
 set nom(v){this._setter('nom',v)}
@@ -8099,6 +8339,8 @@ get origin(){return this._getter('origin')}
 set origin(v){this._setter('origin',v)}
 get specify(){return this._getter('specify')}
 set specify(v){this._setter('specify',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 }
 $p.DpBuyers_orderSpecificationRow = DpBuyers_orderSpecificationRow;
 class DpBuyers_orderCharges_discountsRow extends TabularSectionRow{
@@ -8121,6 +8363,28 @@ set sys(v){this._setter('sys',v)}
 }
 $p.DpBuyers_orderSys_profileRow = DpBuyers_orderSys_profileRow;
 $p.dp.create('buyers_order');
+class DpBuilder_text extends DataProcessorObj{
+get text(){return this._getter('text')}
+set text(v){this._setter('text',v)}
+get font_family(){return this._getter('font_family')}
+set font_family(v){this._setter('font_family',v)}
+get bold(){return this._getter('bold')}
+set bold(v){this._setter('bold',v)}
+get font_size(){return this._getter('font_size')}
+set font_size(v){this._setter('font_size',v)}
+get angle(){return this._getter('angle')}
+set angle(v){this._setter('angle',v)}
+get align(){return this._getter('align')}
+set align(v){this._setter('align',v)}
+get clr(){return this._getter('clr')}
+set clr(v){this._setter('clr',v)}
+get x(){return this._getter('x')}
+set x(v){this._setter('x',v)}
+get y(){return this._getter('y')}
+set y(v){this._setter('y',v)}
+}
+$p.DpBuilder_text = DpBuilder_text;
+$p.dp.create('builder_text');
 class DpBuilder_lay_impost extends DataProcessorObj{
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
@@ -8164,48 +8428,6 @@ set changed(v){this._setter('changed',v)}
 }
 $p.DpBuilder_lay_impostSizesRow = DpBuilder_lay_impostSizesRow;
 $p.dp.create('builder_lay_impost');
-class DpBuilder_pen extends DataProcessorObj{
-get elm_type(){return this._getter('elm_type')}
-set elm_type(v){this._setter('elm_type',v)}
-get inset(){return this._getter('inset')}
-set inset(v){this._setter('inset',v)}
-get clr(){return $p.cat.clrs.getter(this._obj.clr)}
-set clr(v){this._setter('clr',v)}
-get bind_generatrix(){return this._getter('bind_generatrix')}
-set bind_generatrix(v){this._setter('bind_generatrix',v)}
-get bind_node(){return this._getter('bind_node')}
-set bind_node(v){this._setter('bind_node',v)}
-get bind_sys(){return this._getter('bind_sys')}
-set bind_sys(v){this._setter('bind_sys',v)}
-get grid(){return this._getter('grid')}
-set grid(v){this._setter('grid',v)}
-get region(){return this._getter('region')}
-set region(v){this._setter('region',v)}
-}
-$p.DpBuilder_pen = DpBuilder_pen;
-$p.dp.create('builder_pen');
-class DpBuilder_text extends DataProcessorObj{
-get text(){return this._getter('text')}
-set text(v){this._setter('text',v)}
-get font_family(){return this._getter('font_family')}
-set font_family(v){this._setter('font_family',v)}
-get bold(){return this._getter('bold')}
-set bold(v){this._setter('bold',v)}
-get font_size(){return this._getter('font_size')}
-set font_size(v){this._setter('font_size',v)}
-get angle(){return this._getter('angle')}
-set angle(v){this._setter('angle',v)}
-get align(){return this._getter('align')}
-set align(v){this._setter('align',v)}
-get clr(){return this._getter('clr')}
-set clr(v){this._setter('clr',v)}
-get x(){return this._getter('x')}
-set x(v){this._setter('x',v)}
-get y(){return this._getter('y')}
-set y(v){this._setter('y',v)}
-}
-$p.DpBuilder_text = DpBuilder_text;
-$p.dp.create('builder_text');
 class RepMaterials_demand extends DataProcessorObj{
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
@@ -8291,6 +8513,8 @@ get amount(){return this._getter('amount')}
 set amount(v){this._setter('amount',v)}
 get amount_marged(){return this._getter('amount_marged')}
 set amount_marged(v){this._setter('amount_marged',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.RepMaterials_demandSpecificationRow = RepMaterials_demandSpecificationRow;
 $p.rep.create('materials_demand');
@@ -8520,6 +8744,11 @@ class HideParamsRow extends ParamsRow{
 class HideForciblyParamsRow extends HideParamsRow{
   get forcibly(){return this._getter('forcibly')}
   set forcibly(v){this._setter('forcibly',v)}
+
+  option_value({elm, ...other}) {
+    const {value} = this;
+    return value instanceof CatValues_options ? value.option_value({elm, ...other}) : value;
+  }
 }
 
 /**
@@ -8591,6 +8820,10 @@ class Payment_detailsRow extends TabularSectionRow{
 class CatFormulasParamsRow extends ParamsRow{}
 
 class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
+  get region(){return this._getter('region')}
+  set region(v){this._setter('region',v)}
+  get inset(){return this._getter('inset')}
+  set inset(v){this._setter('inset',v)}
   get hide(){return this._getter('hide')}
   set hide(v){this._setter('hide',v)}
 }

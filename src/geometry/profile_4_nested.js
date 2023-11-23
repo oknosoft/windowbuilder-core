@@ -106,6 +106,10 @@ class ProfileNested extends Profile {
     return `влож ${super.info}`;
   }
 
+  auto_insets() {
+    
+  }
+
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
   }

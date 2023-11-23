@@ -1,6 +1,6 @@
 /*!
  * Движок графического построителя
- * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2022
+ * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2023
  */
  
 module.exports = function({$p, paper}) {const consts = {
@@ -42,10 +42,10 @@ module.exports = function({$p, paper}) {const consts = {
 	move_shapes: 'move-shapes',
   get base_offset() {
 	  const {font_size} = this;
-    return font_size < 80 ? 90 : font_size + 12;
+    return font_size < 80 ? 90 : font_size + 18;
   },
   get dop_offset() {
-	  return this.base_offset + 40;
+	  return this.base_offset + 44;
   }
 };
 class EditorInvisible extends paper.PaperScope {
@@ -172,7 +172,7 @@ class EditorInvisible extends paper.PaperScope {
       classList.add(name);
     });
   }
-  do_glass_align(name = 'auto', glasses) {
+  do_glass_align(name = 'auto', glasses, geometric) {
     const {project, Point, Key} = this;
     if(!glasses){
       glasses = project.selected_glasses();
@@ -215,7 +215,8 @@ class EditorInvisible extends paper.PaperScope {
         const {b, e} = impost.rays;
         return impost.orientation == orientation && (b.is_tt || e.is_tt || b.is_i || e.is_i);
       });
-    const galign = Key.modifiers.control || Key.modifiers.shift || project.auto_align == enm.align_types.Геометрически;
+    const galign = geometric || Key.modifiers.control || Key.modifiers.shift ||
+      project.auto_align == enm.align_types.Геометрически;
     let medium = 0;
     const glmap = new Map();
     glasses = glasses.map((glass) => {
@@ -236,7 +237,7 @@ class EditorInvisible extends paper.PaperScope {
       }
       profiles.forEach((curr) => {
         const profile = curr.profile.nearest() || curr.profile;
-        if(shift.indexOf(profile) != -1){
+        if(shift.includes(profile)){
           if(!glmap.has(profile)){
             glmap.set(profile, {dx: new Set, dy: new Set});
           }
@@ -277,16 +278,30 @@ class EditorInvisible extends paper.PaperScope {
         return;
       }
       gl.ok = (gl.is_inner && gl.is_outer);
-      gl.dx.forEach((glass) => {
-        if(glass.left == impost && !glass.right){
-          gl.delta = (glass.width - medium);
-          gl.ok = true;
-        }
-        if(glass.right == impost && !glass.left){
-          gl.delta = (medium - glass.width);
-          gl.ok = true;
-        }
-      });
+      if(name == 'width'){
+        gl.dx.forEach((glass) => {
+          if(glass.left == impost && !glass.right){
+            gl.delta = (glass.width - medium);
+            gl.ok = true;
+          }
+          if(glass.right == impost && !glass.left){
+            gl.delta = (medium - glass.width);
+            gl.ok = true;
+          }
+        }); 
+      }
+      else {
+        gl.dy.forEach((glass) => {
+          if(glass.top == impost && !glass.bottom){
+            gl.delta = (glass.height - medium);
+            gl.ok = true;
+          }
+          if(glass.bottom == impost && !glass.top){
+            gl.delta = (medium - glass.height);
+            gl.ok = true;
+          }
+        });
+      }
     });
     const res = [];
     shift.forEach((impost) => {
@@ -310,6 +325,17 @@ class EditorInvisible extends paper.PaperScope {
         delta = new Point([delta,0]);
       }
       else {
+        if(!gl.hasOwnProperty('delta')){
+          gl.dy.forEach((glass) => {
+            const double = 1.1 * gl.dy.size;
+            if(glass.top == impost){
+              delta += (medium - glass.height) / double;
+            }
+            else if(glass.bottom == impost){
+              delta += (glass.height - medium) / double;
+            }
+          });
+        }
         delta = new Point([0, delta]);
       }
       if(delta.length > consts.epsilon){
@@ -326,8 +352,8 @@ class EditorInvisible extends paper.PaperScope {
     });
     return res;
   }
-  glass_align(name = 'auto', glasses) {
-    const shift = this.do_glass_align(name, glasses);
+  glass_align(name = 'auto', glasses, geometric) {
+    const shift = this.do_glass_align(name, glasses, geometric);
     if(!shift){
       return;
     }
@@ -344,7 +370,7 @@ class EditorInvisible extends paper.PaperScope {
       for (const layer of contours) {
         layer.redraw();
       }
-      return this.glass_align(name, glasses);
+      return this.glass_align(name, glasses, geometric);
     }
     else {
       _attr._align_counter = 0;
@@ -563,6 +589,20 @@ class ToolElement extends paper.Tool {
   }
 };
 EditorInvisible.ToolElement = ToolElement;
+(() => {
+  function getZoom() {
+    const scaling = this._decompose().scaling;
+    return (Math.abs(scaling.x) + Math.abs(scaling.y)) / 2;
+  }
+  const {prototype} = paper.View;
+  prototype.getZoom = getZoom;
+  const setZoom = Object.getOwnPropertyDescriptor(prototype, 'zoom').set;
+  delete prototype.zoom;
+  Object.defineProperty(prototype, 'zoom', {
+    get: getZoom,
+    set: setZoom,
+  });
+})();
 const AbstractFilling = (superclass) => class extends superclass {
   is_pos(pos) {
     if(this.project.contours.count == 1 || this.parent){
@@ -682,7 +722,7 @@ class BuilderElement extends paper.Group {
       attr.row = this.layer._ox.coordinates.add();
     }
     this._row = attr.row;
-    this._attr = {};
+    this._attr = {paths: new Map()};
     if(!this._row.elm){
       this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
@@ -708,7 +748,7 @@ class BuilderElement extends paper.Group {
       this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
     }
     this.project.register_change();
-    if(this.getView()._countItemEvent) {
+    if(this.getView()?._countItemEvent) {
       this.on('doubleclick', this.elm_dblclick);
     }
   }
@@ -947,7 +987,11 @@ class BuilderElement extends paper.Group {
       region: _xfields.region,
       note: fields.note,
       price: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Цена продажи'}),
-      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость план'}),
+      first_cost: Object.assign({}, tabular_sections.specification.fields.price, {synonym: 'Себестоимость'}),
+      price_pieces: {
+        synonym: 'Цена за штуку?',
+        type: {types: ['boolean']},
+      }
     };
     return {
       fields: new Proxy(mfields, {
@@ -1007,7 +1051,7 @@ class BuilderElement extends paper.Group {
   get thickness() {
     return this.inset.thickness(this);
   }
-  get sizeb() {
+  get_sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
       const {nom} = this;
@@ -1030,6 +1074,9 @@ class BuilderElement extends paper.Group {
       return parseFloat(p2);
     }
     return sizeb || 0;
+  }
+  get sizeb() {
+    return this.get_sizeb();
   }
   get sizefurn() {
     return this.nom.sizefurn || 20;
@@ -1118,7 +1165,22 @@ class BuilderElement extends paper.Group {
     const props = [];
     if(this.isInserted()) {
       const inset_params = inset.used_params();
-      const product_params = concat ? inset_params.map((param) => ({param, elm: true})) : layer.sys.product_params;
+      const product_params = [];
+      if(concat) {
+        for(const param of inset_params) {
+          product_params.push({param, elm: true});
+        }
+      }
+      else {
+        for(const row of layer.sys.product_params) {
+          product_params.push(row);
+        }
+        for(const param of inset_params) {
+          if([1, 2].includes(param.inheritance) && !product_params.find(v => v.param === param)) {
+            product_params.push({param, elm: false});
+          }
+        }
+      }
       for(const {param, elm} of product_params) {
         if (!inset_params.includes(param)) {
           continue;
@@ -1318,11 +1380,14 @@ class BuilderElement extends paper.Group {
   }
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
-    const {_attr: {_reflected}, builder_props} = this.project;
+    let {project: {_attr, builder_props}, layer}  = this;
     if(builder_props.bw) {
       return new paper.Color(1, 1, 1, 0.92);
     }
-    if(_reflected){
+    if(!layer) {
+      layer = this.project.activeLayer;
+    }
+    if(_attr._reflected && !layer?.flipped || !_attr._reflected && layer?.flipped){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
@@ -1674,13 +1739,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!res) {
       const furns = this.sys.furns(this._ox, this);
       if(furns.length) {
-        const {cache, cnstr, _ox} = this;
+        const {cache, weight} = this;
         for(const {furn} of furns) {
           if(furn.is_folder || this.open_restrictions_err({furn, cache, bool: true})) {
             continue;
           }
-          const weight_max = furn.furn_set.flap_weight_max;
-          if(weight_max && weight_max < _ox.elm_weight(-cnstr)) {
+          const weight_max = furn.find_set(this).flap_weight_max;
+          if(weight_max && weight_max < weight) {
             continue;
           }
           res = furn;
@@ -1704,11 +1769,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     const glasses = [];
     coordinates.find_rows({cnstr, region: 0}, (row) => {
       const attr = {row, parent: this};
-      if(row.elm_type === elm_types.attachment) {
-        new this.ProfileConstructor(attr);
-      }
-      else if(elm_types.profiles.includes(row.elm_type)) {
-        row.elm_type === elm_types.impost ? new Profile(attr) : new this.ProfileConstructor(attr);
+      if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
+        if(this instanceof ContourVirtual && row.elm_type === elm_types.impost) {
+          new Profile(attr);
+        }
+        else {
+          new this.ProfileConstructor(attr);
+        }
       }
       else if(elm_types.glasses.includes(row.elm_type)) {
         glasses.push(row);
@@ -1761,8 +1828,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {_ox, cnstr, layer} = this;
-    const weight = _ox.elm_weight(-cnstr);
+    const {cnstr, layer, weight} = this;
     return (layer ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
@@ -1781,8 +1847,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         break;
       }
-      if([10, 11].includes(layer._row.kind)) {
-        kind = layer._row.kind;
+      if([10, 11].includes(layer._row?.kind)) {
+        kind = layer._row?.kind;
       }
     }
     return kind;
@@ -1795,7 +1861,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         break;
       }
-      if([10, 11].includes(layer._row.kind)) {
+      if([10, 11].includes(layer._row?.kind)) {
         return layer;
       }
     }
@@ -1880,6 +1946,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return (upath.area/1e6).round(3);
   }
+  get weight() {
+    const {_ox, cnstr} = this;
+    return _ox.elm_weight(-cnstr);
+  }
   get furn() {
     return this._row.furn;
   }
@@ -1911,6 +1981,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     project.register_change(true);
     this.notify(this, 'furn_changed');
+  }
+  get furn_set() {
+    return this.furn.find_set(this);
   }
   glasses(hide, glass_only) {
     return this.children.filter((elm) => {
@@ -2449,17 +2522,27 @@ class Contour extends AbstractFilling(paper.Layer) {
   get opening() {
     const {enm, cch} = $p;
     const param = cch.properties.predefined('opening');
-    let res = enm.opening.in;
+    let res;
     if(param && !param.empty()) {
-      const {params, cnstr} = this;
-      params.find_rows({param, cnstr: {in: [0, cnstr]}}, (row)  => {
-        res = enm.opening.get(row.value);
+      let {params, cnstr, layer} = this;
+      const cnstrs = [0, cnstr];
+      while (layer) {
+        cnstrs.push(layer.cnstr);
+        if(layer instanceof ContourVirtual) {
+          break;
+        }
+        layer = layer.layer;
+      }
+      params.find_rows({param, cnstr: {in: cnstrs}}, (row)  => {
+        if(!res || row.cnstr) {
+          res = enm.opening.get(row.value);
+        }
         if(row.cnstr === cnstr) {
           return false;
         }
       });
     }
-    return res;
+    return res || enm.opening.in;
   }
   set opening(v) {
     const param = $p.cch.properties.predefined('opening');
@@ -2490,7 +2573,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     else {
       l_visualization._static = new paper.Group({parent: l_visualization});
     }
-    for (var i = 0; i < this.profiles.length; i++) {
+    for (let i = 0; i < this.profiles.length; i++) {
       if([Рама, Импост].includes(this.profiles[i].elm_type) &&
         this.profiles[i].static_load().can_use === false) {
         new paper.Path.Circle({
@@ -2532,7 +2615,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.glasses(false, true).forEach(glass => {
       let err;
       const {_row, path, profiles, imposts, inset} = glass;
-      _row.s = glass.form_area;
       profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {
           glass.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
@@ -2820,7 +2902,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   draw_opening() {
     const {l_visualization, furn, opening} = this;
-    const {open_types, open_directions, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
+    const {open_types, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
@@ -2858,15 +2940,27 @@ class Contour extends AbstractFilling(paper.Layer) {
     const sliding = () => {
       const {center} = this.bounds;
       const {_opening} = l_visualization;
-      if (this.direction == open_directions.Правое) {
-        _opening.moveTo(center.add([-100, 0]));
+      if (this.direction.is('right')) {
+        if(furn.open_type.is('up_sliding')) {
+          _opening.moveTo(center.add([-100, 70]));
+          _opening.lineTo(center.add([-100, 0]));
+        }
+        else {
+          _opening.moveTo(center.add([-100, 0]));
+        }
         _opening.lineTo(center.add([100, 0]));
         _opening.moveTo(center.add([30, 30]));
         _opening.lineTo(center.add([100, 0]));
         _opening.lineTo(center.add([30, -30]));
       }
       else {
-        _opening.moveTo(center.add([100, 0]));
+        if(furn.open_type.is('up_sliding')) {
+          _opening.moveTo(center.add([100, 70]));
+          _opening.lineTo(center.add([100, 0]));
+        }
+        else {
+          _opening.moveTo(center.add([100, 0]));
+        }
         _opening.lineTo(center.add([-100, 0]));
         _opening.moveTo(center.add([-30, 30]));
         _opening.lineTo(center.add([-100, 0]));
@@ -2886,13 +2980,22 @@ class Contour extends AbstractFilling(paper.Layer) {
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows) {
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
+    const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
+    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
     l_visualization._by_spec.removeChildren();
-    const hide_by_spec = _attr._reflected || !builder_props.visualization;
+    const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
-      this._ox.specification.find_rows({dop: -1}, (row) => rows.push(row));
+      this._ox.specification.find_rows({dop: -1}, (row) => {
+        const {sketch_view} = row.nom.visualization; 
+        if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
+          (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
+          return;
+        }
+        rows.push(row);
+      });
     }
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
@@ -2902,10 +3005,11 @@ class Contour extends AbstractFilling(paper.Layer) {
           offset: this.len * 1000,
           offset0: this.width * 1000 * (this.alp1 || 1),
           clr: this.clr,
+          reflected,
         });
         return true;
       }
-    };
+    }
     this.draw_mosquito();
     this.draw_sill();
     glasses.forEach(this.draw_jalousie.bind(this));
@@ -2919,6 +3023,7 @@ class Contour extends AbstractFilling(paper.Layer) {
                 layer: l_visualization,
                 offset: [row.len * 1000, row.width * 1000],
                 clr: row.clr,
+                reflected,
               });
               return true;
             }
@@ -2927,54 +3032,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-    if(builder_props.articles) {
-      this.draw_articles(profiles, builder_props.articles);
-    }
     if(builder_props.glass_numbers) {
       this.draw_glass_numbers();
     }
     for(const contour of contours){
       contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
-    }
-  }
-  draw_articles(profiles, articles = 3) {
-    const {l_visualization} = this;
-    for(const profile of profiles) {
-      const {rays: {outer}, sizeb, inset, nom} = profile;
-      const p0 = outer.getNearestPoint(profile.corns(1));
-      const offset = outer.getOffsetOf(p0) + 80;
-      const position = outer.getPointAt(offset).add(outer.getNormalAt(offset).multiply((-consts.font_size) / 2));
-      const tangent = outer.getTangentAt(offset);
-      let content = '→ ';
-      switch (articles) {
-        case 1:
-          content += profile.elm.toFixed();
-          break;
-        case 2:
-          content += inset.article || inset.name;
-          break;
-        case 3:
-          content += nom.article || nom.name;
-          break;
-        case 4:
-          content += `${profile.elm.toFixed()} ${inset.article || inset.name}`;
-          break;
-        case 5:
-          content += `${profile.elm.toFixed()} ${nom.article || nom.name}`;
-          break;
-      }
-      const text = new paper.PointText({
-        parent: l_visualization._by_spec,
-        guide: true,
-        fillColor: 'darkblue',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size,
-        content,
-        position,
-      });
-      const {width} = text.bounds;
-      text.rotate(tangent.angle);
-      text.translate(tangent.multiply(width / 2));
     }
   }
   draw_glass_numbers() {
@@ -3265,12 +3327,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     const addls = [];
     const other = new Set();
     for(const elm of profiles) {
-      elm.redraw();
-      for(const addl of elm.addls) {
-        addls.push(addl);
-      }
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of profiles) {
+      if(imposts.includes(elm)) {
+        elm.redraw();
       }
       else {
         const {b, e} = elm.rays;
@@ -3280,6 +3346,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         if(e.is_short) {
           other.add(e.profile);
         }
+      }
+      for(const addl of elm.addls) {
+        addls.push(addl);
       }
     }
     for (const elm of imposts.sort(Contour.ecompare)) {
@@ -3307,6 +3376,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
       e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
     }
+    for (const elm of this.getItems({class: ProfileGlBead})) {
+      const {b, e} = elm.rays;
+      b?.profile?.profile && elm.isBelow(b.profile.profile) && elm.insertAbove(b.profile.profile);
+      e?.profile?.profile && elm.isBelow(e.profile.profile) && elm.insertAbove(e.profile.profile);
+    }
     const changed = chnom.splice(0);
     for(const elm of profiles) {
       if(!changed.includes(elm)) {
@@ -3327,9 +3401,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     const left = this.children.filter((elm) => !children.includes(elm));
     for(const elm of children) {
       elm.redraw();
-      for(const lelm of left) {
-        if(lelm.isAbove(elm)) {
-          lelm.insertBelow(elm);
+      if(!elm.flipped) {
+        for(const lelm of left) {
+          if(lelm.isAbove(elm)) {
+            lelm.insertBelow(elm);
+          }
         }
       }
     }
@@ -3363,10 +3439,11 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   refresh_prm_links(root) {
     const cnstr = root ? 0 : this.cnstr || -9999;
-    const {project, sys, own_sys, prod_ox} = this;
+    const {project, sys, own_sys, prod_ox, params, layer} = this;
     const {_dp, _attr} = project;
+    const {blank} = $p.utils;
     let notify;
-    this.params.find_rows({cnstr, inset: $p.utils.blank.guid}, (prow) => {
+    params.find_rows({cnstr, inset: blank.guid}, (prow) => {
       const {param} = prow;
       const links = param.params_links({
         grid: {selection: {cnstr}},
@@ -3399,13 +3476,36 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
     });
+    if(!root && !layer) {
+      const {product_params} = this.sys;
+      for(const filling of this.fillings) {
+        const {inset, elm} = filling;
+        const inset_params = inset.used_params();
+        for(const param of inset_params) {
+          if(param.inheritance === 2 || (param.inheritance === 1 && !product_params.find({param}))) {
+            const key = {cnstr: -elm, param, inset: blank.guid, region: 0};
+            const prow = params.find(key) || params.add(key);
+            const drow = inset?.product_params?.find({param});
+            if(drow) {
+              if (drow.hide) {
+                prow.hide = true;
+              }
+              const {value} = prow;
+              if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {
+                prow.value = drow.option_value({elm: filling});
+              }
+            }
+          }
+        }
+      }
+    }
     if(notify) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
         _dp._manager.emit_async('rows', _dp, {extra_fields: true});
         project.check_clr();
       }
-    };
+    }
   }
   refresh_inset_depends(param) {
     const {contours, profiles} = this;
@@ -3497,6 +3597,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       return elm[param.valueOf()];
     }
     const {layer, own_sys} = this;
+    if(!cnstr && (prm_row.origin.is('layer') || (prm_row.origin.is('nearest') && !layer))) {
+      cnstr = this.cnstr;
+    }
     if(!cnstr) {
       if(layer && !own_sys && !(layer instanceof ContourParent)) {
         return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
@@ -3529,18 +3632,24 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(param.inheritance === 4) {
         return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
       }
+      if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, origin, layer: this, prm_row});
+      }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
   }
   get furn_cache() {
+    const {bounds: {height, width}, w, h} = this;
     return {
       profiles: this.outer_nodes,
       bottom: this.profiles_by_side('bottom'),
       ox: this._ox,
-      w: this.w,
-      h: this.h,
+      width,
+      height,
+      w,
+      h,
     };
   }
   open_restrictions_err({furn, cache, bool}) {
@@ -3631,8 +3740,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       });
   }
   update_handle_height(cache, from_setter) {
-    const {furn, _row, project} = this;
-    const {furn_set, handle_side} = furn;
+    const {furn, _row, project, furn_set} = this;
+    const {handle_side} = furn;
     if (!handle_side || furn_set.empty()) {
       return;
     }
@@ -3661,7 +3770,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-    furn.furn_set.specification.find_rows({dop: 0}, (row) => {
+    furn_set.specification.find_rows({dop: 0}, (row) => {
       if (!row.quantity || !row.check_restrictions(this, cache)) {
         return;
       }
@@ -3688,8 +3797,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     return handle_height;
   }
   get h_ruch() {
-    const {layer, _row} = this;
-    return layer ? _row.h_ruch : 0;
+    const {layer, furn, _row} = this;
+    if(!layer) {
+      return 0;  
+    }
+    if(!furn.handle_side && furn.shtulp_kind() === 2) {
+      for(const contour of layer.contours) {
+        if(contour !== this && contour.furn.shtulp_kind() === 1) {
+          return contour.h_ruch;
+        }
+      }      
+    }
+    return _row.h_ruch;
   }
   set h_ruch(v) {
     const {layer, _row, project} = this;
@@ -3740,15 +3859,20 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.dop = {angle3d: v};
   }
   get flipped() {
-    const {flipped} = this._row;
+    const {_row: {flipped}} = this;
     if(!flipped) {
-      return false;
+      const {sys, layer, level} = this;
+      const auto_flipped = sys._extra('auto_flipped');
+      if(!auto_flipped && layer) {
+        return layer.flipped;
+      }
+      return Boolean(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level));
     }
     return flipped > 0;
   }
   set flipped(v) {
-    this._row.flipped = v;
-    this.project.register_change(true);
+    this._row.flipped = typeof v !== 'number' && v ? 1 : v;
+    this.redraw();
   }
   get side_count() {
     const {Импост} = $p.enm.elm_types;
@@ -3866,10 +3990,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
   apply_mirror() {
-    const {l_visualization, profiles, contours, project: {_attr}} = this;
-    if(_attr._reflected) {
-      l_visualization._by_spec.removeChildren();
-    }
+    const {l_visualization, profiles, contours, project: {_attr}, flipped} = this;
+    this.draw_visualization();
     for(const profile of this.profiles) {
       const {clr} = profile;
       if(clr.is_composite()) {
@@ -3884,7 +4006,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     for(const layer of this.contours) {
       layer.apply_mirror();
-      if(_attr._reflected) {
+      if(_attr._reflected || flipped) {
         layer.sendToBack();
       }
       else {
@@ -4113,6 +4235,20 @@ class ContourNested extends Contour {
                 _ox.cnn_elmnts.add(proto);
               }
             }
+            adel.length = 0;
+            for(const trow of _ox.glass_specification) {
+              if(trow.elm > elm0) {
+                adel.push(trow);
+              }
+            }
+            for(const trow of adel) {
+              _ox.glass_specification.del(trow);
+            }
+            for(const trow of tx.glass_specification) {
+              const proto = Object.assign({}, trow._obj);
+              proto.elm = map.get(proto.elm);
+              _ox.glass_specification.add(proto);
+            }
             _ox.params.clear();
             for(const trow of tx.params) {
               const proto = Object.assign({}, trow._obj);
@@ -4199,15 +4335,37 @@ class ContourNested extends Contour {
     this.contours.forEach((contour) => contour.on_sys_changed());
   }
   redraw() {
-    if(!this.visible || this.hidden) {
+    const {visible, hidden, _attr, profiles, project: {_attr: {_reflected}}, flipped} = this;
+    const reflect = _reflected && !flipped || !_reflected && flipped;
+    this.content.scaling = [1, 1];
+    function sendToBack(elm) {
+      elm.sendToBack();
+      for(const chld of elm.contours) {
+        sendToBack(chld);
+      }
+    }
+    if(!visible || hidden) {
       return;
     }
-    this._attr._bounds = null;
-    for(const elm of this.profiles) {
+    _attr._bounds = null;
+    const imposts = [];
+    for(const elm of profiles) {
+      if(elm.elm_type.is('impost')) {
+        imposts.push(elm);
+      }
+      else {
+        elm.redraw();
+      }
+    }
+    for(const elm of imposts) {
       elm.redraw();
     }
     for(const elm of this.contours) {
       elm.redraw();
+    }
+    if(reflect) {
+      this.content.scaling = [-1, 1];
+      sendToBack(this.content);
     }
   }
   remove() {
@@ -4242,6 +4400,7 @@ class ContourNestedContent extends Contour {
   }
   load_stamp({contour, delta, map}) {
     const {_ox: ox, project} = this;
+    const {glass_specification} = contour._ox;
     project._scope.activate();
     for(const proto of contour.profiles) {
       const generatrix = proto.generatrix.clone({insert: false});
@@ -4256,11 +4415,18 @@ class ContourNestedContent extends Contour {
     for(const proto of contour.glasses(false, true)) {
       const path = proto.generatrix.clone({insert: false});
       path.translate(delta);
+      const elm = map.get(proto.elm);
       new Filling({
         parent: this,
         path,
         proto: {inset: proto.inset, clr: proto.clr},
-        elm: map.get(proto.elm),
+        elm,
+      });
+      ox.glass_specification.clear({elm});
+      glass_specification.find_rows({elm: proto.elm}, (trow) => {
+        const gproto = Object.assign({}, trow._obj);
+        gproto.elm = elm;
+        ox.glass_specification.add(gproto);
       });
     }
     for(const proto of contour.contours) {
@@ -4268,7 +4434,7 @@ class ContourNestedContent extends Contour {
       if(row && row.parent === this.cnstr) {
         const sub = Contour.create({project, row, parent: this, ox});
         sub.load_stamp({contour: proto, delta, map})
-      };
+      }
     }
   }
   get key() {
@@ -4318,6 +4484,18 @@ class ContourTearing extends Contour {
     return this.bounds;
   }
   set path(attr) {
+  }
+  get profile_path() {
+    const path = new paper.Path({insert: false});
+    for(const profile of this.profiles) {
+      if(!profile.elm_type.is('impost')) {
+        path.addSegments(profile.generatrix.segments);
+      }
+    }
+    return path;
+  }
+  get glass_path() {
+    return new paper.Path({insert: false});
   }
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileTearing);
@@ -4446,432 +4624,6 @@ class ContourVirtual extends Contour {
   }
 }
 EditorInvisible.ContourVirtual = ContourVirtual;
-class DimensionGroup {
-  clear() {
-    for (let key in this) {
-      this[key].removeChildren();
-      this[key].remove();
-      delete this[key];
-    }
-  }
-  has_size(size) {
-    for (let key in this) {
-      const {path} = this[key];
-      if(path && Math.abs(path.length - size) < 1) {
-        return true;
-      }
-    }
-  }
-  sizes() {
-    const res = [];
-    for (let key in this) {
-      if(this[key].visible) {
-        res.push(this[key]);
-      }
-    }
-    return res;
-  }
-}
-class DimensionLayer extends paper.Layer {
-  get bounds() {
-    return this.project.bounds;
-  }
-  get owner_bounds() {
-    return this.bounds;
-  }
-  get dimension_bounds() {
-    return this.project.dimension_bounds;
-  }
-}
-class DimensionDrawer extends paper.Group {
-  constructor(attr) {
-    super(attr);
-    this.bringToFront();
-  }
-  clear() {
-    this.ihor && this.ihor.clear();
-    this.ivert && this.ivert.clear();
-    for (let pos of ['bottom', 'top', 'right', 'left']) {
-      if(this[pos]) {
-        this[pos].removeChildren();
-        this[pos].remove();
-        this[pos] = null;
-      }
-    }
-    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
-  }
-  redraw(forse) {
-    const {parent, project: {builder_props}} = this;
-    if(forse || !builder_props.auto_lines) {
-      this.clear();
-    }
-    for (let chld of parent.contours) {
-      chld.l_dimensions.redraw();
-    }
-    if(builder_props.auto_lines && (!parent.parent || forse)) {
-      const {ihor, ivert, by_side} = this.imposts();
-      if(!Object.keys(by_side).length) {
-        return this.clear();
-      }
-      const profiles = new Set(parent.profiles);
-      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
-      for (let elm of profiles) {
-        const our = !elm.parent || elm.parent === parent;
-        const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
-        const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
-        this.push_by_point({ihor, ivert, eb, ee, elm});
-      }
-      if(ihor.length > 2) {
-        ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
-          this.by_imposts(ihor, this.ihor, 'right');
-        }
-        else if(parent.is_pos('left')) {
-          this.by_imposts(ihor, this.ihor, 'left');
-        }
-      }
-      else {
-        ihor.length = 0;
-      }
-      if(ivert.length > 2) {
-        ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
-          this.by_imposts(ivert, this.ivert, 'bottom');
-        }
-        else if(parent.is_pos('top')) {
-          this.by_imposts(ivert, this.ivert, 'top');
-        }
-      }
-      else {
-        ivert.length = 0;
-      }
-      this.by_contour(ihor, ivert, forse, by_side);
-    }
-    for (let dl of this.children) {
-      dl.redraw && dl.redraw();
-    }
-  }
-  push_by_point({ihor, ivert, eb, ee, elm}) {
-    if(eb && ihor.every((v) => v.point != eb.y.round())) {
-      ihor.push({
-        point: eb.y.round(),
-        elm: elm,
-        p: 'b'
-      });
-    }
-    if(ee && ihor.every((v) => v.point != ee.y.round())) {
-      ihor.push({
-        point: ee.y.round(),
-        elm: elm,
-        p: 'e'
-      });
-    }
-    if(eb && ivert.every((v) => v.point != eb.x.round())) {
-      ivert.push({
-        point: eb.x.round(),
-        elm: elm,
-        p: 'b'
-      });
-    }
-    if(ee && ivert.every((v) => v.point != ee.x.round())) {
-      ivert.push({
-        point: ee.x.round(),
-        elm: elm,
-        p: 'e'
-      });
-    }
-  }
-  draw_by_imposts() {
-    const {parent} = this;
-    this.clear();
-    let index = 0;
-    for (let elm of parent.profiles) {
-      const {inner, outer} = elm.joined_imposts();
-      const {generatrix, angle_hor} = elm;
-      generatrix.visible = false;
-      const imposts = inner.concat(outer);
-      if(!imposts.length) {
-        continue;
-      }
-      elm.mark_direction();
-      let invert = angle_hor > 135 && angle_hor < 315;
-      for(const impost of imposts) {
-        const {point, profile: {rays, nom}} = impost;
-        const pi = generatrix.intersect_point(rays.inner, point);
-        const po = generatrix.intersect_point(rays.outer, point);
-        const dx = generatrix.getOffsetOf(point);
-        const dxi = generatrix.getOffsetOf(pi);
-        const dxo = generatrix.getOffsetOf(po);
-        let dx1, dx2;
-        if(dx > dxi) {
-          dx1 = dxi + nom.sizefaltz;
-          dx2 = dxo - nom.sizefaltz;
-        }
-        else {
-          dx1 = dxo + nom.sizefaltz;
-          dx2 = dxi - nom.sizefaltz;
-        }
-        this.ihor[`i${++index}`] = new DimensionLineImpost({
-          elm1: elm,
-          elm2: elm,
-          p1: invert ? dx : 'b',
-          p2: invert ? 'b' : dx,
-          dx1,
-          dx2,
-          parent: this,
-          offset: invert ? -150 : 150,
-          outer: outer.includes(impost),
-        });
-      }
-    }
-    this.by_contour([], [], true);
-    for (let dl of this.children) {
-      dl.redraw && dl.redraw();
-    }
-  }
-  draw_by_falsebinding() {
-    const {parent} = this;
-    this.clear();
-    const {ihor, ivert, by_side} = this.imposts();
-    for(const filling of parent.fillings) {
-      if(!filling.visible) {
-        continue;
-      }
-      const {path} = filling;
-      for(const elm of filling.imposts) {
-        let {b: eb, e: ee} = elm;
-        if(path.is_nearest(eb)) {
-          eb = null;
-        }
-        if(path.is_nearest(ee)) {
-          ee = null;
-        }
-        if(eb || ee) {
-          this.push_by_point({ihor, ivert, eb, ee, elm});
-        }
-      }
-    }
-    this.by_contour([], [], true, by_side);
-    if(ihor.length > 2) {
-      ihor.sort((a, b) => b.point - a.point);
-      this.by_base(ihor, this.ihor, 'left');
-    }
-    else {
-      ihor.length = 0;
-    }
-    if(ivert.length > 2) {
-      ivert.sort((a, b) => a.point - b.point);
-      this.by_base(ivert, this.ivert, 'top');
-    }
-    else {
-      ivert.length = 0;
-    }
-    for (let dl of this.children) {
-      dl.redraw && dl.redraw();
-    }
-  }
-  by_imposts(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
-    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
-    for (let i = 0; i < arr.length - 1; i++) {
-      if(!collection[i]) {
-        let shift = Math.abs(arr[i].point - arr[i + 1].point) < 60 ? 70 : 0;
-        if(shift && collection[i - 1] && collection[i - 1].offset !== offset) {
-          shift += 70;
-        }
-        collection[i] = new DimensionLine({
-          pos: pos,
-          elm1: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
-          p1: arr[i].p,
-          elm2: arr[i + 1].elm instanceof GlassSegment ? arr[i + 1].elm._sub : arr[i + 1].elm,
-          p2: arr[i + 1].p,
-          parent: this,
-          offset: offset - shift,
-          impost: true
-        });
-      }
-    }
-  }
-  by_base(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
-    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
-    for (let i = 1; i < arr.length - 1; i++) {
-      if(!collection[i - 1]) {
-        collection[i - 1] = new DimensionLine({
-          pos: pos,
-          elm1: arr[0].elm instanceof GlassSegment ? arr[0].elm._sub : arr[0].elm,
-          p1: arr[0].p,
-          elm2: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
-          p2: arr[i].p,
-          parent: this,
-          offset: offset,
-          impost: true
-        });
-        offset += base_offset;
-      }
-    }
-  }
-  by_contour(ihor, ivert, forse, by_side) {
-    const {project, parent} = this;
-    const {bounds} = parent;
-    const {base_offset, dop_offset} = consts;
-    if(project.contours.length > 1 || forse) {
-      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
-        if(!this.ihor.has_size(bounds.height)) {
-          if(!this.left) {
-            this.left = new DimensionLine({
-              pos: 'left',
-              parent: this,
-              offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
-              contour: true
-            });
-          }
-          else {
-            this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
-          }
-        }
-      }
-      else {
-        if(this.left) {
-          this.left.remove();
-          this.left = null;
-        }
-      }
-      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
-        if(!this.ihor.has_size(bounds.height)) {
-          if(!this.right) {
-            this.right = new DimensionLine({
-              pos: 'right',
-              parent: this,
-              offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
-              contour: true
-            });
-          }
-          else {
-            this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
-          }
-        }
-      }
-      else {
-        if(this.right) {
-          this.right.remove();
-          this.right = null;
-        }
-      }
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
-        if(!this.ivert.has_size(bounds.width)) {
-          if(!this.top) {
-            this.top = new DimensionLine({
-              pos: 'top',
-              parent: this,
-              offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
-              contour: true
-            });
-          }
-          else {
-            this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
-          }
-        }
-      }
-      else {
-        if(this.top) {
-          this.top.remove();
-          this.top = null;
-        }
-      }
-      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
-        if(!this.ivert.has_size(bounds.width)) {
-          if(!this.bottom) {
-            this.bottom = new DimensionLine({
-              pos: 'bottom',
-              parent: this,
-              offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
-              contour: true
-            });
-          }
-          else {
-            this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
-          }
-        }
-      }
-      else {
-        if(this.bottom) {
-          this.bottom.remove();
-          this.bottom = null;
-        }
-      }
-    }
-    if(forse === 'faltz') {
-      this.by_faltz(ihor, ivert, by_side);
-    }
-  }
-  by_faltz(ihor, ivert, by_side) {
-    const {base_offset} = consts;
-    if (!this.left) {
-      this.left = new DimensionLine({
-        pos: 'left',
-        parent: this,
-        offset: base_offset,
-        contour: true,
-        faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
-      });
-    }
-    if(!this.top) {
-      this.top = new DimensionLine({
-        pos: 'top',
-        parent: this,
-        offset: base_offset,
-        contour: true,
-        faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
-      });
-    }
-  }
-  imposts() {
-    const {parent} = this;
-    const {bounds} = parent;
-    const by_side = parent.profiles_by_side();
-    if(!Object.keys(by_side).length) {
-      return {ihor: [], ivert: [], by_side: {}};
-    }
-    const ihor = [
-      {
-        point: bounds.top.round(),
-        elm: by_side.top,
-        p: by_side.top.b.y < by_side.top.e.y ? 'b' : 'e'
-      },
-      {
-        point: bounds.bottom.round(),
-        elm: by_side.bottom,
-        p: by_side.bottom.b.y > by_side.bottom.e.y ? 'b' : 'e'
-      }];
-    const ivert = [
-      {
-        point: bounds.left.round(),
-        elm: by_side.left,
-        p: by_side.left.b.x < by_side.left.e.x ? 'b' : 'e'
-      },
-      {
-        point: bounds.right.round(),
-        elm: by_side.right,
-        p: by_side.right.b.x > by_side.right.e.x ? 'b' : 'e'
-      }];
-    return {ihor, ivert, by_side};
-  }
-  get owner_bounds() {
-    return this.parent.bounds;
-  }
-  get dimension_bounds() {
-    return this.parent.dimension_bounds;
-  }
-  get ihor() {
-    return this._ihor || (this._ihor = new DimensionGroup());
-  }
-  get ivert() {
-    return this._ivert || (this._ivert = new DimensionGroup());
-  }
-}
-EditorInvisible.DimensionDrawer = DimensionDrawer;
-EditorInvisible.DimensionLayer = DimensionLayer;
 class DimensionLine extends paper.Group {
   constructor(attr) {
     super({parent: attr.parent, project: attr.project});
@@ -4939,10 +4691,10 @@ class DimensionLine extends paper.Group {
     return false;
   }
   _mouseenter() {
-    const {children: {text}, project: {_scope}} = this;
+    const {children: {text}, project: {_scope}, is_smart_size} = this;
     const dis = this.is_disabled();
     _scope.canvas_cursor(`cursor-arrow-ruler${dis ? '-dis' : ''}`);
-    if(!dis) {
+    if(!dis || is_smart_size) {
       text.fontWeight = 'bold';
       text.shadowBlur = 10;
       text.shadowOffset = 10;
@@ -4956,10 +4708,6 @@ class DimensionLine extends paper.Group {
   }
   _click(event) {
     event.stop();
-    if(!this.is_disabled() && typeof EditorInvisible.RulerWnd === 'function') {
-      this.wnd = new EditorInvisible.RulerWnd(null, this);
-      this.wnd.size = this.size;
-    }
   }
   correct_move_name({event, p1, p2}) {
     const {pos, _attr: {elm1, elm2}} = this;
@@ -5039,6 +4787,9 @@ class DimensionLine extends paper.Group {
       }
     }
     if(delta.length){
+      if(typeof event.divide === 'number') {
+        delta = delta.divide(event.divide);
+      }
       const {project} = this;
       project.deselect_all_points();
       project.getItems({class: ProfileItem})
@@ -5057,7 +4808,10 @@ class DimensionLine extends paper.Group {
       delta._dimln = true;
       project.move_points(delta, false);
       project.deselect_all_points(true);
-      project.register_change(false, () => project.register_change(true));
+      project.register_change(false, () => {
+        project.register_change(true);
+        event.cb?.();
+      });
     }
   }
   sizes_wnd(event) {
@@ -5079,6 +4833,29 @@ class DimensionLine extends paper.Group {
       case 'bottom':
         if(this.pos == 'left' || this.pos == 'right') {
           this._move_points(event, 'y');
+        }
+        break;
+      case 'rateably':
+        event.divide = 2;
+        if(this.pos == 'left' || this.pos == 'right') {
+          event.name = 'top';
+          event.cb = () => {
+            delete event.cb;
+            delete event.divide;
+            event.name = 'bottom';
+            this._move_points(event, 'y');
+          }
+          this._move_points(event, 'y');
+        }
+        else if(this.pos == 'top' || this.pos == 'bottom') {
+          event.name = 'left';
+          event.cb = () => {
+            delete event.cb;
+            delete event.divide;
+            event.name = 'right';
+            this._move_points(event, 'x');
+          }
+          this._move_points(event, 'x');
         }
         break;
       case 'auto':
@@ -5312,7 +5089,7 @@ class DimensionLineCustom extends DimensionLine {
     if(!attr.row){
       attr.row = attr.parent.project.ox.coordinates.add();
     }
-    if(!attr.row.cnstr){
+    if(!attr.row.cnstr && attr.parent.layer){
       attr.row.cnstr = attr.parent.layer.cnstr;
     }
     if(!attr.row.elm){
@@ -5356,35 +5133,24 @@ class DimensionLineCustom extends DimensionLine {
     }
     _row.path_data = JSON.stringify(path_data);
   }
-  get is_ruler() {
+  get is_smart_size() {
     const {_scope} = this._project;
-    const {constructor: {ToolRuler}, tool} = _scope;
-    return typeof ToolRuler === 'function' && tool instanceof ToolRuler;
+    return _scope?.tool?.is_smart_size;
   }
   setSelection(selection) {
     super.setSelection(selection);
-    const {project, children, hide_c1, hide_c2, hide_line, is_ruler} = this
+    const {project, children, hide_c1, hide_c2, hide_line} = this;
     const {tool} = project._scope;
     if(selection) {
       hide_c1 && children.callout1.setSelection(false);
       hide_c2 && children.callout2.setSelection(false);
       hide_line && children.scale.setSelection(false);
     }
-    is_ruler && tool.wnd.attach(this);
   }
   _click(event) {
     event.stop();
-    if(this.is_ruler){
+    if(this.is_smart_size){
       this.selected = true;
-    }
-  }
-  _mouseenter() {
-    const {project: {_scope}, is_ruler} = this;
-    if(is_ruler){
-      _scope.canvas_cursor('cursor-arrow-ruler');
-    }
-    else{
-      _scope.canvas_cursor('cursor-arrow-ruler-dis');
     }
   }
   get angle() {
@@ -5432,6 +5198,491 @@ class DimensionLineCustom extends DimensionLine {
 }
 EditorInvisible.DimensionLine = DimensionLine;
 EditorInvisible.DimensionLineCustom = DimensionLineCustom;
+class DimensionGroup {
+  clear() {
+    for (let key in this) {
+      this[key].removeChildren();
+      this[key].remove();
+      delete this[key];
+    }
+  }
+  has_size(size) {
+    for (let key in this) {
+      const {path} = this[key];
+      if(path && Math.abs(path.length - size) < 1) {
+        return true;
+      }
+    }
+  }
+  sizes() {
+    const res = [];
+    for (let key in this) {
+      if(this[key].visible) {
+        res.push(this[key]);
+      }
+    }
+    return res;
+  }
+}
+class DimensionLayer extends paper.Layer {
+  get bounds() {
+    return this.project.bounds;
+  }
+  get owner_bounds() {
+    return this.bounds;
+  }
+  get dimension_bounds() {
+    return this.project.dimension_bounds;
+  }
+}
+class DimensionDrawer extends paper.Group {
+  constructor(attr) {
+    super(attr);
+    this.bringToFront();
+  }
+  clear() {
+    this.ihor && this.ihor.clear();
+    this.ivert && this.ivert.clear();
+    for (let pos of ['bottom', 'top', 'right', 'left']) {
+      if(this[pos]) {
+        this[pos].removeChildren();
+        this[pos].remove();
+        this[pos] = null;
+      }
+    }
+    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
+  }
+  redraw(forse) {
+    const {parent, project: {builder_props}} = this;
+    if(forse || !builder_props.auto_lines) {
+      this.clear();
+    }
+    for (let chld of parent.contours) {
+      chld.l_dimensions.redraw();
+    }
+    if(builder_props.auto_lines && (!parent.parent || forse)) {
+      const {ihor, ivert, by_side} = this.imposts();
+      if(!Object.keys(by_side).length) {
+        return this.clear();
+      }
+      const profiles = new Set(parent.profiles);
+      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
+      for (let elm of profiles) {
+        const our = !elm.parent || elm.parent === parent;
+        const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
+        const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
+        this.push_by_point({ihor, ivert, eb, ee, elm});
+        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+          this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
+        }
+      }
+      if(ihor.length > 2) {
+        ihor.sort((a, b) => b.point - a.point);
+        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+          this.by_imposts(ihor, this.ihor, 'right');
+        }
+        else if(parent.is_pos('left')) {
+          this.by_imposts(ihor, this.ihor, 'left');
+        }
+      }
+      else {
+        ihor.length = 0;
+      }
+      if(ivert.length > 2) {
+        ivert.sort((a, b) => a.point - b.point);
+        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+          this.by_imposts(ivert, this.ivert, 'bottom');
+        }
+        else if(parent.is_pos('top')) {
+          this.by_imposts(ivert, this.ivert, 'top');
+        }
+      }
+      else {
+        ivert.length = 0;
+      }
+      this.by_contour(ihor, ivert, forse, by_side);
+    }
+    for (let dl of this.children) {
+      dl.redraw && dl.redraw();
+    }
+  }
+  push_by_point({ihor, ivert, eb, ee, elm}) {
+    if(eb && ihor.every((v) => v.point != eb.y.round())) {
+      ihor.push({
+        point: eb.y.round(),
+        elm: elm,
+        p: eb._name || 'b'
+      });
+    }
+    if(ee && ihor.every((v) => v.point != ee.y.round())) {
+      ihor.push({
+        point: ee.y.round(),
+        elm: elm,
+        p: ee._name || 'e'
+      });
+    }
+    if(eb && ivert.every((v) => v.point != eb.x.round())) {
+      ivert.push({
+        point: eb.x.round(),
+        elm: elm,
+        p: eb._name || 'b'
+      });
+    }
+    if(ee && ivert.every((v) => v.point != ee.x.round())) {
+      ivert.push({
+        point: ee.x.round(),
+        elm: elm,
+        p: ee._name || 'e'
+      });
+    }
+  }
+  draw_by_imposts() {
+    const {parent} = this;
+    this.clear();
+    let index = 0;
+    for (let elm of parent.profiles) {
+      const {inner, outer} = elm.joined_imposts();
+      const {generatrix, angle_hor} = elm;
+      generatrix.visible = false;
+      const imposts = inner.concat(outer);
+      if(!imposts.length) {
+        continue;
+      }
+      elm.mark_direction();
+      let invert = angle_hor > 135 && angle_hor < 315;
+      for(const impost of imposts) {
+        const {point, profile: {rays, nom}} = impost;
+        const pi = generatrix.intersect_point(rays.inner, point);
+        const po = generatrix.intersect_point(rays.outer, point);
+        const dx = generatrix.getOffsetOf(point);
+        const dxi = generatrix.getOffsetOf(pi);
+        const dxo = generatrix.getOffsetOf(po);
+        let dx1, dx2;
+        if(dx > dxi) {
+          dx1 = dxi + nom.sizefaltz;
+          dx2 = dxo - nom.sizefaltz;
+        }
+        else {
+          dx1 = dxo + nom.sizefaltz;
+          dx2 = dxi - nom.sizefaltz;
+        }
+        this.ihor[`i${++index}`] = new DimensionLineImpost({
+          elm1: elm,
+          elm2: elm,
+          p1: invert ? dx : 'b',
+          p2: invert ? 'b' : dx,
+          dx1,
+          dx2,
+          parent: this,
+          offset: invert ? -150 : 150,
+          outer: outer.includes(impost),
+        });
+      }
+    }
+    this.by_contour([], [], true);
+    for (let dl of this.children) {
+      dl.redraw && dl.redraw();
+    }
+  }
+  draw_by_falsebinding() {
+    const {parent} = this;
+    this.clear();
+    const {ihor, ivert, by_side} = this.imposts();
+    for(const filling of parent.fillings) {
+      if(!filling.visible) {
+        continue;
+      }
+      const {path} = filling;
+      for(const elm of filling.imposts) {
+        let {b: eb, e: ee} = elm;
+        if(path.is_nearest(eb)) {
+          eb = null;
+        }
+        if(path.is_nearest(ee)) {
+          ee = null;
+        }
+        if(eb || ee) {
+          this.push_by_point({ihor, ivert, eb, ee, elm});
+        }
+      }
+    }
+    this.by_contour([], [], true, by_side);
+    if(ihor.length > 2) {
+      ihor.sort((a, b) => b.point - a.point);
+      this.by_base(ihor, this.ihor, 'left');
+    }
+    else {
+      ihor.length = 0;
+    }
+    if(ivert.length > 2) {
+      ivert.sort((a, b) => a.point - b.point);
+      this.by_base(ivert, this.ivert, 'top');
+    }
+    else {
+      ivert.length = 0;
+    }
+    for (let dl of this.children) {
+      dl.redraw && dl.redraw();
+    }
+  }
+  by_imposts(arr, collection, pos) {
+    const {base_offset, dop_offset} = consts;
+    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
+    for (let i = 0; i < arr.length - 1; i++) {
+      if(!collection[i]) {
+        const prev = collection[i - 1];
+        let shift = 0;
+        if(prev && prev._attr.shift !== base_offset * 2) {
+          shift = Math.abs(arr[i].point - arr[i + 1].point) < base_offset ? base_offset : 0;
+          if(shift && prev._attr.shift) {
+            shift += base_offset;
+          }
+        }
+        collection[i] = new DimensionLine({
+          pos: pos,
+          elm1: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
+          p1: arr[i].p,
+          elm2: arr[i + 1].elm instanceof GlassSegment ? arr[i + 1].elm._sub : arr[i + 1].elm,
+          p2: arr[i + 1].p,
+          parent: this,
+          offset: offset - shift,
+          impost: true
+        });
+        collection[i]._attr.shift = shift;
+      }
+    }
+  }
+  by_base(arr, collection, pos) {
+    const {base_offset, dop_offset} = consts;
+    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
+    for (let i = 1; i < arr.length - 1; i++) {
+      if(!collection[i - 1]) {
+        collection[i - 1] = new DimensionLine({
+          pos: pos,
+          elm1: arr[0].elm instanceof GlassSegment ? arr[0].elm._sub : arr[0].elm,
+          p1: arr[0].p,
+          elm2: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
+          p2: arr[i].p,
+          parent: this,
+          offset: offset,
+          impost: true
+        });
+        offset += base_offset;
+      }
+    }
+  }
+  by_contour(ihor, ivert, forse, by_side) {
+    const {project, parent} = this;
+    const {bounds} = parent;
+    const {base_offset, dop_offset} = consts;
+    if(project.contours.length > 1 || forse) {
+      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
+        if(!this.ihor.has_size(bounds.height)) {
+          if(!this.left) {
+            this.left = new DimensionLine({
+              pos: 'left',
+              parent: this,
+              offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
+              contour: true
+            });
+          }
+          else {
+            this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
+          }
+        }
+      }
+      else {
+        if(this.left) {
+          this.left.remove();
+          this.left = null;
+        }
+      }
+      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+        if(!this.ihor.has_size(bounds.height)) {
+          if(!this.right) {
+            this.right = new DimensionLine({
+              pos: 'right',
+              parent: this,
+              offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
+              contour: true
+            });
+          }
+          else {
+            this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
+          }
+        }
+      }
+      else {
+        if(this.right) {
+          this.right.remove();
+          this.right = null;
+        }
+      }
+      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
+        if(!this.ivert.has_size(bounds.width)) {
+          if(!this.top) {
+            this.top = new DimensionLine({
+              pos: 'top',
+              parent: this,
+              offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
+              contour: true
+            });
+          }
+          else {
+            this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
+          }
+        }
+      }
+      else {
+        if(this.top) {
+          this.top.remove();
+          this.top = null;
+        }
+      }
+      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+        if(!this.ivert.has_size(bounds.width)) {
+          if(!this.bottom) {
+            this.bottom = new DimensionLine({
+              pos: 'bottom',
+              parent: this,
+              offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
+              contour: true
+            });
+          }
+          else {
+            this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
+          }
+        }
+      }
+      else {
+        if(this.bottom) {
+          this.bottom.remove();
+          this.bottom = null;
+        }
+      }
+    }
+    if(forse === 'faltz') {
+      this.by_faltz(ihor, ivert, by_side);
+    }
+  }
+  by_faltz(ihor, ivert, by_side) {
+    const {base_offset} = consts;
+    if (!this.left) {
+      this.left = new DimensionLine({
+        pos: 'left',
+        parent: this,
+        offset: base_offset,
+        contour: true,
+        faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
+      });
+    }
+    if(!this.top) {
+      this.top = new DimensionLine({
+        pos: 'top',
+        parent: this,
+        offset: base_offset,
+        contour: true,
+        faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
+      });
+    }
+  }
+  imposts() {
+    const {parent} = this;
+    const {bounds} = parent;
+    const by_side = parent.profiles_by_side();
+    if(!Object.keys(by_side).length) {
+      return {ihor: [], ivert: [], by_side: {}};
+    }
+    const ihor = [
+      {
+        point: bounds.top.round(),
+        elm: by_side.top,
+        p: by_side.top.b.y < by_side.top.e.y ? 'b' : 'e'
+      },
+      {
+        point: bounds.bottom.round(),
+        elm: by_side.bottom,
+        p: by_side.bottom.b.y > by_side.bottom.e.y ? 'b' : 'e'
+      }];
+    const ivert = [
+      {
+        point: bounds.left.round(),
+        elm: by_side.left,
+        p: by_side.left.b.x < by_side.left.e.x ? 'b' : 'e'
+      },
+      {
+        point: bounds.right.round(),
+        elm: by_side.right,
+        p: by_side.right.b.x > by_side.right.e.x ? 'b' : 'e'
+      }];
+    return {ihor, ivert, by_side};
+  }
+  get owner_bounds() {
+    return this.parent.bounds;
+  }
+  get dimension_bounds() {
+    return this.parent.dimension_bounds;
+  }
+  get ihor() {
+    return this._ihor || (this._ihor = new DimensionGroup());
+  }
+  get ivert() {
+    return this._ivert || (this._ivert = new DimensionGroup());
+  }
+}
+EditorInvisible.DimensionDrawer = DimensionDrawer;
+EditorInvisible.DimensionLayer = DimensionLayer;
+class DimensionAngle extends DimensionLineCustom {
+  constructor(attr) {
+    super(attr);
+    const {p1, p2, o, through, pos, content} = attr;
+    const {callout1, callout2, scale, text} = this.children;
+    text.content = content;
+    text.position = pos;
+    callout1.addSegments([o, p1]);
+    callout2.addSegments([o, p2]);
+    const tmp = new paper.Path.Arc({
+      from: p1,
+      through: through,
+      to: p2,
+      insert: false,
+    });
+    scale.addSegments(tmp.segments);
+  }
+  get elm_type() {
+    return $p.enm.elm_types.Угол;
+  }
+  save_coordinates() {
+    const {_row, _attr, elm_type, children: {callout1, callout2, scale, text}} = this;
+    _row.len = parseFloat(text.content);
+    _row.elm_type = elm_type;
+    const through = scale.getPointAt(scale.length / 2);
+    const path_data = {
+      o: [callout1.firstSegment.point.x, callout1.firstSegment.point.y],
+      p1: [callout1.lastSegment.point.x, callout1.lastSegment.point.y],
+      p2: [callout2.lastSegment.point.x, callout2.lastSegment.point.y],
+      through: [through.x, through.y],
+      pos: [text.position.x, text.position.y],
+      content: text.content,
+    };
+    _row.path_data = JSON.stringify(path_data);
+  }
+  is_disabled() {
+    return true;
+  }
+  get path() {
+    return this.children.scale;
+  }
+  redraw() {
+    const {children, _attr, path, align} = this;
+    if(!path){
+      this.visible = false;
+      return;
+    }
+    this.visible = true;
+  }
+}
+EditorInvisible.DimensionAngle = DimensionAngle;
 class DimensionLineImpost extends DimensionLineCustom {
   constructor(attr) {
     attr.row = {
@@ -5612,13 +5863,15 @@ class DimensionRadius extends DimensionLineCustom {
     if(_attr.by_curve) {
       const curv = Math.abs(_attr.elm1.path.getCurvatureAt(_attr.p1));
       if(curv) {
-        children.text.content = `R${(1 / curv).round(0)}`;
+        children.text.content = `Rᶜ${(1 / curv).round(0)}`;
       }
     }
     else {
-      const {path, _attr: {_corns}} = _attr.elm1;
-      const sub = _attr.p1 > _attr.elm1.length ? path.get_subpath(_corns[3], _corns[4]) : path.get_subpath(_corns[1], _corns[2])
-      children.text.content = `R${sub.ravg().round(0)}`;
+      const {rays, _attr: {_corns}} = _attr.elm1;
+      const sub = rays ?
+        (_attr.p1 > _attr.elm1.length ? rays.inner.get_subpath(_corns[3], _corns[4]) : rays.outer.get_subpath(_corns[1], _corns[2])) :
+        _attr.elm1.path;
+      children.text.content = `R${sub.ravg().round()}`;
     }
     children.text.position = e.add(path.getTangentAt(0).multiply(consts.font_size * 1.4));
   }
@@ -5668,7 +5921,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     _attr.path.closePath(true);
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
-    _attr.paths = new Map();
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
       _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
@@ -5750,13 +6002,17 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     for(let i=0; i<length; i++ ){
       curr = profiles[i];
-      if(!curr.profile || !curr.profile._row || !curr.cnn){
+      if(!curr.profile || !curr.profile._row){
         if($p.job_prm.debug) {
-          throw new ReferenceError('Не найдено ребро заполнения');
+          console.error('Не найдено ребро заполнения');
         }
-        else {
-          return;
+        return;
+      }
+      if(!curr.cnn){
+        if($p.job_prm.debug) {
+          console.error(`Не найдено примыкающее соединение для заполнения №${_row.elm}`);
         }
+        return;
       }
       curr.aperture_path = curr.profile.generatrix.get_subpath(curr.b, curr.e)._reversed ?
         curr.profile.rays.outer : curr.profile.rays.inner;
@@ -5836,7 +6092,20 @@ class Filling extends AbstractFilling(BuilderElement) {
   cnn_side() {
     return $p.enm.cnn_sides.inner;
   }
-  nearest() {}
+  nearest(point) {
+    if(point && point !== true) {
+      let distance = Infinity;
+      let profile;
+      for(const curr of this.profiles) {
+        const td = curr.sub_path.getNearestPoint(point).getDistance(point, true);
+        if(td < distance) {
+          distance = td;
+          profile = curr.profile;
+        }
+      }
+      return profile;
+    }
+  }
   select_node(v) {
     let point, segm, delta = Infinity;
     if(v === "b"){
@@ -5869,7 +6138,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   redraw() {
     this.sendToBack();
-    const {path, imposts, _attr, is_rectangular} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
     const fontSize = elm_font_size * (2 / 3);
     const maxTextWidth = 600;
@@ -5923,7 +6192,10 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
-    this.draw_regions();
+    for(const glbead of glbeads) {
+      glbead.redraw();
+    }
+    return this.draw_regions();
   }
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts} = this;
@@ -5960,9 +6232,26 @@ class Filling extends AbstractFilling(BuilderElement) {
           rpath.removeSegments();
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
           const outer_profiles = profiles.map((v) => {
-            const profile = v.profile.nearest() || v.profile;
-            const side = profile.cnn_side(this, interior);
-            const cnn = cnns.nom_cnn(nom, profile, cnn_types.acn.ii, false, side.is('outer'))[0];
+            let profile = v.profile.nearest() || v.profile;
+            let side = profile.cnn_side(this, interior);
+            const elm2 = [{profile, side}];
+            if(v.profile !== profile) {
+              elm2.push({profile: v.profile, side: v.profile.cnn_side(this, interior)});              
+            }
+            const cnn = cnns.region_cnn({
+              region: row.region,
+              elm1: this,
+              nom1: nom,
+              elm2,
+              art1glass: true,
+              cnn_types: cnn_types.acn.ii,
+            });
+            if(cnn?.sd2) {
+              if(!side.is('outer')) {
+                side = side._manager.outer;
+              }
+              profile = v.profile;
+            }
             const size = cnn?.size(this, profile, row.region) || 0;
             const sub_path = profile
               .rays[side.is('outer') ? 'outer' : 'inner']
@@ -6013,7 +6302,7 @@ class Filling extends AbstractFilling(BuilderElement) {
               curr.strip_path = curr.strip_path.get_subpath(curr.sb, curr.se, true);
             }
           }
-          let strip_path = rpath.children?.[0] || new paper.Path({parent: rpath});
+          let strip_path = new paper.Path({insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -6035,11 +6324,6 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(strip_path.segments.length){
-            strip_path = rpath.exclude(strip_path);
-            strip_path.parent = rpath;
-            strip_path.fillColor = 'grey';
-          }
           if(row.region > 0) {
             rpath.insertBelow(path);  
           }
@@ -6051,6 +6335,19 @@ class Filling extends AbstractFilling(BuilderElement) {
             _text?.insertAbove(rpath);
             path.opacity = 0.7;
           }
+          if(strip_path.segments.length){
+            strip_path = rpath.exclude(strip_path);
+            strip_path.fillColor = 'grey';
+            const old = paths.get(`s${row.region}`); 
+            if(old && old !== strip_path) {
+              old.remove();
+            }
+            paths.set(`s${row.region}`, strip_path);
+          }
+          if(row.region > 0) {
+            strip_path.opacity = 0.08;
+            rpath.opacity = 0.16;
+          }
         }
       });
     }
@@ -6060,6 +6357,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
       paths.clear();
     }
+    return this;
   }
   reset_fragment() {
     const {_attr, layer, path} = this;
@@ -6118,6 +6416,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     super.set_clr(v);
   }
+  get note() {
+    return this.dop.note || '';
+  }
+  set note(v) {
+    this.project.selected_glasses().forEach(elm => elm.dop = {note: v});
+  }
   purge_paths() {
     const {path, children, _attr: {paths}} = this;
     const {Path, CompoundPath} = paper;
@@ -6137,7 +6441,10 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
   }
   formula(by_art) {
-    const {elm, inset, ox} = this;
+    const {elm, inset, ox, note} = this;
+    if(note) {
+      return note;
+    }
     const {utils: {blank}, cch: {properties}} = $p;
     let res;
     ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
@@ -6197,6 +6504,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   get profiles() {
     return this._attr._profiles || [];
   }
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, glass: this}); 
+  }
   remove_onlays() {
     for(let onlay of this.imposts){
       onlay.remove();
@@ -6246,27 +6556,29 @@ class Filling extends AbstractFilling(BuilderElement) {
       let {length} = attr;
       if(length > 1) {
         let prev, curr, next;
+        const nominate = (i) => {
+          prev = i === 0 ? attr[length-1] : attr[i-1];
+          curr = attr[i];
+          next = i === length-1 ? attr[0] : attr[i+1];
+        };
         const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
         for (let i = 0; i < length; i++) {
-          curr = attr[i];
-          next = i === length - 1 ? attr[0] : attr[i + 1];
+          nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
         }
         for (let i = 0; i < length; i++) {
-          prev = i === 0 ? attr[length-1] : attr[i-1];
-          curr = attr[i];
-          next = i === length-1 ? attr[0] : attr[i+1];
+          nominate(i);
           if(!curr.pb) {
             curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
-            if(prev !== next) {
+            if(prev !== curr && !prev.pe) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
             curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
-            if(prev !== next) {
+            if(next !== curr && !next.pb) {
               next.pb = curr.pe;
             }
           }
@@ -6283,8 +6595,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         if(length > 2) {
           const remove = [];
           for (let i = 0; i < length; i++) {
-            prev = i === 0 ? attr[length-1] : attr[i-1];
-            next = i === length-1 ? attr[0] : attr[i+1];
+            nominate(i);
             const crossings =  prev.sub_path.getCrossings(next.sub_path);
             if(crossings.length){
               if((prev.e.getDistance(crossings[0].point) < prev.profile.width * 2) ||  (next.b.getDistance(crossings[0].point) < next.profile.width * 2)) {
@@ -6302,12 +6613,13 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
         for (let i = 0; i < length; i++) {
           curr = attr[i];
-          path.addSegments(curr.sub_path.segments.filter((v, index) => {
+          const segments = curr.sub_path.segments.filter((v, index) => {
             if(index || !path.segments.length || v.hasHandles()) {
               return true;
             }
-            return !path.lastSegment.point.is_nearest(v.point, 1);
-          }));
+            return !path.lastSegment.point.is_nearest(v.point, .5);
+          });
+          path.addSegments(segments);
           ['anext', 'pb', 'pe'].forEach((prop) => delete curr[prop]);
           _attr._profiles.push(curr);
         }
@@ -6411,7 +6723,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       const next = (index == ubound) ? res[0] : res[index + 1];
       const b = sub_path.intersect_point(prev.sub_path.equidistant(size), curr.b, true);
       const e = sub_path.intersect_point(next.sub_path.equidistant(size), curr.e, true);
-      if (b && e) {
+      if (b && e && !b.equals(e)) {
         sub_path = sub_path.get_subpath(b, e);
       }
       return {
@@ -6527,7 +6839,13 @@ class Filling extends AbstractFilling(BuilderElement) {
               if(!params) {
                 params = {};
               }
-              params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              const {type} = param;
+              if(param.type.digits) {
+                params[prop] = parseFloat(val || 0);  
+              }
+              else {
+                params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+              }
               row.dop = {params};
             }
           }
@@ -6579,7 +6897,7 @@ class FreeText extends paper.PointText {
       this.clr = _row.clr;
       this.angle = _row.angle_hor;
       if(_row.path_data){
-        var path_data = JSON.parse(_row.path_data);
+        const path_data = JSON.parse(_row.path_data);
         this.x = _row.x1 + path_data.bounds_x || 0;
         this.y = _row.y1 - path_data.bounds_y || 0;
         this._mixin(path_data, null, ["bounds_x","bounds_y"]);
@@ -6850,22 +7168,27 @@ class GeneratrixElement extends BuilderElement {
           else{
             const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
             const {bounds} = ppath;
-            if(Math.abs(delta.y) < consts.epsilon){
-              const ray = new paper.Path({
-                insert: false,
-                segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
-              });
-              segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
-            }
-            else if(Math.abs(delta.x) < consts.epsilon){
-              const ray = new paper.Path({
-                insert: false,
-                segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
-              });
-              segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+            if(profile instanceof Filling) {
+              segm.point = free_point;
             }
             else {
-              segm.point = free_point;
+              if(Math.abs(delta.y) < consts.epsilon){
+                const ray = new paper.Path({
+                  insert: false,
+                  segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
+                });
+                segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+              }
+              else if(Math.abs(delta.x) < consts.epsilon){
+                const ray = new paper.Path({
+                  insert: false,
+                  segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
+                });
+                segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
+              }
+              else {
+                segm.point = free_point;
+              }
             }
           }
         }
@@ -6907,6 +7230,9 @@ class GeneratrixElement extends BuilderElement {
           noti_points.start = start_point;
         }
         noti.points.push(noti_points);
+        if(cnn_point?.is_i) {
+          cnn_point.clear('with_neighbor');
+        }
         changed = true;
       }
     });
@@ -6968,7 +7294,7 @@ class GeneratrixElement extends BuilderElement {
 EditorInvisible.GeneratrixElement = GeneratrixElement;
 class GridCoordinates extends paper.Group {
   constructor(attr) {
-    super(attr);
+    super();
     this.parent = this.project.l_dimensions;
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
     const sel_color = new paper.Color(0.1, 0.4, 0, 0.9);
@@ -7239,6 +7565,22 @@ Object.defineProperties(paper.Path.prototype, {
       return res;
     }
   },
+  is_orthogonal: {
+    value: function is_orthogonal(other, point, delta = 1) {
+      const offset1 = this.getOffsetOf(this.getNearestPoint(point));
+      const offset2 = other.getOffsetOf(other.getNearestPoint(point));
+      const v1 = this.getNormalAt(offset1);
+      const v2 = other.getTangentAt(offset2);
+      let angl = v1.getDirectedAngle(v2);
+      if(angl < -170) {
+        angl += 180;
+      }
+      else if(angl > 170) {
+        angl -= 180;
+      }
+      return Math.abs(angl) < delta;
+    }
+  },
   is_linear: {
     value: function is_linear() {
       const {curves, firstCurve} = this;
@@ -7290,25 +7632,25 @@ Object.defineProperties(paper.Path.prototype, {
             });
           }
           else{
-            const step = (offset2 - offset1) * 0.02;
-            tmp = new paper.Path({
-              project,
-              segments: [loc1.point],
-              insert: false
-            });
-            if(step < 0){
-              tmp._reversed = true;
-              for(let i = offset1 + step; i > offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            if(offset1 > offset2){
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset1);
+              tmp = tmp.splitAt(offset2);
+              tmp.reverse();
             }
-            else if(step > 0){
-              for(let i = offset1 + step; i < offset2; i+= step){
-                tmp.add(this.getPointAt(i));
-              }
+            else {
+              tmp = this.clone({insert: false});
+              tmp.splitAt(offset2);
+              tmp = tmp.splitAt(offset1);                
             }
-            tmp.add(loc2.point);
-            tmp.simplify(0.8);
+            if(tmp.lastSegment.handleIn.length > 0.1 || tmp.lastSegment.handleOut.length > 0.1) {
+              tmp.divideAt(tmp.length * 0.99);
+              tmp.lastSegment.clearHandles();
+            }
+            if(tmp.firstSegment.handleIn.length > 0.1 || tmp.firstSegment.handleOut.length > 0.1) {
+              tmp.divideAt(tmp.length * 0.01);
+              tmp.firstSegment.clearHandles();
+            }
           }
           if(offset1 > offset2){
             tmp._reversed = true;
@@ -7493,7 +7835,7 @@ Object.defineProperties(paper.Path.prototype, {
   },
   rmin: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -7505,12 +7847,12 @@ Object.defineProperties(paper.Path.prototype, {
           max = curv;
         }
       }
-      return max === 0 ? 0 : 1 / max;
+      return (max === 0 ? 0 : 1 / max).round(2);
     }
   },
   rmax: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const {length} = this;
@@ -7522,12 +7864,12 @@ Object.defineProperties(paper.Path.prototype, {
           min = curv;
         }
       }
-      return min === 0 ? 0 : 1 / min;
+      return (min === 0 ? 0 : 1 / min).round(2);
     }
   },
   ravg: {
     value() {
-      if(!this.hasHandles()){
+      if(this.is_linear()){
         return 0;
       }
       const b = this.firstSegment.point;
@@ -7541,6 +7883,9 @@ Object.defineProperties(paper.Path.prototype, {
 Object.defineProperties(paper.Point.prototype, {
 	is_nearest: {
 		value: function is_nearest(point, sticking) {
+      if(!point) {
+        return false;
+      }
 		  if(sticking === 0){
         return Math.abs(this.x - point.x) < consts.epsilon && Math.abs(this.y - point.y) < consts.epsilon;
       }
@@ -7627,7 +7972,7 @@ Object.defineProperties(paper.Point.prototype, {
         return 0;
       }
       const [dx, dy] = [(x1 - x2), (y1 - y2)];
-      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(3);
+      return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(2);
     }
   },
 	snap_to_angle: {
@@ -7669,8 +8014,8 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
   const {Line, Point} = paper;
   const res = {rib: null, parallel: null, pos: ''};
   if(x > right && y > top && y < bottom) {
-    res.rib = new Line(new Point(right, top), new Point(right, bottom));
-    res.parallel = new Line(new Point(x, top), new Point(x, bottom));
+    res.rib = new Line(new Point(right, bottom), new Point(right, top));
+    res.parallel = new Line(new Point(x, bottom), new Point(x, top));
     res.pos = 'right';
   }
   else if(x < left && y > top && y < bottom) {
@@ -7684,8 +8029,8 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
     res.pos = 'top';
   }
   else if(y > bottom && x > left && x < right) {
-    res.rib = new Line(new Point(right, bottom), new Point(left, bottom));
-    res.parallel = new Line(new Point(right, y), new Point(left, y));
+    res.rib = new Line(new Point(left, bottom), new Point(right, bottom));
+    res.parallel = new Line(new Point(left, y), new Point(right, y));
     res.pos = 'bottom';
   }
   return res;
@@ -7802,7 +8147,7 @@ class CnnPoint {
     }
     if(_attr._corns.length > 5) {
       _attr._corns.length = 5;
-    };
+    }
   }
   get err() {
     return this._err;
@@ -7850,7 +8195,7 @@ class CnnPoint {
       else {
         const {job_prm: {nom}, msg} = $p;
         const nom_error = nom.cnn_node_error || nom.critical_error;
-        _parent.err_spec_row(nom_error, cnn ? msg.err_seam_len : msg.err_no_cnn, cnn || _parent.inset);
+        _parent.err_spec_row(nom_error, `${cnn ? msg.err_seam_len : msg.err_no_cnn} ${_parent.nom.article}`, cnn || _parent.inset);
       }
     }
   }
@@ -7876,7 +8221,10 @@ class CnnPoint {
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
   find_other() {
-    const {parent, profile, point}  = this;
+    let {parent, profile, point}  = this;
+    if(!point) {
+      point = parent[this.node];
+    }
     const {rays, layer} = parent;
     const {outer} = $p.enm.cnn_sides;
     for(const elm of layer.profiles) {
@@ -7902,13 +8250,20 @@ class CnnPoint {
         if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) !== outer) {
           this._profile = elm;
           this.profile_point = node;
-          this._row = parent.ox.cnn_elmnts.add({
-            elm1: parent.elm,
-            node1: this.node,
-            elm2: elm.elm,
-            node2: node,
-            cnn,
-          });
+          const _row = parent.ox.cnn_elmnts.find({elm1: parent.elm, node1: this.node, elm2: elm.elm, node2: node});
+          if(_row) {
+            this._row = _row;
+            _row.cnn = cnn;
+          }
+          else {
+            this._row = parent.ox.cnn_elmnts.add({
+              elm1: parent.elm,
+              node1: this.node,
+              elm2: elm.elm,
+              node2: node,
+              cnn,
+            });
+          }
           return;
         }
       }
@@ -7973,7 +8328,10 @@ class CnnPoint {
     };
   }
   initialize() {
-    const {_parent, node} = this;
+    let {_parent, node} = this;
+    if(_parent.rnum) {
+      node += _parent.rnum.toFixed();
+    }
     this._err = [];
     _parent.ox.cnn_elmnts.find_rows({elm1: _parent.elm, node1: node}, (row) => {
       if(this._row) {
@@ -7991,7 +8349,7 @@ class CnnPoint {
     const {acn} = $p.enm.cnn_types;
     if(this._row) {
       this.cnn = this._row.cnn;
-      this.profile_point = this._row.node2;
+      this.profile_point = this._row.node2.substring(0, 1);
       if(['b', 'e', 't'].includes(this.profile_point)) {
         this.distance = 0;
       }
@@ -8007,7 +8365,7 @@ class CnnPoint {
     }
     else {
       this.cnn = null;
-      this.cnn_types = acn.i;
+      this.cnn_types = (_parent.rnum && _parent.parent_elm) ? _parent.parent_elm.rays[this.node]?.cnn_types : acn.i;
       this.profile_point = '';
     }
     if(!this.hasOwnProperty('distance')) {
@@ -8043,7 +8401,7 @@ class ProfileRays {
       const {parent} = this;
       const nodes = ['b', 'e'];
       for(const node of nodes) {
-        const {profile, profile_point} = parent.cnn_point(node);
+        const {profile, profile_point} = parent._attr._rays[node];
         const other = node === 'b' ? 'e' : 'b';
         if(profile && profile_point == other) {
           const {_rays, _corns} = profile._attr;
@@ -8078,6 +8436,14 @@ class ProfileRays {
       parent.layer.glasses(false, true).forEach((glass) => {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
+    }
+    const {_ranges} = this.parent._attr;
+    if(_ranges) {
+      for(const [key, region] of _ranges) {
+        if(typeof key === 'number') {
+          region._attr?._rays?.clear(with_cnn);
+        }
+      }
     }
   }
   recalc() {
@@ -8167,8 +8533,8 @@ class ProfileItem extends GeneratrixElement {
       return ;
     }
     const {h_ruch, furn} = layer;
-    const {furn_set, handle_side} = furn;
-    if(!h_ruch || !handle_side || furn_set.empty()) {
+    const {handle_side} = furn;
+    if(!h_ruch || !handle_side) {
       return;
     }
     if(layer.profile_by_furn_side(handle_side) == this) {
@@ -8262,6 +8628,59 @@ class ProfileItem extends GeneratrixElement {
     }
     return this[n];
   }
+  get c1() {
+    const pt = this.corns(1);
+    if(pt) {
+      pt._name = 'c1';
+    }
+    return pt;
+  }
+  get c2() {
+    const pt = this.corns(2);
+    if(pt) {
+      pt._name = 'c2';
+    }
+    return pt;
+  }
+  unlink() {
+    const {generatrix, b, e, rays} = this;
+    const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking_l + 1) : (
+      e.selected ? generatrix.getTangentAt(generatrix.length).multiply(consts.sticking_l + 1).negate() : null
+    );
+    if(tg) {
+      if(b.selected) {
+        rays.b.clear(true);
+      }
+      else {
+        rays.e.clear(true);
+      }
+      this.move_points(tg);
+    }
+  }
+  link() {
+    const {generatrix, b, e, rays, parent} = this;
+    const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking).negate() : (
+      e.selected ? generatrix.getTangentAt(generatrix.length).multiply(consts.sticking) : null
+    );
+    if(tg && parent instanceof Filling) {
+      const node = rays[b.selected ? 'b' : 'e'];
+      const point = this[node.node];
+      const path = new paper.Path({insert: false, segments: [point.subtract(tg), point.add(tg)]});
+      const crossings = path.getCrossings(parent.path);
+      if(crossings.length === 1) {
+        const delta = crossings[0].point.subtract(point);
+        this.move_points(delta);
+        node.profile = parent;
+        node.distance = 0;
+        node.cnn_types = $p.enm.cnn_types.acn.t;
+        node.point = crossings[0].point;
+        this.postcalc_cnn(node.node);
+      }
+      else {
+        throw new Error('Нет подходящего ребра в окрестности точки привязки');
+      }
+    }
+  }
   angle_at(node) {
     const {profile, point} = this.rays[node] || this.cnn_point(node);
     if(!profile || !point) {
@@ -8303,9 +8722,15 @@ class ProfileItem extends GeneratrixElement {
   }
   set r(v) {
     const {_row, _attr} = this;
-    if(_row.r != v) {
+    if(typeof v !== 'number') {
+      v = parseFloat(v);
+    }
+    if(!v) {
+      v = 0;
+    }
+    if(!v || Math.abs(_row.r - v) > 0.2) {
       _attr._rays.clear();
-      _row.r = v;
+      _row.r = v.round(2);
       this.set_generatrix_radius();
       this.project.notify(this, 'update', {r: true, arc_h: true, arc_ccw: true});
     }
@@ -8342,7 +8767,10 @@ class ProfileItem extends GeneratrixElement {
   set arc_h(v) {
     const {_row, _attr, b, e, arc_h} = this;
     v = parseFloat(v);
-    if(arc_h != v) {
+    if(!v) {
+      v = 0;
+    }
+    if(!v || Math.abs(arc_h - v) > 0.2) {
       _attr._rays.clear();
       if(v < 0) {
         v = -v;
@@ -8429,6 +8857,9 @@ class ProfileItem extends GeneratrixElement {
   get addls() {
     return this.children.filter((elm) => elm instanceof ProfileAddl);
   }
+  get glbeads() {
+    return this.layer.getItems({class: ProfileGlBead, profile: this});
+  }
   get segms() {
     return this.children.filter((elm) => elm instanceof ProfileSegment);
   }
@@ -8495,7 +8926,7 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
   setSelection(selection) {
-    const {generatrix, path} = this._attr;
+    const {_attr: {generatrix, path, paths}, project} = this;
     if(!generatrix || !path) {
       return;
     }
@@ -8516,41 +8947,45 @@ class ProfileItem extends GeneratrixElement {
         });
       }
       path.setSelection(0);
-      for(const item of this.segms) {
+      for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
-      for(const item of this.addls) {
-        item.setSelection(0);
-      }
-      for (let t = 0; t < inner.length; t += 50) {
-        const ip = inner.getPointAt(t);
-        const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
-        const fp = new paper.Path({
-          insert: false,
-          segments: [ip, ip.add(np)]
-        });
-        const op = fp.intersect_point(outer, ip);
-        if(ip && op) {
-          const cip = path.getNearestPoint(ip);
-          const cop = path.getNearestPoint(op);
-          const nip = cip.is_nearest(ip);
-          const nop = cop.is_nearest(op);
-          if(nip && nop) {
-            this._hatching.moveTo(cip);
-            this._hatching.lineTo(cop);
-          }
-          else if(nip && !nop) {
-            const pp = fp.intersect_point(path, op);
-            if(pp) {
+      for(const [key, item] of paths) {
+        if(typeof key === 'number') {
+          item.setSelection(0);
+        }
+      }      
+      if([0, 1].includes(project.builder_props.mode)) {
+        for (let t = 0; t < inner.length; t += 50) {
+          const ip = inner.getPointAt(t);
+          const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
+          const fp = new paper.Path({
+            insert: false,
+            segments: [ip, ip.add(np)]
+          });
+          const op = fp.intersect_point(outer, ip);
+          if(ip && op) {
+            const cip = path.getNearestPoint(ip);
+            const cop = path.getNearestPoint(op);
+            const nip = cip.is_nearest(ip);
+            const nop = cop.is_nearest(op);
+            if(nip && nop) {
               this._hatching.moveTo(cip);
-              this._hatching.lineTo(pp);
-            }
-          }
-          else if(!nip && nop) {
-            const pp = fp.intersect_point(path, ip);
-            if(pp) {
-              this._hatching.moveTo(pp);
               this._hatching.lineTo(cop);
+            }
+            else if(nip && !nop) {
+              const pp = fp.intersect_point(path, op);
+              if(pp) {
+                this._hatching.moveTo(cip);
+                this._hatching.lineTo(pp);
+              }
+            }
+            else if(!nip && nop) {
+              const pp = fp.intersect_point(path, ip);
+              if(pp) {
+                this._hatching.moveTo(pp);
+                this._hatching.lineTo(cop);
+              }
             }
           }
         }
@@ -8648,10 +9083,12 @@ class ProfileItem extends GeneratrixElement {
     }
   }
   check_nom(arr) {
-    const {_row, _attr, length, angle_hor} = this;
+    const {_row, _attr, length, glbeads, angle_hor} = this;
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
-      _row.len = length;
-      _row.angle_hor = angle_hor;
+      if(!this.project._attr._loading) {
+        _row.len = length;
+        _row.angle_hor = angle_hor;
+      }
       if(_attr && _attr._rays) {
         const {nom: old} = _attr;
         delete _attr.nom;
@@ -8661,12 +9098,12 @@ class ProfileItem extends GeneratrixElement {
         }
       }      
     }
-    for(const chld of this.getItems({class: ProfileItem})) {
+    for(const chld of this.getItems({class: ProfileItem}).concat(glbeads)) {
       chld.check_nom(arr);
     }
   }
   save_coordinates() {
-    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e}, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix} = this;
     if(!generatrix) {
       return;
     }
@@ -8683,9 +9120,8 @@ class ProfileItem extends GeneratrixElement {
       _row.r = 0;
     }
     else {
-      const {path} = this;
-      const r1 = path.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
-      const r2 = path.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
+      const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
+      const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
       _row.r = Math.max(r1, r2);
     }
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
@@ -8775,7 +9211,7 @@ class ProfileItem extends GeneratrixElement {
     _row.elm_type = this.elm_type;
     _row.orientation = this.orientation;
     _row.pos = this.pos;
-    this.children.forEach((addl) => addl.save_coordinates && addl.save_coordinates());
+    this.children.forEach((addl) => addl.save_coordinates?.());
   }
   initialize(attr) {
     const {project, _attr, _row} = this;
@@ -9009,6 +9445,15 @@ class ProfileItem extends GeneratrixElement {
       });
       for(const row of rm) {
         _owner.inserts.del(row);
+        const {region} = row;
+        if(region) {
+          _attr._ranges.delete(region);
+          _attr._ranges.delete(`cnns${region}`);
+          if(_attr.paths.get(region)) {
+            _attr.paths.get(region).remove();
+            _attr.paths.delete(region);
+          }
+        }
       }
       project.register_change();
       project._scope.eve.emit('set_inset', this);
@@ -9073,7 +9518,7 @@ class ProfileItem extends GeneratrixElement {
       _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn || project.elm_cnn(this, nearest));
     }
   }
-  path_points(cnn_point, profile_point) {
+  path_points(cnn_point, profile_point, profiles) {
     const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const {_attr, rays, generatrix} = this;
     if(!generatrix.curves.length) {
@@ -9108,16 +9553,31 @@ class ProfileItem extends GeneratrixElement {
       }
       return delta;
     }
+    const inner2 = (profile2) => {
+      const interior = generatrix.getPointAt(generatrix.length/2)
+      const {rays: prays2} = profile2;
+      const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
+      let oinner2 = prays2[side2];
+      if(delta) {
+        const pt = oinner2.getNearestPoint(cnn_point.point);
+        const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
+          .normalize(profile2 instanceof ProfileItem ? -delta : delta);
+        const tmp = oinner2.clone({insert: false});
+        tmp.translate(normal);
+        oinner2 = tmp;
+      }
+      return [interior, oinner2];
+    };
     const other = cnn_point.profile;
     const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {inner: other.path, outer: other.path} : undefined);
     const is_b = profile_point === 'b';
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
+    const delta = cnn_point?.cnn?.size(this) || 0;
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
       let oinner = prays[side];
       let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
-      const delta = cnn_point?.cnn?.size(this);
       if(delta || cnn_point?.cnn?.sd2) {
         let base = cnn_point.cnn.sd2 ? oouter : oinner;
         const pt = base.getNearestPoint(cnn_point.point);
@@ -9127,12 +9587,12 @@ class ProfileItem extends GeneratrixElement {
         tmp.translate(normal);
         oinner = tmp;
       }
-      if(cnn_point.is_t || (cnn_type == cnn_types.xx && !cnn_point.profile_point)) {
+      if(cnn_point.is_t || (cnn_type == cnn_types.xx && (!cnn_point.profile_point || cnn_point.profile_point === 't'))) {
         const {width} = this;
         const w2 = width * width;
         const nodes = new Set();
         let profile2;
-        cnn_point.point && !(this instanceof Onlay) && this.layer.profiles.forEach((profile) => {
+        cnn_point.point && !(this instanceof Onlay) && (profiles || this.layer.profiles).forEach((profile) => {
           if(profile !== this){
             if(cnn_point.point.is_nearest(profile.b, w2)) {
               const cp = profile.rays.b.profile;
@@ -9161,18 +9621,7 @@ class ProfileItem extends GeneratrixElement {
           }
         });
         if(profile2) {
-          const interior = generatrix.getPointAt(generatrix.length/2)
-          const {rays: prays2} = profile2;
-          const side2 = profile2.cnn_side(this, null, prays2) === cnn_sides.outer ? 'outer' : 'inner';
-          let oinner2 = prays2[side2];
-          if(delta) {
-            const pt = oinner2.getNearestPoint(cnn_point.point);
-            const normal = oinner2.getNormalAt(oinner2.getOffsetOf(pt))
-              .normalize(profile2 instanceof ProfileItem ? -delta : delta);
-            const tmp = oinner2.clone({insert: false});
-            tmp.translate(normal);
-            oinner2 = tmp;
-          }
+          const [interior, oinner2] = inner2(profile2);
           const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
           const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
@@ -9183,11 +9632,17 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner2, oinner, 5);
             if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
               delete _corns[5];
+              delete _corns[7];
             }
             else {
-              const {width} = this;
               const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
-              intersect_point(l4, rays.outer, 7, interior);
+              const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
+              if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
+                delete _corns[7];
+              }
+              else {
+                intersect_point(l4, rays.outer, 7, interior);
+              }
             }
           }
           else if(is_e) {
@@ -9196,10 +9651,17 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner2, oinner, 6);
             if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
               delete _corns[6];
+              delete _corns[8];
             }
             else {
               const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
-              intersect_point(l2, rays.inner, 8, interior);
+              const lx = new paper.Path({insert: false, segments: [_corns[6], _corns[3]]}).elongation(width * 6);
+              if(generatrix.is_orthogonal(lx, _corns[3]) || generatrix.is_orthogonal(l2, _corns[2])) {
+                delete _corns[8];
+              }
+              else {
+                intersect_point(l2, rays.inner, 8, interior); 
+              }
             }
           }
         }
@@ -9208,17 +9670,20 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);
             delete _corns[5];
+            delete _corns[7];
           }
           else if(is_e) {
             intersect_point(oinner, rays.outer, 2);
             intersect_point(oinner, rays.inner, 3);
             delete _corns[6];
+            delete _corns[8];
           }
         }
       }
       else if(cnn_type === cnn_types.xx) {
+        let {width} = this;
         if(other instanceof Onlay) {
-          const width = this.width * 0.7;
+          width *= 0.7;
           const l = is_b ? width : generatrix.length - width;
           const p = generatrix.getPointAt(l);
           const n = generatrix.getNormalAt(l).normalize(width);
@@ -9239,20 +9704,61 @@ class ProfileItem extends GeneratrixElement {
           const cnn_point2 = other.cnn_point(cnn_point.profile_point);
           const profile2 = cnn_point2 && cnn_point2.profile;
           if(profile2) {
-            const prays2 = profile2 && profile2.rays;
-            const pt1 = intersect_point(oinner, rays.outer);
-            const pt2 = intersect_point(oinner, rays.inner);
-            const pt3 = intersect_point(prays2.inner, rays.outer);
-            const pt4 = intersect_point(prays2.inner, rays.inner);
+            const [interior, oinner2] = inner2(profile2);
+            const pt1 = intersect_point(oinner, rays.outer, 0, interior);
+            const pt2 = intersect_point(oinner, rays.inner, 0, interior);
+            const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
+            const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
+            const pti = intersect_point(oinner2, oinner, 0, interior);
             if(is_b) {
-              intersect_point(prays2.inner, oinner, 5);
-              pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(prays2.inner, rays.outer, 1);
-              pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(prays2.inner, rays.inner, 4);
+              if(pti < pt1 && pti < pt4) {
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+              }
+              else {
+                pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+                pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+              }
+              intersect_point(oinner2, oinner, 5);
+              if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
+                delete _corns[5];
+                delete _corns[7];
+              }
+              else {
+                const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
+                const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
+                if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
+                  delete _corns[7];
+                }
+                else {
+                  intersect_point(l4, rays.outer, 7, interior);
+                }
+              }
             }
             else if(is_e) {
-              pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(prays2.inner, rays.outer, 2);
-              pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(prays2.inner, rays.inner, 3);
-              intersect_point(prays2.inner, oinner, 6);
+              if(pti > pt1 && pti > pt4) {
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);                
+              }
+              else {
+                pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+                pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+              }
+              intersect_point(oinner2, oinner, 6);
+              if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
+                delete _corns[6];
+                delete _corns[8];
+              }
+              else {
+                const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
+                const lx = new paper.Path({insert: false, segments: [_corns[6], _corns[3]]}).elongation(width * 6);
+                if(generatrix.is_orthogonal(lx, _corns[3]) || generatrix.is_orthogonal(l2, _corns[2])) {
+                  delete _corns[8];
+                }
+                else {
+                  intersect_point(l2, rays.inner, 8, interior);
+                }
+              }
             }
           }
           else{
@@ -9265,16 +9771,6 @@ class ProfileItem extends GeneratrixElement {
               delete _corns[3];
             }
           }
-        }
-      }
-      else if(!cnn_point.profile_point || !cnn_point.cnn || cnn_type === cnn_types.i) {
-        if(is_b) {
-          delete _corns[1];
-          delete _corns[4];
-        }
-        else if(is_e) {
-          delete _corns[2];
-          delete _corns[3];
         }
       }
       else {
@@ -9448,29 +9944,45 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
+    else {
+      if(is_b) {
+        delete _corns[1];
+        delete _corns[4];
+        delete _corns[5];
+        delete _corns[7];
+      }
+      else if(is_e) {
+        delete _corns[2];
+        delete _corns[3];
+        delete _corns[6];
+        delete _corns[8];
+      }
+    }
     if(is_b) {
+      const tangent = generatrix.firstCurve.getTangentAt(0, true).normalize(-delta);
+      const pt = this.b.add(tangent);
       if(!_corns[1]) {
-        _corns[1] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
+        _corns[1] = pt.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d1));
       }
       if(!_corns[4]) {
-        _corns[4] = this.b.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
+        _corns[4] = pt.add(generatrix.firstCurve.getNormalAt(0, true).normalize(this.d2));
       }
     }
     else if(is_e) {
+      const tangent = generatrix.lastCurve.getTangentAt(1, true).normalize(delta);
+      const pt = this.e.add(tangent);
       if(!_corns[2]) {
-        _corns[2] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
+        _corns[2] = pt.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d1));
       }
       if(!_corns[3]) {
-        _corns[3] = this.e.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
+        _corns[3] = pt.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
       }
     }
     return cnn_point;
   }
   interiorPoint() {
     const {generatrix, d1, d2} = this;
-    const igen = generatrix.curves.length === 1 ? 
-      generatrix.firstCurve.getPointAt(0.5, true) : 
-      (generatrix.curves.length === 2 ? generatrix.firstCurve.point2 : generatrix.curves[1].point2);
+    const igen = generatrix.getPointAt(generatrix.length / 2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply((d1 + d2) / 2));
   }
@@ -9523,15 +10035,7 @@ class ProfileItem extends GeneratrixElement {
     return Math.abs(angl) < (delta || consts.orientation_delta);
   }
   is_orthogonal(profile, point, delta) {
-    const offset1 = this.generatrix.getOffsetOf(this.generatrix.getNearestPoint(point));
-    const offset2 = profile.generatrix.getOffsetOf(profile.generatrix.getNearestPoint(point));
-    const v1 = this.generatrix.getNormalAt(offset1);
-    const v2 = profile.generatrix.getTangentAt(offset2);
-    let angl = v1.getDirectedAngle(v2);
-    if(angl < -180) {
-      angl += 180;
-    }
-    return Math.abs(angl) < (delta || consts.orientation_delta);
+    return this.generatrix.is_orthogonal(profile.generatrix, point, delta || consts.orientation_delta);
   }
   joined_nearests() {
     return [];
@@ -9610,6 +10114,42 @@ class ProfileItem extends GeneratrixElement {
       chld.observer?.(this);
       chld.redraw();
     }
+    return this.draw_regions();
+  }
+  draw_regions() {
+    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}, elm, ox} = this;
+    if([0, 1].includes(builder_props.mode)) {
+      generatrix.opacity = 1;
+      path.opacity = 1;
+      for(const [region, elm] of paths) {
+        elm?.remove?.();
+      }
+      paths.clear();
+    }
+    else {
+      generatrix.opacity = 0.06;
+      path.opacity = 0.06;
+      let filter;
+      switch (builder_props.mode) {
+        case 2:
+          filter = (v) => v <= -1;
+          break;
+        case 3:
+          filter = (v) => v >= 1 && v < 2;
+          break;
+        case 4:
+          filter = (v) => v >= 2;
+          break;
+      }
+      filter && ox.inserts.find_rows({cnstr: -elm}, (row) => {
+        if(filter(row.region)) {
+          const r = this.region?.(row.region);
+          if(r && r !== this) {
+            r.path;
+          }
+        }
+      });
+    }
     return this;
   }
   mark_direction() {
@@ -9684,8 +10224,8 @@ class ProfileItem extends GeneratrixElement {
       return res;
     }
     else {
-      const index = corn.substr(corn.length - 1, 1);
-      const axis = corn.substr(corn.length - 2, 1);
+      const index = corn.substring(corn.length - 1, 1);
+      const axis = corn.substring(corn.length - 2, 1);
       return _corns[index][axis];
     }
   }
@@ -9760,30 +10300,48 @@ class ProfileItem extends GeneratrixElement {
       });
     }
   }
+  remove() {
+    const {layer} = this;
+    const res = super.remove(); 
+    if(res !== false) {
+      for(const {rays} of layer?.profiles || []) {
+        for(const node of ['b', 'e']) {
+          if(rays[node].profile === this) {
+            rays[node].clear(true);
+          }
+        }
+      }
+    }
+    return res;
+  }
 }
 ProfileItem.path_attr = {
   strokeColor: 'black',
   strokeWidth: 1,
   strokeScaling: false,
   onMouseEnter(event) {
-    const {fillColor, parent: {_attr}, project} = this;
-    if(project._attr._from_service || !fillColor) {
-      return;
+    if(this.isInserted()) {
+      const {fillColor, parent: {_attr}, project} = this;
+      if(project._attr._from_service || !fillColor) {
+        return;
+      }
+      _attr.fillColor = fillColor.clone();
+      const {red, green, blue, alpha} = fillColor;
+      fillColor.alpha = 0.86;
+      fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
+      fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
+      fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
     }
-    _attr.fillColor = fillColor.clone();
-    const {red, green, blue, alpha} = fillColor;
-    fillColor.alpha = 0.86;
-    fillColor.red = red > 0.7 ? red - 0.06 : red + 0.06;
-    fillColor.green = green > 0.7 ? green - 0.05 : green + 0.05;
-    fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
   },
   onMouseLeave(event) {
-    const {_attr, project} = this.parent;
-    if(project._attr._from_service) {
-      return;
+    if(this.isInserted()) {
+      const {_attr, project} = this.parent;
+      if(project._attr._from_service) {
+        return;
+      }
+      this.fillColor = _attr.fillColor;
+      delete _attr.fillColor;
     }
-    this.fillColor = _attr.fillColor;
-    delete _attr.fillColor;
   }
 };
 EditorInvisible.ProfileItem = ProfileItem;
@@ -10034,25 +10592,28 @@ class Profile extends ProfileItem {
     const fromCoordinates = attr.row && attr.row.elm;
     super(attr);
     if(this.parent) {
-      const {project: {_scope}, observer} = this;
+      const {project: {_scope}, observer, layer} = this;
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
       this.layer.on_insert_elm(this);
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
-        const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          if(row.elm_type === elm_types.addition) {
+          if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
-          else if(row.elm_type === elm_types.adjoining) {
+          else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});
           }
-          else if(row.elm_type === elm_types.bundle) {
+          else if(row.elm_type.is('bundle')) {
             new ProfileSegment({row, parent: this});
+          }
+          else if(row.elm_type.is('glbead')) {
+            new ProfileGlBead({row, parent: layer, profile: this});
           }
         });
       }
+      this.auto_insets();
     }
   }
   get d0() {
@@ -10061,7 +10622,7 @@ class Profile extends ProfileItem {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 -= nearest.d2 + (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 20);
+        _attr.d0 = this.offset - nearest.d2 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
@@ -10090,12 +10651,15 @@ class Profile extends ProfileItem {
       if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
         return;
       }
+      if(elm.is_linear() !== this.is_linear()) {
+        return;
+      }
       let {generatrix} = elm;
       if(elm.elm_type === $p.enm.elm_types.Импост) {
         const pb = elm.cnn_point('b').profile;
         const pe = elm.cnn_point('e').profile;
         if(pb && pb.nearest(true) || pe && pe.nearest(true)) {
-          generatrix = generatrix.clone({insert: false}).elongation(100);
+          generatrix = generatrix.clone({insert: false}).elongation(200);
         }
       }
       let is_nearest = [];
@@ -10150,7 +10714,7 @@ class Profile extends ProfileItem {
         _attr._nearest = null;
       }
     });
-    if(layer && !check_nearest(_attr._nearest)) {
+    if(layer && (!_attr._nearest || !check_nearest(_attr._nearest))) {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
       }
@@ -10327,9 +10891,29 @@ class Profile extends ProfileItem {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
+  auto_insets() {
+    const {inset, elm, layer, ox} = this;
+    ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
+      if(row.key.check_condition({elm: this, ox, layer})) {
+        const key = {cnstr: -elm, inset: row.inset, region: row.inset.region};
+        if(!ox.inserts.find(key)) {
+          const irow = ox.inserts.add(key);
+          row.inset.clr_group.default_clr(irow);
+        }
+      }
+    });
+  }
   region(num) {
     const {_attr, rays, layer: {_ox}, elm} = this;
-    const {cat: {cnns, inserts}, utils} = $p;
+    const {cat: {cnns, inserts}, utils, enm} = $p;
+    const trunc = Math.trunc(num);
+    let fraction = Math.abs(num - trunc);
+    if(fraction) {
+    }    
+    const irow = _ox.inserts.find({cnstr: -elm, region: num});
+    if(!irow) {
+      return this;
+    }
     function cnn_choice_links(elm1, o, cnn_point) {
       const nom_cnns = cnns.nom_cnn(elm1, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
       return nom_cnns.some((cnn) => {
@@ -10338,7 +10922,7 @@ class Profile extends ProfileItem {
     }
     function cn_row(prop, add) {
       let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
-      const cnn_point = rays[node1] || {};
+      const cnn_point = rays?.[node1] || {};
       const {profile, profile_point} = cnn_point;
       node1 += num;
       const node2 = profile_point ? (profile_point + num) : `t${num}`;
@@ -10352,56 +10936,152 @@ class Profile extends ProfileItem {
     if(!_attr._ranges) {
       _attr._ranges = new Map();
     }
-    if(!_attr._ranges.get(num)) {
+    if(!_attr._ranges.has(num)) {
+      const __attr = {_corns: []};
+      const nearest = () => this;
       _attr._ranges.set(num, new Proxy(this, {
         get(target, prop, receiver) {
           switch (prop){
-          case 'cnn1':
-          case 'cnn2':
-          case 'cnn3':
-            if(!_attr._ranges.get(`cnns${num}`)) {
-              _attr._ranges.set(`cnns${num}`, {});
+            case '_attr':
+              return __attr;
+            case 'cnn1':
+            case 'cnn2':
+            case 'cnn3':
+              if (!_attr._ranges.get(`cnns${num}`)) {
+                _attr._ranges.set(`cnns${num}`, {});
+              }
+              const cn = _attr._ranges.get(`cnns${num}`);
+              const proxy_point = __attr?._rays?.[prop === 'cnn1' ? 'b' : 'e'];
+              if (!cn[prop] || cn[prop].empty()) {
+                const {row, cnn_point} = cn_row(prop, 0);
+                const pregion = cnn_point?.profile?._attr?._ranges?.get(num);
+                if(row && prop !== 'cnn3' && proxy_point && !pregion) {
+                  proxy_point.profile = null;
+                  proxy_point.profile_point = '';
+                  proxy_point.cnn_types = enm.cnn_types.acn.i;
+                  if(!proxy_point.cnn_types.includes(row.cnn.cnn_type)) {
+                    row.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
+                  }
+                  proxy_point.cnn = row.cnn;
+                }
+                else if(row) {
+                  cn[prop] = row.cnn;
+                  if(proxy_point) {
+                    proxy_point.cnn = row.cnn;
+                  }
+                }
+                else if(prop !== 'cnn3' && proxy_point) {
+                  if(pregion) {
+                    const {profile} = proxy_point;
+                    proxy_point.profile_point = cnn_point?.profile_point || '';
+                    proxy_point.cnn_types = cnn_point?.cnn_types;
+                    const side = profile?.parent_elm?.cnn_side?.(target);
+                    proxy_point.cnn = cnns.region_cnn({region: trunc, elm1: receiver, elm2: [{profile, side}], cnn_types: proxy_point.cnn_types});
+                  }
+                  else {
+                    proxy_point.profile = null;
+                    proxy_point.profile_point = '';
+                    proxy_point.cnn_types = enm.cnn_types.acn.i;
+                    proxy_point.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
+                  }
+                  cn[prop] = cnns.get();
+                }
+              }
+              else {
+                proxy_point.cnn = cn[prop];
+              }
+              return cn[prop];
+            case 'cnn1_row':
+            case 'cnn2_row':
+            case 'cnn3_row':
+              return cn_row(prop.substring(0, 4), 0);
+            case 'rnum':
+              return trunc;
+            case 'irow':
+              return irow;
+            case 'inset':
+              return irow.inset;
+            case 'nom':
+              return receiver.inset.nom(receiver, 0);
+            case 'ref': {
+              const {nom} = receiver;
+              return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
             }
-            const cn = _attr._ranges.get(`cnns${num}`);
-            if(!cn[prop]) {
-              const row = cn_row(prop);
-              cn[prop] = row ? row.cnn : cnns.get();
+            case 'sizeb':
+              return BuilderElement.prototype.get_sizeb.call(receiver);
+            case 'd0': {
+              let {_nearest_cnn} = __attr;
+              if(!_nearest_cnn?.check_nom1(receiver.nom) || !_nearest_cnn?.check_nom2(target.nom)) {
+                const {cnn3} = receiver;
+                if(cnn3?.check_nom1(receiver.nom) && cnn3?.check_nom2(target.nom)) {
+                  __attr._nearest_cnn = _nearest_cnn = cnn3;
+                }
+                else {
+                  __attr._nearest_cnn = _nearest_cnn = cnns.elm_cnn(receiver, target, enm.cnn_types.acn.ii, null, true);
+                }
+              }
+              return target.d0 + (_nearest_cnn?.size(receiver, target, trunc) || 0);
             }
-            return cn[prop];
-          case 'cnn1_row':
-          case 'cnn2_row':
-          case 'cnn3_row':
-            return cn_row(prop.substr(0, 4), 0);
-          case 'rnum':
-            return num;
-          case 'irow':
-            return _ox.inserts.find({cnstr: -elm, region: num});
-          case 'inset':
-            const {irow} = receiver;
-            return irow ? irow.inset : inserts.get();
-          case 'nom':
-            return receiver.inset.nom(receiver);
-          case 'ref':
-            const {nom} = receiver;
-            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
-          case '_metadata':
-            const meta = target.__metadata(false);
-            const {fields} = meta;
-            const {cnn1, cnn2} = fields;
-            const {b, e} = rays;
-            delete cnn1.choice_links;
-            delete cnn2.choice_links;
-            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
-            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
-            return meta;
-          case 'parent_elm':
-            return target;
-          default:
-            let prow;
-            if(utils.is_guid(prop)) {
-              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+            case 'd1':
+              return -(receiver.d0 - receiver.sizeb);
+            case 'd2':
+              return receiver.d1 - receiver.width;
+            case 'width':
+              return receiver.nom?.width || target.width;
+            case 'rays': {
+              if(!__attr._rays) {
+                __attr._rays = new ProfileRays(receiver);
+              }
+              const {_rays} = __attr;
+              if(!_rays.inner.segments.length || !_rays.outer.segments.length) {
+                _rays.recalc();
+              }
+              _rays.b._profile = rays.b._profile?.region?.(num);
+              _rays.e._profile = rays.e._profile?.region?.(num);
+              receiver.cnn1;
+              receiver.cnn2;
+              return _rays;
             }
-            return prow ? prow.value : target[prop];
+            case 'path': {
+              const {generatrix, rays} = receiver;
+              const {_corns} = __attr;
+              _corns.length = 0;
+              ProfileItem.prototype.path_points.call(receiver, rays.b, 'b', []);
+              ProfileItem.prototype.path_points.call(receiver, rays.e, 'e', []);
+              const {paths} = _attr;
+              if(!paths.has(num)) {
+                paths.set(num, Object.assign(new paper.Path({parent: target}), ProfileItem.path_attr));
+              }
+              const path = paths.get(num);
+              path.removeSegments();
+              path.addSegments([_corns[1], _corns[2], _corns[3], _corns[4]]);
+              path.closePath();
+              path.fillColor = BuilderElement.clr_by_clr.call(target, receiver.clr);
+              return path;
+            }
+            case 'clr':
+              return irow.clr.empty() ? target.clr : irow.clr; 
+            case '_metadata': {
+              const meta = target.__metadata(false);
+              const {fields} = meta;
+              const {cnn1, cnn2} = fields;
+              const {b, e} = receiver.rays;
+              delete cnn1.choice_links;
+              delete cnn2.choice_links;
+              cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+              cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+              return meta;
+            }
+            case 'parent_elm':
+              return target;
+            case 'nearest':
+              return nearest;
+            default:
+              let prow;
+              if (utils.is_guid(prop)) {
+                prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+              }
+              return prow ? prow.value : target[prop];
           }
         },
         set(target, prop, val, receiver) {
@@ -10415,6 +11095,9 @@ class Profile extends ProfileItem {
             if(row.cnn !== cn[prop]) {
               row.cnn = cn[prop];
             }
+            break;
+          case 'clr':
+            irow.clr = val;
             break;
           default:
             if(utils.is_guid(prop)) {
@@ -10431,6 +11114,95 @@ class Profile extends ProfileItem {
       }));
     }
     return _attr._ranges.get(num);
+  }
+  draw_articles() {
+    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, inset, nom, angle_hor} = this;
+    if(articles && nom.width > 2) {
+      const ray = layer.layer ? inner : outer;
+      const offset = ray.length / 2;
+      const p0 = ray.getPointAt(offset);
+      const font_move = nom.width > 30 ? consts.font_size / 2.2 : -consts.font_size / 1.3;
+      const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
+      let flip = false;
+      let angle = angle_hor;
+      if(Math.abs(angle - 180) < 1) {
+        angle = 0;
+        flip = true;
+      }
+      else if(Math.abs(angle - 90) < 1) {
+        angle = -90;
+      }
+      else if(Math.abs(angle - 270) < 1) {
+        flip = true;
+      }
+      let content = '→ ', c2 = ' ←';
+      switch (articles) {
+        case 1:
+          if(flip) {
+            content = elm.toFixed() + c2;
+          }
+          else {
+            content += elm.toFixed();
+          }
+          break;
+        case 2:
+          if(flip) {
+            content = (inset.article || inset.name) + c2;
+          }
+          else {
+            content += inset.article || inset.name;
+          }
+          break;
+        case 3:
+          if(flip) {
+            content = (nom.article || nom.name) + c2;
+          }
+          else {
+            content += nom.article || nom.name;
+          }
+          break;
+        case 4:
+          if(flip) {
+            content = `${elm.toFixed()} ${inset.article || inset.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${inset.article || inset.name}`;
+          }
+          break;
+        case 5:
+          if(flip) {
+            content = `${elm.toFixed()} ${nom.article || nom.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${nom.article || nom.name}`;
+          }
+          break;
+      }
+      if(!children.articles) {
+        children.articles = new TextUnselectable({
+          parent: this,
+          guide: true,
+          fillColor: 'black',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * .9,
+          justification: 'center',
+        });
+      }
+      children.articles.content = content;
+      children.articles.position = position;
+      children.articles.rotation = angle;
+    }
+    else {
+      if(children.articles) {
+        children.articles.remove();
+        children.articles = null;
+      }
+    }
+    return this;
+  }
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
   }
 }
 EditorInvisible.Profile = Profile;
@@ -10494,6 +11266,8 @@ class ProfileNested extends Profile {
   }
   get info() {
     return `влож ${super.info}`;
+  }
+  auto_insets() {
   }
   cnn_point(node, point) {
     return ProfileParent.prototype.cnn_point.call(this, node, point);
@@ -10599,8 +11373,8 @@ ProfileNested.nearest_cnn = {
 }
 EditorInvisible.ProfileNested = ProfileNested;
 class ProfileVirtual extends Profile {
-  constructor(attr) {
-    super(attr);
+  initialize(attr) {
+    super.initialize(attr);
     const nearest = super.nearest(true);
     Object.defineProperties(this._attr, {
       _nearest: {
@@ -10835,7 +11609,7 @@ class ProfileAddl extends ProfileItem {
     }
     if(fromCoordinates){
       const {cnstr, elm} = attr.row;
-      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.Добор}, (row) => new ProfileAddl({row, parent: this}));
+      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition}, (row) => new ProfileAddl({row, parent: this}));
     }
   }
   get d0() {
@@ -10846,7 +11620,7 @@ class ProfileAddl extends ProfileItem {
     return this._attr.side == 'outer';
   }
   get elm_type() {
-    return $p.enm.elm_types.Добор;
+    return $p.enm.elm_types.addition;
   }
   nearest() {
     const {_attr, parent, project} = this;
@@ -11216,6 +11990,139 @@ class ProfileCut extends BaseLine {
   }
 }
 EditorInvisible.ProfileCut = ProfileCut;
+class ProfileGlBead extends ProfileItem {
+  constructor(attr) {
+    super(attr);
+    const {layer, _attr, _row} = this;
+    _attr.generatrix.strokeWidth = 0;
+    if(!_row.parent && attr.profile){
+      _row.parent = (this.outer ? -1 : 1) * attr.profile.elm;
+      _attr.profile = attr.profile;
+    }
+    if(!attr.side && _row.parent < 0) {
+      attr.side = 'outer';
+    }
+    _attr.side = attr.side || 'inner';
+    _attr.profile = attr.profile || layer.getItem({elm: Math.abs(_row.parent)});
+  }
+  get d0() {
+    const nearest = this.nearest();
+    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
+  }
+  joined_imposts(check_only) {
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
+  }
+  get outer() {
+    return this._attr.side == 'outer';
+  }
+  get elm_type() {
+    return $p.enm.elm_types.glbead;
+  }
+  get glass() {
+    const {_attr} = this;
+    if(!_attr.glass) {
+      for(const filling of this.layer.glasses(false, true)) {
+        if(filling.profiles.some(({sub_path}) => {
+          if(sub_path.firstSegment.point.is_nearest(this.b, 600) && sub_path.lastSegment.point.is_nearest(this.e, 600)) {
+            _attr.glass = filling;
+            return true;
+          }
+        })) {
+          break;
+        }
+      }
+    }
+    return _attr.glass || this.layer.getItem({class: Filling});
+  }
+  get profile() {
+    return this._attr.profile;
+  }
+  get rib() {
+    const {glass, profile} = this;
+    for(const rib of glass.profiles) {
+      if(rib.profile === profile) {
+        return rib;
+      }
+    }
+  }
+  get brothers() {
+    return this.glass.glbeads;
+  }
+  nearest() {
+    const {_attr, profile, project} = this;
+    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, profile);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, profile, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    return profile;
+  }
+  get glbeads() {
+    return [];
+  }
+  observer() {
+  }
+  do_bind() {
+    const {rib, glass, profile, b, e, generatrix, _attr: {side, _rays}} = this;
+    const {profiles} = glass;
+    const index = profiles.indexOf(rib);
+    const prev = index === 0 ? profiles[profiles.length - 1] : profiles[index - 1]; 
+    const next = index === (profiles.length - 1) ? profiles[0] : profiles[index + 1]; 
+    const ray = profile.rays[side];
+    const pray = prev.profile.rays[prev.outer ? 'outer' : 'inner'];
+    const nray = next.profile.rays[next.outer ? 'outer' : 'inner'];
+    const rb = pray.intersect_point(ray, b);
+    const re = nray.intersect_point(ray, e);
+    if(!rb.is_nearest(b, 0) || !re.is_nearest(e, 0)) {
+      const sub_path = ray.get_subpath(rb, re);
+      if(sub_path.length) {
+        generatrix.removeSegments();
+        generatrix.addSegments(sub_path.segments);
+        _rays.clear();
+        const {brothers} = this;
+        const pglb = brothers.find(({profile}) => profile === prev.profile);
+        const nglb = brothers.find(({profile}) => profile === next.profile);
+        pglb?.do_bind();
+        nglb?.do_bind();
+      }
+    }
+  }
+  draw_regions() {
+    return this;
+  }
+  redraw() {
+    this.do_bind();
+    return super.redraw();
+  }
+  cnn_point(node, point) {
+    const res = this.rays[node];
+    const check_distance = (elm) => {
+        if(elm == this){
+          return;
+        }
+        const gp = elm.generatrix.getNearestPoint(point);
+        let distance;
+        if(gp && (distance = gp.getDistance(point)) < consts.sticking){
+          if(distance <= res.distance){
+            res.point = gp;
+            res.distance = distance;
+            res.profile = elm;
+          }
+        }
+      };
+    if(!point){
+      point = this[node];
+    }
+    if(res.profile && res.profile.children.length){
+      check_distance(res.profile);
+      if(res.distance < consts.sticking){
+        return res;
+      }
+    }
+    res.clear();
+    res.cnn_types = $p.enm.cnn_types.acn.a;
+    this.brothers.forEach(check_distance);
+    return res;
+  }
+}
+EditorInvisible.ProfileGlBead = ProfileGlBead;
 class ProfileAdjoining extends BaseLine {
   constructor({row, parent, proto, b, e, side, project}) {
     const generatrix = b && e && parent.rays[side].get_subpath(e.elm[e.point], b.elm[b.point]);
@@ -11265,7 +12172,7 @@ class ProfileAdjoining extends BaseLine {
     return {elm: parent, row};
   }
   save_coordinates() {
-    super.save_coordinates();
+    ProfileItem.prototype.save_coordinates.call(this);
     const {_row, parent} = this;
     const {row} = this.selected_cnn_ii();
     _row.parent = parent.elm;
@@ -11280,14 +12187,40 @@ class ProfileAdjoining extends BaseLine {
       }
     }
   }
+  get length() {
+    return Object.getOwnPropertyDescriptor(ProfileItem.prototype, 'length').get.call(this);
+  }
+  corns(n) {
+    const {_attr} = this;
+    if([1, 4, 5, 7].includes(n)) {
+      return _attr._corns[1];
+    }
+    else {
+      return _attr._corns[2];
+    }
+  }
   redraw(mode) {
-    const {generatrix, path, children} = this;
+    const {cat: {cnns}, enm: {cnn_types}} = $p;
+    const {generatrix, path, children, _attr, _row, rays, project} = this;
     for(const child of [].concat(children)) {
       if(child !== generatrix && child !== path) {
         child.remove();
       }
     }
     const {length} = generatrix;
+    if(!rays.b.cnn) {
+      const elm2 = {elm: 0, _row};
+      rays.b.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+    }
+    if(!rays.e.cnn) {
+      const elm2 = {elm: 0, _row};
+      rays.e.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+    }    
+    _attr._corns.length = 0;
+    const szb = rays.b.cnn?.size(this) || 0;
+    const sze = rays.e.cnn?.size(this) || 0;
+    _attr._corns[1] = this.b.add(generatrix.getTangentAt(0).negate().normalize(szb));
+    _attr._corns[2] = this.e.add(generatrix.getTangentAt(length).normalize(sze));    
     for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
       const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
@@ -11548,8 +12481,9 @@ class Onlay extends ProfileItem {
     if(!point){
       point = this[node];
     }
+    const is_filling = res.profile instanceof Filling;
     if(res.profile && res.profile.children.length){
-      if(res.profile instanceof Filling){
+      if(is_filling){
         const np = res.profile.path.getNearestPoint(point);
         if(np.getDistance(point) < consts.sticking_l){
           res.point = np;
@@ -11564,7 +12498,7 @@ class Onlay extends ProfileItem {
     }
     res.clear();
     if(this.parent){
-      const res_bind = this.bind_node(point);
+      const res_bind = this.bind_node(point, [this.parent], node, is_filling);
       if(res_bind.binded){
         res._mixin(res_bind, ["point","profile","cnn_types","profile_point"]);
         if(!this[res.node].is_nearest(res.point, 0)) {
@@ -11574,46 +12508,65 @@ class Onlay extends ProfileItem {
     }
     return res;
   }
-  bind_node(point, glasses) {
+  bind_node(point, glasses, node, is_filling) {
+    let res = {distance: Infinity, is_l: true};
     if(!glasses){
       glasses = [this.parent];
     }
-    let res = {distance: Infinity, is_l: true};
-    glasses.some((glass) => {
-      const np = glass.path.getNearestPoint(point);
-      let distance = np.getDistance(point);
-      if(distance < res.distance){
-        res.distance = distance;
-        res.point = np;
-        res.profile = glass;
-        res.cnn_types = $p.enm.cnn_types.acn.t;
+    for(const glass of glasses) {
+      const {b, e, generatrix } = this;
+      const other = node === 'b' ? e : b;
+      let line;
+      if(this.is_linear()) {
+        line = generatrix.clone({insert: false}).elongation(3000);
       }
-      if(distance < consts.sticking_l){
-        res.binded = true;
-        return true;
+      else {
+        const tg = node === 'b' ? generatrix.getTangentAt(0).multiply(consts.sticking).negate() : 
+          generatrix.getTangentAt(generatrix.length).multiply(consts.sticking);
+        const point = node === 'b' ? b : e;
+        line = new paper.Path({insert: false, segments: [point.subtract(tg), point.add(tg)]}).elongation(300);
       }
-      res.cnn_types = $p.enm.cnn_types.acn.t;
-      const ares = [];
-      for(let elm of glass.imposts){
-        if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
-          ares.push({
-            profile_point: res.profile_point,
-            profile: res.profile,
-            cnn_types: res.cnn_types,
-            point: res.point});
+      for(const {sub_path} of glass.profiles) {
+        const np = sub_path.intersect_point(line, point);
+        const angle = np && Math.abs(np.subtract(other).angle - point.subtract(other).angle);
+        if(np && (angle < consts.epsilon || Math.abs(angle - 360) < consts.epsilon)) {
+          let distance = np.getDistance(point);
+          if(distance < res.distance){
+            res.distance = distance;
+            res.point = np;
+            res.profile = glass;
+            res.cnn_types = $p.enm.cnn_types.acn.t;
+          }
+          if((is_filling && res.point) || distance < consts.sticking_l){
+            res.binded = true;
+            return res;
+          }
         }
       }
-      if(ares.length == 1){
-        res._mixin(ares[0]);
-      }
-      else if(ares.length >= 2){
-        if(this.max_right_angle(ares)){
+      if(!res.point || res.distance > consts.sticking_l) {
+        res.cnn_types = $p.enm.cnn_types.acn.t;
+        const ares = [];
+        for(let elm of glass.imposts){
+          if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
+            ares.push({
+              profile_point: res.profile_point,
+              profile: res.profile,
+              cnn_types: res.cnn_types,
+              point: res.point});
+          }
+        }
+        if(ares.length == 1){
           res._mixin(ares[0]);
         }
-        res.is_cut = true;
+        else if(ares.length >= 2){
+          if(this.max_right_angle(ares)){
+            res._mixin(ares[0]);
+          }
+          res.is_cut = true;
+        }
       }
-    });
-    if(!res.binded && res.point && res.distance < consts.sticking){
+    }
+    if (!res.binded && res.point && res.distance < consts.sticking_l) {
       res.binded = true;
     }
     return res;
@@ -11811,8 +12764,10 @@ class Scheme extends paper.Project {
   }
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
-    contour.save_coordinates(true);
-    isBrowser && layer && contour.refresh_prm_links();
+    if(!this._attr._loading) {
+      contour.save_coordinates(true);
+    }
+    isBrowser && contour.refresh_prm_links();
     !layer && l_dimensions.redraw();
     for(const curr of contours) {
       this.refresh_recursive(curr, isBrowser);
@@ -11855,7 +12810,7 @@ class Scheme extends paper.Project {
     }
     if (!clr_group.contains(ox.clr, clrs) || ox.clr.empty()){
       const {default_clr} = _dp.sys;
-      const clr = (default_clr.empty() || !clrs.includes(default_clr)) ? (first || clrs[0]) : default_clr;
+      const clr = (default_clr.empty() || !clr_group.contains(default_clr, clrs)) ? (first || clrs[0]) : default_clr;
       if(clr && !clr.empty()) {
         this.set_clr(clr);
       }
@@ -12060,10 +13015,17 @@ class Scheme extends paper.Project {
     this.redraw();
   }
   load_dimension_lines() {
-    const {Размер, Радиус} = $p.enm.elm_types;
-    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус]}}, (row) => {
-      const layer = this.getItem({cnstr: row.cnstr});
-      const Constructor = row.elm_type === Размер ? DimensionLineCustom : DimensionRadius;
+    const {Размер, Радиус, Угол} = $p.enm.elm_types;
+    this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус, Угол]}}, (row) => {
+      let layer = this.getItem({cnstr: row.cnstr});
+      let Constructor = DimensionLineCustom;
+      if(row.elm_type === Радиус) {
+        Constructor = DimensionRadius;
+      }
+      else if(row.elm_type === Угол) {
+        Constructor = DimensionAngle;
+        layer = this.l_connective;
+      }
       layer && new Constructor({
         parent: layer.l_dimensions,
         row: row
@@ -12548,7 +13510,7 @@ class Scheme extends paper.Project {
     const {cnn_nodes} = ProductsBuilding;
     const {inserts} = ox;
     ox.cnn_elmnts.clear(({elm1, node1}) => {
-      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {gt: 0}}).length;
+      return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
     let res = Promise.resolve();
@@ -12705,13 +13667,16 @@ class Scheme extends paper.Project {
           }
           else {
             ox.glass_specification.find_rows({elm}, (grow) => {
-              grow.default_params();
+              grow.default_params({elm, ox, project: {ox}, inset: grow.inset});
             });
           }
         }
       }
       return this.load(ox, from_service)
-        .then(() => ox._data._modified = true);
+        .then(() => {
+          ox._data._modified = true;
+          this.notify(this, 'scheme_changed');
+        });
     };
     this._attr._loading = true;
     if(is_snapshot) {
@@ -12883,12 +13848,15 @@ class Scheme extends paper.Project {
       }
       return attr.pos == pos;
     }
-    if(pos_array && attr.pos.includes(positions.ЦентрВертикаль) && Array.isArray(attr.elm_type) && attr.elm_type.includes(elm_types.СтворкаБИ)) {
+    if(pos_array && Array.isArray(attr.elm_type) &&
+      attr.pos.includes(positions.ЦентрВертикаль) &&
+      rows.find(({pos}) => pos === positions.ЦентрВертикаль) &&
+      attr.elm_type.includes(elm_types.СтворкаБИ)) {
       if(attr.inset && rows.some((row) => attr.inset == row.nom && check_pos(row.pos))) {
         return attr.inset;
       }
     }
-    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (check_pos(row.pos) || row.pos == positions.Любое))) {
+    else if(attr.inset && rows.some((row) => attr.inset == row.nom && (row.pos === positions.any || check_pos(row.pos)))) {
       return attr.inset;
     }
     let inset;
@@ -12906,7 +13874,7 @@ class Scheme extends paper.Project {
     }
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == positions.Любое && row.by_default) {
+        if(row.pos == positions.any && row.by_default) {
           return inset = row.nom;
         }
       });
@@ -12917,7 +13885,7 @@ class Scheme extends paper.Project {
         return this.default_inset(attr);
       }
       rows.some((row) => {
-        if(row.pos == positions.Любое) {
+        if(row.pos == positions.any) {
           return inset = row.nom;
         }
       });
@@ -13175,30 +14143,16 @@ class Scheme extends paper.Project {
     const {_skeleton} = this;
     _skeleton.skeleton = !!v;
   }
-  async mirror(v, animate) {
+  async mirror(v) {
     const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
     if(typeof v === 'undefined') {
       return _reflected;
     }
-    if(_from_service) {
-      animate = false;
-    }
     v = Boolean(v);
     if(v !== Boolean(_reflected)) {
-      const {utils} = $p;
-      const {scaling} = view._decompose();
-      if(animate) {
-        for(let i=0.8; i>0; i-=0.3) {
-          view.scaling = [scaling.x * i, scaling.y];
-          await utils.sleep(30);
-        }
-      }
+      const {scaling} = view;
       view.scaling = [-scaling.x, scaling.y];
-      for(const txt of this.getItems({class: paper.PointText})) {
-        const {scaling} = txt._decompose();
-        txt.scaling = [-scaling.x, scaling.y];
-      }
       _attr._reflected = v;
       for(const layer of this.contours) {
         layer.apply_mirror();
@@ -13209,6 +14163,10 @@ class Scheme extends paper.Project {
           profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
         }
       }
+      for(const txt of this.getItems({class: paper.PointText})) {
+        const {scaling} = txt._decompose();
+        txt.scaling = [-scaling.x, scaling.y];
+      }
       if(v) {
         this._scope.select_tool?.('pan');
       }
@@ -13216,6 +14174,7 @@ class Scheme extends paper.Project {
         this.register_change(true);
       }
     }
+    this.zoom_fit();
     return _attr._reflected;
   }
   get sketch_view() {
@@ -13670,6 +14629,7 @@ class Skeleton {
 };
 class Pricing {
   constructor({md, adapters, job_prm}) {
+    this.loading = [];
     md.once('predefined_elmnts_inited', () => {
       const {pouch} = adapters;
       if(pouch.props.user_node || job_prm.use_ram) {
@@ -13679,7 +14639,7 @@ class Pricing {
   }
   load_prices() {
     const {adapters: {pouch}, job_prm} = $p;
-    if(job_prm.use_ram === false) {
+    if(job_prm.use_ram === false || job_prm.skip_prices) {
       return Promise.resolve();
     }
     return this.by_range({})
@@ -13687,53 +14647,99 @@ class Pricing {
         pouch.emit('pouch_complete_loaded');
       });
   }
-  deffered_load_prices(log, force) {
-    const {job_prm: {server}, cat: {nom}, adapters: {pouch}} = $p;
+  deffered_load_prices(log, force, price_type) {
+    const {job_prm: {skip_prices, server}, adapters: {pouch}} = $p;
+    if(skip_prices) {
+      return Promise.resolve();
+    }
     if(this.prices_timeout) {
       clearTimeout(this.prices_timeout);
       this.prices_timeout = 0;
     }
-    if(!force) {
+    if(!force && !price_type) {
       const defer = (server ? server.defer : 180000) + Math.random() * 10000;
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
+    if(price_type) {
+      this.loading.push(price_type);
+      if(!force && this.loading.length > 1) {
+        return;
+      }
+    }
+    if(force) {
+      this.loading.length = 0;
+      price_type = undefined;
+    }
     const cache = new Map();
-    return this.by_range({log, cache})
+    return this.by_range({log, cache, price_type})
+      .then(() => this.update_nom_price(price_type, cache))
+      .then(() => pouch.emit('nom_price', {price_type}))
       .then(() => {
-        for(const onom of nom) {
-          if (onom._data) {
-            if(onom._data._price) {
-              for(const cx in onom._data._price) {
-                delete onom._data._price[cx];
-              }
-            }
-            onom._data._price = cache.get(onom);
+        if(price_type) {
+          this.loading.shift();
+          if(this.loading.length) {
+            price_type = this.loading.shift();
+            return this.deffered_load_prices(log, true, price_type);
           }
         }
-      })
-      .then(() => pouch.emit('nom_price'));
+      });
   }
-  by_range({bookmark, step=1, limit=40, log=null, cache=null}) {
+  update_nom_price(price_type, cache) {
+    if(price_type) {
+      for(const onom of $p.cat.nom) {
+        const price = cache.get(onom);
+        if (onom._data && price) {
+          if(onom._data._price) {
+            for(const cx in onom._data._price) {
+              if(price[cx]) {
+                for(const pt in price[cx]) {
+                  onom._data._price[cx][pt] = price[cx][pt];
+                }
+              }
+            }
+          }
+          else {
+            onom._data._price = price;
+          }
+        }
+      }
+    }
+    else {
+      for(const onom of $p.cat.nom) {
+        if (onom._data) {
+          if(onom._data._price) {
+            for(const cx in onom._data._price) {
+              delete onom._data._price[cx];
+            }
+          }
+          onom._data._price = cache.get(onom);
+        }
+      }
+    }
+  }
+  by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     (log || console.log)(`load prices: page №${step}`);
-    return utils.sleep(40)
+    return utils.sleep(limit)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
-          price_type: {$in: abonents.price_types.map(v => v.valueOf())},
+          price_type: price_type || {$in: abonents.price_types.map(v => v.valueOf())},
         },
+        use_index: 'nom_prices_setup',
         limit,
         bookmark,
       }))
-      .then((res) => {
+      .then(async (res) => {
         step++;
         bookmark = res.bookmark;
         for (const doc of res.docs) {
+          await utils.sleep(limit / 2);
           this.by_doc(doc, cache);
         }
-        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache}) : 'done';
+        return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache, price_type}) : 'done';
       });
   }
   by_doc({goods, date, currency}, cache) {
@@ -13795,7 +14801,7 @@ class Pricing {
     }
   }
   price_type(prm) {
-    const {utils, job_prm, enm, ireg, cat} = $p;
+    const {utils, job_prm, enm, ireg, cat, CatNom_prices_types} = $p;
     const empty_formula = cat.formulas.get();
     const empty_price_type = cat.nom_prices_types.get();
     prm.price_type = {
@@ -13845,12 +14851,16 @@ class Pricing {
         prm.price_type[key] = ares[0][key];
       });
     }
-    partner.extra_fields.find_rows({
-      property: job_prm.pricing.dealer_surcharge
-    }, (row) => {
+    partner.extra_fields.find_rows({property: job_prm.pricing.dealer_surcharge}, (row) => {
       const val = parseFloat(row.value);
       if(val){
         prm.price_type.extra_charge_external = val;
+      }
+      return false;
+    });
+    partner.extra_fields.find_rows({property: job_prm.pricing.partner_price_group}, (row) => {
+      if(row.value instanceof CatNom_prices_types){
+        prm.price_type.price_type_sale = row.value;
       }
       return false;
     });
@@ -14116,8 +15126,8 @@ class ProductsBuilding {
       }
       contour.update_handle_height(furn_cache);
       const blank_clr = $p.cat.clrs.get();
-      const {cnstr} = contour;
-      furn.furn_set.get_spec(contour, furn_cache).forEach((row) => {
+      const {cnstr, furn_set, weight} = contour;
+      furn_set.get_spec(contour, furn_cache).forEach((row) => {
         const elm = {elm: -cnstr, clr: blank_clr};
         const row_spec = new_spec_row({elm, row_base: row, origin: row.origin, specify: row.specify, spec, ox});
         if(row.is_procedure_row) {
@@ -14167,7 +15177,7 @@ class ProductsBuilding {
           calc_count_area_mass(row_spec, spec);
         }
       });
-      if(furn.furn_set.flap_weight_max && ox.elm_weight(-cnstr) > furn.furn_set.flap_weight_max) {
+      if(furn_set.flap_weight_max && weight > furn_set.flap_weight_max) {
         const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
         contour.profiles.forEach(elm => {
           new_spec_row({elm, row_base, origin: furn, spec, ox});
@@ -14190,18 +15200,29 @@ class ProductsBuilding {
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
       const {_attr} = elm;
-      if(nearest && nearest._row.clr != $p.cat.clrs.ignored() && _attr._nearest_cnn) {
-        cnn_add_spec(_attr._nearest_cnn, elm, {
-          angle: 0,
-          alp1: 0,
-          alp2: 0,
-          len: elm._row.len,
-          origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
-        }, null, nearest);
+      const {cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
+      if(nearest && nearest._row.clr != clrs.ignored()) {
+        if(_attr._nearest_cnn) {
+          cnn_add_spec(_attr._nearest_cnn, elm, {
+            angle: 0,
+            alp1: 0,
+            alp2: 0,
+            len: elm._row.len,
+            origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
+          }, null, nearest);
+        }
+        else {
+          let enom = nom.cnn_ii_error || nom.info_error;
+          if(nearest instanceof ProfileVirtual && nom.cnn_vii_error) {
+            enom = nom.cnn_vii_error;
+          }          
+          elm.err_spec_row(enom, `${msg.err_no_cnn} элементов №${elm.elm} ${elm.nom.article} и №${
+            nearest.elm} ${nearest.nom.article}`, elm.inset);
+        }        
       }
     }
     function base_spec_profile(elm, totqty0) {
-      const {_row, _attr, rays, layer, segms} = elm;
+      const {_row, _attr, rays, layer, segms, inset} = elm;
       const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -14285,17 +15306,32 @@ class ProductsBuilding {
             row_spec: row_spec
           });
         }
-        const acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
-        const acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
         const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
+        let acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
+        let acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
+        let {alp1, alp2} = _row;
+        if(acmethod_prev == s2 || acmethod_prev == s1) {
+          alp1 = prev?.generatrix?.angle_between(elm.generatrix, b.point);
+        }
+        if(acmethod_next == s2 || acmethod_next == s1) {
+          alp2 = elm.generatrix.angle_between(next?.generatrix, e.point);
+        }
+        if([1, 3].includes(inset.flipped)) {
+          alp1 = 180 - alp1;
+          alp2 = 180 - alp2;
+        }
+        if([2, 3].includes(inset.flipped)) {
+          [alp1, alp2] = [alp2, alp1];
+          [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
+        }
         calc_count_area_mass(
           row_spec,
           spec,
-          _row,
+          {alp1, alp2},
           acmethod_prev,
           acmethod_next,
-          acmethod_prev == s2 || acmethod_prev == s1 ? prev.generatrix.angle_between(elm.generatrix, b.point) : 0,
-          acmethod_next == s2 || acmethod_next == s1 ? elm.generatrix.angle_between(next.generatrix, e.point) : 0,
+          alp1,
+          alp2,
           totqty0,
         );
         len_angl.len = row_spec.len * 1000;
@@ -14326,14 +15362,11 @@ class ProductsBuilding {
           len_angl.node = 'b';
           cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
         }
-        elm.inset.calculate_spec({elm, ox, spec});
+        inset.calculate_spec({elm, ox, spec});
       }
       cnn_spec_nearest(elm);
       elm.addls.forEach(base_spec_profile);
-      elm.adjoinings.forEach((elm) => {
-        elm.inset.calculate_spec({elm, ox, spec});
-        cnn_spec_nearest(elm);
-      });
+      elm.adjoinings.forEach(base_spec_profile);
       const spec_tmp = spec;
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
         if(inset.is_order_row_prod({ox, elm})) {
@@ -14388,8 +15421,8 @@ class ProductsBuilding {
       spec = spec_tmp;
     }
     function base_spec_glass(elm) {
-      const {profiles, imposts, _row} = elm;
-      const {utils: {blank}, cat: {clrs}, cch} = $p;
+      const {profiles, imposts, inset, _row} = elm;
+      const {utils: {blank}, cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
       if(_row.clr == clrs.ignored()) {
         return;
       }
@@ -14409,8 +15442,8 @@ class ProductsBuilding {
         const len_angl = {
           angle_hor,
           angle: 0,
-          alp1: prev.profile.generatrix.angle_between(curr.profile.generatrix, curr.b),
-          alp2: curr.profile.generatrix.angle_between(next.profile.generatrix, curr.e),
+          alp1: prev.sub_path.angle_between(curr.sub_path, curr.b),
+          alp2: curr.sub_path.angle_between(next.sub_path, curr.e),
           len: row_cnn ? row_cnn.aperture_len : 0,
           origin: cnn_row(_row.elm, curr.profile.elm),
           prev,
@@ -14418,10 +15451,13 @@ class ProductsBuilding {
           curr,
         };
         (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, null, elm);
+        if(!row_cnn) {
+          elm.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
+        }
       }
       const spec_tmp0 = spec;
       let spec_tmp = spec;
-      if(elm.inset.is_order_row_prod({ox, elm})) {
+      if(inset.is_order_row_prod({ox, elm})) {
         const {bounds} = elm;
         const attrs = {
           calc_order: ox.calc_order,
@@ -14437,7 +15473,7 @@ class ProductsBuilding {
       }
       const param = cch.properties.predefined('without_glasses');
       const totqty0 = Boolean(param && ox.params.find({param, value: true}));
-      elm.inset.calculate_spec({elm, ox, spec, totqty0});
+      inset.calculate_spec({elm, ox, spec, totqty0});
       for(const lay of imposts) {
         base_spec_profile(lay, totqty0)
       }
@@ -14487,7 +15523,7 @@ class ProductsBuilding {
           origin: inset,
           cnstr: contour.cnstr
         };
-        inset.calculate_spec({elm, len_angl, ox, spec});
+        inset.calculate_spec({elm, len_angl, ox, spec, clr});
       });
       spec = spec_tmp;
     }
@@ -14528,6 +15564,9 @@ class ProductsBuilding {
         for (const elm of contour.children) {
           if(elm instanceof Filling) {
             base_spec_glass(elm);
+          }
+          if(elm instanceof ProfileGlBead) {
+            base_spec_profile(elm);
           }
           else if(elm instanceof Sectional) {
             base_spec_sectional(elm);
@@ -14572,7 +15611,7 @@ class ProductsBuilding {
       ox.calc_order.accessories('clear', ox);
       ox._order_rows = [];
       base_spec(scheme);
-      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
+      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
       scheme.draw_visualization();
       Promise.resolve()
         .then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
@@ -14614,7 +15653,14 @@ class ProductsBuilding {
               text += `\n${ox._data._err}`;
               delete ox._data._err;
             }
-            !attr.silent && $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
+            if(!attr.silent) {
+              if(err.type && err.text && err.title) {
+                $p.md.emit('alert', err);
+              }
+              else {
+                $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
+              }
+            }
           });
       }
       else {
@@ -14690,13 +15736,16 @@ class ProductsBuilding {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
+      job_prm: {debug},
       enm: {
-        predefined_formulas: {cx_clr, gb_short, gb_long, clr_in, clr_out, nom_prm},
+        predefined_formulas: {cx_clr, cx_prm, gb_short, gb_long, clr_in, clr_out, nom_prm},
         comparison_types: ct,
         plan_detailing: {algorithm},
         specification_order_row_types: {kit}
       },
       cch: {properties},
+      CatCharacteristics,
+      CatProperty_values
     } = $p;
     if(!row_spec) {
       if(row_base?.is_order_row === kit) {
@@ -14713,18 +15762,29 @@ class ProductsBuilding {
       elm = row_base.relm;
     }
     if(!row_spec.nom.visualization.empty()) {
-      row_spec.dop = -1;
+      const {cutting_optimization_type} = row_spec.nom;
+      if(cutting_optimization_type.empty() || cutting_optimization_type.is('no')) {
+        row_spec.dop = -1;
+      }
     }
-    else if(row_spec.nom.is_procedure) {
-      row_spec.dop = -2;
+    if(row_spec.nom.is_procedure) {
+      if(!row_spec.dop) {
+        row_spec.dop = -2;
+      }
+      if(!specify && elm && (row_spec.nom.elm_type.is('info') || row_spec.nom.elm_type.is('error'))) {
+        specify = elm?.nom?.article;
+      }
     }
-    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec);
+    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(origin) {
+    if(origin && debug) {
       row_spec.origin = origin;
     }
     if(specify) {
       row_spec.specify = specify;
+    }
+    if(row_base?.stage && !row_base.stage.empty()) {
+      row_spec.stage = row_base.stage;
     }
     if(row_base?.algorithm === cx_clr) {
       const clr = row_base?._clr || row_spec.clr;
@@ -14732,6 +15792,23 @@ class ProductsBuilding {
         row_spec.characteristic = cx;
         return false;
       });
+    }
+    else if(row_base?.algorithm === cx_prm && row_base._owner) {
+      const prm_row = row_base._owner._owner.selection_params.find({elm: row_base.elm, origin: algorithm});
+      if(prm_row) {
+        const pv = prm_row.param.extract_pvalue({ox, elm, prm_row});
+        if(pv instanceof CatCharacteristics && pv.owner === row_spec.nom) {
+          row_spec.characteristic = pv;
+        }
+        else if(pv instanceof CatProperty_values) {
+          characteristics.find_rows({owner: row_spec.nom}, (cx) => {
+            if(cx.params.find({param: prm_row.param, value: pv})) {
+              row_spec.characteristic = cx;
+              return false;
+            }
+          });
+        }
+      }
     }
     else {
       if(row_base) {
@@ -14955,7 +16032,13 @@ class SpecBuilding {
     });
     const kit = calc_order.accessories('clear');
     if(kit) {
-      order_rows.set(kit, kit.calc_order_row);
+      if(kit.specification.count()) {
+        order_rows.set(kit, kit.calc_order_row);
+        kit.before_save({});
+      }
+      else if(kit.calc_order_row) {
+        calc_order.production.del(kit.calc_order_row);
+      }
     }
     if(order_rows.size){
       attr.order_rows = order_rows;
@@ -15162,18 +16245,6 @@ $p.spec_building = new SpecBuilding($p);
   ];
 })($p.enm.inserts_types);
 (function({enm}){
-  enm.debit_credit_kinds.__define({
-    debit: {
-      get() {
-        return this.Приход;
-      }
-    },
-    credit: {
-      get() {
-        return this.Расход;
-      }
-    },
-  });
 	enm.open_types.__define({
     is_opening: {
       value(v) {
@@ -15256,7 +16327,8 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
 $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
   if(field === 'inset' && value != this.inset) {
     this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    this.default_params();
+    const ox = this._owner._owner;
+    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});
   }
 };
 Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
@@ -15273,7 +16345,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
     }
   },
   default_params: {
-    value: function default_params() {
+    value: function default_params(elm) {
       const {inset, clr, dop, _obj, _owner: {_owner}} = this;
       const {product_params} = inset;
       const own_row = _owner.coordinates.find({elm: _obj.elm});
@@ -15288,7 +16360,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
               params[pkey] = dop.params[pkey];
               return;
             }
-            const {value} = def;
+            const value = def.option_value({elm});
             params[pkey] = value ? value.valueOf() : value;
           }
         }
@@ -15364,11 +16436,12 @@ $p.cat.contracts.__define({
 })($p);
 $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm(layer, force=false) {
-    const {project, furn, cnstr, sys} = layer;
+    const {project, furn_set, cnstr, sys} = layer;
     const fprms = project.ox.params;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
-    const aprm = furn.furn_set.used_params();
+    const aprm = furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
+    const mprm = [];
     aprm.forEach((v) => {
       if(v == direction || v == opening){
         return;
@@ -15387,12 +16460,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         prm_row.value = drow.value;
       }
       prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
+      mprm.push(prm_row);
+    });
+    for(const prm_row of mprm) {
+      const {param} = prm_row;
       param.linked_values(param.params_links({
         grid: {selection: {cnstr: cnstr}},
         obj: {_owner: {_owner: project.ox}},
         layer,
-      }), prm_row);
-    });
+      }), prm_row); 
+    }
     const adel = [];
     fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {
       if(aprm.indexOf(row.param) == -1){
@@ -15400,6 +16477,23 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
     });
     adel.forEach((row) => fprms.del(row, true));
+  }
+  find_set(layer) {
+    const {weight, w, h} = layer;
+    const {furn_set, attrs_option} = this;
+    for(const row of attrs_option) {
+      if(row.mmin > weight || (row.mmax && row.mmax < weight)) {
+        continue;
+      }
+      try {
+        const path = row.formula.execute();
+        if(path.contains([w, h])) {
+          return row.furn_set;
+        }
+      }
+      catch (e) {}
+    }
+    return furn_set;
   }
   used_params() {
     const {_data} = this;
@@ -15435,11 +16529,19 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},
       open_directions, offset_options} = $p.enm;
     this.specification.find_rows({dop: 0}, (row_furn) => {
+      if(!row_furn.nom && row_furn._obj.nom) {
+        throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
+             Не найден объект с uid ${row_furn._obj.nom}`);
+      }
       if(!row_furn.check_restrictions(contour, cache)){
         return;
       }
       if(!exclude_dop){
         this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
+          if(!dop_row.nom && dop_row._obj.nom) {
+            throw new Error(`Фурнитура ${this.name} ${this.id} elm ${dop_row.elm} dop ${dop_row.dop} \n
+             Не найден объект с uid ${dop_row._obj.nom}`);
+          }
           if(!dop_row.check_restrictions(contour, cache)){
             return;
           }
@@ -15487,7 +16589,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 }
               }
             }
-            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row);
+            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache);
             proc_row.origin = this;
             proc_row.specify = row_furn.nom;
             proc_row.handle_height_max = contour.cnstr;
@@ -15537,13 +16639,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 res.add(sub_row);
               }
               else if(sub_row.quantity) {
-                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
                 row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row);
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache);
             row_spec.specify = row_furn.nom;
           }
         });
@@ -15555,22 +16657,22 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             res.add(sub_row);
           }
           else if(sub_row.quantity) {
-            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row);
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
             row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
         if(row_furn.quantity) {
-          this.add_with_algorithm(res, ox, contour, row_furn);
+          this.add_with_algorithm(res, ox, contour, row_furn, cache);
         }
       }
     });
     return res;
   }
-  add_with_algorithm(res, ox, contour, row_furn) {
+  add_with_algorithm(res, ox, contour, row_furn, cache) {
     const {algorithm, formula, elm, dop, offset_option} = row_furn;
-    const {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}} = $p.enm;
+    const {CatNom, enm: {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}}} = $p;
     let cx;
     if(algorithm === cx_prm) {
       cx = ox.extract_value({cnstr: contour.cnstr, param: row_furn.nom});
@@ -15585,11 +16687,43 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     else if(algorithm === clr_prm) {
       this.selection_params.find_rows({elm, dop}, (prm_row) => {
-        if((prm_row.comparison_type.empty() || prm_row.comparison_type === eq || prm_row.origin == 'algotithm') &&
-          prm_row.param.type.types.includes('cat.clrs') &&
-          (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name)) {
+        if((prm_row.origin.is('algotithm') && prm_row.param.type.types.includes('cat.clrs')) ||
+          ((prm_row.comparison_type.empty() || prm_row.comparison_type === eq) &&
+            prm_row.param.type.types.includes('cat.clrs') &&
+            (!prm_row.value || prm_row.value.empty() || prm_row.value.predefined_name))
+        ) {
           row_spec.clr = ox.extract_value({cnstr: [0, contour.cnstr], param: prm_row.param});
+          row_spec.algorithm = null;
+          return !prm_row.origin.is('algotithm');
         }
+      });
+    }
+    if(row_furn.inset && !row_furn.inset.empty() && row_spec.nom instanceof CatNom) {
+      let len = 1000;
+      if(!row_spec.nom.is_pieces && row_furn.side) {
+        const profile = contour.profile_by_furn_side(side, cache);
+        if(profile) {
+          len = profile._row.len;
+        }
+      }      
+      const row_prm = {
+        clr: row_spec.clr,
+        elm: -contour.cnstr,
+        layer: contour,
+        nom: row_spec.nom,
+        inset: row_furn.inset,
+        is_linear() {
+          return true;
+        },
+        length: len,
+        _row: {len, angle_hor: 0, s: 0, r: 0}
+      };
+      row_furn.inset.calculate_spec({
+        elm: row_prm,
+        len_angl: {len, cnstr: contour.cnstr, alp1: 0, alp2: 0, angle: 0, origin: this},
+        ox,
+        clr: row_spec.clr,
+        own_row: row_furn
       });
     }
     if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){
@@ -15612,13 +16746,31 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 };
 $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurnsSpecificationRow {
   check_restrictions(contour, cache) {
-    const {elm, dop, handle_height_min, handle_height_max, formula, side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
-    const {direction, h_ruch, cnstr} = contour;
-    if(h_ruch < handle_height_min || (handle_height_max && h_ruch > handle_height_max)){
+    const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
+      side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
+    const {direction, h_ruch, cnstr, _row: {fix_ruch}, project: {_scope}} = contour;
+    if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
+      ((handle_height_min !== -1 && handle_height_max !== -1) && ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
+      ){
       return false;
     }
-    if(!cache.ignore_formulas && !formula.empty() && formula.condition_formula && !formula.execute({ox: cache.ox, contour, row_furn: this})) {
+    if(handle_height_min === -1 && (h_ruch > handle_height_max && h_ruch < cache.height - handle_height_max)) {
       return false;
+    }
+    if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
+      return false;
+    }
+    if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
+      const res = formula.execute({ox: cache.ox, contour, row_furn: this});
+      if(formula.condition_formula && !res) {
+        return false;
+      }
+      if(res instanceof _scope.Path || res instanceof _scope.CompoundPath) {
+        const {w, h} = contour;
+        if(!res.contains([w, h])) {
+          return false;
+        }
+      }
     }
     if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {
@@ -15758,14 +16910,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           class ItemRow extends $p.DpBuyers_orderProductionRow {
             tune(ref, mf, column) {
               const {inset} = this;
-              const prm = cch.properties.get(ref);
-              if(prm && !prm.type.is_ref) {
-                Object.assign(mf.type, {}, prm.type);
+              const param = cch.properties.get(ref);
+              if(param && !param.type.is_ref) {
+                Object.assign(mf.type, {}, param.type);
               }
               if(mf.choice_params) {
                 const adel = new Set();
                 for(const choice of mf.choice_params) {
-                  if(choice.name !== 'owner' && choice.path != prm) {
+                  if(choice.name !== 'owner' && choice.path != param) {
                     adel.add(choice);
                   }
                 }
@@ -15780,20 +16932,41 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               inset.used_params().forEach((param) => {
                 !param.is_calculated && prms.add(param);
               });
-              mf.read_only = !prms.has(prm);
+              mf.read_only = !prms.has(param);
               if(!mf.read_only) {
-                const links = prm.params_links({grid: {selection: {}}, obj: this});
-                const hide = links.some((link) => link.hide);
-                if(hide && !mf.read_only) {
-                  mf.read_only = true;
+                const drow = this.inset?.product_params?.find({param});
+                if(drow) {
+                  if(drow.hide) {
+                    mf.read_only = true;
+                  }
+                  if(drow.list) {
+                    try{
+                      mf.list = JSON.parse(drow.list);
+                    }
+                    catch (e) {
+                      delete mf.list;
+                    }
+                  }
+                  const {value} = this;
+                  if(!value || value?.empty() || (mf.list && !mf.list.includes(value.valueOf()))) {
+                    this.value = drow.value;
+                  }
                 }
-                if(links.length) {
-                  const filter = {}
-                  prm.filter_params_links(filter, null, links);
-                  filter.ref && mf.choice_params.push({
-                    name: 'ref',
-                    path: filter.ref,
-                  });
+                if(!drow || !drow.list) {
+                  delete mf.list;
+                  const links = param.params_links({grid: {selection: {}}, obj: this});
+                  const hide = links.some((link) => link.hide);
+                  if(hide) {
+                    mf.read_only = true;
+                  }
+                  if(links.length) {
+                    const filter = {}
+                    param.filter_params_links(filter, null, links);
+                    filter.ref && mf.choice_params.push({
+                      name: 'ref',
+                      path: filter.ref,
+                    });
+                  }
                 }
               }
             }
@@ -16173,11 +17346,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       else{
         _data.nom = _nom;
       }
-      if(elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
+      if(strict !== 0 && elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
         elm._row.nom = _data.nom;
         const chnom = elm.layer?._attr?.chnom;
         if(chnom && !chnom.includes(elm)) {
           chnom.push(elm);
+          elm.project.register_change();
         }
       }
       return _data.nom;
@@ -16318,7 +17492,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     check_base_restrictions(row, elm) {
       const {_row} = elm;
       if(elm instanceof Filling) {
-        if(row.smin > _row.s || (_row.s && row.smax && row.smax < _row.s)){
+        const {form_area} = elm
+        if(row.smin > form_area || (form_area && row.smax && row.smax < form_area)){
           return false;
         }
         if(row instanceof CatInserts) {
@@ -16417,12 +17592,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           glass_rows.push(row);
         });
         if(glass_rows.length){
-          glass_rows.forEach((row) => {
+          glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               frow.origin = row.inset;
+              for(const {kind} of srow.nom.demand) {
+                if(kind.applying.is('region')) {
+                  frow.specify = index + 1;
+                  break;
+                }
+              }
               res.push(frow);
             }
           });
@@ -16544,25 +17725,31 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         coloring,
       } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
+      const {Основной, Соединение, СоединениеПополам} = enm.angle_calculating_ways;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
+      const own_angle_calc_method = own_row?.angle_calc_method;
       if(!spec){
         spec = ox.specification;
       }
+      let alp1, alp2;
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
         const origin = row_ins_spec._origin || this;
-        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula} = row_ins_spec;
+        let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = row_ins_spec;
         if(!coefficient) {
           coefficient = 0.001;
+        }
+        if(own_angle_calc_method && angle_calc_method == Основной) {
+          angle_calc_method = own_angle_calc_method;
         }
         let row_spec;
         if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
         if(count_calc_method === formulas && !formula.empty()){
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
@@ -16572,9 +17759,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(count_calc_method == cnns){
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
-              const {cnn} = node;
+              const {cnn, profile} = node;
+              const nlen_angl = node.len_angl();
+              if(node === b) {
+                alp1 = nlen_angl.angle;
+              }
+              else {
+                alp2 = nlen_angl.angle;
+              }
               if(cnn) {
-                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, len_angl: node.len_angl(), ox}) * coefficient;
+                row_spec.len -= cnn.nom_size({nom: row_spec.nom, elm, elm2: profile, len_angl: nlen_angl, ox}) * coefficient;
               }
             }
           }
@@ -16588,7 +17782,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             if(!perimeter) {
               perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }
-            const row_prm = {_row: {len: 0, angle_hor: 0, s: _row.s}};
+            const row_prm = {
+              clr: elm.clr,
+              layer: elm.layer,
+              _row: {len: 0, angle_hor: 0, s: _row.s}
+            };
             const {check_params} = ProductsBuilding;
             perimeter.forEach((rib) => {
               row_prm._row._mixin(rib);
@@ -16601,7 +17799,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 origin: row_ins_spec.origin || this,
                 count_calc_method,
               })){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
                 if (len_angl) {
                   len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
                   len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
@@ -16627,9 +17825,23 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   calc_qty_len(row_spec, row_ins_spec, rib.len);
                 }
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
               row_spec = null;
+              if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
+                row_prm.nom = row_ins_spec.nom;
+                row_prm.inset = row_ins_spec.inset;
+                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
+                row_ins_spec.inset.calculate_spec({
+                  elm: row_prm,
+                  len_angl: tmp_len_angl,
+                  ox,
+                  spec,
+                  clr: clr || elm.clr,
+                  own_row: row_ins_spec});
+                row_prm.nom = null;
+                row_prm.inset = null;
+              }
             });
           }
           else if(count_calc_method === steps){
@@ -16665,7 +17877,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 qty = aprop.length;
               }
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
@@ -16679,7 +17891,27 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  angle_calc_method, angle_calc_method, 0, 0, totqty0);
+                  angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
+                if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
+                  const row_prm = {
+                    clr: elm.clr,
+                    layer: elm.layer,
+                    nom: row_ins_spec.nom,
+                    inset: row_ins_spec.inset,
+                    is_linear() {
+                      return true;
+                    },
+                    _row: {len: len_angl?.len || _row.len, angle_hor: 0, s: _row.s}
+                  };
+                  const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len});
+                  row_ins_spec.inset.calculate_spec({
+                    elm: row_prm,
+                    len_angl: tmp_len_angl,
+                    ox,
+                    spec,
+                    clr: clr || elm.clr,
+                    own_row: row_ins_spec});
+                }
               }
               row_spec = null;
             }
@@ -16711,13 +17943,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, spec, ox, len_angl});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(3);
-              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, 0, 0, totqty0);
+              calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, alp1, alp2, totqty0);
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
                 elm: glass,
@@ -16754,8 +17986,20 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.qty = 0;
             }
           }
+          if(alp1 === undefined && alp2 === undefined && (angle_calc_method == Соединение || angle_calc_method == СоединениеПополам)) {
+            if(elm2 instanceof EditorInvisible.Filling && len_angl?.curr) {
+              const {curr, next, prev} = len_angl;
+              alp1 = prev.sub_path.angle_between(curr.sub_path, curr.b);
+              alp2 = curr.sub_path.angle_between(next.sub_path, curr.e);
+            }
+            else {
+              const {b, e, generatrix} = elm;
+              alp1 = b.profile?.generatrix?.angle_between(generatrix, b.point);
+              alp2 = e.profile?.generatrix?.angle_between(generatrix, e.point); 
+            }
+          }
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
-            angle_calc_method, angle_calc_method, 0, 0, totqty0);
+            angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
         }
       });
       if(spec !== ox.specification) {
@@ -16789,18 +18033,23 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
     }
     region_spec({elm, len_angl, ox, spec, region, totqty0}) {
-      const {cat: {cnns}, enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}}, products_building} = $p;
+      const {
+        enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}},
+        job_prm, products_building} = $p;
       const relm = elm.region(region);
-      const {cnn1_row: {row: row1, cnn_point: b}, cnn2_row: {row: row2, cnn_point: e}, nom, _row} = relm;
-      const cnn1 = row1 && !row1.cnn.empty() ? row1.cnn : cnns.nom_cnn(relm, b.profile, b.cnn_types, false, undefined, b)[0];
-      const cnn2 = row2 && !row2.cnn.empty() ? row2.cnn : cnns.nom_cnn(relm, e.profile, e.cnn_types, false, undefined, e)[0];
-      if(cnn1 && cnn2) {
+      let {cnn1, cnn2, nom, _row, rays} = relm;
+      const {b, e} = rays;
+      const belm = b?.profile === elm.rays.b.profile ? null : b?.profile;
+      const eelm = e?.profile === elm.rays.e.profile ? null : e?.profile;
+      cnn1 = b?.cnn;
+      cnn2 = e?.cnn;
+      if(cnn1 && !cnn1.empty() && cnn2 && !cnn2.empty()) {
         const row_cnn_prev = cnn1.main_row(relm);
         const row_cnn_next = cnn2.main_row(relm);
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
         const row_base = row_cnn_prev || row_cnn_next;
         if(row_base) {
-          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, spec, ox});
+          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, specify: region, spec, ox});
           row_spec.qty = row_base.quantity;
           const k001 = 0.001;
           const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?
@@ -16841,21 +18090,24 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           );
           const len_angl = {
             angle: 0,
-            alp1: b.profile ? b.profile.generatrix.angle_between(elm.generatrix, elm.b) : 90,
-            alp2: e.profile ? elm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
+            alp1: belm ? belm.generatrix.angle_between(elm.generatrix, elm.b) : 90,
+            alp2: eelm ? eelm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
             len: row_spec ? row_spec.len * 1000 : _row.len,
             art1: false,
             art2: true,
             node: 'e',
           };
           len_angl.angle = len_angl.alp2;
-          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, e.profile);
+          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, eelm);
           len_angl.angle = len_angl.alp1;
           len_angl.art2 = false;
           len_angl.art1 = true;
           len_angl.node = 'b';
-          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, b.profile);
+          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, belm);
         }
+      }
+      else {
+        elm.err_spec_row(job_prm.nom.cnn_node_error, `ряд №${region}, ${relm.nom.name}`, relm.inset);
       }
       this.calculate_spec({elm: relm, len_angl, ox, spec});
     }
@@ -17049,6 +18301,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     set clr_group(v) {
       this._setter('clr_group',v);
     }
+    option_clr_group({elm, ...other}) {
+      const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
+      return tmp instanceof CatValues_options ? tmp.option_value({elm, ...other}) : tmp;
+    }
   }
   $p.CatInserts = CatInserts;
 })($p);
@@ -17123,7 +18379,10 @@ $p.CatPartners.prototype.__define({
 	}
 });
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
-  const {cch: {properties}, cat: {formulas, clrs}, enm: {orientations, positions, elm_types, comparison_types: ect}, 
+  const {
+    enm: {orientations, positions, elm_types, comparison_types: ect},
+    cch: {properties},
+    cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils} = $p;
   function formulate(name) {
     const prm = properties.predefined(name);
@@ -17172,8 +18431,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'elm_weight':
           _data._formula = function (obj) {
-            const {elm} = obj || {};
-            return elm ? elm.weight : 0;
+            const {elm, prm_row, ox} = obj || {};
+            let weight = elm.weight || 0;
+            if(!weight && prm_row.origin.is('product') && ox) {
+              weight = ox.elm_weight();
+            }
+            return weight;
           };
           break;
         case 'elm_orientation':
@@ -17186,6 +18449,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
+        case 'is_composite':
+          _data._formula = function ({elm}) {
+            return elm?.clr?.is_composite();
+          };
+          break;          
         case 'elm_type':
           _data._formula = function ({elm}) {
             return elm?.elm_type || elm_types.get();
@@ -17209,6 +18477,39 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               layer = elm.layer;
             }
             return layer ? layer.h_ruch : 0;
+          };
+          break;
+        case 'height':
+            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              if(!prm_row?.origin || prm_row.origin.is('product')) {
+                return ox?.y || 0;
+              }
+              return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
+            };
+            break;
+        case 'rotation_axis':
+          _data._formula = function ({elm, layer, prm_row}) {
+            if(!layer && elm?.layer) {
+              layer = elm?.layer;
+            }
+            if(!layer) {
+              return false;
+            }
+            if(prm_row.origin.is('layer') || prm_row.origin.is('nearest')) {
+              return Boolean(layer.furn.open_tunes.find({rotation_axis: true})); 
+            }
+            let res = false;
+            layer.furn.open_tunes.find_rows({rotation_axis: true}, ({side}) => {
+              const profile = layer.profile_by_furn_side(side);
+              if(profile === elm) {
+                res = true;
+                return false;
+              }
+            });
+            return res;
           };
           break;
         case 'branch':
@@ -17249,7 +18550,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'inset',           
     'clr_inset',       
     'handle_height',   
+    'height',          
     'region',          
+    'is_composite',    
+    'rotation_axis',   
   ]) {
     formulate(name);
   }
@@ -17313,7 +18617,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return true;
           }
         }
-        const bounds = elm ? elm.bounds : layer?.bounds;
+        let bounds = elm ? elm.bounds : layer?.bounds;
+        if(!bounds && prm_row.origin.is('product') && elm?.project) {
+          bounds = elm.project.bounds;
+        }
         if(!bounds) {
           return true;
         }
@@ -17345,7 +18652,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(eclr.area_src.empty()) {
           return false;
         }
-        if(no_eclr) {
+        if(no_eclr && elm.layer?.sys) {
           const {colors} = elm.layer.sys;
           if(colors.count()) {
             if(colors.find({clr: eclr})) {
@@ -17391,6 +18698,61 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('direction');
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      prm.check_condition = function () {
+        return true;
+      };
+      prm.glasses = function ({elm, ox}) {
+        const res = [];
+        if(!ox) {
+          ox = elm?.ox;
+        }
+        const calc_order = ox?.calc_order;
+        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
+          const parts = key.split(':');
+          const row = calc_order.production.find({characteristic: parts[0]});
+          for(const glrow of row?.characteristic?.glasses || []) {
+            res.push({
+              formula: glrow.formula,
+              thickness: glrow.thickness,
+              width: glrow.width.round(1),
+              height: glrow.height.round(1),
+              area: glrow.s,
+              is_rectangular: glrow.is_rectangular,
+              is_sandwich: glrow.is_sandwich,
+              weight: row.characteristic.elm_weight(glrow.elm),
+            });
+          }
+        });
+        return res;
+      };
+      prm.products = function ({elm, ox}) {
+        const res = [];
+        if(!ox) {
+          ox = elm?.ox;
+        }
+        const calc_order = ox?.calc_order;
+        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
+          const parts = key.split(':');
+          const row = calc_order.production.find({characteristic: parts[0]});
+          if(row) {
+            res.push(row.characteristic);
+          }
+        });
+        return res.map((cx) => {
+          const weight = cx.elm_weight();
+          return {
+            width: cx.x,
+            height: cx.y,
+            area: cx.s,
+            weight,
+          };
+        });
+      };
+    }
+  })('compound');
 });
 class FakeLenAngl {
   constructor({len, inset}) {
@@ -17588,7 +18950,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
-    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.date).round(rounding);
+    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.price_date).round(rounding);
     if (errors.size) {
       let critical, text = '';
       errors.forEach((errors, characteristic) => {
@@ -17737,6 +19099,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         .catch(() => null);
       return rev.then(() => db.bulkDocs(sobjs));
     };
+    let fin = Promise.resolve();
     return !sobjs.length ? unused() : bulk()
       .then((bres) => {
         for(const row of bres) {
@@ -17746,10 +19109,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           if(row.ok) {
             if(mgr) {
               if(o) {
-                o._obj._rev = row.rev;
+                const {_data, _obj} = o;
+                _obj._rev = row.rev;
                 o.after_save();
-                mgr.emit_promise('after_save', o)
-                  .then(() => o._modified = false);
+                _data._modified = false;
+                _data._saving = 0;
+                _data._saving_trans = false;
+                fin = fin.then(() => mgr.emit_promise('after_save', o));
               }
             }
           }
@@ -17764,7 +19130,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             throw err;
           }
         }
-        return unused();
+        return fin.then(unused);
       })
       .catch((err) => {
         if(err.obj) {
@@ -17829,7 +19195,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(crow?.characteristic && ox) {
         crow.characteristic.specification.clear({specify: ox});
       }
-      return crow?.characteristic;
+      if(crow?.characteristic && !crow.characteristic.empty()) {
+        crow.characteristic.calc_order = this;
+        return crow.characteristic;
+      }
+      return;
     }
     let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
     if(!cx) {
@@ -17837,6 +19207,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         calc_order: this,
         owner: nom.accessories,
       }, false, true);
+    }
+    if(cx._deleted) {
+      cx._obj._deleted = false;
     }
     if(!crow) {
       crow = production.add({
@@ -17853,7 +19226,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {nom, characteristic} = row;
       const {ui, job_prm} = $p;
-      if(nom === job_prm.nom.accessories) {
+      if(nom === job_prm.nom.accessories && characteristic.specification.count()) {
         ui?.dialogs?.alert({
           html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
           title: this.presentation,
@@ -17885,7 +19258,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             cx.specification.clear({specify: characteristic});
             cx.weight = cx.elm_weight();
             cx.name = cx.prod_name();
+          }
+          if(cx.specification.count()) {
             prow.value_change('quantity', 'update', 1);
+          }
+          else {
+            production.del(prow);
           }
         });
         orders.forEach(({invoice}) => {
@@ -17895,7 +19273,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
-        this.accessories('clear', characteristic);
         _data._loading = _loading;
       }
     }
@@ -17938,13 +19315,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return branch;
   }
+  set branch(v) {
+  }
   get price_date() {
     const {utils, job_prm: {pricing}} = $p;
     const {date} = this;
     const fin = utils.moment(date).add(pricing.valid_days || 0, 'days').endOf('day').toDate();
     const curr = new Date();
     const tmp = curr > fin ? curr : new Date(date.valueOf());
-    tmp.setHours(23, 59, 59);
+    tmp.setHours(23, 59, 59, 999);
     return tmp;
   }
   get contract() {
@@ -18387,8 +19766,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
-          if(!characteristic.empty()) {
-            if((!nom.is_procedure && !nom.is_accessory) || characteristic.specification.count() || characteristic.constructions.count() || characteristic.coordinates.count()){
+          if(!characteristic.empty() && !characteristic.is_new()) {
+            if(forse || (!nom.is_procedure && !nom.is_accessory) || characteristic.specification.count() || characteristic.constructions.count() || characteristic.coordinates.count()){
               prod.push(characteristic);
             }
           }
@@ -18513,6 +19892,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
+            this.accessories('clear', row_prod.characteristic);
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
             row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,dop', 'qty,totqty,totqty1');
             row_dp.characteristic = row_prod.characteristic;
@@ -18542,6 +19922,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const {dp} = attr;
     return this.load_linked_refs()
       .then(() => {
+        const accessories = this.accessories('clear');
+        if(accessories) {
+          accessories.specification.clear();
+        }
         this.production.forEach((row) => {
           const {characteristic: cx} = row;
           if(cx.empty() || cx.calc_order !== this) {

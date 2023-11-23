@@ -92,7 +92,13 @@ class SpecBuilding {
     // если существует строка аксессуаров, добавляем её в order_rows
     const kit = calc_order.accessories('clear');
     if(kit) {
-      order_rows.set(kit, kit.calc_order_row);
+      if(kit.specification.count()) {
+        order_rows.set(kit, kit.calc_order_row);
+        kit.before_save({});
+      }
+      else if(kit.calc_order_row) {
+        calc_order.production.del(kit.calc_order_row);
+      }
     }
     if(order_rows.size){
       attr.order_rows = order_rows;

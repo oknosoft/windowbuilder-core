@@ -34,7 +34,7 @@ class Profile extends ProfileItem {
     super(attr);
 
     if(this.parent) {
-      const {project: {_scope}, observer} = this;
+      const {project: {_scope}, observer, layer} = this;
 
       // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
       this.observer = observer.bind(this);
@@ -46,22 +46,26 @@ class Profile extends ProfileItem {
       // ищем и добавляем доборные профили
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
-        const {elm_types} = $p.enm;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
           // добор
-          if(row.elm_type === elm_types.addition) {
+          if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
           // примыкание
-          else if(row.elm_type === elm_types.adjoining) {
+          else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});
           }
           // связка (чулок)
-          else if(row.elm_type === elm_types.bundle) {
+          else if(row.elm_type.is('bundle')) {
             new ProfileSegment({row, parent: this});
+          }
+          // штапик
+          else if(row.elm_type.is('glbead')) {
+            new ProfileGlBead({row, parent: layer, profile: this});
           }
         });
       }
+      this.auto_insets();
     }
   }
 
@@ -72,7 +76,7 @@ class Profile extends ProfileItem {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 -= nearest.d2 + (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 20);
+        _attr.d0 = this.offset - nearest.d2 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
@@ -123,12 +127,15 @@ class Profile extends ProfileItem {
       if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
         return;
       }
+      if(elm.is_linear() !== this.is_linear()) {
+        return;
+      }
       let {generatrix} = elm;
       if(elm.elm_type === $p.enm.elm_types.Импост) {
         const pb = elm.cnn_point('b').profile;
         const pe = elm.cnn_point('e').profile;
         if(pb && pb.nearest(true) || pe && pe.nearest(true)) {
-          generatrix = generatrix.clone({insert: false}).elongation(100);
+          generatrix = generatrix.clone({insert: false}).elongation(200);
         }
       }
       let is_nearest = [];
@@ -187,8 +194,7 @@ class Profile extends ProfileItem {
         _attr._nearest = null;
       }
     });
-
-    if(layer && !check_nearest(_attr._nearest)) {
+    if(layer && (!_attr._nearest || !check_nearest(_attr._nearest))) {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
       }
@@ -443,6 +449,23 @@ class Profile extends ProfileItem {
   }
 
   /**
+   * @summary Добавляет автовставки
+   * @desc обычные и вставки рядов
+   */
+  auto_insets() {
+    const {inset, elm, layer, ox} = this;
+    ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
+      if(row.key.check_condition({elm: this, ox, layer})) {
+        const key = {cnstr: -elm, inset: row.inset, region: row.inset.region};
+        if(!ox.inserts.find(key)) {
+          const irow = ox.inserts.add(key);
+          row.inset.clr_group.default_clr(irow);
+        }
+      }
+    });
+  }
+
+  /**
    * Возвращает виртуальный профиль ряда, вставка и соединения которого, заданы в отдельных свойствах
    * DataObj, транслирующий свойства допвставки через свойства элемента
    * @param num {Number}
@@ -450,7 +473,17 @@ class Profile extends ProfileItem {
    */
   region(num) {
     const {_attr, rays, layer: {_ox}, elm} = this;
-    const {cat: {cnns, inserts}, utils} = $p;
+    const {cat: {cnns, inserts}, utils, enm} = $p;
+    const trunc = Math.trunc(num);
+    let fraction = Math.abs(num - trunc);
+    if(fraction) {
+      
+    }    
+    const irow = _ox.inserts.find({cnstr: -elm, region: num});
+    
+    if(!irow) {
+      return this;
+    }
 
     // параметры выбора для ряда
     function cnn_choice_links(elm1, o, cnn_point) {
@@ -463,7 +496,7 @@ class Profile extends ProfileItem {
     // возаращает строку соединяемых элементов для ряда
     function cn_row(prop, add) {
       let node1 = prop === 'cnn1' ? 'b' : (prop === 'cnn2' ? 'e' : '');
-      const cnn_point = rays[node1] || {};
+      const cnn_point = rays?.[node1] || {};
       const {profile, profile_point} = cnn_point;
       node1 += num;
       const node2 = profile_point ? (profile_point + num) : `t${num}`;
@@ -478,65 +511,173 @@ class Profile extends ProfileItem {
     if(!_attr._ranges) {
       _attr._ranges = new Map();
     }
-    if(!_attr._ranges.get(num)) {
+    if(!_attr._ranges.has(num)) {
+      const __attr = {_corns: []};
+      const nearest = () => this;
       _attr._ranges.set(num, new Proxy(this, {
         get(target, prop, receiver) {
           switch (prop){
-          case 'cnn1':
-          case 'cnn2':
-          case 'cnn3':
-            if(!_attr._ranges.get(`cnns${num}`)) {
-              _attr._ranges.set(`cnns${num}`, {});
+            case '_attr':
+              return __attr;
+            case 'cnn1':
+            case 'cnn2':
+            case 'cnn3':
+              if (!_attr._ranges.get(`cnns${num}`)) {
+                _attr._ranges.set(`cnns${num}`, {});
+              }
+              const cn = _attr._ranges.get(`cnns${num}`);
+              const proxy_point = __attr?._rays?.[prop === 'cnn1' ? 'b' : 'e'];
+              if (!cn[prop] || cn[prop].empty()) {
+                const {row, cnn_point} = cn_row(prop, 0);
+                const pregion = cnn_point?.profile?._attr?._ranges?.get(num);
+                if(row && prop !== 'cnn3' && proxy_point && !pregion) {
+                  proxy_point.profile = null;
+                  proxy_point.profile_point = '';
+                  proxy_point.cnn_types = enm.cnn_types.acn.i;
+                  if(!proxy_point.cnn_types.includes(row.cnn.cnn_type)) {
+                    row.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);  
+                  }
+                  proxy_point.cnn = row.cnn;
+                }
+                else if(row) {
+                  cn[prop] = row.cnn;
+                  if(proxy_point) {
+                    proxy_point.cnn = row.cnn;
+                  }
+                }
+                else if(prop !== 'cnn3' && proxy_point) {
+                  if(pregion) {
+                    const {profile} = proxy_point;
+                    proxy_point.profile_point = cnn_point?.profile_point || '';
+                    proxy_point.cnn_types = cnn_point?.cnn_types;
+                    const side = profile?.parent_elm?.cnn_side?.(target);
+                    proxy_point.cnn = cnns.region_cnn({region: trunc, elm1: receiver, elm2: [{profile, side}], cnn_types: proxy_point.cnn_types});
+                  }
+                  else {
+                    proxy_point.profile = null;
+                    proxy_point.profile_point = '';
+                    proxy_point.cnn_types = enm.cnn_types.acn.i;
+                    proxy_point.cnn = cnns.elm_cnn(receiver, null, proxy_point.cnn_types, null, false, false, proxy_point);
+                  }
+                  cn[prop] = cnns.get();
+                }
+              }
+              else {
+                proxy_point.cnn = cn[prop];
+              }
+              return cn[prop];
+
+            case 'cnn1_row':
+            case 'cnn2_row':
+            case 'cnn3_row':
+              return cn_row(prop.substring(0, 4), 0);
+
+            case 'rnum':
+              return trunc;
+              
+            case 'irow':
+              return irow;
+
+            case 'inset':
+              return irow.inset;
+
+            case 'nom':
+              return receiver.inset.nom(receiver, 0);
+
+            case 'ref': {
+              const {nom} = receiver;
+              return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
             }
-            const cn = _attr._ranges.get(`cnns${num}`);
-            if(!cn[prop]) {
-              const row = cn_row(prop);
-              cn[prop] = row ? row.cnn : cnns.get();
+
+            case 'sizeb':
+              return BuilderElement.prototype.get_sizeb.call(receiver);
+              
+            case 'd0': {
+              let {_nearest_cnn} = __attr;
+              if(!_nearest_cnn?.check_nom1(receiver.nom) || !_nearest_cnn?.check_nom2(target.nom)) {
+                const {cnn3} = receiver;
+                if(cnn3?.check_nom1(receiver.nom) && cnn3?.check_nom2(target.nom)) {
+                  __attr._nearest_cnn = _nearest_cnn = cnn3;
+                }
+                else {
+                  __attr._nearest_cnn = _nearest_cnn = cnns.elm_cnn(receiver, target, enm.cnn_types.acn.ii, null, true);
+                }
+              }
+              return target.d0 + (_nearest_cnn?.size(receiver, target, trunc) || 0);
             }
-            return cn[prop];
-
-          case 'cnn1_row':
-          case 'cnn2_row':
-          case 'cnn3_row':
-            return cn_row(prop.substr(0, 4), 0);
-
-          case 'rnum':
-            return num;
-
-          case 'irow':
-            return _ox.inserts.find({cnstr: -elm, region: num});
-
-          case 'inset':
-            const {irow} = receiver;
-            return irow ? irow.inset : inserts.get();
-
-          case 'nom':
-            return receiver.inset.nom(receiver);
-
-          case 'ref':
-            const {nom} = receiver;
-            return nom && !nom.empty() ? nom.ref : receiver.inset.ref;
-
-          case '_metadata':
-            const meta = target.__metadata(false);
-            const {fields} = meta;
-            const {cnn1, cnn2} = fields;
-            const {b, e} = rays;
-            delete cnn1.choice_links;
-            delete cnn2.choice_links;
-            cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
-            cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
-            return meta;
-
-          case 'parent_elm':
-            return target;
-
-          default:
-            let prow;
-            if(utils.is_guid(prop)) {
-              prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+              
+            case 'd1':
+              return -(receiver.d0 - receiver.sizeb);
+              
+            case 'd2':
+              return receiver.d1 - receiver.width;
+              
+            case 'width':
+              return receiver.nom?.width || target.width;
+              
+            case 'rays': {
+              if(!__attr._rays) {
+                __attr._rays = new ProfileRays(receiver);
+              }
+              const {_rays} = __attr;
+              if(!_rays.inner.segments.length || !_rays.outer.segments.length) {
+                _rays.recalc();
+              }
+              _rays.b._profile = rays.b._profile?.region?.(num);
+              _rays.e._profile = rays.e._profile?.region?.(num);
+              receiver.cnn1;
+              receiver.cnn2;
+              return _rays;
             }
-            return prow ? prow.value : target[prop];
+
+            case 'path': {
+              // получаем узлы
+              const {generatrix, rays} = receiver;
+              //rays.recalc();
+              const {_corns} = __attr;
+              _corns.length = 0;
+              // получаем соединения концов профиля и точки пересечения с соседями
+              ProfileItem.prototype.path_points.call(receiver, rays.b, 'b', []);
+              ProfileItem.prototype.path_points.call(receiver, rays.e, 'e', []);
+              const {paths} = _attr;
+              if(!paths.has(num)) {
+                paths.set(num, Object.assign(new paper.Path({parent: target}), ProfileItem.path_attr));
+              }
+              const path = paths.get(num);
+              path.removeSegments();
+              path.addSegments([_corns[1], _corns[2], _corns[3], _corns[4]]);
+              path.closePath();
+              path.fillColor = BuilderElement.clr_by_clr.call(target, receiver.clr);
+              return path;
+            }
+            
+            case 'clr':
+              return irow.clr.empty() ? target.clr : irow.clr; 
+            
+            case '_metadata': {
+              const meta = target.__metadata(false);
+              const {fields} = meta;
+              const {cnn1, cnn2} = fields;
+              const {b, e} = receiver.rays;
+              delete cnn1.choice_links;
+              delete cnn2.choice_links;
+              cnn1.list = cnns.nom_cnn(receiver, b.profile, b.cnn_types, false, undefined, b);
+              cnn2.list = cnns.nom_cnn(receiver, e.profile, e.cnn_types, false, undefined, e);
+              return meta;
+            }
+
+            case 'parent_elm':
+              return target;
+              
+            case 'nearest':
+              return nearest;
+
+            default:
+              let prow;
+              if (utils.is_guid(prop)) {
+                prow = _ox.params.find({param: prop, cnstr: -elm, region: num});
+              }
+              return prow ? prow.value : target[prop];
           }
         },
 
@@ -551,6 +692,10 @@ class Profile extends ProfileItem {
             if(row.cnn !== cn[prop]) {
               row.cnn = cn[prop];
             }
+            break;
+
+          case 'clr':
+            irow.clr = val;
             break;
 
           default:
@@ -569,6 +714,104 @@ class Profile extends ProfileItem {
     }
     return _attr._ranges.get(num);
   }
+
+  /**
+   * Подписи профилей в отдельном методе
+   * @return {Profile}
+   */
+  draw_articles() {
+    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, inset, nom, angle_hor} = this;
+    if(articles && nom.width > 2) {
+      const ray = layer.layer ? inner : outer;
+      const offset = ray.length / 2;
+      const p0 = ray.getPointAt(offset);
+      const font_move = nom.width > 30 ? consts.font_size / 2.2 : -consts.font_size / 1.3;
+      const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
+      let flip = false;
+      let angle = angle_hor;
+      if(Math.abs(angle - 180) < 1) {
+        angle = 0;
+        flip = true;
+      }
+      else if(Math.abs(angle - 90) < 1) {
+        angle = -90;
+        //flip = true;
+      }
+      else if(Math.abs(angle - 270) < 1) {
+        flip = true;
+      }
+      let content = '→ ', c2 = ' ←';
+      switch (articles) {
+        case 1:
+          if(flip) {
+            content = elm.toFixed() + c2;
+          }
+          else {
+            content += elm.toFixed();
+          }
+          break;
+        case 2:
+          if(flip) {
+            content = (inset.article || inset.name) + c2;
+          }
+          else {
+            content += inset.article || inset.name;
+          }
+          break;
+        case 3:
+          if(flip) {
+            content = (nom.article || nom.name) + c2;
+          }
+          else {
+            content += nom.article || nom.name;
+          }
+          break;
+        case 4:
+          if(flip) {
+            content = `${elm.toFixed()} ${inset.article || inset.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${inset.article || inset.name}`;
+          }
+          break;
+        case 5:
+          if(flip) {
+            content = `${elm.toFixed()} ${nom.article || nom.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${nom.article || nom.name}`;
+          }
+          break;
+      }
+
+      if(!children.articles) {
+        children.articles = new TextUnselectable({
+          parent: this,
+          guide: true,
+          fillColor: 'black',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * .9,
+          justification: 'center',
+        });
+      }
+      children.articles.content = content;
+      children.articles.position = position;
+      children.articles.rotation = angle;
+    }
+    else {
+      if(children.articles) {
+        children.articles.remove();
+        children.articles = null;
+      }
+    }
+    return this;
+  }
+  
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
+  }
+  
 }
 
 EditorInvisible.Profile = Profile;

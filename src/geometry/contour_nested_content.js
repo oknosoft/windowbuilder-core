@@ -34,6 +34,7 @@ class ContourNestedContent extends Contour {
    */
   load_stamp({contour, delta, map}) {
     const {_ox: ox, project} = this;
+    const {glass_specification} = contour._ox;
     project._scope.activate();
 
     for(const proto of contour.profiles) {
@@ -50,11 +51,18 @@ class ContourNestedContent extends Contour {
     for(const proto of contour.glasses(false, true)) {
       const path = proto.generatrix.clone({insert: false});
       path.translate(delta);
+      const elm = map.get(proto.elm);
       new Filling({
         parent: this,
         path,
         proto: {inset: proto.inset, clr: proto.clr},
-        elm: map.get(proto.elm),
+        elm,
+      });
+      ox.glass_specification.clear({elm});
+      glass_specification.find_rows({elm: proto.elm}, (trow) => {
+        const gproto = Object.assign({}, trow._obj);
+        gproto.elm = elm;
+        ox.glass_specification.add(gproto);
       });
     }
 
@@ -63,7 +71,7 @@ class ContourNestedContent extends Contour {
       if(row && row.parent === this.cnstr) {
         const sub = Contour.create({project, row, parent: this, ox});
         sub.load_stamp({contour: proto, delta, map})
-      };
+      }
     }
   }
 
