@@ -19660,6 +19660,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const {dp} = attr;
     return this.load_linked_refs()
       .then(() => {
+        const accessories = this.accessories('clear');
+        if(accessories) {
+          accessories.specification.clear();
+        }
         this.production.forEach((row) => {
           const {characteristic: cx} = row;
           if(cx.empty() || cx.calc_order !== this) {
