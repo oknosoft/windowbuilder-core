@@ -17036,7 +17036,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
           for (const param of params) {
-            if(with_scheme) {
+            if(with_scheme && job_prm.addition_scheme) {
               cat.scheme_settings.find_rows({obj: 'dp.buyers_order.production', name: item.name}, (scheme) => {
                 if(!scheme.fields.find({field: param.ref})) {
                   const row = scheme.fields.add({
