@@ -18417,11 +18417,33 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'inset':
           _data._formula = function ({elm, prm_row, ox, row}) {
-            if(prm_row && prm_row.origin === prm_row.origin._manager.nearest && elm instanceof EditorInvisible.Filling){
+            if(prm_row?.origin?.is('nearest')){
+              if(elm instanceof $p.EditorInvisible.Filling) {
+                const res = new Set();
+                ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+                  if(row && inset !== row._owner?._owner) {
+                    res.add(inset);
+                  }
+                });
+                return Array.from(res);
+              }
+              else {
+                const nearest = elm?.nearest?.();
+                if(nearest) {
+                  return nearest.inset;
+                }
+              }
+            }
+            return elm?.inset;
+          };
+          break;
+        case 'inserts_glass_type':
+          _data._formula = function ({elm, prm_row, ox, row}) {
+            if(elm instanceof $p.EditorInvisible.Filling) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
-                if(row && row._owner && inset !== row._owner._owner) {
-                  res.add(inset);
+                if(!inset.insert_glass_type.empty()) {
+                  res.add(inset.insert_glass_type);
                 }
               });
               return Array.from(res);
@@ -18548,6 +18570,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',          
     'width',           
     'inset',           
+    'inserts_glass_types', 
     'clr_inset',       
     'handle_height',   
     'height',          
