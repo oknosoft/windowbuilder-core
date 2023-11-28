@@ -18570,7 +18570,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',          
     'width',           
     'inset',           
-    'inserts_glass_types', 
+    'inserts_glass_type', 
     'clr_inset',       
     'handle_height',   
     'height',          

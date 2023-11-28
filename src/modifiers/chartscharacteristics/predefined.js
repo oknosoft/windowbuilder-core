@@ -226,7 +226,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',           // отдел абонента текущего контекста
     'width',            // ширина из параметра
     'inset',            // вставка текущего элемента
-    'inserts_glass_types',  // тип вставки заполнения
+    'inserts_glass_type',  // тип вставки заполнения
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
     'height',           // высота слоя или изделия
