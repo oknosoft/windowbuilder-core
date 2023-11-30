@@ -632,6 +632,8 @@ set hide(v){this._setter_ts('hide',v)}
 
     case comparison_types.in:
     case comparison_types.nin:
+    case comparison_types.lke:
+    case comparison_types.nlk:
 
       if(value instanceof CatColor_price_groups) {
         return value.clrs();
