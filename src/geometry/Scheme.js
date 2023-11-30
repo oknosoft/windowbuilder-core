@@ -5,9 +5,12 @@ import {Contour} from './Contour';
 
 export class Scheme extends paper.Project {
   
-  constructor(...attr) {
-    super(...attr);
+  constructor(attr, root) {
+    super(attr);
     Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
+    if(root) {
+      Object.defineProperty(this, 'root', {value: root});
+    }
   }
 
   get activeLayer() {

@@ -22,7 +22,7 @@ export const meta = {
       tooltip: "Указывается тип, к которому относится номенклатура данного вида.",
       choiceGrp: "elm",
       mandatory: true,
-      type: {types: ["enm.nom_types"]}
+      type: {types: ["enm.nomTypes"]}
     },
     dnom: {
       synonym: "Набор свойств номенклатура",
@@ -42,7 +42,7 @@ export const meta = {
       synonym: "Группа",
       multiline: false,
       tooltip: "",
-      type: {types: ["cat.nom_kinds"]}
+      type: {types: ["cat.nomKinds"]}
     }
   },
   tabulars: {},

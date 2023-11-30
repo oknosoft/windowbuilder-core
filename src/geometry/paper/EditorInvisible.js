@@ -11,12 +11,15 @@ export class EditorInvisible extends paper.PaperScope {
     this.settings.handleSize = 10;
     this.history = new History(this);
   }
-  
+
+
   /**
    * Создаёт проект с заданным типом канваса
-   * @param format
+   * @param {HTMLCanvasElement} canvas
+   * @param {MetaEngine} root
+   * @return {Scheme}
    */
-  createScheme(canvas) {
+  createScheme(canvas, root) {
     const {view, projects} = this;
     if(!canvas) {
       canvas = document.createElement('CANVAS');
@@ -26,7 +29,7 @@ export class EditorInvisible extends paper.PaperScope {
     while(projects.length && !(projects[0] instanceof Scheme)) {
       projects[0].remove();
     }
-    const project = projects.length ? projects[0] : new Scheme(canvas);
+    const project = projects.length ? projects[0] : new Scheme(canvas, root);
     if(!this.tool) {
       const tool = new ToolSelect();
       tool.activate();

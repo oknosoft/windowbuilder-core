@@ -29,9 +29,21 @@ export class BuilderElement extends paper.Group {
     if(owner) {
       this.#raw.owner = owner;
     }
-    if(inset) {
-      this.#raw.inset = inset;
+    if(!inset) {
+      inset = this.root.cat.inserts.get();
     }
+    else if(typeof inset === "string") {
+      inset = this.root.cat.inserts.get(inset);
+    }
+    this.#raw.inset = inset;
+  }
+
+  /**
+   * Корень метадаты
+   * @type {MetaEngine}
+   */
+  get root() {
+    return this.project.root;
   }
 
   /**
