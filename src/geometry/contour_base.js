@@ -2400,17 +2400,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.draw_opening();
 
     // перерисовываем вложенные контуры
-    const children = this.contours.concat(this.tearings);
-    //const left = this.children.filter((elm) => !children.includes(elm));
-    for(const elm of children) {
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
-      // if(!elm.flipped) {
-      //   for(const lelm of left) {
-      //     if(lelm.isAbove(elm)) {
-      //       lelm.insertBelow(elm);
-      //     }
-      //   }
-      // }
     }
 
     if(!_attr._hide_errors) {
@@ -2580,8 +2571,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       this._row.by_contour(this);
     }
     else {
-      const push = (contour) => {
-        res = res.then(() => contour.save_coordinates(short, save, close));
+      const push = (elm) => {
+        res = res.then(() => elm.save_coordinates(short, save, close));
       };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
@@ -2589,13 +2580,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
 
       // запись в таблице координат, каждый элемент пересчитывает самостоятельно
-      const {l_text, l_dimensions} = this;
       for (let elm of this.children) {
         if (elm.save_coordinates) {
           push(elm);
-        }
-        else if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
       res = res.then(() => this._row.by_contour(this));

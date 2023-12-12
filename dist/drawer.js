@@ -1595,7 +1595,14 @@ class PointMap extends Map {
     }
   }
 }
-class GroupVisualization extends paper.Group {
+class LayerGroup extends paper.Group {
+  save_coordinates(short, save, close) {
+    for (let elm of this.children) {
+      elm.save_coordinates?.(short, save, close);
+    }
+  }
+}
+class GroupVisualization extends LayerGroup {
   constructor(attr) {
     super(attr);
     new paper.Group({parent: this, name: 'by_insets'});
@@ -1608,8 +1615,8 @@ class GroupVisualization extends paper.Group {
     return this.children.by_spec;
   }
 }
-class GroupLayers extends paper.Group {}
-class GroupProfiles extends paper.Group {
+class GroupLayers extends LayerGroup {}
+class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;
   }
@@ -1617,8 +1624,8 @@ class GroupProfiles extends paper.Group {
     this.layer.on_remove_elm(elm);
   }
 }
-class GroupFillings extends paper.Group {}
-class GroupText extends paper.Group {}
+class GroupFillings extends LayerGroup {}
+class GroupText extends LayerGroup {}
 const AbstractFilling = (superclass) => class extends superclass {
   is_pos(pos) {
     if(this.project.contours.count == 1 || this.parent){
@@ -3443,8 +3450,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     this.glass_recalc();
     this.draw_opening();
-    const children = this.contours.concat(this.tearings);
-    for(const elm of children) {
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
     }
     if(!_attr._hide_errors) {
@@ -3563,19 +3569,15 @@ class Contour extends AbstractFilling(paper.Layer) {
       this._row.by_contour(this);
     }
     else {
-      const push = (contour) => {
-        res = res.then(() => contour.save_coordinates(short, save, close));
+      const push = (elm) => {
+        res = res.then(() => elm.save_coordinates(short, save, close));
       };
       if(!this.hidden) {
         this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());
       }
-      const {l_text, l_dimensions} = this;
       for (let elm of this.children) {
         if (elm.save_coordinates) {
           push(elm);
-        }
-        else if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
       res = res.then(() => this._row.by_contour(this));
@@ -3835,8 +3837,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     return handle_height;
   }
   get h_ruch() {
-    const {layer, _row} = this;
-    return layer ? _row.h_ruch : 0;
+    const {layer, furn, _row} = this;
+    if(!layer) {
+      return 0;  
+    }
+    if(!furn.handle_side && furn.shtulp_kind() === 2) {
+      for(const contour of layer.contours) {
+        if(contour !== this && contour.furn.shtulp_kind() === 1) {
+          return contour.h_ruch;
+        }
+      }      
+    }
+    return _row.h_ruch;
   }
   set h_ruch(v) {
     const {layer, _row, project} = this;
@@ -6100,13 +6112,17 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     for(let i=0; i<length; i++ ){
       curr = profiles[i];
-      if(!curr.profile || !curr.profile._row || !curr.cnn){
+      if(!curr.profile || !curr.profile._row){
         if($p.job_prm.debug) {
-          throw new ReferenceError('Не найдено ребро заполнения');
+          console.error('Не найдено ребро заполнения');
         }
-        else {
-          return;
+        return;
+      }
+      if(!curr.cnn){
+        if($p.job_prm.debug) {
+          console.error(`Не найдено примыкающее соединение для заполнения №${_row.elm}`);
         }
+        return;
       }
       curr.aperture_path = curr.profile.generatrix.get_subpath(curr.b, curr.e)._reversed ?
         curr.profile.rays.outer : curr.profile.rays.inner;
@@ -18155,11 +18171,33 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'inset':
           _data._formula = function ({elm, prm_row, ox, row}) {
-            if(prm_row && prm_row.origin === prm_row.origin._manager.nearest && elm instanceof EditorInvisible.Filling){
+            if(prm_row?.origin?.is('nearest')){
+              if(elm instanceof $p.EditorInvisible.Filling) {
+                const res = new Set();
+                ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+                  if(row && inset !== row._owner?._owner) {
+                    res.add(inset);
+                  }
+                });
+                return Array.from(res);
+              }
+              else {
+                const nearest = elm?.nearest?.();
+                if(nearest) {
+                  return nearest.inset;
+                }
+              }
+            }
+            return elm?.inset;
+          };
+          break;
+        case 'inserts_glass_type':
+          _data._formula = function ({elm, prm_row, ox, row}) {
+            if(elm instanceof $p.EditorInvisible.Filling) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
-                if(row && row._owner && inset !== row._owner._owner) {
-                  res.add(inset);
+                if(!inset.insert_glass_type.empty()) {
+                  res.add(inset.insert_glass_type);
                 }
               });
               return Array.from(res);
@@ -18286,6 +18324,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',          
     'width',           
     'inset',           
+    'inserts_glass_type', 
     'clr_inset',       
     'handle_height',   
     'height',          

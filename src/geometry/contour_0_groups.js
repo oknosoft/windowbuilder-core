@@ -212,7 +212,15 @@ class PointMap extends Map {
   }
 }
 
-class GroupVisualization extends paper.Group {
+class LayerGroup extends paper.Group {
+  save_coordinates(short, save, close) {
+    for (let elm of this.children) {
+      elm.save_coordinates?.(short, save, close);
+    }
+  }
+}
+
+class GroupVisualization extends LayerGroup {
   constructor(attr) {
     super(attr);
     new paper.Group({parent: this, name: 'by_insets'});
@@ -227,8 +235,8 @@ class GroupVisualization extends paper.Group {
     return this.children.by_spec;
   }
 }
-class GroupLayers extends paper.Group {}
-class GroupProfiles extends paper.Group {
+class GroupLayers extends LayerGroup {}
+class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;
   }
@@ -236,7 +244,7 @@ class GroupProfiles extends paper.Group {
     this.layer.on_remove_elm(elm);
   }
 }
-class GroupFillings extends paper.Group {}
-class GroupText extends paper.Group {}
+class GroupFillings extends LayerGroup {}
+class GroupText extends LayerGroup {}
 
 

@@ -53,11 +53,37 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           _data._formula = function ({elm, prm_row, ox, row}) {
 
             // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
-            if(prm_row && prm_row.origin === prm_row.origin._manager.nearest && elm instanceof EditorInvisible.Filling){
+            if(prm_row?.origin?.is('nearest')){
+              if(elm instanceof $p.EditorInvisible.Filling) {
+                const res = new Set();
+                ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+                  if(row && inset !== row._owner?._owner) {
+                    res.add(inset);
+                  }
+                });
+                return Array.from(res);
+              }
+              else {
+                const nearest = elm?.nearest?.();
+                if(nearest) {
+                  return nearest.inset;
+                }
+              }
+            }
+            
+            return elm?.inset;
+          };
+          break;
+
+        case 'inserts_glass_type':
+          _data._formula = function ({elm, prm_row, ox, row}) {
+
+            // если запросили вставку состава заполнения, возвращаем массив
+            if(elm instanceof $p.EditorInvisible.Filling) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
-                if(row && row._owner && inset !== row._owner._owner) {
-                  res.add(inset);
+                if(!inset.insert_glass_type.empty()) {
+                  res.add(inset.insert_glass_type);
                 }
               });
               return Array.from(res);
@@ -66,7 +92,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.inset;
           };
           break;
-
+            
         case 'elm_weight':
           _data._formula = function (obj) {
             const {elm, prm_row, ox} = obj || {};
@@ -200,6 +226,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',           // отдел абонента текущего контекста
     'width',            // ширина из параметра
     'inset',            // вставка текущего элемента
+    'inserts_glass_type',  // тип вставки заполнения
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
     'height',           // высота слоя или изделия
