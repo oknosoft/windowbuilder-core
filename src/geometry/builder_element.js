@@ -24,10 +24,10 @@ class BuilderElement extends paper.Group {
   constructor(attr) {
 
     super(attr);
-    if(attr.parent){
+    if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent){
+    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
       this.parent = attr.proto.parent;
     }
 
@@ -151,7 +151,7 @@ class BuilderElement extends paper.Group {
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
 
-      if(this.layer && this.layer.parent){
+      if(this.layer?.layer){
         _attr.generatrix.guide = true;
       }
     }
