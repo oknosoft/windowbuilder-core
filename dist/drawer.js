@@ -712,10 +712,10 @@ EditorInvisible.AbstractFilling = AbstractFilling;
 class BuilderElement extends paper.Group {
   constructor(attr) {
     super(attr);
-    if(attr.parent){
+    if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent){
+    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
       this.parent = attr.proto.parent;
     }
     if(!attr.row){
@@ -795,7 +795,7 @@ class BuilderElement extends paper.Group {
       generatrix.remove();
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
-      if(this.layer && this.layer.parent){
+      if(this.layer?.layer){
         _attr.generatrix.guide = true;
       }
     }
@@ -5253,35 +5253,35 @@ class DimensionDrawer extends paper.Group {
     this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
   }
   redraw(forse) {
-    const {parent, project: {builder_props}} = this;
+    const {layer, project: {builder_props}} = this;
     if(forse || !builder_props.auto_lines) {
       this.clear();
     }
-    for (let chld of parent.contours) {
+    for (let chld of layer.contours) {
       chld.l_dimensions.redraw();
     }
-    if(builder_props.auto_lines && (!parent.parent || forse)) {
+    if(builder_props.auto_lines && (!layer.layer || forse)) {
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
         return this.clear();
       }
-      const profiles = new Set(parent.profiles);
-      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
+      const profiles = new Set(layer.profiles);
+      layer.imposts.forEach((elm) => elm.visible && profiles.add(elm));
       for (let elm of profiles) {
-        const our = !elm.parent || elm.parent === parent;
+        const our = !elm.layer || elm.layer === layer;
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
         this.push_by_point({ihor, ivert, eb, ee, elm});
-        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
+        if(!layer.layer && elm.nearest() instanceof ProfileConnective) {
           this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
         }
       }
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+        if(layer.is_pos('right') || (forse && !layer.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
-        else if(parent.is_pos('left')) {
+        else if(layer.is_pos('left')) {
           this.by_imposts(ihor, this.ihor, 'left');
         }
       }
@@ -5290,10 +5290,10 @@ class DimensionDrawer extends paper.Group {
       }
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+        if(layer.is_pos('bottom') || (forse && !layer.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
-        else if(parent.is_pos('top')) {
+        else if(layer.is_pos('top')) {
           this.by_imposts(ivert, this.ivert, 'top');
         }
       }
@@ -5337,10 +5337,10 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_imposts() {
-    const {parent} = this;
+    const {layer} = this;
     this.clear();
     let index = 0;
-    for (let elm of parent.profiles) {
+    for (let elm of layer.profiles) {
       const {inner, outer} = elm.joined_imposts();
       const {generatrix, angle_hor} = elm;
       generatrix.visible = false;
@@ -5385,10 +5385,10 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_falsebinding() {
-    const {parent} = this;
+    const {layer} = this;
     this.clear();
     const {ihor, ivert, by_side} = this.imposts();
-    for(const filling of parent.fillings) {
+    for(const filling of layer.fillings) {
       if(!filling.visible) {
         continue;
       }
@@ -5472,11 +5472,11 @@ class DimensionDrawer extends paper.Group {
     }
   }
   by_contour(ihor, ivert, forse, by_side) {
-    const {project, parent} = this;
-    const {bounds} = parent;
+    const {project, layer} = this;
+    const {bounds} = layer;
     const {base_offset, dop_offset} = consts;
     if(project.contours.length > 1 || forse) {
-      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
+      if(layer.is_pos('left') && !layer.is_pos('right') && project.bounds.height != bounds.height) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -5497,7 +5497,7 @@ class DimensionDrawer extends paper.Group {
           this.left = null;
         }
       }
-      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+      if(layer.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -5518,7 +5518,7 @@ class DimensionDrawer extends paper.Group {
           this.right = null;
         }
       }
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
+      if(layer.is_pos('top') && !layer.is_pos('bottom') && project.bounds.width != bounds.width) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
@@ -5539,7 +5539,7 @@ class DimensionDrawer extends paper.Group {
           this.top = null;
         }
       }
-      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+      if(layer.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -5587,9 +5587,9 @@ class DimensionDrawer extends paper.Group {
     }
   }
   imposts() {
-    const {parent} = this;
-    const {bounds} = parent;
-    const by_side = parent.profiles_by_side();
+    const {layer} = this;
+    const {bounds} = layer;
+    const by_side = layer.profiles_by_side();
     if(!Object.keys(by_side).length) {
       return {ihor: [], ivert: [], by_side: {}};
     }
@@ -5618,10 +5618,10 @@ class DimensionDrawer extends paper.Group {
     return {ihor, ivert, by_side};
   }
   get owner_bounds() {
-    return this.parent.bounds;
+    return this.layer.bounds;
   }
   get dimension_bounds() {
-    return this.parent.dimension_bounds;
+    return this.layer.dimension_bounds;
   }
   get ihor() {
     return this._ihor || (this._ihor = new DimensionGroup());
@@ -8423,7 +8423,7 @@ class ProfileRays {
           if(cnn_point.profile == parent && cnn_point.cnn) {
             const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, 0, undefined, cnn_point);
             if(cnn !== cnn_point.cnn) {
-              cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
+              cnn_elmnts.clear({elm1: profile.elm, node1: cnn_nodes, elm2});
               cnn_point.cnn = cnn;
             }
           }
@@ -10041,9 +10041,9 @@ class ProfileItem extends GeneratrixElement {
     return [];
   }
   is_shtulp() {
-    const {orientations: {vert}, elm_types: {impost}} = $p.enm;
-    if(this.elm_type === impost && this.orientation === vert) {
-      for(const profile of this.joined_nearests()) {
+    if(this.elm_type.is('impost') && this.orientation.is('vert')) {
+      const nearests = this.joined_nearests();
+      for(const profile of nearests) {
         const {layer} = profile;
         for(const {shtulp_available, shtulp_fix_here, side} of layer.furn.open_tunes) {
           if((shtulp_available || shtulp_fix_here) && layer.profile_by_furn_side(side) === profile) {
@@ -10053,6 +10053,52 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     return false;
+  }
+  flip() {
+    const nearests = this.joined_nearests();
+    const {inner, outer} = this.joined_imposts();
+    const {elm, rays, generatrix, ox, project, layer} = this;
+    rays.b.clear();
+    rays.e.clear();
+    rays.clear('with_neighbor');
+    ox.cnn_elmnts.clear({elm1: elm});
+    ox.cnn_elmnts.clear({elm2: elm});
+    const shtulp = this.is_shtulp();
+    const furns = [];
+    if(shtulp && nearests.length === 2) {
+      for(const {layer: {furn, direction, h_ruch}} of nearests) {
+        const curr = {
+          shtulp_kind: furn.shtulp_kind(),
+          furn,
+          direction,
+          h_ruch,
+          params: [],
+        };
+        ox.params.find_rows({cnstr: layer.cnstr}, ({param, value, hide}) => {
+          curr.params.push({param, value, hide});
+        });
+        furns.push(curr);
+      }
+    }
+    generatrix.reverse();
+    if(shtulp && nearests.length === 2) {
+      nearests[0].layer.furn = furns[1].furn;
+      nearests[1].layer.furn = furns[0].furn;
+      for(const {layer} of nearests) {
+        for(const {_attr} of layer.fillings) {
+          if(_attr.paths.size) {
+            for(const [region, elm] of _attr.paths) {
+              elm?.remove?.();
+            }
+            _attr.paths.clear();
+          } 
+        }          
+      }
+    }
+    project.register_change(true, () => {
+      rays.clear('with_neighbor');
+      project.register_change();
+    });
   }
   redraw() {
     const bcnn = this.postcalc_cnn('b');
