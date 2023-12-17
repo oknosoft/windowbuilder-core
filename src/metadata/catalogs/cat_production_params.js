@@ -136,6 +136,18 @@ exports.CatProduction_params = class CatProduction_params extends Object {
       elm_types = types[elm_types];
     }
     else if(!Array.isArray(elm_types)) {
+      if(elm && elm_types === types.region) {
+        const nearest = elm.nearest();
+        if(nearest) {
+          elm_types = nearest.elm_type;
+        }
+        else if(!elm.is_t && elm.layer.layer) {
+          elm_types = types.flap;
+        }
+        else {
+          elm_types = types.rama_impost;
+        }
+      }
       elm_types = [elm_types];
     }
 

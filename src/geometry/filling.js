@@ -586,9 +586,6 @@ class Filling extends AbstractFilling(BuilderElement) {
             rpath.insertBelow(path);  
           }
           else {
-            for(const {profile} of profiles) {
-              profile.insertBelow(this);
-            }
             rpath.insertAbove(path);
             _text?.insertAbove(rpath);
             path.opacity = 0.7;

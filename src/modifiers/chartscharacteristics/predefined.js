@@ -137,7 +137,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           
         case 'region':
             _data._formula = function (obj) {
-              const {region} = obj;
+              const region = obj.region || obj.layer?.region;
               return typeof region === 'number' ? region : 0;
             };
             break;

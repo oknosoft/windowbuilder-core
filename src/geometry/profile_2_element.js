@@ -61,7 +61,7 @@ class Profile extends ProfileItem {
           }
           // штапик
           else if(row.elm_type.is('glbead')) {
-            new ProfileGlBead({row, parent: layer, profile: this});
+            new ProfileGlBead({row, parent: layer.children.profiles, profile: this});
           }
         });
       }

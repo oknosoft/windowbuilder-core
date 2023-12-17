@@ -486,8 +486,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   get tearings() {
     const res = [];
     for(const {children} of this.children.fillings.children) {
-      for(const tearing of children.tearings.children) {
-        res.push(tearing);
+      if(children.tearings) {
+        for(const tearing of children.tearings.children) {
+          res.push(tearing);
+        }
       }
     }
     return res;
@@ -2094,7 +2096,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         elm = new this.ProfileConstructor({
           generatrix: curr.profile.generatrix.get_subpath(curr.b, curr.e),
-          proto: outer_nodes.length ? outer_nodes[0] : {parent: this, clr: curr.profile.clr},
+          proto: outer_nodes.length ? outer_nodes[0] : {parent: this.children.profiles, clr: curr.profile.clr},
           _nearest: curr.profile,
         });
 

@@ -520,7 +520,7 @@ class ProfileRays {
           if(cnn_point.profile == parent && cnn_point.cnn) {
             const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, 0, undefined, cnn_point);
             if(cnn !== cnn_point.cnn) {
-              cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
+              cnn_elmnts.clear({elm1: profile.elm, node1: cnn_nodes, elm2});
               cnn_point.cnn = cnn;
             }
           }
@@ -2721,9 +2721,9 @@ class ProfileItem extends GeneratrixElement {
    * @return {boolean}
    */
   is_shtulp() {
-    const {orientations: {vert}, elm_types: {impost}} = $p.enm;
-    if(this.elm_type === impost && this.orientation === vert) {
-      for(const profile of this.joined_nearests()) {
+    if(this.elm_type.is('impost') && this.orientation.is('vert')) {
+      const nearests = this.joined_nearests();
+      for(const profile of nearests) {
         const {layer} = profile;
         for(const {shtulp_available, shtulp_fix_here, side} of layer.furn.open_tunes) {
           if((shtulp_available || shtulp_fix_here) && layer.profile_by_furn_side(side) === profile) {
@@ -2733,6 +2733,67 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     return false;
+  }
+
+  /**
+   * Переворачивает профиль (меняет местами b и e)
+   */
+  flip() {
+    const nearests = this.joined_nearests();
+    const {inner, outer} = this.joined_imposts();
+
+    const {elm, rays, generatrix, ox, project, layer} = this;
+    rays.b.clear();
+    rays.e.clear();
+    rays.clear('with_neighbor');
+    ox.cnn_elmnts.clear({elm1: elm});
+    ox.cnn_elmnts.clear({elm2: elm});
+    
+    
+    // если это штульп - меняем фурнитуру после переворота
+    const shtulp = this.is_shtulp();
+    const furns = [];
+    if(shtulp && nearests.length === 2) {
+      for(const {layer: {furn, direction, h_ruch}} of nearests) {
+        const curr = {
+          shtulp_kind: furn.shtulp_kind(),
+          furn,
+          direction,
+          h_ruch,
+          params: [],
+        };
+        ox.params.find_rows({cnstr: layer.cnstr}, ({param, value, hide}) => {
+          curr.params.push({param, value, hide});
+        });
+        furns.push(curr);
+      }
+    }
+    
+    // переворот
+    generatrix.reverse();
+
+    // смена фурнитуры
+    if(shtulp && nearests.length === 2) {
+      nearests[0].layer.furn = furns[1].furn;
+      nearests[1].layer.furn = furns[0].furn;
+      // чистим пути рядов стеклопакетов
+      for(const {layer} of nearests) {
+        for(const {_attr} of layer.fillings) {
+          if(_attr.paths.size) {
+            for(const [region, elm] of _attr.paths) {
+              elm?.remove?.();
+            }
+            _attr.paths.clear();
+          } 
+        }          
+      }
+    }
+
+    // пересчёт
+    project.register_change(true, () => {
+      rays.clear('with_neighbor');
+      project.register_change();
+    });
   }
 
   /**

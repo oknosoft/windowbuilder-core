@@ -3172,6 +3172,18 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
       elm_types = types[elm_types];
     }
     else if(!Array.isArray(elm_types)) {
+      if(elm && elm_types === types.region) {
+        const nearest = elm.nearest();
+        if(nearest) {
+          elm_types = nearest.elm_type;
+        }
+        else if(!elm.is_t && elm.layer.layer) {
+          elm_types = types.flap;
+        }
+        else {
+          elm_types = types.rama_impost;
+        }
+      }
       elm_types = [elm_types];
     }
 
