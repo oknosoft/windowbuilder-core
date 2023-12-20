@@ -440,7 +440,7 @@ class EditorInvisible extends paper.PaperScope {
       return;
     }
 
-    if(shift.some((delta) => delta.length > 0.3)) {
+    if(shift.some((delta) => delta.length > 0.1)) {
       _attr._align_counter++;
       for (const layer of contours) {
         layer.redraw();

@@ -1180,7 +1180,7 @@ class ProfileItem extends GeneratrixElement {
     const res = sub_gen.length;
     sub_gen.remove();
 
-    return res.round(1);
+    return (res * 2).round() / 2;
   }
 
   /**

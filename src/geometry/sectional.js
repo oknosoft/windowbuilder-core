@@ -368,7 +368,7 @@ class Sectional extends GeneratrixElement {
    */
   get length() {
     const {generatrix, zoom} = this._attr;
-    return generatrix.length / zoom;
+    return (generatrix.length / zoom).round(1);
   }
 
   /**

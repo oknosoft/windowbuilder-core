@@ -365,7 +365,7 @@ class EditorInvisible extends paper.PaperScope {
       _attr._align_counter = 0;
       return;
     }
-    if(shift.some((delta) => delta.length > 0.3)) {
+    if(shift.some((delta) => delta.length > 0.1)) {
       _attr._align_counter++;
       for (const layer of contours) {
         layer.redraw();
@@ -8831,7 +8831,7 @@ class ProfileItem extends GeneratrixElement {
     const sub_gen = outer.get_subpath(ppoints.b, ppoints.e);
     const res = sub_gen.length;
     sub_gen.remove();
-    return res.round(1);
+    return (res * 2).round() / 2;
   }
   get orientation() {
     let {angle_hor} = this;
@@ -11597,7 +11597,7 @@ class BaseLine extends ProfileItem {
     return $p.enm.elm_types.Линия;
   }
   get length() {
-    return this.generatrix.length;
+    return (this.generatrix.length * 2).round() / 2;
   }
   nearest() {}
   joined_nearests() {
@@ -14652,7 +14652,7 @@ class Sectional extends GeneratrixElement {
   }
   get length() {
     const {generatrix, zoom} = this._attr;
-    return generatrix.length / zoom;
+    return (generatrix.length / zoom).round(1);
   }
   get rays() {
     return this._attr._rays;
