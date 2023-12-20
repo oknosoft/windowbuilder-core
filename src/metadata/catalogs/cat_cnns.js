@@ -602,4 +602,110 @@ exports.CatCnns = class CatCnns extends Object {
 
     return res;
   }
+
+  calculate_spec({elm, elm2, len_angl, cnn_other, ox, own_row, spec}) {
+
+    const {
+      enm: {predefined_formulas: {gb_short, gb_long, w2}, cnn_types}, 
+      CatInserts, 
+      utils,
+      ProductsBuilding: {new_spec_row, calc_count_area_mass},
+    } = $p;
+    
+    const sign = this.cnn_type == cnn_types.ii ? -1 : 1;
+    
+    if(!spec){
+      spec = ox.specification;
+    }
+    for(const row_base of this.filtered_spec({elm, elm2, len_angl, ox})) {
+      const {nom} = row_base;
+
+      // TODO: nom может быть вставкой - в этом случае надо разузловать
+      if(nom instanceof CatInserts) {
+        if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
+          const tmp_len_angl = Object.assign({}, len_angl);
+          tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
+          if(row_base.algorithm === w2 && elm2) {
+
+          }
+          nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox, spec});
+        }
+        else {
+          nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox, spec});
+        }
+      }
+      else {
+
+        const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, nom, spec, ox, len_angl});
+
+        // рассчитаем количество
+        if(nom.is_pieces) {
+          if(!row_base.coefficient) {
+            row_spec.qty = row_base.quantity;
+          }
+          else {
+            row_spec.qty = ((len_angl.len - sign * 2 * row_base.sz) * row_base.coefficient * row_base.quantity - 0.5)
+              .round(nom.rounding_quantity);
+          }
+        }
+        else {
+          row_spec.qty = row_base.quantity;
+
+          // если указано cnn_other, берём не размер соединения, а размеры предыдущего и последующего
+          if(![gb_short, gb_long].includes(row_base.algorithm) && (row_base.sz || row_base.coefficient)) {
+            let sz = row_base.sz, finded, qty;
+            if(cnn_other) {
+              cnn_other.specification.find_rows({nom}, (row) => {
+                sz += row.sz;
+                qty = row.quantity;
+                return !(finded = true);
+              });
+            }
+            if(!finded) {
+              if(row_base.algorithm === w2 && elm2) {
+
+              }
+              else {
+                sz *= 2;
+              }
+            }
+            if(!row_spec.qty && finded && len_angl.art1) {
+              row_spec.qty = qty;
+            }
+            row_spec.len = (len_angl.len - sign * sz) * (row_base.coefficient || 0.001);
+          }
+        }
+
+        // если указана формула - выполняем
+        if(!row_base.formula.empty()) {
+          const qty = row_base.formula.execute({
+            ox,
+            elm,
+            len_angl,
+            cnstr: 0,
+            inset: utils.blank.guid,
+            row_cnn: row_base,
+            row_spec: row_spec
+          });
+          // если формула является формулой условия, используем результат, как фильтр
+          if(row_base.formula.condition_formula && !qty){
+            row_spec.qty = 0;
+          }
+        }
+
+        // визуализация svg-dx
+        if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
+          const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
+          const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
+          row_spec.width = generatrix.getOffsetOf(pt) / 1000;
+          if(outer) {
+            row_spec.alp1 = -1;
+          }
+        }
+        else {
+          calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
+        }
+      }
+    }
+  }
 }

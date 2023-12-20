@@ -3259,6 +3259,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       return {
         profile,
+        cnn,
         sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
         angle,
         b: curr.b,
@@ -3267,7 +3268,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     const ubound = res.length - 1;
     return res.map((curr, index) => {
-      let {sub_path} = curr;
+      let {sub_path, profile, cnn, angle} = curr;
       const prev = !index ? res[ubound] : res[index - 1];
       const next = (index == ubound) ? res[0] : res[index + 1];
       const b = sub_path.intersect_point(prev.sub_path, curr.b, true);
@@ -3276,8 +3277,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         sub_path = sub_path.get_subpath(b, e);
       }
       return {
-        profile: curr.profile,
-        angle: curr.angle.round(1),
+        profile,
+        cnn,
+        angle: angle.round(1),
         len: sub_path.length,
         sub_path,
         angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),
@@ -15080,85 +15082,7 @@ class ProductsBuilding {
       if(!cnn) {
         return;
       }
-      const {enm: {predefined_formulas: {gb_short, gb_long, w2}, cnn_types}, CatInserts, utils} = $p;
-      const sign = cnn.cnn_type == cnn_types.ii ? -1 : 1;
-      const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
-      cnn.filtered_spec({elm, elm2, len_angl, ox}).forEach((row_base) => {
-        const {nom} = row_base;
-        if(nom instanceof CatInserts) {
-          if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
-            const tmp_len_angl = Object.assign({}, len_angl);
-            tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
-            if(row_base.algorithm === w2 && elm2) {
-            }
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox, spec});
-          }
-          else {
-            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox, spec});
-          }
-        }
-        else {
-          const row_spec = new_spec_row({row_base, origin: len_angl.origin || cnn, elm, nom, spec, ox, len_angl});
-          if(nom.is_pieces) {
-            if(!row_base.coefficient) {
-              row_spec.qty = row_base.quantity;
-            }
-            else {
-              row_spec.qty = ((len_angl.len - sign * 2 * row_base.sz) * row_base.coefficient * row_base.quantity - 0.5)
-                .round(nom.rounding_quantity);
-            }
-          }
-          else {
-            row_spec.qty = row_base.quantity;
-            if(![gb_short, gb_long].includes(row_base.algorithm) && (row_base.sz || row_base.coefficient)) {
-              let sz = row_base.sz, finded, qty;
-              if(cnn_other) {
-                cnn_other.specification.find_rows({nom}, (row) => {
-                  sz += row.sz;
-                  qty = row.quantity;
-                  return !(finded = true);
-                });
-              }
-              if(!finded) {
-                if(row_base.algorithm === w2 && elm2) {
-                }
-                else {
-                  sz *= 2;
-                }
-              }
-              if(!row_spec.qty && finded && len_angl.art1) {
-                row_spec.qty = qty;
-              }
-              row_spec.len = (len_angl.len - sign * sz) * (row_base.coefficient || 0.001);
-            }
-          }
-          if(!row_base.formula.empty()) {
-            const qty = row_base.formula.execute({
-              ox,
-              elm,
-              len_angl,
-              cnstr: 0,
-              inset: utils.blank.guid,
-              row_cnn: row_base,
-              row_spec: row_spec
-            });
-            if(row_base.formula.condition_formula && !qty){
-              row_spec.qty = 0;
-            }
-          }
-          if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
-            const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
-            const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
-            row_spec.width = generatrix.getOffsetOf(pt) / 1000;
-            if(outer) {
-              row_spec.alp1 = -1;
-            }
-          }
-          else {
-            calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
-          }
-        }
-      });
+      cnn.calculate_spec({elm, elm2, len_angl, cnn_other, ox, spec});
     }
     function furn_spec(contour) {
       const {ContourNested} = EditorInvisible;
@@ -17877,10 +17801,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
                 row_prm.nom = row_ins_spec.nom;
                 row_prm.inset = row_ins_spec.inset;
-                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
                 row_ins_spec.inset.calculate_spec({
                   elm: row_prm,
-                  len_angl: tmp_len_angl,
+                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
                   ox,
                   spec,
                   clr: clr || elm.clr,
@@ -17888,6 +17811,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 row_prm.nom = null;
                 row_prm.inset = null;
               }
+              if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
+                elm.is_linear = () => rib.profile.is_linear();
+                elm.angle_hor = rib.angle;
+                rib.cnn.calculate_spec({
+                  elm,
+                  elm2: rib.profile,
+                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
+                  ox,
+                  spec
+                });
+                rib.cnn = null;
+              }              
             });
           }
           else if(count_calc_method === steps){

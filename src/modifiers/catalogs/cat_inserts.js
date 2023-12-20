@@ -1247,14 +1247,14 @@
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
+              // спецификация по допвставке
               row_spec = null;
               if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
                 row_prm.nom = row_ins_spec.nom;
                 row_prm.inset = row_ins_spec.inset;
-                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
                 row_ins_spec.inset.calculate_spec({
                   elm: row_prm,
-                  len_angl: tmp_len_angl,
+                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
                   ox,
                   spec,
                   clr: clr || elm.clr,
@@ -1262,6 +1262,19 @@
                 row_prm.nom = null;
                 row_prm.inset = null;
               }
+              // спецификация по соединениям мочкитки
+              if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
+                elm.is_linear = () => rib.profile.is_linear();
+                elm.angle_hor = rib.angle;
+                rib.cnn.calculate_spec({
+                  elm,
+                  elm2: rib.profile,
+                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
+                  ox,
+                  spec
+                });
+                rib.cnn = null;
+              }              
             });
 
           }

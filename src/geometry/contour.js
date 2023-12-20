@@ -2369,6 +2369,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       
       return {
         profile,
+        cnn,
         sub_path: sub_path.equidistant(offset, Math.abs(offset) * 2),
         angle,
         b: curr.b,
@@ -2377,7 +2378,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     const ubound = res.length - 1;
     return res.map((curr, index) => {
-      let {sub_path} = curr;
+      let {sub_path, profile, cnn, angle} = curr;
       const prev = !index ? res[ubound] : res[index - 1];
       const next = (index == ubound) ? res[0] : res[index + 1];
       const b = sub_path.intersect_point(prev.sub_path, curr.b, true);
@@ -2386,8 +2387,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         sub_path = sub_path.get_subpath(b, e);
       }
       return {
-        profile: curr.profile,
-        angle: curr.angle.round(1),
+        profile,
+        cnn,
+        angle: angle.round(1),
         len: sub_path.length,
         sub_path,
         angle_prev: 180 - prev.sub_path.angle_to(curr.sub_path, b, true, 0).round(1),
