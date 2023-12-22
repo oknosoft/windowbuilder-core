@@ -7371,6 +7371,8 @@ get len(){return this._getter('len')}
 set len(v){this._setter('len',v)}
 get width(){return this._getter('width')}
 set width(v){this._setter('width',v)}
+get used(){return this._getter('used')}
+set used(v){this._setter('used',v)}
 get x(){return this._getter('x')}
 set x(v){this._setter('x',v)}
 get y(){return this._getter('y')}
