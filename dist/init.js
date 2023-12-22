@@ -1912,6 +1912,18 @@ class CatBranchesManager extends CatManager {
 
 }
 $p.cat.create('branches', CatBranchesManager, false);
+class CatCashboxes extends CatObj{
+get funds_currency(){return this._getter('funds_currency')}
+set funds_currency(v){this._setter('funds_currency',v)}
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
+get current_account(){return this._getter('current_account')}
+set current_account(v){this._setter('current_account',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+}
+$p.CatCashboxes = CatCashboxes;
+$p.cat.create('cashboxes');
 class CatCurrencies extends CatObj{
 get name_full(){return this._getter('name_full')}
 set name_full(v){this._setter('name_full',v)}
@@ -2114,18 +2126,6 @@ set parent(v){this._setter('parent',v)}
 }
 $p.CatMeta_ids = CatMeta_ids;
 $p.cat.create('meta_ids');
-class CatCashboxes extends CatObj{
-get funds_currency(){return this._getter('funds_currency')}
-set funds_currency(v){this._setter('funds_currency',v)}
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get current_account(){return this._getter('current_account')}
-set current_account(v){this._setter('current_account',v)}
-get owner(){return this._getter('owner')}
-set owner(v){this._setter('owner',v)}
-}
-$p.CatCashboxes = CatCashboxes;
-$p.cat.create('cashboxes');
 class CatUnits extends CatObj{
 get name_full(){return this._getter('name_full')}
 set name_full(v){this._setter('name_full',v)}
@@ -7276,6 +7276,8 @@ get len(){return this._getter('len')}
 set len(v){this._setter('len',v)}
 get width(){return this._getter('width')}
 set width(v){this._setter('width',v)}
+get used(){return this._getter('used')}
+set used(v){this._setter('used',v)}
 get x(){return this._getter('x')}
 set x(v){this._setter('x',v)}
 get y(){return this._getter('y')}
