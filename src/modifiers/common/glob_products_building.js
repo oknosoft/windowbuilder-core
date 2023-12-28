@@ -795,12 +795,12 @@ class ProductsBuilding {
         for (const elm of contour.profiles) {
           !elm.virtual && base_spec_profile(elm);
         }
-
+        // для всех заполнений контура
+        for (const elm of contour.fillings) {
+          !elm.virtual && base_spec_glass(elm);
+        }
+        
         for (const elm of contour.children) {
-          if(elm instanceof Filling) {
-            // для всех заполнений контура
-            base_spec_glass(elm);
-          }
           if(elm instanceof ProfileGlBead) {
             // для всех штапиков
             base_spec_profile(elm);

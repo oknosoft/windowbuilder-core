@@ -15449,10 +15449,10 @@ class ProductsBuilding {
         for (const elm of contour.profiles) {
           !elm.virtual && base_spec_profile(elm);
         }
+        for (const elm of contour.fillings) {
+          !elm.virtual && base_spec_glass(elm);
+        }
         for (const elm of contour.children) {
-          if(elm instanceof Filling) {
-            base_spec_glass(elm);
-          }
           if(elm instanceof ProfileGlBead) {
             base_spec_profile(elm);
           }
