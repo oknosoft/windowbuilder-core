@@ -25,7 +25,7 @@ class ProfileRegion extends Profile {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 = this.offset - nearest.d0 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
+        _attr.d0 = this.offset - nearest.d1 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
