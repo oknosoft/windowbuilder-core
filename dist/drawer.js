@@ -19106,7 +19106,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return this;
   }
   after_del_row(name) {
-    name === 'production' && this.product_rows();
+    if(name === 'production'){
+      this.product_rows();
+      this.reset_specify();
+    }
     return this;
   }
   unload() {
@@ -19620,6 +19623,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row.unit.owner != row.nom) {
       row.unit = row.nom.storage_unit;
     }
+    this.reset_specify();
     row._data._loading = false;
   }
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
@@ -19878,6 +19882,59 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return prod;
       });
   }
+  reset_specify() {
+    this._slave_recalc = true;
+    for(const row of this.production) {
+      const {characteristic} = row;
+      if (characteristic.calc_order === this) {
+        characteristic.specification.clear({dop: -3});
+        row.value_change('quantity', 'update', row.quantity);
+      }
+    }
+    this._slave_recalc = false;
+  }
+  aggregate_specification(prow) {
+    const dp = $p.dp.buyers_order.create();
+    if(prow) {
+      const {characteristic, quantity} = prow;
+      for(const srow of characteristic.specification) {
+        if(!srow.totqty1 || srow.nom.is_service || srow.nom.is_procedure) {
+          continue;
+        }
+        const row = dp.specification.add({
+          nom: srow.nom,
+          nom_characteristic: srow.characteristic,
+          clr: srow.clr,
+          quantity: quantity * srow.totqty1,
+        });
+      }
+    }
+    else {
+      for(const {nom, characteristic, quantity} of this.production) {
+        if(characteristic.calc_order === this) {
+          for(const srow of characteristic.specification) {
+            if(!srow.totqty1 || srow.nom.is_service || srow.nom.is_procedure) {
+              continue;
+            }
+            const row = dp.specification.add({
+              nom: srow.nom,
+              nom_characteristic: srow.characteristic,
+              clr: srow.clr,
+              quantity: quantity * srow.totqty1,
+            });
+          }
+        }
+        else {
+          if(!quantity || nom.is_service || nom.is_procedure) {
+            continue;
+          }
+          const row = dp.specification.add({nom, nom_characteristic: characteristic, clr: characteristic.clr, quantity});
+        }
+      }
+    }
+    dp.specification.group_by(['nom', 'characteristic', 'clr'], ['quantity']);
+    return dp;
+  }
   static set_department() {
     const {wsql, cat} = $p
     const department = wsql.get_user_param('current_department');
@@ -19907,6 +19964,11 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
+    let reset_specify;
+    if(field === 'quantity' && !_slave_recalc) {
+      reset_specify = true;
+      characteristic.specification.clear({dop: -3});
+    }
     if(rfield) {
       _obj[field] = rfield === 'n' ? parseFloat(value || 0) : '' + value;
       nom = this.nom;
@@ -20018,8 +20080,11 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _owner._owner._slave_recalc = true;
         _owner.forEach((row) => {
           if(row === this) return;
+          if(reset_specify) {
+            row.characteristic.specification.clear({dop: -3});
+          }
           const {origin} = row.characteristic;
-          if(origin && !origin.empty() && origin.slave) {
+          if(reset_specify || (origin && !origin.empty() && origin.slave)) {
             row.value_change('quantity', 'update', row.quantity, no_extra_charge);
           }
         });
