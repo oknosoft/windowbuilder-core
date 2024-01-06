@@ -140,7 +140,7 @@ class DimensionDrawer extends paper.Group {
   /**
    * Стирает размерные линии
    */
-  clear() {
+  clear(local) {
 
     this.ihor && this.ihor.clear();
     this.ivert && this.ivert.clear();
@@ -152,8 +152,10 @@ class DimensionDrawer extends paper.Group {
         this[pos] = null;
       }
     }
-
-    this.layer?.layer?.l_dimensions?.clear();
+    
+    if(!local) {
+      this.layer?.layer?.l_dimensions?.clear();
+    }
   }
 
   /**
@@ -167,7 +169,10 @@ class DimensionDrawer extends paper.Group {
       forse = layer.show_dimensions;
     }
 
-    if(forse || !builder_props.auto_lines) {
+    if(!forse) {
+      this.clear(true);
+    }
+    else if(forse || !builder_props.auto_lines) {
       this.clear();
     }
 

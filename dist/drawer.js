@@ -5343,7 +5343,7 @@ class DimensionDrawer extends paper.Group {
   constructor(attr) {
     super(attr);
   }
-  clear() {
+  clear(local) {
     this.ihor && this.ihor.clear();
     this.ivert && this.ivert.clear();
     for (let pos of ['bottom', 'top', 'right', 'left']) {
@@ -5353,14 +5353,19 @@ class DimensionDrawer extends paper.Group {
         this[pos] = null;
       }
     }
-    this.layer?.layer?.l_dimensions?.clear();
+    if(!local) {
+      this.layer?.layer?.l_dimensions?.clear();
+    }
   }
   redraw(forse) {
     const {layer, project: {builder_props}} = this;
     if(!forse) {
       forse = layer.show_dimensions;
     }
-    if(forse || !builder_props.auto_lines) {
+    if(!forse) {
+      this.clear(true);
+    }
+    else if(forse || !builder_props.auto_lines) {
       this.clear();
     }
     for (let chld of layer.contours) {
@@ -12594,7 +12599,7 @@ class ProfileRegion extends Profile {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 = this.offset - nearest.d0 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
+        _attr.d0 = this.offset - nearest.d1 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
