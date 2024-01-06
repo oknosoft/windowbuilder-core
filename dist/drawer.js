@@ -3052,15 +3052,19 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
-        this.nom.visualization.draw({
-          elm,
-          layer: l_visualization,
-          offset: this.len * 1000,
-          offset0: this.width * 1000 * (this.alp1 || 1),
-          clr: this.clr,
-          reflected,
-        });
-        return true;
+        const {visualization} = this.nom;
+        const {attributes} = visualization;
+        if(!attributes?.regions || attributes.regions.includes?.(0)) {
+          visualization.draw({
+            elm,
+            layer: l_visualization,
+            offset: this.len * 1000,
+            offset0: this.width * 1000 * (this.alp1 || 1),
+            clr: this.clr,
+            reflected,
+          });
+          return true;
+        }
       }
     }
     this.draw_mosquito();
@@ -3071,14 +3075,18 @@ class Contour extends AbstractFilling(paper.Layer) {
         if(!profiles.some(draw.bind(row))) {
           glasses.some((elm) => {
             if(row.elm === elm.elm) {
-              row.nom.visualization.draw({
-                elm,
-                layer: l_visualization,
-                offset: [row.len * 1000, row.width * 1000],
-                clr: row.clr,
-                reflected,
-              });
-              return true;
+              const {visualization} = row.nom;
+              const {attributes} = visualization;
+              if(!attributes?.regions || attributes.regions.includes?.(0)) {
+                visualization.draw({
+                  elm,
+                  layer: l_visualization,
+                  offset: [row.len * 1000, row.width * 1000],
+                  clr: row.clr,
+                  reflected,
+                });
+                return true;
+              }
             }
             return elm.imposts.some(draw.bind(row));
           });
