@@ -603,6 +603,8 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
+class Skeleton {
+};
 class BuilderElement extends paper.Group {
   constructor(attr) {
     super(attr);
@@ -14531,8 +14533,6 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
-class Skeleton {
-};
 class Pricing {
   constructor({md, adapters, job_prm}) {
     this.loading = [];
@@ -15462,7 +15462,7 @@ class ProductsBuilding {
         for (const elm of contour.profiles) {
           !elm.virtual && base_spec_profile(elm);
         }
-        for (const elm of contour.fillings) {
+        for (const elm of contour.glasses(false, true)) {
           !elm.virtual && base_spec_glass(elm);
         }
         for (const elm of contour.children) {

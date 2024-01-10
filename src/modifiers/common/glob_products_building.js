@@ -796,7 +796,7 @@ class ProductsBuilding {
           !elm.virtual && base_spec_profile(elm);
         }
         // для всех заполнений контура
-        for (const elm of contour.fillings) {
+        for (const elm of contour.glasses(false, true)) {
           !elm.virtual && base_spec_glass(elm);
         }
         
