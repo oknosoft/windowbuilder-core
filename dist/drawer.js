@@ -603,8 +603,6 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
-class Skeleton {
-};
 class BuilderElement extends paper.Group {
   constructor(attr) {
     super(attr);
@@ -12609,7 +12607,8 @@ class ProfileRegion extends Profile {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 = this.offset - nearest.d1 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
+        const delta = nearest.elm_type.is('impost') ? nearest.d0 : nearest.d1; 
+        _attr.d0 = this.offset - delta - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
@@ -14533,6 +14532,8 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
+class Skeleton {
+};
 class Pricing {
   constructor({md, adapters, job_prm}) {
     this.loading = [];
