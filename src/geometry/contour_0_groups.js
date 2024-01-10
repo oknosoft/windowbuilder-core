@@ -235,7 +235,11 @@ class GroupVisualization extends LayerGroup {
     return this.children.by_spec;
   }
 }
-class GroupLayers extends LayerGroup {}
+class GroupLayers extends LayerGroup {
+  get contours() {
+    return this.children.filter(v => v instanceof Contour);
+  }
+}
 class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;

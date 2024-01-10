@@ -476,15 +476,21 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {inset, elm, layer, _attr: {paths, _text}} = this;
     if(inset.region && !(layer instanceof ContourTearing)) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
+        // 0 - не ряд
+        // 1 - ряд внутри элемента
+        // >1 - за элементом
+        // <0 - перед элементом
         if([1, 2, -1].includes(row.region)) {
           const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
-            paths.set(row.region, new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
+            const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
+            paths.set(row.region, new paper.Path({parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
+          rpath._owner = this;
           rpath.removeSegments();
           // получаем периметр ряда
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
@@ -582,17 +588,14 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(row.region > 0) {
-            rpath.insertBelow(path);  
-          }
-          else {
-            rpath.insertAbove(path);
+          if(row.region < 0) {
             _text?.insertAbove(rpath);
-            path.opacity = 0.7;
+            rpath.opacity = 0.7;  
           }
           if(strip_path.segments.length){
             strip_path = rpath.exclude(strip_path);
             strip_path.fillColor = 'grey';
+            strip_path._owner = this;
             const old = paths.get(`s${row.region}`); 
             if(old && old !== strip_path) {
               old.remove();

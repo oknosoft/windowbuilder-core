@@ -480,7 +480,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get contours() {
     const {topLayers, bottomLayers} = this.children;
-    return [...bottomLayers.children, ...topLayers.children];
+    return [...bottomLayers.contours, ...topLayers.contours];
   }
 
   get tearings() {
@@ -504,7 +504,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   glasses(hide, glass_only) {
     const {topLayers, bottomLayers, fillings} = this.children;
     const res = glass_only ? [...fillings.children] : 
-      [...bottomLayers.children, ...fillings.children, ...topLayers.children]
+      [...bottomLayers.contours, ...fillings.children, ...topLayers.contours]
         .filter(v => !(v instanceof ContourRegion));
     return res.filter((elm) => {
       if (hide) {

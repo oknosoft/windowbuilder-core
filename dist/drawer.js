@@ -1615,7 +1615,11 @@ class GroupVisualization extends LayerGroup {
     return this.children.by_spec;
   }
 }
-class GroupLayers extends LayerGroup {}
+class GroupLayers extends LayerGroup {
+  get contours() {
+    return this.children.filter(v => v instanceof Contour);
+  }
+}
 class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;
@@ -2030,7 +2034,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   get contours() {
     const {topLayers, bottomLayers} = this.children;
-    return [...bottomLayers.children, ...topLayers.children];
+    return [...bottomLayers.contours, ...topLayers.contours];
   }
   get tearings() {
     const res = [];
@@ -2046,7 +2050,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   glasses(hide, glass_only) {
     const {topLayers, bottomLayers, fillings} = this.children;
     const res = glass_only ? [...fillings.children] : 
-      [...bottomLayers.children, ...fillings.children, ...topLayers.children]
+      [...bottomLayers.contours, ...fillings.children, ...topLayers.contours]
         .filter(v => !(v instanceof ContourRegion));
     return res.filter((elm) => {
       if (hide) {
@@ -6349,10 +6353,12 @@ class Filling extends AbstractFilling(BuilderElement) {
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
-            paths.set(row.region, new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
+            const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
+            paths.set(row.region, new paper.Path({parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
+          rpath._owner = this;
           rpath.removeSegments();
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
           const outer_profiles = profiles.map((v) => {
@@ -6448,17 +6454,14 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(row.region > 0) {
-            rpath.insertBelow(path);  
-          }
-          else {
-            rpath.insertAbove(path);
+          if(row.region < 0) {
             _text?.insertAbove(rpath);
-            path.opacity = 0.7;
+            rpath.opacity = 0.7;  
           }
           if(strip_path.segments.length){
             strip_path = rpath.exclude(strip_path);
             strip_path.fillColor = 'grey';
+            strip_path._owner = this;
             const old = paths.get(`s${row.region}`); 
             if(old && old !== strip_path) {
               old.remove();
