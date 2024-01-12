@@ -5,6 +5,17 @@
  */
 class ContourTearing extends Contour {
 
+  constructor(attr) {
+    if(attr.row && attr.layer) {
+      const {parent} = attr.row.dop;
+      const filling = attr.layer.glasses(false, true).find((glass) => glass.elm === parent);
+      if(filling) {
+        attr.parent = filling.children.tearings; 
+      }
+    }
+    super(attr);
+  }
+
   get ProfileConstructor() {
     return ProfileTearing;
   }

@@ -1864,7 +1864,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       attr.row = constructions.add({parent: layer ? layer.cnstr : 0});
       attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
-    if(kind) {
+    if(kind && attr.row.kind !== kind) {
       attr.row.kind = kind;
     }
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
@@ -4553,6 +4553,16 @@ class ContourRegion extends Contour {
 }
 EditorInvisible.ContourRegion = ContourRegion;
 class ContourTearing extends Contour {
+  constructor(attr) {
+    if(attr.row && attr.layer) {
+      const {parent} = attr.row.dop;
+      const filling = attr.layer.glasses(false, true).find((glass) => glass.elm === parent);
+      if(filling) {
+        attr.parent = filling.children.tearings; 
+      }
+    }
+    super(attr);
+  }
   get ProfileConstructor() {
     return ProfileTearing;
   }

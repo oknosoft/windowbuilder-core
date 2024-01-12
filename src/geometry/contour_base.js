@@ -199,7 +199,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       attr.row = constructions.add({parent: layer ? layer.cnstr : 0});
       attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
-    if(kind) {
+    if(kind && attr.row.kind !== kind) {
       attr.row.kind = kind;
     }
     // оповещаем мир о новых слоях
