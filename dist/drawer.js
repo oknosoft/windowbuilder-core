@@ -609,7 +609,7 @@ class BuilderElement extends paper.Group {
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
+    else if(!attr.parent && attr.proto.parent && attr.proto.parent !== this.parent){
       this.parent = attr.proto.parent;
     }
     if(!attr.row){
@@ -2196,6 +2196,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return crating;
   }
+  defaultFilling() {
+    return this.getItem({class: Filling}) || this.project.getItem({class: Filling});
+  }
   glass_recalc() {
     const {glass_contours} = this;     
     const glasses = this.glasses(true);
@@ -2251,17 +2254,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
       else {
-        if (glass = this.getItem({class: Filling})) {
-        }
-        else if (glass = this.project.getItem({class: Filling})) {
-        }
-        else {
-        }
         cglass = new Filling({
-          proto: {
-            inset: glass.inset,
-            clr: glass.clr,
-          },
+          proto: this.defaultFilling(),
           parent: this.children.fillings, 
           path: glcontour
         });
@@ -4571,6 +4565,10 @@ class ContourTearing extends Contour {
   }
   set path(attr) {
   }
+  defaultFilling() {
+    const tearing = this.layer.tearings.find(v => v !==this);
+    return tearing?.fillings?.[0] || this.project.getItem({class: Filling});
+  }
   get profile_path() {
     const path = new paper.Path({insert: false});
     for(const profile of this.profiles) {
@@ -6111,7 +6109,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return nom.elm_type == elm_types.Заполнение ? nom.elm_type : elm_types.Стекло;
   }
   save_coordinates() {
-    const {_row, project, layer, profiles, bounds, imposts, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
     glasses.add({
@@ -6187,7 +6185,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     for(let i=0; i<length; i++ ){
       delete profiles[i].aperture_path;
     }
-    imposts.forEach((onlay) => onlay.save_coordinates());
+    for(const child of this.imposts.concat(this.children.tearings.children)) {
+      child.save_coordinates?.();
+    }
   }
   create_leaf(furn, direction) {
     const {project, layer, _row, ox, elm: elm1} = this;

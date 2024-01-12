@@ -27,7 +27,7 @@ class BuilderElement extends paper.Group {
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
+    else if(!attr.parent && attr.proto.parent && attr.proto.parent !== this.parent){
       this.parent = attr.proto.parent;
     }
 

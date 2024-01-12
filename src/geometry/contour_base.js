@@ -698,6 +698,10 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     return crating;
   }
+  
+  defaultFilling() {
+    return this.getItem({class: Filling}) || this.project.getItem({class: Filling});
+  }
 
   /**
    * Получает замкнутые контуры, ищет подходящие створки или заполнения, при необходимости создаёт новые
@@ -772,20 +776,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         // добавляем заполнение
         // 1. ищем в изделии любое заполнение
         // 2. если не находим, используем умолчание системы
-        if (glass = this.getItem({class: Filling})) {
-
-        }
-        else if (glass = this.project.getItem({class: Filling})) {
-
-        }
-        else {
-
-        }
         cglass = new Filling({
-          proto: {
-            inset: glass.inset,
-            clr: glass.clr,
-          },
+          proto: this.defaultFilling(),
           parent: this.children.fillings, 
           path: glcontour
         });

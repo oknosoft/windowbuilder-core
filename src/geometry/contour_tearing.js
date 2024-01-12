@@ -27,6 +27,11 @@ class ContourTearing extends Contour {
     
   }
 
+  defaultFilling() {
+    const tearing = this.layer.tearings.find(v => v !==this);
+    return tearing?.fillings?.[0] || this.project.getItem({class: Filling});
+  }
+
   /**
    * Путь внешних рёбер профилей разрыва
    * @return {paper.Path}
