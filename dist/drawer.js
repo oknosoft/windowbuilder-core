@@ -2257,7 +2257,14 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         else {
         }
-        cglass = new Filling({proto: glass, parent: this.children.fillings, path: glcontour});
+        cglass = new Filling({
+          proto: {
+            inset: glass.inset,
+            clr: glass.clr,
+          },
+          parent: this.children.fillings, 
+          path: glcontour
+        });
         cglass.redraw();
       }
     }
@@ -2753,7 +2760,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
-          parent: props.parent,
+          parent: props.parent.children.text,
           fillColor: 'black',
           fontFamily: font_family,
           fontSize: elm_font_size,
@@ -4566,9 +4573,6 @@ class ContourTearing extends Contour {
   get glass_path() {
     return new paper.Path({insert: false});
   }
-  get profiles() {
-    return this.children.filter((elm) => elm instanceof ProfileTearing);
-  }
   presentation(bounds) {
     if(!bounds){
       bounds = this.bounds;
@@ -4585,7 +4589,8 @@ class ContourTearing extends Contour {
       const profile = new ProfileTearing({
         generatrix: new paper.Path({segments: [curr.segment1, curr.segment2]}),
         proto,
-        parent: this,
+        layer: this,
+        parent: this.children.profiles,
       });
       profile.elm;
     }
@@ -6014,8 +6019,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.initialize(attr);
   }
   create_groups() {
-    new GroupLayers({parent: this, name: 'tearings'});
     super.create_groups();
+    new GroupLayers({parent: this, name: 'tearings'});
     new GroupText({parent: this, name: 'text'});
   }
   initialize(attr) {
@@ -6275,7 +6280,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.purge_paths();
     if(!_attr._text){
       _attr._text = new paper.PointText({
-        parent: this,
+        parent: this.children.text,
         fillColor: 'black',
         fontFamily: font_family,
         fontSize,
@@ -6660,12 +6665,15 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr.path;
   }
   set path(attr) {
-    let {_attr, path, project} = this;
+    let {_attr, path, project, children} = this;
     if(path){
       path.removeSegments();
     }
     else{
       path = _attr.path = new paper.Path({parent: this});
+    }
+    if(children.tearings.isBelow(path)) {
+      path.insertBelow(children.tearings);
     }
     if(Array.isArray(_attr._profiles)){
       _attr._profiles.length = 0;

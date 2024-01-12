@@ -34,8 +34,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   create_groups() {
-    new GroupLayers({parent: this, name: 'tearings'});
     super.create_groups();
+    new GroupLayers({parent: this, name: 'tearings'});
     new GroupText({parent: this, name: 'text'});
   }
 
@@ -387,7 +387,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     // если текст не создан - добавляем
     if(!_attr._text){
       _attr._text = new paper.PointText({
-        parent: this,
+        parent: this.children.text,
         fillColor: 'black',
         fontFamily: font_family,
         fontSize,
@@ -896,7 +896,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr.path;
   }
   set path(attr) {
-    let {_attr, path, project} = this;
+    let {_attr, path, project, children} = this;
 
     // чистим старый путь
     if(path){
@@ -904,6 +904,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     else{
       path = _attr.path = new paper.Path({parent: this});
+    }
+    if(children.tearings.isBelow(path)) {
+      path.insertBelow(children.tearings);
     }
 
     // чистим старые сегменты

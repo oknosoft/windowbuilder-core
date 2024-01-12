@@ -35,10 +35,6 @@ class ContourTearing extends Contour {
     return new paper.Path({insert: false});
   }
 
-  get profiles() {
-    return this.children.filter((elm) => elm instanceof ProfileTearing);
-  }
-
   presentation(bounds) {
     if(!bounds){
       bounds = this.bounds;
@@ -56,7 +52,8 @@ class ContourTearing extends Contour {
       const profile = new ProfileTearing({
         generatrix: new paper.Path({segments: [curr.segment1, curr.segment2]}),
         proto,
-        parent: this,
+        layer: this,
+        parent: this.children.profiles,
       });
       profile.elm;
     }

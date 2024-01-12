@@ -781,7 +781,14 @@ class Contour extends AbstractFilling(paper.Layer) {
         else {
 
         }
-        cglass = new Filling({proto: glass, parent: this.children.fillings, path: glcontour});
+        cglass = new Filling({
+          proto: {
+            inset: glass.inset,
+            clr: glass.clr,
+          },
+          parent: this.children.fillings, 
+          path: glcontour
+        });
         cglass.redraw();
       }
     }
@@ -1474,7 +1481,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
-          parent: props.parent,
+          parent: props.parent.children.text,
           fillColor: 'black',
           fontFamily: font_family,
           fontSize: elm_font_size,
