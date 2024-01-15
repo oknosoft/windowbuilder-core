@@ -14858,7 +14858,7 @@ class Pricing {
   }
   calc_amount(prm) {
     const {calc_order_row, price_type, first_cost, date} = prm;
-    const {marginality_in_spec, not_update} = $p.job_prm.pricing;
+    const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
     const {rounding, manager} = calc_order_row._owner._owner;
     if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
       ;
@@ -14880,10 +14880,13 @@ class Pricing {
     }
     calc_order_row.marginality = calc_order_row.first_cost ?
       calc_order_row.price * ((100 - calc_order_row.discount_percent) / 100) / calc_order_row.first_cost : 0;
-    let extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
-    if(!manager.partners_uids.length || !extra_charge) {
-      extra_charge = price_type.extra_charge_external || 0;
-    }
+    let extra_charge = 0;
+    if(use_internal !== false) {
+      extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
+      if(!manager.partners_uids.length || !extra_charge) {
+        extra_charge = price_type.extra_charge_external || 0;
+      }
+    }    
     calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
     !prm.hand_start && calc_order_row.value_change('price', {}, calc_order_row.price, true);
     prm.order_rows && prm.order_rows.forEach((value) => {
@@ -19992,7 +19995,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
     const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
+    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, job_prm, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
     let reset_specify;
     if(field === 'quantity' && !_slave_recalc) {
@@ -20061,13 +20064,16 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       _obj.amount = (_obj.price * ((100 - _obj.discount_percent) / 100) * _obj.quantity).round(rounding);
       if(!no_extra_charge) {
         const prm = {calc_order_row: this};
-        let extra_charge = wsql.get_user_param('surcharge_internal', 'number');
-        if(!manager.partners_uids.length || !extra_charge) {
-          pricing.price_type(prm);
-          extra_charge = prm.price_type.extra_charge_external;
-        }
-        if (_obj.extra_charge_external !== 0) {
-          extra_charge = _obj.extra_charge_external;
+        let extra_charge = 0;
+        if(job_prm.pricing.use_internal !== false) {
+          extra_charge = wsql.get_user_param('surcharge_internal', 'number');
+          if(!manager.partners_uids.length || !extra_charge) {
+            pricing.price_type(prm);
+            extra_charge = prm.price_type.extra_charge_external;
+          }
+          if (_obj.extra_charge_external !== 0) {
+            extra_charge = _obj.extra_charge_external;
+          }
         }
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
