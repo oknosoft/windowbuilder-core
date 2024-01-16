@@ -1262,6 +1262,20 @@
                 row_prm.nom = null;
                 row_prm.inset = null;
               }
+              // спецификация по соединениям москитки
+              if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
+                elm.is_linear = () => rib.profile.is_linear();
+                elm.angle_hor = rib.angle;
+                elm.t_parent = () => rib.profile;
+                rib.cnn.calculate_spec({
+                  elm,
+                  elm2: rib.profile,
+                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
+                  ox,
+                  spec
+                });
+                rib.cnn = null;
+              }              
             });
 
           }
