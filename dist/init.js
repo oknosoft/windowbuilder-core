@@ -3617,6 +3617,8 @@ get sizes(){return this._getter_ts('sizes')}
 set sizes(v){this._setter_ts('sizes',v)}
 get priorities(){return this._getter_ts('priorities')}
 set priorities(v){this._setter_ts('priorities',v)}
+get coordinates(){return this._getter_ts('coordinates')}
+set coordinates(v){this._setter_ts('coordinates',v)}
 
 
   /**
@@ -4022,6 +4024,19 @@ get priority(){return this._getter('priority')}
 set priority(v){this._setter('priority',v)}
 }
 $p.CatCnnsPrioritiesRow = CatCnnsPrioritiesRow;
+class CatCnnsCoordinatesRow extends TabularSectionRow{
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
+get offset_option(){return this._getter('offset_option')}
+set offset_option(v){this._setter('offset_option',v)}
+get formula(){return this._getter('formula')}
+set formula(v){this._setter('formula',v)}
+get transfer_option(){return this._getter('transfer_option')}
+set transfer_option(v){this._setter('transfer_option',v)}
+get overmeasure(){return this._getter('overmeasure')}
+set overmeasure(v){this._setter('overmeasure',v)}
+}
+$p.CatCnnsCoordinatesRow = CatCnnsCoordinatesRow;
 class CatCnnsManager extends CatManager {
 
   constructor(owner, class_name) {
