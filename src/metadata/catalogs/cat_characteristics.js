@@ -213,6 +213,56 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   }
 
   /**
+   * Рассчитывает наименование продукции
+   */
+  prod_name2({elm, cnstr}) {
+    const {params, coordinates} = this;
+    const main = [];
+    const other = [];
+    // параметры изделия
+    params.find_rows({cnstr: 0, region: 0}, ({param, value}) => {
+      if(param.is_calculated || param.predefined_name === 'auto_align') {
+        return;
+      }
+      main.push(value.toString());
+    });
+
+    // параметры вставки
+    params.find_rows({cnstr: -elm, region: 0}, ({param, value}) => {
+      if(param.type.types.includes('boolean')) {
+        if(value) {
+          other.push(param.caption || param.name);
+        }
+      }
+      else if(param.type.types.includes('number')) {
+        if(value) {
+          other.push(`${param.caption || param.name}: ${value}`);
+        }
+      }
+      else if(value) {
+        other.push(value.toString());
+      }
+    });
+
+    // параметры рёбер
+    const rrows = [];
+    coordinates.find_rows({cnstr, elm_type: 'Рама'}, (rrow) => {
+      rrows.push(rrow);
+    });
+    const rprops = new Set();
+    params.find_rows({cnstr: {in: rrows.map((v) => -v.elm)}, region: 0}, ({value}) => {
+      if(!value.empty() && value.toString() !== 'Нет') {
+        rprops.add(value.toString());
+      }
+    });
+    for(const rp of rprops) {
+      other.push(rp);
+    }
+    
+    return {main, other};
+  }
+
+  /**
    * Открывает форму происхождения строки спецификации
    */
   open_origin(row_id) {
