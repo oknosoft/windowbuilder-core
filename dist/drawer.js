@@ -19902,7 +19902,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    dp.specification.group_by(['nom', 'characteristic', 'clr'], ['quantity']);
+    dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
     return dp;
   }
   static set_department() {

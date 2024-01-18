@@ -1693,7 +1693,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     // сворачиваем
-    dp.specification.group_by(['nom', 'characteristic', 'clr'], ['quantity']);
+    dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
     return dp;
   }
 
