@@ -2532,6 +2532,9 @@ class Contour extends AbstractFilling(paper.Layer) {
                 prow.hide = true;
               }
               const {value} = prow;
+              if(typeof value === 'number') {
+                continue;
+              }
               if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {
                 prow.value = drow.option_value({elm: filling});
               }
