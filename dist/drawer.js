@@ -19854,6 +19854,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   reset_specify() {
     this._slave_recalc = true;
+    const rm = [];
+    for(const row of this.production) {
+      if(row.changed === 3) {
+        rm.push(row);
+      }
+    }
+    for(const row of rm) {
+      this.production.del(row);
+    }
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
