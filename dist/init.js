@@ -5883,6 +5883,7 @@ set demand(v){this._setter_ts('demand',v)}
     for(const rp of rprops) {
       other.push(rp);
     }
+    other.push(this.note);
     
     return {main, other};
   }

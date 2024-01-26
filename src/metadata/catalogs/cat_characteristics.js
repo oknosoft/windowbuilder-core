@@ -258,6 +258,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     for(const rp of rprops) {
       other.push(rp);
     }
+    other.push(this.note);
     
     return {main, other};
   }
