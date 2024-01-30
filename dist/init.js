@@ -6289,7 +6289,8 @@ set demand(v){this._setter_ts('demand',v)}
           for(const {sub_path} of perimetr) {
             ppath.addSegments(sub_path.segments);
             new EditorInvisible.Profile({
-              parent,
+              layer: parent,
+              parent: parent.children.profiles,
               generatrix: sub_path,
               proto: {
                 inset: irama,
@@ -6320,7 +6321,8 @@ set demand(v){this._setter_ts('demand',v)}
               }
               
               new EditorInvisible.Profile({
-                parent,
+                layer: parent,
+                parent: parent.children.profiles,
                 generatrix: impost,
                 proto: {
                   inset: iimpost,
@@ -6374,7 +6376,8 @@ set demand(v){this._setter_ts('demand',v)}
           // добавляем текст
           const {elm_font_size, font_family} = editor.consts;
           new editor.PointText({
-            parent,
+            layer: parent,
+            parent: parent.children.text,
             fillColor: 'black',
             fontFamily: font_family,
             fontSize: elm_font_size * 1.2,
