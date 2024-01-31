@@ -1815,7 +1815,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Рисует дополнительную визуализацию. Данные берёт из спецификации и проблемных соединений
    */
-  draw_visualization(rows) {
+  draw_visualization(rows, region = 0) {
 
     const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
@@ -1842,7 +1842,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(this.elm === elm.elm && elm.visible) {
         const {visualization} = this.nom;
         const {attributes} = visualization;
-        if(!attributes?.regions || attributes.regions.includes?.(0)) {
+        if(!attributes?.regions || attributes.regions.includes?.(region)) {
           visualization.draw({
             elm,
             layer: l_visualization,
@@ -1875,7 +1875,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             if(row.elm === elm.elm) {
               const {visualization} = row.nom;
               const {attributes} = visualization;
-              if(!attributes?.regions || attributes.regions.includes?.(0)) {
+              if(!attributes?.regions || attributes.regions.includes?.(region)) {
                 visualization.draw({
                   elm,
                   layer: l_visualization,
