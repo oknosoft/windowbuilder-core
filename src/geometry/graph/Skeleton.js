@@ -94,6 +94,9 @@ export class Skeleton extends Graph {
       this.addVertex(vertex);
     }
     if(point instanceof CnnPoint) {
+      if(!vertex.cnnPoints.includes(point)) {
+        vertex.cnnPoints.push(point);
+      }
       point.vertex = vertex;
     }
     return vertex;
@@ -155,11 +158,23 @@ export class Skeleton extends Graph {
    */
   addFragment({startVertex, endVertex, vertex, profile}) {
     const edge = this.findEdge(startVertex, endVertex);
+    const startPoints = [...startVertex.cnnPoints];
+    const endPoints = [...endVertex.cnnPoints];
     if(edge) {
       this.deleteEdge(edge);
     }
     this.addEdge(new GraphEdge({startVertex, endVertex: vertex, profile}));
     this.addEdge(new GraphEdge({startVertex: vertex, endVertex, profile}));
+    for(const cnnPoint of startPoints) {
+      if(!startVertex.cnnPoints.includes(cnnPoint)) {
+        startVertex.cnnPoints.push(cnnPoint);
+      }
+    }
+    for(const cnnPoint of endPoints) {
+      if(!endVertex.cnnPoints.includes(cnnPoint)) {
+        endVertex.cnnPoints.push(cnnPoint);
+      }
+    }
   }
   
   checkNodes(b, e) {

@@ -160,7 +160,8 @@ export class ToolSelect extends ToolElement {
 
     deselect.length && this._scope.cmd('deselect', deselect);
     select.length && this._scope.cmd('select', select);
-    //this.originalContent = this._scope.capture_selection_state();
+
+    this.project.activeLayer.prepareMovePoints(true);
   }
 
   mouseup(event) {

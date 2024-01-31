@@ -21,6 +21,12 @@ export class GraphVertex {
   get point() {
     return this.cnnPoints[0]?.point;
   }
+  set point(v) {
+    const {point, profiles, cnnPoints} = this;
+    for(const pt of cnnPoints) {
+      pt.point = v;
+    }
+  }
 
   /**
    * @param {GraphEdge} edge
@@ -42,6 +48,16 @@ export class GraphVertex {
   deleteEdge(edge) {
     this.edges.delete(edge);
     this.endEdges.delete(edge);
+    const {profile} = edge;
+    for(const cnnPoint of [profile.b, profile.e]) {
+      const index = this.cnnPoints.indexOf(cnnPoint);
+      if(index >= 0) {
+        this.cnnPoints.splice(index, 1);
+        if(!this.cnnPoints.length) {
+          this.cnnPoints.push({point: cnnPoint.point});
+        }
+      }
+    }
   }
 
   /**

@@ -84,8 +84,10 @@ export class Contour extends paper.Layer {
     });
     return profile;
   }
-  
-  
+
+  prepareMovePoints(interactive) {
+    this.#raw.mover.prepareMovePoints(interactive);
+  }
   
   tryMovePoints(delta, interactive) {
     this.#raw.mover.tryMovePoints(delta, interactive);
