@@ -110,12 +110,18 @@ export class GraphVertex {
 
   /**
    * @summary Узел выделен
-   * @desc Истина, если выделен хотя бы один из сегментов профилей узла
+   * @desc Истина, если выделен хотя бы один из сегментов профилей узла.
+   * Направление импостов, может отличаться
    * @type Boolean
    */
   get selected() {
-    return this.getEdges().some(({profile: {selected, b, e}}) => selected && (!b.selected && !e.selected || b.selected)) || 
-      this.getEndEdges().some(({profile: {selected, b, e}}) => selected && (!e.selected && !b.selected || e.selected));
+    const {cnnPoints, point} = this;
+    let selected = cnnPoints.some(({selected}) => selected);
+    if(!selected) {
+      const fullSelected = ({profile: {selected, b, e}}) => selected && (!b.selected && !e.selected || b.selected && e.selected);
+      selected = this.getEdges().some(fullSelected) || this.getEndEdges().some(fullSelected);
+    }
+    return selected;
   }
 
   /**
