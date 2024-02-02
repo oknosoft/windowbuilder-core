@@ -59,6 +59,18 @@ export class BuilderElement extends paper.Group {
     return this.#raw[name];
   }
 
+  get isActual() {
+    return this.project.props.stamp === this.#raw.stamp;
+  }
+  
+  checkActual() {     
+    if(!this.isActual) {
+      this.#raw.nom = null;
+      this.#raw.path?.removeSegments?.();
+      this.#raw.stamp = this.project.props.stamp;
+    }
+  }
+
   /**
    * @summary Элемент - владелец
    * @desc имеет смысл для раскладок и рёбер заполнения
@@ -83,7 +95,7 @@ export class BuilderElement extends paper.Group {
   /**
    * @summary Путь элемента
    * @desc состоит из кривых, соединяющих вершины элемента
-   * @type paper.Path
+   * @type {paper.Path}
    */
   get path() {
     return this.#raw.path;
@@ -109,6 +121,7 @@ export class BuilderElement extends paper.Group {
    * @type CatNom
    */
   get nom() {
+    this.checkActual();
     if(!this.#raw.nom) {
       this.#raw.nom = this.inset.nom(this);
     }
@@ -158,7 +171,7 @@ export class BuilderElement extends paper.Group {
    * @type Number
    */
   get width() {
-    return this.nom.width;
+    return this.nom.width || 80;
   }
 
   /**

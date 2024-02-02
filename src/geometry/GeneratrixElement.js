@@ -1,6 +1,12 @@
-
+import paper from 'paper/dist/paper-core';
 import {BuilderElement} from './BuilderElement';
 import {CnnPoint} from './ProfileCnnPoint';
+
+export const pathAttr = {
+  strokeColor: 'black',
+  strokeWidth: 1,
+  strokeScaling: false,
+};
 
 export class GeneratrixElement extends BuilderElement {
 
@@ -24,6 +30,7 @@ export class GeneratrixElement extends BuilderElement {
     }
     this.raw('b', new CnnPoint({owner: this, name: 'b', cnn: cnns?.b, cnnOuter: cnns?.bOuter}));
     this.raw('e', new CnnPoint({owner: this, name: 'e', cnn: cnns?.e, cnnOuter: cnns?.eOuter}));
+    this.raw('path', new paper.Path({parent: this, name: 'path', ...pathAttr}));
   }
   
   get skeleton() {
@@ -38,11 +45,19 @@ export class GeneratrixElement extends BuilderElement {
   get generatrix() {
     return this.children.generatrix;
   }
-  
+
+  /**
+   * @summary Узел начала профиля
+   * @type {CnnPoint}
+   */
   get b() {
     return this.raw('b');
   }
 
+  /**
+   * @summary Узел конца профиля
+   * @type {CnnPoint}
+   */
   get e() {
     return this.raw('e');
   }
@@ -82,7 +97,7 @@ export class GeneratrixElement extends BuilderElement {
    * @summary вспомогательный метод для sizeb
    * @return {Number}
    */
-  get_sizeb() {
+  getSizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
       const {nom} = this;
@@ -113,7 +128,7 @@ export class GeneratrixElement extends BuilderElement {
    * @type {Number}
    */
   get sizeb() {
-    return this.get_sizeb();
+    return this.getSizeb();
   }
 
   /**
