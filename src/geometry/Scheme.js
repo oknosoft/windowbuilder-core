@@ -61,5 +61,14 @@ export class Scheme extends paper.Project {
     const dy = view.viewSize.height - height * zoom * 1.2;
     view.center = center.add([Math.sign(scaling.x) * dx, -Math.sign(scaling.y) * dy]);
   }
+
+  /**
+   * @summary Перерисовывает все слои изделия
+   */
+  redraw() {
+    for(const item of this.children) {
+      item.redraw?.();
+    }
+  }
   
 }

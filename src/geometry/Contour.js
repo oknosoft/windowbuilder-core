@@ -2,7 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {Skeleton} from './graph/Skeleton';
 import {Mover} from './graph/Mover';
 
-import {GeneratrixElement} from './GeneratrixElement';
+import {Profile} from './ProfileItem';
 import {contourGroups} from './ContourGroups';
 
 export class Contour extends paper.Layer {
@@ -28,7 +28,7 @@ export class Contour extends paper.Layer {
    */
   get contours() {
     const {topLayers, bottomLayers} = this.children; 
-    return topLayers.children.concat(bottomLayers.children);
+    return bottomLayers.children.concat(topLayers.children);
   }
 
   get profiles() {
@@ -76,13 +76,20 @@ export class Contour extends paper.Layer {
       strokeScaling: false,
     });
     // TODO: defaultInset
-    const profile = new GeneratrixElement({
+    const profile = new Profile({
       layer: this,
       parent: this.children.profiles,
       generatrix,
       ...other
     });
     return profile;
+  }
+
+  /**
+   * @summary Создаёт при необходимости, заполнения в замкнутых областях 
+   */
+  recalcFillings() {
+    
   }
 
   prepareMovePoints(interactive) {
@@ -95,5 +102,20 @@ export class Contour extends paper.Layer {
   
   applyMovePoints() {
     this.#raw.mover.applyMovePoints();
+  }
+
+  /**
+   * @summary Перерисовывает все элементы слоя
+   */
+  redraw() {
+    for(const item of this.profiles) {
+      item.redraw?.();
+    }
+    for(const item of this.fillings) {
+      item.redraw?.();
+    }
+    for(const item of this.contours) {
+      item.redraw?.();
+    }
   }
 }

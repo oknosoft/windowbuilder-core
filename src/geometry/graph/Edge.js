@@ -17,7 +17,7 @@ export class GraphEdge {
 
   /**
    * Кеш, ассоциированный с текущим ребром
-   * @return {Map}
+   * @type {Map}
    */
   get cache() {
     let cache = this._cache.get(this);
@@ -37,7 +37,7 @@ export class GraphEdge {
   }
 
   /**
-   * @return {string}
+   * @type {string}
    */
   get key() {
     const {startVertex, endVertex} = this;

@@ -100,7 +100,7 @@ export class GraphVertex {
   }
 
   /**
-   * @return {Profile[]}
+   * @type {Profile[]}
    */
   get profiles() {
     const profiles = new Set();
@@ -133,7 +133,7 @@ export class GraphVertex {
 
   /**
    * @param {GraphEdge} requiredEdge
-   * @returns {boolean}
+   * @return {boolean}
    */
   hasEdge(requiredEdge) {
     const edgeNode = this.edges.find({
@@ -145,7 +145,7 @@ export class GraphVertex {
 
   /**
    * @param {GraphVertex} vertex
-   * @returns {boolean}
+   * @return {boolean}
    */
   hasNeighbor(vertex) {
     const vertexNode = this.edges.find({
@@ -157,7 +157,7 @@ export class GraphVertex {
 
   /**
    * @param {GraphVertex} vertex
-   * @returns {(GraphEdge|null)}
+   * @return {(GraphEdge|null)}
    */
   findEdge(vertex) {
     const callback = (edge) => edge.startVertex === vertex || edge.endVertex === vertex;
@@ -166,7 +166,7 @@ export class GraphVertex {
   }
 
   /**
-   * @returns {string}
+   * @type {string}
    */
   get key() {
     return this.value;
@@ -183,7 +183,7 @@ export class GraphVertex {
 
   /**
    * @param {function} [callback]
-   * @returns {string}
+   * @return {string}
    */
   toString(callback) {
     return callback ? callback(this.value) : `${this.value}`;

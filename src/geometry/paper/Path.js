@@ -32,6 +32,18 @@ export default function (proto) {
       const offset = this.getOffsetOf(np);
       const line = new paper.Line(np, np.add(this.getTangentAt(offset)));
       return line.getSide(point, true);
+    },
+
+    /**
+     * @summary
+     * @param point
+     * @return {{normal: Point, tangent: Point, offset: Number}}
+     */
+    otn(point) {
+      const offset = this.getOffsetOf(point);
+      const tangent = this.getTangentAt(offset);
+      const normal = this.getNormalAt(offset);
+      return {offset, tangent, normal};
     }
 
   });

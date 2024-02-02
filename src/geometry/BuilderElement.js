@@ -78,17 +78,7 @@ export class BuilderElement extends paper.Group {
   get nearest() {
     return this.#raw.nearest;
   }
-
-  /**
-   * @summary Образующая
-   * @desc Вокруг образующей, строится Путь элемента. Здесь может быть линия, простая дуга или безье
-   * @type paper.Path
-   */
-  get generatrix() {
-    return this.#raw.generatrix;
-  }
-  set generatrix(attr) {
-  }
+  
 
   /**
    * @summary Путь элемента

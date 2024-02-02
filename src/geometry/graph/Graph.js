@@ -29,7 +29,7 @@ export class Graph {
 
   /**
    * @param {GraphVertex} newVertex
-   * @returns {Graph}
+   * @return {Graph}
    */
   addVertex(newVertex) {
     this.vertices[newVertex.key] = newVertex;
@@ -38,7 +38,7 @@ export class Graph {
 
   /**
    * @param {string} vertexKey
-   * @returns GraphVertex
+   * @return GraphVertex
    */
   getVertexByKey(vertexKey) {
     return this.vertices[vertexKey];
@@ -46,7 +46,7 @@ export class Graph {
 
   /**
    * @param {GraphVertex} vertex
-   * @returns {GraphVertex[]}
+   * @return {GraphVertex[]}
    */
   getNeighbors(vertex) {
     return vertex.getNeighbors();
@@ -77,7 +77,7 @@ export class Graph {
 
   /**
    * @param {GraphEdge} edge
-   * @returns {Graph}
+   * @return {Graph}
    */
   addEdge(edge) {
     // Try to find and end start vertices.

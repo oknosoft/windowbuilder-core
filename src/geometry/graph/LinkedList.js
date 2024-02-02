@@ -221,7 +221,7 @@ export class LinkedList {
 
   /**
    * Reverse a linked list.
-   * @returns {LinkedList}
+   * @return {LinkedList}
    */
   reverse() {
     let currNode = this.head;
