@@ -540,10 +540,10 @@ class Scheme extends paper.Project {
           new ProfileConnective({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === elm_types.Линия) {
-          new BaseLine({row});
+          new BaseLine({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === elm_types.Сечение) {
-          new ProfileCut({row});
+          new ProfileCut({row, parent: _scheme.l_connective});
         }
       });
 
@@ -824,6 +824,9 @@ class Scheme extends paper.Project {
     
     // перерисовываем габаритные размерные линии изделия
     this.draw_sizes();
+    if(this.l_connective.isBelow(this.l_dimensions)) {
+      this.l_connective.insertAbove(this.l_dimensions);
+    }
 
     // обновляем изображение на экране
     this.view.update();

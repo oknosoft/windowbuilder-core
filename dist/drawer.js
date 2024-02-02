@@ -13031,10 +13031,10 @@ class Scheme extends paper.Project {
           new ProfileConnective({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === elm_types.Линия) {
-          new BaseLine({row});
+          new BaseLine({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === elm_types.Сечение) {
-          new ProfileCut({row});
+          new ProfileCut({row, parent: _scheme.l_connective});
         }
       });
       if(typeof from_service === 'object') {
@@ -13232,6 +13232,9 @@ class Scheme extends paper.Project {
       contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
     }
     this.draw_sizes();
+    if(this.l_connective.isBelow(this.l_dimensions)) {
+      this.l_connective.insertAbove(this.l_dimensions);
+    }
     this.view.update();
     _ch.length = 0;
     for(const deffer of _deffer) {
