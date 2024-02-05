@@ -1,5 +1,11 @@
 import paper from 'paper/dist/paper-core';
 
+/**
+ * @typedef IOPaths
+ * @prop {paper.Path} outer
+ * @prop {paper.Path} inner
+ */
+
 const clear = {
   inner: null,
   outer: null,
@@ -32,25 +38,30 @@ export class CnnPoint {
   checkActual() {
     const {stamp} = this.owner.project.props;
     if(stamp !== this.#raw.stamp) {
-      this.#raw.profile = null;
-      this.#raw.isT = null;
-      this.#raw.stamp = stamp;
-      Object.assign(this.#raw.pts, clear);
+      const raw = this.#raw;
+      raw.profile = null;
+      raw.isT = null;
+      raw.stamp = stamp;
+      raw.outer.removeSegments();
+      raw.inner.removeSegments();
+      Object.assign(raw.pts, clear);
     }
   }
 
   tuneRays() {
-    const {point, owner, name, inner, outer} = this;
-    const {d1, d2, width, generatrix} = owner;
-    const ds = 5 * (width > 30 ? width : 30) * (name === 'b' ? 1 : -1);
-    const {offset, tangent, normal} = generatrix.otn(point);
-    outer.removeSegments();
-    inner.removeSegments();
-    outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(-ds)));
-    inner.add(point.add(normal.multiply(d2)).add(tangent.multiply(-ds)));
-    outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(ds)));
-    inner.add(point.add(normal.multiply(d2)).add(tangent.multiply(ds)));
-    this.#raw.pts.interior = point.add(normal.multiply((d1 + d2) / 2)).add(tangent.multiply(ds/2));
+    const {inner, outer} = this.#raw;
+    if(!inner.segments.length || !outer.segments.length) {
+      const {point} = this;
+      const {owner, name, pts} = this.#raw;
+      const {d1, d2, width, generatrix} = owner;
+      const ds = 5 * (width > 30 ? width : 30) * (name === 'b' ? 1 : -1);
+      const {offset, tangent, normal} = generatrix.otn(point);
+      outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(-ds)));
+      inner.add(point.add(normal.multiply(d2)).add(tangent.multiply(-ds)));
+      outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(ds)));
+      inner.add(point.add(normal.multiply(d2)).add(tangent.multiply(ds)));
+      pts.interior = point.add(normal.multiply((d1 + d2) / 2)).add(tangent.multiply(ds/2));
+    }
     return this;
   }
   
@@ -63,17 +74,91 @@ export class CnnPoint {
   }
 
   get inner() {
+    this.checkActual();
+    this.tuneRays();
     return this.#raw.inner;
   }
 
   get outer() {
+    this.checkActual();
+    this.tuneRays();
     return this.#raw.outer;
   }
 
-  get points() {
+  /**
+   * @summary выясняет, какой из лучей ближе
+   * @param {paper.Path} inner
+   * @param {paper.Path} outer
+   * @return {IOPaths}
+   */
+  checkNearest({inner, outer}) {
+    const {pts} = this.#raw;
+    if(inner.getDistance(pts.interior) > outer.getDistance(pts.interior)) {
+      [inner, outer] = [outer, inner];
+    }
+    return {inner, outer};
+  }
+
+  /**
+   * @summary Лучи основного профиля
+   * @type {IOPaths}
+   */
+  get prays() {
+    const {isT, profile} = this;
+    if(isT) {       
+      return this.checkNearest(profile);
+    }
+    for(const cnnPoint of this.vertex.cnnPoints) {
+      if(cnnPoint !== this) {
+        return this.checkNearest(cnnPoint);
+      }
+    }
+  }
+
+  /**
+   * @summary Лучи профиля с обратной стороны
+   * @desc если таковой существует (разрыв)
+   * @type {IOPaths}
+   */
+  get orays() {
+
+  }
+
+  /**
+   * @summary Лучи профиля в продолжение текущего
+   * @desc если таковой существует (крест)
+   * @type {IOPaths}
+   */
+  get irays() {
+
+  }
+
+  points(mode) {
     const {pts} = this.#raw;
     if(!pts.inner || !pts.outer) {
-      const {point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
+      const {owner, point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
+      const {cnnTypes} = owner.root.enm;
+      const cnnType = profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i;
+      let prays, orays;
+      switch (cnnType) {
+        case cnnTypes.i: {
+          pts.inner = inner.getNearestPoint(point);
+          pts.outer = outer.getNearestPoint(point);
+          break;
+        }
+        case cnnTypes.t: {
+          const {prays} = this;
+          pts.inner = prays.inner.intersectPoint(inner);
+          pts.outer = prays.inner.intersectPoint(outer);
+          break;
+        }
+        case cnnTypes.ad: {
+          const {prays} = this;
+          pts.inner = prays.inner.intersectPoint(inner);
+          pts.outer = prays.outer.intersectPoint(outer);
+          break;
+        }
+      }
     }
     return pts;
   }
@@ -121,9 +206,16 @@ export class CnnPoint {
     if(this.#raw.profile === null) {
       const {point, owner} = this;
       const profiles = [];
-      for(const profile of owner.layer.profiles) {
-        if(profile !== owner && profile.generatrix.isNearest(point)) {
-          profiles.push(profile);
+      for(const cnnPoint of this.vertex.cnnPoints) {
+        if(cnnPoint !== this) {
+          profiles.push(owner);
+        }
+      }
+      if(!profiles.length) {
+        for(const profile of owner.layer.profiles) {
+          if(profile !== owner && profile.generatrix.isNearest(point)) {
+            profiles.push(profile);
+          }
         }
       }
       if(profiles.length > 1) {

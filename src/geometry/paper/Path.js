@@ -34,6 +34,35 @@ export default function (proto) {
       return line.getSide(point, true);
     },
 
+    intersectPoint(path, point, elongate) {
+      const intersections = this.getIntersections(path);
+      if (intersections.length === 1) {
+        if (!point || typeof elongate !== 'number' || point.isNearest(intersections[0].point, elongate * elongate)) {
+          return intersections[0].point;
+        }
+      }
+      if (intersections.length > 1) {
+
+      }
+      else if (elongate == "nearest") {
+
+      }
+      else if(elongate) {
+        
+      }
+    },
+
+    /**
+     * @summary Расстояние от точки до прямой
+     * @param {paper.Point} point
+     * @param {Boolean} [squared]
+     * @return {Number}
+     */
+    getDistance(point, squared) {
+      const np = this.getNearestPoint(point);
+      return np?.getDistance(point, squared) || Infinity;
+    },
+
     /**
      * @summary
      * @param point

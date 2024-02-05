@@ -53,6 +53,8 @@ export class Profile extends GeneratrixElement {
       return path;
     }
     const {inner, outer, b, e} = this;
-    const points = {b: b.points, e: e.points};
+    const points = {b: b.points(), e: e.points()};
+    path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
+    path.closePath();
   }
 }

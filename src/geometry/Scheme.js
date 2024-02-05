@@ -62,11 +62,15 @@ export class Scheme extends paper.Project {
     view.center = center.add([Math.sign(scaling.x) * dx, -Math.sign(scaling.y) * dy]);
   }
 
+  get contours() {
+    return this.layers.filter(v => v instanceof Contour);
+  }
+
   /**
    * @summary Перерисовывает все слои изделия
    */
   redraw() {
-    for(const item of this.children) {
+    for(const item of this.contours) {
       item.redraw?.();
     }
   }
