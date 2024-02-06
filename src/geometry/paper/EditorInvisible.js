@@ -52,6 +52,7 @@ export class EditorInvisible extends paper.PaperScope {
     }
     props.loading = false;
     this.project.zoomFit(activeLayer.bounds);
+    this.project.redraw();
   }
   
   cmd(name, attr) {

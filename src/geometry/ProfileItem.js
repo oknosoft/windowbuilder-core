@@ -48,13 +48,13 @@ export class Profile extends GeneratrixElement {
   }
 
   redraw() {
+    this.checkActual();
     const {path} = this;
-    if(path.segments.length) {
-      return path;
-    }
-    const {inner, outer, b, e} = this;
-    const points = {b: b.points(), e: e.points()};
-    path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
-    path.closePath();
+    if(!path.segments.length) {
+      const {b, e} = this;
+      const points = {b: b.points(), e: e.points()};
+      path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
+      path.closePath(); 
+    }    
   }
 }

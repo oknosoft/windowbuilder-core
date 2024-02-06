@@ -165,8 +165,12 @@ export class ToolSelect extends ToolElement {
   }
 
   mouseup(event) {
-    if (this.mode === 'move-shapes' || this.mode === 'move-points') {
-      this.project.activeLayer.applyMovePoints();
+    const {mode, project} = this;
+    if (mode === 'move-shapes' || mode === 'move-points') {
+      if(project.activeLayer.applyMovePoints()) {
+        project.props.registerChange();
+        project.redraw();
+      }
     }
     this.mode = null;
   }

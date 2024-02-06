@@ -64,12 +64,15 @@ export class Mover {
   }
   
   applyMovePoints() {
+    let moved;
     for(const [vertex, delta] of this.#raw.vertexes) {
       if(delta?.length) {
+        moved = true;
         vertex.point = vertex.point.add(delta);
       }
     }
     
     this.cancelMovePoints();
+    return moved;
   }
 }

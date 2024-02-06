@@ -93,15 +93,15 @@ export class Contour extends paper.Layer {
   }
 
   prepareMovePoints(interactive) {
-    this.#raw.mover.prepareMovePoints(interactive);
+    return this.#raw.mover.prepareMovePoints(interactive);
   }
   
   tryMovePoints(delta, interactive) {
-    this.#raw.mover.tryMovePoints(delta, interactive);
+    return this.#raw.mover.tryMovePoints(delta, interactive);
   }
   
   applyMovePoints() {
-    this.#raw.mover.applyMovePoints();
+    return this.#raw.mover.applyMovePoints();
   }
 
   /**

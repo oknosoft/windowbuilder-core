@@ -4,6 +4,7 @@ import {CnnPoint} from './ProfileCnnPoint';
 
 export const pathAttr = {
   strokeColor: 'black',
+  fillColor: 'white',
   strokeWidth: 1,
   strokeScaling: false,
 };
@@ -30,6 +31,7 @@ export class GeneratrixElement extends BuilderElement {
     }
     this.raw('b', new CnnPoint({owner: this, name: 'b', cnn: cnns?.b, cnnOuter: cnns?.bOuter}));
     this.raw('e', new CnnPoint({owner: this, name: 'e', cnn: cnns?.e, cnnOuter: cnns?.eOuter}));
+    this.raw('cut', new paper.Path({insert: false}));
     this.raw('path', new paper.Path({parent: this, name: 'path', ...pathAttr}));
   }
   
@@ -60,6 +62,14 @@ export class GeneratrixElement extends BuilderElement {
    */
   get e() {
     return this.raw('e');
+  }
+
+  /**
+   * @summary Путь фактического реза элемента
+   * @type {paper.Path}
+   */
+  get cut() {
+    return this.raw('cut');
   }
 
   /**

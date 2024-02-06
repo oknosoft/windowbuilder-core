@@ -93,7 +93,7 @@ export class BuilderElement extends paper.Group {
   
 
   /**
-   * @summary Путь элемента
+   * @summary Видимый путь элемента
    * @desc состоит из кривых, соединяющих вершины элемента
    * @type {paper.Path}
    */

@@ -135,6 +135,7 @@ export class CnnPoint {
 
   points(mode) {
     const {pts} = this.#raw;
+    this.checkActual();
     if(!pts.inner || !pts.outer) {
       const {owner, point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
       const {cnnTypes} = owner.root.enm;
