@@ -3889,7 +3889,31 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, nom, spec, ox, len_angl});
 
         // рассчитаем количество
-        if(nom.is_pieces) {
+        const procedure = nom.is_procedure && this.coordinates.find({elm: row_base.elm}) && this.cnn_type.is('t'); 
+        if(procedure) {
+          const {Path} = elm.project._scope;
+          row_spec.elm = elm2.elm;
+          let ray;
+          if(elm2.cnn_side(elm).is('outer')) {
+            ray = elm2.rays.outer;
+          }
+          else {
+            ray = elm2.rays.inner;
+            ray.reverse();
+          }
+          const pt = ray.getNearestPoint(elm[len_angl.node]);
+          const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
+          const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
+          const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
+          let offset = offset1 < offset4 ? offset1 : offset4;
+          if(offset7 && offset7 < offset) {
+            offset = offset7;
+          }
+          const pt0 = ray.getPointAt(offset);
+          const path = ray.get_subpath(pt0, pt);
+          row_spec.len = path.length;
+        }
+        else if(nom.is_pieces) {
           if(!row_base.coefficient) {
             row_spec.qty = row_base.quantity;
           }

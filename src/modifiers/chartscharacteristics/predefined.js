@@ -7,7 +7,7 @@
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   const {
-    enm: {orientations, positions, elm_types, comparison_types: ect},
+    enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils} = $p;
@@ -40,12 +40,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               ox.inserts.find_rows({cnstr}, row => (clr = row.clr));
             }
             return clr;
-          };
-          break;
-
-        case 'width':
-          _data._formula = function (obj) {
-            return obj?.ox?.y || 0;
           };
           break;
 
@@ -116,6 +110,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
 
+        case 'cnn_side':
+          _data._formula = function ({elm, elm2}) {
+            return (elm && elm2) ? elm2.cnn_side(elm) : cnn_sides.get();
+          };
+          break;
+
         case 'is_composite':
           _data._formula = function ({elm}) {
             return elm?.clr?.is_composite();
@@ -148,6 +148,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               layer = elm.layer;
             }
             return layer ? layer.h_ruch : 0;
+          };
+          break;
+
+        case 'width':
+          _data._formula = function (obj) {
+            return obj?.ox?.y || 0;
           };
           break;
           
@@ -221,14 +227,15 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
+    'cnn_side',         // сторона соединения (изнутри-снаружи)
     'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента
     'branch',           // отдел абонента текущего контекста
-    'width',            // ширина из параметра
     'inset',            // вставка текущего элемента
     'inserts_glass_type',  // тип вставки заполнения
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
+    'width',            // ширина из параметра
     'height',           // высота слоя или изделия
     'region',           // ряд
     'is_composite',     // у элемента составной цвет
