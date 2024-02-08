@@ -1795,6 +1795,8 @@ get no_divisions(){return this._getter('no_divisions')}
 set no_divisions(v){this._setter('no_divisions',v)}
 get filter(){return this._getter('filter')}
 set filter(v){this._setter('filter',v)}
+get part(){return this._getter('part')}
+set part(v){this._setter('part',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get organizations(){return this._getter_ts('organizations')}
@@ -5598,6 +5600,8 @@ get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
 set editor(v){this._setter('editor',v)}
+get route(){return this._getter('route')}
+set route(v){this._setter('route',v)}
 get branch(){return this._getter('branch')}
 set branch(v){this._setter('branch',v)}
 get owner(){return this._getter('owner')}
@@ -7954,6 +7958,8 @@ get lead(){return this._getter('lead')}
 set lead(v){this._setter('lead',v)}
 get approval(){return this._getter('approval')}
 set approval(v){this._setter('approval',v)}
+get route(){return this._getter('route')}
+set route(v){this._setter('route',v)}
 get branch(){return this._getter('branch')}
 set branch(v){this._setter('branch',v)}
 get production(){return this._getter_ts('production')}
