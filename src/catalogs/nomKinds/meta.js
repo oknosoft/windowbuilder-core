@@ -49,7 +49,7 @@ export const meta = {
   cachable: "ram"
 };
 
-export const exclude = ['catalogs.nomKinds'];
+export const exclude = ['cat.nomKinds'];
 
 export function classes({cat, classes, symbols}, exclude)  {
   const {CatObj} = classes;
@@ -59,7 +59,7 @@ export function classes({cat, classes, symbols}, exclude)  {
     get parent(){return this[get]('parent')}
     set parent(v){this[set]('parent',v)}
   }
-  classes.CatDivisions = CatNomKinds;
+  classes.CatNomKinds = CatNomKinds;
 
   cat.create('nomKinds');
 }

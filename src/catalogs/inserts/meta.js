@@ -1182,7 +1182,7 @@ export const meta= {
       }
     }
   },
-  "cachable": "ram"
+  cachable: "ram"
 };
 
 

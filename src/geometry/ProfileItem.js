@@ -21,6 +21,20 @@ export class Profile extends GeneratrixElement {
     return super.checkActual();
   }
 
+  tuneRays() {
+    const [inner, outer] = this.raw(['inner', 'outer']);
+    if(!inner.segments.length || !outer.segments.length) {
+      const {b, e, d1, d2, generatrix} = this;
+      const nb = generatrix.getNormalAt(0);
+      const ne = generatrix.getNormalAt(generatrix.length);
+      outer.add(b.point.add(nb.multiply(d1)));
+      inner.add(b.point.add(nb.multiply(d2)));
+      outer.add(e.point.add(ne.multiply(d1)));
+      inner.add(e.point.add(ne.multiply(d2)));
+    }
+    return this;
+  }
+
   /**
    * @summary Путь внешнего ребра элемента
    * @type {paper.Path}
@@ -29,7 +43,7 @@ export class Profile extends GeneratrixElement {
     this.checkActual();
     const outer = this.raw('outer');
     if(!outer.segments.length) {
-
+      this.tuneRays();
     }
     return outer;
   }
@@ -42,7 +56,7 @@ export class Profile extends GeneratrixElement {
     this.checkActual();
     const inner = this.raw('inner');
     if(!inner.segments.length) {
-      
+      this.tuneRays();
     }
     return inner;
   }

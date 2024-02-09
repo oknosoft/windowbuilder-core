@@ -20,7 +20,7 @@ export const meta= {
       tooltip: "",
       type: {
         "types": [
-          "catalogs.divisions"
+          "cat.divisions"
         ],
       }
     }
@@ -28,7 +28,7 @@ export const meta= {
   cachable: "ram"
 };
 
-export const exclude = ['catalogs.divisions'];
+export const exclude = ['cat.divisions'];
 
 export function classes({cat, classes, symbols}, exclude)  {
   const {CatObj} = classes;

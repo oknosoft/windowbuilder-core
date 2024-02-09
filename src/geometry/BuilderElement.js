@@ -48,7 +48,7 @@ export class BuilderElement extends paper.Group {
 
   /**
    * @summary Доступ к сырым данным
-   * @param {String} name
+   * @param {String|Array} name
    * @param {Any} [value]
    * @return {Any}
    */
@@ -56,7 +56,7 @@ export class BuilderElement extends paper.Group {
     if(arguments.length > 1) {
       this.#raw[name] = value;
     }
-    return this.#raw[name];
+    return Array.isArray(name) ? name.map(n => this.#raw[n]) : this.#raw[name];
   }
 
   get isActual() {

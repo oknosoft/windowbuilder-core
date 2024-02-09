@@ -1,5 +1,5 @@
 
-export const exclude = ['catalogs.inserts'];
+export const exclude = ['cat.inserts'];
 
 export function classes({cat, classes, symbols}, exclude)  {
   const {CatObj} = classes;
