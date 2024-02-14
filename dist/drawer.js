@@ -14467,6 +14467,7 @@ class Sectional extends GeneratrixElement {
     for(let child of children){
       child.remove();
     }
+    children.length = 0;
     for(let i = 1; i < segments.length - 1; i++){
       this.draw_angle(i);
     }
@@ -14477,11 +14478,17 @@ class Sectional extends GeneratrixElement {
         point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
         content: (curve.length / zoom).toFixed(0),
         fontSize: radius * 1.4,
-        parent: layer,
+        parent: layer.children.text,
         _owner: curve
       }));
     }
     return this;
+  }
+  beforeRemove() {
+    for(const elm of this._attr.children) {
+      elm.remove?.();
+    }    
+    return true;
   }
   draw_angle(ind) {
     const {layer, generatrix, _attr, radius} = this;
@@ -14511,13 +14518,13 @@ class Sectional extends GeneratrixElement {
       to,
       strokeColor: 'grey',
       guide: true,
-      parent: layer,
+      parent: layer.children.text,
     }));
     children.push(new AngleText({
       point: center.add(end.multiply(-2.2)),
       content: angle.toFixed(0) + '°',
       fontSize: radius * 1.4,
-      parent: layer,
+      parent: layer.children.text,
       _owner: this,
       _ind: ind,
     }));
