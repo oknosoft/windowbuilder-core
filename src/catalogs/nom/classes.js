@@ -1,11 +1,13 @@
 
-export const exclude = ['cat.nom'];
+export const exclude = [/*'cat.nom'*/];
 
 export function classes({cat, classes, symbols}, exclude)  {
   const {CatObj} = classes;
   const {get, set} = symbols;
 
-  class CatNom extends CatObj{
+  /*
+  
+class CatNom extends CatObj{
     get width(){return this[get]('width')}
     set width(v){this[set]('width',v)}
     
@@ -13,4 +15,6 @@ export function classes({cat, classes, symbols}, exclude)  {
   classes.CatNom = CatNom;
 
   cat.create('nom');
+   
+  */
 }
