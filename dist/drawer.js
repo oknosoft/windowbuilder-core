@@ -3370,10 +3370,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   get pos() {
   }
   get profiles() {
-    return [...this.children.profiles.children];
+    return this.children.profiles.children.filter((elm) => !(elm instanceof Sectional));
   }
   get sectionals() {
-    return this.children.filter((elm) => elm instanceof Sectional);
+    return this.children.profiles.children.filter((elm) => elm instanceof Sectional);
   }
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);

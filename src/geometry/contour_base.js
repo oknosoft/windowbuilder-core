@@ -2269,7 +2269,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {Array.<Profile>}
    */
   get profiles() {
-    return [...this.children.profiles.children];
+    return this.children.profiles.children.filter((elm) => !(elm instanceof Sectional));
   }
 
   /**
@@ -2277,7 +2277,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Array.<Sectional>}
    */
   get sectionals() {
-    return this.children.filter((elm) => elm instanceof Sectional);
+    return this.children.profiles.children.filter((elm) => elm instanceof Sectional);
   }
 
   /**
