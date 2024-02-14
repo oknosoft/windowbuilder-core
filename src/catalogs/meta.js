@@ -1,10 +1,62 @@
 
 import {classes as divisionsClasses, meta as divisions, exclude as divisionsExclude} from './divisions/meta';
 import {classes as nomKindsClasses, meta as nomKinds, exclude as nomKindsExclude} from './nomKinds/meta';
-import {classes as insertsClasses, meta as inserts, exclude as insertsExclude} from './inserts';
 import {classes as nomClasses, meta as nom, exclude as nomExclude} from './nom';
+import {classes as insertsClasses, meta as inserts, exclude as insertsExclude} from './inserts';
+import {classes as cnnsClasses, meta as cnns, exclude as cnnsExclude} from './cnns';
 
 export const meta = {
+  currencies: {
+    name: "Валюты",
+    splitted: false,
+    synonym: "Валюты",
+    illustration: "Валюты, используемые при расчетах",
+    objPresentation: "Валюта",
+    inputBy: ["name", "id"],
+    groupHierarchy: true,
+    mainPresentation: "name",
+    codeLength: 3,
+    fields: {
+      name_full: {
+        synonym: "Наименование валюты",
+        tooltip: "Полное наименование валюты",
+        mandatory: true,
+        type: {
+          types: ["string"],
+          strLen: 50
+        }
+      },
+      extra_charge: {
+        synonym: "Наценка",
+        tooltip: "Коэффициент, который применяется к курсу основной валюты для вычисления курса текущей валюты.",
+        type: {
+          types: ["number"],
+          digits: 10,
+          fraction: 2
+        }
+      },
+      main_currency: {
+        synonym: "Основная валюта",
+        tooltip: "Валюта, на основании курса которой рассчитывается курс текущей валюты",
+        choiceGrp: "elm",
+        mandatory: true,
+        type: {
+          types: ["cat.currencies"]
+        }
+      },
+      parameters_russian_recipe: {
+        synonym: "Параметры прописи на русском",
+        tooltip: "Параметры прописи валюты на русском языке",
+        type: {
+          types: ["string"],
+          strLen: 200
+        }
+      }
+    },
+    tabulars: {},
+    cachable: "ram",
+    id: "cr",
+  },
   divisions,
   nomKinds,
   nomUnits: {
@@ -76,6 +128,7 @@ export const meta = {
   },
   nom,
   inserts,
+  cnns,
   workCenterKinds: {
     name: "ВидыРабочихЦентров",
     synonym: "Этапы производства (Виды РЦ)",
@@ -94,14 +147,7 @@ export const meta = {
         choiceParams: [
           {
             name: "ref",
-            "path": [
-              "product",
-              "layer",
-              "parent",
-              "elm",
-              "order",
-              "region"
-            ]
+            path: ["product", "layer", "parent", "elm", "order", "region"]
           }
         ],
         choiceGrp: "elm",
@@ -195,13 +241,46 @@ export const meta = {
     common: true,
     aliases: ['work_centers'],
   },
+  units: {
+    "name": "КлассификаторЕдиницИзмерения",
+    synonym: "Классификатор единиц измерения",
+    inputBy: ["name", "id"],
+    mainPresentation: "name",
+    codeLength: 3,
+    fields: {
+      name_full: {
+        synonym: "Полное наименование",
+        type: {
+          types: ["string"],
+          strLen: 100
+        }
+      },
+      international_short: {
+        synonym: "Международное сокращение",
+        type: {
+          types: ["string"],
+          strLen: 3
+        }
+      }
+    },
+    tabulars: {},
+    cachable: "ram",
+    id: "uc",
+  },
 };
 
-export const exclude = [...divisionsExclude, ...nomKindsExclude, ...insertsExclude, ...nomExclude];
+export const exclude = [
+  ...divisionsExclude,
+  ...nomKindsExclude,
+  ...insertsExclude,
+  ...nomExclude,
+  ...cnnsExclude,
+];
 
 export const classes = [
   divisionsClasses,
   nomKindsClasses,
-  insertsClasses,
   nomClasses,
+  insertsClasses,
+  cnnsClasses
 ];
