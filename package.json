@@ -40,7 +40,7 @@
     "md5-file": "^5.0",
     "decomment": "^0.9.5"
   },
-  "packageManager": "^yarn@1.22",
+  "packageManager": "yarn@1.22.21",
   "files": [
     "dist/**",
     "LICENSE",
