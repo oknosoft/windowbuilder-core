@@ -2327,23 +2327,33 @@ class Contour extends AbstractFilling(paper.Layer) {
     const addls = [];
     const other = new Set();
     for(const elm of profiles) {
+      const {_rays} = elm._attr; 
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
+      }
+      else if(_rays?.b?.is_short && _rays?.e?.is_short) {
+        other.add(elm);
       }
       else {
         elm.redraw();
       }
     }
+    for(const elm of other) {
+      elm.redraw();
+    }
+    other.clear();
     for(const elm of profiles) {
       if(imposts.includes(elm)) {
         elm.redraw();
       }
       else {
         const {b, e} = elm.rays;
-        if(b.is_short) {
+        if(b.is_short && b.profile?.isBelow(elm)) {
+          b.profile.insertAbove(elm);
           other.add(b.profile);
         }
-        if(e.is_short) {
+        if(e.is_short && e.profile?.isBelow(elm)) {
+          e.profile.insertAbove(elm);
           other.add(e.profile);
         }
       }
@@ -2355,14 +2365,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     // упорядочиваем по z TODO: оптимизировать
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
-      b.profile?.bringToFront?.();
+      if(b.profile?.isBelow(elm)) {
+        b.profile?.insertAbove(elm);
+      }
       if(b.profile?.e?.is_nearest(b.point, 20000)) {
         b.profile.rays.e.profile?.bringToFront?.();
       }
       else if(b.profile?.b?.is_nearest(b.point, 20000)) {
         b.profile.rays.b.profile?.bringToFront?.();
       }
-      e.profile?.bringToFront?.();
+      if(e.profile?.isBelow(elm)) {
+        e.profile?.insertAbove(elm);
+      }
       if(e.profile?.e?.is_nearest(e.point, 20000)) {
         e.profile.rays.e.profile?.bringToFront?.();
       }

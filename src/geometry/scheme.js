@@ -856,10 +856,10 @@ class Scheme extends paper.Project {
     if(_attr._update_timer) {
       clearTimeout(_attr._update_timer);
     }
-    _attr._update_timer = setTimeout(() => {
-      this.view && this.view.update();
-      _attr._update_timer = 0;
-    }, 100);
+    // _attr._update_timer = setTimeout(() => {
+    //   this.view && this.view.update();
+    //   _attr._update_timer = 0;
+    // }, 100);
   }
 
   /**

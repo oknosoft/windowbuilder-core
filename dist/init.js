@@ -3898,7 +3898,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
             ray = elm2.rays.outer;
           }
           else {
-            ray = elm2.rays.inner;
+            ray = elm2.rays.inner.clone({insert: false, deep: false});
             ray.reverse();
           }
           const pt = ray.getNearestPoint(elm[len_angl.node]);
