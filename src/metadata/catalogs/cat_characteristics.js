@@ -216,7 +216,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * Рассчитывает наименование продукции
    */
   prod_name2({elm, cnstr}) {
-    const {params, coordinates} = this;
+    const {params, coordinates, x, y, note} = this;
     const main = [];
     const other = [];
     // параметры изделия
@@ -226,6 +226,17 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       main.push(value.toString());
     });
+
+    // добавляем размеры
+    if(x && y) {
+      main.push(x.toFixed(0) + 'x' + y.toFixed(0));
+    }
+    else if(x) {
+      main.push(x.toFixed(0));
+    }
+    else if(y) {
+      main.push(y.toFixed(0));
+    }
 
     // параметры вставки
     params.find_rows({cnstr: -elm, region: 0}, ({param, value}) => {
@@ -239,7 +250,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           other.push(`${param.caption || param.name}: ${value}`);
         }
       }
-      else if(value) {
+      else if(value && !value.empty() && value.toString() !== 'Нет') {
         other.push(value.toString());
       }
     });
@@ -258,7 +269,9 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     for(const rp of rprops) {
       other.push(rp);
     }
-    other.push(this.note);
+    if(note) {
+      other.push(note);
+    }
     
     return {main, other};
   }
