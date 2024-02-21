@@ -3946,7 +3946,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
             if(!row_spec.qty && finded && len_angl.art1) {
               row_spec.qty = qty;
             }
-            row_spec.len = (len_angl.len - sign * sz) * (row_base.coefficient || 0.001);
+            row_spec.len = (((len_angl.len - sign * sz) * 2).round() / 2) * (row_base.coefficient || 0.001) ;
           }
         }
 
