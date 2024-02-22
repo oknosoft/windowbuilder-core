@@ -889,5 +889,790 @@ export const meta = {
         aliases: ['transfer_operations_options']
       }
     ],
+    insetAttrsOptions: [
+      {
+        order: 0,
+        name: "НеПоперечина",
+        synonym: "Не поперечина"
+      },
+      {
+        order: 1,
+        name: "ОбаНаправления",
+        synonym: "Оба направления"
+      },
+      {
+        order: 2,
+        name: "ОтключитьВтороеНаправление",
+        synonym: "Отключить второе направление"
+      },
+      {
+        order: 3,
+        name: "ОтключитьШагиВторогоНаправления",
+        synonym: "Отключить шаги второго направления"
+      },
+      {
+        order: 4,
+        name: "ОтключитьПервоеНаправление",
+        synonym: "Отключить первое направление"
+      },
+      {
+        order: 5,
+        name: "ОтключитьШагиПервогоНаправления",
+        synonym: "Отключить шаги первого направления"
+      },
+      {
+        tag: "Варианты атрибутов вставок",
+        id: 'eia',
+        description: "Используется для расчёта спецификации вставки \"по шагам\"",
+        aliases: ['inset_attrs_options']
+      }
+    ],
+    applicationModeKinds: [
+      {
+        order: 0,
+        name: "Минимум",
+        synonym: "Минимум"
+      },
+      {
+        order: 1,
+        name: "Максимум",
+        synonym: "Максимум"
+      },
+      {
+        order: 2,
+        name: "Сложение",
+        synonym: "Сложение"
+      },
+      {
+        order: 3,
+        name: "Умножение",
+        synonym: "Умножение"
+      },
+      {
+        order: 4,
+        name: "Вытеснение",
+        synonym: "Вытеснение"
+      },
+      {
+        tag: "Варианты совместного применения скидок наценок",
+        id: 'eaa',
+        aliases: ['application_mode_kinds']
+      }
+    ],
+    contractionOptions: [
+      {
+        order: 0,
+        name: "ОтДлиныСтороны",
+        synonym: "От длины стороны"
+      },
+      {
+        order: 1,
+        name: "ОтВысотыРучки",
+        synonym: "От высоты ручки"
+      },
+      {
+        order: 2,
+        name: "ОтДлиныСтороныМинусВысотыРучки",
+        synonym: "От длины стороны минус высота ручки"
+      },
+      {
+        order: 3,
+        name: "ФиксированнаяДлина",
+        synonym: "Фиксированная длина"
+      },
+      {
+        order: 4,
+        name: "Выражение",
+        synonym: "Выражение"
+      },
+      {
+        tag: "Варианты укорочений",
+        id: 'esv',
+        description: "Для расчёта координат в {@link CatFurns|фурнитуре}",
+        aliases: ['contraction_options']
+      }
+    ],
+    sketchView: [
+      {
+        order: 0,
+        name: "hinge",
+        synonym: "Со стороны петель"
+      },
+      {
+        order: 1,
+        name: "inner",
+        synonym: "Изнутри"
+      },
+      {
+        order: 2,
+        name: "outer",
+        synonym: "Снаружи"
+      },
+      {
+        order: 3,
+        name: "out_hinge",
+        synonym: "Обратный от петель"
+      },
+      {
+        "default": "hinge"
+      },
+      {
+        tag: "Вид на эскиз",
+        id: 'evv',
+        aliases: ['sketch_view']
+      }
+    ],
+    textAligns: [
+      {
+        order: 0,
+        name: "left",
+        synonym: "Лево"
+      },
+      {
+        order: 1,
+        name: "right",
+        synonym: "Право"
+      },
+      {
+        order: 2,
+        name: "center",
+        synonym: "Центр"
+      },
+      {
+        tag: "Выравнивание текста",
+        id: 'eta',
+        aliases: ['text_aligns']
+      }
+    ],
+    orderCategories: [
+      {
+        order: 0,
+        name: "order",
+        synonym: "Расчет заказ"
+      },
+      {
+        order: 1,
+        name: "service",
+        synonym: "Сервис"
+      },
+      {
+        order: 2,
+        name: "complaints",
+        synonym: "Рекламация"
+      },
+      {
+        order: 3,
+        name: "variant",
+        synonym: "Вариант КП"
+      },
+      {
+        tag: "Категории заказов",
+        id: 'eok',
+        aliases: ['order_categories']
+      }
+    ],
+    colorPriceGroupDestinations: [
+      {
+        order: 0,
+        name: "ДляЦенообразования",
+        synonym: "Для ценообразования"
+      },
+      {
+        order: 1,
+        name: "ДляХарактеристик",
+        synonym: "Для характеристик"
+      },
+      {
+        order: 2,
+        name: "ДляГруппировкиВПараметрах",
+        synonym: "Для группировки в параметрах"
+      },
+      {
+        order: 3,
+        name: "ДляОграниченияДоступности",
+        synonym: "Для ограничения доступности"
+      },
+      {
+        tag: "Назначения цветовых групп",
+        id: 'ecd',
+        aliases: ['color_price_group_destinations']
+      }
+    ],
+    orientations: [
+      {
+        order: 0,
+        name: "Горизонтальная",
+        synonym: "Горизонтальная",
+        latin: "hor"
+      },
+      {
+        order: 1,
+        name: "Вертикальная",
+        synonym: "Вертикальная",
+        latin: "vert"
+      },
+      {
+        order: 2,
+        name: "Наклонная",
+        synonym: "Наклонная",
+        latin: "incline"
+      },
+      {
+        tag: "Ориентация элемента",
+        id: 'eoi',
+      }
+    ],
+    opening: [
+      {
+        order: 0,
+        name: "in",
+        synonym: "На себя"
+      },
+      {
+        order: 1,
+        name: "out",
+        synonym: "От себя"
+      },
+      {
+        "default": "in"
+      },
+      {
+        tag: "Открывание",
+        description: "Вовнутрь или наружу",
+        id: 'eop',
+      }
+    ],
+    positions: [
+      {
+        order: 0,
+        name: "Любое",
+        synonym: "Любое",
+        latin: "any"
+      },
+      {
+        order: 1,
+        name: "Верх",
+        synonym: "Верх",
+        latin: "top"
+      },
+      {
+        order: 2,
+        name: "Низ",
+        synonym: "Низ",
+        latin: "bottom"
+      },
+      {
+        order: 3,
+        name: "Лев",
+        synonym: "Лев",
+        latin: "left"
+      },
+      {
+        order: 4,
+        name: "Прав",
+        synonym: "Прав",
+        latin: "right"
+      },
+      {
+        order: 5,
+        name: "ЦентрВертикаль",
+        synonym: "Центр вертикаль",
+        latin: "vert"
+      },
+      {
+        order: 6,
+        name: "ЦентрГоризонталь",
+        synonym: "Центр горизонталь",
+        latin: "hor"
+      },
+      {
+        order: 7,
+        name: "Центр",
+        synonym: "Центр",
+        latin: "center"
+      },
+      {
+        order: 8,
+        name: "ЛевВерх",
+        synonym: "Лев верх",
+        latin: "lt"
+      },
+      {
+        order: 9,
+        name: "ЛевНиз",
+        synonym: "Лев низ",
+        latin: "lb"
+      },
+      {
+        order: 10,
+        name: "ПравВерх",
+        synonym: "Прав верх",
+        latin: "rt"
+      },
+      {
+        order: 11,
+        name: "ПравНиз",
+        synonym: "Прав низ",
+        latin: "rb"
+      },
+      {
+        tag: "Положение элемента",
+        description: "Используется для назначения {@link CatInserts|Вставки} в {@link CatProduction_params|Системе}",
+        id: 'eep'
+      }
+    ],
+    parametersKeysApplying: [
+      {
+        order: 0,
+        name: "НаправлениеДоставки",
+        synonym: "Направление доставки"
+      },
+      {
+        order: 1,
+        name: "РабочийЦентр",
+        synonym: "Рабочий центр"
+      },
+      {
+        order: 2,
+        name: "Технология",
+        synonym: "Технология"
+      },
+      {
+        order: 3,
+        name: "Ценообразование",
+        synonym: "Ценообразование"
+      },
+      {
+        order: 4,
+        name: "ПараметрВыбора",
+        synonym: "Параметр выбора"
+      },
+      {
+        tag: "Применения ключей параметров",
+        id: 'epa',
+        aliases: ['parameters_keys_applying']
+      }
+    ],
+    bindCoordinates: [
+      {
+        order: 0,
+        name: "product",
+        synonym: "Изделие"
+      },
+      {
+        order: 1,
+        name: "contour",
+        synonym: "Слой"
+      },
+      {
+        order: 2,
+        name: "b",
+        synonym: "Начало пути"
+      },
+      {
+        order: 3,
+        name: "e",
+        synonym: "Конец пути"
+      },
+      {
+        tag: "Приязка координат",
+        id: 'ebc',
+        aliases: ['bind_coordinates']
+      }
+    ],
+    layRegions: [
+      {
+        order: 0,
+        name: "inner",
+        synonym: "Изнутри"
+      },
+      {
+        order: 1,
+        name: "outer",
+        synonym: "Снаружи"
+      },
+      {
+        order: 2,
+        name: "all",
+        synonym: "С двух стор"
+      },
+      {
+        order: 3,
+        name: "r1",
+        synonym: "Кам 1"
+      },
+      {
+        order: 4,
+        name: "r2",
+        synonym: "Кам 2"
+      },
+      {
+        order: 5,
+        name: "r3",
+        synonym: "Кам 3"
+      },
+      {
+        tag: "Слои раскладки",
+        id: 'elr',
+        aliases: ['lay_regions']
+      }
+    ],
+    coloring: [
+      {
+        order: 0,
+        name: "lam",
+        synonym: "Ламинация"
+      },
+      {
+        order: 1,
+        name: "coloring",
+        synonym: "Покраска"
+      },
+      {
+        order: 2,
+        name: "subl",
+        synonym: "Сублимация"
+      },
+      {
+        tag: "Способ придания цвета",
+        id: 'ecv',
+      }
+    ],
+    countCalculatingWays: [
+      {
+        order: 0,
+        name: "ПоПериметру",
+        synonym: "По периметру",
+        latin: "perim"
+      },
+      {
+        order: 1,
+        name: "ПоПлощади",
+        synonym: "По площади",
+        latin: "area"
+      },
+      {
+        order: 2,
+        name: "ДляЭлемента",
+        synonym: "Для элемента",
+        latin: "element"
+      },
+      {
+        order: 3,
+        name: "ПоШагам",
+        synonym: "По шагам",
+        latin: "steps"
+      },
+      {
+        order: 4,
+        name: "ПоФормуле",
+        synonym: "По формуле",
+        latin: "formulas"
+      },
+      {
+        order: 5,
+        name: "ПоПарам",
+        synonym: "По параметру",
+        latin: "parameters"
+      },
+      {
+        order: 6,
+        name: "ДлинаПоПарам",
+        synonym: "Длина по параметру",
+        latin: "len_prm"
+      },
+      {
+        order: 7,
+        name: "ГабаритыПоПарам",
+        synonym: "Габариты по параметрам",
+        latin: "dimensions"
+      },
+      {
+        order: 8,
+        name: "ПоСоединениям",
+        synonym: "По соединениям",
+        latin: "cnns",
+        note: "Поправки размеров из концевых соединений"
+      },
+      {
+        order: 9,
+        name: "ПоЗаполнениям",
+        synonym: "По заполнениям",
+        latin: "fillings",
+        note: "Для всех заполнений контура"
+      },
+      {
+        order: 10,
+        name: "ПоЦвету",
+        synonym: "По цвету",
+        latin: "coloring",
+        note: "С учётом группы цвета и площадей изнутри-снаружи"
+      },
+      {
+        tag: "Способы расчета количества",
+        id: 'ecc',
+        aliases: ['count_calculating_ways']
+      }
+    ],
+    angleCalculatingWays: [
+      {
+        order: 0,
+        name: "Основной",
+        synonym: "Основной"
+      },
+      {
+        order: 1,
+        name: "СварнойШов",
+        synonym: "Сварной шов"
+      },
+      {
+        order: 2,
+        name: "СоединениеПополам",
+        synonym: "Соед./2"
+      },
+      {
+        order: 3,
+        name: "Соединение",
+        synonym: "Соединение"
+      },
+      {
+        order: 4,
+        name: "_90",
+        synonym: "90"
+      },
+      {
+        order: 5,
+        name: "НеСчитать",
+        synonym: "Не считать"
+      },
+      {
+        tag: "Способы расчета угла",
+        id: 'eac',
+        aliases: ['angle_calculating_ways']
+      }
+    ],
+    specInstallationMethods: [
+      {
+        order: 0,
+        name: "Всегда",
+        synonym: "Всегда"
+      },
+      {
+        order: 1,
+        name: "САртикулом1",
+        synonym: "с Арт1"
+      },
+      {
+        order: 2,
+        name: "САртикулом2",
+        synonym: "с Арт2"
+      },
+      {
+        tag: "Способы установки спецификации",
+        id: 'eim',
+        aliases: ['specification_installation_methods']
+      }
+    ],
+    cnnSides: [
+      {
+        order: 0,
+        name: "Изнутри",
+        synonym: "Изнутри",
+        latin: "inner"
+      },
+      {
+        order: 1,
+        name: "Снаружи",
+        synonym: "Снаружи",
+        latin: "outer"
+      },
+      {
+        order: 2,
+        name: "Любая",
+        synonym: "Любая",
+        latin: "any"
+      },
+      {
+        "default": "Любая"
+      },
+      {
+        tag: "Стороны соединений",
+        description: "Актуально для импостов и витражных элементов",
+        id: 'ecs',
+        aliases: ['cnn_sides']
+      }
+    ],
+    laySplitTypes: [
+      {
+        order: 0,
+        name: "ДелениеГоризонтальных",
+        synonym: "Деление горизонтальных",
+        latin: "hor"
+      },
+      {
+        order: 1,
+        name: "ДелениеВертикальных",
+        synonym: "Деление вертикальных",
+        latin: "vert"
+      },
+      {
+        order: 2,
+        name: "КрестВСтык",
+        synonym: "Крест в стык",
+        latin: "cross_butt"
+      },
+      {
+        order: 3,
+        name: "КрестПересечение",
+        synonym: "Крест пересечение",
+        latin: "crossing"
+      },
+      {
+        order: 4,
+        name: "ЗапретДеления",
+        synonym: "Запрет деления",
+        latin: "disabled"
+      },
+      {
+        tag: "Типы деления раскладки",
+        description: "Тип параметра для команды \"добавить раскладку\"",
+        id: 'els',
+        aliases: ['lay_split_types']
+      }
+    ],
+    cutOptimizationTypes: [
+      {
+        order: 0,
+        name: "Нет",
+        synonym: "Нет",
+        latin: "no"
+      },
+      {
+        order: 1,
+        name: "РасчетНарезки",
+        synonym: "Расчет нарезки",
+        latin: "cut"
+      },
+      {
+        order: 2,
+        name: "НельзяВращатьПереворачивать",
+        synonym: "Нельзя вращать переворачивать",
+        latin: "no_rotate"
+      },
+      {
+        order: 3,
+        name: "ТолькоНомераЯчеек",
+        synonym: "Только номера ячеек",
+        latin: "cell"
+      },
+      {
+        "default": "Нет"
+      },
+      {
+        tag: "Типы оптимизаций раскроя",
+        id: 'ec',
+        aliases: ['cutting_optimization_types']
+      }
+    ],
+    openTypes: [
+      {
+        order: 0,
+        name: "Глухое",
+        synonym: "Глухое",
+        latin: "no"
+      },
+      {
+        order: 1,
+        name: "Поворотное",
+        synonym: "Поворотное",
+        latin: "rotary"
+      },
+      {
+        order: 2,
+        name: "Откидное",
+        synonym: "Откидное",
+        latin: "folding"
+      },
+      {
+        order: 3,
+        name: "ПоворотноОткидное",
+        synonym: "Поворотно-откидное",
+        latin: "rotary_folding"
+      },
+      {
+        order: 4,
+        name: "Раздвижное",
+        synonym: "Раздвижное",
+        latin: "sliding"
+      },
+      {
+        order: 5,
+        name: "Неподвижное",
+        synonym: "Неподвижное",
+        latin: "static"
+      },
+      {
+        order: 6,
+        name: "ПодъемноСдвижное",
+        synonym: "Подъемно сдвижное",
+        latin: "up_sliding"
+      },
+      {
+        tag: "Типы открывания",
+        id: 'eo',
+        aliases: ['open_types']
+      }
+    ],
+    specOrderRowTypes: [
+      {
+        order: 0,
+        name: "Нет",
+        synonym: "Нет",
+        latin: "no"
+      },
+      {
+        order: 1,
+        name: "Материал",
+        synonym: "Материал",
+        latin: "material"
+      },
+      {
+        order: 2,
+        name: "Продукция",
+        synonym: "Продукция",
+        latin: "prod"
+      },
+      {
+        order: 3,
+        name: "Комплектация",
+        synonym: "Комплектация",
+        latin: "kit"
+      },
+      {
+        order: 4,
+        name: "ТекИзделие",
+        synonym: "Текущее изделие",
+        latin: "current"
+      },
+      {
+        order: 5,
+        name: "Контур",
+        synonym: "Контур",
+        latin: "layer"
+      },
+      {
+        order: 6,
+        name: "Соседний",
+        synonym: "Соседний элем или слой",
+        latin: "nearest"
+      },
+      {
+        tag: "Типы строк в заказ",
+        description: "Способ вытягивания строки спецификации в заказ либо привязка к элементу или слою",
+        id: 'eol',
+        aliases: ['specification_order_row_types']
+      }
+    ],
   },
 };
+

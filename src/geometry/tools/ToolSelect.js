@@ -26,6 +26,7 @@ export class ToolSelect extends ToolElement {
       mouseup: this.mouseup,
       mousedrag: this.mousedrag,
       mousemove: this.hitTest,
+      keydown: this.keydown,
     });
   }
 
@@ -39,9 +40,11 @@ export class ToolSelect extends ToolElement {
 
     this.mode = null;
     this.changed = false;
-    const select = [];
-    const deselect = [];
+    this.mouseStartPos = event.point.clone();
+    this.mousePos = event.point.clone();
     
+    const select = [];
+    const deselect = [];    
 
     if(hitItem && !alt) {
       
@@ -83,7 +86,6 @@ export class ToolSelect extends ToolElement {
             // }
           }
           this.mode = 'move-shapes';
-          this.mouseStartPos = event.point.clone();
         }
         else if(deselect.length) {
           if(control) {
@@ -121,11 +123,9 @@ export class ToolSelect extends ToolElement {
           }
         }
         this.mode = 'move-points';
-        this.mouseStartPos = event.point.clone();
       }
       else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
         this.mode = 'move-handle';
-        this.mouseStartPos = event.point.clone();
         this.originalHandleIn = hitItem.segment.handleIn.clone();
         this.originalHandleOut = hitItem.segment.handleOut.clone();
       }
@@ -145,7 +145,6 @@ export class ToolSelect extends ToolElement {
     }
     else {
       // Clicked on and empty area, engage box select.
-      this.mouseStartPos = event.point.clone();
       this.mode = 'box-select';
       
       if(!control && !shift) {
@@ -173,6 +172,8 @@ export class ToolSelect extends ToolElement {
       }
     }
     this.mode = null;
+    this.mouseStartPos = null;
+    this.mousePos = null;
   }
 
   mousedrag(event) {
@@ -181,7 +182,22 @@ export class ToolSelect extends ToolElement {
       if (!event.modifiers.shift) {
         delta = delta.snapToAngle();
       }
-      this.project.activeLayer.tryMovePoints(delta, true);
+      if(delta.length > 8) {
+        this.mousePos = event.point.clone();
+        this.project.activeLayer.tryMovePoints(this.mouseStartPos, delta, true);
+      }
+    }
+  }
+
+  keydown(event) {
+    const {project, mode, _scope} = this;
+    const {event: {code, target}, modifiers} = event;
+    if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
+      this.mode = null;
+      project.activeLayer.cancelMovePoints();
+      if(this.mousePos) {
+        this.hitTest({point: this.mousePos});
+      }
     }
   }
 

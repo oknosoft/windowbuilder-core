@@ -63,12 +63,20 @@ export class Profile extends GeneratrixElement {
 
   redraw() {
     this.checkActual();
-    const {path} = this;
-    if(!path.segments.length) {
-      const {b, e} = this;
-      const points = {b: b.points(), e: e.points()};
-      path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
-      path.closePath(); 
-    }    
+    this.project.props.loading
+    const {path, project} = this;
+    if(project.props.carcass) {
+      path.selected = false;
+      path.visible = false;
+    }
+    else {
+      path.visible = true;
+      if(!path.segments.length) {
+        const {b, e} = this;
+        const points = {b: b.points(), e: e.points()};
+        path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
+        path.closePath();
+      }
+    }     
   }
 }

@@ -4,6 +4,7 @@ import {classes as nomKindsClasses, meta as nomKinds, exclude as nomKindsExclude
 import {classes as nomClasses, meta as nom, exclude as nomExclude} from './nom';
 import {classes as insertsClasses, meta as inserts, exclude as insertsExclude} from './inserts';
 import {classes as cnnsClasses, meta as cnns, exclude as cnnsExclude} from './cnns';
+import {classes as productionParamsClasses, meta as productionParams, exclude as productionParamsExclude} from './productionParams';
 
 export const meta = {
   currencies: {
@@ -129,6 +130,7 @@ export const meta = {
   nom,
   inserts,
   cnns,
+  productionParams,
   workCenterKinds: {
     name: "ВидыРабочихЦентров",
     synonym: "Этапы производства (Виды РЦ)",
@@ -275,6 +277,7 @@ export const exclude = [
   ...insertsExclude,
   ...nomExclude,
   ...cnnsExclude,
+  ...productionParamsExclude,
 ];
 
 export const classes = [
@@ -282,5 +285,6 @@ export const classes = [
   nomKindsClasses,
   nomClasses,
   insertsClasses,
-  cnnsClasses
+  cnnsClasses,
+  productionParamsClasses,
 ];

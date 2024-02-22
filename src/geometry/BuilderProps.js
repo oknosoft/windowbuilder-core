@@ -2,8 +2,8 @@
 export class BuilderProps  {
   #raw = {};
   
-  constructor(scheme) {
-    this.#raw.scheme = scheme;
+  constructor(project) {
+    this.#raw.project = project;
     this.#raw.stamp = Date.now();
   }
   
@@ -12,6 +12,7 @@ export class BuilderProps  {
   }
   registerChange() {
     this.#raw.stamp = Date.now();
+    this.#raw?.registerChange?.();
   }
   
   get flipped() {
@@ -25,7 +26,12 @@ export class BuilderProps  {
     return Boolean(this.#raw.carcass);
   }
   set carcass(v) {
-    this.#raw.carcass = Boolean(v);
+    v = Boolean(v);
+    const change = this.#raw.carcass !== v;
+    this.#raw.carcass = v;
+    if(change) {
+      this.#raw.project.redraw(true);
+    }
   }
 
   get loading() {

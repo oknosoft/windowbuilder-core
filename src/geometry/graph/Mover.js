@@ -12,31 +12,32 @@ export class Mover {
       vertexes: new Map(),
     });
   }
+  
 
   /**
    * @summary Запоминает выделенные узлы перед началом сдвига
    * @param {Boolean} [interactive]
    */
   prepareMovePoints(interactive) {
-    for(const edge of this.#raw.owner.skeleton.getAllEdges()) {
+    const {owner, edges, vertexes, dependEdges} = this.#raw;
+    for(const edge of owner.skeleton.getAllEdges()) {
       if(edge.selected || (edge.startVertex.selected && edge.endVertex.selected)) {
-        this.#raw.edges.add(edge);
-        this.#raw.vertexes.set(edge.startVertex, new paper.Point);
-        this.#raw.vertexes.set(edge.endVertex, new paper.Point);
+        edges.add(edge);
+        vertexes.set(edge.startVertex, new paper.Point);
+        vertexes.set(edge.endVertex, new paper.Point);
       }
       else if(edge.startVertex.selected) {
-        this.#raw.vertexes.set(edge.startVertex, new paper.Point);
-        this.#raw.dependEdges.add(edge);
+        vertexes.set(edge.startVertex, new paper.Point);
+        dependEdges.add(edge);
       }
       else if(edge.endVertex.selected) {
-        this.#raw.vertexes.set(edge.endVertex, new paper.Point);
-        this.#raw.dependEdges.add(edge);
+        vertexes.set(edge.endVertex, new paper.Point);
+        dependEdges.add(edge);
       }      
     }
-    if(this.#raw.vertexes.size && interactive) {
-      for(const profile of this.#raw.owner.profiles) {
-        profile.opacity = 0.3;
-      }
+    if(interactive) {
+      this.#raw.initialCarcass = owner.project.props.carcass; 
+      owner.project.props.carcass = true;
     }
   }
 
@@ -44,20 +45,20 @@ export class Mover {
    * @summary При завершении или отмене сдвига
    */
   cancelMovePoints() {
-    this.#raw.edges.clear();
-    this.#raw.dependEdges.clear();
-    this.#raw.vertexes.clear();
-    for(const profile of this.#raw.owner.profiles) {
-      profile.opacity = 1;
-    }
+    const {owner, edges, vertexes, dependEdges, initialCarcass} = this.#raw;
+    edges.clear();
+    dependEdges.clear();
+    vertexes.clear();
+    owner.project.props.carcass = initialCarcass;
   }
 
   /**
    * @summary Корректирует delta допустимой величиной сдвига для каждого узла
+   * @param {paper.Point} start
    * @param {paper.Point} delta
    * @param {Boolean} [interactive]
    */
-  tryMovePoints(delta, interactive) {
+  tryMovePoints(start, delta, interactive) {
     for(const [vertex] of this.#raw.vertexes) {
       this.#raw.vertexes.set(vertex, delta);
     }

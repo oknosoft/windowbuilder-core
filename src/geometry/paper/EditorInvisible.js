@@ -16,7 +16,7 @@ export class EditorInvisible extends paper.PaperScope {
   /**
    * Создаёт проект с заданным типом канваса
    * @param {HTMLCanvasElement} canvas
-   * @param {MetaEngine} root
+   * @param {MetaEngine} root - ссылка на $p
    * @return {Scheme}
    */
   createScheme(canvas, root) {

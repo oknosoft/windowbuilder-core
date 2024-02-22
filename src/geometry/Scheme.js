@@ -7,10 +7,10 @@ export class Scheme extends paper.Project {
   
   constructor(attr, root) {
     super(attr);
-    Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
     if(root) {
       Object.defineProperty(this, 'root', {value: root});
     }
+    Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
   }
 
   get activeLayer() {
@@ -69,9 +69,12 @@ export class Scheme extends paper.Project {
   /**
    * @summary Перерисовывает все слои изделия
    */
-  redraw() {
+  redraw(silent) {
     for(const item of this.contours) {
       item.redraw?.();
+    }
+    if(!silent) {
+      this.root.md.emit('redraw', this);
     }
   }
   
