@@ -5,6 +5,7 @@ export class BuilderProps  {
   constructor(project) {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
+    this.#raw.carcass = true;
   }
   
   get stamp() {

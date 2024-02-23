@@ -60,6 +60,11 @@ export class Profile extends GeneratrixElement {
     }
     return inner;
   }
+  
+  remove() {
+    this.skeleton.removeProfile(this);
+    super.remove();
+  }
 
   redraw() {
     this.checkActual();

@@ -40,11 +40,10 @@ export class ToolSelect extends ToolElement {
 
     this.mode = null;
     this.changed = false;
-    this.mouseStartPos = event.point.clone();
-    this.mousePos = event.point.clone();
-    
+        
     const select = [];
-    const deselect = [];    
+    const deselect = [];
+    this.mouseStartPos = event.point.clone();
 
     if(hitItem && !alt) {
       
@@ -86,6 +85,7 @@ export class ToolSelect extends ToolElement {
             // }
           }
           this.mode = 'move-shapes';
+          this.mouseStartPos = hitItem.point.clone();
         }
         else if(deselect.length) {
           if(control) {
@@ -123,6 +123,7 @@ export class ToolSelect extends ToolElement {
           }
         }
         this.mode = 'move-points';
+        this.mouseStartPos = hitItem.point.clone();
       }
       else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
         this.mode = 'move-handle';
@@ -156,7 +157,8 @@ export class ToolSelect extends ToolElement {
       }
 
     }
-
+    this.mousePos = this.mouseStartPos?.clone() || null;
+    
     deselect.length && this._scope.cmd('deselect', deselect);
     select.length && this._scope.cmd('select', select);
 

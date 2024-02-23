@@ -1,5 +1,5 @@
 /**
- * Узел графа
+ * Ребро графа
  */
 export class GraphEdge {
   /**
@@ -135,6 +135,18 @@ export class GraphEdge {
     cache.set(profile, {some_side});
 
     return some_side;
+  }
+  
+  other(vertex) {
+    const {startVertex, endVertex, cnnPoints, profile} = this;
+    const other = startVertex === vertex ? endVertex : startVertex;
+    const cnnPoint = vertex.cnnPoints.find((v) => v.owner === profile);
+    return {other, profileOther: cnnPoint?.other};
+  }
+
+  otherProfileVertex(vertex) {
+    const {profile} = this;
+    const cnnPoint = vertex.cnnPoints.find(pt => pt.owner === profile);
   }
 
   /**

@@ -68,21 +68,42 @@ export class CnnPoint {
   get name() {
     return this.#raw.name;
   }
-  
+
+  /**
+   * @summary Профиль-владелец
+   * @type {Profile}
+   */
   get owner() {
     return this.#raw.owner;
   }
 
+  /**
+   * @summary Путь внутренних лучей
+   * @type {paper.Path}
+   */
   get inner() {
     this.checkActual();
     this.tuneRays();
     return this.#raw.inner;
   }
 
+  /**
+   * @summary Путь внешних лучей
+   * @type {paper.Path}
+   */
   get outer() {
     this.checkActual();
     this.tuneRays();
     return this.#raw.outer;
+  }
+
+  /**
+   * @summary CnnPoint с тругой стороны профиля
+   * @type {CnnPoint}
+   */
+  get other() {
+    const {owner, name} = this.#raw;
+    return name === 'b' ? owner.e : owner.b; 
   }
 
   /**

@@ -7,34 +7,47 @@ export class Mover {
   constructor(owner) {
     Object.assign(this.#raw, {
       owner,
-      edges: new Set(),
-      dependEdges: new Set(),
       vertexes: new Map(),
     });
   }
   
+  addRecursive(vertex, edge, level) {
+    const {owner, vertexes} = this.#raw;
+    if(!vertexes.has(vertex)) {
+      vertexes.set(vertex, {level, point: vertex.point.clone()});
+    }
+    const {other, profileOther} = edge.other(vertex);
+    if(!other.selected && !vertexes.has(other)) {
+      for(const otherEdge of other.getEdges()) {
+        if(otherEdge.profile !== edge.profile) {
+          this.addRecursive(other, otherEdge, level + 1);
+        }
+      }
+    }
+    if(profileOther && !profileOther.selected) {
+      vertexes.get(vertex).base = profileOther.point.clone();
+    }
+  }
 
   /**
-   * @summary Запоминает выделенные узлы перед началом сдвига
+   * @summary Запоминает выделенные узлы и рёбра перед началом сдвига
    * @param {Boolean} [interactive]
    */
   prepareMovePoints(interactive) {
-    const {owner, edges, vertexes, dependEdges} = this.#raw;
+    const {owner, vertexes} = this.#raw;
     for(const edge of owner.skeleton.getAllEdges()) {
       if(edge.selected || (edge.startVertex.selected && edge.endVertex.selected)) {
-        edges.add(edge);
-        vertexes.set(edge.startVertex, new paper.Point);
-        vertexes.set(edge.endVertex, new paper.Point);
+        this.addRecursive(edge.startVertex, edge, 0);
+        this.addRecursive(edge.endVertex, edge, 0);
       }
       else if(edge.startVertex.selected) {
-        vertexes.set(edge.startVertex, new paper.Point);
-        dependEdges.add(edge);
+        this.addRecursive(edge.startVertex, edge, 0);
       }
       else if(edge.endVertex.selected) {
-        vertexes.set(edge.endVertex, new paper.Point);
-        dependEdges.add(edge);
+        this.addRecursive(edge.endVertex, edge, 0);
       }      
     }
+    // при интерактивных сдвигах, прячем линии профилей
     if(interactive) {
       this.#raw.initialCarcass = owner.project.props.carcass; 
       owner.project.props.carcass = true;
@@ -45,9 +58,7 @@ export class Mover {
    * @summary При завершении или отмене сдвига
    */
   cancelMovePoints() {
-    const {owner, edges, vertexes, dependEdges, initialCarcass} = this.#raw;
-    edges.clear();
-    dependEdges.clear();
+    const {owner, vertexes, initialCarcass} = this.#raw;
     vertexes.clear();
     owner.project.props.carcass = initialCarcass;
   }
@@ -59,20 +70,24 @@ export class Mover {
    * @param {Boolean} [interactive]
    */
   tryMovePoints(start, delta, interactive) {
-    for(const [vertex] of this.#raw.vertexes) {
-      this.#raw.vertexes.set(vertex, delta);
+    for(const [vertex, move] of this.#raw.vertexes) {
+      if(move.level === 0) {
+        if(!move.startPoint) {
+          move.startPoint = move.point; 
+        }
+        move.point = move.startPoint.add(delta);
+      }
     }
   }
   
   applyMovePoints() {
     let moved;
-    for(const [vertex, delta] of this.#raw.vertexes) {
-      if(delta?.length) {
+    for(const [vertex, move] of this.#raw.vertexes) {
+      if(!vertex.point.isNearest(move.point)) {
         moved = true;
-        vertex.point = vertex.point.add(delta);
+        vertex.point = move.point;
       }
-    }
-    
+    }    
     this.cancelMovePoints();
     return moved;
   }

@@ -22,7 +22,7 @@ export class GraphVertex {
     return this.cnnPoints[0]?.point;
   }
   set point(v) {
-    const {point, profiles, cnnPoints} = this;
+    const {point, cnnPoints} = this;
     for(const pt of cnnPoints) {
       pt.point = v;
     }
