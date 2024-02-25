@@ -1346,6 +1346,8 @@ class BuilderElement extends paper.Group {
     if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});
       ox.inserts.clear({cnstr: -elm});
+      ox.cnn_elmnts.find({elm1: elm});
+      ox.cnn_elmnts.find({elm2: elm});      
       _row._owner.del(_row);
     }
     project.register_change();
@@ -8297,6 +8299,10 @@ class CnnPoint {
     }
     if(this.is_cut) {
       this.is_cut = false;
+    }
+    const {_row} = this;
+    if(_row) {
+      _row.elm2 = 0;
     }
     this.profile = null;
     this.err = null;

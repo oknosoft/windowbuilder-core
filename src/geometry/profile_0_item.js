@@ -149,6 +149,10 @@ class CnnPoint {
     if(this.is_cut) {
       this.is_cut = false;
     }
+    const {_row} = this;
+    if(_row) {
+      _row.elm2 = 0;
+    }
     this.profile = null;
     this.err = null;
     this.distance = Infinity;
