@@ -165,15 +165,20 @@ export class Skeleton extends Graph {
     }
     this.addEdge(new GraphEdge({startVertex, endVertex: vertex, profile}));
     this.addEdge(new GraphEdge({startVertex: vertex, endVertex, profile}));
-    for(const cnnPoint of startPoints) {
-      if(!startVertex.cnnPoints.includes(cnnPoint)) {
-        startVertex.cnnPoints.push(cnnPoint);
+    const addPurge = ({cnnPoints}, point) => {
+      if(!cnnPoints.includes(point)) {
+        cnnPoints.push(point);
       }
+      const rm = cnnPoints.filter((pt) => !(pt instanceof CnnPoint));
+      for (const pt of rm) {
+        cnnPoints.length > 1 && cnnPoints.splice(cnnPoints.indexOf(pt), 1);
+      }
+    };
+    for(const cnnPoint of startPoints) {
+      addPurge(startVertex, cnnPoint);
     }
     for(const cnnPoint of endPoints) {
-      if(!endVertex.cnnPoints.includes(cnnPoint)) {
-        endVertex.cnnPoints.push(cnnPoint);
-      }
+      addPurge(endVertex, cnnPoint);
     }
   }
   

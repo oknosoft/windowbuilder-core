@@ -70,11 +70,27 @@ export class Mover {
    * @param {Boolean} [interactive]
    */
   tryMovePoints(start, delta, interactive) {
+    // извлекаем разрешенные диапазоны из шаблона
+    let li = 200;
+    let lmin = 200;
+    let lmax = 2000;
+    
     for(const [vertex, move] of this.#raw.vertexes) {
+      if(!move.startPoint) {
+        move.startPoint = move.point;
+      }
+      const test = move.startPoint.add(delta);
+      // если это узел нулевого уровня
       if(move.level === 0) {
-        if(!move.startPoint) {
-          move.startPoint = move.point; 
+        if(vertex.isT) {
+          // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
+          
         }
+        else {
+          // узел угла не должен порождать длины < lmin и > lmax
+          
+        }
+        
         move.point = move.startPoint.add(delta);
       }
     }

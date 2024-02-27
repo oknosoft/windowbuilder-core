@@ -17,7 +17,12 @@ export class GraphVertex {
     this.neighborsConverter = this.neighborsConverter.bind(this);
     this.cnnPoints = [point instanceof paper.Point ? {point} : point];
   }
-  
+
+  /**
+   * @summary Координата узла
+   * @desc При чтении - возвращает точку, при записи - двигает узел
+   * @type {paper.Point}
+   */
   get point() {
     return this.cnnPoints[0]?.point;
   }
@@ -26,6 +31,10 @@ export class GraphVertex {
     for(const pt of cnnPoints) {
       pt.point = v;
     }
+  }
+  
+  get isT() {
+    return this.cnnPoints.some(pt => pt.isT);
   }
 
   /**
