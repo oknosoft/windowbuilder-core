@@ -1005,8 +1005,8 @@ class BuilderElement extends paper.Group {
     if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});
       ox.inserts.clear({cnstr: -elm});
-      ox.cnn_elmnts.find({elm1: elm});
-      ox.cnn_elmnts.find({elm2: elm});      
+      ox.cnn_elmnts.clear({elm1: elm});
+      ox.cnn_elmnts.clear({elm2: elm});   
       _row._owner.del(_row);
     }
 
