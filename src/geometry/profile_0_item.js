@@ -2745,6 +2745,7 @@ class ProfileItem extends GeneratrixElement {
   flip() {
     const nearests = this.joined_nearests();
     const {inner, outer} = this.joined_imposts();
+    const shtulp = this.is_shtulp();
 
     const {elm, rays, generatrix, ox, project, layer} = this;
     rays.b.clear();
@@ -2755,7 +2756,6 @@ class ProfileItem extends GeneratrixElement {
     
     
     // если это штульп - меняем фурнитуру после переворота
-    const shtulp = this.is_shtulp();
     const furns = [];
     if(shtulp && nearests.length === 2) {
       for(const {layer: {furn, direction, h_ruch}} of nearests) {

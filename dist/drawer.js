@@ -10201,13 +10201,13 @@ class ProfileItem extends GeneratrixElement {
   flip() {
     const nearests = this.joined_nearests();
     const {inner, outer} = this.joined_imposts();
+    const shtulp = this.is_shtulp();
     const {elm, rays, generatrix, ox, project, layer} = this;
     rays.b.clear();
     rays.e.clear();
     rays.clear('with_neighbor');
     ox.cnn_elmnts.clear({elm1: elm});
     ox.cnn_elmnts.clear({elm2: elm});
-    const shtulp = this.is_shtulp();
     const furns = [];
     if(shtulp && nearests.length === 2) {
       for(const {layer: {furn, direction, h_ruch}} of nearests) {
