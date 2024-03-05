@@ -12149,19 +12149,23 @@ class ProfileAdjoining extends BaseLine {
       }
     }
     const {length} = generatrix;
-    if(!rays.b.cnn) {
-      const elm2 = {elm: 0, _row};
-      rays.b.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+    if(rays) {
+      if(!rays.b.cnn) {
+        const elm2 = {elm: 0, _row};
+        rays.b.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+      }
+      if(!rays.e.cnn) {
+        const elm2 = {elm: 0, _row};
+        rays.e.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
+      }
     }
-    if(!rays.e.cnn) {
-      const elm2 = {elm: 0, _row};
-      rays.e.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
-    }    
-    _attr._corns.length = 0;
-    const szb = rays.b.cnn?.size(this) || 0;
-    const sze = rays.e.cnn?.size(this) || 0;
-    _attr._corns[1] = this.b.add(generatrix.getTangentAt(0).negate().normalize(szb));
-    _attr._corns[2] = this.e.add(generatrix.getTangentAt(length).normalize(sze));    
+    const szb = rays?.b?.cnn?.size(this) || 0;
+    const sze = rays?.e?.cnn?.size(this) || 0;
+    if(_attr) {
+      _attr._corns.length = 0;
+      _attr._corns[1] = this.b.add(generatrix.getTangentAt(0).negate().normalize(szb));
+      _attr._corns[2] = this.e.add(generatrix.getTangentAt(length).normalize(sze));
+    }
     for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
       const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
@@ -12211,7 +12215,7 @@ class ProfileNestedContent extends Profile {
         row.y2 -= y;
       }
       let pelm;
-      if(row.elm_type != 'Импост') {
+      if(!row.elm_type.is('Импост')) {
         const h = pbounds.height + pbounds.y;
         const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
         for(const elm of profiles) {
