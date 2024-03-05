@@ -18,7 +18,7 @@ class ProfileNestedContent extends Profile {
       this._attr._nearest = _nearest;
     }
     else {
-      const {layer, project: {bounds: pbounds}} = parent;
+      const {layer: {layer}, project: {bounds: pbounds}} = parent;
       const {profiles, bounds: lbounds} = layer;
 
       const x = lbounds.x + pbounds.x;
@@ -37,7 +37,7 @@ class ProfileNestedContent extends Profile {
       }
 
       let pelm;
-      if(row.elm_type != 'Импост') {
+      if(!row.elm_type.is('Импост')) {
         const h = pbounds.height + pbounds.y;
         const dir = new paper.Point(row.x2, h - row.y2).subtract(new paper.Point(row.x1, h - row.y1));
         for(const elm of profiles) {
