@@ -33,6 +33,7 @@ $p.enm.create('text_aligns');
 $p.enm.create('obj_delivery_states');
 $p.enm.create('use_cut');
 $p.enm.create('order_categories');
+$p.enm.create('planning_keys');
 $p.enm.create('color_price_group_destinations');
 $p.enm.create('open_directions');
 $p.enm.create('rounding_quantity');
@@ -368,6 +369,8 @@ get showcalc(){return this._getter('showcalc')}
 set showcalc(v){this._setter('showcalc',v)}
 get inheritance(){return this._getter('inheritance')}
 set inheritance(v){this._setter('inheritance',v)}
+get conserve(){return this._getter('conserve')}
+set conserve(v){this._setter('conserve',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -6689,6 +6692,8 @@ get cnn(){return this._getter('cnn')}
 set cnn(v){this._setter('cnn',v)}
 get aperture_len(){return this._getter('aperture_len')}
 set aperture_len(v){this._setter('aperture_len',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.CatCharacteristicsCnn_elmntsRow = CatCharacteristicsCnn_elmntsRow;
 class CatCharacteristicsGlass_specificationRow extends TabularSectionRow{
@@ -7280,6 +7285,39 @@ set grouping(v){this._setter('grouping',v)}
 }
 $p.CatProject_stages = CatProject_stages;
 $p.cat.create('project_stages');
+class CatProduct_fragments extends CatObj{
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get route(){return this._getter('route')}
+set route(v){this._setter('route',v)}
+get branch(){return this._getter('branch')}
+set branch(v){this._setter('branch',v)}
+get composition(){return this._getter_ts('composition')}
+set composition(v){this._setter_ts('composition',v)}
+}
+$p.CatProduct_fragments = CatProduct_fragments;
+class CatProduct_fragmentsCompositionRow extends TabularSectionRow{
+get characteristic(){return this._getter('characteristic')}
+set characteristic(v){this._setter('characteristic',v)}
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
+}
+$p.CatProduct_fragmentsCompositionRow = CatProduct_fragmentsCompositionRow;
+$p.cat.create('product_fragments');
+class CatPlanning_keys extends CatObj{
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
+get specimen(){return this._getter('specimen')}
+set specimen(v){this._setter('specimen',v)}
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+get type(){return this._getter('type')}
+set type(v){this._setter('type',v)}
+}
+$p.CatPlanning_keys = CatPlanning_keys;
+$p.cat.create('planning_keys');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -9129,87 +9167,6 @@ set dop(v){this._setter('dop',v)}
 }
 $p.RepMaterials_demandSpecificationRow = RepMaterials_demandSpecificationRow;
 $p.rep.create('materials_demand');
-class RepFormulas_stat extends DataProcessorObj{
-get data(){return this._getter_ts('data')}
-set data(v){this._setter_ts('data',v)}
-}
-$p.RepFormulas_stat = RepFormulas_stat;
-class RepFormulas_statDataRow extends TabularSectionRow{
-get date(){return this._getter('date')}
-set date(v){this._setter('date',v)}
-get formula(){return this._getter('formula')}
-set formula(v){this._setter('formula',v)}
-get user(){return this._getter('user')}
-set user(v){this._setter('user',v)}
-get suffix(){return this._getter('suffix')}
-set suffix(v){this._setter('suffix',v)}
-get requests(){return this._getter('requests')}
-set requests(v){this._setter('requests',v)}
-get time(){return this._getter('time')}
-set time(v){this._setter('time',v)}
-}
-$p.RepFormulas_statDataRow = RepFormulas_statDataRow;
-$p.rep.create('formulas_stat');
-class RepCash extends DataProcessorObj{
-get data(){return this._getter_ts('data')}
-set data(v){this._setter_ts('data',v)}
-}
-$p.RepCash = RepCash;
-class RepCashDataRow extends TabularSectionRow{
-get period(){return this._getter('period')}
-set period(v){this._setter('period',v)}
-get register(){return this._getter('register')}
-set register(v){this._setter('register',v)}
-get organization(){return this._getter('organization')}
-set organization(v){this._setter('organization',v)}
-get bank_account_cashbox(){return this._getter('bank_account_cashbox')}
-set bank_account_cashbox(v){this._setter('bank_account_cashbox',v)}
-get initial_balance(){return this._getter('initial_balance')}
-set initial_balance(v){this._setter('initial_balance',v)}
-get debit(){return this._getter('debit')}
-set debit(v){this._setter('debit',v)}
-get credit(){return this._getter('credit')}
-set credit(v){this._setter('credit',v)}
-get final_balance(){return this._getter('final_balance')}
-set final_balance(v){this._setter('final_balance',v)}
-}
-$p.RepCashDataRow = RepCashDataRow;
-$p.rep.create('cash');
-class RepGoods extends DataProcessorObj{
-get data(){return this._getter_ts('data')}
-set data(v){this._setter_ts('data',v)}
-}
-$p.RepGoods = RepGoods;
-class RepGoodsDataRow extends TabularSectionRow{
-get period(){return this._getter('period')}
-set period(v){this._setter('period',v)}
-get register(){return this._getter('register')}
-set register(v){this._setter('register',v)}
-get warehouse(){return this._getter('warehouse')}
-set warehouse(v){this._setter('warehouse',v)}
-get nom(){return this._getter('nom')}
-set nom(v){this._setter('nom',v)}
-get characteristic(){return this._getter('characteristic')}
-set characteristic(v){this._setter('characteristic',v)}
-get initial_balance(){return this._getter('initial_balance')}
-set initial_balance(v){this._setter('initial_balance',v)}
-get debit(){return this._getter('debit')}
-set debit(v){this._setter('debit',v)}
-get credit(){return this._getter('credit')}
-set credit(v){this._setter('credit',v)}
-get final_balance(){return this._getter('final_balance')}
-set final_balance(v){this._setter('final_balance',v)}
-get amount_initial_balance(){return this._getter('amount_initial_balance')}
-set amount_initial_balance(v){this._setter('amount_initial_balance',v)}
-get amount_debit(){return this._getter('amount_debit')}
-set amount_debit(v){this._setter('amount_debit',v)}
-get amount_credit(){return this._getter('amount_credit')}
-set amount_credit(v){this._setter('amount_credit',v)}
-get amount_final_balance(){return this._getter('amount_final_balance')}
-set amount_final_balance(v){this._setter('amount_final_balance',v)}
-}
-$p.RepGoodsDataRow = RepGoodsDataRow;
-$p.rep.create('goods');
 class RepInvoice_execution extends DataProcessorObj{
 get data(){return this._getter_ts('data')}
 set data(v){this._setter_ts('data',v)}
@@ -9270,39 +9227,43 @@ set final_balance(v){this._setter('final_balance',v)}
 }
 $p.RepMutual_settlementsDataRow = RepMutual_settlementsDataRow;
 $p.rep.create('mutual_settlements');
-class RepSelling extends DataProcessorObj{
+class RepPlanning extends DataProcessorObj{
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
+get phase(){return this._getter('phase')}
+set phase(v){this._setter('phase',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
 get data(){return this._getter_ts('data')}
 set data(v){this._setter_ts('data',v)}
 }
-$p.RepSelling = RepSelling;
-class RepSellingDataRow extends TabularSectionRow{
-get period(){return this._getter('period')}
-set period(v){this._setter('period',v)}
-get register(){return this._getter('register')}
-set register(v){this._setter('register',v)}
-get organization(){return this._getter('organization')}
-set organization(v){this._setter('organization',v)}
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get partner(){return this._getter('partner')}
-set partner(v){this._setter('partner',v)}
-get trans(){return this._getter('trans')}
-set trans(v){this._setter('trans',v)}
-get nom(){return this._getter('nom')}
-set nom(v){this._setter('nom',v)}
-get characteristic(){return this._getter('characteristic')}
-set characteristic(v){this._setter('characteristic',v)}
-get quantity(){return this._getter('quantity')}
-set quantity(v){this._setter('quantity',v)}
-get amount(){return this._getter('amount')}
-set amount(v){this._setter('amount',v)}
-get vat_amount(){return this._getter('vat_amount')}
-set vat_amount(v){this._setter('vat_amount',v)}
-get discount(){return this._getter('discount')}
-set discount(v){this._setter('discount',v)}
+$p.RepPlanning = RepPlanning;
+class RepPlanningDataRow extends TabularSectionRow{
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
+get phase(){return this._getter('phase')}
+set phase(v){this._setter('phase',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get power(){return this._getter('power')}
+set power(v){this._setter('power',v)}
 }
-$p.RepSellingDataRow = RepSellingDataRow;
-$p.rep.create('selling');
+$p.RepPlanningDataRow = RepPlanningDataRow;
+$p.rep.create('planning');
 
 /*
  * Подмешивается в конец init-файла
