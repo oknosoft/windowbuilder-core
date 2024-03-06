@@ -43,6 +43,8 @@ export class GraphEdge {
     const {startVertex, endVertex} = this;
     return `${startVertex.key}_${endVertex.key}`;
   }
+  
+
 
   /**
    * @return {GraphEdge}
@@ -147,6 +149,7 @@ export class GraphEdge {
   otherProfileVertex(vertex) {
     const {profile} = this;
     const cnnPoint = vertex.cnnPoints.find(pt => pt.owner === profile);
+    return cnnPoint.other.vertex;
   }
 
   /**

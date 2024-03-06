@@ -55,7 +55,7 @@ export class CnnPoint {
       const {owner, name, pts} = this.#raw;
       const {d1, d2, width, generatrix} = owner;
       const ds = 5 * (width > 30 ? width : 30) * (name === 'b' ? 1 : -1);
-      const {offset, tangent, normal} = generatrix.otn(point);
+      const {offset, tangent, normal} = generatrix.getLocationOf(point);
       outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(-ds)));
       inner.add(point.add(normal.multiply(d2)).add(tangent.multiply(-ds)));
       outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(ds)));

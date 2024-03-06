@@ -7,5 +7,5 @@ import path from './Path';
 import view from './View';
 
 point(paper.Point.prototype);
-path(paper.Path.prototype);
+path(paper);
 view(paper.View.prototype);

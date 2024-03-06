@@ -12,16 +12,21 @@ class LayerGroup extends paper.Group {
 class GroupVisualization extends LayerGroup {
   constructor(attr) {
     super(attr);
-    new paper.Group({parent: this, name: 'by_insets'});
-    new paper.Group({parent: this, name: 'by_spec'});
+    new paper.Group({parent: this, name: 'insets'});
+    new paper.Group({parent: this, name: 'spec'});
+    new paper.Group({parent: this, name: 'ribs'});
   }
 
-  get by_insets() {
-    return this.children.by_insets;
+  get insets() {
+    return this.children.insets;
   }
 
-  get by_spec() {
-    return this.children.by_spec;
+  get spec() {
+    return this.children.spec;
+  }
+
+  get ribs() {
+    return this.children.ribs;
   }
 }
 

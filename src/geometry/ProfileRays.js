@@ -23,7 +23,7 @@ export class ProfileRays {
     const {cnn: {point, owner}, inner, outer} = this;
     const {d1, d2, width, generatrix} = owner;
     const ds = 3 * (width > 30 ? width : 30);
-    const {offset, tangent, normal} = generatrix.otn(point);
+    const {offset, tangent, normal} = generatrix.getLocationOf(point);
     outer.removeSegments();
     inner.removeSegments();
     outer.add(point.add(normal.multiply(d1)).add(tangent.multiply(-ds)));

@@ -13,10 +13,16 @@ export class Mover {
   
   addRecursive(vertex, edge, level) {
     const {owner, vertexes} = this.#raw;
-    if(!vertexes.has(vertex)) {
-      vertexes.set(vertex, {level, point: vertex.point.clone()});
+    const move = vertexes.has(vertex) ? 
+      vertexes.get(vertex) :
+      vertexes.set(vertex, {level, point: vertex.point.clone(), edges: new Map()}).get(vertex);
+    if(move.edges.has(edge)) {
+      return;
     }
-    const {other, profileOther} = edge.other(vertex);
+    // узлы с другой стороны ближайшего ребра и с другой стороны профиля
+    const {other, profileOther: base} = edge.other(vertex);
+    move.edges.set(edge, {other, base});
+    
     if(!other.selected && !vertexes.has(other)) {
       for(const otherEdge of other.getEdges()) {
         if(otherEdge.profile !== edge.profile) {
@@ -24,9 +30,7 @@ export class Mover {
         }
       }
     }
-    if(profileOther && !profileOther.selected) {
-      vertexes.get(vertex).base = profileOther.point.clone();
-    }
+    
   }
 
   /**
@@ -60,6 +64,7 @@ export class Mover {
   cancelMovePoints() {
     const {owner, vertexes, initialCarcass} = this.#raw;
     vertexes.clear();
+    owner.children.visualization.ribs.clear();
     owner.project.props.carcass = initialCarcass;
   }
 
@@ -79,7 +84,7 @@ export class Mover {
       if(!move.startPoint) {
         move.startPoint = move.point;
       }
-      const test = move.startPoint.add(delta);
+      let test = move.startPoint.add(delta);
       // если это узел нулевого уровня
       if(move.level === 0) {
         if(vertex.isT) {
@@ -88,10 +93,95 @@ export class Mover {
         }
         else {
           // узел угла не должен порождать длины < lmin и > lmax
-          
+          for(const [edge, me] of move.edges) {
+            const pos = edge.profile.generatrix.directedPosition({
+              base: me.other.point,
+              initial: move.startPoint,
+              test,
+              free: true,
+              min: lmin,
+              max: lmax,
+            });
+            if(pos.delta.length) {
+              // на текущем профиле перевёртыш - ищем точку
+              if(pos.stop) {
+                const pos = edge.profile.generatrix.directedMinPosition({
+                  base: me.other.point,
+                  initial: move.startPoint,
+                  min: lmin,
+                });
+                move.delta = pos.delta;
+                break;
+              }
+              else if (!move.delta || move.delta.length > pos.delta.length) {
+                move.delta = pos.delta;
+              }
+            }
+          }
         }
-        
-        move.point = move.startPoint.add(delta);
+      }
+    }
+    for(const [vertex, move] of this.#raw.vertexes) {
+      if(move.delta?.length) {
+        move.point = move.startPoint.add(move.delta);
+        move.delta = null;
+      }
+    }
+    this.drawMoveRibs();
+  }
+
+  drawMoveRibs() {
+    const {ribs} = this.#raw.owner.children.visualization;
+    ribs.clear();
+    const rects = [];
+    const selected = new Map();
+    for(const [vertex, move] of this.#raw.vertexes) {
+      for(const [edge, me] of move.edges) {
+        if(!move.level && move.point.length) {
+          if(me.other.selected) {
+            if(selected.has(edge.profile)) {
+              selected.get(edge.profile).push(move.point);
+            }
+            else {
+              selected.set(edge.profile, [move.point]);
+            }
+          }
+          else {
+            new paper.Path({
+              parent: ribs,
+              strokeColor: 'blue',
+              strokeWidth: 2,
+              strokeScaling: false,
+              dashArray: [4, 4],
+              guide: true,
+              segments: [me.other.point, move.point],
+            });
+          }
+          if(!rects.some((pt) => pt.isNearest(move.point))) {
+            rects.push(move.point.clone());
+            new paper.Path.Rectangle({
+              parent: ribs,
+              fillColor: 'blue',
+              center: move.point,
+              strokeScaling: false,
+              size: [60, 60],
+            });
+          }
+        }         
+      }
+      
+    }
+    for(const [profile, points] of selected) {
+      if(points.length === 2) {
+        new paper.Path({
+          parent: ribs,
+          strokeColor: 'blue',
+          strokeWidth: 2,
+          strokeScaling: false,
+          dashArray: [4, 4],
+          guide: true,
+          segments: [points[0], points[1]],
+        });
       }
     }
   }
@@ -99,7 +189,7 @@ export class Mover {
   applyMovePoints() {
     let moved;
     for(const [vertex, move] of this.#raw.vertexes) {
-      if(!vertex.point.isNearest(move.point)) {
+      if(move.point && !vertex.point.isNearest(move.point)) {
         moved = true;
         vertex.point = move.point;
       }

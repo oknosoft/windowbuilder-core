@@ -1,7 +1,7 @@
 
 
-export default function (proto) {
-  Object.assign(proto, {
+export default function (paper) {
+  Object.assign(paper.Path.prototype, {
 
     /**
      * @summary Определяет, находится ли точка вблизи пути
@@ -63,16 +63,44 @@ export default function (proto) {
       return np?.getDistance(point, squared) || Infinity;
     },
 
-    /**
-     * @summary
-     * @param point
-     * @return {{normal: Point, tangent: Point, offset: Number}}
-     */
-    otn(point) {
-      const offset = this.getOffsetOf(point);
-      const tangent = this.getTangentAt(offset);
-      const normal = this.getNormalAt(offset);
-      return {offset, tangent, normal};
+    directedPosition({base, initial, test, free, min, max}) {
+      const lb = this.getNearestLocation(base);
+      const li = this.getNearestLocation(initial);
+      const lt = this.getNearestLocation(test);
+      const line = new paper.Line(lb.point, lb.point.add(lb.normal));
+      const side = line.getSide(initial, true);
+      const stop = (line.getSide(test, true) !== side) || line.getDistance(test) < min;
+      if(free) {
+        const segment = new paper.Path({insert: false, segments: [base, test]});
+        if(segment.length > max) {
+          segment.lastSegment.point = segment.getPointAt(max);
+        }
+        else if(segment.length < min) {
+          segment.lastSegment.point = this.getPointAt(lb.offset > li.offset ? lb.offset - min : lb.offset + min);
+        }
+        return {delta: segment.lastSegment.point.subtract(initial), stop};
+      }
+      const sign = (li.offset >= lb.offset && lt.offset >= lb.offset) ||
+        (li.offset <= lb.offset && lt.offset <= lb.offset) ? 1 : -1;
+      const delta = initial.getDistance(test);
+      if(delta > 0 && li.point.isNearest(lt.point) && free) {
+        
+      }
+      return {location: lt, delta: lt.point.subtract(initial), stop};
+    },
+
+    directedMinPosition({base, initial, min}) {
+      let pt;
+      if(this.length <= min) {
+        pt = this.getPointAt(this.length / 2);
+      }
+      else {
+        const ob = this.getOffsetOf(base);
+        const oi = this.getOffsetOf(initial);
+        pt = this.getPointAt(oi <= ob ? ob - min : min);
+      }
+      return {delta: pt.subtract(initial)};
+      
     }
 
   });
