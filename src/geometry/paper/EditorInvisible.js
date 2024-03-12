@@ -48,7 +48,7 @@ export class EditorInvisible extends paper.PaperScope {
       activeLayer.createProfile({b: [100, 1000], e: [100, 0]}),
       activeLayer.createProfile({b: [100, 0], e: [1400, 0]}),
       activeLayer.createProfile({b: [1400, 0], e: [1400, 1000]}),
-      // activeLayer.createProfile({b: [500, 1000], e: [500, 0]}),
+      activeLayer.createProfile({b: [500, 1000], e: [500, 0]}),
       // activeLayer.createProfile({b: [700, 1000], e: [800, 0]}),
       // activeLayer.createProfile({b: [750, 500], e: [1400, 600]}),
     ];

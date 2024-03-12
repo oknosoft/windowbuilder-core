@@ -1,5 +1,5 @@
 
-const epsilon = 0.1;
+export const epsilon = 0.1;
 
 export default function (proto) {
   Object.assign(proto, {

@@ -1,4 +1,4 @@
-
+import {epsilon} from './Point';
 
 export default function (paper) {
   Object.assign(paper.Path.prototype, {
@@ -12,6 +12,29 @@ export default function (paper) {
      */
     isNearest(point, sticking) {
       return point.isNearest(this.getNearestPoint(point), sticking);
+    },
+    
+    isLinear() {
+      const {curves, firstCurve} = this;
+      // если в пути единственная кривая и она прямая - путь прямой
+      if(curves.length === 1 && (!firstCurve.hasHandles() || firstCurve.isLinear())) {
+        return true;
+      }
+      // если в пути есть искривления, путь кривой
+      else if(this.hasHandles()) {
+        return false;
+      }
+      else {
+        // если у всех кривых пути одинаковые направленные углы - путь прямой
+        const da = firstCurve.point2.subtract(firstCurve.point1).angle;
+        for (let i = 1; i < curves.length; i++) {
+          const dc = curves[i].point2.subtract(curves[i].point1).angle;
+          if(Math.abs(dc - da) > epsilon) {
+            return false;
+          }
+        }
+      }
+      return true;
     },
 
     /**
@@ -63,6 +86,73 @@ export default function (paper) {
       return np?.getDistance(point, squared) || Infinity;
     },
 
+    /**
+     * @summary Возвращает фрагмент пути между точками
+     * @memberof paper.Path#
+     * @method
+     * @param {paper.Point} point1 - точка начала фрагмента
+     * @param {paper.Point} point2 - точка конца фрагмента
+     * @param {Boolean} [strict] - если точки 1-2 не лежат в точности на пути, искать ли ближайшую
+     * @return {paper.Path}
+     */
+    getSubPath(point1, point2, strict) {
+      let tmp;
+      const {project} = this;
+
+      if(!this.length || !point1 || !point2 || (!strict && point1.isNearest(this.firstSegment.point) && point2.isNearest(this.lastSegment.point))){
+        tmp = this.clone({insert: false, deep: false});
+      }
+      else if(!strict && point2.isNearest(this.firstSegment.point) && point1.isNearest(this.lastSegment.point)){
+        tmp = this.clone({insert: false, deep: false});
+        tmp.reverse();
+        tmp._reversed = true;
+      }
+      else{
+        const loc1 = this.getLocationOf(point1) || this.getNearestLocation(point1);
+        const loc2 = this.getLocationOf(point2) || this.getNearestLocation(point2);
+        const offset1 = loc1.offset;
+        const offset2 = loc2.offset;
+
+        if(this.isLinear()){
+          // для прямого формируем новый путь из двух точек
+          tmp = new paper.Path({
+            project,
+            segments: [loc1.point, loc2.point],
+            insert: false
+          });
+        }
+        else{
+          // для кривого, создаём клон, вырезаем и добавляем плоский хвостик
+
+          if(offset1 > offset2){
+            tmp = this.clone({insert: false});
+            tmp.splitAt(offset1);
+            tmp = tmp.splitAt(offset2);
+            tmp.reverse();
+          }
+          else {
+            tmp = this.clone({insert: false});
+            tmp.splitAt(offset2);
+            tmp = tmp.splitAt(offset1);
+          }
+          if(tmp.lastSegment.handleIn.length > 0.1 || tmp.lastSegment.handleOut.length > 0.1) {
+            tmp.divideAt(tmp.length * 0.99);
+            tmp.lastSegment.clearHandles();
+          }
+          if(tmp.firstSegment.handleIn.length > 0.1 || tmp.firstSegment.handleOut.length > 0.1) {
+            tmp.divideAt(tmp.length * 0.01);
+            tmp.firstSegment.clearHandles();
+          }
+        }
+
+        if(offset1 > offset2){
+          tmp._reversed = true;
+        }
+      }
+
+      return tmp;
+    },
+    
     directedPosition({base, initial, test, free, min, max}) {
       const lb = this.getNearestLocation(base);
       const li = this.getNearestLocation(initial);
@@ -90,17 +180,9 @@ export default function (paper) {
     },
 
     directedMinPosition({base, initial, min}) {
-      let pt;
-      if(this.length <= min) {
-        pt = this.getPointAt(this.length / 2);
-      }
-      else {
-        const ob = this.getOffsetOf(base);
-        const oi = this.getOffsetOf(initial);
-        pt = this.getPointAt(oi <= ob ? ob - min : min);
-      }
+      const sub = this.getSubPath(base, initial);
+      const pt = sub.length <= min ? sub.getPointAt(sub.length / 2) : sub.getPointAt(min);
       return {delta: pt.subtract(initial)};
-      
     }
 
   });
