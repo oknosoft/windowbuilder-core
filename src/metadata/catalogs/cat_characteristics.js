@@ -946,6 +946,36 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   }
 
   /**
+   * @summary Возвращает Map ошибок из спецификации (при их наличии)
+   * @param {Boolean} [checkOnly] - проверять только наличие критических ошибок
+   * @return @return {Map<EnmElmTypes, Map>|Boolean} 
+   */
+  errors(checkOnly = false) {
+    const errors = new Map();
+    const {elm_types} = $p.enm;
+    const err_types = [elm_types.ОшибкаКритическая];
+    if(!checkOnly) {
+      err_types.push(elm_types.ОшибкаИнфо);
+    }
+    
+    for(const {nom, elm} of this.specification) {
+      if(err_types.includes(nom.elm_type)) {
+        if(!errors.has(nom.elm_type)){
+          errors.set(nom.elm_type, new Map());
+        }
+        if(checkOnly) {
+          break;
+        }
+        if(!errors.get(nom.elm_type).has(nom)){
+          errors.get(nom.elm_type).set(nom, new Set())
+        }
+        errors.get(nom.elm_type).get(nom).add(elm);
+      }
+    }
+    return checkOnly ? errors.has(elm_types.ОшибкаКритическая) : errors;
+  }
+
+  /**
    * Формирует строку индекса слоя cnstr
    * @param cnstr {Number}
    * @return {String}

@@ -1271,6 +1271,8 @@ $p.cat.create('work_center_kinds');
 class CatProperty_values_hierarchy extends CatObj{
 get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
+get full_name(){return this._getter('full_name')}
+set full_name(v){this._setter('full_name',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get parent(){return this._getter('parent')}
@@ -6599,6 +6601,36 @@ set demand(v){this._setter_ts('demand',v)}
       }
     }
     return res;
+  }
+
+  /**
+   * @summary Возвращает Map ошибок из спецификации (при их наличии)
+   * @param {Boolean} [checkOnly] - проверять только наличие критических ошибок
+   * @return @return {Map<EnmElmTypes, Map>|Boolean} 
+   */
+  errors(checkOnly = false) {
+    const errors = new Map();
+    const {elm_types} = $p.enm;
+    const err_types = [elm_types.ОшибкаКритическая];
+    if(!checkOnly) {
+      err_types.push(elm_types.ОшибкаИнфо);
+    }
+    
+    for(const {nom, elm} of this.specification) {
+      if(err_types.includes(nom.elm_type)) {
+        if(!errors.has(nom.elm_type)){
+          errors.set(nom.elm_type, new Map());
+        }
+        if(checkOnly) {
+          break;
+        }
+        if(!errors.get(nom.elm_type).has(nom)){
+          errors.get(nom.elm_type).set(nom, new Set())
+        }
+        errors.get(nom.elm_type).get(nom).add(elm);
+      }
+    }
+    return checkOnly ? errors.has(elm_types.ОшибкаКритическая) : errors;
   }
 
   /**
