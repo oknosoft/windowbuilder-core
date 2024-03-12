@@ -76,7 +76,7 @@ export class Mover {
    */
   tryMovePoints(start, delta, interactive) {
     // извлекаем разрешенные диапазоны из шаблона
-    let li = 200;
+    let li = 140;
     let lmin = 200;
     let lmax = 2000;
     
@@ -89,7 +89,46 @@ export class Mover {
       if(move.level === 0) {
         if(vertex.isT) {
           // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
-          
+          let profile;
+          for(const [edge, me] of move.edges) {
+            if (!me.base) {
+              profile = edge.profile;
+              break;
+            }
+          }
+          if(profile) {
+            for(const [edge, me] of move.edges) {
+              if(!me.base) {
+                continue;
+              }
+              // обратное ребро импоста, двигать-анализировать не надо (но надо подумать про связанные импосты)
+              // нам нужны входящее и исходящее рёбра на ведущем профиле
+              const edges = {};
+              for(const [parent] of move.edges) {
+                if(parent.profile === profile) {
+                  if(parent.startVertex === vertex) {
+                    edges.out = parent;
+                  }
+                  else if(parent.endVertex === vertex) {
+                    edges.in = parent;
+                  }
+                }
+              }
+              if(edges.in && edges.out) {
+                const pos = profile.generatrix.joinedPosition({
+                  base1: edges.in.startVertex.point,
+                  base2: edges.out.endVertex.point,
+                  initial: move.startPoint,
+                  test,
+                  min: li,
+                });
+                if(pos.delta.length) {
+                  move.delta = pos.delta;
+                  break;
+                }
+              }
+            }
+          }
         }
         else {
           // узел угла не должен порождать длины < lmin и > lmax
@@ -147,6 +186,7 @@ export class Mover {
             }
           }
           else {
+            const start = edge.otherProfileVertex(vertex) || me.other.point;
             new paper.Path({
               parent: ribs,
               strokeColor: 'blue',
@@ -154,7 +194,7 @@ export class Mover {
               strokeScaling: false,
               dashArray: [4, 4],
               guide: true,
-              segments: [me.other.point, move.point],
+              segments: [start, move.point],
             });
           }
           if(!rects.some((pt) => pt.isNearest(move.point))) {
@@ -164,7 +204,7 @@ export class Mover {
               fillColor: 'blue',
               center: move.point,
               strokeScaling: false,
-              size: [60, 60],
+              size: [50, 50],
             });
           }
         }         

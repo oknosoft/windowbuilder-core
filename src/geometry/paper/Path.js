@@ -183,6 +183,28 @@ export default function (paper) {
       const sub = this.getSubPath(base, initial);
       const pt = sub.length <= min ? sub.getPointAt(sub.length / 2) : sub.getPointAt(min);
       return {delta: pt.subtract(initial)};
+    },
+    
+    joinedPosition({base1, base2, initial, test, min}) {
+      const sub = this.getSubPath(base1, base2);
+      let pt, stop;
+      if(sub.length <= min * 2) {
+        pt = sub.getPointAt(sub.length / 2);
+        stop = true;
+      }
+      else {
+        pt = sub.getNearestPoint(test);
+        const offset = sub.getOffsetOf(pt);
+        if(offset < min) {
+          pt = sub.getPointAt(min);
+          stop = true;
+        }
+        else if(offset > sub.length - min) {
+          pt = sub.getPointAt(sub.length - min);
+          stop = true;
+        }
+      }
+      return {delta: pt.subtract(initial), stop: true};
     }
 
   });

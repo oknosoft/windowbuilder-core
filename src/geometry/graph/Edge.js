@@ -146,14 +146,19 @@ export class GraphEdge {
     return {other, profileOther: cnnPoint?.other};
   }
 
+  /**
+   * @summary Узел с другой стороны ребра
+   * @param {GraphVertex} vertex
+   * @return {GraphVertex}
+   */
   otherProfileVertex(vertex) {
     const {profile} = this;
     const cnnPoint = vertex.cnnPoints.find(pt => pt.owner === profile);
-    return cnnPoint.other.vertex;
+    return cnnPoint?.other?.vertex;
   }
 
   /**
-   * Касательная в точке
+   * @summary Касательная в узле
    * @param {GraphVertex} vertex
    * @return {Point}
    */
