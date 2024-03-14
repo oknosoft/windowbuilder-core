@@ -205,7 +205,20 @@ export default function (paper) {
         }
       }
       return {delta: pt.subtract(initial), stop: true};
-    }
+    },
+
+    joinedDirectedPosition({test, initial, min, max}) {
+      // удлиняем test
+      const path = new paper.Path({insert: false, segments: [
+          test.firstSegment.point.subtract(test.getTangentAt(0).multiply(max)),
+          test.lastSegment.point.add(test.getTangentAt(test.length).multiply(max)),
+        ]});
+      const pt = this.intersectPoint(path, initial);
+      return {delta: pt.subtract(initial)};
+      // TODO: проверки
+      // const dir = this.getDistance(test.firstSegment.point) > this.getDistance(test.lastSegment.point);
+      // const nearest = dir ? test.lastSegment.point : test.firstSegment.point;
+    },
 
   });
 }

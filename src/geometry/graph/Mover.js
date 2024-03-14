@@ -80,22 +80,24 @@ export class Mover {
     let lmin = 200;
     let lmax = 2000;
     
+    function parentTProfile(edges) {
+      for(const [edge, me] of edges) {
+        if (!me.base) {
+          return edge.profile;
+        }
+      }
+    }
+
+    // сначала, для узлов нулевого уровня
     for(const [vertex, move] of this.#raw.vertexes) {
       if(!move.startPoint) {
         move.startPoint = move.point;
       }
-      let test = move.startPoint.add(delta);
-      // если это узел нулевого уровня
       if(move.level === 0) {
+        const test = move.startPoint.add(delta);
         if(vertex.isT) {
           // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
-          let profile;
-          for(const [edge, me] of move.edges) {
-            if (!me.base) {
-              profile = edge.profile;
-              break;
-            }
-          }
+          const profile = parentTProfile(move.edges);
           if(profile) {
             for(const [edge, me] of move.edges) {
               if(!me.base) {
@@ -156,6 +158,42 @@ export class Mover {
                 move.delta = pos.delta;
               }
             }
+          }
+        }
+      }
+    }
+    // для узлов зависимости c ведомым T
+    for(const [vertex, move] of this.#raw.vertexes) {
+      if(move.level && vertex.isT) {
+        // ищем точку на будущей образующей
+        for (const [edge, me] of move.edges) {
+          if (me?.base?.isT) {
+            const {b, e} = me.base.profile;
+            const moves = {};
+            for(const [pv, pm] of this.#raw.vertexes) {
+              if(pv === b.vertex) {
+                moves.b = pm;
+              }
+              else if(pv === e.vertex) {
+                moves.e = pm; // pm.delta?.length ? pm.startPoint.add(pm.delta) : pm.startPoint
+              }
+            }
+            if(moves?.b?.delta || moves?.e?.delta) {
+              const gen = new paper.Path({insert: false, segments: [
+                  moves?.b?.delta?.length ? moves.b.startPoint.add(moves.b.delta) : b.point,
+                  moves?.e?.delta?.length ? moves.e.startPoint.add(moves.e.delta) : e.point,
+                ]});
+              const pos = gen.joinedDirectedPosition({
+                test: edge.profile.generatrix,
+                initial: move.startPoint,
+                min: li,
+                max: lmax,
+              });
+              if(pos.delta.length) {
+                move.delta = pos.delta;
+                break;
+              }
+            }            
           }
         }
       }
