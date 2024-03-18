@@ -23,9 +23,12 @@ export class Mover {
     const {other, profileOther: base} = edge.other(vertex);
     move.edges.set(edge, {other, base});
     
+    if(level > 2) {
+      return;
+    }
     if(!other.selected && !vertexes.has(other)) {
-      for(const otherEdge of other.getEdges()) {
-        if(otherEdge.profile !== edge.profile) {
+      for(const otherEdge of other.getAllEdges()) {
+        if(otherEdge !== edge && otherEdge.profile !== edge.profile) {
           this.addRecursive(other, otherEdge, level + 1);
         }
       }
@@ -167,8 +170,8 @@ export class Mover {
       if(move.level && vertex.isT) {
         // ищем точку на будущей образующей
         for (const [edge, me] of move.edges) {
-          if (me?.base?.isT) {
-            const {b, e} = me.base.profile;
+          if (!me?.base) {
+            const {b, e} = edge.profile;
             const moves = {};
             for(const [pv, pm] of this.#raw.vertexes) {
               if(pv === b.vertex) {
@@ -179,19 +182,22 @@ export class Mover {
               }
             }
             if(moves?.b?.delta || moves?.e?.delta) {
-              const gen = new paper.Path({insert: false, segments: [
-                  moves?.b?.delta?.length ? moves.b.startPoint.add(moves.b.delta) : b.point,
-                  moves?.e?.delta?.length ? moves.e.startPoint.add(moves.e.delta) : e.point,
-                ]});
-              const pos = gen.joinedDirectedPosition({
-                test: edge.profile.generatrix,
-                initial: move.startPoint,
-                min: li,
-                max: lmax,
-              });
-              if(pos.delta.length) {
-                move.delta = pos.delta;
-                break;
+              const cpt = vertex.cnnPoints.find((cpt) => cpt.profile === edge.profile);
+              if(cpt) {
+                const gen = new paper.Path({insert: false, segments: [
+                    moves?.b?.delta?.length ? moves.b.startPoint.add(moves.b.delta) : b.point,
+                    moves?.e?.delta?.length ? moves.e.startPoint.add(moves.e.delta) : e.point,
+                  ]});
+                const pos = gen.joinedDirectedPosition({
+                  test: cpt.owner.generatrix,
+                  initial: move.startPoint,
+                  min: li,
+                  max: lmax,
+                });
+                if(pos.delta.length) {
+                  move.delta = pos.delta;
+                  break;
+                }
               }
             }            
           }

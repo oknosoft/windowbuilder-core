@@ -109,11 +109,18 @@ export class GraphVertex {
   }
 
   /**
+   * @return {GraphEdge[]}
+   */
+  getAllEdges() {
+    return this.getEdges().concat(this.getEndEdges());
+  }
+
+  /**
    * @type {Profile[]}
    */
   get profiles() {
     const profiles = new Set();
-    this.getEdges().concat(this.getEndEdges()).forEach(({profile}) => profiles.add(profile));
+    this.getAllEdges().forEach(({profile}) => profiles.add(profile));
     return Array.from(profiles);
   }
 
