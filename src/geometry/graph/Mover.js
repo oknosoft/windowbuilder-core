@@ -26,12 +26,23 @@ export class Mover {
     if(level > 2) {
       return;
     }
-    if(!other.selected && !vertexes.has(other)) {
-      for(const otherEdge of other.getAllEdges()) {
-        if(otherEdge !== edge && otherEdge.profile !== edge.profile) {
-          this.addRecursive(other, otherEdge, level + 1);
+    const candidates = [];
+    if(!vertex.selected) {
+      for(const otherEdge of vertex.getAllEdges()) {
+        if(otherEdge !== edge && otherEdge.profile !== edge.profile && !move.edges.has(otherEdge)) {
+          candidates.push({vertex, edge: otherEdge});
         }
       }
+    }
+    if(!other.selected && !vertexes.has(other)) {
+      for(const otherEdge of other.getAllEdges()) {
+        if(otherEdge !== edge && otherEdge.profile !== edge.profile && !move.edges.has(otherEdge)) {
+          candidates.push({vertex: other, edge: otherEdge});
+        }
+      }
+    }
+    for(const {vertex, edge} of candidates) {
+      this.addRecursive(vertex, edge, level + 1);
     }
     
   }
