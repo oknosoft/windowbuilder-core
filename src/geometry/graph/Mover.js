@@ -11,7 +11,7 @@ export class Mover {
     });
   }
   
-  addRecursive(vertex, edge, level) {
+  addRecursive(vertex, edge, level, noDepth) {
     const {owner, vertexes} = this.#raw;
     const move = vertexes.has(vertex) ? 
       vertexes.get(vertex) :
@@ -23,7 +23,7 @@ export class Mover {
     const {other, profileOther: base} = edge.other(vertex);
     move.edges.set(edge, {other, base});
     
-    if(level > 2) {
+    if(level > 2 || noDepth) {
       return;
     }
     const candidates = [];
@@ -43,8 +43,7 @@ export class Mover {
     }
     for(const {vertex, edge} of candidates) {
       this.addRecursive(vertex, edge, level + 1);
-    }
-    
+    }    
   }
 
   /**
@@ -53,17 +52,35 @@ export class Mover {
    */
   prepareMovePoints(interactive) {
     const {owner, vertexes} = this.#raw;
-    for(const edge of owner.skeleton.getAllEdges()) {
+    const edges = owner.skeleton.getAllEdges();
+    for(const edge of edges) {
       if(edge.selected || (edge.startVertex.selected && edge.endVertex.selected)) {
-        this.addRecursive(edge.startVertex, edge, 0);
-        this.addRecursive(edge.endVertex, edge, 0);
+        this.addRecursive(edge.startVertex, edge, 0, true);
+        this.addRecursive(edge.endVertex, edge, 0, true);
+      }
+    }
+    // опускаем Т ниже в иерархии
+    const t = new Map();
+    for(const [vertex, move] of this.#raw.vertexes) {
+      if(vertex.isT) {
+        t.set(vertex, move);
+      }
+    }
+    for(const [vertex, move] of t) {
+      this.#raw.vertexes.delete(vertex);
+      this.#raw.vertexes.set(vertex, move);
+    }
+    
+    for(const edge of edges) {
+      if(edge.selected || (edge.startVertex.selected && edge.endVertex.selected)) {
+        continue;
       }
       else if(edge.startVertex.selected) {
         this.addRecursive(edge.startVertex, edge, 0);
       }
       else if(edge.endVertex.selected) {
         this.addRecursive(edge.endVertex, edge, 0);
-      }      
+      }
     }
     // при интерактивных сдвигах, прячем линии профилей
     if(interactive) {
@@ -131,9 +148,23 @@ export class Mover {
                 }
               }
               if(edges.in && edges.out) {
-                const pos = profile.generatrix.joinedPosition({
-                  base1: edges.in.startVertex.point,
-                  base2: edges.out.endVertex.point,
+                let gen = profile.generatrix,
+                  base1 = edges.in.startVertex.point,
+                  base2 = edges.out.endVertex.point;
+                if(profile.selected) {
+                  const m1 = this.#raw.vertexes.get(edges.in.startVertex);
+                  const m2 = this.#raw.vertexes.get(edges.out.endVertex);
+                  if(m1.delta?.length) {
+                    base1 = base1.add(m1.delta);
+                  }
+                  if(m2.delta?.length) {
+                    base2 = base2.add(m2.delta);
+                  }
+                  gen = new paper.Path({insert: false, segments: [base1, base2]});
+                }
+                const pos = gen.joinedPosition({
+                  base1,
+                  base2,
                   initial: move.startPoint,
                   test,
                   min: li,
