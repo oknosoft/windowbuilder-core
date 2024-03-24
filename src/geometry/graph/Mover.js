@@ -130,50 +130,29 @@ export class Mover {
           // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
           const profile = parentTProfile(move.edges);
           if(profile) {
-            for(const [edge, me] of move.edges) {
-              if(!me.base) {
-                continue;
+            let gen = profile.generatrix,
+              base1 = profile.b.point,
+              base2 = profile.e.point;
+            if(profile.selected) {
+              const m1 = this.#raw.vertexes.get(profile.b.vertex);
+              const m2 = this.#raw.vertexes.get(profile.e.vertex);
+              if(m1.delta?.length) {
+                base1 = base1.add(m1.delta);
               }
-              // обратное ребро импоста, двигать-анализировать не надо (но надо подумать про связанные импосты)
-              // нам нужны входящее и исходящее рёбра на ведущем профиле
-              const edges = {};
-              for(const [parent] of move.edges) {
-                if(parent.profile === profile) {
-                  if(parent.startVertex === vertex) {
-                    edges.out = parent;
-                  }
-                  else if(parent.endVertex === vertex) {
-                    edges.in = parent;
-                  }
-                }
+              if(m2.delta?.length) {
+                base2 = base2.add(m2.delta);
               }
-              if(edges.in && edges.out) {
-                let gen = profile.generatrix,
-                  base1 = edges.in.startVertex.point,
-                  base2 = edges.out.endVertex.point;
-                if(profile.selected) {
-                  const m1 = this.#raw.vertexes.get(edges.in.startVertex);
-                  const m2 = this.#raw.vertexes.get(edges.out.endVertex);
-                  if(m1.delta?.length) {
-                    base1 = base1.add(m1.delta);
-                  }
-                  if(m2.delta?.length) {
-                    base2 = base2.add(m2.delta);
-                  }
-                  gen = new paper.Path({insert: false, segments: [base1, base2]});
-                }
-                const pos = gen.joinedPosition({
-                  base1,
-                  base2,
-                  initial: move.startPoint,
-                  test,
-                  min: li,
-                });
-                if(pos.delta.length) {
-                  move.delta = pos.delta;
-                  break;
-                }
-              }
+              gen = new paper.Path({insert: false, segments: [base1, base2]});
+            }
+            const pos = gen.joinedPosition({
+              base1,
+              base2,
+              initial: move.startPoint,
+              test,
+              min: li,
+            });
+            if(pos.delta.length && (!move.delta || move.delta.length > pos.delta.length)) {
+              move.delta = pos.delta;
             }
           }
         }
