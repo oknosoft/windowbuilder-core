@@ -111,9 +111,9 @@ export class Mover {
     let lmin = 200;
     let lmax = 2000;
     
-    function parentTProfile(edges) {
+    function edgesProfile(edges, impost) {
       for(const [edge, me] of edges) {
-        if (!me.base) {
+        if (!impost && !me.base || impost && me.base) {
           return edge.profile;
         }
       }
@@ -128,31 +128,57 @@ export class Mover {
         const test = move.startPoint.add(delta);
         if(vertex.isT) {
           // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
-          const profile = parentTProfile(move.edges);
+          const profile = edgesProfile(move.edges);
           if(profile) {
-            let gen = profile.generatrix,
-              base1 = profile.b.point,
-              base2 = profile.e.point;
-            if(profile.selected) {
-              const m1 = this.#raw.vertexes.get(profile.b.vertex);
-              const m2 = this.#raw.vertexes.get(profile.e.vertex);
-              if(m1.delta?.length) {
-                base1 = base1.add(m1.delta);
+            let gen = profile.generatrix, base1, base2;
+            for(const [edge, me] of move.edges) {
+              if(edge.profile === profile) {
+                if(edge.startVertex === vertex) {
+                  base1 = edge.endVertex.point;
+                }
+                else if(edge.endVertex === vertex) {
+                  base2 = edge.startVertex.point;
+                }
               }
-              if(m2.delta?.length) {
-                base2 = base2.add(m2.delta);
-              }
-              gen = new paper.Path({insert: false, segments: [base1, base2]});
             }
-            const pos = gen.joinedPosition({
-              base1,
-              base2,
-              initial: move.startPoint,
-              test,
-              min: li,
-            });
-            if(pos.delta.length && (!move.delta || move.delta.length > pos.delta.length)) {
-              move.delta = pos.delta;
+            if(base1 && base2) {
+              if(gen.getOffsetOf(base1) > gen.getOffsetOf(base2)) {
+                [base1, base2] = [base2, base1];
+              }
+              if(profile.selected) {
+                const m1 = this.#raw.vertexes.get(profile.b.vertex);
+                const m2 = this.#raw.vertexes.get(profile.e.vertex);
+                if(m1.delta?.length) {
+                  base1 = base1.add(m1.delta);
+                }
+                if(m2.delta?.length) {
+                  base2 = base2.add(m2.delta);
+                }
+                gen = new paper.Path({insert: false, segments: [base1, base2]});
+              }
+              // если импост в данной вершине только один, он должен двигаться вдоль своей образующей
+              let pos;
+              if(move.edges.size === 4 && profile.selected) {
+                const impost = edgesProfile(move.edges, true);
+                pos = gen.joinedDirectedPosition({
+                  test: impost.generatrix,
+                  initial: move.startPoint,
+                  min: li,
+                  max: lmax,
+                  });
+              }
+              else {
+                pos = gen.joinedPosition({
+                  base1,
+                  base2,
+                  initial: move.startPoint,
+                  test,
+                  min: li,
+                });
+              }
+              if(pos.delta.length && (!move.delta || move.delta.length > pos.delta.length)) {
+                move.delta = pos.delta;
+              }
             }
           }
         }

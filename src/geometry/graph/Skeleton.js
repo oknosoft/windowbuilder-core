@@ -264,6 +264,11 @@ export class Skeleton extends Graph {
           this.deleteEdge(fromEdge);
           this.deleteEdge(toEdge);
           this.addEdge(new GraphEdge({startVertex: toEdge.startVertex, endVertex: fromEdge.endVertex, profile: fromEdge.profile}));
+          const {b, e} = fromEdge.profile;
+          toEdge.startVertex.addCnnPointIfNearest(b);
+          fromEdge.endVertex.addCnnPointIfNearest(b);
+          toEdge.startVertex.addCnnPointIfNearest(e);
+          fromEdge.endVertex.addCnnPointIfNearest(e);
         }
       }
     }

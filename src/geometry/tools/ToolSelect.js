@@ -31,6 +31,7 @@ export class ToolSelect extends ToolElement {
   }
 
   mousedown(event) {
+    this.hitTest(event);
     const {body, activeElement} = document;
     const {project, view, hitItem} = this;
     if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
@@ -199,6 +200,18 @@ export class ToolSelect extends ToolElement {
       project.activeLayer.cancelMovePoints();
       if(this.mousePos) {
         this.hitTest({point: this.mousePos});
+      }
+    }
+    else if (code === 'Delete') {
+      for(const elm of project.activeLayer.profiles) {
+        if(elm.selected) {
+          try{
+            elm.remove();
+          }
+          catch (err) {
+            alert(err.message);
+          }
+        }
       }
     }
   }

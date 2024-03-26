@@ -214,7 +214,7 @@ export default function (paper) {
           test.lastSegment.point.add(test.getTangentAt(test.length).multiply(max)),
         ]});
       const pt = this.intersectPoint(path, initial);
-      return {delta: pt.subtract(initial)};
+      return pt ? {delta: pt.subtract(initial)} : {stop: true};
       // TODO: проверки
       // const dir = this.getDistance(test.firstSegment.point) > this.getDistance(test.lastSegment.point);
       // const nearest = dir ? test.lastSegment.point : test.firstSegment.point;

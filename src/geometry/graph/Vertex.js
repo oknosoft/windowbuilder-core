@@ -70,6 +70,21 @@ export class GraphVertex {
   }
 
   /**
+   * @summary Добавляет CnnPoint при необходимости
+   * @param {CnnPoint} pt
+   */
+  addCnnPointIfNearest(pt) {
+    if(this.point.isNearest(pt.point)) {
+      if(!this.cnnPoints.includes(pt)) {
+        if(!this.cnnPoints[0].owner) {
+          this.cnnPoints.splice(0, 1);
+        }
+        this.cnnPoints.push(pt);
+      }
+    }
+  }
+
+  /**
    * @param {LinkedListNode} node
    */
   neighborsConverter(node) {
