@@ -369,8 +369,6 @@ get showcalc(){return this._getter('showcalc')}
 set showcalc(v){this._setter('showcalc',v)}
 get inheritance(){return this._getter('inheritance')}
 set inheritance(v){this._setter('inheritance',v)}
-get conserve(){return this._getter('conserve')}
-set conserve(v){this._setter('conserve',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -1271,8 +1269,6 @@ $p.cat.create('work_center_kinds');
 class CatProperty_values_hierarchy extends CatObj{
 get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
-get full_name(){return this._getter('full_name')}
-set full_name(v){this._setter('full_name',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get parent(){return this._getter('parent')}
