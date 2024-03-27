@@ -121,5 +121,21 @@ export class Contour extends paper.Layer {
     for(const item of this.contours) {
       item.redraw?.();
     }
+    this.drawVisualization();
+  }
+  
+  drawVisualization() {
+    const {project, children: {visualization}, skeleton} = this;
+    visualization.children.graph.clear();
+    if(project.props.carcass) {
+      for(const vertex of skeleton.getAllVertices()) {
+        new paper.PointText({
+          point: vertex.point.add([20, -20]),
+          content: vertex.value,
+          parent: visualization.children.graph,
+          fontSize: 60,
+        })
+      }
+    }
   }
 }

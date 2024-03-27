@@ -15,6 +15,7 @@ class GroupVisualization extends LayerGroup {
     new paper.Group({parent: this, name: 'insets'});
     new paper.Group({parent: this, name: 'spec'});
     new paper.Group({parent: this, name: 'ribs'});
+    new paper.Group({parent: this, name: 'graph'});
   }
 
   get insets() {
