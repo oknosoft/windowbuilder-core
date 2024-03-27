@@ -3931,7 +3931,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
           }
           const pt0 = ray.getPointAt(offset);
           const path = ray.get_subpath(pt0, pt);
-          row_spec.len = path.length;
+          row_spec.len = path.length * (row_base.coefficient || 0.001);
         }
         else if(nom.is_pieces) {
           if(!row_base.coefficient) {
