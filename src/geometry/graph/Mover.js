@@ -16,7 +16,7 @@ export class Mover {
     });
   }
   
-  addRecursive(vertex, edge, level, noDepth) {
+  addRecursive(vertex, edge, level, noDepth, candidates = []) {
     const {owner, vertexes} = this.#raw;
     const move = vertexes.has(vertex) ? 
       vertexes.get(vertex) :
@@ -27,28 +27,37 @@ export class Mover {
     // узлы с другой стороны ближайшего ребра и с другой стороны профиля
     const {other, profileOther: base} = edge.other(vertex);
     move.edges.set(edge, {other, base});
+
+    const ncandidates = [];
+    if(!level) {
+      for(const ov of edge.allProfileVertexes()) {
+        if(ov !== vertex && !ov.selected && !vertexes.has(ov)) {
+          for(const otherEdge of ov.getAllEdges()) {
+            if(!candidates.find((c) => c.vertex === ov && c.edge === otherEdge)) {
+              ncandidates.push({vertex: ov, edge: otherEdge});
+            }
+          }
+        }
+      }
+    }
     
-    if(level > 2 || noDepth) {
-      return;
-    }
-    const candidates = [];
-    if(!vertex.selected) {
-      for(const otherEdge of vertex.getAllEdges()) {
-        if(otherEdge !== edge && otherEdge.profile !== edge.profile && !move.edges.has(otherEdge)) {
-          candidates.push({vertex, edge: otherEdge});
+    if(level <= 2 && !noDepth) {
+      if(!vertex.selected) {
+        for(const otherEdge of vertex.getAllEdges()) {
+          if(otherEdge !== edge && otherEdge.profile !== edge.profile && !move.edges.has(otherEdge)) {
+            if(!candidates.find((c) => c.vertex === vertex && c.edge === otherEdge)) {
+              ncandidates.push({vertex, edge: otherEdge});
+            }
+          }
         }
       }
     }
-    if(!other.selected && !vertexes.has(other)) {
-      for(const otherEdge of other.getAllEdges()) {
-        if(otherEdge !== edge && otherEdge.profile !== edge.profile && !move.edges.has(otherEdge)) {
-          candidates.push({vertex: other, edge: otherEdge});
-        }
+    
+    if(!noDepth) {
+      for(const {vertex, edge} of ncandidates) {
+        this.addRecursive(vertex, edge, level + 1, false, ncandidates);
       }
     }
-    for(const {vertex, edge} of candidates) {
-      this.addRecursive(vertex, edge, level + 1);
-    }    
   }
 
   /**
@@ -241,7 +250,7 @@ export class Mover {
           min: li,
         });
       }
-      if(pos.delta.length && (!move.delta || move.delta.length > pos.delta.length)) {
+      if(pos?.delta?.length && (!move.delta || move.delta.length > pos.delta.length)) {
         move.delta = pos.delta;
       }
       

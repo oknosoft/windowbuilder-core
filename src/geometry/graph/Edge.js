@@ -157,6 +157,24 @@ export class GraphEdge {
     return cnnPoint?.other?.vertex;
   }
 
+  allProfileVertexes(vertex, profile, res) {
+    if(!vertex) {
+      profile = this.profile;
+      vertex = profile.b.vertex;
+      res = new Set();
+    }
+    if(!res.has(vertex)) {
+      res.add(vertex);
+      for(const edge of vertex.getEdges()) {
+        if(edge.profile === profile) {
+          this.allProfileVertexes(edge.endVertex, profile, res);
+          break;
+        }
+      }
+    }
+    return res;
+  }
+
   /**
    * @summary Касательная в узле
    * @param {GraphVertex} vertex
