@@ -2471,13 +2471,19 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-  remove() {
+  clearChildren() {
     for(const elm of this.glasses()) {
       elm.remove();
     }
     for(const elm of this.imposts.reverse()) {
       elm.remove();
     }
+    for(const elm of this.profiles) {
+      elm.remove();
+    }
+  }
+  remove() {
+    this.clearChildren();
     const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
       if(children[0].remove() === false) {
@@ -4200,7 +4206,7 @@ class ContourNested extends Contour {
           const {calc_order_row} = tx;
           calc_order_row && tx.calc_order.production.del(calc_order_row);
           teditor.unload();
-          tx.unload();
+          !tx.is_new() && tx.unload();
         };
         return tproject.load(tx, true, _ox.calc_order)
           .then(() => {
@@ -4234,11 +4240,7 @@ class ContourNested extends Contour {
           })
           .then(() => {
             const {lbounds, content} = this;
-            while (content.children.length) {
-              if(content.children[0].remove() === false) {
-                throw new Error('Ошибка при удалении элемента');
-              }
-            }
+            content.clearChildren();
             for (const elm of this.profiles) {
               elm.save_coordinates();
             }
@@ -4449,7 +4451,8 @@ class ContourNestedContent extends Contour {
       const generatrix = proto.generatrix.clone({insert: false});
       generatrix.translate(delta);
       new ProfileNestedContent({
-        parent: this,
+        layer: this,
+        parent: this.children.profiles,
         generatrix,
         proto: {inset: proto.inset, clr: proto.clr},
         elm: map.get(proto.elm),
@@ -4460,6 +4463,7 @@ class ContourNestedContent extends Contour {
       path.translate(delta);
       const elm = map.get(proto.elm);
       new Filling({
+        layer: this,
         parent: this.children.fillings,
         path,
         proto: {inset: proto.inset, clr: proto.clr},

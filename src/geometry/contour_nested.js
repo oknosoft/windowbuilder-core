@@ -142,7 +142,7 @@ class ContourNested extends Contour {
           const {calc_order_row} = tx;
           calc_order_row && tx.calc_order.production.del(calc_order_row);
           teditor.unload();
-          tx.unload();
+          !tx.is_new() && tx.unload();
         };
 
         return tproject.load(tx, true, _ox.calc_order)
@@ -183,15 +183,11 @@ class ContourNested extends Contour {
           .then(() => {
             const {lbounds, content} = this;
             // чистим наше
-            while (content.children.length) {
-              if(content.children[0].remove() === false) {
-                throw new Error('Ошибка при удалении элемента');
-              }
-            }
+            content.clearChildren();
+            // пересчитываем профили временного изделия
             for (const elm of this.profiles) {
               elm.save_coordinates();
             }
-
             // перезаполняем сырыми данными временного изделия
             _ox.specification.clear();
             _ox.sys = base_block.sys;

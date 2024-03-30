@@ -1079,23 +1079,28 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
+  
+  clearChildren() {
+    // сначала удаляем створки и заполнения
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+    // затем - импосты
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+    // и остальные профили
+    for(const elm of this.profiles) {
+      elm.remove();
+    }
+  }
 
   /**
    * Удаляет контур из иерархии проекта
    * Одновлеменно, удаляет строку из табчасти _Конструкции_ и подчиненные строки из табчасти _Координаты_
    */
   remove() {
-
-    // сначала удаляем створки и заполнения
-    for(const elm of this.glasses()) {
-      elm.remove();
-    }
-
-    // затем - импосты
-    for(const elm of this.imposts.reverse()) {
-      elm.remove();
-    }
-
+    this.clearChildren();
     // и всех остальных детей
     const {children, project, _row, cnstr, _ox} = this;
     while (children.length) {
