@@ -7320,6 +7320,8 @@ get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get work_center_kinds(){return this._getter_ts('work_center_kinds')}
 set work_center_kinds(v){this._setter_ts('work_center_kinds',v)}
+get extra_fields(){return this._getter_ts('extra_fields')}
+set extra_fields(v){this._setter_ts('extra_fields',v)}
 }
 $p.CatWork_centers = CatWork_centers;
 class CatWork_centersWork_center_kindsRow extends TabularSectionRow{
@@ -9524,6 +9526,8 @@ class CatOrganizationsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
+class CatWork_centersExtra_fieldsRow extends Extra_fieldsRow{}
+
 
 class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
   get cnstr(){return this._getter('cnstr')}
@@ -9626,6 +9630,7 @@ Object.assign($p, {
   CatDivisionsExtra_fieldsRow,
   CatUsersExtra_fieldsRow,
   CatProduction_paramsExtra_fieldsRow,
+  CatWork_centersExtra_fieldsRow,
   CatParameters_keysParamsRow,
   CatCharacteristicsCoordinatesRow,
   CatCharacteristicsInsertsRow,

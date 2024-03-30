@@ -64,6 +64,7 @@ const custom_constructor = [
   'CatDivisionsExtra_fieldsRow',
   'CatUsersExtra_fieldsRow',
   'CatProduction_paramsExtra_fieldsRow',
+  'CatWork_centersExtra_fieldsRow',
   'CatParameters_keysParamsRow',
   'CatCharacteristicsCoordinatesRow',
   'CatCharacteristicsInsertsRow',
