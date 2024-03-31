@@ -204,17 +204,17 @@ export default function (paper) {
           stop = true;
         }
       }
-      return {delta: pt.subtract(initial), stop: true};
+      return {delta: pt.subtract(initial), stop};
     },
 
     joinedDirectedPosition({test, initial, min, max}) {
       // удлиняем test
       const path = new paper.Path({insert: false, segments: [
-          test.firstSegment.point.subtract(test.getTangentAt(0).multiply(max)),
+          test.firstSegment.point,
           test.lastSegment.point.add(test.getTangentAt(test.length).multiply(max)),
         ]});
       const pt = this.intersectPoint(path, initial);
-      return pt ? {delta: pt.subtract(initial)} : {stop: true};
+      return pt && pt.getDistance(test.firstSegment.point) > min ? {delta: pt.subtract(initial)} : {reset: true};
       // TODO: проверки
       // const dir = this.getDistance(test.firstSegment.point) > this.getDistance(test.lastSegment.point);
       // const nearest = dir ? test.lastSegment.point : test.firstSegment.point;

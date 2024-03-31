@@ -1,4 +1,5 @@
 import paper from 'paper/dist/paper-core';
+import {epsilon} from '../paper/Point';
 
 // извлекаем разрешенные диапазоны из шаблона
 let li = 140;
@@ -142,7 +143,7 @@ export class Mover {
               min: lmin,
               max: lmax,
             });
-            if(pos.delta.length) {
+            if(pos?.delta?.length > epsilon) {
               // на текущем профиле перевёртыш - ищем точку
               if(pos.stop) {
                 const pos = edge.profile.generatrix.directedMinPosition({
@@ -169,10 +170,19 @@ export class Mover {
         this.tryMoveImpost({vertex, move, test});
       }
     }
+    let reset;
     for(const [vertex, move] of this.#raw.vertexes) {
-      if(move.delta?.length) {
-        move.point = move.startPoint.add(move.delta);
-        move.delta = null;
+      if(move.reset) {
+        reset = true;
+        break;
+      }
+    }
+    if(!reset) {
+      for(const [vertex, move] of this.#raw.vertexes) {
+        if(move.delta?.length) {
+          move.point = move.startPoint.add(move.delta);
+          move.delta = null;
+        }
       }
     }
     this.drawMoveRibs();
@@ -182,20 +192,34 @@ export class Mover {
     // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
 
     function edgesProfile(edges, impost) {
+      let iedge;
       for(const [edge, me] of edges) {
         if (!impost && !me.base || impost && me.base) {
-          return edge.profile;
+          if(!iedge || iedge.length > edge.length) {
+            iedge = edge;
+          }
+          if(!impost) {
+            break;
+          }
         }
       }
-      for(const [edge, me] of edges) {
-        const cpt = vertex.cnnPoints.find((cpt) => cpt.owner === edge.profile);
-        if(cpt) {
-          return impost ? edge.profile : cpt.profile;
+      if(!iedge) {
+        for(const [edge, me] of edges) {
+          const cpt = vertex.cnnPoints.find((cpt) => impost ? cpt.owner === edge.profile : cpt.profile === edge.profile);
+          if(cpt) {
+            if(!iedge || iedge.length > edge.length) {
+              iedge = edge;
+            }
+            if(!impost) {
+              break;
+            }
+          }
         }
       }
+      return iedge;
     }
     
-    const profile = edgesProfile(move.edges);
+    const {profile} = edgesProfile(move.edges);
     if(profile) {
       let gen = profile.generatrix.clone({insert: false, deep: false}), base1, base2;
       for(const [edge, me] of move.edges) {
@@ -218,9 +242,11 @@ export class Mover {
       // если импост в данной вершине только один, он должен двигаться вдоль своей образующей
       let pos;
       if(move.edges.size <= 4 && (profile.selected || move.level)) {
-        const impost = edgesProfile(move.edges, true);
+        const iedge = edgesProfile(move.edges, true);
+        const segments = move.startPoint.getDistance(iedge.startVertex.point) > move.startPoint.getDistance(iedge.endVertex.point) ?
+          [iedge.startVertex.point, iedge.endVertex.point] : [iedge.endVertex.point, iedge.startVertex.point];
         pos = gen.joinedDirectedPosition({
-          test: impost.generatrix,
+          test: new paper.Path({insert: false, segments}),
           initial: move.startPoint,
           min: li,
           max: lmax,
@@ -250,8 +276,15 @@ export class Mover {
           min: li,
         });
       }
-      if(pos?.delta?.length && (!move.delta || move.delta.length > pos.delta.length)) {
-        move.delta = pos.delta;
+      if(pos?.reset) {
+        move.reset = true;
+        delete move.delta;
+      }
+      else {
+        delete move.reset;
+        if(pos?.delta?.length > epsilon && (!move.delta || move.delta.length > pos.delta.length)) {
+          move.delta = pos.delta;
+        }
       }
       
     }
