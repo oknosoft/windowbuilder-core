@@ -7534,6 +7534,8 @@ get cuts(){return this._getter_ts('cuts')}
 set cuts(v){this._setter_ts('cuts',v)}
 get cutting(){return this._getter_ts('cutting')}
 set cutting(v){this._setter_ts('cutting',v)}
+get set(){return this._getter_ts('set')}
+set set(v){this._setter_ts('set',v)}
 
 
   /**
@@ -7996,6 +7998,27 @@ get nonstandard(){return this._getter('nonstandard')}
 set nonstandard(v){this._setter('nonstandard',v)}
 }
 $p.DocWork_centers_taskCuttingRow = DocWork_centers_taskCuttingRow;
+class DocWork_centers_taskSetRow extends TabularSectionRow{
+get record_kind(){return this._getter('record_kind')}
+set record_kind(v){this._setter('record_kind',v)}
+get phase(){return this._getter('phase')}
+set phase(v){this._setter('phase',v)}
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get power(){return this._getter('power')}
+set power(v){this._setter('power',v)}
+}
+$p.DocWork_centers_taskSetRow = DocWork_centers_taskSetRow;
 class DocWork_centers_taskManager extends DocManager {
   
   get cut_defaults() {
