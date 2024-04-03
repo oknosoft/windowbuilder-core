@@ -158,6 +158,8 @@ class ContourNested extends Contour {
 
             // подгоняем размеры под проём
             const {bottom, right} = tproject.l_dimensions;
+            bottom.redraw();
+            right.redraw();
             const dx = lbounds.width - bottom.size;
             const dy = lbounds.height - right.size;
 

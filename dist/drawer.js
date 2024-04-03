@@ -4219,6 +4219,8 @@ class ContourNested extends Contour {
               throw new Error(`Нет слоёв в шаблоне ${base_block.name}`);
             }
             const {bottom, right} = tproject.l_dimensions;
+            bottom.redraw();
+            right.redraw();
             const dx = lbounds.width - bottom.size;
             const dy = lbounds.height - right.size;
             dx && bottom._move_points({size: lbounds.width - dx / 2, name: 'left'}, 'x');
