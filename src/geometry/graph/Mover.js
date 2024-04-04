@@ -183,6 +183,9 @@ export class Mover {
           move.point = move.startPoint.add(move.delta);
           move.delta = null;
         }
+        else if(!move.point.equals(move.startPoint)) {
+          move.point = move.startPoint;
+        }
       }
     }
     this.drawMoveRibs();
@@ -320,12 +323,12 @@ export class Mover {
           }
           if(!rects.some((pt) => pt.isNearest(move.point))) {
             rects.push(move.point.clone());
-            new paper.Path.Rectangle({
+            new paper.Path.Circle({
               parent: ribs,
               fillColor: 'blue',
               center: move.point,
               strokeScaling: false,
-              size: [50, 50],
+              radius: 20,
             });
           }
         }         
