@@ -16,6 +16,40 @@ export class Mover {
       vertexes: new Map(),
     });
   }
+
+  /**
+   * 
+   * @param {Map} edges
+   * @param {Boolean} [impost]
+   * @return {GraphEdge}
+   */
+  edgesProfile(edges, impost) {
+    let iedge;
+    for(const [edge, me] of edges) {
+      if (!impost && !me.base || impost && me.base) {
+        if(!iedge || iedge.length > edge.length) {
+          iedge = edge;
+        }
+        if(!impost) {
+          break;
+        }
+      }
+    }
+    if(!iedge) {
+      for(const [edge, me] of edges) {
+        const cpt = vertex.cnnPoints.find((cpt) => impost ? cpt.owner === edge.profile : cpt.profile === edge.profile);
+        if(cpt) {
+          if(!iedge || iedge.length > edge.length) {
+            iedge = edge;
+          }
+          if(!impost) {
+            break;
+          }
+        }
+      }
+    }
+    return iedge;
+  }
   
   addRecursive(vertex, edge, level, noDepth, candidates = []) {
     const {owner, vertexes} = this.#raw;
@@ -193,36 +227,8 @@ export class Mover {
 
   tryMoveImpost({vertex, move, test}) {
     // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
-
-    function edgesProfile(edges, impost) {
-      let iedge;
-      for(const [edge, me] of edges) {
-        if (!impost && !me.base || impost && me.base) {
-          if(!iedge || iedge.length > edge.length) {
-            iedge = edge;
-          }
-          if(!impost) {
-            break;
-          }
-        }
-      }
-      if(!iedge) {
-        for(const [edge, me] of edges) {
-          const cpt = vertex.cnnPoints.find((cpt) => impost ? cpt.owner === edge.profile : cpt.profile === edge.profile);
-          if(cpt) {
-            if(!iedge || iedge.length > edge.length) {
-              iedge = edge;
-            }
-            if(!impost) {
-              break;
-            }
-          }
-        }
-      }
-      return iedge;
-    }
     
-    const {profile} = edgesProfile(move.edges);
+    const {profile} = this.edgesProfile(move.edges);
     if(profile) {
       let gen = profile.generatrix.clone({insert: false, deep: false}), base1, base2;
       for(const [edge, me] of move.edges) {
@@ -245,7 +251,7 @@ export class Mover {
       // если импост в данной вершине только один, он должен двигаться вдоль своей образующей
       let pos;
       if(move.edges.size <= 4 && (profile.selected || move.level)) {
-        const iedge = edgesProfile(move.edges, true);
+        const iedge = this.edgesProfile(move.edges, true);
         const segments = move.startPoint.getDistance(iedge.startVertex.point) > move.startPoint.getDistance(iedge.endVertex.point) ?
           [iedge.startVertex.point, iedge.endVertex.point] : [iedge.endVertex.point, iedge.startVertex.point];
         pos = gen.joinedDirectedPosition({
@@ -297,7 +303,20 @@ export class Mover {
     const {ribs} = this.#raw.owner.children.visualization;
     ribs.clear();
     const rects = [];
+    const segms = new Set();
     const selected = new Map();
+    const circle = (point) => {
+      if(!rects.some((pt) => pt.isNearest(point))) {
+        rects.push(point.clone());
+        new paper.Path.Circle({
+          parent: ribs,
+          fillColor: 'blue',
+          center: point,
+          strokeScaling: false,
+          radius: 20,
+        });
+      }
+    };
     for(const [vertex, move] of this.#raw.vertexes) {
       for(const [edge, me] of move.edges) {
         if(!move.level && move.point.length) {
@@ -310,26 +329,43 @@ export class Mover {
             }
           }
           else {
-            const start = edge.otherProfileVertex(vertex) || me.other.point;
-            new paper.Path({
-              parent: ribs,
-              strokeColor: 'blue',
-              strokeWidth: 2,
-              strokeScaling: false,
-              dashArray: [4, 4],
-              guide: true,
-              segments: [start, move.point],
-            });
+            if(!segms.has(edge.profile)) {
+              segms.add(edge.profile);
+              const start = edge.otherProfileVertex(vertex)?.point || me.other.point;
+              new paper.Path({
+                parent: ribs,
+                strokeColor: 'blue',
+                strokeWidth: 1,
+                strokeScaling: false,
+                dashArray: [4, 4],
+                guide: true,
+                segments: [start, move.point],
+              });
+            }
           }
-          if(!rects.some((pt) => pt.isNearest(move.point))) {
-            rects.push(move.point.clone());
-            new paper.Path.Circle({
-              parent: ribs,
-              fillColor: 'blue',
-              center: move.point,
-              strokeScaling: false,
-              radius: 20,
-            });
+          circle(move.point);
+          for(const tv of edge.allProfileVertexes()) {
+            if(tv !== vertex) {
+              const tm = this.#raw.vertexes.get(tv);
+              circle(tm.point);
+              const iedge = this.edgesProfile(tm.edges, true);
+              if(!segms.has(iedge.profile)) {
+                segms.add(iedge.profile);
+                const sv = iedge.otherProfileVertex(tv);
+                if(sv) {
+                  const sm = this.#raw.vertexes.get(sv);
+                  new paper.Path({
+                    parent: ribs,
+                    strokeColor: 'blue',
+                    strokeWidth: 1,
+                    strokeScaling: false,
+                    dashArray: [4, 4],
+                    guide: true,
+                    segments: [sm?.point || sv.point, tm.point],
+                  });
+                }
+              }
+            }
           }
         }         
       }
