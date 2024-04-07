@@ -31,13 +31,30 @@ export class Contour extends paper.Layer {
     return bottomLayers.children.concat(topLayers.children);
   }
 
+  /**
+   * @summary Массив профилей текущего слоя
+   * @type {Array.<Profile>}
+   */
   get profiles() {
     return [...this.children.profiles.children];
   }
 
+  /**
+   * @summary Массив Заполнений текущего слоя
+   * @type {Array.<Filling>}
+   */
   get fillings() {
     return [...this.children.fillings.children];
   }
+  
+  /**
+   * @summary Габариты по внешним краям профилей контура
+   * @type {paper.Rectangle}
+   */
+  get bounds() {
+    return this.children.profiles.bounds;
+  }
+  
 
   /**
    * @param {Object} attr - объект со свойствами создаваемого элемента

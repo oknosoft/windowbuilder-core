@@ -1,13 +1,6 @@
 
 import paper from 'paper/dist/paper-core';
-
-class LayerGroup extends paper.Group {
-  save_coordinates(short, save, close) {
-    for (let elm of this.children) {
-      elm.save_coordinates?.(short, save, close);
-    }
-  }
-}
+import {LayerGroup, DimensionDrawer} from './DimensionDrawer';
 
 class GroupVisualization extends LayerGroup {
   constructor(attr) {
@@ -50,9 +43,12 @@ class GroupFillings extends LayerGroup {}
 class GroupText extends LayerGroup {}
 
 export function contourGroups(parent) {
-  new GroupVisualization({parent, name: 'visualization', guide: true});
-  new GroupLayers({parent, name: 'topLayers'});
-  new GroupProfiles({parent, name: 'profiles'});
-  new GroupFillings({parent, name: 'fillings'});
   new GroupLayers({parent, name: 'bottomLayers'});
+  new GroupFillings({parent, name: 'fillings'});
+  new GroupProfiles({parent, name: 'profiles'});
+  new GroupLayers({parent, name: 'topLayers'});
+  new GroupVisualization({parent, name: 'visualization', guide: true});
+  new DimensionDrawer({parent, name: 'dimensions'});
+  new GroupText({parent: this, name: 'text'});
+  
 }
