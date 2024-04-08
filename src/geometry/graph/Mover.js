@@ -15,6 +15,7 @@ export class Mover {
       owner,
       vertexes: new Map(),
       space: false,
+      interactive: false,
     });
   }
 
@@ -135,6 +136,7 @@ export class Mover {
     // при интерактивных сдвигах, прячем линии профилей
     this.#raw.space = false;
     if(interactive) {
+      this.#raw.interactive = true;
       this.#raw.initialCarcass = owner.project.props.carcass; 
       owner.project.props.carcass = true;
       if(interactive === 'space') {
@@ -151,6 +153,7 @@ export class Mover {
     vertexes.clear();
     owner.children.visualization.ribs.clear();
     owner.project.props.carcass = initialCarcass;
+    this.#raw.interactive = false;
   }
 
   /**
@@ -265,7 +268,7 @@ export class Mover {
           const o0 = profile.generatrix.getOffsetOf(move.startPoint);
           const l1 = gen.length;
           const o1 = o0 * l1 / l0;
-          pos = {delta: gen.getPointAt(o1).subtract(move.startPoint)};          
+          pos = {delta: gen.getPointAt(o1).subtract(move.startPoint)};
         }
         else {
           pos = gen.joinedDirectedPosition({
@@ -315,88 +318,91 @@ export class Mover {
   }
 
   drawMoveRibs() {
-    const {ribs} = this.#raw.owner.children.visualization;
-    ribs.clear();
-    const rects = [];
-    const segms = new Set();
-    const selected = new Map();
-    const circle = (point) => {
-      if(!rects.some((pt) => pt.isNearest(point))) {
-        rects.push(point.clone());
-        new paper.Path.Circle({
-          parent: ribs,
-          fillColor: 'blue',
-          center: point,
-          strokeScaling: false,
-          radius: 20,
-        });
-      }
-    };
-    for(const [vertex, move] of this.#raw.vertexes) {
-      for(const [edge, me] of move.edges) {
-        if(!move.level && move.point.length) {
-          if(me.other.selected) {
-            if(selected.has(edge.profile)) {
-              selected.get(edge.profile).push(move.point);
+    const {owner, interactive} = this.#raw;
+    if(interactive) {
+      const {ribs} = owner.children.visualization;
+      ribs.clear();
+      const rects = [];
+      const segms = new Set();
+      const selected = new Map();
+      const circle = (point) => {
+        if(!rects.some((pt) => pt.isNearest(point))) {
+          rects.push(point.clone());
+          new paper.Path.Circle({
+            parent: ribs,
+            fillColor: 'blue',
+            center: point,
+            strokeScaling: false,
+            radius: 20,
+          });
+        }
+      };
+      for(const [vertex, move] of this.#raw.vertexes) {
+        for(const [edge, me] of move.edges) {
+          if(!move.level && move.point.length) {
+            if(me.other.selected) {
+              if(selected.has(edge.profile)) {
+                selected.get(edge.profile).push(move.point);
+              }
+              else {
+                selected.set(edge.profile, [move.point]);
+              }
             }
             else {
-              selected.set(edge.profile, [move.point]);
+              if(!segms.has(edge.profile)) {
+                segms.add(edge.profile);
+                const start = edge.otherProfileVertex(vertex)?.point || me.other.point;
+                new paper.Path({
+                  parent: ribs,
+                  strokeColor: 'blue',
+                  strokeWidth: 1,
+                  strokeScaling: false,
+                  dashArray: [4, 4],
+                  guide: true,
+                  segments: [start, move.point],
+                });
+              }
             }
-          }
-          else {
-            if(!segms.has(edge.profile)) {
-              segms.add(edge.profile);
-              const start = edge.otherProfileVertex(vertex)?.point || me.other.point;
-              new paper.Path({
-                parent: ribs,
-                strokeColor: 'blue',
-                strokeWidth: 1,
-                strokeScaling: false,
-                dashArray: [4, 4],
-                guide: true,
-                segments: [start, move.point],
-              });
-            }
-          }
-          circle(move.point);
-          for(const tv of edge.allProfileVertexes()) {
-            if(tv !== vertex) {
-              const tm = this.#raw.vertexes.get(tv);
-              circle(tm.point);
-              const iedge = this.edgesProfile(tm.edges, true);
-              if(!segms.has(iedge.profile)) {
-                segms.add(iedge.profile);
-                const sv = iedge.otherProfileVertex(tv);
-                if(sv) {
-                  const sm = this.#raw.vertexes.get(sv);
-                  new paper.Path({
-                    parent: ribs,
-                    strokeColor: 'blue',
-                    strokeWidth: 1,
-                    strokeScaling: false,
-                    dashArray: [4, 4],
-                    guide: true,
-                    segments: [sm?.point || sv.point, tm.point],
-                  });
+            circle(move.point);
+            for(const tv of edge.allProfileVertexes()) {
+              if(tv !== vertex) {
+                const tm = this.#raw.vertexes.get(tv);
+                circle(tm.point);
+                const iedge = this.edgesProfile(tm.edges, true);
+                if(!segms.has(iedge.profile)) {
+                  segms.add(iedge.profile);
+                  const sv = iedge.otherProfileVertex(tv);
+                  if(sv) {
+                    const sm = this.#raw.vertexes.get(sv);
+                    new paper.Path({
+                      parent: ribs,
+                      strokeColor: 'blue',
+                      strokeWidth: 1,
+                      strokeScaling: false,
+                      dashArray: [4, 4],
+                      guide: true,
+                      segments: [sm?.point || sv.point, tm.point],
+                    });
+                  }
                 }
               }
             }
           }
-        }         
+        }
+
       }
-      
-    }
-    for(const [profile, points] of selected) {
-      if(points.length === 2) {
-        new paper.Path({
-          parent: ribs,
-          strokeColor: 'blue',
-          strokeWidth: 2,
-          strokeScaling: false,
-          dashArray: [4, 4],
-          guide: true,
-          segments: [points[0], points[1]],
-        });
+      for(const [profile, points] of selected) {
+        if(points.length === 2) {
+          new paper.Path({
+            parent: ribs,
+            strokeColor: 'blue',
+            strokeWidth: 2,
+            strokeScaling: false,
+            dashArray: [4, 4],
+            guide: true,
+            segments: [points[0], points[1]],
+          });
+        }
       }
     }
   }
@@ -411,5 +417,27 @@ export class Mover {
     }    
     this.cancelMovePoints();
     return moved;
+  }
+  
+  setBounds({width, height, direction, space}) {
+    const {bounds} = this.#raw.owner;
+    // запомним выделенные элементы и узлы
+    ;
+    if(width && width !== bounds.width) {
+      // снимаем выделение всего
+
+      // выделяем край
+      
+      // формируем vertexes
+      this.prepareMovePoints(space ? 'space' : false);
+    }
+    if(height && height !== bounds.height) {
+      // снимаем выделение всего
+
+      // выделяем край
+
+      // формируем vertexes
+      this.prepareMovePoints(space ? 'space' : false);
+    }
   }
 }
