@@ -14,6 +14,7 @@ export class Mover {
     Object.assign(this.#raw, {
       owner,
       vertexes: new Map(),
+      space: false,
     });
   }
 
@@ -97,7 +98,7 @@ export class Mover {
 
   /**
    * @summary Запоминает выделенные узлы и рёбра перед началом сдвига
-   * @param {Boolean} [interactive]
+   * @param {Boolean|String} [interactive]
    */
   prepareMovePoints(interactive) {
     const {owner, vertexes} = this.#raw;
@@ -132,9 +133,13 @@ export class Mover {
       }
     }
     // при интерактивных сдвигах, прячем линии профилей
+    this.#raw.space = false;
     if(interactive) {
       this.#raw.initialCarcass = owner.project.props.carcass; 
       owner.project.props.carcass = true;
+      if(interactive === 'space') {
+        this.#raw.space = true;
+      }
     }
   }
 
@@ -152,19 +157,19 @@ export class Mover {
    * @summary Корректирует delta допустимой величиной сдвига для каждого узла
    * @param {paper.Point} start
    * @param {paper.Point} delta
-   * @param {Boolean} [interactive]
    */
-  tryMovePoints(start, delta, interactive) {
+  tryMovePoints(start, delta) {
 
+    const {vertexes} = this.#raw;
     // сначала, для узлов нулевого уровня
-    for(const [vertex, move] of this.#raw.vertexes) {
+    for(const [vertex, move] of vertexes) {
       if(!move.startPoint) {
         move.startPoint = move.point;
       }
       if(move.level === 0) {
         const test = move.startPoint.add(delta);
         if(vertex.isT) {
-          this.tryMoveImpost({vertex, move, test});
+          this.tryMoveImpost({vertex, move, test, delta});
         }
         else {
           // узел угла не должен порождать длины < lmin и > lmax
@@ -197,22 +202,22 @@ export class Mover {
       }
     }
     // для узлов зависимости c ведомым T
-    for(const [vertex, move] of this.#raw.vertexes) {
+    for(const [vertex, move] of vertexes) {
       if(move.level && vertex.isT) {
         // ищем точку на будущей образующей
         const test = move.startPoint.clone();
-        this.tryMoveImpost({vertex, move, test});
+        this.tryMoveImpost({vertex, move, test, delta});
       }
     }
     let reset;
-    for(const [vertex, move] of this.#raw.vertexes) {
+    for(const [vertex, move] of vertexes) {
       if(move.reset) {
         reset = true;
         break;
       }
     }
     if(!reset) {
-      for(const [vertex, move] of this.#raw.vertexes) {
+      for(const [vertex, move] of vertexes) {
         if(move.delta?.length) {
           move.point = move.startPoint.add(move.delta);
           move.delta = null;
@@ -225,9 +230,9 @@ export class Mover {
     this.drawMoveRibs();
   }
 
-  tryMoveImpost({vertex, move, test}) {
+  tryMoveImpost({vertex, move, test, delta}) {
     // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
-    
+     
     const {profile} = this.edgesProfile(move.edges);
     if(profile) {
       let gen = profile.generatrix.clone({insert: false, deep: false}), base1, base2;
@@ -251,15 +256,25 @@ export class Mover {
       // если импост в данной вершине только один, он должен двигаться вдоль своей образующей
       let pos;
       if(move.edges.size <= 4 && (profile.selected || move.level)) {
+        
         const iedge = this.edgesProfile(move.edges, true);
         const segments = move.startPoint.getDistance(iedge.startVertex.point) > move.startPoint.getDistance(iedge.endVertex.point) ?
           [iedge.startVertex.point, iedge.endVertex.point] : [iedge.endVertex.point, iedge.startVertex.point];
-        pos = gen.joinedDirectedPosition({
-          test: new paper.Path({insert: false, segments}),
-          initial: move.startPoint,
-          min: li,
-          max: lmax,
-        });
+        if(this.#raw.space && profile.generatrix.isCollinear(delta)) {
+          const l0 = profile.generatrix.length;
+          const o0 = profile.generatrix.getOffsetOf(move.startPoint);
+          const l1 = gen.length;
+          const o1 = o0 * l1 / l0;
+          pos = {delta: gen.getPointAt(o1).subtract(move.startPoint)};          
+        }
+        else {
+          pos = gen.joinedDirectedPosition({
+            test: new paper.Path({insert: false, segments}),
+            initial: move.startPoint,
+            min: li,
+            max: lmax,
+          });
+        }
       }
       else {
         if(base1) {

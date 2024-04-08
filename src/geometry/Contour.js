@@ -20,10 +20,12 @@ export class Contour extends paper.Layer {
     return this.#raw.skeleton;
   }
   
+  get mover() {
+    return this.#raw.mover;
+  }
+  
   /**
-   * Возвращает массив вложенных контуров текущего контура
-   * @memberOf AbstractFilling
-   * @instance
+   * @summary Возвращает массив вложенных контуров текущего контура
    * @type Array.<Contour>
    */
   get contours() {
@@ -37,6 +39,67 @@ export class Contour extends paper.Layer {
    */
   get profiles() {
     return [...this.children.profiles.children];
+  }
+  
+  /**
+   * @summary Возвращает структуру профилей по сторонам
+   * @param {String} [side]
+   * @return {Object}
+   */
+  profilesBySide(side) {
+    // получаем таблицу расстояний профилей от рёбер габаритов
+    const {profiles} = this;
+    const bounds = {
+      left: Infinity,
+      top: Infinity,
+      bottom: -Infinity,
+      right: -Infinity
+    };
+    const res = {};
+    const ares = [];
+
+    function bySide(name) {
+      ares.some((elm) => {
+        if(elm[name] == bounds[name]){
+          res[name] = elm.profile;
+          return true;
+        }
+      })
+    }
+
+    for(const profile of this.profiles) {
+      const {b, e} = profile;
+      const x = b.x + e.x;
+      const y = b.y + e.y;
+      if(x < bounds.left){
+        bounds.left = x;
+      }
+      if(x > bounds.right){
+        bounds.right = x;
+      }
+      if(y < bounds.top){
+        bounds.top = y;
+      }
+      if(y > bounds.bottom){
+        bounds.bottom = y;
+      }
+      ares.push({
+        profile: profile,
+        left: x,
+        top: y,
+        bottom: y,
+        right: x
+      });
+    }
+    
+    if (side) {
+      bySide(side);
+      return res[side];
+    }
+
+    Object.keys(bounds).forEach(bySide);
+
+    return res;
   }
 
   /**
@@ -54,9 +117,70 @@ export class Contour extends paper.Layer {
   get bounds() {
     return this.children.profiles.bounds;
   }
+
+  get strokeBounds() {
+    return this.children.profiles.strokeBounds;
+  }
+  
+  /**
+   * @summary Тест положения контура в изделии
+   * @param {EnmElm_positions} pos
+   * @return {Boolean}
+   */
+  isPos(pos) {
+    const {project, layer} = this;
+    // если в изделии один контур или если контур является створкой, он занимает одновременно все положения
+    if(project.contours.count == 1 || layer){
+      return true;
+    }
+
+    // если контур реально верхний или правый и т.д. - возвращаем результат сразу
+    const {bounds} = this;
+    let res = Math.abs(bounds[pos] - project.bounds[pos]) < project.props.sticking;
+
+    if(!res){
+      let rect;
+      if(pos == "top"){
+        rect = new paper.Rectangle(bounds.topLeft, bounds.topRight.add([0, -200]));
+      }
+      else if(pos == "left"){
+        rect = new paper.Rectangle(bounds.topLeft, bounds.bottomLeft.add([-200, 0]));
+      }
+      else if(pos == "right"){
+        rect = new paper.Rectangle(bounds.topRight, bounds.bottomRight.add([200, 0]));
+      }
+      else if(pos == "bottom"){
+        rect = new paper.Rectangle(bounds.bottomLeft, bounds.bottomRight.add([0, 200]));
+      }
+
+      res = !project.contours.some((layer) => {
+        return layer != this && rect.intersects(layer.bounds);
+      });
+    }
+
+    return res;
+  }
+
+  /**
+   * @summary Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
+   * @type paper.Rectangle
+   */
+  get dimensionBounds() {
+    const {profiles, dimensions} = this.children;
+    return profiles.bounds.unite(dimensions.bounds);
+  }
+
+  /**
+   * @summary Надо ли строить авторазмерные линии
+   * @type {Boolean}
+   */
+  get showDimensions() {
+    return !this.layer;
+  }
   
 
   /**
+   * @summary Создаёт профиль и помещает его в своё семейство профилей
    * @param {Object} attr - объект со свойствами создаваемого элемента
    *  @param {paper.Point} [attr.b] - координата узла начала элемента
    *  @param {paper.Point} [attr.e] - координата узла конца элемента
@@ -107,22 +231,6 @@ export class Contour extends paper.Layer {
    */
   recalcFillings() {
     
-  }
-
-  prepareMovePoints(interactive) {
-    return this.#raw.mover.prepareMovePoints(interactive);
-  }
-  
-  tryMovePoints(start, delta, interactive) {
-    return this.#raw.mover.tryMovePoints(start, delta, interactive);
-  }
-  
-  applyMovePoints() {
-    return this.#raw.mover.applyMovePoints();
-  }
-
-  cancelMovePoints() {
-    return this.#raw.mover.cancelMovePoints();
   }
 
   /**

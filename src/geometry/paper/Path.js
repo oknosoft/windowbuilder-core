@@ -8,12 +8,17 @@ export default function (paper) {
      * @memberof paper.Path#
      * @param point
      * @param sticking
-     * @return {*|boolean}
+     * @return {Boolean}
      */
     isNearest(point, sticking) {
       return point.isNearest(this.getNearestPoint(point), sticking);
     },
-    
+
+    /**
+     * @summary Определяет, является ли путь прямым (линия)
+     * @memberof paper.Path#
+     * @return {Boolean}
+     */
     isLinear() {
       const {curves, firstCurve} = this;
       // если в пути единственная кривая и она прямая - путь прямой
@@ -35,6 +40,18 @@ export default function (paper) {
         }
       }
       return true;
+    },
+
+    /**
+     * @summary Определяет, параллелен ли путь пути или вектору параметра
+     * @memberof paper.Path#
+     * @param {paper.Point|paper.Path} test
+     * @return {Boolean}
+     */
+    isCollinear(test) {
+      const tn = test instanceof paper.Point ? test : test.getTangentAt(0);
+      const normal = this.getTangentAt(0);
+      return normal.isCollinear(tn); 
     },
 
     /**

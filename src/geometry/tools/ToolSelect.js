@@ -163,13 +163,13 @@ export class ToolSelect extends ToolElement {
     deselect.length && this._scope.cmd('deselect', deselect);
     select.length && this._scope.cmd('select', select);
 
-    this.project.activeLayer.prepareMovePoints(true);
+    this.project.activeLayer.mover.prepareMovePoints(space ? 'space' : true);
   }
 
   mouseup(event) {
     const {mode, project} = this;
     if (mode === 'move-shapes' || mode === 'move-points') {
-      if(project.activeLayer.applyMovePoints()) {
+      if(project.activeLayer.mover.applyMovePoints()) {
         project.props.registerChange();
         project.redraw();
       }
@@ -187,7 +187,7 @@ export class ToolSelect extends ToolElement {
       }
       if(delta.length > 8) {
         this.mousePos = event.point.clone();
-        this.project.activeLayer.tryMovePoints(this.mouseStartPos, delta, true);
+        this.project.activeLayer.mover.tryMovePoints(this.mouseStartPos, delta);
       }
     }
   }
@@ -197,7 +197,7 @@ export class ToolSelect extends ToolElement {
     const {event: {code, target}, modifiers} = event;
     if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
       this.mode = null;
-      project.activeLayer.cancelMovePoints();
+      project.activeLayer.mover.cancelMovePoints();
       if(this.mousePos) {
         this.hitTest({point: this.mousePos});
       }
