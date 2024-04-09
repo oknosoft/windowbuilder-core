@@ -29,10 +29,10 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
    */
   after_create() {
     const {$p} = this._manager._owner;
-    if(this.date == $p.utils.blank.date) {
+    if(this.is_new()) {
       this.date = new Date();
     }
-    if(!$p.job_prm.is_node) {
+    if(!$p.job_prm.is_node && this.responsible.empty()) {
       this.responsible = $p.current_user;
     }
     return this;
@@ -229,9 +229,19 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
    */
   optimize({onStep}) {
     const {$p: {classes: {Cutting}}} = this._manager._owner;
-    let queue = Promise.resolve();
+    const keys = new Set();
+    const queues = [Promise.resolve(), Promise.resolve(), Promise.resolve()];
+    let index = -1;
     for(const {nom, characteristic, part, parts, rows} of this.fragments()) {
-      queue = queue.then(() => this.optimize_fragment({
+      const key = nom.valueOf() + characteristic.valueOf();
+      if(!keys.has(key)) {
+        keys.add(key);
+        index++;
+        if(index > 2) {
+          index = 0;
+        }
+      }
+      queues[index] = queues[index].then(() => this.optimize_fragment({
         cutting: new Cutting('1D'),
         rows,
         part,
@@ -239,7 +249,17 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         onStep,
       }));
     }
-    return queue;
+    const fin = [];
+    Object.values(queues).forEach((v, index) => {
+      const i = index % 2;
+      if(!fin[i]) {
+        fin[i] = v;
+      }
+      else {
+        fin[i] = fin[i].then(() => v);
+      }
+    })
+    return Promise.all(fin);
   }
 
   /**
@@ -271,6 +291,13 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       }
 
       const config = Object.assign({}, cut_defaults);
+      if(rows.length < 13) {
+        config.iterations = 100;
+      }
+      const len0 = rows[0].len;
+      if(rows.every(({len}) => len === len0)) {
+        config.iterations = 3;
+      }
       const userData = {
         products: rows.map((row) => row.len),
         workpieces: workpieces.map((row) => row.len - row.used),
