@@ -1931,7 +1931,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Надо ли строить авторазмерные линии
-   * @return {Boolean}
+   * @type {Boolean}
    */
   get show_dimensions() {
     return !this.layer;
@@ -1939,7 +1939,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   
   /**
    * Признак сокрытия слоя
-   * @return {boolean}
+   * @type {boolean}
    */
   get hidden() {
     return !!this._hidden;

@@ -997,6 +997,13 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     }
     return index;
   }
+  
+  get frame() {
+    if(!this._data.frame) {
+      this._data.frame = new CatCharacteristics.ProductFrame(this);
+    }
+    return this._data.frame;
+  }
 
   /**
    * Настройки отображения в рисовалке по умолчанию

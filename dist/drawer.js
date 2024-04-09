@@ -5394,11 +5394,13 @@ class DimensionLayer extends paper.Layer {
 class DimensionDrawer extends paper.Group {
   constructor(attr) {
     super(attr);
+    this.ihor = new DimensionGroup();
+    this.ivert = new DimensionGroup();
   }
   clear(local) {
-    this.ihor && this.ihor.clear();
-    this.ivert && this.ivert.clear();
-    for (let pos of ['bottom', 'top', 'right', 'left']) {
+    this.ihor?.clear();
+    this.ivert?.clear();
+    for (const pos of ['bottom', 'top', 'right', 'left']) {
       if(this[pos]) {
         this[pos].removeChildren();
         this[pos].remove();
@@ -5785,12 +5787,6 @@ class DimensionDrawer extends paper.Group {
   }
   get dimension_bounds() {
     return this.layer.dimension_bounds;
-  }
-  get ihor() {
-    return this._ihor || (this._ihor = new DimensionGroup());
-  }
-  get ivert() {
-    return this._ivert || (this._ivert = new DimensionGroup());
   }
 }
 EditorInvisible.DimensionDrawer = DimensionDrawer;
