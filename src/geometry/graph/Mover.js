@@ -2,8 +2,8 @@ import paper from 'paper/dist/paper-core';
 import {epsilon} from '../paper/Point';
 
 // извлекаем разрешенные диапазоны из шаблона
-let li = 140;
-let lmin = 200;
+let li = 120;
+let lmin = 160;
 let lmax = 2000;
 
 export class Mover {
@@ -163,6 +163,7 @@ export class Mover {
    */
   tryMovePoints(start, delta) {
 
+    const cmax = this.#raw.owner.profiles.length > 100 ? 40000 : lmax;
     const {vertexes} = this.#raw;
     // сначала, для узлов нулевого уровня
     for(const [vertex, move] of vertexes) {
@@ -175,7 +176,7 @@ export class Mover {
           this.tryMoveImpost({vertex, move, test, delta});
         }
         else {
-          // узел угла не должен порождать длины < lmin и > lmax
+          // узел угла не должен порождать длины < lmin и > cmax
           for(const [edge, me] of move.edges) {
             const pos = edge.profile.generatrix.directedPosition({
               base: me.other.point,
@@ -183,7 +184,7 @@ export class Mover {
               test,
               free: true,
               min: lmin,
-              max: lmax,
+              max: cmax,
             });
             if(pos?.delta?.length > epsilon) {
               // на текущем профиле перевёртыш - ищем точку
@@ -235,7 +236,7 @@ export class Mover {
 
   tryMoveImpost({vertex, move, test, delta}) {
     // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
-     
+    const cmax = this.#raw.owner.profiles.length > 100 ? 40000 : lmax;     
     const {profile} = this.edgesProfile(move.edges);
     if(profile) {
       let gen = profile.generatrix.clone({insert: false, deep: false}), base1, base2;
@@ -275,7 +276,7 @@ export class Mover {
             test: new paper.Path({insert: false, segments}),
             initial: move.startPoint,
             min: li,
-            max: lmax,
+            max: cmax,
           });
         }
       }

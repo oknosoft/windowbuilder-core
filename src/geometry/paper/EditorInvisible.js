@@ -37,29 +37,6 @@ export class EditorInvisible extends paper.PaperScope {
     return project;
   }
   
-  createTestProduct() {
-    const {activeLayer, props} = this.project;
-    props.loading = true;
-    for(const profile of activeLayer.profiles.reverse()) {
-      profile.remove();
-    }
-    const profiles = [
-      activeLayer.createProfile({b: [1400, 1000], e: [100, 1000]}),
-      activeLayer.createProfile({b: [100, 1000], e: [100, 0]}),
-      activeLayer.createProfile({b: [100, 0], e: [1400, 0]}),
-      activeLayer.createProfile({b: [1400, 0], e: [1400, 1000]}),
-      activeLayer.createProfile({b: [500, 1000], e: [500, 0]}),
-      activeLayer.createProfile({b: [700, 1000], e: [800, 0]}),
-      activeLayer.createProfile({b: [750, 500], e: [1400, 600]}),
-    ];
-    for(const profile of profiles) {
-      activeLayer.skeleton.addProfile(profile);
-    }
-    props.loading = false;
-    this.project.zoomFit(activeLayer.bounds);
-    this.project.redraw();
-  }
-  
   cmd(name, attr) {
     this.history[name](attr);
   }
