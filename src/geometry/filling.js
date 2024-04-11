@@ -621,11 +621,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   
   reset_fragment() {
-    const {_attr, layer, path} = this;
-    if(_attr._dimlns) {
-      _attr._dimlns.remove();
-      delete _attr._dimlns;
-    }
+    const {children, layer, path} = this;
+    children.dimlns.clear(true);
     path.set({
       strokeColor: null,
       strokeWidth: 0,

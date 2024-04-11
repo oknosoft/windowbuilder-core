@@ -5412,9 +5412,9 @@ class DimensionDrawer extends paper.Group {
     }
   }
   redraw(forse) {
-    const {layer, project: {builder_props}} = this;
+    const {parent, project: {builder_props}} = this;
     if(!forse) {
-      forse = layer.show_dimensions;
+      forse = parent.show_dimensions;
     }
     if(!forse) {
       this.clear(true);
@@ -5422,31 +5422,35 @@ class DimensionDrawer extends paper.Group {
     else if(forse || !builder_props.auto_lines) {
       this.clear();
     }
-    for (let chld of layer.contours) {
-      chld.l_dimensions.redraw();
+    const {contours} = parent;
+    if(contours) {
+      for (let chld of contours) {
+        chld.l_dimensions.redraw();
+      }
     }
     if(builder_props.auto_lines && forse) {
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
         return this.clear();
       }
-      const profiles = new Set(layer.profiles);
-      layer.imposts.forEach((elm) => elm.visible && profiles.add(elm));
+      const our_profiles = parent.profiles;
+      const profiles = new Set(our_profiles);
+      parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
       for (let elm of profiles) {
-        const our = !elm.layer || elm.layer === layer;
+        const our = our_profiles.includes(elm);
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
         this.push_by_point({ihor, ivert, eb, ee, elm});
-        if(!layer.layer && elm.nearest() instanceof ProfileConnective) {
+        if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
           this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
         }
       }
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(layer.is_pos('right') || (forse && !layer.is_pos('left'))) {
+        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
-        else if(layer.is_pos('left')) {
+        else if(parent.is_pos('left')) {
           this.by_imposts(ihor, this.ihor, 'left');
         }
       }
@@ -5455,10 +5459,10 @@ class DimensionDrawer extends paper.Group {
       }
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(layer.is_pos('bottom') || (forse && !layer.is_pos('top'))) {
+        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
-        else if(layer.is_pos('top')) {
+        else if(parent.is_pos('top')) {
           this.by_imposts(ivert, this.ivert, 'top');
         }
       }
@@ -5502,10 +5506,10 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_imposts() {
-    const {layer} = this;
+    const {parent} = this;
     this.clear();
     let index = 0;
-    for (let elm of layer.profiles) {
+    for (let elm of parent.profiles) {
       const {inner, outer} = elm.joined_imposts();
       const {generatrix, angle_hor} = elm;
       generatrix.visible = false;
@@ -5550,10 +5554,10 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_falsebinding() {
-    const {layer} = this;
+    const {parent} = this;
     this.clear();
     const {ihor, ivert, by_side} = this.imposts();
-    for(const filling of layer.fillings) {
+    for(const filling of parent.fillings) {
       if(!filling.visible) {
         continue;
       }
@@ -5637,11 +5641,11 @@ class DimensionDrawer extends paper.Group {
     }
   }
   by_contour(ihor, ivert, forse, by_side) {
-    const {project, layer} = this;
-    const {bounds} = layer;
+    const {project, parent} = this;
+    const {bounds} = parent;
     const {base_offset, dop_offset} = consts;
     if(project.contours.length > 1 || forse) {
-      if(layer.is_pos('left') && !layer.is_pos('right') && project.bounds.height != bounds.height) {
+      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -5662,7 +5666,7 @@ class DimensionDrawer extends paper.Group {
           this.left = null;
         }
       }
-      if(layer.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -5683,7 +5687,7 @@ class DimensionDrawer extends paper.Group {
           this.right = null;
         }
       }
-      if(layer.is_pos('top') && !layer.is_pos('bottom') && project.bounds.width != bounds.width) {
+      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
@@ -5704,7 +5708,7 @@ class DimensionDrawer extends paper.Group {
           this.top = null;
         }
       }
-      if(layer.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -5752,9 +5756,9 @@ class DimensionDrawer extends paper.Group {
     }
   }
   imposts() {
-    const {layer} = this;
-    const {bounds} = layer;
-    const by_side = layer.profiles_by_side();
+    const {parent} = this;
+    const {bounds} = parent;
+    const by_side = parent.profiles_by_side();
     if(!Object.keys(by_side).length) {
       return {ihor: [], ivert: [], by_side: {}};
     }
@@ -5783,10 +5787,10 @@ class DimensionDrawer extends paper.Group {
     return {ihor, ivert, by_side};
   }
   get owner_bounds() {
-    return this.layer.bounds;
+    return this.parent.bounds;
   }
   get dimension_bounds() {
-    return this.layer.dimension_bounds;
+    return this.parent.dimension_bounds;
   }
 }
 EditorInvisible.DimensionDrawer = DimensionDrawer;
@@ -6522,11 +6526,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this;
   }
   reset_fragment() {
-    const {_attr, layer, path} = this;
-    if(_attr._dimlns) {
-      _attr._dimlns.remove();
-      delete _attr._dimlns;
-    }
+    const {children, layer, path} = this;
+    children.dimlns.clear(true);
     path.set({
       strokeColor: null,
       strokeWidth: 0,
@@ -8245,6 +8246,9 @@ class CnnPoint {
   }
   get is_tt() {
     let {profile_point, profile, parent, point} = this;
+    if(profile instanceof Filling) {
+      return true;
+    }
     if(!point) {
       point = parent[this.node];
     }

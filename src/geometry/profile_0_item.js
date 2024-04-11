@@ -68,6 +68,9 @@ class CnnPoint {
   get is_tt() {
     // если это угол, то точно не T
     let {profile_point, profile, parent, point} = this;
+    if(profile instanceof Filling) {
+      return true;
+    }
     if(!point) {
       point = parent[this.node];
     }
