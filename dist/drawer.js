@@ -5043,12 +5043,12 @@ class DimensionLine extends paper.Group {
     children.callout1.visible = !this.hide_c1;
     children.callout2.visible = !this.hide_c2;
     children.scale.visible = !this.hide_line;
-    children.text.content = length.round(builder_props.rounding).toString();
+    children.text.content = length.round(length > 220 ? builder_props.rounding : 0).toString();
     children.text.rotation = e.subtract(b).angle;
     children.text.justification = align.ref;
     const font_size = this._font_size();
     const {isNode} = $p.wsql.alasql.utils;
-    children.text.fontSize = font_size;
+    children.text.fontSize = length < 220 ? font_size * 0.8 : font_size;
     if(align == $p.enm.text_aligns.left) {
       children.text.position = bs
         .add(path.getTangentAt(0).multiply(font_size))
