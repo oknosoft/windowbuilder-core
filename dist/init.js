@@ -3178,9 +3178,6 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
     else if(typeof elm_types == 'string') {
       elm_types = types[elm_types];
     }
-    if(elm && elm_types === types.region) {
-      return this.region_inserts(rows, elm);
-    }
     if(!Array.isArray(elm_types)) {
       elm_types = [elm_types];
     }
@@ -3231,34 +3228,6 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
     });
 
     return noms.map((e) => e.nom);
-  }
-  
-  region_inserts(rows, elm) {
-    let elm_types;
-    const nearest = elm.nearest();
-    if(nearest) {
-      elm_types = nearest.elm_type;
-    }
-    else if(!elm.is_t && elm.layer.layer) {
-      elm_types = types.flap;
-    }
-    else {
-      elm_types = types.rama_impost;
-    }
-    const inserts = this.inserts(elm_types, rows, nearest);
-    if(rows === 'rows') {
-      return inserts;
-    }
-    const res = new Set();
-    const {region} = elm.layer;
-    for(const inset of inserts) {
-      for(const row of inset.inserts) {
-        if(row.inset.region === region) {
-          res.add(row.inset);
-        }
-      }
-    }
-    return Array.from(res);
   }
 
   /**

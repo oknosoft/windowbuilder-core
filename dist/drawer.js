@@ -4563,6 +4563,9 @@ class ContourRegion extends Contour {
   get region() {
     return this.dop.region || 0;
   }
+  get level() {
+    return this.layer.level;
+  }
   get show_dimensions() {
     const {visible, hidden} = this.layer;
     return !visible || hidden;

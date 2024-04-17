@@ -49,6 +49,15 @@ class ContourRegion extends Contour {
   }
 
   /**
+   * Уровень вложенности слоя
+   * @type {number}
+   * @final
+   */
+  get level() {
+    return this.layer.level;
+  }
+
+  /**
    * Надо ли строить авторазмерные линии
    * @return {Boolean}
    */
