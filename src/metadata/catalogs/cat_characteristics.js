@@ -798,6 +798,22 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
+        
+        // видимость рядов профиля
+        // 0, undefined - только контур основных элементов
+        // 1 - только контур элементов ряда
+        // 2 - и ряд и основной элемент
+        if(attr.regions) {
+          for(const layer of project.getItems({class: EditorInvisible.Contour})) {
+            if(attr.regions === 1) {
+              layer.hidden = !(layer instanceof EditorInvisible.ContourRegion);
+            }
+            else {
+              layer.hidden = false;
+            }
+          }
+        }        
+        
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {
           const elmnts = Array.isArray(attr.elm) ? attr.elm : [attr.elm];
