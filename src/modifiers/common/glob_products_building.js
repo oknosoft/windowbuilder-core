@@ -706,15 +706,15 @@ class ProductsBuilding {
         for (const elm of contour.glasses(false, true)) {
           !elm.virtual && base_spec_glass(elm);
         }
+        // для всех разрезов (водоотливов)
+        for (const elm of contour.sectionals) {
+          !elm.virtual && base_spec_sectional(elm);
+        }
         
         for (const elm of contour.children) {
           if(elm instanceof ProfileGlBead) {
             // для всех штапиков
             base_spec_profile(elm);
-          }
-          else if(elm instanceof Sectional) {
-            // для всех разрезов (водоотливов)
-            base_spec_sectional(elm);
           }
           else if(elm instanceof Compound) {
             // для всех поверхностей (составных путей)

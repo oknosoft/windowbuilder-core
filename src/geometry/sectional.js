@@ -194,8 +194,11 @@ class Sectional extends GeneratrixElement {
    */
   initialize(attr) {
 
-    const {project, _attr, _row} = this;
+    const {project, layer, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
+    if(this.parent === layer) {
+      this.parent = layer.children.sectionals;
+    }
 
     _attr._rays = {
       b: {},

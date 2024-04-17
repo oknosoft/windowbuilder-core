@@ -7,7 +7,7 @@
     "url": "https://github.com/oknosoft/windowbuilder-core.git"
   },
   "engines": {
-    "node": ">=18.16",
+    "node": ">=20.2",
     "yarn": "^1.22"
   },
   "keywords": [

@@ -50,6 +50,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupLayers({parent: this, name: 'bottomLayers'});
     new GroupFillings({parent: this, name: 'fillings'});
     new GroupProfiles({parent: this, name: 'profiles'});
+    new GroupSectionals({parent: this, name: 'sectionals'});
     new GroupLayers({parent: this, name: 'topLayers'});    
     new GroupVisualization({parent: this, name: 'visualization', guide: true});
     super.create_groups();
@@ -141,7 +142,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       // разрезы
       else if(row.elm_type === elm_types.drainage) {
-        new Sectional(attr)
+        new Sectional({row, parent: this.children.sectionals})
       }
       // остальные элементы (текст)
       else if(row.elm_type === elm_types.text) {
@@ -2274,7 +2275,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {Array.<Profile>}
    */
   get profiles() {
-    return this.children.profiles.children.filter((elm) => !(elm instanceof Sectional));
+    return this.children.profiles.children;
   }
 
   /**
@@ -2282,7 +2283,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Array.<Sectional>}
    */
   get sectionals() {
-    return this.children.profiles.children.filter((elm) => elm instanceof Sectional);
+    return this.children.sectionals.children;
   }
 
   /**

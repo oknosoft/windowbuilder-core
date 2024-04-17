@@ -240,6 +240,9 @@ class GroupLayers extends LayerGroup {
     return this.children.filter(v => v instanceof Contour);
   }
 }
+class GroupSectionals extends LayerGroup {
+  
+}
 class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;

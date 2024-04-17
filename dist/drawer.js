@@ -1622,6 +1622,8 @@ class GroupLayers extends LayerGroup {
     return this.children.filter(v => v instanceof Contour);
   }
 }
+class GroupSectionals extends LayerGroup {
+}
 class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;
@@ -1751,6 +1753,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupLayers({parent: this, name: 'bottomLayers'});
     new GroupFillings({parent: this, name: 'fillings'});
     new GroupProfiles({parent: this, name: 'profiles'});
+    new GroupSectionals({parent: this, name: 'sectionals'});
     new GroupLayers({parent: this, name: 'topLayers'});    
     new GroupVisualization({parent: this, name: 'visualization', guide: true});
     super.create_groups();
@@ -1818,7 +1821,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         glasses.push(row);
       }
       else if(row.elm_type === elm_types.drainage) {
-        new Sectional(attr)
+        new Sectional({row, parent: this.children.sectionals})
       }
       else if(row.elm_type === elm_types.text) {
         new FreeText({row, parent: this.l_text})
@@ -3378,10 +3381,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   get pos() {
   }
   get profiles() {
-    return this.children.profiles.children.filter((elm) => !(elm instanceof Sectional));
+    return this.children.profiles.children;
   }
   get sectionals() {
-    return this.children.profiles.children.filter((elm) => elm instanceof Sectional);
+    return this.children.sectionals.children;
   }
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
@@ -14450,8 +14453,11 @@ class LenText extends EditableText {
 }
 class Sectional extends GeneratrixElement {
   initialize(attr) {
-    const {project, _attr, _row} = this;
+    const {project, layer, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
+    if(this.parent === layer) {
+      this.parent = layer.children.sectionals;
+    }
     _attr._rays = {
       b: {},
       e: {},
@@ -15453,12 +15459,12 @@ class ProductsBuilding {
         for (const elm of contour.glasses(false, true)) {
           !elm.virtual && base_spec_glass(elm);
         }
+        for (const elm of contour.sectionals) {
+          !elm.virtual && base_spec_sectional(elm);
+        }
         for (const elm of contour.children) {
           if(elm instanceof ProfileGlBead) {
             base_spec_profile(elm);
-          }
-          else if(elm instanceof Sectional) {
-            base_spec_sectional(elm);
           }
           else if(elm instanceof Compound) {
           }
