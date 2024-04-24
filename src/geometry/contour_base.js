@@ -3125,13 +3125,19 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {Boolean}
    */
   get opacity() {
-    return this.children.length ? this.children[0].opacity : 1;
+    for(const elm of this.profiles) {
+      if(elm.opacity !== 1) {
+        return elm.opacity;
+      }
+    }
+    return 1;
   }
   set opacity(v) {
-    this.children.forEach((elm) => {
-      if (elm instanceof BuilderElement)
+    for(const elm of [...this.profiles, ...this.glasses()]) {
+      if (elm instanceof BuilderElement) {
         elm.opacity = v;
-    });
+      }
+    }
   }
 
   /**
