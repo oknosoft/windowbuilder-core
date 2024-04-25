@@ -247,6 +247,7 @@ export class Contour extends paper.Layer {
       item.redraw?.();
     }
     this.drawVisualization();
+    this.children.dimensions.redraw();
   }
   
   drawVisualization() {
