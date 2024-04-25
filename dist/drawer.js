@@ -18284,6 +18284,46 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return weight;
           };
           break;
+        case 'up_glasses_weight':
+          _data._formula = function ({elm, elm2, ox}) {
+            let weight = 0;
+            if(elm2 instanceof EditorInvisible.Profile && !(elm instanceof EditorInvisible.Profile)) {
+              elm = elm2;
+            }
+            if(elm?.orientation?.is('hor')) {
+              const {top} = elm.nearest_glasses;
+              if(top?.length) {
+                weight = (ox || elm.ox).elm_weight(top.map((glass) => glass.elm));
+              }
+            }
+            return weight;
+          };
+          break;
+        case 'nearest_gl_thickness':
+          _data._formula = function ({elm, elm2}) {
+            if(elm instanceof EditorInvisible.ProfileAdjoining) {
+              elm = elm.nearest();
+              elm2 = null;
+            }
+            let thickness = elm2 ? elm2.thickness : 0;
+            if(!thickness && elm?.joined_glasses) {
+              thickness = Math.max(...elm.joined_glasses().map((gl) => gl.thickness || 0));
+            }
+            return thickness;
+          };
+          break;
+        case 'nearest_gl_var':
+          _data._formula = function ({elm}) {
+            if(elm instanceof EditorInvisible.ProfileAdjoining) {
+              elm = elm.nearest();
+            }
+            const set = new Set();
+            for(const gl of elm?.joined_glasses?.()) {
+              set.add(gl.thickness);
+            }
+            return set.size > 1;
+          };
+          break;
         case 'elm_orientation':
           _data._formula = function ({elm, elm2}) {
             return elm?.orientation || elm2?.orientation || orientations.get();
@@ -18292,6 +18332,44 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'elm_pos':
           _data._formula = function ({elm}) {
             return elm?.pos || positions.get();
+          };
+          break;
+        case 'node_pos':
+          _data._formula = function ({elm, node}) {
+            if(elm && node) {
+              if(elm instanceof EditorInvisible.ProfileSegment) {
+                const {parent} = elm;
+                if(!parent[node].is_nearest(elm[node])) {
+                  return positions.left.center;
+                }
+              }
+              const other = node === 'b' ? 'e' : 'b';
+              if(elm.orientation.is('vert')) {
+                return elm[node].y < elm[other].y ? positions.top : positions.bottom;
+              }
+              if(elm.orientation.is('hor')) {
+                return elm[node].x > elm[other].x ? positions.right : positions.left;
+              }
+            }
+            return positions.get();
+          };
+          break;
+        case 'is_node_last':
+          _data._formula = function ({elm, node}) {
+            if(elm && node) {
+              if(elm instanceof EditorInvisible.ProfileSegment) {
+                const {parent} = elm;
+                if(!parent[node].is_nearest(elm[node])) {
+                  return false;
+                }
+              }
+              const pt = elm[node];
+              const {bounds} = elm.layer;
+              const {sticking} = consts;
+              return (pt.y < bounds.top + sticking) || (pt.y > bounds.bottom - sticking) ||
+                (pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking);
+            }
+            return false;
           };
           break;
         case 'cnn_side':
@@ -18335,16 +18413,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
         case 'height':
-            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
-              if(!layer && elm) {
-                layer = elm.layer;
-              }
-              if(!prm_row?.origin || prm_row.origin.is('product')) {
-                return ox?.y || 0;
-              }
-              return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
-            };
-            break;
+          _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+            if(!layer && elm) {
+              layer = elm.layer;
+            }
+            if(!prm_row?.origin || prm_row.origin.is('product')) {
+              return ox?.y || 0;
+            }
+            return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
+          };
+          break;
         case 'rotation_axis':
           _data._formula = function ({elm, layer, prm_row}) {
             if(!layer && elm?.layer) {
@@ -18395,9 +18473,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   }
   for(const name of [
     'clr_product',     
+    'up_glasses_weight',
     'elm_weight',      
     'elm_orientation', 
     'elm_pos',         
+    'node_pos',        
+    'is_node_last',    
     'cnn_side',        
     'elm_type',        
     'elm_rectangular', 
@@ -18411,6 +18492,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'region',          
     'is_composite',    
     'rotation_axis',   
+    'nearest_gl_thickness',
+    'nearest_gl_var',  
   ]) {
     formulate(name);
   }
