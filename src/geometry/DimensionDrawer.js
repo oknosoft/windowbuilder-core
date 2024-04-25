@@ -1,5 +1,6 @@
 import paper from 'paper/dist/paper-core';
 import {DimensionLine} from './DimensionLine';
+import {DimensionLineCustom} from './DimensionLineCustom';
 
 export class LayerGroup extends paper.Group {
   saveCoordinates(short, save, close) {
@@ -207,13 +208,25 @@ export class DimensionDrawer extends LayerGroup {
       this.layer?.layer?.children?.dimensions?.clear();
     }
   }
+  
+  get ownerBounds() {
+    return this.parent.bounds;
+  }
+  
+  get dimensionBounds() {
+    let {bounds} = this.layer;
+    this.getItems({class: DimensionLineCustom}).forEach((dl) => {
+      bounds = bounds.unite(dl.bounds);
+    });
+    return bounds;
+  }
 
   /**
    * @summary Формирует авторазмерные линии
    * @param {Boolean} [forse]
    */
   redraw(forse) {
-    const {layer, project: {props}} = this;
+    const {layer, children, project: {props}} = this;
 
     if(!forse) {
       forse = layer.showDimensions;
@@ -236,6 +249,10 @@ export class DimensionDrawer extends LayerGroup {
 
       // далее - размерные линии контура
       this.byContour([], [], forse, bySide);
+    }
+    
+    for(const dl of children) {
+      dl.redraw?.();
     }
   }
 }

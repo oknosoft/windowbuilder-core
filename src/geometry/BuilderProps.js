@@ -48,5 +48,13 @@ export class BuilderProps  {
   set saving(v) {
     this.#raw.saving = Boolean(v);
   }
+
+  fontFamily() {
+    return 'GOST type B';
+  }
+  
+  fontSize() {
+    return 60;
+  }
   
 }

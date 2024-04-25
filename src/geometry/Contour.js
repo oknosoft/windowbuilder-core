@@ -258,7 +258,7 @@ export class Contour extends paper.Layer {
           point: vertex.point.add([20, -20]),
           content: vertex.value,
           parent: visualization.children.graph,
-          fontSize: 60,
+          fontSize: project.props.fontSize(),
         })
       }
     }
