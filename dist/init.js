@@ -7560,7 +7560,7 @@ set set(v){this._setter_ts('set',v)}
   }
 
   /**
-   * Заполняет план по заказу
+   * Заполняет план по массиву заказов
    * @param {Array<String|DataObj>} refs
    * @return {Promise<void>}
    */
@@ -7604,6 +7604,66 @@ set set(v){this._setter_ts('set',v)}
       });
   }
 
+  fill_by_keys(opts = {}) {
+    const {set, cutting, planning} = this;
+    
+    // старый раскрой чистим
+    cutting.clear();
+    planning.clear();
+    for(const srow of set) {
+      const {obj: {obj, type, specimen, region}, stage} = srow;
+      // для ключей типа 'Изделие', добавляем все строки, привязанные к этапу производства
+      if(type.is('product')) {
+        obj.specification.find_rows({stage}, (row) => {
+          const {cutting_optimization_type: ct, is_procedure, is_service} = row.nom;
+          if(!row.len || is_procedure || is_service) {
+            return;
+          }
+          if(!ct.empty() && !ct.is('no')) {
+            this.cutting_row({obj, specimen, row, opts});
+          }
+        });
+      }
+    }
+  }
+
+  cutting_row({obj, specimen, elm, row, opts}) {
+    // если планирование до элемента...
+    if(elm && row.elm !== elm) {
+      return;
+    }
+    // по типам оптимизации
+    if(row.width && !opts.bilinear && !opts.c2d) {
+      return;
+    }
+    // должен существовать элемент
+    const coord = obj.coordinates.find({elm: row.elm});
+    if(!coord) {
+      return;
+    }
+    // только для цветных
+    if(opts.clr_only) {
+      if(row.clr.empty() || /Белый|БезЦвета/.test(row.clr.predefined_name) ) {
+        return;
+      }
+    }
+    for(let qty = 1;  qty <= row.qty; qty++) {
+      this.cutting.add({
+        production: obj,
+        specimen,
+        elm: row.elm,
+        nom: row.nom,
+        characteristic: row.characteristic.empty() ? row.clr : row.characteristic,
+        len: (row.len * 1000).round(0),
+        width: (row.width * 1000).round(0),
+        orientation: coord.orientation,
+        elm_type: coord.elm_type,
+        alp1: row.alp1,
+        alp2: row.alp2,
+      });
+    }
+  }
+  
   /**
    * Заполняет табчасть раскрой по плану
    * @param opts {Object}
@@ -7624,43 +7684,13 @@ set set(v){this._setter_ts('set',v)}
         planning.forEach(({obj, specimen, elm}) => {
           obj.specification.forEach((row) => {
             // только строки подлежащие раскрою
-            if(!row.len || row.nom.cutting_optimization_type.empty() || row.nom.cutting_optimization_type.is('Нет')) {
+            if(!row.len || row.nom.cutting_optimization_type.empty() || row.nom.cutting_optimization_type.is('no')) {
               return;
             }
-            // если планирование до элемента...
-            if(elm && row.elm !== elm) {
-              return;
-            }
-            // по типам оптимизации
-            if(!opts.bilinear && row.width) {
-              return;
-            }
-            // должен существовать элемент
-            const coord = obj.coordinates.find({elm: row.elm});
-            if(!coord) {
-              return;
-            }
-            // только для цветных
-            if(opts.clr_only) {
-              if(row.clr.empty() || /Белый|БезЦвета/.test(row.clr.predefined_name) ) {
-                return;
-              }
-            }
-            for(let qty = 1;  qty <= row.qty; qty++) {
-              cutting.add({
-                production: obj,
-                specimen,
-                elm: row.elm,
-                nom: row.nom,
-                characteristic: row.characteristic.empty() ? row.clr : row.characteristic,
-                len: (row.len * 1000).round(0),
-                width: (row.width * 1000).round(0),
-                orientation: coord.orientation,
-                elm_type: coord.elm_type,
-                alp1: row.alp1,
-                alp2: row.alp2,
-              });
-            }
+            this.cutting_row({obj, specimen, elm, row, opts});
+            
+            
+            
           });
         });
       });
