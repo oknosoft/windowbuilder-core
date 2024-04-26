@@ -98,11 +98,12 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
   }
 
   fill_by_keys(opts = {}) {
-    const {set, cutting, planning} = this;
+    const {set, cutting, planning, cuts} = this;
     
     // старый раскрой чистим
     cutting.clear();
     planning.clear();
+    const noms = [];
     for(const srow of set) {
       const {obj: {obj, type, specimen, region}, stage} = srow;
       // для ключей типа 'Изделие', добавляем все строки, привязанные к этапу производства
@@ -113,8 +114,23 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
             return;
           }
           if(!ct.empty() && !ct.is('no')) {
-            this.cutting_row({obj, specimen, row, opts});
+            const last = this.cutting_row({obj, specimen, row, opts});
+            if(last && !noms.find(({nom, characteristic}) => {nom === last.nom && characteristic === last.characteristic})) {
+              noms.push({nom: last.nom, characteristic: last.characteristic});
+            }
           }
+        });
+      }
+    }
+    for(const {nom, characteristic} of noms) {
+      if(!cuts.find({nom, characteristic})) {
+        cuts.add({
+          record_kind: 'debit',
+          nom,
+          characteristic,
+          len: nom.len,
+          width: nom.width,
+          quantity: nom.width ? 100 : nom.len / 1000,
         });
       }
     }
@@ -140,8 +156,9 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         return;
       }
     }
+    let last;
     for(let qty = 1;  qty <= row.qty; qty++) {
-      this.cutting.add({
+      last = this.cutting.add({
         production: obj,
         specimen,
         elm: row.elm,
@@ -155,6 +172,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         alp2: row.alp2,
       });
     }
+    return last;
   }
   
   /**
