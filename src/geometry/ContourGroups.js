@@ -9,6 +9,7 @@ class GroupVisualization extends LayerGroup {
     new paper.Group({parent: this, name: 'spec'});
     new paper.Group({parent: this, name: 'ribs'});
     new paper.Group({parent: this, name: 'graph'});
+    new paper.Group({parent: this, name: 'tool'});
   }
 
   get insets() {
@@ -21,6 +22,10 @@ class GroupVisualization extends LayerGroup {
 
   get ribs() {
     return this.children.ribs;
+  }
+
+  get tool() {
+    return this.children.tool;
   }
 }
 

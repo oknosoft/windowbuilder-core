@@ -2,6 +2,7 @@
 import paper from 'paper/dist/paper-core';
 import {BuilderProps} from './BuilderProps';
 import {Contour} from './Contour';
+import {ContourRoot} from './ContourRoot';
 
 export class Scheme extends paper.Project {
   
@@ -11,10 +12,21 @@ export class Scheme extends paper.Project {
       Object.defineProperty(this, 'root', {value: root});
     }
     Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
+    Object.defineProperty(this, 'rootLayer', {value: new ContourRoot({project: this, insert: true})});
   }
 
   get activeLayer() {
-    return this._activeLayer || new Contour({project: this, insert: true});
+    const {_activeLayer, rootLayer} = this;
+    if(_activeLayer && _activeLayer !== rootLayer) {
+      return _activeLayer;
+    }
+    for(const layer of this.layers) {
+      if(layer instanceof Contour && layer !== rootLayer) {
+        layer.activate();
+        return layer;
+      }
+    }
+    return new Contour({project: this, insert: true});
   }
 
   get strokeBounds() {

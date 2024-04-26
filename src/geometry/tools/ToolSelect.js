@@ -21,7 +21,24 @@ export class ToolSelect extends ToolElement {
   constructor() {
     super();
     this.on({
-      activate: () => this.onActivate('cursor-arrow-white'),
+      activate: () => {
+        if(this.#raw.node) {
+          this.#raw.node.remove();
+        }
+        const {scaling} = this.project.view;
+        this.#raw.node = new paper.Path.Rectangle({
+          point: [0, 0],
+          size: [24, 24],
+          strokeColor: 'blue',
+          fillColor: 'blue',
+          opacity: 0.4,
+          parent: this.project.rootLayer.children.visualization.tool,
+          visible: false,
+          guide: true,
+          strokeScaling: false,
+        });
+        this.onActivate('cursor-arrow-white');
+      },
       mousedown: this.mousedown,
       mouseup: this.mouseup,
       mousedrag: this.mousedrag,
@@ -30,21 +47,22 @@ export class ToolSelect extends ToolElement {
     });
   }
 
-  mousedown(event) {
-    this.hitTest(event);
+  mousedown(ev) {
+    //this.hitTest(ev);
     const {body, activeElement} = document;
     const {project, view, hitItem} = this;
     if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
       activeElement.blur();
     }
-    const {shift, space, control, alt} = event.modifiers;
+    const {shift, space, control, alt} = ev.modifiers;
 
     this.mode = null;
     this.changed = false;
         
     const select = [];
     const deselect = [];
-    this.mouseStartPos = event.point.clone();
+    this.mouseStartPos = ev.point.clone();
+    this.#raw.node.visible = false;
 
     if(hitItem && !alt) {
       
@@ -108,7 +126,7 @@ export class ToolSelect extends ToolElement {
         }
       }
       else if(hitItem.type == 'segment') {
-        const node = item.generatrix.firstSegment.point.isNearest(event.point, true) ? 'b' : 'e';
+        const node = item.generatrix.firstSegment.point.isNearest(hitItem.segment.point, true) ? 'b' : 'e';
         if(shift) {
           if(hitItem.segment.selected) {
             deselect.push({item, node, shift});
@@ -166,7 +184,7 @@ export class ToolSelect extends ToolElement {
     this.project.activeLayer.mover.prepareMovePoints(space ? 'space' : true);
   }
 
-  mouseup(event) {
+  mouseup(ev) {
     const {mode, project} = this;
     if (mode === 'move-shapes' || mode === 'move-points') {
       if(project.activeLayer.mover.applyMovePoints()) {
@@ -179,22 +197,22 @@ export class ToolSelect extends ToolElement {
     this.mousePos = null;
   }
 
-  mousedrag(event) {
+  mousedrag(ev) {
     if (this.mode === 'move-shapes' || this.mode === 'move-points') {
-      let delta = event.point.subtract(this.mouseStartPos);
-      if (!event.modifiers.shift) {
+      let delta = ev.point.subtract(this.mouseStartPos);
+      if (!ev.modifiers.shift) {
         delta = delta.snapToAngle();
       }
       if(delta.length > 8) {
-        this.mousePos = event.point.clone();
+        this.mousePos = ev.point.clone();
         this.project.activeLayer.mover.tryMovePoints(this.mouseStartPos, delta);
       }
     }
   }
 
-  keydown(event) {
+  keydown(ev) {
     const {project, mode, _scope} = this;
-    const {event: {code, target}, modifiers} = event;
+    const {event: {code, target}, modifiers} = ev;
     if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
       this.mode = null;
       project.activeLayer.mover.cancelMovePoints();
@@ -216,9 +234,9 @@ export class ToolSelect extends ToolElement {
     }
   }
 
-  hitTest({point}) {
-
-    const tolerance = 10;
+  hitTest(ev) {
+    const {point} = ev;
+    const tolerance = 26;
     const {project, canvasCursor} = this;
     this.hitItem = null;
 
@@ -253,6 +271,8 @@ export class ToolSelect extends ToolElement {
     }
 
     const {hitItem} = this;
+    const {node} = this.#raw;
+    node.visible = false;
     if (hitItem) {
       if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
         // if (hitItem.item.parent instanceof DimensionLine) {
@@ -270,9 +290,12 @@ export class ToolSelect extends ToolElement {
         }
       }
       else if (hitItem.type == 'segment' || hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
+        node.position = hitItem.point.clone();
+        node.visible = true;
         if (hitItem.segment.selected) {
           canvasCursor('cursor-arrow-small-point');
-        } else {
+        } 
+        else {
           canvasCursor('cursor-arrow-white-point');
         }
       }
