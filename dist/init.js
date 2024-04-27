@@ -6440,7 +6440,8 @@ set demand(v){this._setter_ts('demand',v)}
         .then(() => attr.res);
       
     }
-    
+
+    project._attr._regions = attr.regions;
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
@@ -6458,7 +6459,8 @@ set demand(v){this._setter_ts('demand',v)}
               layer.hidden = false;
             }
           }
-        }        
+        }
+        project.redraw();
         
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {
@@ -6496,7 +6498,7 @@ set demand(v){this._setter_ts('demand',v)}
         }
         else {
           if(format === 'png') {
-            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substring(22);
           }
           else {
             link.imgs[`l0`] = project.get_svg(attr);
@@ -6505,7 +6507,7 @@ set demand(v){this._setter_ts('demand',v)}
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
               if(format === 'png') {
-                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
+                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substring(22);
               }
               else {
                 link.imgs[`l${cnstr}`] = project.get_svg(attr);

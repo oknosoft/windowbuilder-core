@@ -5079,7 +5079,7 @@ class DimensionLine extends paper.Group {
     }
   }
   get path() {
-    const {parent, children, _attr, pos} = this;
+    const {parent, project, children, _attr, pos} = this;
     if(!children.length){
       return;
     }
@@ -5108,6 +5108,9 @@ class DimensionLine extends paper.Group {
       b = owner_bounds.bottomRight;
       e = owner_bounds.topRight;
       offset = owner_bounds[pos] - dimension_bounds[pos];
+    }
+    if(project._attr._regions && parent.layer?.layer?.contours?.filter?.(l => l !== parent.layer)?.length) {
+      offset += (pos == 'right' || pos == 'bottom') ? -60 : 50;
     }
     if(!b || !e){
       return;
@@ -5614,14 +5617,19 @@ class DimensionDrawer extends paper.Group {
     }
   }
   by_imposts(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
+    const {_regions} = this.project._attr;
+    if(_regions) {
+      base_offset += 80;
+      dop_offset = base_offset + 40;
+    }
     const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         const prev = collection[i - 1];
         let shift = 0;
         if(prev && prev._attr.shift !== base_offset * 2) {
-          shift = Math.abs(arr[i].point - arr[i + 1].point) < base_offset ? base_offset : 0;
+          shift = (Math.abs(arr[i].point - arr[i + 1].point) < base_offset) ? base_offset : 0;
           if(shift && prev._attr.shift) {
             shift += base_offset;
           }
@@ -5641,7 +5649,7 @@ class DimensionDrawer extends paper.Group {
     }
   }
   by_base(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
     let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
@@ -5662,7 +5670,12 @@ class DimensionDrawer extends paper.Group {
   by_contour(ihor, ivert, forse, by_side) {
     const {project, parent} = this;
     const {bounds} = parent;
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
+    const {_regions} = this.project._attr;
+    if(_regions) {
+      base_offset += 60;
+      dop_offset = base_offset + 40;
+    }
     if(project.contours.length > 1 || forse) {
       if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
         if(!this.ihor.has_size(bounds.height)) {
@@ -13381,7 +13394,7 @@ class Scheme extends paper.Project {
   }
   clear() {
     const {_attr} = this;
-    const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service';
+    const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service,_regions';
     for (let fld in _attr) {
       if(!pnames.match(fld)) {
         delete _attr[fld];

@@ -794,7 +794,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         .then(() => attr.res);
       
     }
-    
+
+    project._attr._regions = attr.regions;
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
@@ -812,7 +813,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
               layer.hidden = false;
             }
           }
-        }        
+        }
+        project.redraw();
         
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {
@@ -850,7 +852,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         }
         else {
           if(format === 'png') {
-            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substring(22);
           }
           else {
             link.imgs[`l0`] = project.get_svg(attr);
@@ -859,7 +861,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
               if(format === 'png') {
-                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
+                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substring(22);
               }
               else {
                 link.imgs[`l${cnstr}`] = project.get_svg(attr);

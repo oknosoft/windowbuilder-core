@@ -415,14 +415,19 @@ class DimensionDrawer extends paper.Group {
    * Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
+    const {_regions} = this.project._attr;
+    if(_regions) {
+      base_offset += 80;
+      dop_offset = base_offset + 40;
+    }
     const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         const prev = collection[i - 1];
         let shift = 0;
         if(prev && prev._attr.shift !== base_offset * 2) {
-          shift = Math.abs(arr[i].point - arr[i + 1].point) < base_offset ? base_offset : 0;
+          shift = (Math.abs(arr[i].point - arr[i + 1].point) < base_offset) ? base_offset : 0;
           if(shift && prev._attr.shift) {
             shift += base_offset;
           }
@@ -446,7 +451,7 @@ class DimensionDrawer extends paper.Group {
    * Формирует размерные линии от габарита
    */
   by_base(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
     let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
@@ -472,7 +477,12 @@ class DimensionDrawer extends paper.Group {
 
     const {project, parent} = this;
     const {bounds} = parent;
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
+    const {_regions} = this.project._attr;
+    if(_regions) {
+      base_offset += 60;
+      dop_offset = base_offset + 40;
+    }
 
     if(project.contours.length > 1 || forse) {
 

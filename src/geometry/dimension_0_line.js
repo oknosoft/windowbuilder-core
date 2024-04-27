@@ -413,7 +413,7 @@ class DimensionLine extends paper.Group {
 
   get path() {
 
-    const {parent, children, _attr, pos} = this;
+    const {parent, project, children, _attr, pos} = this;
     if(!children.length){
       return;
     }
@@ -443,6 +443,10 @@ class DimensionLine extends paper.Group {
       b = owner_bounds.bottomRight;
       e = owner_bounds.topRight;
       offset = owner_bounds[pos] - dimension_bounds[pos];
+    }
+    
+    if(project._attr._regions && parent.layer?.layer?.contours?.filter?.(l => l !== parent.layer)?.length) {
+      offset += (pos == 'right' || pos == 'bottom') ? -60 : 50;
     }
 
     // если точки профиля еще не нарисованы - выходим
