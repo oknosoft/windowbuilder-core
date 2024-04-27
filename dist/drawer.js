@@ -9291,9 +9291,7 @@ class ProfileItem extends GeneratrixElement {
       _row.r = 0;
     }
     else {
-      const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
-      const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
-      _row.r = Math.max(r1, r2);
+      _row.r = generatrix.ravg().round(2);
     }
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
       _row.alp1 = _row.alp2 = 0;
