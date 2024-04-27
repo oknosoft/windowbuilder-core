@@ -87,6 +87,7 @@ export class Scheme extends paper.Project {
     }
     if(!silent) {
       this.root.md.emit('redraw', this);
+      this._scope?.tool?.onRedraw?.();
     }
   }
   

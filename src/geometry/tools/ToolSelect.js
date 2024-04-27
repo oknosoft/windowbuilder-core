@@ -14,36 +14,49 @@ export class ToolSelect extends ToolElement {
     originalHandleOut: null,
     changed: false,
     minDistance: 10,
-    dp: null, //$p.dp.builder_pen.create({grid: 50}),
-    input: null,
   }
   
   constructor() {
     super();
     this.on({
-      activate: () => {
-        if(this.#raw.node) {
-          this.#raw.node.remove();
-        }
-        const {scaling} = this.project.view;
-        this.#raw.node = new paper.Path.Rectangle({
-          point: [0, 0],
-          size: [24, 24],
-          strokeColor: 'blue',
-          fillColor: 'blue',
-          opacity: 0.4,
-          parent: this.project.rootLayer.children.visualization.tool,
-          visible: false,
-          guide: true,
-          strokeScaling: false,
-        });
-        this.onActivate('cursor-arrow-white');
-      },
+      activate: () => this.onActivate('cursor-arrow-white'),
       mousedown: this.mousedown,
       mouseup: this.mouseup,
       mousedrag: this.mousedrag,
       mousemove: this.hitTest,
       keydown: this.keydown,
+    });
+  }
+
+  onRedraw() {
+    if(this.#raw.node) {
+      this.#raw.node.remove();
+    }
+    if(this.#raw.line) {
+      this.#raw.line.remove();
+    }
+    const {scaling} = this.project.view;
+    this.#raw.node = new paper.Path.Rectangle({
+      point: [0, 0],
+      size: [24, 24],
+      opacity: 0.4,
+      parent: this.project.rootLayer.children.visualization.tool,
+      visible: false,
+      guide: true,
+      strokeColor: 'blue',
+      fillColor: 'blue',
+      strokeScaling: false,
+    });
+    this.#raw.line = new paper.Path({
+      segments: [[0,0], [1,1]],
+      opacity: 0.4,
+      parent: this.project.rootLayer.children.visualization.tool,
+      visible: false,
+      guide: true,
+      strokeColor: 'blue',
+      strokeWidth: 5,
+      strokeScaling: false,
+      strokeCap: 'round',
     });
   }
 
@@ -195,6 +208,7 @@ export class ToolSelect extends ToolElement {
     this.mode = null;
     this.mouseStartPos = null;
     this.mousePos = null;
+    this.hitTest(ev);
   }
 
   mousedrag(ev) {
@@ -271,37 +285,43 @@ export class ToolSelect extends ToolElement {
     }
 
     const {hitItem} = this;
-    const {node} = this.#raw;
-    node.visible = false;
-    if (hitItem) {
-      if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
-        // if (hitItem.item.parent instanceof DimensionLine) {
-        //   // размерные линии сами разберутся со своими курсорами
-        // }
-        // else if (hitItem.item instanceof PointText) {
-        //   !(hitItem.item instanceof EditableText) && canvasCursor('cursor-text');     // указатель с черным Т
-        // }
-        // else 
-        if (hitItem.item.selected) {
-          canvasCursor('cursor-arrow-small');
+    const {node, line} = this.#raw;
+    if(node && line) {
+      node.visible = false;
+      line.visible = false;
+      if (hitItem) {
+        if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
+          // if (hitItem.item.parent instanceof DimensionLine) {
+          //   // размерные линии сами разберутся со своими курсорами
+          // }
+          // else if (hitItem.item instanceof PointText) {
+          //   !(hitItem.item instanceof EditableText) && canvasCursor('cursor-text');     // указатель с черным Т
+          // }
+          // else 
+          if (hitItem.item.selected) {
+            canvasCursor('cursor-arrow-small');
+          }
+          else {
+            canvasCursor('cursor-arrow-white-shape');
+          }
+          line.removeSegments();
+          line.addSegments(hitItem.item.segments.map(({point, handleIn, handleOut}) => ({point, handleIn, handleOut})));
+          line.visible = true;
         }
-        else {
-          canvasCursor('cursor-arrow-white-shape');
+        else if (hitItem.type == 'segment' || hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
+          node.position = hitItem.point.clone();
+          node.visible = true;
+          if (hitItem.segment.selected) {
+            canvasCursor('cursor-arrow-small-point');
+          }
+          else {
+            canvasCursor('cursor-arrow-white-point');
+          }
         }
       }
-      else if (hitItem.type == 'segment' || hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
-        node.position = hitItem.point.clone();
-        node.visible = true;
-        if (hitItem.segment.selected) {
-          canvasCursor('cursor-arrow-small-point');
-        } 
-        else {
-          canvasCursor('cursor-arrow-white-point');
-        }
+      else {
+        canvasCursor('cursor-arrow-white');
       }
-    }
-    else {
-      canvasCursor('cursor-arrow-white');
     }
 
     return true;

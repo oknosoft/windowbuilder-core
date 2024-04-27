@@ -11,6 +11,10 @@ export class ToolElement extends paper.Tool {
     this.canvasCursor(cursor);
     this.eve?.emitAsync?.('tool_activated', this);
   }
+  
+  onRedraw() {
+    
+  }
 
   canvasCursor(name) {
     const {classList} = this.project?.view?.element || {};

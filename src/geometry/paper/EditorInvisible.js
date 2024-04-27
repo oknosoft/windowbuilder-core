@@ -1,14 +1,13 @@
 
 import paper from 'paper/dist/paper-core';
 import {Scheme} from '../Scheme';
-import {ToolSelect} from '../tools/ToolSelect';
+import tools from '../tools';
 import {History} from './History';
 
 export class EditorInvisible extends paper.PaperScope {
   
   constructor(...attr) {
     super(...attr);
-    this.settings.handleSize = 12;
     this.history = new History(this);
   }
 
@@ -31,8 +30,10 @@ export class EditorInvisible extends paper.PaperScope {
     }
     const project = projects.length ? projects[0] : new Scheme(canvas, root);
     if(!this.tool) {
-      const tool = new ToolSelect();
-      tool.activate();
+      for(const Tool of Object.values(tools)) {
+        new Tool();
+      }
+      this.tools[0].activate();
     }
     return project;
   }
