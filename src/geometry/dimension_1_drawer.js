@@ -355,25 +355,32 @@ class DimensionDrawer extends paper.Group {
     this.clear();
 
     const {ihor, ivert, by_side} = this.imposts();
+    
+    function crossing(elm, imposts) {
+      for(const other of imposts) {
+        if(other !== elm && other.generatrix.getCrossings(elm.generatrix).length) {
+          return true;
+        }
+      }
+    }
 
     for(const filling of parent.fillings) {
       if(!filling.visible) {
         continue;
       }
-      const {path} = filling;
-      for(const elm of filling.imposts) {
+      const {path, imposts} = filling;
+      for(const elm of imposts) {
         let {b: eb, e: ee} = elm;
-        // если точка не на границе заполнения
-        if(path.is_nearest(eb)) {
+        // если точка не на границе заполнения и импост имеет пересечения
+        if(path.is_nearest(eb) && crossing(elm, imposts)) {
           eb = null;
         }
-        if(path.is_nearest(ee)) {
+        if(path.is_nearest(ee) && crossing(elm, imposts)) {
           ee = null;
         }
         if(eb || ee) {
           this.push_by_point({ihor, ivert, eb, ee, elm});
         }
-
       }
     }
 
