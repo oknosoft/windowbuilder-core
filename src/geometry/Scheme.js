@@ -72,6 +72,8 @@ export class Scheme extends paper.Project {
     const dx = view.viewSize.width - width * zoom;
     const dy = view.viewSize.height - height * zoom * 1.2;
     view.center = center.add([Math.sign(scaling.x) * dx, -Math.sign(scaling.y) * dy]);
+
+    this._scope?.tool?.onZoomFit?.();
   }
 
   get contours() {
@@ -87,7 +89,6 @@ export class Scheme extends paper.Project {
     }
     if(!silent) {
       this.root.md.emit('redraw', this);
-      this._scope?.tool?.onRedraw?.();
     }
   }
   

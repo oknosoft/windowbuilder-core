@@ -19,7 +19,10 @@ export class ToolSelect extends ToolElement {
   constructor() {
     super();
     this.on({
-      activate: () => this.onActivate('cursor-arrow-white'),
+      activate: () => {
+        this.onActivate('cursor-arrow-white');
+        this.onZoomFit();
+      },
       mousedown: this.mousedown,
       mouseup: this.mouseup,
       mousedrag: this.mousedrag,
@@ -28,17 +31,18 @@ export class ToolSelect extends ToolElement {
     });
   }
 
-  onRedraw() {
+  onZoomFit() {
     if(this.#raw.node) {
       this.#raw.node.remove();
     }
     if(this.#raw.line) {
       this.#raw.line.remove();
     }
-    const {scaling} = this.project.view;
+    const {zoom} = this.project.view;
+    const size = this._scope.settings.handleSize / (zoom || 1);
     this.#raw.node = new paper.Path.Rectangle({
       point: [0, 0],
-      size: [24, 24],
+      size: [size, size],
       opacity: 0.4,
       parent: this.project.rootLayer.children.visualization.tool,
       visible: false,

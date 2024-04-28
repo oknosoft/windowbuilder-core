@@ -28,7 +28,7 @@ export class ToolPen extends ToolElement {
       grid: 50
     });
     this.on({
-      activate: () => this.onActivate('cursor-arrow-white'),
+      activate: () => this.onActivate('cursor-autodesk'),
       // mousedown: this.mousedown,
       // mouseup: this.mouseup,
       // mousedrag: this.mousedrag,

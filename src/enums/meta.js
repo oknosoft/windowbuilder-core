@@ -161,28 +161,28 @@ export const meta = {
       name: "Линия",
       synonym: "Линия",
       latin: "line",
-      note: "Произвольная линия (путь)"
+      "note": "Произвольная линия (путь)"
     },
     {
       order: 11,
       name: "Размер",
       synonym: "Размер",
       latin: "size",
-      note: "Размерная линия"
+      "note": "Размерная линия"
     },
     {
       order: 12,
       name: "Радиус",
       synonym: "Радиус",
       latin: "radius",
-      note: "Размерная линия радиуса"
+      "note": "Размерная линия радиуса"
     },
     {
       order: 13,
       name: "Угол",
       synonym: "Угол",
       latin: "angle",
-      note: "Размерная линия угла"
+      "note": "Размерная линия угла"
     },
     {
       order: 14,
@@ -246,96 +246,102 @@ export const meta = {
     },
     {
       order: 24,
+      name: "Перекрытие",
+      synonym: "Перекрытие",
+      latin: "floor"
+    },
+    {
+      order: 25,
       name: "Фурнитура",
       synonym: "Фурнитура",
       latin: "furn"
     },
     {
-      order: 25,
+      order: 26,
       name: "СоставнойПуть",
       synonym: "Составной путь",
       latin: "compound"
     },
     {
-      order: 26,
+      order: 27,
       name: "Макрос",
       synonym: "Макрос обр центра",
       latin: "macro"
     },
     {
-      order: 27,
+      order: 28,
       name: "Подоконник",
       synonym: "Подоконник",
       latin: "sill"
     },
     {
-      order: 28,
+      order: 29,
       name: "ОшибкаКритическая",
       synonym: "Ошибка критическая",
       latin: "error"
     },
     {
-      order: 29,
+      order: 30,
       name: "ОшибкаИнфо",
       synonym: "Ошибка инфо",
       latin: "info"
     },
     {
-      order: 30,
+      order: 31,
       name: "Визуализация",
       synonym: "Визуализация",
       latin: "visualization"
     },
     {
-      order: 31,
+      order: 32,
       name: "Прочее",
       synonym: "Прочее",
       latin: "other"
     },
     {
-      order: 32,
+      order: 33,
       name: "Продукция",
       synonym: "Продукция",
       latin: "product"
     },
     {
-      order: 33,
+      order: 34,
       name: "Доставка",
       synonym: "Доставка",
       latin: "delivery"
     },
     {
-      order: 34,
+      order: 35,
       name: "РаботыЦеха",
       synonym: "Работы цеха",
       latin: "work"
     },
     {
-      order: 35,
+      order: 36,
       name: "Монтаж",
       synonym: "Монтаж",
       latin: "mounting"
     },
     {
-      order: 36,
+      order: 37,
       name: "Уплотнение",
       synonym: "Уплотнение",
       latin: "gasket"
     },
     {
-      order: 37,
+      order: 38,
       name: "Арматура",
       synonym: "Армирование",
       latin: "reinforcement"
     },
     {
-      order: 38,
+      order: 39,
       name: "Порог",
       synonym: "Порог",
       latin: "doorstep"
     },
     {
-      order: 39,
+      order: 40,
       name: "Подставочник",
       synonym: "Подставочн. профиль"
     },

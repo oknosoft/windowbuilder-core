@@ -6,7 +6,7 @@ export class BuilderProps  {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
     this.#raw.carcass = true;
-    project._scope.settings.handleSize = 16;
+    project._scope.settings.handleSize = 14;
   }
   
   get stamp() {
