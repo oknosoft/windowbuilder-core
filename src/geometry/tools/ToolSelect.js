@@ -1,23 +1,12 @@
 
-import {ToolElement} from './ToolElement';
+import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
 
-export class ToolSelect extends ToolElement {
-
-  #raw = {
-    name: 'select_node',
-    mouseStartPos: null,
-    mode: null,
-    hitItem: null,
-    originalContent: null,
-    originalHandleIn: null,
-    originalHandleOut: null,
-    changed: false,
-    minDistance: 10,
-  }
+export class ToolSelect extends ToolSelectable {
   
   constructor() {
     super();
+    this.name = 'select_node';
     this.on({
       activate: () => {
         this.onActivate('cursor-arrow-white');
@@ -26,48 +15,16 @@ export class ToolSelect extends ToolElement {
       mousedown: this.mousedown,
       mouseup: this.mouseup,
       mousedrag: this.mousedrag,
-      mousemove: this.hitTest,
+      mousemove: this.mousemove,
       keydown: this.keydown,
-    });
-  }
-
-  onZoomFit() {
-    if(this.#raw.node) {
-      this.#raw.node.remove();
-    }
-    if(this.#raw.line) {
-      this.#raw.line.remove();
-    }
-    const {zoom} = this.project.view;
-    const size = this._scope.settings.handleSize / (zoom || 1);
-    this.#raw.node = new paper.Path.Rectangle({
-      point: [0, 0],
-      size: [size, size],
-      opacity: 0.4,
-      parent: this.project.rootLayer.children.visualization.tool,
-      visible: false,
-      guide: true,
-      strokeColor: 'blue',
-      fillColor: 'blue',
-      strokeScaling: false,
-    });
-    this.#raw.line = new paper.Path({
-      segments: [[0,0], [1,1]],
-      opacity: 0.4,
-      parent: this.project.rootLayer.children.visualization.tool,
-      visible: false,
-      guide: true,
-      strokeColor: 'blue',
-      strokeWidth: 5,
-      strokeScaling: false,
-      strokeCap: 'round',
     });
   }
 
   mousedown(ev) {
     //this.hitTest(ev);
     const {body, activeElement} = document;
-    const {project, view, hitItem} = this;
+    const {project, view} = this;
+    const hitItem = this.get('hitItem');
     if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
       activeElement.blur();
     }
@@ -79,7 +36,7 @@ export class ToolSelect extends ToolElement {
     const select = [];
     const deselect = [];
     this.mouseStartPos = ev.point.clone();
-    this.#raw.node.visible = false;
+    this.get('node').visible = false;
 
     if(hitItem && !alt) {
       
@@ -212,7 +169,7 @@ export class ToolSelect extends ToolElement {
     this.mode = null;
     this.mouseStartPos = null;
     this.mousePos = null;
-    this.hitTest(ev);
+    this.mousemove(ev);
   }
 
   mousedrag(ev) {
@@ -228,68 +185,10 @@ export class ToolSelect extends ToolElement {
     }
   }
 
-  keydown(ev) {
-    const {project, mode, _scope} = this;
-    const {event: {code, target}, modifiers} = ev;
-    if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
-      this.mode = null;
-      project.activeLayer.mover.cancelMovePoints();
-      if(this.mousePos) {
-        this.hitTest({point: this.mousePos});
-      }
-    }
-    else if (code === 'Delete') {
-      for(const elm of project.activeLayer.profiles) {
-        if(elm.selected) {
-          try{
-            elm.remove();
-          }
-          catch (err) {
-            alert(err.message);
-          }
-        }
-      }
-    }
-  }
-
-  hitTest(ev) {
-    const {point} = ev;
-    const tolerance = 26;
-    const {project, canvasCursor} = this;
-    this.hitItem = null;
-
-    if (point) {
-
-      // отдаём предпочтение выделенным ранее элементам
-      this.hitItem = project.hitTest(point, {selected: true, stroke: true, tolerance});
-
-      // во вторую очередь - тем элементам, которые не скрыты
-      if (!this.hitItem) {
-        this.hitItem = project.hitTest(point, {stroke: true, visible: true, tolerance});
-      }
-
-      // если мышь около сегмента - ему предпочтение
-      let hit = project.hitTest(point, {ends: true, tolerance});
-      if (hit) {
-        this.hitItem = hit;
-      }
-
-      // Hit test points
-      // hit = project.hitPoints(point, 26, true);
-      //
-      // if (hit) {
-      //   if (hit.item.parent instanceof ProfileItem) {
-      //     if (hit.item.parent.generatrix === hit.item) {
-      //       this.hitItem = hit;
-      //     }
-      //   } else {
-      //     this.hitItem = hit;
-      //   }
-      // }
-    }
-
-    const {hitItem} = this;
-    const {node, line} = this.#raw;
+  mousemove(ev) {
+    this.hitTest(ev);
+    const {canvasCursor} = this;
+    const {hitItem, node, line} = this.get('hitItem,node,line');
     if(node && line) {
       node.visible = false;
       line.visible = false;
@@ -327,8 +226,32 @@ export class ToolSelect extends ToolElement {
         canvasCursor('cursor-arrow-white');
       }
     }
+  }
 
-    return true;
+  keydown(ev) {
+    const {project, mode, _scope} = this;
+    const {event: {code, target}, modifiers} = ev;
+    if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
+      this.mode = null;
+      project.activeLayer.mover.cancelMovePoints();
+      if(this.mousePos) {
+        this.hitTest({point: this.mousePos});
+      }
+    }
+    else if (code === 'Delete') {
+      for(const elm of project.activeLayer.profiles) {
+        if(elm.selected) {
+          try{
+            elm.remove();
+          }
+          catch (err) {
+            alert(err.message);
+          }
+          project.redraw();
+          this.mousemove(ev);
+        }
+      }
+    }
   }
   
 }
