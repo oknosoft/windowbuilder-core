@@ -186,6 +186,7 @@ export class ToolPen extends ToolSelectable {
         p1,
         p2,
       });
+      project.redraw();
       return this.reset(ev);
     }
   }

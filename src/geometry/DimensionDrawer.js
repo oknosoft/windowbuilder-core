@@ -193,8 +193,8 @@ export class DimensionDrawer extends LayerGroup {
    */
   clear(local) {
 
-    this.ihor?.clear();
-    this.ivert?.clear();
+    this.ihor.clear();
+    this.ivert.clear();
 
     for (const pos of ['bottom', 'top', 'right', 'left']) {
       if(this[pos]) {

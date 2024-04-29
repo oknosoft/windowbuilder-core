@@ -27,6 +27,12 @@ class GroupVisualization extends LayerGroup {
   get tool() {
     return this.children.tool;
   }
+
+  clear() {
+    for(const grp of this.children) {
+      grp.removeChildren();
+    }
+  }
 }
 
 class GroupLayers extends LayerGroup {
