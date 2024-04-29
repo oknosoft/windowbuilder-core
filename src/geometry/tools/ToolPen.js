@@ -1,6 +1,7 @@
 import paper from 'paper/dist/paper-core';
 import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
+import {DimensionLineCustom} from '../DimensionLineCustom';
 
 export class ToolPen extends ToolSelectable {
 
@@ -17,6 +18,8 @@ export class ToolPen extends ToolSelectable {
       path: null,
       hit1: null,
       hit2: null,
+      callout1: null,
+      callout2: null,
     })
     this.on({
       activate: () => {
@@ -36,6 +39,7 @@ export class ToolPen extends ToolSelectable {
     this.hitTest(ev);
     const {shift, space, control, alt} = ev.modifiers;
     const {hitItem, node, line} = this.get('hitItem,node,line');
+    const {mode, profile, path} = this;
     if(node && line) {
       node.visible = false;
       line.visible = false;
@@ -45,28 +49,85 @@ export class ToolPen extends ToolSelectable {
           item = item.nearest();
         }
         if(item instanceof GeneratrixElement) {
-          if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
+          if (!profile.elm_type.is('size') && (hitItem.type == 'fill' || hitItem.type == 'stroke')) {
             line.removeSegments();
             line.addSegments(hitItem.item.segments.map(({point, handleIn, handleOut}) => ({point, handleIn, handleOut})));
             line.visible = true;
           }
-          node.position = hitItem.point.clone();
-          node.visible = true;
+          if(!profile.elm_type.is('size') || hitItem.type === 'segment') {
+            node.position = hitItem.point.clone();
+            node.visible = true;
+          }
         }
       }
     }
-    if(this.mode === 1 && this.path) {
-      const pt = hitItem?.point || ev.point;
-      this.path.lastSegment.point = pt.clone();
+    if(mode === 1 && path) {
+      let pt = hitItem?.point || ev.point;
+      let delta = pt.subtract(path.firstSegment.point);
+      if (!shift && !profile.elm_type.is('size')) {
+        delta = delta.snapToAngle();
+        pt = path.firstSegment.point.add(delta);
+      }
+      if(delta.length > 10) {
+        if(hitItem?.segment) {
+          pt = hitItem.segment.point;
+        }
+        else if(hitItem?.location) {
+          pt = hitItem.location.path.getNearestPoint(pt);
+        }
+        path.lastSegment.point = pt;
+      }
+    }
+    else if(mode === 2 && path) {
+      const {callout1, callout2, hit1, hit2} = this;
+      const b = this.hit1.point;
+      const e = this.hit2.point;
+      const rect = new paper.Rectangle(b, e);
+      const gen = new paper.Path({insert: false, segments: [b, e]});
+      const {rib, pos, parallel} = rect.nearestRib(ev.point);
+      this.rectPos = pos;
+      this.swap = false;
+      this.sign = gen.pointPos(ev.point);
+      const pt = gen.getNearestPoint(ev.point);
+      const line = path;
+      if(rect.contains(ev.point) || !rib) {
+        this.rect_pos = 'free';
+        const delta = pt.getDistance(ev.point);
+        const normal = gen.getNormalAt(0).multiply(delta * this.sign);
+        callout1.lastSegment.point = b.add(normal);
+        callout2.lastSegment.point = e.add(normal);
+        line.firstSegment.point = b.add(normal);
+        line.lastSegment.point = e.add(normal);
+      }
+      else {
+        const pp2 = parallel.point.add(parallel.vector);
+        line.firstSegment.point = parallel.point;
+        line.lastSegment.point = pp2;
+        if(b.getDistance(parallel.point) > b.getDistance(pp2)) {
+          this.swap = true;
+          callout1.lastSegment.point = pp2;
+          callout2.lastSegment.point = parallel.point;
+        }
+        else {
+          callout1.lastSegment.point = parallel.point;
+          callout2.lastSegment.point = pp2;
+        }
+      }
+      this.sign = gen.pointPos(line.interiorPoint);
     }
   }
 
   mousedown(ev) {
     const {hitItem, node} = this.get('hitItem,node,line');
-    if(!node.visible || ev?.which > 1) {
+    const {mode, profile, project} = this;
+    if(ev.event?.which > 1) {
+      project.deselectAll();
       return this.reset(ev);
     }
-    if(!this.mode) {
+    if(!mode) {
+      if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
+        return this.reset(ev);
+      }
       this.hit1 = hitItem;
       const pt = hitItem?.point || ev.point;
       this.path = new paper.Path({
@@ -79,6 +140,53 @@ export class ToolPen extends ToolSelectable {
         strokeCap: 'round',
       });
       this.mode = 1;
+    }
+    else if(mode === 1 && this.path?.length) {
+      if(profile.elm_type.is('size')) {
+        this.hit2 = hitItem;
+        const normal = this.path.getNormalAt(0).multiply(10);
+        this.callout1 = new paper.Path({
+          parent: this.parent,
+          segments: [this.hit1.point, this.hit1.point.add(normal)],
+          strokeColor: 'black',
+          guide: true,
+        });
+        this.callout2 = new paper.Path({
+          parent: this.parent,
+          segments: [this.hit2.point, this.hit2.point.add(normal)],
+          strokeColor: 'black',
+          guide: true,
+        });
+        this.path.firstSegment.point = this.callout1.lastSegment.point;
+        this.path.lastSegment.point = this.callout2.lastSegment.point;
+        this.mode = 2;
+        return;
+      }
+      else {
+        project.activeLayer.createProfile({
+          b: this.path.firstSegment.point,
+          e: this.path.lastSegment.point,
+        });
+      }
+      project.redraw();
+      this.mousemove(ev);
+      return this.reset(ev);
+    }
+    else if(mode === 2 && this.path?.length) {
+      const {parent, hit1, hit2} = this;
+      const elm1 = hit1.segment.path.parent;
+      const elm2 = hit2.segment.path.parent;
+      const p1 = elm1.b.point.equals(hit1.point) ? 'b' : 'e';
+      const p2 = elm2.b.point.equals(hit2.point) ? 'b' : 'e';
+      new DimensionLineCustom({
+        parent: elm1.layer.children.dimensions, 
+        project,
+        elm1,
+        elm2,
+        p1,
+        p2,
+      });
+      return this.reset(ev);
     }
   }
 
@@ -112,9 +220,13 @@ export class ToolPen extends ToolSelectable {
   reset(ev) {
     this.mode = 0;
     this.path?.remove?.();
+    this.callout1?.remove?.();
+    this.callout2?.remove?.();
     this.path = null;
     this.hit1 = null;
     this.hit2 = null;
+    this.callout1 = null;
+    this.callout2 = null;
     ev?.stop?.();
   }
 
