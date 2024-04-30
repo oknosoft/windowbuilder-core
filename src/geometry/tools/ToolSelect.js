@@ -123,6 +123,9 @@ export class ToolSelect extends ToolSelectable {
         this.originalHandleIn = hitItem.segment.handleIn.clone();
         this.originalHandleOut = hitItem.segment.handleOut.clone();
       }
+      else if(hitItem.type == 'dimension') {
+        return item.szStart();
+      }
 
       // подключаем диалог свойств элемента
       // if(item instanceof ProfileItem || item instanceof Filling) {

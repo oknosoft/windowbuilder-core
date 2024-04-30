@@ -160,6 +160,187 @@ export class DimensionLine extends paper.Group {
     return path;
   }
 
+  divByPos() {
+    const {children, size, pos, project: {view}} = this;
+    const point = view.projectToView(children.text.bounds.center);
+    const tip = 'Установить размер сдвигом элементов ';
+    const div = this.div = document.createElement('DIV');
+    div.classList.add('sz_div');
+    if(pos === 'left' || pos === 'right') {
+      div.innerHTML = `<div id="sz_btn_top" class="sz_btn tb_align_vert" title="${tip}сверху"></div>
+<input class="sz_input" type="number" step="10" value="${size.toFixed()}"/>
+<div id="sz_btn_bottom" class="sz_btn tb_align_vert" title="${tip}снизу"></div>
+<div id="sz_btn_rateably" class="sz_btn tb_align_vert2" title="${tip}пропорционально"></div>`;
+      div.style.top = `${point.y - 37}px`;
+      div.style.left = `${point.x - 29}px`;
+    }
+    else if(pos === 'top' || pos === 'bottom') {
+      div.innerHTML = `<div class="sz_div2">
+    <div id="sz_btn_left" class="sz_btn tb_align_hor" title="${tip}слева"></div>
+    <input class="sz_input" type="number" step="10" value="${size.toFixed()}"/>
+    <div id="sz_btn_right" class="sz_btn tb_align_hor" title="${tip}справа"></div>
+</div>
+<div id="sz_btn_rateably" class="sz_btn tb_align_hor2" title="${tip}пропорционально"></div>`;
+      div.style.top = `${point.y - 12}px`;
+      div.style.left = `${point.x - 59}px`;
+    }
+    else {
+      div.innerHTML = `<div id="sz_btn_top" class="sz_btn tb_align_vert" title="${tip}сверху"></div>
+<div class="sz_div2">
+    <div id="sz_btn_left" class="sz_btn tb_align_hor" title="${tip}слева"></div>
+    <input class="sz_input" type="number" step="10" value="${size.toFixed()}"/>
+    <div id="sz_btn_right" class="sz_btn tb_align_hor" title="${tip}справа"></div>
+</div>
+<div id="sz_btn_bottom" class="sz_btn tb_align_vert" title="${tip}снизу"></div>`;
+      div.style.top = `${point.y - 37}px`;
+      div.style.left = `${point.x - 49}px`;
+    }
+    view.element.parentNode.appendChild(div);
+    return div;
+  }
+  
+  /**
+   * @summary Создаёт поле ввода и кнопки уточнения размера
+   */
+  szStart() {
+    this.szFin();
+    const div = this.divByPos();
+    const input = this.input = div.querySelector('.sz_input');
+    input.focus();
+    input.select();
+    input.onkeydown = this.szKeydown.bind(this);
+    div.onclick = this.szClick.bind(this);
+  }
+
+  /**
+   * @summary Обработчик клика кнопок размера
+   */
+  szClick(ev) {
+    const {id} = ev.target;
+    if(id?.startsWith('sz_btn')) {
+      const attr = {
+        wnd: this,
+        size: parseFloat(this.input.value),
+        name: id.substring(7),
+      };
+      this.szFin();
+      this.szMsg(attr);
+      // const {elm1, elm2} = this.#raw;
+      // if(!elm1 && !elm2) {
+      //   this._scope.deffered_zoom_fit();
+      // }
+    }
+  }
+
+  /**
+   * @summary Обработчик нажатия кнопок в поле ввода
+   */
+  szKeydown(ev) {
+    
+  }
+
+  /**
+   * @summary При окончании ввода размера, удаляем HTMLElement
+   */
+  szFin() {
+    const {div, project: {view}} = this;
+    if (div) {
+      view.element.parentNode.removeChild(div);
+      this.div = null;
+      this.input = null;
+    }
+  }
+
+  /**
+   * @summary Обрабатывает сообщение окна размеров
+   * @param {Object} ev
+   */
+  szMsg(ev) {
+
+    if(ev.wnd == this){
+
+      switch (ev.name) {
+        case 'close':
+          if(this.children.text) {
+            this.children.text.selected = false;
+          }
+          this.wnd = null;
+          break;
+
+        case 'left':
+        case 'right':
+          if(this.pos == 'top' || this.pos == 'bottom') {
+            this.movePoints(ev, 'x');
+          }
+          break;
+
+        case 'top':
+        case 'bottom':
+          if(this.pos == 'left' || this.pos == 'right') {
+            this.movePoints(ev, 'y');
+          }
+          break;
+
+        case 'rateably':
+          ev.divide = 2;
+          if(this.pos == 'left' || this.pos == 'right') {
+            ev.name = 'top';
+            ev.cb = () => {
+              delete ev.cb;
+              delete ev.divide;
+              ev.name = 'bottom';
+              this.movePoints(ev, 'y');
+            }
+            this.movePoints(ev, 'y');
+          }
+          else if(this.pos == 'top' || this.pos == 'bottom') {
+            ev.name = 'left';
+            ev.cb = () => {
+              delete ev.cb;
+              delete ev.divide;
+              ev.name = 'right';
+              this.movePoints(ev, 'x');
+            }
+            this.movePoints(ev, 'x');
+          }
+          break;
+
+        case 'auto':
+          const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
+          const {positions} = $p.enm;
+          if(pos == 'top' || pos == 'bottom') {
+            ev.name = 'right';
+            if(impost && elm2.pos === positions.right) {
+              ev.name = 'left';
+            }
+            else if(project.contours.length > 1 && layer.is_pos && layer.is_pos('left')) {
+              ev.name = 'left';
+            }
+            this.movePoints(ev, 'x');
+          }
+          if(pos == 'left' || pos == 'right') {
+            ev.name = 'top';
+            if(impost && elm2.pos === positions.top) {
+              ev.name = 'bottom';
+            }
+            else if(project.contours.length > 1) {
+              const other = project.contours.find((v) => v !== layer);
+              if(layer.bounds.top === other.bounds.top || layer.bounds.height < other.bounds.height) {
+                ev.name = 'bottom';
+              }
+            }
+            this.movePoints(ev, 'y');
+          }
+          break;
+
+      }
+    }
+  }
+
+  movePoints(ev, xy) {
+    
+  }
+  
   redraw() {
     const {children, path, align, project: {props}} = this;
 
