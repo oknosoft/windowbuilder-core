@@ -53,7 +53,7 @@ export class DimensionLine extends paper.Group {
       fontFamily: props.fontFamily(),
       fontSize: props.fontSize(),
     });
-
+    this.szClick = this.szClick.bind(this);
   }
 
   // размер
@@ -202,28 +202,32 @@ export class DimensionLine extends paper.Group {
   /**
    * @summary Создаёт поле ввода и кнопки уточнения размера
    */
-  szStart() {
+  szStart(ev) {
+    ev?.stop();
     this.szFin();
-    const div = this.divByPos();
-    const input = this.input = div.querySelector('.sz_input');
-    input.focus();
-    input.select();
-    input.onkeydown = this.szKeydown.bind(this);
-    div.onclick = this.szClick.bind(this);
+    Promise.resolve().then(() => {
+      const div = this.divByPos();
+      const input = this.input = div.querySelector('.sz_input');
+      input.focus();
+      input.select();
+      input.onkeydown = this.szKeydown.bind(this);
+      div.parentNode.addEventListener('mousedown', this.szClick);
+    });
   }
 
   /**
    * @summary Обработчик клика кнопок размера
    */
   szClick(ev) {
-    const {id} = ev.target;
+    const {target} = ev;
+    if(target === this.input) {
+      return;
+    }
+    const {id} = target;
+    const size = parseFloat(this.input.value);
+    this.szFin();
     if(id?.startsWith('sz_btn')) {
-      const attr = {
-        wnd: this,
-        size: parseFloat(this.input.value),
-        name: id.substring(7),
-      };
-      this.szFin();
+      const attr = {wnd: this, size, name: id.substring(7)};
       this.szMsg(attr);
       // const {elm1, elm2} = this.#raw;
       // if(!elm1 && !elm2) {
@@ -236,16 +240,48 @@ export class DimensionLine extends paper.Group {
    * @summary Обработчик нажатия кнопок в поле ввода
    */
   szKeydown(ev) {
-    
+    const {key, altKey} = ev;
+    if (key === 'Escape' || key === 'Tab') {
+      this.szFin();
+    }
+    else if (key === 'Enter' || (altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key))) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const {input} = this;
+      const attr = {
+        wnd: this,
+        size: parseFloat(input.value),
+      };
+      switch (key) {
+        case 'Enter':
+          attr.name = altKey ? 'rateably' : 'auto';
+          break;
+        case 'ArrowUp':
+          attr.name = 'top';
+          break;
+        case 'ArrowDown':
+          attr.name = 'bottom';
+          break;
+        default:
+          attr.name = key.substring(5).toLowerCase();
+      }
+      this.szFin();
+      this.szMsg(attr);
+      // const {elm1, elm2} = this.#raw;
+      // if(!elm1 && !elm2) {
+      //   this._scope.deffered_zoom_fit();
+      // }
+    }
   }
 
   /**
    * @summary При окончании ввода размера, удаляем HTMLElement
    */
   szFin() {
-    const {div, project: {view}} = this;
+    const {div, szClick} = this;
     if (div) {
-      view.element.parentNode.removeChild(div);
+      div.parentNode.removeEventListener('mousedown', szClick);
+      div.parentNode.removeChild(div);
       this.div = null;
       this.input = null;
     }

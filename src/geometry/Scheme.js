@@ -30,7 +30,11 @@ export class Scheme extends paper.Project {
   }
 
   get strokeBounds() {
-    return this.layers.reduce((sum, curr) => sum.unite(curr.strokeBounds), new paper.Rectangle);
+    return this.layers.reduce((sum, curr) => sum.unite(curr.strokeBounds), new paper.Rectangle());
+  }
+  
+  get dimensionBounds() {
+    return this.layers.reduce((sum, curr) => sum.unite(curr.dimensionBounds), new paper.Rectangle());
   }
 
   /**
@@ -51,7 +55,7 @@ export class Scheme extends paper.Project {
    */
   zoomFit(bounds) {
     if(!bounds) {
-      bounds = this.strokeBounds;
+      bounds = this.dimensionBounds;
     }
     const space = 180;
     const min = 900;
