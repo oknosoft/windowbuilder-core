@@ -9,8 +9,7 @@ export class ToolPen extends ToolSelectable {
     super();
     this.name = 'pen';
     this.profile = $p.dp.builderPen.create({
-      bind_generatrix: true,
-      bind_node: false,
+      elm_type: 'rama',
       grid: 50
     });
     Object.assign(this, {
@@ -125,11 +124,14 @@ export class ToolPen extends ToolSelectable {
       return this.reset(ev);
     }
     if(!mode) {
-      if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
+      if(profile.elm_type.is('rama')) {
+        
+      }
+      else if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
         return this.reset(ev);
       }
-      this.hit1 = hitItem;
       const pt = hitItem?.point || ev.point;
+      this.hit1 = hitItem || {point: pt};
       this.path = new paper.Path({
         segments: [pt.clone(), pt.clone()],
         parent: this.parent,
