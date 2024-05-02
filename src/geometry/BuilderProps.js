@@ -1,6 +1,6 @@
 
 export class BuilderProps  {
-  #raw = {};
+  #raw = {sticking: 4};
   
   constructor(project) {
     this.#raw.project = project;
@@ -49,6 +49,15 @@ export class BuilderProps  {
   set saving(v) {
     this.#raw.saving = Boolean(v);
   }
+
+  get sticking() {
+    return Boolean(this.#raw.sticking);
+  }
+  set sticking(v) {
+    this.#raw.sticking = Boolean(v);
+  }
+
+  
 
   fontFamily() {
     return 'GOST type B';

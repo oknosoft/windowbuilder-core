@@ -29,6 +29,10 @@ export class Scheme extends paper.Project {
     return new Contour({project: this, insert: true});
   }
 
+  get bounds() {
+    return this.layers.reduce((sum, curr) => sum.unite(curr.bounds), new paper.Rectangle());
+  }
+  
   get strokeBounds() {
     return this.layers.reduce((sum, curr) => sum.unite(curr.strokeBounds), new paper.Rectangle());
   }
@@ -81,7 +85,8 @@ export class Scheme extends paper.Project {
   }
 
   get contours() {
-    return this.layers.filter(v => v instanceof Contour);
+    const {rootLayer, layers} = this;
+    return layers.filter(v => v instanceof Contour && v !== rootLayer);
   }
 
   /**

@@ -1,4 +1,5 @@
 import paper from 'paper/dist/paper-core';
+import {Profile} from './ProfileItem';
 
 export class DimensionLine extends paper.Group {
 
@@ -342,14 +343,15 @@ export class DimensionLine extends paper.Group {
           break;
 
         case 'auto':
-          const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
+          const {project, layer}  = this;
+         const {impost, pos, elm1, elm2}  = this.#raw;
           const {positions} = $p.enm;
           if(pos == 'top' || pos == 'bottom') {
             ev.name = 'right';
             if(impost && elm2.pos === positions.right) {
               ev.name = 'left';
             }
-            else if(project.contours.length > 1 && layer.is_pos && layer.is_pos('left')) {
+            else if(project.contours.length > 1 && layer.isPos?.('left')) {
               ev.name = 'left';
             }
             this.movePoints(ev, 'x');
@@ -373,8 +375,96 @@ export class DimensionLine extends paper.Group {
     }
   }
 
-  movePoints(ev, xy) {
+  correctMoveName({event, p1, p2}) {
     
+  }
+  
+  movePoints(event, xy) {
+    let _bounds, delta;
+
+    const {pos, project, layer} = this;
+    const _attr = this.#raw;
+    const {Point} = paper;
+
+    // получаем дельту - на сколько смещать
+    if(_attr.elm1){
+
+      // в _bounds[event.name] надо поместить координату по x или у (в зависисмости от xy), которую будем двигать
+      _bounds = {};
+
+      const p1 = (_attr.elm1._sub || _attr.elm1)[_attr.p1].point;
+      const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2].point;
+      this.correctMoveName({event, p1, p2, _attr});
+
+      if(pos == 'top' || pos == 'bottom') {
+        const size = Math.abs(p1.x - p2.x);
+        if(event.name == 'right') {
+          delta = new Point(event.size - size, 0);
+          _bounds[event.name] = Math.max(p1.x, p2.x);
+        }
+        else {
+          delta = new Point(size - event.size, 0);
+          _bounds[event.name] = Math.min(p1.x, p2.x);
+        }
+      }
+      else{
+        const size = Math.abs(p1.y - p2.y);
+        if(event.name == 'bottom') {
+          delta = new Point(0, event.size - size);
+          _bounds[event.name] = Math.max(p1.y, p2.y);
+        }
+        else {
+          delta = new Point(0, size - event.size);
+          _bounds[event.name] = Math.min(p1.y, p2.y);
+        }
+      }
+    }
+    else {
+      _bounds = this.layer.bounds;
+      if(pos == 'top' || pos == 'bottom') {
+        if(event.name == 'right') {
+          delta = new Point(event.size - _bounds.width, 0);
+        }
+        else {
+          delta = new Point(_bounds.width - event.size, 0);
+        }
+      }
+      else{
+        if(event.name == 'bottom') {
+          delta = new Point(0, event.size - _bounds.height);
+        }
+        else {
+          delta = new Point(0, _bounds.height - event.size);
+        }
+      }
+    }
+
+    if(delta.length){
+      if(typeof event.divide === 'number') {
+        delta = delta.divide(event.divide);
+      }
+      project.deselectAll();
+      for(let {b, e, generatrix, width} of project.getItems({class: Profile})) {
+        width = width / 2 + 1;
+        if(Math.abs(b.point[xy] - _bounds[event.name]) < width && Math.abs(e.point[xy] - _bounds[event.name]) < width){
+          generatrix.segments.forEach((segm) => segm.selected = true)
+        }
+        else if(Math.abs(b.point[xy] - _bounds[event.name]) < width){
+          generatrix.firstSegment.selected = true;
+        }
+        else if(Math.abs(e.point[xy] - _bounds[event.name]) < width){
+          generatrix.lastSegment.selected = true;
+        }
+      }
+      delta._dimln = true;
+      layer.mover.prepareMovePoints(true);
+      layer.mover.tryMovePoints(new paper.Point, delta);
+      if(layer.mover.applyMovePoints()) {
+        project.props.registerChange();
+      }
+      project.deselectAll(true);
+      project.redraw();
+    }
   }
   
   redraw() {
