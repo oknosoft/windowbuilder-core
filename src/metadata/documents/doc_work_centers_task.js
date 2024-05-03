@@ -512,4 +512,27 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
 
   }
   
+  load_keys() {
+    const {$p: {adapters: {pouch}, cat: {planning_keys}}} = this._manager._owner;
+    const refs = new Set();
+    for(const {obj} of this.set) {
+      if(obj.is_new()) {
+        refs.add(obj.ref);
+      }
+    }
+    if(refs.size) {
+      return pouch.fetch(`/adm/api/keys/rows`, {method: 'POST', body: JSON.stringify(Array.from(refs))})
+        .then(res => res.json())
+        .then(res => {
+          const rows = res.rows.map(({abonent, branch, year, barcode, calc_order, characteristic, presentation, ...other}) => {
+            other.id = parseInt(barcode);
+            other.obj = other.type === 'order' ? calc_order : characteristic;
+            return other;
+          });          
+          planning_keys.load_array(rows);
+          return this;
+        });
+    }
+    return Promise.resolve(this);
+  }
 }
