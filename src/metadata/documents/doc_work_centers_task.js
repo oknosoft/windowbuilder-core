@@ -511,7 +511,45 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     }
 
   }
+
+  /**
+   * @summary Чистит результаты раскроя в табчасти cutting
+   * @desc Параллельно, подчищает табчасть cuts
+   */
+  reset_sticks(kind) {
+    const noms = new Map();
+    for(const row of this.cutting) {
+      if(!kind || (kind === '1D' && !row.width) || (kind === '2D' && row.width)) {
+        if(noms.has(row.nom)) {
+          noms.get(row.nom).add(row.characteristic);
+        }
+        else {
+          noms.set(row.nom, new Set([row.characteristic]));
+        }
+        row.stick = 0;
+        row.pair = 0;
+      }
+    }
+    const rm = [];
+    for(const [nom, characteristics] of noms) {
+      for(const characteristic of characteristics) {
+        this.cuts.find_rows({nom, characteristic}, (row) => {
+          if(row.record_kind.is('debit') || (!row.width && row.len === nom.len) || (row.width === nom.width && row.len === nom.len)) {
+            rm.push(row);
+          }
+        });
+      }
+    }
+    for(const row of rm) {
+      this.cuts.del(row);
+    }
+  }
   
+  
+  /**
+   * @summary Загружает из сервиса планирования, задействованные ключи
+   * @return {Promise<DocWork_centers_task>}
+   */
   load_keys() {
     const {$p: {adapters: {pouch}, job_prm, cat: {planning_keys}}} = this._manager._owner;
     const refs = new Set();
