@@ -295,6 +295,7 @@ export class DimensionLine extends paper.Group {
   szMsg(ev) {
 
     if(ev.wnd == this){
+      const {pos} = this;
 
       switch (ev.name) {
         case 'close':
@@ -306,21 +307,21 @@ export class DimensionLine extends paper.Group {
 
         case 'left':
         case 'right':
-          if(this.pos == 'top' || this.pos == 'bottom') {
+          if(!pos || pos == 'top' || pos == 'bottom') {
             this.movePoints(ev, 'x');
           }
           break;
 
         case 'top':
         case 'bottom':
-          if(this.pos == 'left' || this.pos == 'right') {
+          if(!pos || pos == 'left' || pos == 'right') {
             this.movePoints(ev, 'y');
           }
           break;
 
         case 'rateably':
           ev.divide = 2;
-          if(this.pos == 'left' || this.pos == 'right') {
+          if(pos == 'left' || pos == 'right') {
             ev.name = 'top';
             ev.cb = () => {
               delete ev.cb;
@@ -330,7 +331,7 @@ export class DimensionLine extends paper.Group {
             }
             this.movePoints(ev, 'y');
           }
-          else if(this.pos == 'top' || this.pos == 'bottom') {
+          else if(pos == 'top' || pos == 'bottom') {
             ev.name = 'left';
             ev.cb = () => {
               delete ev.cb;
@@ -344,7 +345,7 @@ export class DimensionLine extends paper.Group {
 
         case 'auto':
           const {project, layer}  = this;
-         const {impost, pos, elm1, elm2}  = this.#raw;
+         const {impost, elm1, elm2}  = this.#raw;
           const {positions} = $p.enm;
           if(pos == 'top' || pos == 'bottom') {
             ev.name = 'right';
@@ -396,7 +397,7 @@ export class DimensionLine extends paper.Group {
       const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2].point;
       this.correctMoveName({event, p1, p2, _attr});
 
-      if(pos == 'top' || pos == 'bottom') {
+      if(pos == 'top' || pos == 'bottom' || (!pos && (event.name == 'right' || event.name == 'left'))) {
         const size = Math.abs(p1.x - p2.x);
         if(event.name == 'right') {
           delta = new Point(event.size - size, 0);
@@ -421,7 +422,7 @@ export class DimensionLine extends paper.Group {
     }
     else {
       _bounds = this.layer.bounds;
-      if(pos == 'top' || pos == 'bottom') {
+      if(!pos || pos == 'top' || pos == 'bottom') {
         if(event.name == 'right') {
           delta = new Point(event.size - _bounds.width, 0);
         }
