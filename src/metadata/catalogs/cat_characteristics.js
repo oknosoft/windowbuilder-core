@@ -813,8 +813,9 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
               layer.hidden = false;
             }
           }
+          project.redraw();
+          project.draw_visualization();
         }
-        project.redraw();
         
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {

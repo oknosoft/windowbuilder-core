@@ -6459,8 +6459,9 @@ set demand(v){this._setter_ts('demand',v)}
               layer.hidden = false;
             }
           }
+          project.redraw();
+          project.draw_visualization();
         }
-        project.redraw();
         
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {
