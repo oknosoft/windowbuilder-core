@@ -567,4 +567,18 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
   })('compound');
 
+  // наличие связанного профиля ряда
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function ({prm_row, elm}) {
+        const has = elm.joined_nearests().some((elm2) => elm2.rnum === prm_row.value);
+        return prm_row.comparison_type.is('ne') ? !has : has;
+        //return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('has_region_elm');
+  
+
 });

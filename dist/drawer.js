@@ -7465,7 +7465,7 @@ class GeneratrixElement extends BuilderElement {
     return segments;
   }
   do_sub_bind(profile, node) {
-    const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
+    const ppath = (!(profile instanceof ProfileRegion) && profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
     let mpoint = ppath.getNearestPoint(this[node]);
     if(!mpoint.is_nearest(this[node], 0)) {
       const gen = this.generatrix.clone({insert: false}).elongation(3000);
@@ -18711,6 +18711,15 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       };
     }
   })('compound');
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      prm.check_condition = function ({prm_row, elm}) {
+        const has = elm.joined_nearests().some((elm2) => elm2.rnum === prm_row.value);
+        return prm_row.comparison_type.is('ne') ? !has : has;
+      }
+    }
+  })('has_region_elm');
 });
 class FakeLenAngl {
   constructor({len, inset}) {
