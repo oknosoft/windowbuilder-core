@@ -25,7 +25,7 @@ export class Mover {
    * @param {Boolean} [impost]
    * @return {GraphEdge}
    */
-  edgesProfile(edges, impost) {
+  edgesProfile(edges, impost, vertex) {
     let iedge;
     for(const [edge, me] of edges) {
       if (!impost && !me.base || impost && me.base) {
@@ -50,7 +50,7 @@ export class Mover {
         }
       }
     }
-    return iedge;
+    return iedge || {};
   }
   
   addRecursive(vertex, edge, level, noDepth, candidates = []) {
@@ -237,7 +237,7 @@ export class Mover {
   tryMoveImpost({vertex, move, test, delta}) {
     // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
     const cmax = this.#raw.owner.profiles.length > 100 ? 40000 : lmax;     
-    const {profile} = this.edgesProfile(move.edges);
+    const {profile} = this.edgesProfile(move.edges, false, vertex);
     if(profile) {
       let gen = profile.generatrix.clone({insert: false, deep: false}), base1, base2;
       for(const [edge, me] of move.edges) {
@@ -261,7 +261,7 @@ export class Mover {
       let pos;
       if(move.edges.size <= 4 && (profile.selected || move.level)) {
         
-        const iedge = this.edgesProfile(move.edges, true);
+        const iedge = this.edgesProfile(move.edges, true, vertex);
         const segments = move.startPoint.getDistance(iedge.startVertex.point) > move.startPoint.getDistance(iedge.endVertex.point) ?
           [iedge.startVertex.point, iedge.endVertex.point] : [iedge.endVertex.point, iedge.startVertex.point];
         if(this.#raw.space && profile.generatrix.isCollinear(delta)) {
@@ -369,7 +369,7 @@ export class Mover {
               if(tv !== vertex) {
                 const tm = this.#raw.vertexes.get(tv);
                 circle(tm.point);
-                const iedge = this.edgesProfile(tm.edges, true);
+                const iedge = this.edgesProfile(tm.edges, true, vertex);
                 if(!segms.has(iedge.profile)) {
                   segms.add(iedge.profile);
                   const sv = iedge.otherProfileVertex(tv);
@@ -408,12 +408,21 @@ export class Mover {
     }
   }
   
-  applyMovePoints() {
+  applyMovePoints(delta) {
     let moved;
     for(const [vertex, move] of this.#raw.vertexes) {
       if(move.point && !vertex.point.isNearest(move.point)) {
         moved = true;
-        vertex.point = move.point;
+        if(delta instanceof paper.Point) {
+          const dt = move.point.subtract(move.startPoint);
+          if(dt.length < delta.length) {
+            delta.x = dt.x; 
+            delta.y = dt.y; 
+          }
+        }
+        else {
+          vertex.point = move.point;
+        }
       }
     }    
     this.cancelMovePoints();

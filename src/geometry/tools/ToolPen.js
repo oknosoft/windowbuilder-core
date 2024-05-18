@@ -8,10 +8,8 @@ export class ToolPen extends ToolSelectable {
   constructor() {
     super();
     this.name = 'pen';
-    this.profile = $p.dp.builderPen.create({
-      elm_type: 'rama',
-      grid: 50
-    });
+    const dp = $p.dp.builderPen || $p.dp.builder_pen;
+    this.profile = dp.create({elm_type: 'rama', grid: 50});
     Object.assign(this, {
       mode: 0,
       path: null,
