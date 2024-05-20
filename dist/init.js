@@ -2176,6 +2176,31 @@ get contact_information(){return this._getter_ts('contact_information')}
 set contact_information(v){this._setter_ts('contact_information',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+
+
+  toJSON() {
+    const json = Object.getPrototypeOf(this.constructor).prototype.toJSON.call(this);
+    const accounts = [];
+    const contracts = [];
+    const {_owner} = this._manager;
+    _owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
+      const raw = o.toJSON();
+      delete raw.owner;
+      accounts.push(raw);
+    });
+    _owner.contracts.find_rows({owner: this}, (o) => {
+      const raw = o.toJSON();
+      delete raw.owner;
+      contracts.push(raw);
+    });
+    if(accounts) {
+      json.accounts = accounts;
+    }
+    if(contracts) {
+      json.contracts = contracts;
+    }
+    return json;
+  }
 }
 $p.CatPartners = CatPartners;
 class CatPartnersContact_informationRow extends TabularSectionRow{
@@ -2201,7 +2226,38 @@ get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
 }
 $p.CatPartnersContact_informationRow = CatPartnersContact_informationRow;
-$p.cat.create('partners');
+class CatPartnersManager extends CatManager {
+
+  load_array(aattr, forse) {
+    // если внутри контрагента завёрнуты счета и договоры - вытаскиваем
+    const aaccounts = [];
+    const acontracts = [];
+    for(const row of aattr) {
+      if(row.accounts) {
+        row.accounts.forEach((v) => {
+          v.owner = row.ref;
+          aaccounts.push(v);
+        });
+        delete row.accounts;
+      }
+      if(row.contracts) {
+        row.contracts.forEach((v) => {
+          v.owner = row.ref;
+          contracts.push(v);
+        });
+        delete row.contracts;
+      }
+    }
+    const res = super.load_array(aattr, forse);
+    const {partner_bank_accounts, contracts} = this._owner;
+    aaccounts.length && partner_bank_accounts.load_array(aaccounts, forse);
+    acontracts.length && contracts.load_array(acontracts, forse);
+
+    return res;
+  }
+
+}
+$p.cat.create('partners', CatPartnersManager, false);
 class CatNom extends CatObj{
 get article(){return this._getter('article')}
 set article(v){this._setter('article',v)}
@@ -2736,6 +2792,21 @@ get contact_information(){return this._getter_ts('contact_information')}
 set contact_information(v){this._setter_ts('contact_information',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+
+
+  toJSON() {
+    const json = Object.getPrototypeOf(this.constructor).prototype.toJSON.call(this);
+    const accounts = [];
+    this._manager._owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
+      const raw = o.toJSON();
+      delete raw.owner;
+      accounts.push(raw);
+    });
+    if(accounts) {
+      json.accounts = accounts;
+    }
+    return json;
+  }
 }
 $p.CatOrganizations = CatOrganizations;
 class CatOrganizationsContact_informationRow extends TabularSectionRow{
@@ -2765,7 +2836,29 @@ get act_from(){return this._getter('act_from')}
 set act_from(v){this._setter('act_from',v)}
 }
 $p.CatOrganizationsContact_informationRow = CatOrganizationsContact_informationRow;
-$p.cat.create('organizations');
+class CatOrganizationsManager extends CatManager {
+
+  load_array(aattr, forse) {
+    // если внутри организации завёрнуты счета - вытаскиваем
+    const aaccounts = [];
+    for(const row of aattr) {
+      if(row.accounts) {
+        row.accounts.forEach((v) => {
+          v.owner = row.ref;
+          aaccounts.push(v);
+        });
+        delete row.accounts;
+      }
+    }
+    const res = super.load_array(aattr, forse);
+    const {partner_bank_accounts} = this._owner;
+    aaccounts.length && partner_bank_accounts.load_array(aaccounts, forse);
+
+    return res;
+  }
+
+}
+$p.cat.create('organizations', CatOrganizationsManager, false);
 class CatInserts extends CatObj{
 get article(){return this._getter('article')}
 set article(v){this._setter('article',v)}
@@ -7408,8 +7501,8 @@ get vat_rate(){return this._getter('vat_rate')}
 set vat_rate(v){this._setter('vat_rate',v)}
 get vat_amount(){return this._getter('vat_amount')}
 set vat_amount(v){this._setter('vat_amount',v)}
-get trans(){return this._getter('trans')}
-set trans(v){this._setter('trans',v)}
+get buyers_order(){return this._getter('buyers_order')}
+set buyers_order(v){this._setter('buyers_order',v)}
 }
 $p.DocPurchaseGoodsRow = DocPurchaseGoodsRow;
 class DocPurchaseServicesRow extends TabularSectionRow{
