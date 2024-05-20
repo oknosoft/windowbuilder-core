@@ -3126,7 +3126,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         fontFamily: consts.font_family,
         fontSize: consts.font_size * 2,
         content: glass.elm,
-        position: glass.bounds.center,
+        position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
       });
     }
   }
