@@ -3620,7 +3620,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!this.hidden) {
         this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());
       }
-      for (let elm of this.children) {
+      for (const elm of this.children) {
         if (elm.save_coordinates) {
           push(elm);
         }
@@ -5817,6 +5817,12 @@ class DimensionDrawer extends paper.Group {
         p: by_side.right.b.x > by_side.right.e.x ? 'b' : 'e'
       }];
     return {ihor, ivert, by_side};
+  }
+  save_coordinates(short, save, close) {
+    for (const elm of this.children) {
+      elm.save_coordinates?.(short, save, close);
+    }
+    return Promise.resolve();
   }
   get owner_bounds() {
     return this.parent.bounds;

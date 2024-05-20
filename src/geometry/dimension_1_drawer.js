@@ -644,6 +644,13 @@ class DimensionDrawer extends paper.Group {
     return {ihor, ivert, by_side};
   }
 
+  save_coordinates(short, save, close) {
+    for (const elm of this.children) {
+      elm.save_coordinates?.(short, save, close);
+    }
+    return Promise.resolve();
+  }
+
   get owner_bounds() {
     return this.parent.bounds;
   }

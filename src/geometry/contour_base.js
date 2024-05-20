@@ -2614,7 +2614,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
 
       // запись в таблице координат, каждый элемент пересчитывает самостоятельно
-      for (let elm of this.children) {
+      for (const elm of this.children) {
         if (elm.save_coordinates) {
           push(elm);
         }
