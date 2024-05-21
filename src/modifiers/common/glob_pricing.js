@@ -143,7 +143,7 @@ class Pricing {
    * @param startkey
    * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
+  by_range({bookmark, step=1, limit=80, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     
     (log || console.log)(`load prices: page №${step}`);
