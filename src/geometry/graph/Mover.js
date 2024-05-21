@@ -2,9 +2,9 @@ import paper from 'paper/dist/paper-core';
 import {epsilon} from '../paper/Point';
 
 // извлекаем разрешенные диапазоны из шаблона
-let li = 120;
-let lmin = 160;
-let lmax = 2000;
+let li = 220;
+let lmin = 400;
+let lmax = 2200;
 
 export class Mover {
 
@@ -413,18 +413,22 @@ export class Mover {
     for(const [vertex, move] of this.#raw.vertexes) {
       if(move.point && !vertex.point.isNearest(move.point)) {
         moved = true;
-        if(delta instanceof paper.Point) {
+        if(delta?.className === 'Point') {
           const dt = move.point.subtract(move.startPoint);
           if(dt.length < delta.length) {
-            delta.x = dt.x; 
-            delta.y = dt.y; 
+            delta.x = dt.x.round();
+            delta.y = dt.y.round();
           }
         }
         else {
           vertex.point = move.point;
         }
       }
-    }    
+    }
+    if(!moved && delta?.className === 'Point') {
+      delta.x = 0;
+      delta.y = 0;
+    }
     this.cancelMovePoints();
     return moved;
   }
