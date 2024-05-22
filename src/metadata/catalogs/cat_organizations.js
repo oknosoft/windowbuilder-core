@@ -26,17 +26,26 @@ exports.CatOrganizationsManager = class CatOrganizationsManager extends Object {
 exports.CatOrganizations = class CatOrganizations extends Object {
 
   toJSON() {
-    const json = Object.getPrototypeOf(this.constructor).prototype.toJSON.call(this);
-    const accounts = [];
-    this._manager._owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
-      const raw = o.toJSON();
-      delete raw.owner;
-      accounts.push(raw);
-    });
-    if(accounts) {
-      json.accounts = accounts;
+    const {classes: {TabularSection, CatObj}, CatOrganizations} = $p;
+    if(this instanceof TabularSection) {
+      return TabularSection.prototype.toJSON.call(this)
     }
-    return json;
+    
+    if(this instanceof CatOrganizations) {
+      const json = CatObj.prototype.toJSON.call(this);
+      const accounts = [];
+      this._manager._owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
+        const raw = o.toJSON();
+        delete raw.owner;
+        accounts.push(raw);
+      });
+      if(accounts) {
+        json.accounts = accounts;
+      }
+      return json;
+    }
+    
+    return this?.toJSON ? this.toJSON() : this; 
   }
 
 };

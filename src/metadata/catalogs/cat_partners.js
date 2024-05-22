@@ -34,27 +34,36 @@ exports.CatPartnersManager = class CatPartnersManager extends Object {
 exports.CatPartners = class CatPartners extends Object {
 
   toJSON() {
-    const json = Object.getPrototypeOf(this.constructor).prototype.toJSON.call(this);
-    const accounts = [];
-    const contracts = [];
-    const {_owner} = this._manager;
-    _owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
-      const raw = o.toJSON();
-      delete raw.owner;
-      accounts.push(raw);
-    });
-    _owner.contracts.find_rows({owner: this}, (o) => {
-      const raw = o.toJSON();
-      delete raw.owner;
-      contracts.push(raw);
-    });
-    if(accounts) {
-      json.accounts = accounts;
+    const {classes: {TabularSection, CatObj}, CatPartners} = $p;
+    if(this instanceof TabularSection) {
+      return TabularSection.prototype.toJSON.call(this)
     }
-    if(contracts) {
-      json.contracts = contracts;
+    
+    if(this instanceof CatPartners) {
+      const json = classes.CatObj.prototype.toJSON.call(this);
+      const accounts = [];
+      const contracts = [];
+      const {_owner} = this._manager;
+      _owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
+        const raw = o.toJSON();
+        delete raw.owner;
+        accounts.push(raw);
+      });
+      _owner.contracts.find_rows({owner: this}, (o) => {
+        const raw = o.toJSON();
+        delete raw.owner;
+        contracts.push(raw);
+      });
+      if(accounts) {
+        json.accounts = accounts;
+      }
+      if(contracts) {
+        json.contracts = contracts;
+      }
+      return json;
     }
-    return json;
+
+    return this?.toJSON ? this.toJSON() : this;
   }
 
 };
