@@ -2185,7 +2185,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
     }
     
     if(this instanceof CatPartners) {
-      const json = classes.CatObj.prototype.toJSON.call(this);
+      const json = CatObj.prototype.toJSON.call(this);
       const accounts = [];
       const contracts = [];
       const {_owner} = this._manager;
