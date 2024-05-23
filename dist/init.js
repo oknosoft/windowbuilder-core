@@ -3126,6 +3126,8 @@ get furn_level(){return this._getter('furn_level')}
 set furn_level(v){this._setter('furn_level',v)}
 get base_clr(){return this._getter('base_clr')}
 set base_clr(v){this._setter('base_clr',v)}
+get lock_flap_order(){return this._getter('lock_flap_order')}
+set lock_flap_order(v){this._setter('lock_flap_order',v)}
 get sketch_view(){return this._getter('sketch_view')}
 set sketch_view(v){this._setter('sketch_view',v)}
 get production_kind(){return this._getter('production_kind')}

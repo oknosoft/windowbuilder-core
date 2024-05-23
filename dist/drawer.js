@@ -2765,7 +2765,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
-          parent: props.parent.children.text,
+          parent: props.parent,
           fillColor: 'black',
           fontFamily: font_family,
           fontSize: elm_font_size,
@@ -3054,6 +3054,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
     const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
     l_visualization.by_spec.removeChildren();
+    l_visualization.by_insets.removeChildren();
     const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
@@ -3113,7 +3114,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.draw_glass_numbers();
     }
     for(const contour of contours){
-      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
+      contour.draw_visualization(
+        contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows), region);
     }
   }
   draw_glass_numbers() {
