@@ -1365,7 +1365,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.x = row_spec.len;
           ox.y = row_spec.height;
           ox.z = row_spec.depth;
-          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(3);
+          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(4);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
 
@@ -1786,7 +1786,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
-        characteristic.s = (this.s || this.len * this.width / 1e6).round(3);
+        characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
         const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
         origin.calculate_spec({elm, len_angl, ox: characteristic});

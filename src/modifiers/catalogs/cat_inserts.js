@@ -688,7 +688,7 @@
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
-          res.s = ((res.x * res.y) / 1e6).round(3);
+          res.s = ((res.x * res.y) / 1e6).round(4);
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
@@ -706,12 +706,12 @@
             const bounds = contour.bounds_inner(irow.sz, this);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
-            res.s = ((res.x * res.y) / 1e6).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(4);
           }
           else{
             res.x = contour.w + irow.sz;
             res.y = contour.h + irow.sz;
-            res.s = ((res.x * res.y) / 1e6).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(4);
           }
         }
       }
@@ -1380,7 +1380,7 @@
             row_spec.qty = row_ins_spec.quantity;
             row_spec.len = (len - sz) * coefficient;
             row_spec.width = (width - sz) * coefficient;
-            row_spec.s = (row_spec.len * row_spec.width).round(3);
+            row_spec.s = (row_spec.len * row_spec.width).round(4);
           }
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
@@ -1391,7 +1391,7 @@
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
-              row_spec.s = (row_spec.len * row_spec.width).round(3);
+              row_spec.s = (row_spec.len * row_spec.width).round(4);
               calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, alp1, alp2, totqty0);
 
               const qty = !formula.empty() && formula.execute({
@@ -1461,7 +1461,7 @@
               const bounds = elm.bounds_inner();
               _owner.x = bounds.width.round(1);
               _owner.y = bounds.height.round(1);
-              _owner.s = (bounds.area / 1e6).round(3);
+              _owner.s = (bounds.area / 1e6).round(4);
             }
             break;
           case enm.inserts_types.jalousie:
@@ -1478,7 +1478,7 @@
             });
             _owner.x = bounds.y * 1000;
             _owner.y = bounds.x * 1000;
-            _owner.s = (bounds.x * bounds.y).round(3);
+            _owner.s = (bounds.x * bounds.y).round(4);
         }
         spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }

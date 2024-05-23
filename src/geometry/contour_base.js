@@ -385,7 +385,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type Number
    */
   get area() {
-    return (this.bounds.area/1e6).round(3);
+    return (this.bounds.area/1e6).round(4);
   }
 
   /**
@@ -404,7 +404,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         upath = path.clone({insert: false});
       }
     });
-    return (upath.area/1e6).round(3);
+    return (upath.area/1e6).round(4);
   }
 
   /**

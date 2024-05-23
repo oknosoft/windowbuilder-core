@@ -1984,7 +1984,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.project.branch;
   }
   get area() {
-    return (this.bounds.area/1e6).round(3);
+    return (this.bounds.area/1e6).round(4);
   }
   get form_area() {
     let upath;
@@ -1996,7 +1996,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         upath = path.clone({insert: false});
       }
     });
-    return (upath.area/1e6).round(3);
+    return (upath.area/1e6).round(4);
   }
   get weight() {
     const {_ox, cnstr} = this;
@@ -13781,10 +13781,10 @@ class Scheme extends paper.Project {
     return this.layers.filter((l) => l instanceof Contour);
   }
   get area() {
-    return this.contours.reduce((sum, {area}) => sum + area, 0).round(3);
+    return this.contours.reduce((sum, {area}) => sum + area, 0).round(4);
   }
   get form_area() {
-    return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(3);
+    return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(4);
   }
   get clr() {
     return this.ox.clr;
@@ -15472,7 +15472,7 @@ class ProductsBuilding {
             const {bounds} = layer;
             cx.x = bounds.width;
             cx.y = bounds.height;
-            cx.s = (bounds.area / 1e6).round(3);
+            cx.s = (bounds.area / 1e6).round(4);
             cx.calc_order_row.nom = cx.prod_nom;
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
@@ -16035,7 +16035,7 @@ $p.spec_building = new SpecBuilding($p);
       if(row_spec.width) {
         row_spec.qty = quantity;
         row_spec.len = (elm.length / 1000).round(3);
-        row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);
+        row_spec.s = (row_spec.len * row_spec.width * (coefficient || 1)).round(4);
       }
     }
     if(!row_spec.width) {
@@ -17310,7 +17310,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
-          res.s = ((res.x * res.y) / 1e6).round(3);
+          res.s = ((res.x * res.y) / 1e6).round(4);
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
@@ -17327,12 +17327,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             const bounds = contour.bounds_inner(irow.sz, this);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
-            res.s = ((res.x * res.y) / 1e6).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(4);
           }
           else{
             res.x = contour.w + irow.sz;
             res.y = contour.h + irow.sz;
-            res.s = ((res.x * res.y) / 1e6).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(4);
           }
         }
       }
@@ -17871,7 +17871,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             row_spec.qty = row_ins_spec.quantity;
             row_spec.len = (len - sz) * coefficient;
             row_spec.width = (width - sz) * coefficient;
-            row_spec.s = (row_spec.len * row_spec.width).round(3);
+            row_spec.s = (row_spec.len * row_spec.width).round(4);
           }
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
@@ -17881,7 +17881,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
-              row_spec.s = (row_spec.len * row_spec.width).round(3);
+              row_spec.s = (row_spec.len * row_spec.width).round(4);
               calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, alp1, alp2, totqty0);
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
@@ -17943,7 +17943,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               const bounds = elm.bounds_inner();
               _owner.x = bounds.width.round(1);
               _owner.y = bounds.height.round(1);
-              _owner.s = (bounds.area / 1e6).round(3);
+              _owner.s = (bounds.area / 1e6).round(4);
             }
             break;
           case enm.inserts_types.jalousie:
@@ -17960,7 +17960,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             });
             _owner.x = bounds.y * 1000;
             _owner.y = bounds.x * 1000;
-            _owner.s = (bounds.x * bounds.y).round(3);
+            _owner.s = (bounds.x * bounds.y).round(4);
         }
         spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }
@@ -19827,7 +19827,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.x = row_spec.len;
           ox.y = row_spec.height;
           ox.z = row_spec.depth;
-          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(3);
+          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(4);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
         }
@@ -20150,7 +20150,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
-        characteristic.s = (this.s || this.len * this.width / 1e6).round(3);
+        characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
         const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
         origin.calculate_spec({elm, len_angl, ox: characteristic});

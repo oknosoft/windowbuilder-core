@@ -676,7 +676,7 @@ class ProductsBuilding {
             const {bounds} = layer;
             cx.x = bounds.width;
             cx.y = bounds.height;
-            cx.s = (bounds.area / 1e6).round(3);
+            cx.s = (bounds.area / 1e6).round(4);
             cx.calc_order_row.nom = cx.prod_nom;
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
