@@ -8,10 +8,15 @@ export default function (proto) {
   }
   proto.getZoom = getZoom;
   const setZoom = Object.getOwnPropertyDescriptor(proto, 'zoom').set;
-  delete proto.zoom;
-  Object.defineProperty(proto, 'zoom', {
-    get: getZoom,
-    set: setZoom,
-  });
+  try {
+    delete proto.zoom;
+    Object.defineProperty(proto, 'zoom', {
+      get: getZoom,
+      set: setZoom,
+    });
+  }
+  catch (e) {
+    
+  }
 }
 
