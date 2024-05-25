@@ -184,15 +184,17 @@ export class Mover {
               test,
               free: true,
               min: lmin,
+              imin: li,
               max: cmax,
             });
-            if(pos?.delta?.length > epsilon) {
+            if(pos?.delta?.length > epsilon || pos?.stop) {
               // на текущем профиле перевёртыш - ищем точку
               if(pos.stop) {
                 const pos = edge.profile.generatrix.directedMinPosition({
                   base: me.other.point,
                   initial: move.startPoint,
                   min: lmin,
+                  imin: li,
                 });
                 move.delta = pos.delta;
                 break;

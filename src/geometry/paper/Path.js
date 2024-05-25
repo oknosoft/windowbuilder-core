@@ -170,13 +170,22 @@ export default function (paper) {
       return tmp;
     },
     
-    directedPosition({base, initial, test, free, min, max}) {
+    directedPosition({base, initial, test, free, min, imin, max}) {
       const lb = this.getNearestLocation(base);
       const li = this.getNearestLocation(initial);
       const lt = this.getNearestLocation(test);
       const line = new paper.Line(lb.point, lb.point.add(lb.normal));
       const side = line.getSide(initial, true);
-      const stop = (line.getSide(test, true) !== side) || line.getDistance(test) < min;
+      const {length} = this;
+      if(imin && (lb.offset > epsilon) && (lb.offset < length - epsilon)) {
+        min = imin;
+      }
+      let stop = (line.getSide(test, true) !== side) || line.getDistance(test) < min;
+      // if(imin && (lb.offset > epsilon) && (lb.offset < length - epsilon)) {
+      //   if(Math.abs(lb.offset - lt.offset) < imin) {
+      //     stop = true;
+      //   }
+      // }
       if(free) {
         const segment = new paper.Path({insert: false, segments: [base, test]});
         if(segment.length > max) {
@@ -196,9 +205,14 @@ export default function (paper) {
       return {location: lt, delta: lt.point.subtract(initial), stop};
     },
 
-    directedMinPosition({base, initial, min}) {
+    directedMinPosition({base, initial, min, imin}) {
+      // если base в середине профиля - используем imin
+      const boffset = this.getOffsetOf(base);
+      if(imin && (boffset > epsilon) && (boffset < this.length - epsilon)) {
+        min = imin;
+      }
       const sub = this.getSubPath(base, initial);
-      const pt = sub.length <= min ? sub.getPointAt(sub.length / 2) : sub.getPointAt(min);
+      const pt = sub.length <= min ? initial : (sub.getPointAt(min) || initial);
       return {delta: pt.subtract(initial)};
     },
     
