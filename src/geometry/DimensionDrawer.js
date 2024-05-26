@@ -10,6 +10,13 @@ export class LayerGroup extends paper.Group {
   }
 }
 
+export class MapedGroup extends LayerGroup {
+  constructor(attr) {
+    super(attr);
+    this.map = new Map();
+  }
+}
+
 class DimensionGroup {
 
   clear() {
@@ -41,7 +48,7 @@ class DimensionGroup {
 
 }
 
-export class DimensionDrawer extends LayerGroup {
+export class DimensionDrawer extends MapedGroup {
 
   constructor(attr) {
     super(attr);

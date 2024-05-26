@@ -5,14 +5,15 @@ export class DimensionLine extends paper.Group {
 
   #raw = {};
   
-  constructor(attr) {
+  constructor({owner, parent, row, ...attr}) {
 
-    super({parent: attr.parent, project: attr.project});
+    super({parent, project: attr.project});
     
-    this.#raw.row = attr.row;
+    this.#raw.row = row;
+    this.#raw.owner = owner;
 
-    if(attr.row?.path_data){
-      Object.assign(attr, JSON.parse(attr.row.path_data));
+    if(row?.path_data){
+      Object.assign(attr, JSON.parse(row.path_data));
       if(attr.elm1){
         attr.elm1 = this.project.getItem({elm: attr.elm1});
       }
@@ -29,7 +30,7 @@ export class DimensionLine extends paper.Group {
     if(!attr.p2) {
       attr.p2 = 'e';
     }
-    const {path_data, row, contour, ...other} = attr;
+    const {path_data, contour, ...other} = attr;
     Object.assign(this.#raw, other);
 
     if(contour){
@@ -102,16 +103,16 @@ export class DimensionLine extends paper.Group {
 
   get path() {
 
-    const {parent: {dimensionBounds, ownerBounds}, children, pos} = this;
-    const raw = this.#raw;
+    const {children, pos} = this;
+    const {owner: {dimensionBounds, bounds: ownerBounds}, elm1, elm2, p1, p2, faltz} = this.#raw;
     if(!children.length){
       return;
     }
     let offset = 0, b, e;
 
     if(!pos){
-      b = typeof raw.p1 == "number" ? raw.elm1.corns(raw.p1) : raw.elm1[raw.p1];
-      e = typeof raw.p2 == "number" ? raw.elm2.corns(raw.p2) : raw.elm2[raw.p2];
+      b = typeof p1 == "number" ? elm1.corns(p1) : elm1[p1];
+      e = typeof p2 == "number" ? elm2.corns(p2) : elm2[p2];
     }
     else if(pos == "top"){
       b = ownerBounds.topLeft;
@@ -141,18 +142,18 @@ export class DimensionLine extends paper.Group {
 
     const path = new paper.Path({ insert: false, segments: [b, e] });
 
-    if(raw.elm1 && pos){
-      b = path.getNearestPoint(raw.elm1[raw.p1].point);
-      e = path.getNearestPoint(raw.elm2[raw.p2].point);
+    if(elm1 && pos){
+      b = path.getNearestPoint(elm1[p1].point);
+      e = path.getNearestPoint(elm2[p2].point);
       if(path.getOffsetOf(b) > path.getOffsetOf(e)){
         [b, e] = [e, b]
       }
       path.firstSegment.point = b;
       path.lastSegment.point = e;
     }
-    if(raw.faltz) {
-      b = path.getPointAt(raw.faltz);
-      e = path.getPointAt(path.length - raw.faltz);
+    if(faltz) {
+      b = path.getPointAt(faltz);
+      e = path.getPointAt(path.length - faltz);
       path.firstSegment.point = b;
       path.lastSegment.point = e;
     }
@@ -383,18 +384,18 @@ export class DimensionLine extends paper.Group {
   movePoints(event, xy) {
     let _bounds, delta;
 
-    const {pos, project, layer} = this;
-    const _attr = this.#raw;
+    const {pos, project} = this;
+    const {owner, elm1, elm2, ..._attr} = this.#raw;
     const {Point} = paper;
 
     // получаем дельту - на сколько смещать
-    if(_attr.elm1){
+    if(elm1){
 
       // в _bounds[event.name] надо поместить координату по x или у (в зависисмости от xy), которую будем двигать
       _bounds = {};
 
-      const p1 = (_attr.elm1._sub || _attr.elm1)[_attr.p1].point;
-      const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2].point;
+      const p1 = (elm1._sub || elm1)[_attr.p1].point;
+      const p2 = (elm2._sub || elm2)[_attr.p2].point;
       this.correctMoveName({event, p1, p2, _attr});
 
       if(pos == 'top' || pos == 'bottom' || (!pos && (event.name == 'right' || event.name == 'left'))) {
@@ -421,7 +422,7 @@ export class DimensionLine extends paper.Group {
       }
     }
     else {
-      _bounds = this.layer.bounds;
+      _bounds = owner.bounds;
       if(!pos || pos == 'top' || pos == 'bottom') {
         if(event.name == 'right') {
           delta = new Point(event.size - _bounds.width, 0);
@@ -458,9 +459,9 @@ export class DimensionLine extends paper.Group {
         }
       }
       delta._dimln = true;
-      layer.mover.prepareMovePoints(true);
-      layer.mover.tryMovePoints(new paper.Point, delta);
-      if(layer.mover.applyMovePoints()) {
+      owner.mover.prepareMovePoints(true);
+      owner.mover.tryMovePoints(new paper.Point, delta);
+      if(owner.mover.applyMovePoints()) {
         project.props.registerChange();
       }
       project.deselectAll(true);
