@@ -237,9 +237,13 @@ export class Contour extends paper.Layer {
    * @summary Перерисовывает все элементы слоя
    */
   redraw() {
+    // сначала, все профили
     for(const item of this.profiles) {
       item.redraw?.();
     }
+    // синхронизируем области
+    this.containers.sync();
+    
     for(const item of this.fillings) {
       item.redraw?.();
     }

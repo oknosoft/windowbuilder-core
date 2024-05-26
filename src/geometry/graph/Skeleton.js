@@ -5,6 +5,7 @@
 import {Graph} from './Graph';
 import {GraphEdge} from './Edge';
 import {GraphVertex} from './Vertex';
+import {Cycle} from './Cycle';
 import {CnnPoint} from '../ProfileCnnPoint';
 
 const offsetSort = (a, b) => a.offset - b.offset;
@@ -368,7 +369,7 @@ export class Skeleton extends Graph {
         // If cycle was detected we must forbid all further traversing since it will
         // cause infinite traversal loop.
         if(cycle) {
-          cycles.push(Skeleton.reorderCycle(cycle, blackSet, graySet));
+          cycles.push(new Cycle().reorder(cycle, blackSet, graySet));
           cycle = null;
           return false;
         }
@@ -422,40 +423,6 @@ export class Skeleton extends Graph {
     $p.jobPrm.debug ? console.profileEnd() : console.timeEnd();
 
     return cycles;
-  }
-
-  /**
-   * Ищет нижнее ребро и упорядочивает цикл
-   * @param cycle
-   * @param blackSet
-   * @param graySet
-   * @return {[]}
-   */
-  static reorderCycle(cycle, blackSet, graySet) {
-    let delta = Infinity;
-    let bottom = -1;
-    const sorted = [];
-    for (let i = 0; i < cycle.length; i++) {
-      const edge = cycle[i];
-      blackSet.add(edge);
-      graySet.delete(edge);
-      let {angle} = edge.endVertex.point.subtract(edge.startVertex.point);
-      if(angle < 0) {
-        angle += 360;
-      }
-      const cdelta = Math.abs(angle - 180);
-      if(cdelta < delta) {
-        bottom = i;
-        delta = cdelta;
-      }
-    }
-    for (let i = bottom; i < cycle.length; i++) {
-      sorted.push(cycle[i]);
-    }
-    for (let i = 0; i < bottom; i++) {
-      sorted.push(cycle[i]);
-    }
-    return sorted;
   }
 }
 

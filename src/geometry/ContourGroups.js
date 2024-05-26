@@ -1,6 +1,7 @@
 
 import paper from 'paper/dist/paper-core';
 import {LayerGroup} from './DimensionDrawer';
+import {Containers} from './Container';
 
 class GroupVisualization extends LayerGroup {
   constructor(attr) {
@@ -59,4 +60,5 @@ export function contourGroups(parent) {
   new GroupProfiles({parent, name: 'profiles'});
   new GroupLayers({parent, name: 'topLayers'});
   new GroupVisualization({parent, name: 'visualization', guide: true});
+  Object.defineProperty(parent, 'containers', {value: new Containers(parent)});
 }
