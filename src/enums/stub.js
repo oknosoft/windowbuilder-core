@@ -626,7 +626,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -665,7 +665,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -1193,11 +1193,11 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Входит в группу",
           multiline: false,
           tooltip: "Вышестоящее дополнительное значение свойства.",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -1311,7 +1311,7 @@ const tmp = {
             strLen: 12
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа банков",
           multiline: false,
           tooltip: "Группа банков, в которую входит данный банк",
@@ -1352,7 +1352,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "Входит в группу",
           multiline: false,
           tooltip: "Группа, к которой относится набор.",
@@ -1655,7 +1655,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "Группа формул",
@@ -1745,7 +1745,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -1864,7 +1864,7 @@ const tmp = {
             strLen: 0
           }
         },
-        "attributes": {
+        attributes: {
           synonym: "Атрибуты",
           multiline: false,
           tooltip: "Дополнительные атрибуты svg path",
@@ -2259,7 +2259,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Ведущий отдел",
           multiline: false,
           tooltip: "Заполняется в случае иерархической репликации",
@@ -2412,7 +2412,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -2598,7 +2598,7 @@ const tmp = {
           synonym: "Расчетный счет",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -2754,7 +2754,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "Группа вида контактной информации",
@@ -2843,7 +2843,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "",
@@ -3135,7 +3135,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа договоров",
           multiline: false,
           tooltip: "",
@@ -3167,7 +3167,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -3433,11 +3433,11 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Входит в группу",
           multiline: false,
           tooltip: "Группа дополнительных значений свойства.",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -3487,7 +3487,7 @@ const tmp = {
             "fraction": 0
           }
         },
-        "parent": {
+        parent: {
           synonym: "Входит в подразделение",
           multiline: false,
           tooltip: "",
@@ -3519,7 +3519,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -3663,7 +3663,7 @@ const tmp = {
             strLen: 430
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа объектов",
           multiline: false,
           tooltip: "Группа объектов метаданных.",
@@ -3753,7 +3753,7 @@ const tmp = {
           synonym: "Основной банковский счет",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -3841,7 +3841,7 @@ const tmp = {
           synonym: "Основной договор контрагента",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -3912,7 +3912,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа контрагентов",
           multiline: false,
           tooltip: "",
@@ -4074,7 +4074,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -4174,7 +4174,7 @@ const tmp = {
       },
       cachable: "ram"
     },
-    "nom": {
+    nom: {
       name: "Номенклатура",
       synonym: "Номенклатура",
       illustration: "Перечень товаров, продукции, материалов, полуфабрикатов, тары, услуг",
@@ -4230,7 +4230,7 @@ const tmp = {
           synonym: "Единица хранения остатков",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -4657,7 +4657,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "Группа, в которую входит данная позиция номенклатуры.",
@@ -4689,7 +4689,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -4996,7 +4996,7 @@ const tmp = {
           synonym: "Основной банковский счет",
           multiline: false,
           tooltip: "Основной банковский счет организации",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -5018,7 +5018,7 @@ const tmp = {
           synonym: "Основноая касса",
           multiline: false,
           tooltip: "Основноая касса организации",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -5115,7 +5115,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -5299,7 +5299,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -5836,7 +5836,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -5860,11 +5860,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -5911,7 +5911,7 @@ const tmp = {
                 "default": "cat.clrs"
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -6289,7 +6289,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "comparison_type"
@@ -6423,7 +6423,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -6708,7 +6708,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -6788,7 +6788,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "comparison_type"
@@ -7007,7 +7007,7 @@ const tmp = {
         }
       },
       tabulars: {
-        "coordinates": {
+        coordinates: {
           name: "Координаты",
           synonym: "Координаты",
           tooltip: "Периметр района",
@@ -7357,7 +7357,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -7381,11 +7381,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -7456,7 +7456,7 @@ const tmp = {
                 "fraction": 2
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -7788,7 +7788,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "comparison_type"
@@ -7968,7 +7968,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "comparison_type"
@@ -8133,7 +8133,7 @@ const tmp = {
             }
           }
         },
-        "coordinates": {
+        coordinates: {
           name: "Координаты",
           synonym: "Координаты",
           tooltip: "",
@@ -8425,7 +8425,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "",
@@ -8599,7 +8599,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура/Набор",
               multiline: false,
               tooltip: "",
@@ -8629,11 +8629,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -8680,7 +8680,7 @@ const tmp = {
                 "default": "cat.clrs"
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -9037,7 +9037,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "comparison_type"
@@ -9451,7 +9451,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "",
@@ -9866,7 +9866,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -10213,7 +10213,7 @@ const tmp = {
               synonym: "Отдел",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -10274,7 +10274,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Ответственный за реализацию проекта.",
@@ -10307,7 +10307,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -10339,7 +10339,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -10468,7 +10468,7 @@ const tmp = {
                 "datePart": "date_time"
               }
             },
-            "responsible": {
+            responsible: {
               synonym: "Ответственный",
               multiline: false,
               tooltip: "Ответственный за регистрацию этапа",
@@ -10629,7 +10629,7 @@ const tmp = {
             strLen: 0
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "",
@@ -10661,7 +10661,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -10873,7 +10873,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "В группе статей",
           multiline: false,
           tooltip: "Группа статей движения денежных средств",
@@ -11201,7 +11201,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -11688,7 +11688,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "parent": {
+            parent: {
               synonym: "Внешн. констр.",
               multiline: false,
               tooltip: "№ внешней конструкции",
@@ -11873,7 +11873,7 @@ const tmp = {
             }
           }
         },
-        "coordinates": {
+        coordinates: {
           name: "Координаты",
           synonym: "Координаты",
           tooltip: "Координаты элементов",
@@ -11890,7 +11890,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "parent": {
+            parent: {
               synonym: "Родитель",
               multiline: false,
               tooltip: "Дополнительная иерархия. Например, номер стеклопакета для раскладки или внешняя примыкающая палка для створки или доборного профиля",
@@ -12129,7 +12129,7 @@ const tmp = {
                 ]
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "Вычисляется по вставке, геометрии и параметрам",
@@ -12303,7 +12303,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -12579,7 +12579,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -12692,7 +12692,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -12818,7 +12818,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -12847,7 +12847,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -13090,7 +13090,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -13404,7 +13404,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "Группа",
           multiline: false,
           tooltip: "Группа скидок (наценок)",
@@ -13559,7 +13559,7 @@ const tmp = {
             ]
           }
         },
-        "parent": {
+        parent: {
           synonym: "Раздел",
           multiline: false,
           tooltip: "",
@@ -13878,7 +13878,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -14128,7 +14128,7 @@ const tmp = {
           synonym: "Продукция",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -14443,7 +14443,7 @@ const tmp = {
             }
           }
         },
-        "coordinates": {
+        coordinates: {
           name: "Координаты",
           synonym: "Координаты",
           tooltip: "Периметр района",
@@ -14494,7 +14494,7 @@ const tmp = {
       id: "pa",
       fields: {},
       tabulars: {
-        "nom": {
+        nom: {
           name: "Номенклатура",
           synonym: "Номенклатура",
           tooltip: "Позиции с параметрами, которые можно заказать у данного поставщика. В заказе будет номенклатура с уникальной характеристикой",
@@ -14521,7 +14521,7 @@ const tmp = {
                 strLen: 50
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -14532,11 +14532,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "Характеристика номенклатуры",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -14656,7 +14656,7 @@ const tmp = {
           synonym: "Этапы",
           tooltip: "",
           fields: {
-            "parent": {
+            parent: {
               synonym: "Предыдущие",
               multiline: false,
               tooltip: "",
@@ -14742,7 +14742,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -14909,7 +14909,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Автор",
@@ -15046,7 +15046,7 @@ const tmp = {
             "fraction": 0
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -15148,7 +15148,7 @@ const tmp = {
             strLen: 255
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -15261,7 +15261,7 @@ const tmp = {
             ]
           }
         },
-        "warehouse": {
+        warehouse: {
           synonym: "Склад",
           multiline: false,
           tooltip: "",
@@ -15284,7 +15284,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -15308,12 +15308,12 @@ const tmp = {
         }
       },
       tabulars: {
-        "goods": {
+        goods: {
           name: "Товары",
           synonym: "Товары",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -15335,11 +15335,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "Характеристика номенклатуры",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -15358,7 +15358,7 @@ const tmp = {
                 ]
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -15371,11 +15371,11 @@ const tmp = {
                 "fraction": 3
               }
             },
-            "unit": {
+            unit: {
               synonym: "Ед.",
               multiline: false,
               tooltip: "Единица измерения",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -15446,7 +15446,7 @@ const tmp = {
               synonym: "Заказ резерв",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -15480,7 +15480,7 @@ const tmp = {
           synonym: "Услуги",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -15514,7 +15514,7 @@ const tmp = {
                 strLen: 0
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -15623,7 +15623,7 @@ const tmp = {
               synonym: "Заказ затрат",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -15663,7 +15663,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -15786,7 +15786,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -15827,7 +15827,7 @@ const tmp = {
           synonym: "Материалы",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -15842,7 +15842,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -15910,7 +15910,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "recorded_quantity": {
+            recorded_quantity: {
               synonym: "Количество по данным учета",
               multiline: false,
               tooltip: "",
@@ -15927,7 +15927,7 @@ const tmp = {
       },
       cachable: "doc"
     },
-    "inventory_goods": {
+    inventory_goods: {
       name: "ИнвентаризацияТоваровНаСкладе",
       synonym: "Инвентаризация товаров на складе",
       illustration: "",
@@ -15962,7 +15962,7 @@ const tmp = {
             strLen: 0
           }
         },
-        "warehouse": {
+        warehouse: {
           synonym: "Склад",
           multiline: false,
           tooltip: "",
@@ -15973,7 +15973,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -15997,12 +15997,12 @@ const tmp = {
         }
       },
       tabulars: {
-        "goods": {
+        goods: {
           name: "Товары",
           synonym: "Товары",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -16013,11 +16013,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика номенклатуры",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -16037,7 +16037,7 @@ const tmp = {
               },
               "force_ram": true
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -16049,7 +16049,7 @@ const tmp = {
                 "fraction": 3
               }
             },
-            "recorded_quantity": {
+            recorded_quantity: {
               synonym: "Количество по данным учета",
               multiline: false,
               tooltip: "",
@@ -16061,11 +16061,11 @@ const tmp = {
                 "fraction": 3
               }
             },
-            "unit": {
+            unit: {
               synonym: "Единица измерения",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -16219,7 +16219,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -16337,7 +16337,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "Номенклатура потребности. По умолчанию, совпадает с номенклатурой спецификации, но может содержать аналог",
@@ -16352,7 +16352,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "Характеристика потребности. По умолчанию, совпадает с характеристикой спецификации, но может содержать аналог",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -16388,7 +16388,7 @@ const tmp = {
                 "fraction": 3
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -16465,7 +16465,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -16480,7 +16480,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -16564,7 +16564,7 @@ const tmp = {
                 "fraction": 2
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "Количество в единицах хранения",
@@ -16639,7 +16639,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -16654,7 +16654,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -16929,7 +16929,7 @@ const tmp = {
           synonym: "Договор контрагента",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -16960,7 +16960,7 @@ const tmp = {
           synonym: "Банковский счет",
           multiline: false,
           tooltip: "Банковский счет организации, на который планируется поступление денежных средств",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -17022,7 +17022,7 @@ const tmp = {
             ]
           }
         },
-        "warehouse": {
+        warehouse: {
           synonym: "Склад",
           multiline: false,
           tooltip: "Предполагаемый склад отгрузки товаров по заказу",
@@ -17101,7 +17101,7 @@ const tmp = {
             strLen: 255
           }
         },
-        "coordinates": {
+        coordinates: {
           synonym: "Координаты",
           multiline: false,
           tooltip: "Гео - координаты адреса доставки",
@@ -17318,7 +17318,7 @@ const tmp = {
           synonym: "Продукция",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -17333,7 +17333,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -17363,7 +17363,7 @@ const tmp = {
                 strLen: 512
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -17376,11 +17376,11 @@ const tmp = {
                 "fraction": 3
               }
             },
-            "unit": {
+            unit: {
               synonym: "Ед.",
               multiline: false,
               tooltip: "Единица измерения",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -17649,7 +17649,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -17905,7 +17905,7 @@ const tmp = {
               synonym: "Объект",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18053,7 +18053,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -18099,7 +18099,7 @@ const tmp = {
               synonym: "Объект расчетов",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18162,7 +18162,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18296,7 +18296,7 @@ const tmp = {
             "datePart": "date"
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -18428,7 +18428,7 @@ const tmp = {
           synonym: "Счет организации",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -18458,7 +18458,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -18504,7 +18504,7 @@ const tmp = {
               synonym: "Объект расчетов",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18567,7 +18567,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18736,7 +18736,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -18782,7 +18782,7 @@ const tmp = {
               synonym: "Объект расчетов",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18845,7 +18845,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -18996,7 +18996,7 @@ const tmp = {
           synonym: "Касса",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -19026,7 +19026,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -19072,7 +19072,7 @@ const tmp = {
               synonym: "Объект расчетов",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19135,7 +19135,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19286,7 +19286,7 @@ const tmp = {
           synonym: "Касса",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -19316,7 +19316,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -19362,7 +19362,7 @@ const tmp = {
               synonym: "Объект расчетов",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19425,7 +19425,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19579,7 +19579,7 @@ const tmp = {
             ]
           }
         },
-        "warehouse": {
+        warehouse: {
           synonym: "Склад",
           multiline: false,
           tooltip: "",
@@ -19602,7 +19602,7 @@ const tmp = {
             "fraction": 2
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "Пользователь, ответственный за  документ",
@@ -19626,12 +19626,12 @@ const tmp = {
         }
       },
       tabulars: {
-        "goods": {
+        goods: {
           name: "Товары",
           synonym: "Товары",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -19653,11 +19653,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "Характеристика номенклатуры",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19676,7 +19676,7 @@ const tmp = {
                 ]
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -19689,11 +19689,11 @@ const tmp = {
                 "fraction": 3
               }
             },
-            "unit": {
+            unit: {
               synonym: "Ед.",
               multiline: false,
               tooltip: "Единица измерения",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19776,7 +19776,7 @@ const tmp = {
               synonym: "Сделка",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19810,7 +19810,7 @@ const tmp = {
           synonym: "Услуги",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -19844,7 +19844,7 @@ const tmp = {
                 strLen: 0
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -19920,7 +19920,7 @@ const tmp = {
               synonym: "Сделка",
               multiline: false,
               tooltip: "Документ расчетов с партнером",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -19969,7 +19969,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "Значение дополнительного реквизита",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -20094,7 +20094,7 @@ const tmp = {
             ]
           }
         },
-        "currency": {
+        currency: {
           synonym: "Валюта",
           multiline: false,
           tooltip: "",
@@ -20106,7 +20106,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -20130,12 +20130,12 @@ const tmp = {
         }
       },
       tabulars: {
-        "goods": {
+        goods: {
           name: "Товары",
           synonym: "Товары",
           tooltip: "",
           fields: {
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -20147,11 +20147,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика или цветогруппа",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -20405,7 +20405,7 @@ const tmp = {
                 "fraction": 2
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "Номенклатура работы или услуги события",
@@ -20478,7 +20478,7 @@ const tmp = {
             ]
           }
         },
-        "warehouse": {
+        warehouse: {
           synonym: "Склад",
           multiline: false,
           tooltip: "",
@@ -20504,7 +20504,7 @@ const tmp = {
           synonym: "Договор контрагента",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -20553,7 +20553,7 @@ const tmp = {
             ]
           }
         },
-        "responsible": {
+        responsible: {
           synonym: "Ответственный",
           multiline: false,
           tooltip: "",
@@ -20614,7 +20614,7 @@ const tmp = {
           synonym: "Банковский счет",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -20700,7 +20700,7 @@ const tmp = {
         }
       },
       tabulars: {
-        "goods": {
+        goods: {
           name: "Товары",
           synonym: "Товары",
           tooltip: "",
@@ -20716,7 +20716,7 @@ const tmp = {
                 strLen: 36
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -20727,11 +20727,11 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "Характеристика номенклатуры",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -20754,11 +20754,11 @@ const tmp = {
                 "strFix": true
               }
             },
-            "unit": {
+            unit: {
               synonym: "Ед.",
               multiline: false,
               tooltip: "Единица измерения",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -20777,7 +20777,7 @@ const tmp = {
                 ]
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -20875,12 +20875,12 @@ const tmp = {
     }
   },
   "ireg": {
-    "currency_courses": {
+    currency_courses: {
       name: "КурсыВалют",
       note: "",
       synonym: "Курсы валют",
-      "dimensions": {
-        "currency": {
+      dimensions: {
+        currency: {
           synonym: "Валюта",
           multiline: false,
           tooltip: "Ссылка на валюты",
@@ -20891,7 +20891,7 @@ const tmp = {
             ]
           }
         },
-        "period": {
+        period: {
           synonym: "Дата курса",
           multiline: false,
           tooltip: "Дата курса валюты",
@@ -20904,8 +20904,8 @@ const tmp = {
           }
         }
       },
-      "resources": {
-        "course": {
+      resources: {
+        course: {
           synonym: "Курс",
           multiline: false,
           tooltip: "Курс валюты",
@@ -20918,7 +20918,7 @@ const tmp = {
             "fraction": 4
           }
         },
-        "multiplicity": {
+        multiplicity: {
           synonym: "Кратность",
           multiline: false,
           tooltip: "Кратность валюты",
@@ -20932,14 +20932,14 @@ const tmp = {
           }
         }
       },
-      "attributes": {},
+      attributes: {},
       cachable: "ram"
     },
     "margin_coefficients": {
       name: "пзМаржинальныеКоэффициентыИСкидки",
       note: "",
       synonym: "Маржинальные коэффициенты",
-      "dimensions": {
+      dimensions: {
         "price_group": {
           synonym: "Ценовая группа",
           multiline: false,
@@ -20974,7 +20974,7 @@ const tmp = {
           }
         }
       },
-      "resources": {
+      resources: {
         "marginality": {
           synonym: "К марж",
           multiline: false,
@@ -21164,7 +21164,7 @@ const tmp = {
           }
         }
       },
-      "attributes": {
+      attributes: {
         note: {
           synonym: "Комментарий",
           multiline: false,
@@ -21183,8 +21183,8 @@ const tmp = {
       name: "КурсВзаиморасчетов",
       note: "",
       synonym: "Курсы взаиморасчетов",
-      "dimensions": {
-        "currency": {
+      dimensions: {
+        currency: {
           synonym: "Валюта",
           multiline: false,
           tooltip: "",
@@ -21215,7 +21215,7 @@ const tmp = {
             ]
           }
         },
-        "period": {
+        period: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -21228,8 +21228,8 @@ const tmp = {
           }
         }
       },
-      "resources": {
-        "course": {
+      resources: {
+        course: {
           synonym: "Курс",
           multiline: false,
           tooltip: "Курс валюты",
@@ -21243,15 +21243,15 @@ const tmp = {
           }
         }
       },
-      "attributes": {},
+      attributes: {},
       cachable: "ram"
     },
     "delivery_schedules": {
       name: "ГрафикиДоставки",
       note: "",
       synonym: "Графики доставки по районам",
-      "dimensions": {
-        "warehouse": {
+      dimensions: {
+        warehouse: {
           synonym: "Точка отправления",
           multiline: false,
           tooltip: "",
@@ -21285,7 +21285,7 @@ const tmp = {
           }
         }
       },
-      "resources": {
+      resources: {
         "start": {
           synonym: "Выезд",
           multiline: false,
@@ -21297,15 +21297,15 @@ const tmp = {
           }
         }
       },
-      "attributes": {},
+      attributes: {},
       cachable: "ram"
     },
     "delivery_scheme": {
       name: "СхемаДоставки",
       note: "",
       synonym: "Схема доставки готовой продукции",
-      "dimensions": {
-        "warehouse": {
+      dimensions: {
+        warehouse: {
           synonym: "Склад отправления",
           multiline: false,
           tooltip: "",
@@ -21350,7 +21350,7 @@ const tmp = {
           }
         }
       },
-      "resources": {
+      resources: {
         "chain": {
           synonym: "Номер звена",
           multiline: false,
@@ -21364,14 +21364,14 @@ const tmp = {
           }
         }
       },
-      "attributes": {},
+      attributes: {},
       cachable: "ram"
     },
     "predefined_elmnts": {
       name: "ПредопределенныеЭлементы",
       note: "",
       synonym: "Предопределенные элементы",
-      "dimensions": {
+      dimensions: {
         "property": {
           synonym: "Свойство",
           multiline: false,
@@ -21402,13 +21402,13 @@ const tmp = {
           }
         }
       },
-      "resources": {},
-      "attributes": {
+      resources: {},
+      attributes: {
         "value": {
           synonym: "Значение",
           multiline: false,
           tooltip: "Значение дополнительного реквизита",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -21506,7 +21506,7 @@ const tmp = {
       name: "Интернационализация",
       note: "",
       synonym: "Интернационализация",
-      "dimensions": {
+      dimensions: {
         "obj": {
           synonym: "Объект",
           multiline: false,
@@ -21616,7 +21616,7 @@ const tmp = {
           }
         }
       },
-      "resources": {
+      resources: {
         "value": {
           synonym: "Значение",
           multiline: false,
@@ -21629,7 +21629,7 @@ const tmp = {
           }
         }
       },
-      "attributes": {},
+      attributes: {},
       cachable: "ram"
     }
   },
@@ -21869,7 +21869,7 @@ const tmp = {
         }
       },
       tabulars: {
-        "coordinates": {
+        coordinates: {
           name: "Координаты",
           synonym: "Координаты",
           tooltip: "",
@@ -22042,7 +22042,7 @@ const tmp = {
       codeLength: 0,
       id: "",
       fields: {
-        "nom": {
+        nom: {
           synonym: "Номенклатура",
           multiline: false,
           tooltip: "",
@@ -22066,7 +22066,7 @@ const tmp = {
         }
       },
       tabulars: {
-        "goods": {
+        goods: {
           name: "Товары",
           synonym: "Цены",
           tooltip: "",
@@ -22094,11 +22094,11 @@ const tmp = {
                 "datePart": "date"
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -22128,7 +22128,7 @@ const tmp = {
                 "fraction": 2
               }
             },
-            "currency": {
+            currency: {
               synonym: "Валюта",
               multiline: false,
               tooltip: "",
@@ -22195,7 +22195,7 @@ const tmp = {
       codeLength: 0,
       id: "",
       fields: {
-        "nom": {
+        nom: {
           synonym: "Номенклатура",
           multiline: false,
           tooltip: "",
@@ -22210,7 +22210,7 @@ const tmp = {
           synonym: "Характеристика",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -22305,7 +22305,7 @@ const tmp = {
             "fraction": 4
           }
         },
-        "quantity": {
+        quantity: {
           synonym: "Колич., шт",
           multiline: false,
           tooltip: "",
@@ -22605,7 +22605,7 @@ const tmp = {
               synonym: "Значение",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -22735,7 +22735,7 @@ const tmp = {
                 ]
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -22751,7 +22751,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -22836,7 +22836,7 @@ const tmp = {
                 "fraction": 4
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество, шт",
               multiline: false,
               tooltip: "",
@@ -23030,7 +23030,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура/Набор",
               multiline: false,
               tooltip: "",
@@ -23060,7 +23060,7 @@ const tmp = {
                 ]
               }
             },
-            "nom_characteristic": {
+            nom_characteristic: {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
@@ -23085,7 +23085,7 @@ const tmp = {
                 "strFix": true
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -23902,7 +23902,7 @@ const tmp = {
                 ]
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -24002,7 +24002,7 @@ const tmp = {
                 "fraction": 0
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -24057,7 +24057,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -24431,7 +24431,7 @@ const tmp = {
           synonym: "Данные",
           tooltip: "",
           fields: {
-            "period": {
+            period: {
               synonym: "Период",
               multiline: false,
               tooltip: "",
@@ -24533,7 +24533,7 @@ const tmp = {
         }
       }
     },
-    "goods": {
+    goods: {
       name: "goods",
       synonym: "Товары на складах",
       illustration: "",
@@ -24549,7 +24549,7 @@ const tmp = {
           synonym: "Данные",
           tooltip: "",
           fields: {
-            "period": {
+            period: {
               synonym: "Период",
               multiline: false,
               tooltip: "",
@@ -24573,7 +24573,7 @@ const tmp = {
                 ]
               }
             },
-            "warehouse": {
+            warehouse: {
               synonym: "Склад",
               multiline: false,
               tooltip: "",
@@ -24584,7 +24584,7 @@ const tmp = {
                 ]
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -24599,7 +24599,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -24734,7 +24734,7 @@ const tmp = {
           synonym: "Данные",
           tooltip: "",
           fields: {
-            "period": {
+            period: {
               synonym: "Период",
               multiline: false,
               tooltip: "",
@@ -24893,7 +24893,7 @@ const tmp = {
           synonym: "Данные",
           tooltip: "",
           fields: {
-            "period": {
+            period: {
               synonym: "Период",
               multiline: false,
               tooltip: "",
@@ -25023,7 +25023,7 @@ const tmp = {
           synonym: "Данные",
           tooltip: "",
           fields: {
-            "period": {
+            period: {
               synonym: "Период",
               multiline: false,
               tooltip: "",
@@ -25091,7 +25091,7 @@ const tmp = {
                 ]
               }
             },
-            "nom": {
+            nom: {
               synonym: "Номенклатура",
               multiline: false,
               tooltip: "",
@@ -25106,7 +25106,7 @@ const tmp = {
               synonym: "Характеристика",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",
@@ -25125,7 +25125,7 @@ const tmp = {
                 ]
               }
             },
-            "quantity": {
+            quantity: {
               synonym: "Количество",
               multiline: false,
               tooltip: "",
@@ -25314,7 +25314,7 @@ const tmp = {
             strLen: 256
           }
         },
-        "parent": {
+        parent: {
           synonym: "",
           multiline: false,
           tooltip: "",
@@ -25981,7 +25981,7 @@ const tmp = {
               synonym: "Скрывать значения",
               multiline: false,
               tooltip: "",
-              "choiceLinks": [
+              choiceLinks: [
                 {
                   name: [
                     "selection",

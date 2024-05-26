@@ -166,8 +166,8 @@ export class Contour extends paper.Layer {
    * @type paper.Rectangle
    */
   get dimensionBounds() {
-    const {profiles, dimensions} = this.children;
-    return profiles.bounds.unite(dimensions.bounds);
+    const {profiles} = this.children;
+    return profiles.bounds;
   }
 
   /**
@@ -247,19 +247,19 @@ export class Contour extends paper.Layer {
       item.redraw?.();
     }
     this.drawVisualization();
-    this.children.dimensions.redraw();
   }
   
   drawVisualization() {
-    const {project, children: {visualization}, skeleton} = this;
+    const {project: {props}, children: {visualization}, skeleton} = this;
     visualization.children.graph.clear();
-    if(project.props.carcass) {
+    if(props.carcass) {
       for(const vertex of skeleton.getAllVertices()) {
         new paper.PointText({
           point: vertex.point.add([20, -20]),
           content: vertex.value,
           parent: visualization.children.graph,
-          fontSize: project.props.fontSize(),
+          fontSize: props.fontSize(),
+          fontFamily: props.fontFamily(),
         })
       }
     }

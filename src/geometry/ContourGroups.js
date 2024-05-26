@@ -1,6 +1,6 @@
 
 import paper from 'paper/dist/paper-core';
-import {LayerGroup, DimensionDrawer} from './DimensionDrawer';
+import {LayerGroup} from './DimensionDrawer';
 
 class GroupVisualization extends LayerGroup {
   constructor(attr) {
@@ -45,13 +45,13 @@ class GroupProfiles extends LayerGroup {
   get profiles() {
     return this.children;
   }
-  on_remove_elm(elm) {
-    this.layer.on_remove_elm(elm);
+  onRemove(elm) {
+    this.layer.onRemove(elm);
   }
 }
 
 class GroupFillings extends LayerGroup {}
-class GroupText extends LayerGroup {}
+
 
 export function contourGroups(parent) {
   new GroupLayers({parent, name: 'bottomLayers'});
@@ -59,7 +59,4 @@ export function contourGroups(parent) {
   new GroupProfiles({parent, name: 'profiles'});
   new GroupLayers({parent, name: 'topLayers'});
   new GroupVisualization({parent, name: 'visualization', guide: true});
-  new DimensionDrawer({parent, name: 'dimensions'});
-  new GroupText({parent: this, name: 'text'});
-  
 }

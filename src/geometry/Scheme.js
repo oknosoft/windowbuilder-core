@@ -28,6 +28,10 @@ export class Scheme extends paper.Project {
     }
     return new Contour({project: this, insert: true});
   }
+  
+  get dimensions() {
+    return this.rootLayer.children.dimensions;
+  }
 
   get bounds() {
     return this.layers.reduce((sum, curr) => sum.unite(curr.bounds), new paper.Rectangle());
@@ -38,7 +42,7 @@ export class Scheme extends paper.Project {
   }
   
   get dimensionBounds() {
-    return this.layers.reduce((sum, curr) => sum.unite(curr.dimensionBounds), new paper.Rectangle());
+    return [...this.layers, this.dimensions].reduce((sum, curr) => sum.unite(curr.bounds), new paper.Rectangle());
   }
 
   /**
@@ -96,6 +100,7 @@ export class Scheme extends paper.Project {
     for(const item of this.contours) {
       item.redraw?.();
     }
+    this.dimensions.redraw();
     if(!silent) {
       this.root.md.emit('redraw', this);
     }
