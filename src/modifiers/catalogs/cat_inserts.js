@@ -12,7 +12,7 @@
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatColor_price_groups} = $p;
+    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatCnnsSpecificationRow, CatColor_price_groups} = $p;
 
   const {inserts_types} = enm;
 
@@ -919,7 +919,7 @@
       }
 
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
+      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
@@ -935,7 +935,7 @@
         fakerow._owner = sub_row._owner;
 
         // количество по параметру
-        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === parameters) {
+        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
             fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
@@ -944,7 +944,7 @@
         }
 
         if(row) {
-          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === parameters ? 0 : 1)) * (row.quantity || 1);
+          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method.is('parameters') ? 0 : 1)) * (row.quantity || 1);
           fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
           if(fakerow.clr.empty()) {
             fakerow.clr = row.clr;
@@ -958,6 +958,10 @@
         }
 
         return fakerow;
+      }
+      
+      function check_own_row() {
+        return own_row instanceof CatCnnsSpecificationRow && own_row.quantity && own_row.quantity !== 1;
       }
 
       // для заполнений, можно переопределить состав верхнего уровня
@@ -1003,9 +1007,18 @@
         }
 
         // Проверяем параметры изделия, контура или элемента
-        if(own_row && row.clr.empty() && !own_row.clr.empty()){
-          row = fake_row(row);
-          row.clr = own_row.clr;
+        if(own_row){
+          if(row.clr.empty() && !own_row.clr.empty()) {
+            row = fake_row(row);
+            row.clr = own_row.clr;
+            if(check_own_row()) {
+              row.quantity *= own_row.quantity;
+            }
+          }
+          else if(check_own_row()) {
+            row = fake_row(row);
+            row.quantity *= own_row.quantity;
+          }
         }
         if(!check_params({
           params: this.selection_params,
