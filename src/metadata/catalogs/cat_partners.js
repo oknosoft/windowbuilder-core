@@ -16,7 +16,7 @@ exports.CatPartnersManager = class CatPartnersManager extends Object {
       if(row.contracts) {
         row.contracts.forEach((v) => {
           v.owner = row.ref;
-          contracts.push(v);
+          acontracts.push(v);
         });
         delete row.contracts;
       }
