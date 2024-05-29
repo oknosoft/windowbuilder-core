@@ -2179,10 +2179,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
 
   toJSON() {
-    const {classes: {TabularSection, CatObj}, CatPartners} = $p;
-    if(this instanceof TabularSection) {
-      return TabularSection.prototype.toJSON.call(this)
-    }
+    const {classes: {TabularSectionRow, CatObj}, CatPartners} = $p;
     
     if(this instanceof CatPartners) {
       const json = CatObj.prototype.toJSON.call(this);
@@ -2199,13 +2196,19 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
         delete raw.owner;
         contracts.push(raw);
       });
-      if(accounts) {
+      if(accounts.length) {
         json.accounts = accounts;
       }
-      if(contracts) {
+      if(contracts.length) {
         json.contracts = contracts;
       }
       return json;
+    }
+    else {
+      const {_obj} = this;
+      if(_obj?._row instanceof TabularSectionRow) {
+        return _obj;
+      }
     }
 
     return this?.toJSON ? this.toJSON() : this;
@@ -2804,10 +2807,7 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
 
   toJSON() {
-    const {classes: {TabularSection, CatObj}, CatOrganizations} = $p;
-    if(this instanceof TabularSection) {
-      return TabularSection.prototype.toJSON.call(this)
-    }
+    const {classes: {TabularSectionRow, CatObj}, CatOrganizations} = $p;
     
     if(this instanceof CatOrganizations) {
       const json = CatObj.prototype.toJSON.call(this);
@@ -2817,10 +2817,16 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
         delete raw.owner;
         accounts.push(raw);
       });
-      if(accounts) {
+      if(accounts.length) {
         json.accounts = accounts;
       }
       return json;
+    }
+    else {
+      const {_obj} = this;
+      if(_obj?._row instanceof TabularSectionRow) {
+        return _obj;
+      }
     }
     
     return this?.toJSON ? this.toJSON() : this; 

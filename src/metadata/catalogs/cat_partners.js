@@ -34,10 +34,7 @@ exports.CatPartnersManager = class CatPartnersManager extends Object {
 exports.CatPartners = class CatPartners extends Object {
 
   toJSON() {
-    const {classes: {TabularSection, CatObj}, CatPartners} = $p;
-    if(this instanceof TabularSection) {
-      return TabularSection.prototype.toJSON.call(this)
-    }
+    const {classes: {TabularSectionRow, CatObj}, CatPartners} = $p;
     
     if(this instanceof CatPartners) {
       const json = CatObj.prototype.toJSON.call(this);
@@ -54,13 +51,19 @@ exports.CatPartners = class CatPartners extends Object {
         delete raw.owner;
         contracts.push(raw);
       });
-      if(accounts) {
+      if(accounts.length) {
         json.accounts = accounts;
       }
-      if(contracts) {
+      if(contracts.length) {
         json.contracts = contracts;
       }
       return json;
+    }
+    else {
+      const {_obj} = this;
+      if(_obj?._row instanceof TabularSectionRow) {
+        return _obj;
+      }
     }
 
     return this?.toJSON ? this.toJSON() : this;
