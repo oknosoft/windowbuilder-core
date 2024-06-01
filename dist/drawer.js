@@ -17593,7 +17593,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
-                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                     res.push(fakerow);
                   }
                 });
@@ -17605,7 +17605,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
-                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                     res.push(fakerow);
                   }
                 });
@@ -17616,7 +17616,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 const fakerow = fake_row(subrow, row);
                 fakerow._origin = row.nom;
                 fakerow._clr = eclr;
-                if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                   res.push(fakerow);
                 }
               });
@@ -17626,7 +17626,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               fakerow._origin = row.nom;
-              if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+              if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
               }
             });
