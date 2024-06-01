@@ -24,10 +24,13 @@ export class GeneratrixElement extends BuilderElement {
    *  @param {CatCnns} [attr.cnns.bOuter]
    *  @param {CatCnns} [attr.cnns.eOuter]
    */
-  constructor({generatrix, cnns, ...attr}) {
+  constructor({generatrix, cnns, edge, ...attr}) {
     super(attr);
     if(generatrix) {
       generatrix.set({parent: this, name: 'generatrix'});
+    }
+    if(edge) {
+      this.raw('edge', edge);  
     }
     this.raw('b', new CnnPoint({owner: this, name: 'b', cnn: cnns?.b, cnnOuter: cnns?.bOuter}));
     this.raw('e', new CnnPoint({owner: this, name: 'e', cnn: cnns?.e, cnnOuter: cnns?.eOuter}));
@@ -70,6 +73,14 @@ export class GeneratrixElement extends BuilderElement {
    */
   get cut() {
     return this.raw('cut');
+  }
+
+  /**
+   * @summary Ребро - владельца профиля
+   * @type {GraphEdge}
+   */
+  get edge() {
+    return this.raw('edge');
   }
 
   /**

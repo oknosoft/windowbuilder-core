@@ -1,7 +1,7 @@
 
 // import paper from 'paper/dist/paper-core';
 // import {LayerGroup} from './DimensionDrawer';
-
+import {Contour} from './Contour';
 
 /**
  * @summary Область-проём для слоёв и заполнений
@@ -14,7 +14,7 @@ export class Container  {
   constructor(owner, cycle) {
     Object.assign(this.#raw, {owner, cycle});
     owner.children[cycle.key] = this;
-    this.init();
+    this.createChild({kind: 'glass'});
   }
 
   /**
@@ -27,6 +27,10 @@ export class Container  {
 
   get free() {
     return this.#raw.owner.free;
+  }
+  
+  get layer() {
+    return this.skeleton.owner;
   }
 
   /**
@@ -49,7 +53,7 @@ export class Container  {
       const prev = paths[i === 0 ? cycle.length -1 : i - 1];
       const curr = paths[i];
       const next = paths[i === cycle.length - 1 ? 0 : i + 1];
-      res.push(curr.intersectPoint(prev, curr.firstSegment.point));
+      res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point), {edge: cycle[i]}));
     }
     return res;
   }
@@ -68,11 +72,34 @@ export class Container  {
     this.#raw.height = Number(v);
   }
 
+
   /**
    * @summary Создаёт дочернее заполнение или слой
    */
-  init() {
-    
+  createChild({kind}) {
+    if(kind !== this.#raw.kind) {
+      this.#raw.child?.remove();
+      const {pathInner, layer} = this;
+      if(kind === 'flap') {
+        const child = new Contour({
+          project: layer.project,
+          parent: layer.children.topLayers,
+        });
+        const profiles = [];
+        for(let i = 0; i < pathInner.length; i++) {
+          const b = pathInner[i];
+          const e = pathInner[i === pathInner.length - 1 ? 0 : i + 1];
+          profiles.push(child.createProfile({b, e, edge: b.edge, loading: true}));
+        }
+        for(const profile of profiles) {
+          child.skeleton.addProfile(profile);
+        }
+        this.#raw.child = child; 
+      }
+      this.#raw.kind = kind;
+      return;
+    }
+    this.sync();
   }
 
   remove() {
@@ -83,8 +110,21 @@ export class Container  {
   }
 
   sync() {
-    
+    const {pathInner} = this;
+    const {kind, child} = this.#raw;
+    if(kind === 'flap') {
+      for(let i = 0; i < pathInner.length; i++) {
+        const b = pathInner[i];
+        for(const profile of child.profiles) {
+          if(profile.edge === b.edge && !profile.b.vertex.point.isNearest(b)) {
+            profile.b.vertex.point = b.clone();
+          }
+        }
+      }
+    }
   }
+
+
   
 }
 

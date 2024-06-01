@@ -3,11 +3,11 @@ import {GeneratrixElement} from './GeneratrixElement';
 
 export class Profile extends GeneratrixElement {
   
-  constructor(attr) {
+  constructor({loading, ...attr}) {
     super(attr);
     this.raw('inner', new paper.Path({insert: false}));
     this.raw('outer', new paper.Path({insert: false}));
-    if(!this.project.props.loading) {
+    if(!(loading || this.project.props.loading)) {
       this.skeleton.addProfile(this);
       this.layer.recalcFillings();
     }
