@@ -10,7 +10,7 @@
 class GridCoordinates extends paper.Group {
 
   constructor(attr) {
-    super();
+    super(attr);
     this.parent = this.project.l_dimensions;
 
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
