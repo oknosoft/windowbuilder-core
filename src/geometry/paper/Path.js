@@ -251,5 +251,41 @@ export default function (paper) {
       // const nearest = dir ? test.lastSegment.point : test.firstSegment.point;
     },
 
+    elongation(delta) {
+      if(delta){
+        if(this.isLinear()) {
+          const tangent = this.getTangentAt(0);
+          this.firstSegment.point = this.firstSegment.point.add(tangent.multiply(-delta));
+          this.lastSegment.point = this.lastSegment.point.add(tangent.multiply(delta));
+        }else{
+          const {length} = this;
+          let tangent = this.getTangentAt(length * 0.01);
+          this.insert(0, this.firstSegment.point.add(tangent.multiply(-delta)));
+          tangent = this.getTangentAt(length * 0.99);
+          this.add(this.lastSegment.point.add(tangent.multiply(delta)));
+        }
+      }
+      return this;
+    },
+
+    equidistant(delta, elong) {
+      const {firstSegment, lastSegment} = this;
+      const normal = this.getNormalAt(0);
+      const res = new paper.Path({
+        segments: [firstSegment.point.add(normal.multiply(delta))],
+        insert: false
+      });
+
+      if(this.isLinear()) {
+        // добавляем последнюю точку
+        res.add(lastSegment.point.add(normal.multiply(delta)));
+      }
+      else{
+        
+      }
+
+      return res.elongation(elong);
+    },
+
   });
 }
