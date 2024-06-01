@@ -7,7 +7,7 @@
 
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   const {
-    enm: {orientations, positions, elm_types, comparison_types: ect},
+    enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils} = $p;
@@ -43,21 +43,41 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
 
-        case 'width':
-          _data._formula = function (obj) {
-            return obj?.ox?.y || 0;
-          };
-          break;
-
         case 'inset':
           _data._formula = function ({elm, prm_row, ox, row}) {
 
             // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
-            if(prm_row && prm_row.origin === prm_row.origin._manager.nearest && elm instanceof EditorInvisible.Filling){
+            if(prm_row?.origin?.is('nearest')){
+              if(elm instanceof $p.EditorInvisible.Filling) {
+                const res = new Set();
+                ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+                  if(row && inset !== row._owner?._owner) {
+                    res.add(inset);
+                  }
+                });
+                return Array.from(res);
+              }
+              else {
+                const nearest = elm?.nearest?.();
+                if(nearest) {
+                  return nearest.inset;
+                }
+              }
+            }
+            
+            return elm?.inset;
+          };
+          break;
+
+        case 'inserts_glass_type':
+          _data._formula = function ({elm, prm_row, ox, row}) {
+
+            // если запросили вставку состава заполнения, возвращаем массив
+            if(elm instanceof $p.EditorInvisible.Filling) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
-                if(row && row._owner && inset !== row._owner._owner) {
-                  res.add(inset);
+                if(!inset.insert_glass_type.empty()) {
+                  res.add(inset.insert_glass_type);
                 }
               });
               return Array.from(res);
@@ -66,7 +86,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.inset;
           };
           break;
-
+            
         case 'elm_weight':
           _data._formula = function (obj) {
             const {elm, prm_row, ox} = obj || {};
@@ -75,6 +95,49 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               weight = ox.elm_weight();
             }
             return weight;
+          };
+          break;
+          
+        case 'up_glasses_weight':
+          _data._formula = function ({elm, elm2, ox}) {
+            let weight = 0;
+            if(elm2 instanceof EditorInvisible.Profile && !(elm instanceof EditorInvisible.Profile)) {
+              elm = elm2;
+            }
+            if(elm?.orientation?.is('hor')) {
+              const {top} = elm.nearest_glasses;
+              if(top?.length) {
+                weight = (ox || elm.ox).elm_weight(top.map((glass) => glass.elm));
+              }
+            }
+            return weight;
+          };
+          break;
+          
+        case 'nearest_gl_thickness':
+          _data._formula = function ({elm, elm2}) {
+            if(elm instanceof EditorInvisible.ProfileAdjoining) {
+              elm = elm.nearest();
+              elm2 = null;
+            }
+            let thickness = elm2 ? elm2.thickness : 0;
+            if(!thickness && elm?.joined_glasses) {
+              thickness = Math.max(...elm.joined_glasses().map((gl) => gl.thickness || 0));
+            }
+            return thickness;
+          };
+          break;
+
+        case 'nearest_gl_var':
+          _data._formula = function ({elm}) {
+            if(elm instanceof EditorInvisible.ProfileAdjoining) {
+              elm = elm.nearest();
+            }
+            const set = new Set();
+            for(const gl of elm?.joined_glasses?.()) {
+              set.add(gl.thickness);
+            }
+            return set.size > 1;
           };
           break;
 
@@ -87,6 +150,52 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'elm_pos':
           _data._formula = function ({elm}) {
             return elm?.pos || positions.get();
+          };
+          break;
+          
+        case 'node_pos':
+          _data._formula = function ({elm, node}) {
+            if(elm && node) {
+              if(elm instanceof EditorInvisible.ProfileSegment) {
+                const {parent} = elm;
+                if(!parent[node].is_nearest(elm[node])) {
+                  return positions.left.center;
+                }
+              }
+              const other = node === 'b' ? 'e' : 'b';
+              if(elm.orientation.is('vert')) {
+                return elm[node].y < elm[other].y ? positions.top : positions.bottom;
+              }
+              if(elm.orientation.is('hor')) {
+                return elm[node].x > elm[other].x ? positions.right : positions.left;
+              }
+            }
+            return positions.get();
+          };
+          break;
+
+        case 'is_node_last':
+          _data._formula = function ({elm, node}) {
+            if(elm && node) {
+              if(elm instanceof EditorInvisible.ProfileSegment) {
+                const {parent} = elm;
+                if(!parent[node].is_nearest(elm[node])) {
+                  return false;
+                }
+              }
+              const pt = elm[node];
+              const {bounds} = elm.layer;
+              const {sticking} = consts;
+              return (pt.y < bounds.top + sticking) || (pt.y > bounds.bottom - sticking) ||
+                (pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking);
+            }
+            return false;
+          };
+          break;
+
+        case 'cnn_side':
+          _data._formula = function ({elm, elm2}) {
+            return (elm && elm2) ? elm2.cnn_side(elm) : cnn_sides.get();
           };
           break;
 
@@ -111,7 +220,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           
         case 'region':
             _data._formula = function (obj) {
-              const {region} = obj;
+              const region = obj.region || obj.layer?.region;
               return typeof region === 'number' ? region : 0;
             };
             break;
@@ -124,18 +233,24 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer ? layer.h_ruch : 0;
           };
           break;
+
+        case 'width':
+          _data._formula = function (obj) {
+            return obj?.ox?.y || 0;
+          };
+          break;
           
         case 'height':
-            _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
-              if(!layer && elm) {
-                layer = elm.layer;
-              }
-              if(!prm_row?.origin || prm_row.origin.is('product')) {
-                return ox?.y || 0;
-              }
-              return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
-            };
-            break;
+          _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
+            if(!layer && elm) {
+              layer = elm.layer;
+            }
+            if(!prm_row?.origin || prm_row.origin.is('product')) {
+              return ox?.y || 0;
+            }
+            return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
+          };
+          break;
 
         case 'rotation_axis':
           _data._formula = function ({elm, layer, prm_row}) {
@@ -192,20 +307,27 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   // создаём те, где нужна только формула со стандартным check_condition
   for(const name of [
     'clr_product',      // цвет изделия
+    'up_glasses_weight',// масса заполнений, опирающихся на профиль
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
+    'node_pos',         // положение узла профиля
+    'is_node_last',     // крайний по координатам узел в текущем слое
+    'cnn_side',         // сторона соединения (изнутри-снаружи)
     'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента
     'branch',           // отдел абонента текущего контекста
-    'width',            // ширина из параметра
     'inset',            // вставка текущего элемента
+    'inserts_glass_type',  // тип вставки заполнения
     'clr_inset',        // цвет вставки в элемент
     'handle_height',    // высота ручки
+    'width',            // ширина из параметра
     'height',           // высота слоя или изделия
     'region',           // ряд
     'is_composite',     // у элемента составной цвет
     'rotation_axis',    // у слоя есть ось поворота
+    'nearest_gl_thickness',// толщина примыкающего заполнения
+    'nearest_gl_var',   // бит отличия толщин примыкающих заполнений
   ]) {
     formulate(name);
   }
@@ -444,5 +566,19 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       };
     }
   })('compound');
+
+  // наличие связанного профиля ряда
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      // проверка условия
+      prm.check_condition = function ({prm_row, elm}) {
+        const has = elm.joined_nearests().some((elm2) => elm2.rnum === prm_row.value);
+        return prm_row.comparison_type.is('ne') ? !has : has;
+        //return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
+      }
+    }
+  })('has_region_elm');
+  
 
 });

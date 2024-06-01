@@ -19,24 +19,14 @@
 
 		profiles: {
 			get(){
-				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing]);
+				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing, mgr.region]);
 			}
 		},
 
 		profile_items: {
 			get(){
 				return cache.profile_items
-					|| ( cache.profile_items = [
-						mgr.Рама,
-						mgr.Створка,
-						mgr.Импост,
-						mgr.Штульп,
-						mgr.Добор,
-						mgr.Соединитель,
-						mgr.Раскладка,
-            mgr.Связка,
-            mgr.Разрыв,
-					] );
+					|| ( cache.profile_items = [...this.profiles, mgr.addition, mgr.linking, mgr.layout, mgr.bundle]);
 			}
 		},
 
@@ -48,19 +38,19 @@
 
 		impost_lay: {
 			get(){
-        return cache.impost_lay || (cache.impost_lay = [mgr.Импост, mgr.Раскладка]);
+        return cache.impost_lay || (cache.impost_lay = [mgr.impost, mgr.layout]);
 			}
 		},
 
 		stvs: {
 			get(){
-        return cache.stvs || (cache.stvs = [mgr.Створка]);
+        return cache.stvs || (cache.stvs = [mgr.flap]);
 			}
 		},
 
 		glasses: {
 			get(){
-        return cache.glasses || (cache.glasses = [mgr.Стекло, mgr.Заполнение]);
+        return cache.glasses || (cache.glasses = [mgr.glass, mgr.sandwich]);
 			}
 		}
 

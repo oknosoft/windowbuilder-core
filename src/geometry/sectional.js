@@ -194,8 +194,11 @@ class Sectional extends GeneratrixElement {
    */
   initialize(attr) {
 
-    const {project, _attr, _row} = this;
+    const {project, layer, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
+    if(this.parent === layer) {
+      this.parent = layer.children.sectionals;
+    }
 
     _attr._rays = {
       b: {},
@@ -252,6 +255,7 @@ class Sectional extends GeneratrixElement {
     for(let child of children){
       child.remove();
     }
+    children.length = 0;
 
     // рисуем углы
     for(let i = 1; i < segments.length - 1; i++){
@@ -266,13 +270,20 @@ class Sectional extends GeneratrixElement {
         point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
         content: (curve.length / zoom).toFixed(0),
         fontSize: radius * 1.4,
-        parent: layer,
+        parent: layer.children.text,
         _owner: curve
       }));
     }
 
 
     return this;
+  }
+
+  beforeRemove() {
+    for(const elm of this._attr.children) {
+      elm.remove?.();
+    }    
+    return true;
   }
 
   /**
@@ -312,7 +323,7 @@ class Sectional extends GeneratrixElement {
       to,
       strokeColor: 'grey',
       guide: true,
-      parent: layer,
+      parent: layer.children.text,
     }));
 
     // Angle Label
@@ -320,7 +331,7 @@ class Sectional extends GeneratrixElement {
       point: center.add(end.multiply(-2.2)), //.add([0, -end.y / 2])
       content: angle.toFixed(0) + '°',
       fontSize: radius * 1.4,
-      parent: layer,
+      parent: layer.children.text,
       _owner: this,
       _ind: ind,
     }));

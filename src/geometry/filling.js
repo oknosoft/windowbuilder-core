@@ -25,10 +25,18 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(path){
       attr.path = path;
     }
+    
+    this.create_groups();
 
     // initialize
     this.initialize(attr);
 
+  }
+
+  create_groups() {
+    super.create_groups();
+    new GroupLayers({parent: this, name: 'tearings'});
+    new GroupText({parent: this, name: 'text'});
   }
 
   initialize(attr) {
@@ -133,7 +141,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, layer, profiles, bounds, imposts, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -230,8 +238,10 @@ class Filling extends AbstractFilling(BuilderElement) {
       delete profiles[i].aperture_path;
     }
 
-    // дочерние раскладки
-    imposts.forEach((onlay) => onlay.save_coordinates());
+    // дочерние раскладки и разрывы заполнений
+    for(const child of this.imposts.concat(this.children.tearings.children)) {
+      child.save_coordinates?.();
+    }
   }
 
   /**
@@ -254,7 +264,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         kind = 1;
       }
     }
-    const cattr = {project, kind, parent: this.parent};
+    const cattr = {project, kind, parent: layer.children.topLayers};
     // фурнитура и параметры по умолчанию
     if(direction) {
       cattr.direction = direction;
@@ -278,7 +288,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.remove();
     }
     else {
-      this.parent = contour;
+      this.parent = contour.children.fillings;
       _row.cnstr = contour.cnstr;
       // проверим вставку
       this.set_inset(project.default_inset({
@@ -364,7 +374,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   redraw() {
 
-    this.sendToBack();
+    //this.sendToBack();
 
     const {path, imposts, glbeads, _attr, is_rectangular} = this;
     const {elm_font_size, font_family} = consts;
@@ -379,7 +389,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     // если текст не создан - добавляем
     if(!_attr._text){
       _attr._text = new paper.PointText({
-        parent: this,
+        parent: this.children.text,
         fillColor: 'black',
         fontFamily: font_family,
         fontSize,
@@ -454,7 +464,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     l_dimensions.redraw(true);
     layer.draw_visualization();
     const {l_visualization: lv} = layer;
-    lv._by_insets && lv._by_insets.removeChildren();
+    lv.by_insets && lv.by_insets.removeChildren();
     lv._cnn && lv._cnn.removeChildren();
     lv._opening && lv._opening.removeChildren();
     lv.visible = true;
@@ -468,15 +478,21 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {inset, elm, layer, _attr: {paths, _text}} = this;
     if(inset.region && !(layer instanceof ContourTearing)) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
+        // 0 - не ряд
+        // 1 - ряд внутри элемента
+        // >1 - за элементом
+        // <0 - перед элементом
         if([1, 2, -1].includes(row.region)) {
           const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
-            paths.set(row.region, new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
+            const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
+            paths.set(row.region, new paper.Path({parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
+          rpath._owner = this;
           rpath.removeSegments();
           // получаем периметр ряда
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
@@ -574,20 +590,14 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(row.region > 0) {
-            rpath.insertBelow(path);  
-          }
-          else {
-            for(const {profile} of profiles) {
-              profile.insertBelow(this);
-            }
-            rpath.insertAbove(path);
+          if(row.region < 0) {
             _text?.insertAbove(rpath);
-            path.opacity = 0.7;
+            rpath.opacity = 0.7;  
           }
           if(strip_path.segments.length){
             strip_path = rpath.exclude(strip_path);
             strip_path.fillColor = 'grey';
+            strip_path._owner = this;
             const old = paths.get(`s${row.region}`); 
             if(old && old !== strip_path) {
               old.remove();
@@ -611,11 +621,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   
   reset_fragment() {
-    const {_attr, layer, path} = this;
-    if(_attr._dimlns) {
-      _attr._dimlns.remove();
-      delete _attr._dimlns;
-    }
+    const {children, layer, path} = this;
+    children.dimlns.clear(true);
     path.set({
       strokeColor: null,
       strokeWidth: 0,
@@ -888,7 +895,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr.path;
   }
   set path(attr) {
-    let {_attr, path, project} = this;
+    let {_attr, path, project, children} = this;
 
     // чистим старый путь
     if(path){
@@ -896,6 +903,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     else{
       path = _attr.path = new paper.Path({parent: this});
+    }
+    if(children.tearings.isBelow(path)) {
+      path.insertBelow(children.tearings);
     }
 
     // чистим старые сегменты
@@ -1037,9 +1047,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   get nodes() {
     let res = this.profiles.map((curr) => curr.b);
     if(!res.length){
-      const {path, parent} = this;
+      const {path, layer} = this;
       if(path){
-        res = parent.glass_nodes(path);
+        res = layer.glass_nodes(path);
       }
     }
     return res;

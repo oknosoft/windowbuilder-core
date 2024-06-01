@@ -143,7 +143,7 @@ class Pricing {
    * @param startkey
    * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
+  by_range({bookmark, step=1, limit=80, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     
     (log || console.log)(`load prices: page №${step}`);
@@ -441,7 +441,7 @@ class Pricing {
   calc_amount(prm) {
 
     const {calc_order_row, price_type, first_cost, date} = prm;
-    const {marginality_in_spec, not_update} = $p.job_prm.pricing;
+    const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
     const {rounding, manager} = calc_order_row._owner._owner;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
@@ -472,11 +472,14 @@ class Pricing {
 
 
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
-    let extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
-    // если пересчет выполняется менеджером, используем наценку по умолчанию
-    if(!manager.partners_uids.length || !extra_charge) {
-      extra_charge = price_type.extra_charge_external || 0;
-    }
+    let extra_charge = 0;
+    if(use_internal !== false) {
+      extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
+      // если пересчет выполняется менеджером, используем наценку по умолчанию
+      if(!manager.partners_uids.length || !extra_charge) {
+        extra_charge = price_type.extra_charge_external || 0;
+      }
+    }    
 
     // TODO: учесть формулу
     calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);

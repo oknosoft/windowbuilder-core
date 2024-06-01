@@ -76,110 +76,17 @@ class ProductsBuilding {
 
     /**
      * ДополнитьСпецификациюСпецификациейСоединения
-     * @param cnn {_cat.Cnns}
-     * @param elm {BuilderElement}
-     * @param len_angl {Object}
+     * @param {CatCnns} cnn
+     * @param {BuilderElement} elm
+     * @param {Object} len_angl
+     * @param {CatCnns} [cnn_other]
+     * @param {BuilderElement} [elm2]
      */
     function cnn_add_spec(cnn, elm, len_angl, cnn_other, elm2) {
       if(!cnn) {
         return;
       }
-      const {enm: {predefined_formulas: {gb_short, gb_long, w2}, cnn_types}, CatInserts, utils} = $p;
-      const sign = cnn.cnn_type == cnn_types.ii ? -1 : 1;
-      const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
-
-      cnn.filtered_spec({elm, elm2, len_angl, ox}).forEach((row_base) => {
-
-        const {nom} = row_base;
-
-        // TODO: nom может быть вставкой - в этом случае надо разузловать
-        if(nom instanceof CatInserts) {
-          if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
-            const tmp_len_angl = Object.assign({}, len_angl);
-            tmp_len_angl.len = (len_angl.len - sign * 2 * row_base.sz) * (row_base.coefficient || 0.001);
-            if(row_base.algorithm === w2 && elm2) {
-
-            }
-            nom.calculate_spec({elm, elm2, len_angl: tmp_len_angl, own_row: row_base, ox, spec});
-          }
-          else {
-            nom.calculate_spec({elm, elm2, len_angl, own_row: row_base, ox, spec});
-          }
-        }
-        else {
-
-          const row_spec = new_spec_row({row_base, origin: len_angl.origin || cnn, elm, nom, spec, ox, len_angl});
-
-          // рассчитаем количество
-          if(nom.is_pieces) {
-            if(!row_base.coefficient) {
-              row_spec.qty = row_base.quantity;
-            }
-            else {
-              row_spec.qty = ((len_angl.len - sign * 2 * row_base.sz) * row_base.coefficient * row_base.quantity - 0.5)
-                .round(nom.rounding_quantity);
-            }
-          }
-          else {
-            row_spec.qty = row_base.quantity;
-
-            // если указано cnn_other, берём не размер соединения, а размеры предыдущего и последующего
-            if(![gb_short, gb_long].includes(row_base.algorithm) && (row_base.sz || row_base.coefficient)) {
-              let sz = row_base.sz, finded, qty;
-              if(cnn_other) {
-                cnn_other.specification.find_rows({nom}, (row) => {
-                  sz += row.sz;
-                  qty = row.quantity;
-                  return !(finded = true);
-                });
-              }
-              if(!finded) {
-                if(row_base.algorithm === w2 && elm2) {
-
-                }
-                else {
-                  sz *= 2;
-                }
-              }
-              if(!row_spec.qty && finded && len_angl.art1) {
-                row_spec.qty = qty;
-              }
-              row_spec.len = (len_angl.len - sign * sz) * (row_base.coefficient || 0.001);
-            }
-          }
-
-          // если указана формула - выполняем
-          if(!row_base.formula.empty()) {
-            const qty = row_base.formula.execute({
-              ox,
-              elm,
-              len_angl,
-              cnstr: 0,
-              inset: utils.blank.guid,
-              row_cnn: row_base,
-              row_spec: row_spec
-            });
-            // если формула является формулой условия, используем результат, как фильтр
-            if(row_base.formula.condition_formula && !qty){
-              row_spec.qty = 0;
-            }
-          }
-
-          // визуализация svg-dx
-          if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
-            const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
-            const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
-            row_spec.width = generatrix.getOffsetOf(pt) / 1000;
-            if(outer) {
-              row_spec.alp1 = -1;
-            }
-          }
-          else {
-            calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
-          }
-        }
-
-      });
+      cnn.calculate_spec({elm, elm2, len_angl, cnn_other, ox, spec});
     }
 
     /**
@@ -518,7 +425,7 @@ class ProductsBuilding {
       // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr, region}) => {
+      ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
 
         // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
@@ -536,14 +443,7 @@ class ProductsBuilding {
         delete len_angl.art1;
         delete len_angl.art2;
         delete len_angl.node;
-        if(region) {
-          inset.region_spec({elm, len_angl, ox, spec, region});
-        }
-        else {
-          inset.calculate_spec({elm, len_angl, ox, spec});
-        }
-
-
+        inset.calculate_spec({elm, clr, len_angl, ox, spec});
       });
       spec = spec_tmp;
     }
@@ -776,7 +676,7 @@ class ProductsBuilding {
             const {bounds} = layer;
             cx.x = bounds.width;
             cx.y = bounds.height;
-            cx.s = (bounds.area / 1e6).round(3);
+            cx.s = (bounds.area / 1e6).round(4);
             cx.calc_order_row.nom = cx.prod_nom;
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
@@ -802,19 +702,19 @@ class ProductsBuilding {
         for (const elm of contour.profiles) {
           !elm.virtual && base_spec_profile(elm);
         }
-
+        // для всех заполнений контура
+        for (const elm of contour.glasses(false, true)) {
+          !elm.virtual && base_spec_glass(elm);
+        }
+        // для всех разрезов (водоотливов)
+        for (const elm of contour.sectionals) {
+          !elm.virtual && base_spec_sectional(elm);
+        }
+        
         for (const elm of contour.children) {
-          if(elm instanceof Filling) {
-            // для всех заполнений контура
-            base_spec_glass(elm);
-          }
           if(elm instanceof ProfileGlBead) {
             // для всех штапиков
             base_spec_profile(elm);
-          }
-          else if(elm instanceof Sectional) {
-            // для всех разрезов (водоотливов)
-            base_spec_sectional(elm);
           }
           else if(elm instanceof Compound) {
             // для всех поверхностей (составных путей)

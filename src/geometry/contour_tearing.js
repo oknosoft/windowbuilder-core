@@ -5,6 +5,17 @@
  */
 class ContourTearing extends Contour {
 
+  constructor(attr) {
+    if(attr.row && attr.layer) {
+      const {parent} = attr.row.dop;
+      const filling = attr.layer.glasses(false, true).find((glass) => glass.elm === parent);
+      if(filling) {
+        attr.parent = filling.children.tearings; 
+      }
+    }
+    super(attr);
+  }
+
   get ProfileConstructor() {
     return ProfileTearing;
   }
@@ -14,6 +25,11 @@ class ContourTearing extends Contour {
   }
   set path(attr) {
     
+  }
+
+  defaultFilling() {
+    const tearing = this.layer.tearings.find(v => v !==this);
+    return tearing?.fillings?.[0] || this.project.getItem({class: Filling});
   }
 
   /**
@@ -35,10 +51,6 @@ class ContourTearing extends Contour {
     return new paper.Path({insert: false});
   }
 
-  get profiles() {
-    return this.children.filter((elm) => elm instanceof ProfileTearing);
-  }
-
   presentation(bounds) {
     if(!bounds){
       bounds = this.bounds;
@@ -56,7 +68,8 @@ class ContourTearing extends Contour {
       const profile = new ProfileTearing({
         generatrix: new paper.Path({segments: [curr.segment1, curr.segment2]}),
         proto,
-        parent: this,
+        layer: this,
+        parent: this.children.profiles,
       });
       profile.elm;
     }

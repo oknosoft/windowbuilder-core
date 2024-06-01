@@ -68,6 +68,9 @@ class CnnPoint {
   get is_tt() {
     // если это угол, то точно не T
     let {profile_point, profile, parent, point} = this;
+    if(profile instanceof Filling) {
+      return true;
+    }
     if(!point) {
       point = parent[this.node];
     }
@@ -148,6 +151,10 @@ class CnnPoint {
     }
     if(this.is_cut) {
       this.is_cut = false;
+    }
+    const {_row} = this;
+    if(_row) {
+      _row.elm2 = 0;
     }
     this.profile = null;
     this.err = null;
@@ -520,7 +527,7 @@ class ProfileRays {
           if(cnn_point.profile == parent && cnn_point.cnn) {
             const cnn = cnns.elm_cnn(profile, parent, cnn_point.cnn_types, cnn_point.cnn, 0, undefined, cnn_point);
             if(cnn !== cnn_point.cnn) {
-              cnn_elmnts.clear({elm1: profile, node1: cnn_nodes, elm2: parent});
+              cnn_elmnts.clear({elm1: profile.elm, node1: cnn_nodes, elm2});
               cnn_point.cnn = cnn;
             }
           }
@@ -537,16 +544,6 @@ class ProfileRays {
       parent.layer.glasses(false, true).forEach((glass) => {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
-    }
-    
-    // чистим лучи рядов
-    const {_ranges} = this.parent._attr;
-    if(_ranges) {
-      for(const [key, region] of _ranges) {
-        if(typeof key === 'number') {
-          region._attr?._rays?.clear(with_cnn);
-        }
-      }
     }
   }
 
@@ -1180,7 +1177,7 @@ class ProfileItem extends GeneratrixElement {
     const res = sub_gen.length;
     sub_gen.remove();
 
-    return res.round(1);
+    return (res * 2).round() / 2;
   }
 
   /**
@@ -1339,7 +1336,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    const {_attr: {generatrix, path, paths}, project} = this;
+    const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {
       return;
     }
@@ -1368,13 +1365,8 @@ class ProfileItem extends GeneratrixElement {
       for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
-      for(const [key, item] of paths) {
-        if(typeof key === 'number') {
-          item.setSelection(0);
-        }
-      }      
 
-      if([0, 1].includes(project.builder_props.mode)) {
+      if([0, 1].includes(project.builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
           const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
@@ -1565,14 +1557,15 @@ class ProfileItem extends GeneratrixElement {
     _row.path_data = generatrix.pathData;
     _row.nom = this.nom;
 
-    // радиус, как дань традиции - вычисляем для внешнего ребра профиля
+    // радиус, как дань традиции - вычисляем для внешнего ребра профиля??
     if(generatrix.is_linear()) {
       _row.r = 0;
     }
     else {
-      const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
-      const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
-      _row.r = Math.max(r1, r2);
+      // const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
+      // const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
+      // _row.r = Math.max(r1, r2);
+      _row.r = generatrix.ravg().round(2);
     }
 
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
@@ -1986,15 +1979,6 @@ class ProfileItem extends GeneratrixElement {
       });
       for(const row of rm) {
         _owner.inserts.del(row);
-        const {region} = row;
-        if(region) {
-          _attr._ranges.delete(region);
-          _attr._ranges.delete(`cnns${region}`);
-          if(_attr.paths.get(region)) {
-            _attr.paths.get(region).remove();
-            _attr.paths.delete(region);
-          }
-        }
       }
 
       project.register_change();
@@ -2745,9 +2729,9 @@ class ProfileItem extends GeneratrixElement {
    * @return {boolean}
    */
   is_shtulp() {
-    const {orientations: {vert}, elm_types: {impost}} = $p.enm;
-    if(this.elm_type === impost && this.orientation === vert) {
-      for(const profile of this.joined_nearests()) {
+    if(this.elm_type.is('impost') && this.orientation.is('vert')) {
+      const nearests = this.joined_nearests();
+      for(const profile of nearests) {
         const {layer} = profile;
         for(const {shtulp_available, shtulp_fix_here, side} of layer.furn.open_tunes) {
           if((shtulp_available || shtulp_fix_here) && layer.profile_by_furn_side(side) === profile) {
@@ -2757,6 +2741,67 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     return false;
+  }
+
+  /**
+   * Переворачивает профиль (меняет местами b и e)
+   */
+  flip() {
+    const nearests = this.joined_nearests();
+    const {inner, outer} = this.joined_imposts();
+    const shtulp = this.is_shtulp();
+
+    const {elm, rays, generatrix, ox, project, layer} = this;
+    rays.b.clear();
+    rays.e.clear();
+    rays.clear('with_neighbor');
+    ox.cnn_elmnts.clear({elm1: elm});
+    ox.cnn_elmnts.clear({elm2: elm});
+    
+    
+    // если это штульп - меняем фурнитуру после переворота
+    const furns = [];
+    if(shtulp && nearests.length === 2) {
+      for(const {layer: {furn, direction, h_ruch}} of nearests) {
+        const curr = {
+          shtulp_kind: furn.shtulp_kind(),
+          furn,
+          direction,
+          h_ruch,
+          params: [],
+        };
+        ox.params.find_rows({cnstr: layer.cnstr}, ({param, value, hide}) => {
+          curr.params.push({param, value, hide});
+        });
+        furns.push(curr);
+      }
+    }
+    
+    // переворот
+    generatrix.reverse();
+
+    // смена фурнитуры
+    if(shtulp && nearests.length === 2) {
+      nearests[0].layer.furn = furns[1].furn;
+      nearests[1].layer.furn = furns[0].furn;
+      // чистим пути рядов стеклопакетов
+      for(const {layer} of nearests) {
+        for(const {_attr} of layer.fillings) {
+          if(_attr.paths.size) {
+            for(const [region, elm] of _attr.paths) {
+              elm?.remove?.();
+            }
+            _attr.paths.clear();
+          } 
+        }          
+      }
+    }
+
+    // пересчёт
+    project.register_change(true, () => {
+      rays.clear('with_neighbor');
+      project.register_change();
+    });
   }
 
   /**
@@ -2851,47 +2896,6 @@ class ProfileItem extends GeneratrixElement {
       chld.redraw();
     }
     
-    return this.draw_regions();
-  }
-
-  /**
-   * В зависимости от builder_props.mode, прячет основные пути и дорисовывает пути рядов 
-   * @return {ProfileItem}
-   */
-  draw_regions() {
-    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}, elm, ox} = this;
-    if([0, 1].includes(builder_props.mode)) {
-      generatrix.opacity = 1;
-      path.opacity = 1;
-      for(const [region, elm] of paths) {
-        elm?.remove?.();
-      }
-      paths.clear();
-    }
-    else {
-      generatrix.opacity = 0.06;
-      path.opacity = 0.06;
-      let filter;
-      switch (builder_props.mode) {
-        case 2:
-          filter = (v) => v <= -1;
-          break;
-        case 3:
-          filter = (v) => v >= 1 && v < 2;
-          break;
-        case 4:
-          filter = (v) => v >= 2;
-          break;
-      }
-      filter && ox.inserts.find_rows({cnstr: -elm}, (row) => {
-        if(filter(row.region)) {
-          const r = this.region?.(row.region);
-          if(r && r !== this) {
-            r.path;
-          }
-        }
-      });
-    }
     return this;
   }
 

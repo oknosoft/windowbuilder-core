@@ -57,7 +57,7 @@ class BaseLine extends ProfileItem {
   }
 
   get length() {
-    return this.generatrix.length;
+    return (this.generatrix.length * 2).round() / 2;
   }
 
   /**

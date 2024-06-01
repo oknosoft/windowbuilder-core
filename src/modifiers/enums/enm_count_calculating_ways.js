@@ -34,7 +34,7 @@
       if(row_spec.width) {
         row_spec.qty = quantity;
         row_spec.len = (elm.length / 1000).round(3);
-        row_spec.s = row_spec.len * row_spec.width * (coefficient || 1);
+        row_spec.s = (row_spec.len * row_spec.width * (coefficient || 1)).round(4);
       }
     }
     if(!row_spec.width) {

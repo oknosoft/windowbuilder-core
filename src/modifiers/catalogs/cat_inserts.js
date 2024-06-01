@@ -12,7 +12,7 @@
 (($p) => {
 
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
-    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatColor_price_groups} = $p;
+    CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatCnnsSpecificationRow, CatColor_price_groups} = $p;
 
   const {inserts_types} = enm;
 
@@ -223,7 +223,7 @@
           for (const param of params) {
 
             // корректируем схему
-            if(with_scheme) {
+            if(with_scheme && job_prm.addition_scheme) {
               cat.scheme_settings.find_rows({obj: 'dp.buyers_order.production', name: item.name}, (scheme) => {
                 if(!scheme.fields.find({field: param.ref})) {
                   // добавляем строку с новым полем
@@ -688,7 +688,7 @@
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
-          res.s = ((res.x * res.y) / 1e6).round(3);
+          res.s = ((res.x * res.y) / 1e6).round(4);
           res.z = sizes.thickness * (irow.coefficient * 1000 || 1);
         }
         else{
@@ -706,12 +706,12 @@
             const bounds = contour.bounds_inner(irow.sz, this);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
-            res.s = ((res.x * res.y) / 1e6).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(4);
           }
           else{
             res.x = contour.w + irow.sz;
             res.y = contour.h + irow.sz;
-            res.s = ((res.x * res.y) / 1e6).round(3);
+            res.s = ((res.x * res.y) / 1e6).round(4);
           }
         }
       }
@@ -919,7 +919,7 @@
       }
 
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
-      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}, count_calculating_ways: {parameters}} = enm;
+      const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
@@ -935,7 +935,7 @@
         fakerow._owner = sub_row._owner;
 
         // количество по параметру
-        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method === parameters) {
+        if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
             fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
@@ -944,7 +944,7 @@
         }
 
         if(row) {
-          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method === parameters ? 0 : 1)) * (row.quantity || 1);
+          fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method.is('parameters') ? 0 : 1)) * (row.quantity || 1);
           fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
           if(fakerow.clr.empty()) {
             fakerow.clr = row.clr;
@@ -958,6 +958,10 @@
         }
 
         return fakerow;
+      }
+      
+      function check_own_row() {
+        return own_row instanceof CatCnnsSpecificationRow && own_row.quantity && own_row.quantity !== 1;
       }
 
       // для заполнений, можно переопределить состав верхнего уровня
@@ -1003,9 +1007,18 @@
         }
 
         // Проверяем параметры изделия, контура или элемента
-        if(own_row && row.clr.empty() && !own_row.clr.empty()){
-          row = fake_row(row);
-          row.clr = own_row.clr;
+        if(own_row){
+          if(row.clr.empty() && !own_row.clr.empty()) {
+            row = fake_row(row);
+            row.clr = own_row.clr;
+            if(check_own_row()) {
+              row.quantity *= own_row.quantity;
+            }
+          }
+          else if(check_own_row()) {
+            row = fake_row(row);
+            row.quantity *= own_row.quantity;
+          }
         }
         if(!check_params({
           params: this.selection_params,
@@ -1048,7 +1061,7 @@
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
-                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                     res.push(fakerow);
                   }
                 });
@@ -1060,7 +1073,7 @@
                   fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
-                  if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                  if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                     res.push(fakerow);
                   }
                 });
@@ -1071,7 +1084,7 @@
                 const fakerow = fake_row(subrow, row);
                 fakerow._origin = row.nom;
                 fakerow._clr = eclr;
-                if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+                if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                   res.push(fakerow);
                 }
               });
@@ -1081,7 +1094,7 @@
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               fakerow._origin = row.nom;
-              if(fakerow.quantity || subrow.count_calc_method !== parameters) {
+              if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
               }
             });
@@ -1262,6 +1275,20 @@
                 row_prm.nom = null;
                 row_prm.inset = null;
               }
+              // спецификация по соединениям москитки
+              if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
+                elm.is_linear = () => rib.profile.is_linear();
+                elm.angle_hor = rib.angle;
+                elm.t_parent = () => rib.profile;
+                rib.cnn.calculate_spec({
+                  elm,
+                  elm2: rib.profile,
+                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
+                  ox,
+                  spec
+                });
+                rib.cnn = null;
+              }              
             });
 
           }
@@ -1366,7 +1393,7 @@
             row_spec.qty = row_ins_spec.quantity;
             row_spec.len = (len - sz) * coefficient;
             row_spec.width = (width - sz) * coefficient;
-            row_spec.s = (row_spec.len * row_spec.width).round(3);
+            row_spec.s = (row_spec.len * row_spec.width).round(4);
           }
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
@@ -1377,7 +1404,7 @@
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
-              row_spec.s = (row_spec.len * row_spec.width).round(3);
+              row_spec.s = (row_spec.len * row_spec.width).round(4);
               calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, alp1, alp2, totqty0);
 
               const qty = !formula.empty() && formula.execute({
@@ -1447,7 +1474,7 @@
               const bounds = elm.bounds_inner();
               _owner.x = bounds.width.round(1);
               _owner.y = bounds.height.round(1);
-              _owner.s = (bounds.area / 1e6).round(3);
+              _owner.s = (bounds.area / 1e6).round(4);
             }
             break;
           case enm.inserts_types.jalousie:
@@ -1464,112 +1491,10 @@
             });
             _owner.x = bounds.y * 1000;
             _owner.y = bounds.x * 1000;
-            _owner.s = (bounds.x * bounds.y).round(3);
+            _owner.s = (bounds.x * bounds.y).round(4);
         }
         spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
       }
-    }
-
-    /**
-     * Дополняет спецификацию изделия спецификацией текущего ряда
-     * @param elm {BuilderElement}
-     * @param [len_angl] {Object}
-     * @param ox {CatCharacteristics}
-     * @param spec {TabularSection}
-     * @param region {Number}
-     * $return {void}
-     */
-    region_spec({elm, len_angl, ox, spec, region, totqty0}) {
-      const {
-        enm: {angle_calculating_ways: {СоединениеПополам: s2, Соединение: s1}, predefined_formulas: {w2}},
-        job_prm, products_building} = $p;
-      const relm = elm.region(region);
-      let {cnn1, cnn2, nom, _row, rays} = relm;
-      const {b, e} = rays;
-      const belm = b?.profile === elm.rays.b.profile ? null : b?.profile;
-      const eelm = e?.profile === elm.rays.e.profile ? null : e?.profile;
-      cnn1 = b?.cnn;
-      cnn2 = e?.cnn;
-      
-      if(cnn1 && !cnn1.empty() && cnn2 && !cnn2.empty()) {
-        const row_cnn_prev = cnn1.main_row(relm);
-        const row_cnn_next = cnn2.main_row(relm);
-        const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
-        const row_base = row_cnn_prev || row_cnn_next;
-        if(row_base) {
-          const row_spec = new_spec_row({elm: relm, row_base, nom, origin: cnn1, specify: region, spec, ox});
-          row_spec.qty = row_base.quantity;
-
-          // длина с учетом соединений
-          const k001 = 0.001;
-          const len = row_cnn_prev && row_cnn_prev.algorithm === w2 && row_cnn_next && row_cnn_next.algorithm === w2 ?
-            elm.generatrix.length : _row.len;
-          row_spec.len = (len - row_cnn_prev.sz - row_cnn_next.sz) * (row_cnn_prev.coefficient + row_cnn_next.coefficient) / 2;
-
-          // припуск для гнутых элементов
-          if(!elm.is_linear()) {
-            row_spec.len = row_spec.len + row_spec.nom.arc_elongation * k001;
-          }
-
-          // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
-          if(!row_cnn_prev.formula.empty()) {
-            row_cnn_prev.formula.execute({
-              ox,
-              elm: relm,
-              inset: this,
-              row_cnn: row_cnn_prev || row_cnn_next,
-              row_spec
-            });
-          }
-          else if(!row_cnn_next.formula.empty()) {
-            row_cnn_next.formula.execute({
-              ox,
-              elm: relm,
-              inset: this,
-              row_cnn: row_cnn_next|| row_cnn_prev,
-              row_spec
-            });
-          }
-
-          // РассчитатьКоличествоПлощадьМассу
-          const angle_calc_method_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
-          const angle_calc_method_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
-          calc_count_area_mass(
-            row_spec,
-            spec,
-            _row,
-            angle_calc_method_prev,
-            angle_calc_method_next,
-            angle_calc_method_prev == s2 || angle_calc_method_prev == s1 ? b.profile.generatrix.angle_between(elm.generatrix, b.point) : 0,
-            angle_calc_method_next == s2 || angle_calc_method_next == s1 ? elm.generatrix.angle_between(e.profile.generatrix, e.point) : 0,
-            totqty0,
-          );
-
-          // добавляем спецификации соединений
-          const len_angl = {
-            angle: 0,
-            alp1: belm ? belm.generatrix.angle_between(elm.generatrix, elm.b) : 90,
-            alp2: eelm ? eelm.generatrix.angle_between(e.profile.generatrix, elm.e) : 90,
-            len: row_spec ? row_spec.len * 1000 : _row.len,
-            art1: false,
-            art2: true,
-            node: 'e',
-          };
-          len_angl.angle = len_angl.alp2;
-          products_building.cnn_add_spec(cnn2, relm, len_angl, cnn1, eelm);
-          // с дрйгой стороны
-          len_angl.angle = len_angl.alp1;
-          len_angl.art2 = false;
-          len_angl.art1 = true;
-          len_angl.node = 'b';
-          products_building.cnn_add_spec(cnn1, relm, len_angl, cnn2, belm);
-        }
-      }
-      else {
-        elm.err_spec_row(job_prm.nom.cnn_node_error, `ряд №${region}, ${relm.nom.name}`, relm.inset);
-      }
-      // спецификация вставки
-      this.calculate_spec({elm: relm, len_angl, ox, spec});
     }
 
     /**

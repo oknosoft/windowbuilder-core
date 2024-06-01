@@ -235,7 +235,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
           finded = this.by_predefined(sub_clr,  row.clr);
           return false;
         });
-        return finded || clr_elm;
+        return finded || this.by_predefined(sub_clr,  t_parent.clr, clr_sch, t_parent, spec, row, row_base);
 
       default :
         return clr_elm;

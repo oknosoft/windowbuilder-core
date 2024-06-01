@@ -207,6 +207,8 @@ class CatOrganizationsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
+class CatWork_centersExtra_fieldsRow extends Extra_fieldsRow{}
+
 
 class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
   get cnstr(){return this._getter('cnstr')}
@@ -309,6 +311,7 @@ Object.assign($p, {
   CatDivisionsExtra_fieldsRow,
   CatUsersExtra_fieldsRow,
   CatProduction_paramsExtra_fieldsRow,
+  CatWork_centersExtra_fieldsRow,
   CatParameters_keysParamsRow,
   CatCharacteristicsCoordinatesRow,
   CatCharacteristicsInsertsRow,

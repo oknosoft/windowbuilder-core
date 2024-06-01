@@ -135,7 +135,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     else if(typeof elm_types == 'string') {
       elm_types = types[elm_types];
     }
-    else if(!Array.isArray(elm_types)) {
+    if(!Array.isArray(elm_types)) {
       elm_types = [elm_types];
     }
 

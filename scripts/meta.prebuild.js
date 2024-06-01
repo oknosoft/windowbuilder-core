@@ -17,7 +17,10 @@ debug('Читаем конструктор и плагины');
 
 // путь настроек приложения
 const settings_path = path.resolve(__dirname, '../config/app.settings.js');
-const custom_constructors_path = path.resolve(__dirname, '../src/metadata/common/custom_constructors.js');
+const custom_constructors = [
+  path.resolve(__dirname, '../src/metadata/common/custom_constructors.js'),
+  path.resolve(__dirname, '../src/metadata/common/ProductFrame.js'),
+];
 
 // текст модуля начальных настроек приложения для включения в итоговый скрипт
 const settings = fs.readFileSync(settings_path, 'utf8');
@@ -64,6 +67,7 @@ const custom_constructor = [
   'CatDivisionsExtra_fieldsRow',
   'CatUsersExtra_fieldsRow',
   'CatProduction_paramsExtra_fieldsRow',
+  'CatWork_centersExtra_fieldsRow',
   'CatParameters_keysParamsRow',
   'CatCharacteristicsCoordinatesRow',
   'CatCharacteristicsInsertsRow',
@@ -177,7 +181,7 @@ function create_modules(_m) {
       bp: {mgr: 'BusinessProcessManager', proto: 'BusinessProcessObj'},
       tsk: {mgr: 'TaskManager', proto: 'TaskObj'},
       doc: {mgr: 'DocManager', proto: 'DocObj', dir: 'documents'},
-      ireg: {mgr: 'InfoRegManager', proto: 'RegisterRow'},
+      ireg: {mgr: 'InfoRegManager', proto: 'RegisterRow', dir: 'ireg'},
       areg: {mgr: 'AccumRegManager', proto: 'RegisterRow'},
       dp: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj', dir: 'dataprocessors'},
       rep: {mgr: 'DataProcessorsManager', proto: 'DataProcessorObj', dir: 'reports'},
@@ -206,7 +210,9 @@ function create_modules(_m) {
     }
   }
 
-  text += fs.readFileSync(custom_constructors_path, 'utf8');
+  for(const path of custom_constructors) {
+    text += fs.readFileSync(path, 'utf8');
+  }
 
   return text + '})();\n';
 

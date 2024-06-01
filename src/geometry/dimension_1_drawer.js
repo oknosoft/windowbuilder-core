@@ -59,6 +59,69 @@ class DimensionLayer extends paper.Layer {
     return this.project.dimension_bounds;
   }
 
+  /**
+   * @summary Создаёт и перерисовавает габаритные линии изделия
+   * @desc Отвечает только за габариты изделия
+   * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
+   *
+   */
+  draw_sizes() {
+
+    const {bounds, builder_props, contours} = this.project;
+
+    if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
+
+      if(!this.bottom) {
+        this.bottom = new DimensionLine({
+          pos: 'bottom',
+          parent: this,
+          offset: -120
+        });
+      }
+      else {
+        this.bottom.offset = -120;
+      }
+
+      if(!this.right) {
+        this.right = new DimensionLine({
+          pos: 'right',
+          parent: this,
+          offset: -120
+        });
+      }
+      else {
+        this.right.offset = -120;
+      }
+
+
+      // если среди размеров, сформированных контурами есть габарит - второй раз не выводим
+
+      if(contours.some((l) => l.l_dimensions.children.some((dl) =>
+        dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
+        this.right.visible = false;
+      }
+      else {
+        this.right.redraw();
+      }
+
+      if(contours.some((l) => l.l_dimensions.children.some((dl) =>
+        dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
+        this.bottom.visible = false;
+      }
+      else {
+        this.bottom.redraw();
+      }
+    }
+    else {
+      if(this.bottom) {
+        this.bottom.visible = false;
+      }
+      if(this.right) {
+        this.right.visible = false;
+      }
+    }
+  }
+
 }
 
 /**
@@ -72,26 +135,29 @@ class DimensionDrawer extends paper.Group {
 
   constructor(attr) {
     super(attr);
-    this.bringToFront();
+    this.ihor = new DimensionGroup();
+    this.ivert = new DimensionGroup();
   }
 
   /**
    * Стирает размерные линии
    */
-  clear() {
+  clear(local) {
 
-    this.ihor && this.ihor.clear();
-    this.ivert && this.ivert.clear();
+    this.ihor?.clear();
+    this.ivert?.clear();
 
-    for (let pos of ['bottom', 'top', 'right', 'left']) {
+    for (const pos of ['bottom', 'top', 'right', 'left']) {
       if(this[pos]) {
         this[pos].removeChildren();
         this[pos].remove();
         this[pos] = null;
       }
     }
-
-    this.layer && this.layer.parent && this.layer.parent.l_dimensions.clear();
+    
+    if(!local) {
+      this.layer?.layer?.l_dimensions?.clear();
+    }
   }
 
   /**
@@ -100,18 +166,28 @@ class DimensionDrawer extends paper.Group {
   redraw(forse) {
 
     const {parent, project: {builder_props}} = this;
+    
+    if(!forse) {
+      forse = parent.show_dimensions;
+    }
 
-    if(forse || !builder_props.auto_lines) {
+    if(!forse) {
+      this.clear(true);
+    }
+    else if(forse || !builder_props.auto_lines) {
       this.clear();
     }
 
     // сначала, перерисовываем размерные линии вложенных контуров, чтобы получить отступы
-    for (let chld of parent.contours) {
-      chld.l_dimensions.redraw();
+    const {contours} = parent;
+    if(contours) {
+      for (let chld of contours) {
+        chld.l_dimensions.redraw();
+      }
     }
 
     // для внешних контуров строим авторазмерные линии
-    if(builder_props.auto_lines && (!parent.parent || forse)) {
+    if(builder_props.auto_lines && forse) {
 
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
@@ -119,13 +195,14 @@ class DimensionDrawer extends paper.Group {
       }
 
       // подмешиваем импосты вложенных контуров
-      const profiles = new Set(parent.profiles);
+      const our_profiles = parent.profiles;
+      const profiles = new Set(our_profiles);
       parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
 
       for (let elm of profiles) {
 
         // получаем точки начала и конца элемента
-        const our = !elm.parent || elm.parent === parent;
+        const our = our_profiles.includes(elm);
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
 
@@ -278,25 +355,32 @@ class DimensionDrawer extends paper.Group {
     this.clear();
 
     const {ihor, ivert, by_side} = this.imposts();
+    
+    function crossing(elm, imposts) {
+      for(const other of imposts) {
+        if(other !== elm && other.generatrix.getCrossings(elm.generatrix).length) {
+          return true;
+        }
+      }
+    }
 
     for(const filling of parent.fillings) {
       if(!filling.visible) {
         continue;
       }
-      const {path} = filling;
-      for(const elm of filling.imposts) {
+      const {path, imposts} = filling;
+      for(const elm of imposts) {
         let {b: eb, e: ee} = elm;
-        // если точка не на границе заполнения
-        if(path.is_nearest(eb)) {
+        // если точка не на границе заполнения и импост имеет пересечения
+        if(path.is_nearest(eb) && crossing(elm, imposts)) {
           eb = null;
         }
-        if(path.is_nearest(ee)) {
+        if(path.is_nearest(ee) && crossing(elm, imposts)) {
           ee = null;
         }
         if(eb || ee) {
           this.push_by_point({ihor, ivert, eb, ee, elm});
         }
-
       }
     }
 
@@ -331,14 +415,19 @@ class DimensionDrawer extends paper.Group {
    * Формирует размерные линии импоста
    */
   by_imposts(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
+    const {_regions} = this.project._attr;
+    if(_regions) {
+      base_offset += 80;
+      dop_offset = base_offset + 40;
+    }
     const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         const prev = collection[i - 1];
         let shift = 0;
         if(prev && prev._attr.shift !== base_offset * 2) {
-          shift = Math.abs(arr[i].point - arr[i + 1].point) < base_offset ? base_offset : 0;
+          shift = (Math.abs(arr[i].point - arr[i + 1].point) < base_offset) ? base_offset : 0;
           if(shift && prev._attr.shift) {
             shift += base_offset;
           }
@@ -362,7 +451,7 @@ class DimensionDrawer extends paper.Group {
    * Формирует размерные линии от габарита
    */
   by_base(arr, collection, pos) {
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
     let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
@@ -388,7 +477,12 @@ class DimensionDrawer extends paper.Group {
 
     const {project, parent} = this;
     const {bounds} = parent;
-    const {base_offset, dop_offset} = consts;
+    let {base_offset, dop_offset} = consts;
+    const {_regions} = this.project._attr;
+    if(_regions) {
+      base_offset += 60;
+      dop_offset = base_offset + 40;
+    }
 
     if(project.contours.length > 1 || forse) {
 
@@ -550,6 +644,13 @@ class DimensionDrawer extends paper.Group {
     return {ihor, ivert, by_side};
   }
 
+  save_coordinates(short, save, close) {
+    for (const elm of this.children) {
+      elm.save_coordinates?.(short, save, close);
+    }
+    return Promise.resolve();
+  }
+
   get owner_bounds() {
     return this.parent.bounds;
   }
@@ -557,14 +658,7 @@ class DimensionDrawer extends paper.Group {
   get dimension_bounds() {
     return this.parent.dimension_bounds;
   }
-
-  get ihor() {
-    return this._ihor || (this._ihor = new DimensionGroup());
-  }
-
-  get ivert() {
-    return this._ivert || (this._ivert = new DimensionGroup());
-  }
+  
 }
 
 EditorInvisible.DimensionDrawer = DimensionDrawer;

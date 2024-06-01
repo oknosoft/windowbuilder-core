@@ -116,19 +116,13 @@ const AbstractFilling = (superclass) => class extends superclass {
 
     return res;
   }
-
-  /**
-   * Возвращает массив вложенных контуров текущего контура
-   * @memberOf AbstractFilling
-   * @instance
-   * @type Array.<Contour>
-   */
-  get contours() {
-    return this.children.filter((elm) => (elm instanceof Contour) && !(elm instanceof ContourTearing));
-  }
-
+  
   get skeleton() {
     return this._skeleton;
+  }
+  
+  create_groups() {
+    new DimensionDrawer({parent: this, name: 'dimlns'});
   }
 
   /**
@@ -138,16 +132,7 @@ const AbstractFilling = (superclass) => class extends superclass {
    * @type DimensionDrawer
    */
   get l_dimensions() {
-    const {_attr} = this;
-    if(!_attr._dimlns) {
-      _attr._dimlns = new DimensionDrawer({parent: this});
-      for(const contour of this.contours) {
-       if(_attr._dimlns.isAbove(contour)) {
-         _attr._dimlns.insertBelow(contour);
-       } 
-      }
-    }
-    return _attr._dimlns;
+    return this.children.dimlns;
   }
 
   /**
