@@ -252,6 +252,20 @@ export class Contour extends paper.Layer {
     }
     this.drawVisualization();
   }
+
+  remove() {
+    for(const contour of this.contours) {
+      contour.remove();
+    }
+    for(const container of this.containers) {
+      container.remove();
+    }
+    for(const profile of this.profiles.reverse()) {
+      profile.remove();
+    }
+    this.children.visualization.clear();
+    super.remove();
+  }
   
   drawVisualization() {
     const {project: {props}, children: {visualization}, skeleton} = this;

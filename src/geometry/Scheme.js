@@ -92,6 +92,14 @@ export class Scheme extends paper.Project {
     const {rootLayer, layers} = this;
     return layers.filter(v => v instanceof Contour && v !== rootLayer);
   }
+  
+  clear() {
+    for(const contour of this.contours) {
+      contour.remove();
+    }
+    this.dimensions.clear();
+    this.dimensions.removeChildren();
+  }
 
   /**
    * @summary Перерисовывает все слои изделия

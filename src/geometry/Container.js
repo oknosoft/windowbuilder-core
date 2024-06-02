@@ -16,6 +16,14 @@ export class Container  {
     owner.children[cycle.key] = this;
     this.createChild({kind: 'glass'});
   }
+  
+  get key() {
+    return this.#raw.cycle.key;
+  }
+  
+  get kind() {
+    return this.#raw.kind;
+  }
 
   /**
    * @summary {{#crossLink "Skeleton"}}Скелетон{{/crossLink}} слоя, которому принадлежит `Область`
