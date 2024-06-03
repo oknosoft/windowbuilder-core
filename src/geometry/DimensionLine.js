@@ -69,9 +69,9 @@ export class DimensionLine extends paper.Group {
   // расположение относительно контура $p.enm.pos
   get pos() {
     return this.#raw.pos || '';
-    const {pos} = this.#raw;
-    const {positions} = $p.enm;
-    return (!pos || pos == '_') ? positions.center : positions.get(pos);
+    // const {pos} = this.#raw;
+    // const {positions} = $p.enm;
+    // return (!pos || pos == '_') ? positions.center : positions.get(pos);
   }
   set pos(v) {
     this.#raw.pos = v?.valueOf();
@@ -378,7 +378,26 @@ export class DimensionLine extends paper.Group {
   }
 
   correctMoveName({event, p1, p2}) {
-    
+    const {pos, elm1, elm2} = this.#raw;
+
+    if(pos == 'top' || pos == 'bottom') {
+      const dir = p1.x < p2.x;
+      // if(event.name == 'left' && dir) {
+      //   event.name = 'right';
+      // }
+      // if(event.name == 'right' && dir) {
+      //   event.name = 'left';
+      // }
+    }
+    else {
+      const dir = p1.y > p2.y;
+      // if(event.name == 'bottom' && dir) {
+      //   event.name = 'top';
+      // }
+      // if(event.name == 'top' && dir) {
+      //   event.name = 'bottom';
+      // }
+    }
   }
   
   movePoints(event, xy) {
@@ -396,7 +415,7 @@ export class DimensionLine extends paper.Group {
 
       const p1 = (elm1._sub || elm1)[_attr.p1].point;
       const p2 = (elm2._sub || elm2)[_attr.p2].point;
-      this.correctMoveName({event, p1, p2, _attr});
+      this.correctMoveName({event, p1, p2});
 
       if(pos == 'top' || pos == 'bottom' || (!pos && (event.name == 'right' || event.name == 'left'))) {
         const size = Math.abs(p1.x - p2.x);
