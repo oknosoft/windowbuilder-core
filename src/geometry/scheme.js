@@ -1213,8 +1213,8 @@ class Scheme extends paper.Project {
 
     if(bounds) {
       // устанавливаем размеры в характеристике
-      ox.x = bounds.width.round(1);
-      ox.y = bounds.height.round(1);
+      ox.x = bounds.width.round();
+      ox.y = bounds.height.round();
       ox.s = this.area;
 
       // вызываем метод save_coordinates в дочерних слоях
