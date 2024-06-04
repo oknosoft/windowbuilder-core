@@ -4958,15 +4958,17 @@ class DimensionLine extends paper.Group {
           this._move_points(event, 'y');
         }
         break;
-      case 'rateably':
+      case 'rateably': {
         event.divide = 2;
+        const {parent, pos, contour, elm1, elm2, p1, p2} = this._attr;
         if(this.pos == 'left' || this.pos == 'right') {
           event.name = 'top';
           event.cb = () => {
             delete event.cb;
             delete event.divide;
             event.name = 'bottom';
-            this._move_points(event, 'y');
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            dl._move_points(event, 'y');
           }
           this._move_points(event, 'y');
         }
@@ -4976,11 +4978,13 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'right';
-            this._move_points(event, 'x');
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            dl._move_points(event, 'x');
           }
           this._move_points(event, 'x');
         }
         break;
+      }
       case 'auto':
         const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
         const {positions} = $p.enm;
@@ -5825,6 +5829,20 @@ class DimensionDrawer extends paper.Group {
       elm.save_coordinates?.(short, save, close);
     }
     return Promise.resolve();
+  }
+  find({pos, contour, elm1, elm2, p1, p2}) {
+    if(contour) {
+      return this[pos];
+    }
+    for(const grp of ['ivert', 'ihor']) {
+      for (let key in this[grp]) {
+        const dl = this[grp][key];
+        const {_attr} = dl;
+        if(_attr.elm1 === elm1 && _attr.elm2 === elm2 && _attr.p1 === p1 && _attr.p2 === p2) {
+          return dl;
+        }
+      }
+    }
   }
   get owner_bounds() {
     return this.parent.bounds;
@@ -13562,8 +13580,8 @@ class Scheme extends paper.Project {
       res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
     };
     if(bounds) {
-      ox.x = bounds.width.round(1);
-      ox.y = bounds.height.round(1);
+      ox.x = bounds.width.round();
+      ox.y = bounds.height.round();
       ox.s = this.area;
       contours.forEach((contour) => {
         if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {

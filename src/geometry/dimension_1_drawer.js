@@ -650,6 +650,21 @@ class DimensionDrawer extends paper.Group {
     }
     return Promise.resolve();
   }
+  
+  find({pos, contour, elm1, elm2, p1, p2}) {
+    if(contour) {
+      return this[pos];
+    }
+    for(const grp of ['ivert', 'ihor']) {
+      for (let key in this[grp]) {
+        const dl = this[grp][key];
+        const {_attr} = dl;
+        if(_attr.elm1 === elm1 && _attr.elm2 === elm2 && _attr.p1 === p1 && _attr.p2 === p2) {
+          return dl;
+        }
+      }
+    }
+  }
 
   get owner_bounds() {
     return this.parent.bounds;

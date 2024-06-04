@@ -275,15 +275,17 @@ class DimensionLine extends paper.Group {
         }
         break;
         
-      case 'rateably':
+      case 'rateably': {
         event.divide = 2;
+        const {parent, pos, contour, elm1, elm2, p1, p2} = this._attr;
         if(this.pos == 'left' || this.pos == 'right') {
           event.name = 'top';
           event.cb = () => {
             delete event.cb;
             delete event.divide;
             event.name = 'bottom';
-            this._move_points(event, 'y');
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            dl._move_points(event, 'y');
           }
           this._move_points(event, 'y');
         }
@@ -293,11 +295,13 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'right';
-            this._move_points(event, 'x');
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            dl._move_points(event, 'x');
           }
           this._move_points(event, 'x');
         }
         break;
+      }
 
       case 'auto':
         const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
