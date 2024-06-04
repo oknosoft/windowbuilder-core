@@ -112,6 +112,10 @@ export class BuilderElement extends paper.Group {
   }
   set inset(v) {
     this.#raw.inset = v;
+    const {project, generatrix} = this;
+    if(generatrix && project.props.carcass) {
+      generatrix.strokeColor = !this.#raw.inset || this.#raw.inset?.empty?.() ? '#a00' : '#00a';
+    }
   }
 
   /**

@@ -207,13 +207,14 @@ export class Contour extends paper.Layer {
     }
     b = generatrix.firstSegment.point;
     e = generatrix.lastSegment.point;
+    const {skeleton, project} = this;
     if(this.skeleton.checkNodes(b, e)) {
       throw new Error('createProfile: Edge has already been added before');
     }
     generatrix.set({
       layer: this,
       //guide: true,
-      strokeColor: 'grey',
+      strokeColor: project.props.carcass ? (other.inset ? '#00a' : '#a00') : 'grey',
       strokeScaling: false,
     });
     // TODO: defaultInset
