@@ -7659,7 +7659,6 @@ set set(v){this._setter_ts('set',v)}
    * @return {DocWork_centers_task}
    */
   after_create() {
-    const {$p} = this._manager._owner;
     if(this.is_new()) {
       this.date = new Date();
     }
@@ -7730,7 +7729,7 @@ set set(v){this._setter_ts('set',v)}
 
   fill_by_keys(opts = {}) {
     const {set, cutting, planning, cuts, _manager} = this;
-    const {nom: {profile}} = _manager._owner.$p.job_prm;
+    const {job_prm: {nom: {profile}}, enm: {debit_credit_kinds}} = $p;
     // старый раскрой чистим
     cutting.clear();
     planning.clear();
@@ -7757,7 +7756,7 @@ set set(v){this._setter_ts('set',v)}
     for(const {nom, characteristic} of noms) {
       if(!nom._hierarchy(profile) && !cuts.find({nom, characteristic})) {
         cuts.add({
-          record_kind: 'debit',
+          record_kind: debit_credit_kinds.debit,
           nom,
           characteristic,
           len: nom.len,
@@ -7840,6 +7839,7 @@ set set(v){this._setter_ts('set',v)}
   }
 
   fragments2D() {
+    const {debit_credit_kinds} = $p.enm;
     const res = {
       products: [],
       scraps: [],
@@ -7847,7 +7847,7 @@ set set(v){this._setter_ts('set',v)}
     };
     for(const row of this.cuts) {
       if(row.record_kind.empty()) {
-        row.record_kind = 'debit';
+        row.record_kind = debit_credit_kinds.debit;
       }
       if(!row.stick) {
         row.stick = this.cuts.aggregate([], ['stick'], 'max') + 1;
@@ -7957,7 +7957,7 @@ set set(v){this._setter_ts('set',v)}
    * @return {Promise<Awaited<unknown>[]>}
    */
   optimize({onStep, state}) {
-    const {$p: {classes: {Cutting}}} = this._manager._owner;
+    const {classes: {Cutting}} = $p;
     if(!state) {
       state = {statuses: []};
     }
@@ -8085,7 +8085,7 @@ set set(v){this._setter_ts('set',v)}
    * помещает результат раскроя в документ
    */
   push_cut_result(decision, fin) {
-    const {$p: {enm: {debit_credit_kinds}}} = this._manager._owner;
+    const {debit_credit_kinds} = $p.enm;
     // сначала добавляем заготовки
     for(let i = 0; i < decision.workpieces.length; i++) {
       let workpiece = decision.cuts[i];
@@ -8182,7 +8182,7 @@ set set(v){this._setter_ts('set',v)}
    * @return {Promise<DocWork_centers_task>}
    */
   load_keys() {
-    const {$p: {adapters: {pouch}, job_prm, cat: {planning_keys}}} = this._manager._owner;
+    const {adapters: {pouch}, job_prm, cat: {planning_keys}} = $p;
     const refs = new Set();
     for(const {obj} of this.set) {
       if(obj.is_new()) {
