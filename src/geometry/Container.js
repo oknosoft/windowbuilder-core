@@ -177,7 +177,7 @@ export class Containers {
    */
   detectAndPurge() {
     const {skeleton, children} = this;
-    const cycles = skeleton.detectCycles();
+    const cycles = skeleton.project.props.slave ? [] : skeleton.detectCycles();
     const keys = cycles.map(v => v.key);
     for(const key in children) {
       if(!keys.includes(key)) {
