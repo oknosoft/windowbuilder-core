@@ -3132,8 +3132,6 @@ get furn_level(){return this._getter('furn_level')}
 set furn_level(v){this._setter('furn_level',v)}
 get base_clr(){return this._getter('base_clr')}
 set base_clr(v){this._setter('base_clr',v)}
-get lock_flap_order(){return this._getter('lock_flap_order')}
-set lock_flap_order(v){this._setter('lock_flap_order',v)}
 get sketch_view(){return this._getter('sketch_view')}
 set sketch_view(v){this._setter('sketch_view',v)}
 get production_kind(){return this._getter('production_kind')}
@@ -4447,7 +4445,7 @@ class CatCnnsManager extends CatManager {
     const all = [];
     elm2.forEach(({nom, side}, index) => {
       for(const cnn of region_cache.get(nom)) {
-        if(cnn_types.includes(cnn.cnn_type) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
+        if((!cnn_types || cnn_types.includes(cnn.cnn_type)) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
           const is_nom = cnn.check_nom1(nom1);
           if(is_nom || art1glass) {
             all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + ((art1glass && cnn.sd2 === index) ? 10000 : 0)});
@@ -7482,8 +7480,6 @@ get region(){return this._getter('region')}
 set region(v){this._setter('region',v)}
 get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
-get calc_order(){return this._getter('calc_order')}
-set calc_order(v){this._setter('calc_order',v)}
 }
 $p.CatPlanning_keys = CatPlanning_keys;
 $p.cat.create('planning_keys');
@@ -7527,8 +7523,8 @@ get vat_rate(){return this._getter('vat_rate')}
 set vat_rate(v){this._setter('vat_rate',v)}
 get vat_amount(){return this._getter('vat_amount')}
 set vat_amount(v){this._setter('vat_amount',v)}
-get buyers_order(){return this._getter('buyers_order')}
-set buyers_order(v){this._setter('buyers_order',v)}
+get trans(){return this._getter('trans')}
+set trans(v){this._setter('trans',v)}
 }
 $p.DocPurchaseGoodsRow = DocPurchaseGoodsRow;
 class DocPurchaseServicesRow extends TabularSectionRow{
