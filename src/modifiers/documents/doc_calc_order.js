@@ -370,19 +370,33 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
     const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
       .then(({rows}) => {
-        let res = Promise.resolve();
-        let deleted = 0;
+        if(!rows.length) {
+          return 0;
+        }
+        const keys = [];
         for (const {id} of rows) {
           const ref = id.substring(20);
           if(this.production.find({characteristic: ref})) {
             continue;
           }
-          deleted ++;
-          res = res
-            .then(() => cat.characteristics.get(ref, 'promise'))
-            .then((ox) => !ox.is_new() && !ox._deleted && ox.mark_deleted(true));
+          keys.push(id);
         }
-        return res.then(() => deleted);
+        const  timestamp = {
+          moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'), 
+          user: wsql.get_user_param('user_name')
+        };
+        return db.allDocs({keys, limit: keys.length})
+          .then(({rows}) => {
+            keys.length = 0;
+            for(const {doc, key, error, value} of rows) {
+              if(error || value.deleted) {
+                continue;
+              }
+              keys.push({_id: key, _rev: value.rev, _deleted: true, timestamp});
+            }
+            return db.bulkDocs(keys)
+              .then(() => keys.length);
+          })
       })
       .then((res) => {
         res && _manager.emit_async('svgs', this);
