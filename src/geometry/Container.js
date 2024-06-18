@@ -53,15 +53,17 @@ export class Container  {
     const {cycle} = this.#raw;
     const paths = [];
     const res = [];
-    for(let i = 0; i < cycle.length; i++) {
-      const {startVertex, endVertex, profile} = cycle[i];
-      paths.push(new paper.Path({insert: false, segments: [startVertex.point, endVertex.point]}).equidistant(offset));
-    }
-    for(let i = 0; i < cycle.length; i++) {
-      const prev = paths[i === 0 ? cycle.length -1 : i - 1];
-      const curr = paths[i];
-      const next = paths[i === cycle.length - 1 ? 0 : i + 1];
-      res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point), {edge: cycle[i]}));
+    if(cycle.length > 1) {
+      for(let i = 0; i < cycle.length; i++) {
+        const {startVertex, endVertex, profile} = cycle[i];
+        paths.push(new paper.Path({insert: false, segments: [startVertex.point, endVertex.point]}).equidistant(offset));
+      }
+      for(let i = 0; i < cycle.length; i++) {
+        const prev = paths[i === 0 ? cycle.length -1 : i - 1];
+        const curr = paths[i];
+        const next = paths[i === cycle.length - 1 ? 0 : i + 1];
+        res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point, Math.abs(offset) * 3), {edge: cycle[i]}));
+      }
     }
     return res;
   }

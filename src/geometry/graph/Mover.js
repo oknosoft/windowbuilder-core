@@ -370,22 +370,24 @@ export class Mover {
             for(const tv of edge.allProfileVertexes()) {
               if(tv !== vertex) {
                 const tm = this.#raw.vertexes.get(tv);
-                circle(tm.point);
-                const iedge = this.edgesProfile(tm.edges, true, vertex);
-                if(!segms.has(iedge.profile)) {
-                  segms.add(iedge.profile);
-                  const sv = iedge.otherProfileVertex(tv);
-                  if(sv) {
-                    const sm = this.#raw.vertexes.get(sv);
-                    new paper.Path({
-                      parent: ribs,
-                      strokeColor: 'blue',
-                      strokeWidth: 1,
-                      strokeScaling: false,
-                      dashArray: [4, 4],
-                      guide: true,
-                      segments: [sm?.point || sv.point, tm.point],
-                    });
+                if(tm) {
+                  circle(tm.point);
+                  const iedge = this.edgesProfile(tm.edges, true, vertex);
+                  if(!segms.has(iedge.profile)) {
+                    segms.add(iedge.profile);
+                    const sv = iedge.otherProfileVertex(tv);
+                    if(sv) {
+                      const sm = this.#raw.vertexes.get(sv);
+                      new paper.Path({
+                        parent: ribs,
+                        strokeColor: 'blue',
+                        strokeWidth: 1,
+                        strokeScaling: false,
+                        dashArray: [4, 4],
+                        guide: true,
+                        segments: [sm?.point || sv.point, tm.point],
+                      });
+                    }
                   }
                 }
               }

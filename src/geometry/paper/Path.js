@@ -130,7 +130,45 @@ export default function (paper) {
   }
   else {
     Object.assign(paper.Path.prototype, {
-      
+
+      /**
+       * @summary Определяет, находится ли точка вблизи пути
+       * @memberof paper.Path#
+       * @param point
+       * @param sticking
+       * @return {Boolean}
+       */
+      isNearest(point, sticking) {
+        return point.isNearest(this.getNearestPoint(point), sticking);
+      },
+
+      /**
+       * @summary Определяет, является ли путь прямым (линия)
+       * @memberof paper.Path#
+       * @return {Boolean}
+       */
+      isLinear() {
+        const {curves, firstCurve} = this;
+        // если в пути единственная кривая и она прямая - путь прямой
+        if(curves.length === 1 && (!firstCurve.hasHandles() || firstCurve.isLinear())) {
+          return true;
+        }
+        // если в пути есть искривления, путь кривой
+        else if(this.hasHandles()) {
+          return false;
+        }
+        else {
+          // если у всех кривых пути одинаковые направленные углы - путь прямой
+          const da = firstCurve.point2.subtract(firstCurve.point1).angle;
+          for (let i = 1; i < curves.length; i++) {
+            const dc = curves[i].point2.subtract(curves[i].point1).angle;
+            if(Math.abs(dc - da) > epsilon) {
+              return false;
+            }
+          }
+        }
+        return true;
+      },
 
       /**
        * @summary Определяет, параллелен ли путь пути или вектору параметра
@@ -177,8 +215,10 @@ export default function (paper) {
         else if (elongate == "nearest") {
 
         }
-        else if(elongate) {
-
+        else if(typeof elongate === 'number') {
+          const path1 = this.clone({insert: false}).elongation(elongate);
+          const path2 = path.clone({insert: false}).elongation(elongate);
+          return path1.intersectPoint(path2, point);
         }
       },
 
