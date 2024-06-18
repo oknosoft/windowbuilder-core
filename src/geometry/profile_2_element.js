@@ -470,13 +470,25 @@ class Profile extends ProfileItem {
    * @return {Profile}
    */
   draw_articles() {
-    const {rays: {inner, outer}, project: {_attr, builder_props: {articles}}, layer, children, elm, inset, nom, angle_hor} = this;
+    const {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
     if(articles && nom.width > 2) {
-      const ray = layer.layer ? inner : outer;
-      const offset = ray.length / 2;
+      const impost = this.elm_type.is('impost');
+      let {level} = layer;
+      const nearest = this.nearest();
+      if(level === 1 && layer.layer instanceof ContourVirtual && nearest()?.nom?.width < 2) {
+        level = 0;
+      }
+      const ray = impost ? generatrix : (level ? inner : outer);
+      const offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4);  // вдоль профиля
       const p0 = ray.getPointAt(offset);
-      const font_move = nom.width > 30 ? consts.font_size / 2.2 : -consts.font_size / 1.3;
-      const position = p0.add(outer.getNormalAt(offset).multiply(layer.layer ? font_move : -font_move));
+      let font_move = this.elm_type.is('impost') ? consts.font_size / 4 : (nom.width > 30 ? consts.font_size / 5 : -consts.font_size / 1.1); // поперёк
+      // если к образующей родителя привязаны другие элементы - увеличиваем сдвиг
+      if(nearest?.joined_nearests()?.some(v => v !== this && 
+        (v.b.is_nearest(this.b, 100) && v.e.is_nearest(this.e, 100) || v.e.is_nearest(this.b, 100) && v.b.is_nearest(this.e, 100))
+      )) {
+        font_move -= 26;
+      }
+      const position = p0.add(outer.getNormalAt(offset).multiply(level ? font_move : -font_move));
       let flip = false;
       let angle = angle_hor;
       if(Math.abs(angle - 180) < 1) {
@@ -534,24 +546,45 @@ class Profile extends ProfileItem {
           break;
       }
 
-      if(!children.articles) {
-        children.articles = new TextUnselectable({
-          parent: this,
+      if(!l_dimensions.articles.map.has(this)) {
+        const parent = new paper.Group({parent: l_dimensions.articles});
+        new paper.Path.Rectangle({
+          parent,
+          name: 'back',
           guide: true,
-          fillColor: 'black',
-          fontFamily: consts.font_family,
-          fontSize: consts.font_size * .9,
-          justification: 'center',
+          point: position,
+          size: [consts.font_size, consts.font_size],
+          strokeColor: '#ccc',
+          fillColor: 'white',
+          strokeScaling: false,
+          opacity: 0.8,
         });
+        new TextUnselectable({
+          parent,
+          name: 'article',
+          guide: true,
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size,
+          justification: 'center',
+          fillColor: 'black',
+        });
+        l_dimensions.articles.map.set(this, parent);
       }
-      children.articles.content = content;
-      children.articles.position = position;
-      children.articles.rotation = angle;
+      const {children} = l_dimensions.articles.map.get(this);
+      children.article.content = content;
+      children.article.position = position;
+      children.article.rotation = angle;
+      
+      const size = children.article.bounds.size.add(20);
+      children.back.segments[0].point = position.add([-size.width/2, size.height/2]);
+      children.back.segments[1].point = position.add([-size.width/2, -size.height/2]);
+      children.back.segments[2].point = position.add([size.width/2, -size.height/2]);
+      children.back.segments[3].point = position.add([size.width/2, size.height/2]);
     }
     else {
-      if(children.articles) {
-        children.articles.remove();
-        children.articles = null;
+      if(l_dimensions.articles.map.has(this)) {
+        l_dimensions.articles.map.get(this).remove();
+        l_dimensions.articles.map.delete(this);
       }
     }
     return this;

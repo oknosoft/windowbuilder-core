@@ -135,7 +135,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, layer, ...other}) {
+  check_condition({row_spec, prm_row, elm, elm2, node, node2, cnstr, origin, ox, layer, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -179,7 +179,7 @@ exports.CchProperties = class CchProperties extends Object {
         ok = val == prm_row.value;
       }
       else {
-        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, elm2, node, node2, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, elm2, node, node2, origin, prm_row});
         ok = value == val;
       }
     }
@@ -199,7 +199,7 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
    */
-  extract_pvalue({ox, cnstr, elm = {}, origin, layer, prm_row}) {
+  extract_pvalue({ox, cnstr, elm = {}, elm2, node, node2, origin, layer, prm_row}) {
     
     // для некоторых параметров, значения живут не в изделии, а в отделе абонента
     if(this.inheritance === 3) {
@@ -283,6 +283,21 @@ exports.CchProperties = class CchProperties extends Object {
           
         case plan_detailing.elm:
         case plan_detailing.layer:
+          break;
+
+        case plan_detailing.cnn:
+          if(elm && node) {
+            const value = elm.dop[node]?.[this.ref];
+            if(value !== undefined) {
+              return this.fetch_type(value);
+            }
+          }
+          if(cnstr) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            cnstr = 0;
+            elm = {};
+          }
           break;
           
         default:
@@ -596,7 +611,7 @@ exports.CchProperties = class CchProperties extends Object {
    * @param [ox] {CatCharacteristics}
    */
   template_value({project, cnstr = 0, ox}) {
-    const {params} = ox.base_block;
+    const {params} = (ox.obj_delivery_state.is('Шаблон') || ox.calc_order.obj_delivery_state.is('Шаблон')) ? ox : ox.base_block;
     let prow;
     params.find_rows({
       param: this,

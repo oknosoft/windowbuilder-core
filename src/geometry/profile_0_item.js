@@ -1312,7 +1312,7 @@ class ProfileItem extends GeneratrixElement {
           }
           const glpoint = glass.interiorPoint();
           const vector = generatrix.getNearestPoint(glpoint).subtract(glpoint);
-          if(orientation === orientation._manager.hor) {
+          if(orientation.is('hor')) {
             if(vector.y > 0) {
               res.top.push(glass);
             }
@@ -1320,7 +1320,7 @@ class ProfileItem extends GeneratrixElement {
               res.bottom.push(glass);
             }
           }
-          else if (orientation === orientation._manager.vert) {
+          else if (orientation.is('vert')) {
             if(vector.x < 0) {
               res.right.push(glass);
             }
@@ -2760,20 +2760,23 @@ class ProfileItem extends GeneratrixElement {
     
     
     // если это штульп - меняем фурнитуру после переворота
-    const furns = [];
     if(shtulp && nearests.length === 2) {
-      for(const {layer: {furn, direction, h_ruch}} of nearests) {
-        const curr = {
+      nearests.forEach(({layer}, index) => {
+        const {cnstr, furn, direction, h_ruch} = layer;
+        nearests[index] = {
+          layer,
+          cnstr,
           shtulp_kind: furn.shtulp_kind(),
           furn,
           direction,
           h_ruch,
-          params: [],
-        };
-        ox.params.find_rows({cnstr: layer.cnstr}, ({param, value, hide}) => {
-          curr.params.push({param, value, hide});
+          params: new Map(),
+        }; 
+      });
+      for(const row of nearests) {
+        ox.params.find_rows({cnstr: row.cnstr}, ({param, value, hide}) => {
+          row.params.set(param, {value, hide});
         });
-        furns.push(curr);
       }
     }
     
@@ -2782,8 +2785,24 @@ class ProfileItem extends GeneratrixElement {
 
     // смена фурнитуры
     if(shtulp && nearests.length === 2) {
-      nearests[0].layer.furn = furns[1].furn;
-      nearests[1].layer.furn = furns[0].furn;
+      nearests[0].layer.furn = nearests[1].furn;
+      nearests[1].layer.furn = nearests[0].furn;
+      nearests[0].layer.h_ruch = nearests[1].h_ruch;
+      nearests[1].layer.h_ruch = nearests[0].h_ruch;
+
+      for(const prow of ox.params) {
+        let other;
+        if(prow.cnstr === nearests[0].cnstr) {
+          other = nearests[1].params.get(prow.param);
+        }
+        else if(prow.cnstr === nearests[1].cnstr) {
+          other = nearests[0].params.get(prow.param);
+        }
+        if(other) {
+          Object.assign(prow, other);
+        }
+      }
+      
       // чистим пути рядов стеклопакетов
       for(const {layer} of nearests) {
         for(const {_attr} of layer.fillings) {
@@ -3061,34 +3080,6 @@ class ProfileItem extends GeneratrixElement {
       return aa - ab;
     });
     return has_a;
-  }
-
-  /**
-   * Выводит текст с номером элемента
-   * @param show
-   */
-  show_number(show = true) {
-    let {elm_number} = this.children;
-    if(!show) {
-      return elm_number && elm_number.remove();
-    }
-    if(elm_number) {
-      elm_number.position = this.path.interiorPoint;
-    }
-    else {
-      elm_number = new paper.PointText({
-        parent: this,
-        guide: true,
-        name: 'elm_number',
-        justification: 'center',
-        fillColor: 'darkblue',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size * 1.1,
-        fontWeight: 'bold',
-        content: this.elm,
-        position: this.interiorPoint().add(this.generatrix.getTangentAt(this.generatrix.length / 1).multiply(consts.font_size * 2)),
-      });
-    }
   }
 
   remove() {

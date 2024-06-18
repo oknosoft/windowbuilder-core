@@ -200,7 +200,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
    * @param [project] {Scheme} - текущий проект
-   * @param [defaults] {TabularSection} - внешние умоляания
+   * @param [defaults] {TabularSection} - внешние умолчания
    */
   refill_prm(ox, cnstr = 0, force, project, defaults) {
 

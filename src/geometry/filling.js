@@ -672,7 +672,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           selm.set_inset(inset, true, force);
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
-          // если тип стеклопаке - заполняем по умолчанию
+          // если тип стеклопакет - заполняем по умолчанию
           if(insert_type === insert_type._manager.Стеклопакет) {
             for(const row of inset.specification) {
               row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});

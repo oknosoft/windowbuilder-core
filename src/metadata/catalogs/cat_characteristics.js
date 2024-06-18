@@ -9,7 +9,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   before_save(attr) {
 
     // уточняем номенклатуру системы
-    const {prod_nom, calc_order, _data} = this;
+    const {prod_nom, calc_order, params, _data} = this;
 
     // контроль прав на запись характеристики
     if(!attr.force && calc_order.is_read_only) {
@@ -37,6 +37,16 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
     // дублируем контрагента для целей RLS
     this.partner = calc_order.partner;
+    
+    // сохраним значения сохраняемых параметров
+    _data._loading = true;
+    for(const prow of params) {
+      const { param, cnstr, inset, region } = prow;
+      if(param.conserve && param.is_calculated) {
+        prow.value = param.calculated_value({ ox: this, cnstr, inset, region });
+      }
+    }
+    _data._loading = false;
 
     return this;
 
@@ -454,6 +464,26 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   }
 
   /**
+   * @summary Номер изделия по порядку для экранных и печатных форм
+   * @type {Number}
+   */
+  get prod_sequence() {
+    const {calc_order, calc_order_row} = this;
+    let index = 0;
+    if(calc_order_row) {
+      for(const {characteristic} of calc_order_row._owner) {
+        if(characteristic.coordinates.count() || characteristic.leading_product.calc_order === calc_order) {
+          index++;
+        }
+        if(characteristic === this) {
+          break;
+        }
+      }
+    }
+    return index;
+  }
+
+  /**
    * Дополнительные свойства изделия для рисовалки
    */
   get builder_props() {
@@ -590,7 +620,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     return project.load(this, true)
       .then(() => {
         // выполняем пересчет
-        return project.save_coordinates(Object.assign({save: true, svg: false}, attr));
+        return project.save_coordinates(Object.assign({save: true, svg: attr.svg || false}, attr));
       })
       .then(() => {
         project.ox = '';

@@ -120,7 +120,22 @@ class ContourVirtual extends Contour {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');
   }
-
+  /**
+   * Доступные системы
+   * @return {Set.<CatProduction_params>}
+   */
+  get sys_available() {
+    const res = new Set();
+    const attachments = this.project._dp.sys._extra('attachments_map');
+    if(attachments instanceof Map) {
+      const {production_params} = $p.cat;
+      for(const [k, ref] of attachments) {
+        res.add(production_params.get(ref));
+      }
+    }
+    return res;
+  }
+  
   save_coordinates(...args) {
     return super.save_coordinates(...args);
   }

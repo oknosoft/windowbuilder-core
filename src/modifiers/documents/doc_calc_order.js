@@ -1284,7 +1284,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     //nom,characteristic,note,quantity,unit,qty,len,width,s,first_cost,marginality,price,discount_percent,discount_percent_internal,
     //discount,amount,margin,price_internal,amount_internal,vat_rate,vat_amount,ordn,changed
 
-    row._data._loading = true;
+    this._data._loading = true;
     row.nom = ox.owner;
     row.note = _dp.note;
     row.quantity = _dp.quantity || 1;
@@ -1297,7 +1297,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       row.unit = row.nom.storage_unit;
     }
     this.reset_specify();
-    row._data._loading = false;
+    this._data._loading = false;
   }
 
   /**
@@ -1625,7 +1625,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               this._data._templates_loaded = true;
               return this;
             })
-        });
+        })
+        .then(() => this._manager.emit('templates_loaded', this));
       return this._data._templates_loading;
     }
     return this.load_production()

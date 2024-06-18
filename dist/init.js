@@ -425,7 +425,7 @@ set hide(v){this._setter_ts('hide',v)}
   /**
    * Проверяет условие в строке отбора
    */
-  check_condition({row_spec, prm_row, elm, elm2, cnstr, origin, ox, layer, ...other}) {
+  check_condition({row_spec, prm_row, elm, elm2, node, node2, cnstr, origin, ox, layer, ...other}) {
 
     if(this.empty()) {
       return true;
@@ -469,7 +469,7 @@ set hide(v){this._setter_ts('hide',v)}
         ok = val == prm_row.value;
       }
       else {
-        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+        const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, elm2, node, node2, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, elm2, node, node2, origin, prm_row});
         ok = value == val;
       }
     }
@@ -489,7 +489,7 @@ set hide(v){this._setter_ts('hide',v)}
   /**
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
    */
-  extract_pvalue({ox, cnstr, elm = {}, origin, layer, prm_row}) {
+  extract_pvalue({ox, cnstr, elm = {}, elm2, node, node2, origin, layer, prm_row}) {
     
     // для некоторых параметров, значения живут не в изделии, а в отделе абонента
     if(this.inheritance === 3) {
@@ -573,6 +573,21 @@ set hide(v){this._setter_ts('hide',v)}
           
         case plan_detailing.elm:
         case plan_detailing.layer:
+          break;
+
+        case plan_detailing.cnn:
+          if(elm && node) {
+            const value = elm.dop[node]?.[this.ref];
+            if(value !== undefined) {
+              return this.fetch_type(value);
+            }
+          }
+          if(cnstr) {
+            cnstr0 = cnstr;
+            elm0 = elm;
+            cnstr = 0;
+            elm = {};
+          }
           break;
           
         default:
@@ -886,7 +901,7 @@ set hide(v){this._setter_ts('hide',v)}
    * @param [ox] {CatCharacteristics}
    */
   template_value({project, cnstr = 0, ox}) {
-    const {params} = ox.base_block;
+    const {params} = (ox.obj_delivery_state.is('Шаблон') || ox.calc_order.obj_delivery_state.is('Шаблон')) ? ox : ox.base_block;
     let prow;
     params.find_rows({
       param: this,
@@ -3362,7 +3377,7 @@ set color_price_groups(v){this._setter_ts('color_price_groups',v)}
    * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
    * @param [project] {Scheme} - текущий проект
-   * @param [defaults] {TabularSection} - внешние умоляания
+   * @param [defaults] {TabularSection} - внешние умолчания
    */
   refill_prm(ox, cnstr = 0, force, project, defaults) {
 
@@ -3956,7 +3971,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
       }
 
       // проверяем параметры изделия и добавляем, если проходит по ограничениям
-      if(correct || check_params({params: selection_params, row_spec: row, elm, elm2, ox})) {
+      if(correct || check_params({params: selection_params, row_spec: row, elm, elm2, ox, node: len_angl?.node})) {
         res.push(row);
       }
 
@@ -5073,6 +5088,45 @@ class CatClrsManager extends CatManager {
   }
 
   /**
+   * @summary Формирует строки контрастных цветов
+   * @desc для подстановки в css
+   * @param clr_str
+   * @return {Object}
+   */
+  contrast(clr_str) {
+    let hex = '',
+      clrs = null;
+    if (clr_str.length === 3) {
+      hex = '';
+      for (let i = 0; i < 3; i++) {
+        hex += clr_str[i];
+        hex += clr_str[i];
+      }
+      hex = parseInt(hex, 16);
+    }
+    else if (clr_str.length === 6) {
+      hex = parseInt(clr_str, 16);
+    }
+    if (hex) {
+      let back = hex.toString(16);
+      while (back.length < 6) {
+        back = '0' + back;
+      }
+      back = '#' + back;
+      let clr = (0xafafaf ^ hex).toString(16);
+      while (clr.length < 6) {
+        clr = '0' + clr;
+      }
+      clr = '#' + clr;
+      clrs = {
+        backgroundColor: back,
+        color: clr
+      };
+    }
+    return clrs;
+  }
+
+  /**
    * Возвращает предопределенный цвет НеВключатьВСпецификацию
    */
   ignored() {
@@ -5203,7 +5257,7 @@ class CatClrsManager extends CatManager {
   find_group(sys, ox) {
     const {EditorInvisible: {BuilderElement, Filling}, classes: {DataProcessorObj}} = $p;
     let clr_group;
-    if(sys instanceof BuilderElement) {
+    if(sys instanceof BuilderElement && sys.isInserted()) {
       clr_group = sys.inset.clr_group;
       if(clr_group.empty() && !(sys instanceof Filling)) {
         clr_group = sys.layer.sys.find_group(ox);
@@ -5213,10 +5267,10 @@ class CatClrsManager extends CatManager {
       const iclr_group = sys.profile.inset.clr_group;
       clr_group = iclr_group.empty() ? sys.sys.find_group(ox) : iclr_group;
     }
-    else if(sys.sys && sys.sys.find_group) {
+    else if(sys.sys?.find_group) {
       clr_group = sys.sys.find_group(ox);
     }
-    else if(sys.sys && sys.sys.clr_group) {
+    else if(sys.sys?.clr_group) {
       clr_group = sys.sys.clr_group;
     }
     else if(sys instanceof DataProcessorObj && ox) {
@@ -5774,7 +5828,7 @@ set demand(v){this._setter_ts('demand',v)}
   before_save(attr) {
 
     // уточняем номенклатуру системы
-    const {prod_nom, calc_order, _data} = this;
+    const {prod_nom, calc_order, params, _data} = this;
 
     // контроль прав на запись характеристики
     if(!attr.force && calc_order.is_read_only) {
@@ -5802,6 +5856,16 @@ set demand(v){this._setter_ts('demand',v)}
 
     // дублируем контрагента для целей RLS
     this.partner = calc_order.partner;
+    
+    // сохраним значения сохраняемых параметров
+    _data._loading = true;
+    for(const prow of params) {
+      const { param, cnstr, inset, region } = prow;
+      if(param.conserve && param.is_calculated) {
+        prow.value = param.calculated_value({ ox: this, cnstr, inset, region });
+      }
+    }
+    _data._loading = false;
 
     return this;
 
@@ -6219,6 +6283,26 @@ set demand(v){this._setter_ts('demand',v)}
   }
 
   /**
+   * @summary Номер изделия по порядку для экранных и печатных форм
+   * @type {Number}
+   */
+  get prod_sequence() {
+    const {calc_order, calc_order_row} = this;
+    let index = 0;
+    if(calc_order_row) {
+      for(const {characteristic} of calc_order_row._owner) {
+        if(characteristic.coordinates.count() || characteristic.leading_product.calc_order === calc_order) {
+          index++;
+        }
+        if(characteristic === this) {
+          break;
+        }
+      }
+    }
+    return index;
+  }
+
+  /**
    * Дополнительные свойства изделия для рисовалки
    */
   get builder_props() {
@@ -6355,7 +6439,7 @@ set demand(v){this._setter_ts('demand',v)}
     return project.load(this, true)
       .then(() => {
         // выполняем пересчет
-        return project.save_coordinates(Object.assign({save: true, svg: false}, attr));
+        return project.save_coordinates(Object.assign({save: true, svg: attr.svg || false}, attr));
       })
       .then(() => {
         project.ox = '';

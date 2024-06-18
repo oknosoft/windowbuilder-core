@@ -1387,13 +1387,11 @@ class Scheme extends paper.Project {
       ox._mixin(src, null,
         'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,obj_delivery_state,_rev'.split(','),
         true);
-
-      const {obj_delivery_states: {Шаблон}, inserts_types: {Заполнение, Стеклопакет}} = $p.enm;
-
+      
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
-        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === Шаблон ||
-          obx.base_block.calc_order.obj_delivery_state === Шаблон) ? obx : obx.base_block;
+        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state.is('Шаблон') ||
+          obx.base_block.calc_order.obj_delivery_state.is('Шаблон')) ? obx : obx.base_block;
         if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
@@ -1401,10 +1399,10 @@ class Scheme extends paper.Project {
 
       // параметры составных пакетов
       for(const {elm, inset} of ox.coordinates) {
-        if(inset.insert_type === Заполнение) {
+        if(inset.insert_type.is('Заполнение')) {
           ox.glass_specification.clear({elm});
         }
-        else if(inset.insert_type === Стеклопакет) {
+        else if(inset.insert_type.is('Стеклопакет')) {
           if(!ox.glass_specification.find({elm})) {
             for(const row of inset.specification) {
               row.quantity && ox.glass_specification.add({elm, inset: row.nom});
@@ -1691,7 +1689,7 @@ class Scheme extends paper.Project {
     // ищем по умолчанию + любое
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == positions.any && row.by_default) {
+        if(row.by_default && (row.pos == positions.any || row.pos?.empty?.())) {
           return inset = row.nom;
         }
       });
@@ -1704,7 +1702,7 @@ class Scheme extends paper.Project {
         return this.default_inset(attr);
       }
       rows.some((row) => {
-        if(row.pos == positions.any) {
+        if(row.pos == positions.any || row.pos?.empty?.()) {
           return inset = row.nom;
         }
       });

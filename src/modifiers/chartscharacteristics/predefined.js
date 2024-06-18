@@ -140,6 +140,20 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return set.size > 1;
           };
           break;
+          
+        case 'nearest_flap_z':
+          _data._formula = function ({elm}) {
+            let res = 0;
+            if(elm?.elm_type.is('flap')) {
+              const nearest = elm.nearest(true);
+              if(nearest?.elm_type?.is('impost')) {
+                const other = nearest.joined_nearests().find((v) => v !== elm) || nearest;
+                return elm.isAbove(other) ? 1 : -1;
+              }              
+            }
+            return res;
+          };
+          break;
 
         case 'elm_orientation':
           _data._formula = function ({elm, elm2}) {
@@ -188,6 +202,28 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               const {sticking} = consts;
               return (pt.y < bounds.top + sticking) || (pt.y > bounds.bottom - sticking) ||
                 (pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking);
+            }
+            return false;
+          };
+          break;
+          
+        case 'joins_last_elm':
+          _data._formula = function ({elm, elm2}) {
+            if(!(elm instanceof EditorInvisible.Profile) && elm2 instanceof EditorInvisible.Profile) {
+              elm = elm2;
+            }
+            if(elm instanceof EditorInvisible.ProfileSegment) {
+              elm = elm.parent;
+            }
+            if(elm) {
+              const {bounds} = elm.layer;
+              const {sticking} = consts;
+              for(const node of ['b', e]) {
+                const pt = elm[node];
+              }
+              if((pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking)) {
+                return true;
+              }                
             }
             return false;
           };
@@ -313,6 +349,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_pos',          // положение элемента
     'node_pos',         // положение узла профиля
     'is_node_last',     // крайний по координатам узел в текущем слое
+    'joins_last_elm',   // примыкает крайний элемент
     'cnn_side',         // сторона соединения (изнутри-снаружи)
     'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента
@@ -328,6 +365,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'rotation_axis',    // у слоя есть ось поворота
     'nearest_gl_thickness',// толщина примыкающего заполнения
     'nearest_gl_var',   // бит отличия толщин примыкающих заполнений
+    'nearest_flap_z',   // z-индекс примыкающей створки 
   ]) {
     formulate(name);
   }

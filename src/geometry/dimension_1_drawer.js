@@ -46,6 +46,12 @@ class DimensionGroup {
  * @extends paper.Layer
  */
 class DimensionLayer extends paper.Layer {
+  
+  constructor(...attr) {
+    super(...attr);
+    this.articles = new paper.Group({parent: this, name: 'articles'});
+    this.articles.map = new Map();
+  }
 
   get bounds() {
     return this.project.bounds;
