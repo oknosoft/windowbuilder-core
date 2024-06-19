@@ -5061,9 +5061,36 @@ class CatClrsManager extends CatManager {
     }
     else if (clr instanceof $p.CatColor_price_groups) {
       const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row, row_base);
-      for(const row of clr.clr_conformity) {
-        if(row.clr1.contains(tmp)) {
-          return row.clr2;
+      if(tmp.is_composite()) {
+        let {clr_in, clr_out} = tmp;
+        let tin, tout;
+        for(const row of clr.clr_conformity) {
+          if(!tin && row.clr1.contains(clr_in)) {
+            tin = row.clr2;
+          }
+          if(!tout && row.clr1.contains(clr_out)) {
+            tout = row.clr2;
+          }
+          if(tin && tout) {
+            break;
+          }
+        }
+        if(tin){
+          clr_in = tin;
+        }
+        if(tout){
+          clr_out = tout;
+        }
+        if(clr_in === clr_out) {
+          return clr_in;
+        }
+        return this.getter(clr_in.ref + clr_out.ref);
+      }
+      else {
+        for(const row of clr.clr_conformity) {
+          if(row.clr1.contains(tmp)) {
+            return row.clr2;
+          }
         }
       }
       return tmp;
