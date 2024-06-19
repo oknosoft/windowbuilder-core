@@ -13,6 +13,12 @@ export class Profile extends GeneratrixElement {
     }
   }
 
+  setSelection(selection) {
+    const {path} = this;
+    super.setSelection(selection);
+    path.setSelection(0);
+  }
+
   checkActual() {
     if(!this.isActual) {
       this.raw('inner').removeSegments();
@@ -70,7 +76,7 @@ export class Profile extends GeneratrixElement {
     this.checkActual();
     this.project.props.loading
     const {path, project} = this;
-    if(project.props.carcass) {
+    if(project.props.carcass !== 'normal') {
       path.selected = false;
       path.visible = false;
     }

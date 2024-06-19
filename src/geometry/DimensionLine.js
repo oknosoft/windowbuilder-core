@@ -491,7 +491,7 @@ export class DimensionLine extends paper.Group {
   redraw() {
     const {children, path, align, project: {props}} = this;
 
-    if(!path){
+    if(!path || props.carcass === 'plane'){
       this.visible = false;
       return;
     }

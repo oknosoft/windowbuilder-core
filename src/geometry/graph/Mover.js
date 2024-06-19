@@ -135,10 +135,10 @@ export class Mover {
     }
     // при интерактивных сдвигах, прячем линии профилей
     this.#raw.space = false;
-    if(interactive) {
+    if(interactive && vertexes.size) {
       this.#raw.interactive = true;
       this.#raw.initialCarcass = owner.project.props.carcass; 
-      owner.project.props.carcass = true;
+      owner.project.props.carcass = 'carcass';
       if(interactive === 'space') {
         this.#raw.space = true;
       }

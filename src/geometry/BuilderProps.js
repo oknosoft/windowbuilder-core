@@ -5,7 +5,7 @@ export class BuilderProps  {
   constructor(project) {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
-    this.#raw.carcass = true;
+    this.#raw.carcass = 'carcass'; // carcass|normal|plane
     project._scope.settings.handleSize = 14;
   }
   
@@ -25,10 +25,9 @@ export class BuilderProps  {
   }
 
   get carcass() {
-    return Boolean(this.#raw.carcass);
+    return this.#raw.carcass;
   }
   set carcass(v) {
-    v = Boolean(v);
     const change = this.#raw.carcass !== v;
     this.#raw.carcass = v;
     if(change) {

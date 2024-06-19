@@ -214,7 +214,7 @@ export class Contour extends paper.Layer {
     generatrix.set({
       layer: this,
       //guide: true,
-      strokeColor: project.props.carcass ? (other.inset ? '#00a' : '#a00') : 'grey',
+      strokeColor: project.props.carcass === 'normal' ? 'grey' : (other.inset ? '#00a' : '#a00'),
       strokeScaling: false,
     });
     // TODO: defaultInset
@@ -238,6 +238,7 @@ export class Contour extends paper.Layer {
    * @summary Перерисовывает все элементы слоя
    */
   redraw() {
+    const isPlane =  this.project.props.carcass === 'plane';
     // сначала, все профили
     for(const item of this.profiles) {
       item.redraw?.();
@@ -249,7 +250,13 @@ export class Contour extends paper.Layer {
       item.redraw?.();
     }
     for(const item of this.contours) {
-      item.redraw?.();
+      if(isPlane) {
+        item.visible = false;
+      }
+      else {
+        item.visible = true;
+        item.redraw?.();
+      }
     }
     this.drawVisualization();
   }
@@ -271,7 +278,7 @@ export class Contour extends paper.Layer {
   drawVisualization() {
     const {project: {props}, children: {visualization}, skeleton} = this;
     visualization.children.graph.clear();
-    if(props.carcass) {
+    if(props.carcass === 'carcass') {
       for(const vertex of skeleton.getAllVertices()) {
         new paper.PointText({
           point: vertex.point.add([20, -20]),

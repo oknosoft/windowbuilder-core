@@ -3,12 +3,14 @@ import paper from 'paper/dist/paper-core';
 import {Scheme} from '../Scheme';
 import tools from '../tools';
 import {History} from './History';
+import {StableZoom} from './StableZoom';
 
 export class EditorInvisible extends paper.PaperScope {
   
   constructor(...attr) {
     super(...attr);
     this.history = new History(this);
+    this.stableZoom = new StableZoom(this);
   }
 
 
