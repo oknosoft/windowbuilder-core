@@ -1840,7 +1840,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         layer = parent;
       }
-      parent = layer.children.topLayers;
+      parent = row?.dop?.grp === 'bottom' ? layer.children.bottomLayers : layer.children.topLayers;
     }
     else if(!layer && parent) {
       layer = parent.layer;
@@ -1936,11 +1936,20 @@ class Contour extends AbstractFilling(paper.Layer) {
     svg.querySelector('g').removeAttribute('transform');
     return svg.outerHTML;
   }
-  bring(direction = 'up') {
-    const {layer, project, _row} = this;
+  bring(direction = 'up', lock) {
+    const {layer, parent, project, _row} = this;
     const contours = layer ? layer.contours : project.contours;
     const index = contours.indexOf(this);
     if(contours.length < 2 || (direction === 'down' && index === 0) || (direction === 'up' && index === contours.length - 1) ) {
+      if(parent && !lock) {
+        if(direction === 'down' && index === 0 && parent === layer.children.topLayers) {
+          this.parent = layer.children.bottomLayers;
+        }
+        else if(direction === 'up' && index === contours.length - 1 && parent === layer.children.bottomLayers) {
+          this.parent = layer.children.topLayers;
+        }
+        project.register_change(true);
+      }
       return;
     }
     const other = direction === 'up' ? contours[index + 1] : contours[index - 1];
@@ -1951,6 +1960,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.insertBelow(other);
     }
     _row._owner.swap(_row, other._row);
+    project.register_change(true);
   }
   activate(custom) {
     super.activate();
@@ -2023,7 +2033,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     _row.furn.refill_prm(this);
     switch(_row.furn.shtulp_kind()) {
     case 2:
-      this.bring('down');
+      this.bring('down', true);
       break;
     case 1:
       this.bring('up');
@@ -3403,10 +3413,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     this._attr._bounds = null;
-    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
+    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}, children: {topLayers, bottomLayers}} = this;
     const {_attr, _scope} = project;
     by_insets.removeChildren();
     !_attr._saving && by_spec.removeChildren();
+    for(const elm of bottomLayers.contours) {
+      elm.redraw();
+    }
     const imposts = [];
     const addls = [];
     const other = new Set();
@@ -3494,7 +3507,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     this.glass_recalc();
     this.draw_opening();
-    for(const elm of this.contours.concat(this.tearings)) {
+    for(const elm of topLayers.contours.concat(this.tearings)) {
       elm.redraw();
     }
     if(!_attr._hide_errors) {
@@ -11138,7 +11151,7 @@ class Profile extends ProfileItem {
       const impost = this.elm_type.is('impost');
       let {level} = layer;
       const nearest = this.nearest();
-      if(level === 1 && layer.layer instanceof ContourVirtual && nearest()?.nom?.width < 2) {
+      if(level === 1 && layer.layer instanceof ContourVirtual && nearest?.nom?.width < 2) {
         level = 0;
       }
       const ray = impost ? generatrix : (level ? inner : outer);

@@ -475,7 +475,7 @@ class Profile extends ProfileItem {
       const impost = this.elm_type.is('impost');
       let {level} = layer;
       const nearest = this.nearest();
-      if(level === 1 && layer.layer instanceof ContourVirtual && nearest()?.nom?.width < 2) {
+      if(level === 1 && layer.layer instanceof ContourVirtual && nearest?.nom?.width < 2) {
         level = 0;
       }
       const ray = impost ? generatrix : (level ? inner : outer);

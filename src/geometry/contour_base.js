@@ -168,7 +168,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         layer = parent;
       }
-      parent = layer.children.topLayers;
+      parent = row?.dop?.grp === 'bottom' ? layer.children.bottomLayers : layer.children.topLayers;
     }
     else if(!layer && parent) {
       layer = parent.layer;
@@ -312,11 +312,20 @@ class Contour extends AbstractFilling(paper.Layer) {
    * Перемещает слой выше-ниже по координате Z
    * @param {('up'|'down')} direction
    */
-  bring(direction = 'up') {
-    const {layer, project, _row} = this;
+  bring(direction = 'up', lock) {
+    const {layer, parent, project, _row} = this;
     const contours = layer ? layer.contours : project.contours;
     const index = contours.indexOf(this);
     if(contours.length < 2 || (direction === 'down' && index === 0) || (direction === 'up' && index === contours.length - 1) ) {
+      if(parent && !lock) {
+        if(direction === 'down' && index === 0 && parent === layer.children.topLayers) {
+          this.parent = layer.children.bottomLayers;
+        }
+        else if(direction === 'up' && index === contours.length - 1 && parent === layer.children.bottomLayers) {
+          this.parent = layer.children.topLayers;
+        }
+        project.register_change(true);
+      }
       return;
     }
     const other = direction === 'up' ? contours[index + 1] : contours[index - 1];
@@ -327,6 +336,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.insertBelow(other);
     }
     _row._owner.swap(_row, other._row);
+    project.register_change(true);
   }
 
   /**
@@ -449,7 +459,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // двигаем по Z
     switch(_row.furn.shtulp_kind()) {
     case 2: // пассивная
-      this.bring('down');
+      this.bring('down', true);
       break;
     case 1: // активная
       this.bring('up');
@@ -2323,14 +2333,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
+    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}, children: {topLayers, bottomLayers}} = this;
     const {_attr, _scope} = project;
     by_insets.removeChildren();
     !_attr._saving && by_spec.removeChildren();
 
-    //$p.job_prm.debug && console.profile();
+    // сначала, рисуем слои за нами
+    for(const elm of bottomLayers.contours) {
+      elm.redraw();
+    }
 
-    // сначала перерисовываем все профили контура
+    // перерисовываем все профили контура
     const imposts = [];
     const addls = [];
     const other = new Set();
@@ -2426,14 +2439,12 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
-    
-    //$p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
     this.draw_opening();
 
     // перерисовываем вложенные контуры
-    for(const elm of this.contours.concat(this.tearings)) {
+    for(const elm of topLayers.contours.concat(this.tearings)) {
       elm.redraw();
     }
 
