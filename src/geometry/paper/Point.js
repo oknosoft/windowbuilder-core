@@ -12,6 +12,12 @@ export default function (proto) {
       return this.getDistance(point, true) < (typeof sticking === 'number' ? sticking : 64);
     },
 
+    snap(step = 10) {
+      const x = (this.x / step).round() * step;
+      const y = (this.y / step).round() * step;
+      return new paper.Point(x, y);
+    },
+
     snapToAngle(snapAngle, shift) {
       if(!snapAngle){
         snapAngle = Math.PI*2/8;

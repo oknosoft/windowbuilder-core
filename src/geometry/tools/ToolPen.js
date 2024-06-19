@@ -128,8 +128,8 @@ export class ToolPen extends ToolSelectable {
       else if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
         return this.reset(ev);
       }
-      const pt = hitItem?.point || ev.point;
-      this.hit1 = hitItem || {point: pt};
+      const pt = (hitItem?.point || ev.point).snap();
+      this.hit1 = {...hitItem, point: pt};
       this.path = new paper.Path({
         segments: [pt.clone(), pt.clone()],
         parent: this.parent,
