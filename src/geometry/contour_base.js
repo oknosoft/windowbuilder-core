@@ -168,7 +168,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!layer) {
         layer = parent;
       }
-      parent = row?.dop?.grp === 'bottom' ? layer.children.bottomLayers : layer.children.topLayers;
+      parent = (row?.dop?.grp === 'bottom' || row?.dop?.region > 1) ? layer.children.bottomLayers : layer.children.topLayers;
     }
     else if(!layer && parent) {
       layer = parent.layer;
