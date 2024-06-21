@@ -1,9 +1,9 @@
 
 import paper from 'paper/dist/paper-core';
 import {Scheme} from '../Scheme';
-import tools from '../tools';
 import {History} from './History';
 import {StableZoom} from './StableZoom';
+import tools from '../tools';
 
 export class EditorInvisible extends paper.PaperScope {
   
@@ -13,7 +13,6 @@ export class EditorInvisible extends paper.PaperScope {
     this.stableZoom = new StableZoom(this);
   }
 
-
   /**
    * Создаёт проект с заданным типом канваса
    * @param {HTMLCanvasElement} canvas
@@ -21,7 +20,7 @@ export class EditorInvisible extends paper.PaperScope {
    * @return {Scheme}
    */
   createScheme(canvas, root) {
-    const {view, projects} = this;
+    const {view, projects, tools} = this;
     if(!canvas) {
       canvas = document.createElement('CANVAS');
       canvas.height = 480;
@@ -31,13 +30,20 @@ export class EditorInvisible extends paper.PaperScope {
       projects[0].remove();
     }
     const project = projects.length ? projects[0] : new Scheme(canvas, root);
-    if(!this.tool) {
-      for(const Tool of Object.values(tools)) {
-        new Tool();
-      }
-      this.tools[0].activate();
+    if(!tools.length) {
+      this.refreshTools();
     }
     return project;
+  }
+  
+  refreshTools() {
+    while (this.tools.length) {
+      this.tools[0].remove();
+    }
+    for(const Tool of Object.values(tools)) {
+      new Tool();
+    }
+    this.tools[0].activate();
   }
   
   cmd(name, attr) {

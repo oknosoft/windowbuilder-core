@@ -100,6 +100,18 @@ export class Scheme extends paper.Project {
     this.dimensions.clear();
     this.dimensions.removeChildren();
   }
+  
+  activate() {
+    const {_scope, _view} = this;
+    if(_scope.project !== this) {
+      _scope.project?.deselectAll?.();
+      super.activate();
+      this.deselectAll();
+      if(_view) {
+        _scope.View._viewsById[_view._id] = _view;
+      }
+    }
+  }
 
   /**
    * @summary Перерисовывает все слои изделия
