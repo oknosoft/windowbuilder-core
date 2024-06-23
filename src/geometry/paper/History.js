@@ -19,24 +19,22 @@ export class History {
    * Выделяет элемент или узел
    */
   select(items) {
-    const {project, editor} = this;
+    const {project, editor: {eve}} = this;
     let deselect;
     for(const {item, node, shift} of items) {
       if(item) {
         if(node) {
           item.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment'].selected = true;
+          eve.emit_promise('select', {type: 'elm', project, elm: item, node, layer: item.layer, shift});
         }
         else if(item.cnstr) {
           item.activate();
-          //editor.eve.emit('elm_activated', item);
+          eve.emit_promise('select', {type: 'layer', project, layer: item, shift});
         }
         else {
           deselect = true;
           item.selected = true;
-          if(item.layer){
-            // editor.eve.emit_async('layer_activated', item.layer);
-            // editor.eve.emit_async('elm_activated', item, shift);
-          }
+          eve.emit_promise('select', {type: 'elm', project, elm: item, layer: item.layer, shift});
         }
       }
     }
@@ -47,23 +45,26 @@ export class History {
    * Снимает выделение элемента или узла
    */
   deselect(items) {
-    const {project} = this;
+    const {project, editor: {eve}} = this;
     if(!items || !items.length || items.some(({item}) => !item)) {
       project.deselectAll();
-      //return editor.eve.emit('elm_deactivated', null);
+      eve.emit_promise('deselect', {type: 'all', project});
     }
     else {
       for(const {item, node} of items) {
         if(item) {
           if(node) {
             item.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment'].selected = false;
+            eve.emit_promise('deselect', {type: 'node', project, elm: item, node});
           }
           else {
             item.selected = false;
+            eve.emit_promise('deselect', {type: 'elm', project, elm: item});
           }
         }
       }
     }
+    
   }
   
 }

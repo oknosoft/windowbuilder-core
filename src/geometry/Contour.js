@@ -15,6 +15,11 @@ export class Contour extends paper.Layer {
     this.#raw.mover = new Mover(this);
     contourGroups(this);
   }
+  
+  get index() {
+    const {layer, _index} = this;
+    return layer ? `${layer.index}-${_index+1}` : _index.toString();
+  }
 
   get skeleton() {
     return this.#raw.skeleton;
@@ -272,7 +277,14 @@ export class Contour extends paper.Layer {
       profile.remove();
     }
     this.children.visualization.clear();
+    this.project.props.registerChange();
     super.remove();
+  }
+
+  move(delta) {
+    this.translate(delta);
+    this.project.props.registerChange();
+    this.project.redraw();
   }
   
   drawVisualization() {

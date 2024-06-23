@@ -45,6 +45,10 @@ export class BuilderElement extends paper.Group {
   get root() {
     return this.project.root;
   }
+  
+  get _manager() {
+    return this.project;
+  }
 
   /**
    * @summary Доступ к сырым данным

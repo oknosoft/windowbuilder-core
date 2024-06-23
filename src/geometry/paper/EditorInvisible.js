@@ -12,6 +12,10 @@ export class EditorInvisible extends paper.PaperScope {
     this.history = new History(this);
     this.stableZoom = new StableZoom(this);
   }
+  
+  get eve() {
+    return this.project?.root?.md;
+  }
 
   /**
    * Создаёт проект с заданным типом канваса

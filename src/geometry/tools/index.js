@@ -1,5 +1,6 @@
 
-import {ToolSelect} from '../tools/ToolSelect';
-import {ToolPen} from '../tools/ToolPen';
+import {ToolSelect} from './ToolSelect';
+import {ToolPen} from './ToolPen';
+import {ToolPan} from './ToolPan';
 
-export default {ToolSelect, ToolPen};
+export default {ToolSelect, ToolPan, ToolPen};

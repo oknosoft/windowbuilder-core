@@ -122,7 +122,7 @@ export class Scheme extends paper.Project {
     }
     this.dimensions.redraw();
     if(!silent) {
-      this.root.md.emit('redraw', this);
+      this.root.md.emit_promise('redraw', this);
     }
   }
   
