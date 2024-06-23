@@ -371,6 +371,8 @@ get inheritance(){return this._getter('inheritance')}
 set inheritance(v){this._setter('inheritance',v)}
 get conserve(){return this._getter('conserve')}
 set conserve(v){this._setter('conserve',v)}
+get presentation(){return this._getter('presentation')}
+set presentation(v){this._setter('presentation',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -636,7 +638,8 @@ set hide(v){this._setter_ts('hide',v)}
     }
     if(this.inheritance === 4) {
       return this.branch_value({project: elm.project, cnstr, ox});
-    }    
+    }
+    return this.fetch_type();
   }
 
   /**

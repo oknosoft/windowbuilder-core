@@ -1599,9 +1599,11 @@ class PointMap extends Map {
 }
 class LayerGroup extends paper.Group {
   save_coordinates(short, save, close) {
+    let res = Promise.resolve();
     for (let elm of this.children) {
-      elm.save_coordinates?.(short, save, close);
+      res = res.then(() => elm.save_coordinates?.(short, save, close));
     }
+    return res;
   }
 }
 class GroupVisualization extends LayerGroup {
@@ -16376,13 +16378,14 @@ $p.cat.characteristics.metadata('glass_specification').fields.region = {
     types: ['number'],
   }
 };
-$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {
+$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer, parent}) {
   this.x = bounds ? bounds.width.round(4) : 0;
   this.y = bounds ? bounds.height.round(4) : 0;
   this.is_rectangular = is_rectangular;
   if (layer) {
     this.w = w.round(4);
     this.h = h.round(4);
+    this.dop = {grp: parent === layer.children.bottomLayers ? 'bottom' : 'top'}
   }
   else {
     this.w = 0;

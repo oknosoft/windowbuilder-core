@@ -214,9 +214,11 @@ class PointMap extends Map {
 
 class LayerGroup extends paper.Group {
   save_coordinates(short, save, close) {
+    let res = Promise.resolve();
     for (let elm of this.children) {
-      elm.save_coordinates?.(short, save, close);
+      res = res.then(() => elm.save_coordinates?.(short, save, close));
     }
+    return res;
   }
 }
 

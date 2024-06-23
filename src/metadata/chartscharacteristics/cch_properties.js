@@ -346,7 +346,8 @@ exports.CchProperties = class CchProperties extends Object {
     }
     if(this.inheritance === 4) {
       return this.branch_value({project: elm.project, cnstr, ox});
-    }    
+    }
+    return this.fetch_type();
   }
 
   /**
