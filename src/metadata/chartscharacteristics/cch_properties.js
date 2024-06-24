@@ -190,7 +190,7 @@ exports.CchProperties = class CchProperties extends Object {
     }
     // параметр явно указан в табчасти параметров изделия
     else {
-      const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, origin, prm_row});
+      const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, elm2, node, node2, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, elm2, node, node2, origin, prm_row});
       ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
     }
     return ok;
@@ -313,6 +313,17 @@ exports.CchProperties = class CchProperties extends Object {
         params.find_rows({
           param: this,
           cnstr: cnstr || (elm._row ? {in: [0, -elm._row.elm]} : 0),
+          inset,
+        }, (row) => {
+          if(!prow || row.cnstr) {
+            prow = row;
+          }
+        });
+      }
+      if(!prow && elm2?.elm && [1, 2].includes(this.inheritance)) {
+        params.find_rows({
+          param: this,
+          cnstr: -elm2.elm,
           inset,
         }, (row) => {
           if(!prow || row.cnstr) {

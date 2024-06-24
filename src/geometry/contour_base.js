@@ -2711,14 +2711,17 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает значение параметра с учётом наследования
-   * @param param {CchProperties}
-   * @param cnstr {Number}
-   * @param elm {BuilderElement}
-   * @param origin {CatInserts|undefined}
+   * @param {CchProperties} param
+   * @param {Number} cnstr
+   * @param {BuilderElement} elm
+   * @param {BuilderElement} [elm2]
+   * @param {String} [node]
+   * @param {String} [node2]
+   * @param {CatInserts|undefined} [origin]
    * @param prm_row
    * @returns {*}
    */
-  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+  extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
     if(elm?.rnum) {
       return elm[param.valueOf()];
     }
@@ -2728,7 +2731,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     if(!cnstr) {
       if(layer && !own_sys && !(layer instanceof ContourParent)) {
-        return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+        return layer.extract_pvalue({param, cnstr, elm, elm2, node, node2, origin, prm_row});
       }
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
@@ -2754,21 +2757,21 @@ class Contour extends AbstractFilling(paper.Layer) {
         return prow.value;
       }
       else if(cnstr && layer && !own_sys) {
-        return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
+        return layer.extract_pvalue({param, cnstr: 0, elm, elm2, node, node2, origin, prm_row});
       }
       if(param.inheritance === 4) {
-        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+        return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       if(param.inheritance === 5) {
         return param.template_value({ox: _ox, cnstr, project: this.project});
       }
       if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
-        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, origin, layer: this, prm_row});
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
-    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+    return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
   }
 
   /**

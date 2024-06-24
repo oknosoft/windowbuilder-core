@@ -3694,7 +3694,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   get own_sys() {
     return this.layer ? false : [10, 11].includes(this.kind);
   }
-  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
+  extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
     if(elm?.rnum) {
       return elm[param.valueOf()];
     }
@@ -3704,7 +3704,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     if(!cnstr) {
       if(layer && !own_sys && !(layer instanceof ContourParent)) {
-        return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+        return layer.extract_pvalue({param, cnstr, elm, elm2, node, node2, origin, prm_row});
       }
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
@@ -3729,21 +3729,21 @@ class Contour extends AbstractFilling(paper.Layer) {
         return prow.value;
       }
       else if(cnstr && layer && !own_sys) {
-        return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
+        return layer.extract_pvalue({param, cnstr: 0, elm, elm2, node, node2, origin, prm_row});
       }
       if(param.inheritance === 4) {
-        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+        return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       if(param.inheritance === 5) {
         return param.template_value({ox: _ox, cnstr, project: this.project});
       }
       if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
-        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, origin, layer: this, prm_row});
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
-    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+    return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
   }
   get furn_cache() {
     const {bounds: {height, width}, w, h} = this;
@@ -6824,7 +6824,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
-          curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
+          curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this, curr.profile) : 20));
         }
         for (let i = 0; i < length; i++) {
           nominate(i);
