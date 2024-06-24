@@ -126,4 +126,12 @@ export class Scheme extends paper.Project {
     }
   }
   
+  // deprecated
+  /**
+   * @summary Заглушка для совместимости с v2.1
+   */
+  value_mgr(obj, fld, type) {
+    const meta = this.root.md.get(type.types.find(v => v.includes('.'))); 
+    return meta?.mgr;
+  }
 }
