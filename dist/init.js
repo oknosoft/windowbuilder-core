@@ -9316,6 +9316,8 @@ set value(v){this._setter('value',v)}
 $p.DpBuilder_priceRounding_quantityRow = DpBuilder_priceRounding_quantityRow;
 $p.dp.create('builder_price');
 class DpBuyers_order extends DataProcessorObj{
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
 get nom(){return this._getter('nom')}
 set nom(v){this._setter('nom',v)}
 get characteristic(){return this._getter('characteristic')}
