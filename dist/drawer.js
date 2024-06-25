@@ -4662,6 +4662,15 @@ class ContourTearing extends Contour {
       profile.elm;
     }
   }
+  get hidden() {
+    return super.hidden;
+  }
+  set hidden(v) {
+    super.hidden = v;
+    if(!v) {
+      this.parent.parent.visible = true;
+    }
+  }
 }
 EditorInvisible.ContourTearing = ContourTearing;
 class ContourVirtual extends Contour {

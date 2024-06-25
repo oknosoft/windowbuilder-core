@@ -74,6 +74,20 @@ class ContourTearing extends Contour {
       profile.elm;
     }
   }
+
+  /**
+   * Признак сокрытия слоя
+   * @type {boolean}
+   */
+  get hidden() {
+    return super.hidden;
+  }
+  set hidden(v) {
+    super.hidden = v;
+    if(!v) {
+      this.parent.parent.visible = true;
+    }
+  }
   
 }
 
