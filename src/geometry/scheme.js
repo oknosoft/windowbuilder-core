@@ -742,6 +742,9 @@ class Scheme extends paper.Project {
       if(glasses.length) {
         attr.elm = glasses[0].elm;
         this.deselectAll();
+        if(glasses[0].layer instanceof ContourTearing) {
+          attr.elm = -glasses[0].layer.cnstr;
+        }
         return this.draw_fragment(attr);
       }
       else {
