@@ -183,6 +183,22 @@ export class Contour extends paper.Layer {
     return !this.layer;
   }
   
+  get sys() {
+    const {project, layer} = this;
+    const {utils, cat} = project.root;
+    const {sys} = this.#raw;
+    return utils.is.emptyGuid(sys) && layer ? layer.sys : cat.productionParams.get(sys);
+  }
+  set sys(v) {
+    this.#raw.sys = this.project.root.cat.productionParams.get(v);
+  }
+  
+  get furn() {
+    
+  }
+  set furn(v) {
+    
+  }
 
   /**
    * @summary Создаёт профиль и помещает его в своё семейство профилей

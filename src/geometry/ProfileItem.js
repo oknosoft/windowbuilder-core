@@ -66,6 +66,14 @@ export class Profile extends GeneratrixElement {
     }
     return inner;
   }
+
+  get elmType() {
+    const {project: {root}, layer, b, e} = this;
+    if(b.isT || e.isT) {
+      return root.enm.elmTypes.impost;
+    }
+    return root.enm.elmTypes[layer.layer ? 'flap' : 'rama']; 
+  }
   
   remove() {
     this.skeleton.removeProfile(this);

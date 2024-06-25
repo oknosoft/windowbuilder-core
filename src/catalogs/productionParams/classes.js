@@ -25,9 +25,15 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
      * @param {BuilderElement} [elm] - указатель на элемент или проект, чтобы отфильтровать по ключам
      * @return {Array.<CatInserts|CatProductionParamsElmntsRow>}
      */
-    inserts(elmTypes, rows, elm){
-      const noms = [];
-      const {elmTypes: types} = enm;
+    inserts({elmTypes, rows, elm}){
+      const noms = new Set();
+      if(elm && !elmTypes) {
+        elmTypes = [elm.elmType];
+      }
+      this.elmnts.findRows({elm_type: elmTypes}, row => {
+        noms.add(row.nom);
+      });
+      return Array.from(noms);
     }
     
   }
