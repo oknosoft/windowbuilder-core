@@ -8446,21 +8446,33 @@ class CnnPoint {
       return;
     }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
-    const {cnn} = this;
+    const {cnn, profile, profile_point} = this;
     let angle = _parent.angle_at(node);
     let aerr;
-    if(cnn && cnn.amin && cnn.amax) {
-      if(angle > 180) {
-        angle = 360 - angle;
-      }
-      if(cnn.amin < 0 && cnn.amax < 0) {
-        if(-cnn.amin <= angle && -cnn.amax >= angle) {
-          aerr = true;
+    if(cnn) {
+      if(cnn.amin && cnn.amax) {
+        if(angle > 180) {
+          angle = 360 - angle;
+        }
+        if(cnn.amin < 0 && cnn.amax < 0) {
+          if(-cnn.amin <= angle && -cnn.amax >= angle) {
+            aerr = true;
+          }
+        }
+        else {
+          if(cnn.amin > angle || cnn.amax < angle) {
+            aerr = true;
+          }
         }
       }
-      else {
-        if(cnn.amin > angle || cnn.amax < angle) {
-          aerr = true;
+      if(!cnn.cnn_type.is('t') && profile && profile_point) {
+        const other = profile.rays[profile_point]?.cnn?.cnn_type;
+        if(other) {
+          if((cnn.cnn_type.is('xx') && !other.is('xx')) ||
+            (cnn.cnn_type.is('ad') && !other.is('ad')) ||
+            (!cnn.cnn_type.is('ad') && other.is('ad'))) {
+            aerr = true;
+          }
         }
       }
     }
