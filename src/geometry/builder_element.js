@@ -641,8 +641,11 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props(inset) {
-    const {_attr, _row, layer, ox: {params}, rnum} = this;
     const {utils, md, enm: {positions}} = $p;
+    let {_attr, _row, layer, ox: {params}, rnum} = this;
+    if(this instanceof ProfileItem) {
+      rnum = 0;
+    }
     const concat = inset || rnum;
     if(!inset) {
       inset = this.inset;
