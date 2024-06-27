@@ -3415,13 +3415,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     this._attr._bounds = null;
-    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}, children: {topLayers, bottomLayers}} = this;
+    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
     by_insets.removeChildren();
     !_attr._saving && by_spec.removeChildren();
-    for(const elm of bottomLayers.contours) {
-      elm.redraw();
-    }
     const imposts = [];
     const addls = [];
     const other = new Set();
@@ -3509,7 +3506,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     this.glass_recalc();
     this.draw_opening();
-    for(const elm of topLayers.contours.concat(this.tearings)) {
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
     }
     if(!_attr._hide_errors) {
@@ -4081,7 +4078,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
   }
   apply_mirror() {
-    const {l_visualization, profiles, contours, project: {_attr}, flipped} = this;
+    const {l_visualization, contours, project: {_attr}, flipped, children} = this;
     this.draw_visualization();
     for(const profile of this.profiles) {
       const {clr} = profile;
@@ -4095,8 +4092,18 @@ class Contour extends AbstractFilling(paper.Layer) {
         onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay, onlay.clr);
       }
     }
-    for(const layer of this.contours) {
+    for(const layer of contours) {
       layer.apply_mirror();
+    }
+    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children;
+    const order = (_attr._reflected && !flipped || !_attr._reflected && flipped) ?
+      [topLayers, fillings, profiles, sectionals, bottomLayers] :
+      [bottomLayers, fillings, profiles, sectionals, topLayers];
+    if(order.some((v, i) => children.indexOf(v) !== i)) {
+      for(const item of order) {
+        item.remove();
+      }
+      this.insertChildren(0, order);
     }
   }
   get sketch_view() {

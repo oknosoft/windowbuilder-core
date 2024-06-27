@@ -2333,15 +2333,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}, children: {topLayers, bottomLayers}} = this;
+    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
     by_insets.removeChildren();
     !_attr._saving && by_spec.removeChildren();
-
-    // сначала, рисуем слои за нами
-    for(const elm of bottomLayers.contours) {
-      elm.redraw();
-    }
 
     // перерисовываем все профили контура
     const imposts = [];
@@ -2443,8 +2438,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     // рисуем направление открывания
     this.draw_opening();
 
-    // перерисовываем вложенные контуры
-    for(const elm of topLayers.contours.concat(this.tearings)) {
+    // перерисовываем вложенные контуры и ряды
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
     }
 
@@ -3245,10 +3240,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
   }
-  
+
+  /**
+   * @summary Порядок групп в зависимости от признака mirror
+   */
   apply_mirror() {
     
-    const {l_visualization, profiles, contours, project: {_attr}, flipped} = this;
+    const {l_visualization, contours, project: {_attr}, flipped, children} = this;
     
     // обновляем визуализацию
     this.draw_visualization();
@@ -3270,15 +3268,21 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-    for(const layer of this.contours) {
+    for(const layer of contours) {
       layer.apply_mirror();
-      // if(_attr._reflected || flipped) {
-      //   layer.sendToBack();
-      // }
-      // else {
-      //   layer.bringToFront();
-      // }
     }
+
+    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children;
+    const order = (_attr._reflected && !flipped || !_attr._reflected && flipped) ?
+      [topLayers, fillings, profiles, sectionals, bottomLayers] :
+      [bottomLayers, fillings, profiles, sectionals, topLayers];
+    if(order.some((v, i) => children.indexOf(v) !== i)) {
+      for(const item of order) {
+        item.remove();
+      }
+      this.insertChildren(0, order);
+    }
+    
   }
 
   get sketch_view() {
