@@ -226,7 +226,7 @@ exports.CchProperties = class CchProperties extends Object {
       }
     };
     if(params) {
-      const {enm: {plan_detailing}, utils, CatInserts} = $p;
+      const {enm: {plan_detailing}, utils, CatInserts, EditorInvisible} = $p;
       let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
         src = plan_detailing.get();
@@ -306,7 +306,7 @@ exports.CchProperties = class CchProperties extends Object {
       }
       const inset = (!src || src.empty()) ? ((origin instanceof CatInserts) ? origin : utils.blank.guid) : utils.blank.guid;
       const {rnum} = elm;
-      if(rnum) {
+      if(rnum && !(elm instanceof EditorInvisible.ProfileItem)) {
         return elm[this.valueOf()];
       }
       else {

@@ -518,7 +518,7 @@ set hide(v){this._setter_ts('hide',v)}
       }
     };
     if(params) {
-      const {enm: {plan_detailing}, utils, CatInserts} = $p;
+      const {enm: {plan_detailing}, utils, CatInserts, EditorInvisible} = $p;
       let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
         src = plan_detailing.get();
@@ -598,7 +598,7 @@ set hide(v){this._setter_ts('hide',v)}
       }
       const inset = (!src || src.empty()) ? ((origin instanceof CatInserts) ? origin : utils.blank.guid) : utils.blank.guid;
       const {rnum} = elm;
-      if(rnum) {
+      if(rnum && !(elm instanceof EditorInvisible.ProfileItem)) {
         return elm[this.valueOf()];
       }
       else {

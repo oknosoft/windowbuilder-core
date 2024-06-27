@@ -2717,7 +2717,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {*}
    */
   extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
-    if(elm?.rnum) {
+    if(!(elm instanceof ProfileItem) && elm?.rnum) {
       return elm[param.valueOf()];
     }
     const {layer, own_sys} = this;
@@ -2737,6 +2737,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     // параметры, переопределяемые для отдела, читаем из отдела
     if(param.inheritance !== 3 &&
         plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      if(!cnstr && elm?.elm && [1, 2].includes(param.inheritance)) {
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
+      }
       let prow;
       _ox.params.find_rows({
         param,
@@ -2759,9 +2762,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       if(param.inheritance === 5) {
         return param.template_value({ox: _ox, cnstr, project: this.project});
-      }
-      if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
-        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();

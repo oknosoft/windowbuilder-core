@@ -938,7 +938,7 @@
         if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
-            fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
+            fakerow.quantity = (rnum && !(elm instanceof ProfileItem) ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
             return false;
           });
         }

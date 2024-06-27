@@ -3695,7 +3695,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.layer ? false : [10, 11].includes(this.kind);
   }
   extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
-    if(elm?.rnum) {
+    if(!(elm instanceof ProfileItem) && elm?.rnum) {
       return elm[param.valueOf()];
     }
     const {layer, own_sys} = this;
@@ -3714,6 +3714,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     if(param.inheritance !== 3 &&
         plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      if(!cnstr && elm?.elm && [1, 2].includes(param.inheritance)) {
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
+      }
       let prow;
       _ox.params.find_rows({
         param,
@@ -3736,9 +3739,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       if(param.inheritance === 5) {
         return param.template_value({ox: _ox, cnstr, project: this.project});
-      }
-      if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
-        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
@@ -17604,7 +17604,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
-            fakerow.quantity = (rnum ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
+            fakerow.quantity = (rnum && !(elm instanceof ProfileItem) ? elm[prm_row.param.valueOf()] : ox.extract_value({cnstr: [0, -elm.elm], param: prm_row.param})) || 0;
             return false;
           });
         }
