@@ -18541,12 +18541,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(elm) {
               const {bounds} = elm.layer;
               const {sticking} = consts;
-              for(const node of ['b', e]) {
+              for(const node of ['b', 'e']) {
                 const pt = elm[node];
-              }
-              if((pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking)) {
-                return true;
-              }                
+                if((pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking)) {
+                  return true;
+                }
+              }               
             }
             return false;
           };
