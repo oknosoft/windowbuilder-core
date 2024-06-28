@@ -731,6 +731,9 @@ class Scheme extends paper.Project {
         if(l.cnstr == cnstr) {
           l.hidden = false;
           l.hide_generatrix();
+          if(l instanceof ContourTearing) {
+            l.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
+          }           
           l.l_dimensions.redraw(attr.faltz || true);
           l.zoom_fit();
           return true;

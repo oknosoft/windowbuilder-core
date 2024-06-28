@@ -84,14 +84,15 @@ class ContourTearing extends Contour {
   }
   set hidden(v) {
     super.hidden = v;
-    if(!v && !this.parent.parent.visible) {
-      this.parent.parent.visible = true;
-      this.parent.parent.path.opacity = 0.3;
-      this.parent.parent.children.text.visible = false;
+    const {parent} = this.parent; 
+    if(!v) {
+      parent.visible = true;
+      parent.path.visible = false;
+      parent.children.text.visible = false;
     }
-    else if(this.parent.parent.path.opacity < 1) {
-      this.parent.parent.path.opacity = 1;
-      this.parent.parent.children.text.visible = true;
+    else {
+      parent.path.visible = true;
+      parent.children.text.visible = true;
     }
   }
   
