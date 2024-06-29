@@ -4,6 +4,7 @@ import {Mover} from './graph/Mover';
 
 import {Profile} from './ProfileItem';
 import {contourGroups} from './ContourGroups';
+import {Three} from './Three';
 
 export class Contour extends paper.Layer {
 
@@ -13,6 +14,7 @@ export class Contour extends paper.Layer {
     super(attr);
     this.#raw.skeleton = new Skeleton(this);
     this.#raw.mover = new Mover(this);
+    this.#raw.three = new Three();
     contourGroups(this);
   }
   
@@ -27,6 +29,10 @@ export class Contour extends paper.Layer {
   
   get mover() {
     return this.#raw.mover;
+  }
+
+  get three() {
+    return this.#raw.three;
   }
   
   /**

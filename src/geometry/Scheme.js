@@ -94,11 +94,14 @@ export class Scheme extends paper.Project {
   }
   
   clear() {
-    for(const contour of this.contours) {
+    const {contours, dimensions, props} = this;
+    for(const contour of contours) {
       contour.remove();
     }
-    this.dimensions.clear();
-    this.dimensions.removeChildren();
+    dimensions.clear();
+    dimensions.removeChildren();
+    props.registerChange();
+    this.redraw();
   }
   
   activate() {

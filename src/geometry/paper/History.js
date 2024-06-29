@@ -23,6 +23,7 @@ export class History {
     let deselect;
     for(const {item, node, shift} of items) {
       if(item) {
+        item.layer.activate();
         if(node) {
           item.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment'].selected = true;
           eve.emit_promise('select', {type: 'elm', project, elm: item, node, layer: item.layer, shift});

@@ -1,3 +1,4 @@
+import {Three} from './Three';
 
 export class BuilderProps  {
   #raw = {sticking: 4};
@@ -5,6 +6,7 @@ export class BuilderProps  {
   constructor(project) {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
+    this.#raw.three = new Three();
     this.#raw.carcass = 'carcass'; // carcass|normal|plane
     project._scope.settings.handleSize = 14;
   }
@@ -17,11 +19,8 @@ export class BuilderProps  {
     this.#raw?.registerChange?.();
   }
   
-  get flipped() {
-    return Boolean(this.#raw.flipped);
-  }
-  set flipped(v) {
-    this.#raw.flipped = Boolean(v);
+  get three() {
+    return this.#raw.three;
   }
 
   get carcass() {
