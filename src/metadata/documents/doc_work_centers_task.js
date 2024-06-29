@@ -142,7 +142,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       return;
     }
     // по типам оптимизации
-    if(row.width && !opts.bilinear && !opts.c2d) {
+    if((row.width && !opts.bilinear && !opts.c2d) || (!row.width && opts.linear === false)) {
       return;
     }
     // должен существовать элемент
@@ -177,11 +177,12 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
   
   /**
    * Заполняет табчасть раскрой по плану
-   * @param opts {Object}
-   * @param opts.clear {Boolean}
-   * @param opts.linear {Boolean}
-   * @param opts.bilinear {Boolean}
-   * @param opts.clr_only {Boolean}
+   * @param {Object} [opts]
+   * @param {Boolean} [opts.clear]
+   * @param {Boolean} [opts.linear]
+   * @param {Boolean} [opts.bilinear]
+   * @param {Boolean} [opts.c2d]
+   * @param {Boolean} [opts.clr_only]
    * @return {Promise<void>}
    */
   fill_cutting(opts) {
@@ -206,9 +207,27 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         });
       });
   }
+  
+  fill_cuts() {
+    const {debit} = $p.enm.debit_credit_kinds;
+    const {cutting, cuts} = this;
+    for(const {nom, characteristic} of cutting) {
+      if(!cuts.find({nom, characteristic})) {
+        cuts.add({
+          record_kind: debit,
+          nom,
+          characteristic,
+          len: nom.len,
+          width: nom.width,
+          quantity: nom.width ? 100 : nom.len / 1000,
+        });
+      }
+    }
+    return this;
+  }
 
   fragments2D() {
-    const {debit_credit_kinds} = $p.enm;
+    const {debit} = $p.enm.debit_credit_kinds;
     const res = {
       products: [],
       scraps: [],
@@ -216,7 +235,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     };
     for(const row of this.cuts) {
       if(row.record_kind.empty()) {
-        row.record_kind = debit_credit_kinds.debit;
+        row.record_kind = debit;
       }
       if(!row.stick) {
         row.stick = this.cuts.aggregate([], ['stick'], 'max') + 1;
