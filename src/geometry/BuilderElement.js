@@ -112,13 +112,15 @@ export class BuilderElement extends paper.Group {
    * @type CatInsets
    */
   get inset() {
-    return this.#raw.inset;
+    return this.project.root.cat.inserts.get(this.#raw.inset);
   }
   set inset(v) {
-    this.#raw.inset = v;
-    const {project, generatrix} = this;
-    if(generatrix && project.props.carcass !== 'normal') {
-      generatrix.strokeColor = !this.#raw.inset || this.#raw.inset?.empty?.() ? '#a00' : '#00a';
+    const {project} = this;
+    v = project.root.cat.inserts.get(v);
+    if(v !== this.#raw.inset) {
+      this.#raw.inset = v;
+      project.props.registerChange();
+      project.redraw();
     }
   }
 

@@ -26,7 +26,7 @@ export class Scheme extends paper.Project {
         return layer;
       }
     }
-    return new Contour({project: this, insert: true});
+    return this.addLayer();
   }
   
   get dimensions() {
@@ -114,6 +114,12 @@ export class Scheme extends paper.Project {
         _scope.View._viewsById[_view._id] = _view;
       }
     }
+  }
+
+  addLayer() {
+    const layer = new Contour({project: this, insert: true});
+    this.props.registerChange();
+    return layer;
   }
 
   /**

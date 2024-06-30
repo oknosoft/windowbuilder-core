@@ -241,7 +241,7 @@ export class Contour extends paper.Layer {
     generatrix.set({
       layer: this,
       //guide: true,
-      strokeColor: project.props.carcass === 'normal' ? 'grey' : (other.inset ? '#00a' : '#a00'),
+      strokeColor: project.props.carcass === 'normal' ? new paper.Color(0.5, 0.5) : (other.inset ? '#00a' : '#a00'),
       strokeScaling: false,
     });
     // TODO: defaultInset

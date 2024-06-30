@@ -83,10 +83,11 @@ export class Profile extends GeneratrixElement {
   redraw() {
     this.checkActual();
     this.project.props.loading
-    const {path, project} = this;
+    const {path, project, generatrix, inset} = this;
     if(project.props.carcass !== 'normal') {
       path.selected = false;
       path.visible = false;
+      generatrix.strokeColor = inset.empty() ? '#a00' : '#00a';
     }
     else {
       path.visible = true;
@@ -96,6 +97,7 @@ export class Profile extends GeneratrixElement {
         path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
         path.closePath();
       }
-    }     
+      generatrix.strokeColor = new paper.Color(0.5, 0.5);
+    }
   }
 }

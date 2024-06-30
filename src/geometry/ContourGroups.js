@@ -1,7 +1,7 @@
 
 import paper from 'paper/dist/paper-core';
 import {LayerGroup} from './DimensionDrawer';
-import {Containers} from './Container';
+import {Containers} from './Containers';
 
 class GroupVisualization extends LayerGroup {
   constructor(attr) {

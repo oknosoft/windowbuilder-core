@@ -1,3 +1,4 @@
+import {Contour} from '../Contour';
 
 export class History {
 
@@ -22,15 +23,15 @@ export class History {
     const {project, editor: {eve}} = this;
     let deselect;
     for(const {item, node, shift} of items) {
-      if(item) {
-        item.layer.activate();
+      if(item instanceof Contour) {
+        item.activate();
+        eve.emit_promise('select', {type: 'layer', project, layer: item, shift});
+      }
+      else if(item) {
+        item.layer?.activate?.();
         if(node) {
           item.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment'].selected = true;
           eve.emit_promise('select', {type: 'elm', project, elm: item, node, layer: item.layer, shift});
-        }
-        else if(item.cnstr) {
-          item.activate();
-          eve.emit_promise('select', {type: 'layer', project, layer: item, shift});
         }
         else {
           deselect = true;

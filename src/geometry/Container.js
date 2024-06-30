@@ -2,6 +2,7 @@
 // import paper from 'paper/dist/paper-core';
 // import {LayerGroup} from './DimensionDrawer';
 import {Contour} from './Contour';
+import {Filling} from './Filling';
 
 /**
  * @summary Область-проём для слоёв и заполнений
@@ -106,6 +107,14 @@ export class Container  {
         }
         this.#raw.child = child; 
       }
+      else if(kind === 'glass') {
+        this.#raw.child = new Filling({
+          project: layer.project,
+          layer,
+          parent: layer.children.fillings,
+          pathOuter: pathInner,
+        });
+      }
       this.#raw.kind = kind;
       return;
     }
@@ -132,72 +141,13 @@ export class Container  {
         }
       }
     }
+    else if(kind === 'glass') {
+      child.path = pathInner;
+    }
   }
 
 
   
 }
 
-export class Containers {
-  #raw = {
-    owner: null,
-    free: false,
-    children: {},
-  };
 
-  constructor(owner) {
-    this.#raw.owner = owner;
-  }
-
-  /**
-   * Итератор
-   * @return {Iterator}
-   */
-  [Symbol.iterator]() {
-    const {root} = this.#raw.owner.project;
-    return new root.classes.Iterator(Object.values(this.children));
-  }
-
-  /**
-   * @summary Скелетон слоя
-   * @return {Skeleton}
-   */
-  get skeleton() {
-    return this.#raw.owner.skeleton;
-  }
-
-  get children() {
-    return this.#raw.children;
-  }
-  
-  get free() {
-    return this.#raw.free;
-  }
-
-  /**
-   * @summary Ищет замкнутые циклы и прочищает неактуальные
-   */
-  detectAndPurge() {
-    const {skeleton, children} = this;
-    const cycles = skeleton.project.props.slave ? [] : skeleton.detectCycles();
-    const keys = cycles.map(v => v.key);
-    for(const key in children) {
-      if(!keys.includes(key)) {
-        children[key].remove();
-      }
-    }
-    return {children, cycles};
-  }
-
-  /**
-   * @summary Ищет замкнутые циклы и создаёт-удаляет {{#crossLink "Container"}}Области{{/crossLink}}
-   */
-  sync() {
-    const {children, cycles} = this.detectAndPurge();
-    // создаём недостающие
-    for(const cycle of cycles) {
-      const container = children[cycle.key] || new Container(this, cycle);
-      container.sync();
-    }
-  }
-}
