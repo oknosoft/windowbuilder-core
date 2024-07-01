@@ -241,7 +241,12 @@ class ProductsBuilding {
     function base_spec_profile(elm, totqty0) {
 
       const {_row, _attr, rays, layer, segms, inset} = elm;
-      const {enm: {angle_calculating_ways, cnn_types, predefined_formulas: {w2}}, cat, utils: {blank}} = $p;
+      const {enm: {
+        angle_calculating_ways,
+        cnn_types,
+        predefined_formulas: {w2},
+        specification_order_row_types: {Продукция},
+      }, cat, utils: {blank}} = $p;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
       }
@@ -253,6 +258,25 @@ class ProductsBuilding {
         art2: true,
         node: 'e',
       };
+
+      // во время расчетов возможна подмена объекта спецификации
+      const spec_tmp0 = spec;
+      if(inset.is_order_row_prod({ox, elm})) {
+        const prow = inset.specification.find({quantity: 0, is_order_row: Продукция});
+        const nom = prow ? prow.nom : elm.nom;
+        const attrs = {
+          calc_order: ox.calc_order,
+          nom,
+          owner: nom,
+          clr: elm.clr,
+          s: 0,
+          x: _row.len,
+          y: 0,
+        };
+        const cx = Object.assign(ox.find_create_cx(elm.elm, blank.guid), attrs);
+        ox._order_rows.push(cx);
+        spec = cx.specification.clear();
+      }
 
       if(segms?.length) {
         // если профиль разбит на связки, добавляем их спецификации, вместо спецификации самого профиля
@@ -415,6 +439,9 @@ class ProductsBuilding {
 
       // если у профиля есть примыкающий родительский элемент, добавим спецификацию II соединения
       cnn_spec_nearest(elm);
+
+      // возвращаем указатель на спецификацию на место
+      spec = spec_tmp0;
 
       // если у профиля есть доборы, добавляем их спецификации
       elm.addls.forEach(base_spec_profile);
