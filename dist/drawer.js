@@ -20237,7 +20237,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return prod;
       });
   }
-  reset_specify() {
+  reset_specify(cond) {
     this._slave_recalc = true;
     const rm = [];
     for(const row of this.production) {
@@ -20251,7 +20251,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
-        characteristic.specification.clear({dop: -3});
+        if(!cond) {
+          characteristic.specification.clear({dop: -3});
+        }
+        else if(cond === '2D') {
+          characteristic.specification.clear({dop: -3, width: {not: 0}});
+        }
+        else {
+          characteristic.specification.clear({dop: -3, width: 0});
+        }
         row.value_change('quantity', 'update', row.quantity);
       }
     }
