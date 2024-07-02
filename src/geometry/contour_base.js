@@ -1910,7 +1910,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-    // подписи профилей
+    // подписи заполнений
     if(builder_props.glass_numbers) {
       this.draw_glass_numbers();
     }

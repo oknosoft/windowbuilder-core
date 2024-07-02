@@ -1655,7 +1655,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const rm = [];
     for(const row of this.production) {
       if(row.changed === 3) {
-        rm.push(row);
+        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && row.len)) {
+          rm.push(row);
+        }
       }
     }
     for(const row of rm) {
@@ -1668,10 +1670,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.specification.clear({dop: -3});
         }
         else if(cond === '2D') {
-          characteristic.specification.clear({dop: -3, width: {not: 0}});
+          characteristic.specification.clear({dop: -3, s: {ne: 0}});
         }
         else {
-          characteristic.specification.clear({dop: -3, width: 0});
+          characteristic.specification.clear({dop: -3, s: 0});
         }
         row.value_change('quantity', 'update', row.quantity);
       }

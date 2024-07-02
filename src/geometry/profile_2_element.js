@@ -469,8 +469,11 @@ class Profile extends ProfileItem {
    * Подписи профилей в отдельном методе
    * @return {Profile}
    */
-  draw_articles() {
-    const {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
+  draw_articles(kind) {
+    let {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
+    if(typeof kind === 'number') {
+      articles = kind;
+    }
     if(articles && nom.width > 2) {
       const impost = this.elm_type.is('impost');
       let {level} = layer;
@@ -509,7 +512,12 @@ class Profile extends ProfileItem {
             content = elm.toFixed() + c2;
           }
           else {
-            content += elm.toFixed();
+            if(kind === 1) {
+              content = elm.toFixed();
+            }
+            else {
+              content += elm.toFixed();
+            }
           }
           break;
         case 2:

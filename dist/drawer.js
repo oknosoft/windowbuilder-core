@@ -11185,8 +11185,11 @@ class Profile extends ProfileItem {
       }
     });
   }
-  draw_articles() {
-    const {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
+  draw_articles(kind) {
+    let {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
+    if(typeof kind === 'number') {
+      articles = kind;
+    }
     if(articles && nom.width > 2) {
       const impost = this.elm_type.is('impost');
       let {level} = layer;
@@ -11223,7 +11226,12 @@ class Profile extends ProfileItem {
             content = elm.toFixed() + c2;
           }
           else {
-            content += elm.toFixed();
+            if(kind === 1) {
+              content = elm.toFixed();
+            }
+            else {
+              content += elm.toFixed();
+            }
           }
           break;
         case 2:
@@ -20242,7 +20250,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const rm = [];
     for(const row of this.production) {
       if(row.changed === 3) {
-        rm.push(row);
+        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && row.len)) {
+          rm.push(row);
+        }
       }
     }
     for(const row of rm) {
@@ -20255,10 +20265,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.specification.clear({dop: -3});
         }
         else if(cond === '2D') {
-          characteristic.specification.clear({dop: -3, width: {not: 0}});
+          characteristic.specification.clear({dop: -3, s: {ne: 0}});
         }
         else {
-          characteristic.specification.clear({dop: -3, width: 0});
+          characteristic.specification.clear({dop: -3, s: 0});
         }
         row.value_change('quantity', 'update', row.quantity);
       }
