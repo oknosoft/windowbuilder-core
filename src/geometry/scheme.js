@@ -2167,12 +2167,7 @@ class Scheme extends paper.Project {
         const {scaling} = txt._decompose();
         txt.scaling = [-scaling.x, scaling.y];
       }
-      if(v) {
-        this._scope.select_tool?.('pan');
-      }
-      else {
-        this.register_change(true);
-      }
+      this.register_change(true);
     }
     this.zoom_fit();
     return _attr._reflected;
