@@ -509,7 +509,10 @@ class Profile extends ProfileItem {
       switch (articles) {
         case 1:
           if(flip) {
-            content = elm.toFixed() + c2;
+            content = elm.toFixed();
+            if(kind !== 1) {
+              content += c2;
+            }
           }
           else {
             if(kind === 1) {
