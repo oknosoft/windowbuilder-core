@@ -34,7 +34,12 @@ export class Scheme extends paper.Project {
   }
 
   get bounds() {
-    return this.layers.reduce((sum, curr) => sum.unite(curr.bounds), new paper.Rectangle());
+    return this.layers.reduce((sum, {bounds}) => {
+      if(!bounds.width || !bounds.height) {
+        return sum;
+      }
+      return sum ? sum.unite(bounds) : bounds;
+    }, null);
   }
   
   get strokeBounds() {
