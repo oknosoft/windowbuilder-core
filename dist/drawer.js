@@ -717,8 +717,8 @@ class BuilderElement extends paper.Group {
       _xfields = tabular_sections.coordinates.fields,
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
-      rinner = Object.assign({}, _xfields.r, {synonym: 'Радиус внутр.'}),
-      router = Object.assign({}, _xfields.r, {synonym: 'Радиус внешн.'}),
+      rinner = Object.assign({}, _xfields.r, {synonym: 'Радиус внутр.', read_only: true}),
+      router = Object.assign({}, _xfields.r, {synonym: 'Радиус внешн.', read_only: true}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
@@ -19409,7 +19409,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   after_del_row(name) {
     if(name === 'production'){
       this.product_rows();
-      this.reset_specify();
+      !this._slave_recalc && this.reset_specify();
     }
     return this;
   }
@@ -20189,7 +20189,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const rm = [];
     for(const row of this.production) {
       if(row.changed === 3) {
-        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && row.len)) {
+        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && !row.s)) {
           rm.push(row);
         }
       }

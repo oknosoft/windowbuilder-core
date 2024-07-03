@@ -661,7 +661,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   after_del_row(name) {
     if(name === 'production'){
       this.product_rows();
-      this.reset_specify();
+      !this._slave_recalc && this.reset_specify();
     }
     return this;
   }
@@ -1655,7 +1655,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const rm = [];
     for(const row of this.production) {
       if(row.changed === 3) {
-        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && row.len)) {
+        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && !row.s)) {
           rm.push(row);
         }
       }
