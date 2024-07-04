@@ -143,7 +143,7 @@ class Pricing {
    * @param startkey
    * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=80, log=null, cache=null, price_type}) {
+  by_range({bookmark, step=1, limit=60, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     
     (log || console.log)(`load prices: page №${step}`);
@@ -153,7 +153,7 @@ class Pricing {
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
-          price_type: price_type || {$in: abonents.price_types.map(v => v.valueOf())},
+          price_type: price_type || {$in: abonents.price_types.filter(v => v).map(v => v.valueOf())},
         },
         use_index: 'nom_prices_setup',
         limit,
