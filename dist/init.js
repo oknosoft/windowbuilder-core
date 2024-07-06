@@ -6925,6 +6925,8 @@ set demand(v){this._setter_ts('demand',v)}
     cnns: true,
     visualization: true,
     txts: true,
+    glass_regions: true,
+    profile_regions: true,
     rounding: 0,
     mosquito: true,
     jalousie: true,

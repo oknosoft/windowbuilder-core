@@ -1065,6 +1065,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     cnns: true,
     visualization: true,
     txts: true,
+    glass_regions: true,
+    profile_regions: true,
     rounding: 0,
     mosquito: true,
     jalousie: true,
