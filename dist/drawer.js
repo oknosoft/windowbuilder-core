@@ -8528,15 +8528,23 @@ class CnnPoint {
     }
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
+  get elongate_by_other() {
+    const {elongate_by_other} = $p.job_prm.properties;
+    const {parent, node} = this;
+    return Boolean(elongate_by_other && parent.dop[node]?.[elongate_by_other.ref]);
+  }
   find_other() {
     let {parent, profile, point} = this;
     if (!point) {
       point = parent[this.node];
     }
     const {rays, layer} = parent;
-    const {outer} = $p.enm.cnn_sides;
+    let {inner, outer} = $p.enm.cnn_sides;
+    if(parent.cnn_side(profile, null, rays) === outer){
+      outer = inner;
+    }
     for (const elm of layer.profiles) {
-      if (elm === parent) {
+      if (elm === parent || elm === profile) {
         continue;
       }
       for (const node of 'be') {
@@ -10167,10 +10175,15 @@ class ProfileItem extends GeneratrixElement {
         else if ((cnn_type === cnn_types.long) ||
           (cnn_type === cnn_types.ah && orientation.is('hor')) ||
           (cnn_type === cnn_types.av && orientation.is('vert'))) {
+          if(cnn_point.elongate_by_other && cnn_other) {
+            const prays = cnn_other.profile.rays;
+            oouter = prays[cnn_other.profile.cnn_side(this, null, prays).is('inner') ? 'outer' : 'inner'];
+          }
           if (is_b) {
             intersect_point(oouter, rays.outer, 1);
             intersect_point(oouter, rays.inner, 4);
-          } else if (is_e) {
+          } 
+          else if (is_e) {
             intersect_point(oouter, rays.outer, 2);
             intersect_point(oouter, rays.inner, 3);
           }
