@@ -312,10 +312,10 @@ exports.CchProperties = class CchProperties extends Object {
       else {
         params.find_rows({
           param: this,
-          cnstr: cnstr || (elm._row ? {in: [0, -elm._row.elm]} : 0),
+          cnstr: (cnstr > 0 || !elm._row) ? cnstr : (elm._row ? {in: [0, cnstr || 0, -elm._row.elm]} : 0),
           inset,
         }, (row) => {
-          if(!prow || row.cnstr) {
+          if(!prow || (!prow.cnstr && row.cnstr) || (prow.cnstr > 0 && row.cnstr < 0)) {
             prow = row;
           }
         });
