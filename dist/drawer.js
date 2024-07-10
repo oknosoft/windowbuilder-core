@@ -18486,11 +18486,17 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'elm_orientation':
           _data._formula = function ({elm, elm2}) {
+            if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+              elm = elm2;
+            }
             return elm?.orientation || elm2?.orientation || orientations.get();
           };
           break;
         case 'elm_pos':
-          _data._formula = function ({elm}) {
+          _data._formula = function ({elm, elm2}) {
+            if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+              elm = elm2;
+            }
             return elm?.pos || positions.get();
           };
           break;
@@ -18534,7 +18540,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'joins_last_elm':
           _data._formula = function ({elm, elm2}) {
-            if(!(elm instanceof EditorInvisible.Profile) && elm2 instanceof EditorInvisible.Profile) {
+            if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
               elm = elm2;
             }
             if(elm instanceof EditorInvisible.ProfileSegment) {
