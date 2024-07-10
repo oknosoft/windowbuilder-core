@@ -98,6 +98,26 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'layer_weight':
+            _data._formula = function (obj) {
+              let {ox, elm, layer, prm_row} = obj;
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              if(!layer) {
+                return 0;
+              }
+              const weights = [];
+              const contours = layer.layer ? layer.layer.contours : [layer]; 
+              for(const cnt of contours) {
+                if(cnt === layer || !cnt.furn.open_type.is('Неподвижное')) {
+                  weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));
+                }
+              }
+              return Math.max(...weights);
+            };
+            break;
+          
         case 'up_glasses_weight':
           _data._formula = function ({elm, elm2, ox}) {
             let weight = 0;
@@ -214,7 +234,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
           
         case 'joins_last_elm':
-          _data._formula = function ({elm, elm2}) {
+          _data._formula = function ({elm, elm2, prm_row, node}) {
             if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
               elm = elm2;
             }
@@ -222,11 +242,14 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               elm = elm.parent;
             }
             if(elm) {
-              const {bounds} = elm.layer;
+              const {layer: {bounds}, orientation} = elm;
               const {sticking} = consts;
               for(const node of ['b', 'e']) {
                 const pt = elm[node];
-                if((pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking)) {
+                if(orientation?.is('hor') && (pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking)) {
+                  return true;
+                }
+                if(orientation?.is('vert') && (pt.y < bounds.top + sticking) || (pt.y > bounds.bottom - sticking)) {
                   return true;
                 }
               }               
@@ -354,6 +377,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
     'node_pos',         // положение узла профиля
+    'layer_weight',     // масса слоя с учётом признака 'Фильтр по тяжелой створке'
     'is_node_last',     // крайний по координатам узел в текущем слое
     'joins_last_elm',   // примыкает крайний элемент
     'cnn_side',         // сторона соединения (изнутри-снаружи)
