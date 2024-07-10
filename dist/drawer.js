@@ -10446,15 +10446,18 @@ class ProfileItem extends GeneratrixElement {
     const {_corns} = this._attr;
     if (typeof corn == 'number') {
       return corn < 10 ? _corns[corn] : this.generatrix.getPointAt(corn);
-    } else if (corn instanceof paper.Point) {
+    } 
+    else if (corn instanceof paper.Point) {
       const res = {dist: Infinity, profile: this};
       let dist;
-      for (let i = 1; i < 5; i++) {
-        dist = _corns[i].getDistance(corn);
-        if (dist < res.dist) {
-          res.dist = dist;
-          res.point = _corns[i];
-          res.point_name = i;
+      if(_corns.length > 4) {
+        for (let i = 1; i < 5; i++) {
+          dist = _corns[i]?.getDistance(corn);
+          if (dist < res.dist) {
+            res.dist = dist;
+            res.point = _corns[i];
+            res.point_name = i;
+          }
         }
       }
       const {hhi} = this;
@@ -10478,7 +10481,8 @@ class ProfileItem extends GeneratrixElement {
         res.dist = this.b.getDistance(corn);
         res.point = this.b;
         res.point_name = 'b';
-      } else {
+      } 
+      else {
         dist = this.e.getDistance(corn);
         if (dist <= res.dist) {
           res.dist = this.e.getDistance(corn);
@@ -10487,7 +10491,8 @@ class ProfileItem extends GeneratrixElement {
         }
       }
       return res;
-    } else {
+    } 
+    else {
       const index = corn.substring(corn.length - 1, 1);
       const axis = corn.substring(corn.length - 2, 1);
       return _corns[index][axis];
