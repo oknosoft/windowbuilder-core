@@ -122,8 +122,9 @@ export class Container  {
   }
 
   remove() {
-    const {owner, cycle} = this.#raw;
+    const {owner, cycle, child} = this.#raw;
     // удалить элементы рисовалки
+    child?.remove();
     // удалить себя из коллекции владельца
     delete owner.children[cycle.key];
   }

@@ -76,7 +76,8 @@ export class Profile extends GeneratrixElement {
   }
   
   remove() {
-    this.skeleton.removeProfile(this);
+    const {project, skeleton} = this;
+    skeleton.removeProfile(this);
     super.remove();
   }
 

@@ -91,7 +91,20 @@ export class Skeleton extends Graph {
     const vertices = this.getAllVertices();
     let vertex = this.vertexByPoint(point, vertices, 1);
     if(!vertex) {
-      vertex = new GraphVertex((vertices.length + 1).toString(), point);
+      let omission;
+      for(let i=1; i<vertices.length; i++) {
+        if(!vertices.find(({value}) => parseInt(value, 10) === i)) {
+          omission = i;
+          break;
+        }
+      }
+      if(!omission) {
+        omission = vertices.reduce((prev, curr) => {
+          const v = parseInt(curr.value, 10); 
+          return v > prev ? v : prev;
+        }, 0) + 1;
+      }
+      vertex = new GraphVertex(omission.toString(), point);
       this.addVertex(vertex);
     }
     if(point instanceof CnnPoint) {
@@ -183,13 +196,15 @@ export class Skeleton extends Graph {
     }
   }
   
-  checkNodes(b, e) {
+  checkNodes(b, e, preserve) {
     const startVertex = this.createVertexByPoint(b);
     const endVertex = this.createVertexByPoint(e);
     const res = Boolean(this.findEdge(startVertex, endVertex));
-    for(const vertex of [startVertex, endVertex]) {
-      if(!vertex.edges.head && !vertex.endEdges.head) {
-        this.deleteVertex(vertex);
+    if(!preserve) {
+      for(const vertex of [startVertex, endVertex]) {
+        if(!vertex.edges.head && !vertex.endEdges.head) {
+          this.deleteVertex(vertex);
+        }
       }
     }
     return res;

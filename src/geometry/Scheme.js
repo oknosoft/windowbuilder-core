@@ -105,8 +105,8 @@ export class Scheme extends paper.Project {
     }
     dimensions.clear();
     dimensions.removeChildren();
-    props.registerChange();
-    this.redraw();
+    //props.registerChange();
+    //this.redraw();
   }
   
   activate() {

@@ -250,6 +250,16 @@ export class BuilderElement extends paper.Group {
   set note(v) {
     this.dop = {note: v};
   }
+
+  remove() {
+    const {project, layer} = this;
+    super.remove();
+    if(layer && !project.props.loading) {
+      project.root.md.emit('select', {project, elm: null, layer, type: 'layer'});
+      project.props.registerChange();
+      project.redraw();
+    }
+  }
   
 }
 
