@@ -56,6 +56,10 @@ export class ToolPen extends ToolSelectable {
             node.visible = true;
           }
         }
+        else if(hitItem.type == 'bind') {
+          node.position = hitItem.point.clone();
+          node.visible = true;
+        }
       }
     }
     if(mode === 1 && path) {
@@ -229,6 +233,29 @@ export class ToolPen extends ToolSelectable {
     this.callout1 = null;
     this.callout2 = null;
     ev?.stop?.();
+  }
+
+  hitTest(ev) {
+    super.hitTest(ev);
+    const {hitItem, node, line} = this.get('hitItem,node,line');
+    if(!hitItem) {
+      const {point} = ev;
+      const {mode, path, project: {activeLayer, props}} = this;
+      if(mode === 1 && path?.length > props.gridStep * 2) {
+        const {bounds} = path;
+        const dir = bounds.width > bounds.height ? 'x' : 'y'; 
+        for(const vertex of activeLayer.skeleton.getAllVertices()) {
+          if(Math.abs(vertex.point[dir] - point[dir]) < props.gridStep * 1.2) {
+            this.set({hitItem: {
+                item: 'virtual',
+                type: 'bind',
+                segments: [],
+                point: Object.assign(point.clone(), {[dir]: vertex.point[dir]}),
+              }});
+          }
+        }        
+      }
+    }
   }
 
 }

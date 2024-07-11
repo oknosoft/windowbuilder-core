@@ -1,6 +1,7 @@
 
 import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
+import {Filling} from '../Filling';
 
 export class ToolSelect extends ToolSelectable {
   
@@ -24,6 +25,7 @@ export class ToolSelect extends ToolSelectable {
     //this.hitTest(ev);
     const {body, activeElement} = document;
     const {project, view} = this;
+    const {gridStep} = project.props;
     const hitItem = this.get('hitItem');
     if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
       activeElement.blur();
@@ -35,7 +37,7 @@ export class ToolSelect extends ToolSelectable {
         
     const select = [];
     const deselect = [];
-    this.mouseStartPos = ev.point.snap();
+    this.mouseStartPos = ev.point.snap(gridStep);
     this.get('node').visible = false;
 
     if(hitItem && !alt) {
@@ -46,7 +48,7 @@ export class ToolSelect extends ToolSelectable {
         item = item.nearest();
       }
 
-      if(item && (hitItem.type == 'fill' || hitItem.type == 'stroke')) {
+      if(item && (hitItem.type == 'fill' || hitItem.type == 'stroke' || hitItem.type == 'filling')) {
         if(shift) {
           if(item.selected) {
             deselect.push({item, node: null, shift});
@@ -77,8 +79,10 @@ export class ToolSelect extends ToolSelectable {
             //   }
             // }
           }
-          this.mode = 'move-shapes';
-          this.mouseStartPos = hitItem.point.snap();
+          if(item instanceof GeneratrixElement) {
+            this.mode = 'move-shapes';
+            this.mouseStartPos = hitItem.point.snap(gridStep);
+          }
         }
         else if(deselect.length) {
           if(control) {
@@ -116,7 +120,7 @@ export class ToolSelect extends ToolSelectable {
           }
         }
         this.mode = 'move-points';
-        this.mouseStartPos = hitItem.point.snap();
+        this.mouseStartPos = hitItem.point.snap(gridStep);
       }
       else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
         this.mode = 'move-handle';
@@ -153,7 +157,7 @@ export class ToolSelect extends ToolSelectable {
       }
 
     }
-    this.mousePos = this.mouseStartPos?.snap() || null;
+    this.mousePos = this.mouseStartPos?.snap(gridStep) || null;
     
     deselect.length && this._scope.cmd('deselect', deselect);
     select.length && this._scope.cmd('select', select);
@@ -177,13 +181,14 @@ export class ToolSelect extends ToolSelectable {
 
   mousedrag(ev) {
     if (this.mode === 'move-shapes' || this.mode === 'move-points') {
+      const {props: {gridStep}, activeLayer}  = this.project;
       let delta = ev.point.subtract(this.mouseStartPos);
       if (!ev.modifiers.shift) {
-        delta = delta.snapToAngle();
+        delta = delta.snapToAngle().snap(gridStep);
       }
       if(delta.length > 8) {
         this.mousePos = ev.point.clone();
-        this.project.activeLayer.mover.tryMovePoints(this.mouseStartPos, delta);
+        activeLayer.mover.tryMovePoints(this.mouseStartPos, delta);
       }
     }
   }
@@ -196,7 +201,10 @@ export class ToolSelect extends ToolSelectable {
       node.visible = false;
       line.visible = false;
       if (hitItem) {
-        if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
+        if(hitItem.type == 'filling') {
+          canvasCursor('cursor-arrow-white-point');
+        }
+        else if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
           // if (hitItem.item.parent instanceof DimensionLine) {
           //   // размерные линии сами разберутся со своими курсорами
           // }

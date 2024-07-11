@@ -7,8 +7,12 @@ export class BuilderProps  {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
     this.#raw.three = new Three();
-    this.#raw.carcass = 'carcass'; // carcass|normal|plane
-    project._scope.settings.handleSize = 14;
+    const {settings} = project._scope;
+    if(!settings.carcass) {
+      settings.carcass = 'carcass'; // carcass|normal|plane
+      settings.handleSize = 14;
+      settings.gridStep = 50;
+    }
   }
   
   get stamp() {
@@ -24,14 +28,24 @@ export class BuilderProps  {
   }
 
   get carcass() {
-    return this.#raw.carcass;
+    return this.#raw.project._scope.settings.carcass;
   }
   set carcass(v) {
-    const change = this.#raw.carcass !== v;
-    this.#raw.carcass = v;
+    const change = this.carcass !== v;
+    const {_scope} = this.#raw.project;
+    _scope.settings.carcass = v;
     if(change) {
-      this.#raw.project.redraw(true);
+      for(const project of _scope.projects) {
+        project.redraw(true);
+      }
     }
+  }
+  
+  get gridStep() {
+    return this.#raw.project._scope.settings.gridStep;
+  }
+  set gridStep(v) {
+    this.#raw.project._scope.settings.gridStep = parseInt(v, 10) || 10;
   }
 
   get loading() {
@@ -56,7 +70,6 @@ export class BuilderProps  {
   }
 
   
-
   fontFamily() {
     return 'GOST type B';
   }

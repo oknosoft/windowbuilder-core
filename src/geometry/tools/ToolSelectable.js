@@ -1,6 +1,7 @@
 
 import {ToolElement} from './ToolElement';
 import {DimensionLine} from '../DimensionLine';
+import {Filling} from '../Filling';
 import paper from 'paper/dist/paper-core';
 
 export class ToolSelectable extends ToolElement {
@@ -87,7 +88,7 @@ export class ToolSelectable extends ToolElement {
   hitTest(ev) {
     const {point} = ev;
     const tolerance = 26;
-    const {project, canvasCursor} = this;
+    const {project, canvasCursor, mode} = this;
     this.#raw.hitItem = null;
 
     if (point) {
@@ -109,7 +110,14 @@ export class ToolSelectable extends ToolElement {
       if(!this.#raw.hitItem) {
         hit = project.hitTest(point, {class: paper.PointText, fill: true, tolerance});
         if(hit?.item?.parent instanceof DimensionLine) {
-          this.#raw.hitItem = {item: hit.item, type: 'dimension'};
+          this.#raw.hitItem = {...hit, type: 'dimension'};
+        }
+      }
+
+      if(!this.#raw.hitItem) {
+        hit = project.hitTest(point, {fill: true});
+        if(hit?.item?.parent instanceof Filling) {
+          this.#raw.hitItem = {...hit, type: 'filling'};
         }
       }
 
