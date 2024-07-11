@@ -10,6 +10,7 @@
     "node": ">=20.11",
     "yarn": "^1.22"
   },
+  "packageManager": "yarn@1.22.22",
   "keywords": [
     "metadata",
     "order dealer",
@@ -34,7 +35,6 @@
     "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
     "md5-file": "^5.0"
   },
-  "packageManager": "yarn@1.22.21",
   "files": [
     "dist/**",
     "LICENSE",
