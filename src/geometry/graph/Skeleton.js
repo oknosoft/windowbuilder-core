@@ -92,7 +92,7 @@ export class Skeleton extends Graph {
     let vertex = this.vertexByPoint(point, vertices, 1);
     if(!vertex) {
       let omission;
-      for(let i=1; i<vertices.length; i++) {
+      for(let i=1; i<=vertices.length; i++) {
         if(!vertices.find(({value}) => parseInt(value, 10) === i)) {
           omission = i;
           break;
@@ -196,15 +196,13 @@ export class Skeleton extends Graph {
     }
   }
   
-  checkNodes(b, e, preserve) {
+  checkNodes(b, e) {
     const startVertex = this.createVertexByPoint(b);
     const endVertex = this.createVertexByPoint(e);
     const res = Boolean(this.findEdge(startVertex, endVertex));
-    if(!preserve) {
-      for(const vertex of [startVertex, endVertex]) {
-        if(!vertex.edges.head && !vertex.endEdges.head) {
-          this.deleteVertex(vertex);
-        }
+    for(const vertex of [startVertex, endVertex]) {
+      if(!vertex.edges.head && !vertex.endEdges.head) {
+        this.deleteVertex(vertex);
       }
     }
     return res;

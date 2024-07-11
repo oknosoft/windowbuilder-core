@@ -235,7 +235,7 @@ export class Contour extends paper.Layer {
     b = generatrix.firstSegment.point;
     e = generatrix.lastSegment.point;
     const {skeleton, project} = this;
-    if(this.skeleton.checkNodes(b, e, true)) {
+    if(this.skeleton.checkNodes(b, e)) {
       throw new Error('createProfile: Edge has already been added before');
     }
     generatrix.set({
