@@ -1876,7 +1876,7 @@ class ProfileItem extends GeneratrixElement {
    */
   cnn_side(profile, interior, rays) {
     if (!interior) {
-      interior = profile.interiorPoint();
+      interior = profile?.interiorPoint?.();
     }
     if (!rays) {
       rays = this.rays;

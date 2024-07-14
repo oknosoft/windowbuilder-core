@@ -272,6 +272,7 @@ class ProductsBuilding {
           s: 0,
           x: _row.len,
           y: 0,
+          origin: inset,
         };
         const cx = Object.assign(ox.find_create_cx(elm.elm, blank.guid), attrs);
         ox._order_rows.push(cx);

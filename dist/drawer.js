@@ -9640,7 +9640,7 @@ class ProfileItem extends GeneratrixElement {
   }
   cnn_side(profile, interior, rays) {
     if (!interior) {
-      interior = profile.interiorPoint();
+      interior = profile?.interiorPoint?.();
     }
     if (!rays) {
       rays = this.rays;
@@ -15276,6 +15276,7 @@ class ProductsBuilding {
           s: 0,
           x: _row.len,
           y: 0,
+          origin: inset,
         };
         const cx = Object.assign(ox.find_create_cx(elm.elm, blank.guid), attrs);
         ox._order_rows.push(cx);
