@@ -250,6 +250,7 @@ export class ToolSelect extends ToolSelectable {
       }
     }
     else if (code === 'Delete') {
+      let rm;
       for(const elm of project.activeLayer.profiles) {
         if(elm.selected) {
           try{
@@ -258,9 +259,12 @@ export class ToolSelect extends ToolSelectable {
           catch (err) {
             alert(err.message);
           }
-          project.redraw();
-          this.mousemove(ev);
+          rm = true;
         }
+      }
+      if(rm) {
+        project.redraw();
+        this.mousemove(ev);
       }
     }
   }
