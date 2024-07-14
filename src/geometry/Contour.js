@@ -23,6 +23,11 @@ export class Contour extends paper.Layer {
     return layer ? `${layer.index}-${_index+1}` : _index.toString();
   }
 
+  get level() {
+    const {layer} = this;
+    return layer ? layer.index + 1 : 0;
+  }
+
   get skeleton() {
     return this.#raw.skeleton;
   }
@@ -289,6 +294,7 @@ export class Contour extends paper.Layer {
   }
 
   remove() {
+    this._removing = true;
     for(const contour of this.contours) {
       contour.remove();
     }
@@ -301,6 +307,7 @@ export class Contour extends paper.Layer {
     this.children.visualization.clear();
     this.project.props.registerChange();
     super.remove();
+    delete this._removing;
   }
 
   move(delta) {
