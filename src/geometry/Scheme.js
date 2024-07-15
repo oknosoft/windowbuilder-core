@@ -11,8 +11,8 @@ export class Scheme extends paper.Project {
     if(root) {
       Object.defineProperty(this, 'root', {value: root});
     }
-    Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
     Object.defineProperty(this, 'rootLayer', {value: new ContourRoot({project: this, insert: true})});
+    Object.defineProperty(this, 'props', {value: new BuilderProps(this)});
   }
 
   get activeLayer() {
@@ -105,8 +105,6 @@ export class Scheme extends paper.Project {
     }
     dimensions.clear();
     dimensions.removeChildren();
-    //props.registerChange();
-    //this.redraw();
   }
   
   activate() {

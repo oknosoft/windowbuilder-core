@@ -198,7 +198,12 @@ export class Contour extends paper.Layer {
     const {project, layer} = this;
     const {utils, cat} = project.root;
     const {sys} = this.#raw;
-    return utils.is.emptyGuid(sys) && layer ? layer.sys : cat.productionParams.get(sys);
+    if(utils.is.emptyGuid(sys)) {
+      return layer ? layer.sys : project.props.sys;
+    }
+    else {
+      return cat.productionParams.get(sys);
+    }
   }
   set sys(v) {
     this.#raw.sys = this.project.root.cat.productionParams.get(v);

@@ -1,4 +1,5 @@
 import {Three} from './Three';
+import defaults from './BuilderPropsDefaults';
 
 export class BuilderProps  {
   #raw = {sticking: 4};
@@ -7,12 +8,11 @@ export class BuilderProps  {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
     this.#raw.three = new Three();
-    const {settings} = project._scope;
-    if(!settings.carcass) {
-      settings.carcass = 'carcass'; // carcass|normal|plane
-      settings.handleSize = 14;
-      settings.gridStep = 50;
-    }
+    defaults(project, this);
+  }
+  
+  get project() {
+    return this.#raw.project;
   }
   
   get stamp() {
@@ -69,6 +69,13 @@ export class BuilderProps  {
     this.#raw.sticking = Boolean(v);
   }
 
+  get sys() {
+    const {project, sys} = this.#raw;
+    return project.root.cat.productionParams.get(sys);
+  }
+  set sys(v) {
+    this.#raw.sys = this.#raw.project.root.cat.productionParams.get(v);
+  }
   
   fontFamily() {
     return 'GOST type B';
