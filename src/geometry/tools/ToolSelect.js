@@ -1,7 +1,10 @@
 
+import paper from 'paper/dist/paper-core';
 import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
 import {Filling} from '../Filling';
+
+const {Point} = paper;
 
 export class ToolSelect extends ToolSelectable {
   
@@ -241,17 +244,19 @@ export class ToolSelect extends ToolSelectable {
 
   keydown(ev) {
     const {project, mode, _scope} = this;
-    const {event: {code, target}, modifiers} = ev;
+    const {event: {code, key, target}, modifiers} = ev;
+    const {activeLayer} = project;
+    const arrow = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
     if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
       this.mode = null;
-      project.activeLayer.mover.cancelMovePoints();
+      activeLayer.mover.cancelMovePoints();
       if(this.mousePos) {
         this.hitTest({point: this.mousePos});
       }
     }
     else if (code === 'Delete') {
       let rm;
-      for(const elm of project.activeLayer.profiles) {
+      for(const elm of activeLayer.profiles) {
         if(elm.selected) {
           try{
             elm.remove();
@@ -265,6 +270,35 @@ export class ToolSelect extends ToolSelectable {
       if(rm) {
         project.redraw();
         this.mousemove(ev);
+      }
+    }
+    else if(arrow.includes(code) || arrow.includes(key)) {
+      const profiles = activeLayer.profiles.filter(p => p.selected);
+      if(profiles.length) {
+        const {node, line} = this.get('node,line');
+        if(node && line) {
+          node.visible = false;
+          line.visible = false;
+        }
+        const step = modifiers.shift ? 1 : project.props.gridStep;
+        const pt = profiles[0].generatrix.interiorPoint;
+        const delta = new Point();
+        if(code === arrow[0] || key === arrow[0]) {
+          delta.x = step;
+        }
+        else if(code === arrow[1] || key === arrow[1]) {
+          delta.x = -step;
+        }
+        else if(code === arrow[2] || key === arrow[2]) {
+          delta.y = -step;
+        }
+        else if(code === arrow[3] || key === arrow[3]) {
+          delta.y = step;
+        }
+        activeLayer.mover.prepareMovePoints();
+        activeLayer.mover.tryMovePoints(pt, delta);
+        activeLayer.mover.applyMovePoints();
+        project.redraw();
       }
     }
   }
