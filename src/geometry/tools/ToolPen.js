@@ -59,6 +59,9 @@ export class ToolPen extends ToolSelectable {
         else if(hitItem.type == 'bind') {
           node.position = hitItem.point.clone();
           node.visible = true;
+          line.removeSegments();
+          line.addSegments(hitItem.segments);
+          line.visible = true;
         }
       }
     }
@@ -246,11 +249,16 @@ export class ToolPen extends ToolSelectable {
         const dir = bounds.width > bounds.height ? 'x' : 'y'; 
         for(const vertex of activeLayer.skeleton.getAllVertices()) {
           if(Math.abs(vertex.point[dir] - point[dir]) < props.gridStep * 1.2) {
+            const odir = dir === 'x' ? 'y' : 'x';
+            const start = path.firstSegment.point;
+            const other = Math.abs(start[odir] - point[odir]) < props.gridStep * 1.2 ? start[odir] : point[odir];
             this.set({hitItem: {
                 item: 'virtual',
                 type: 'bind',
-                segments: [],
-                point: Object.assign(point.clone(), {[dir]: vertex.point[dir]}),
+                segments: [
+                  {[dir]: vertex.point[dir], [odir]: vertex.point[odir] - 100}, 
+                  {[dir]: vertex.point[dir], [odir]: vertex.point[odir] + 100}],
+                point: Object.assign(point.clone(), {[dir]: vertex.point[dir], [odir]: other}),
               }});
           }
         }        
