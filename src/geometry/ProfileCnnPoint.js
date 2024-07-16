@@ -206,17 +206,17 @@ export class CnnPoint {
   }
   
   get cnn() {
-    return this.#raw.cnn;
+    return this.owner.root.cat.cnns.get(this.#raw.cnn);
   }
   set cnn(v) {
     this.#raw.cnn = cnn;
   }
 
-  get cnno() {
-    return this.#raw.cnno;
+  get cnnOuter() {
+    return this.hasOuter ? this.owner.root.cat.cnns.get(this.#raw.cnnOuter) : null;
   }
-  set cnno(v) {
-    this.#raw.cnno = v;
+  set cnnOuter(v) {
+    this.#raw.cnnOuter = v;
   }
 
   /**
@@ -230,7 +230,7 @@ export class CnnPoint {
       const profiles = [];
       for(const cnnPoint of this.vertex.cnnPoints) {
         if(cnnPoint !== this) {
-          profiles.push(owner);
+          profiles.push(cnnPoint.owner);
         }
       }
       if(!profiles.length) {
@@ -254,6 +254,15 @@ export class CnnPoint {
    */
   get profileOuter() {
 
+  }
+
+  get profilePoint() {
+    const {profile, vertex} = this;
+    for(const cnnPoint of vertex.cnnPoints) {
+      if(cnnPoint.owner === profile) {
+        return cnnPoint;
+      }
+    }
   }
 
   /**
