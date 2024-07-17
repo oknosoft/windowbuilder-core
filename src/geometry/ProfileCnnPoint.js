@@ -253,7 +253,7 @@ export class CnnPoint {
    * @type {null|GeneratrixElement}
    */
   get profileOuter() {
-
+    return this.hasOuter ? undefined: null;
   }
 
   get profilePoint() {
@@ -266,7 +266,7 @@ export class CnnPoint {
   }
 
   /**
-   * Признак Т-соединения
+   * @summary Признак Т-соединения
    * @type {Boolean}
    */
   get isT() {
@@ -277,8 +277,24 @@ export class CnnPoint {
     }
     return this.#raw.isT;
   }
+
+  /**
+   * @summary Признак соединения с пустотой
+   * @type {Boolean}
+   */
+  get isI() {
+    return !this.profile;
+  }
   
   get hasOuter() {
     return false;
+  }
+  
+  get cnns() {
+    return this.owner.root.cat.cnns.nodeCnns(this, this.profile);
+  }
+  
+  get cnnsOuter() {
+    return this.hasOuter ? this.owner.root.cat.cnns.nodeCnns(this, this.profileOuter) : [];
   }
 }
