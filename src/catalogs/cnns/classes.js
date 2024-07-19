@@ -2,7 +2,7 @@
 // если класс не включён в exclude, заготовки конструкторов система создаст автоматически
 export const exclude = [/*'cat.cnns'*/];
 
-export function classes({cat, classes, symbols}, exclude)  {
+export function classes({cat, enm, classes, symbols}, exclude)  {
     
   const {CatCnns: CatObj, CatCnnsManager: CatManager} = classes;
   const {get, set} = symbols;
@@ -31,7 +31,7 @@ export function classes({cat, classes, symbols}, exclude)  {
         }
         c1 = cache.get(nom1);
         if(!c1.has(nom2)) {
-          c1.set(nom2, cat.cnns.byNoms(nom1, nom2));
+          c1.set(nom2, cat.cnns.byNoms(nom1, nom2, enm.cnnTypes.acn[kind]));
         }
       }
       return {elm1, kind, cnns: c1?.get(nom2) || []};
@@ -48,15 +48,17 @@ export function classes({cat, classes, symbols}, exclude)  {
   
   class CatCnnsManager extends CatManager{
 
-    byNoms(nom1, nom2) {
+    byNoms(nom1, nom2, types) {
       const res = [];
       for(const cnn of this) {
-        for(const row of cnn.cnn_elmnts) {
-          if(row.nom1 === nom1) {
-            if(row.nom2 === nom2 ||
-              (row.nom2.empty() && cnn.cnn_elmnts.find((row) => row.nom2 === nom2 && row.nom1.empty()))) {
-              res.push(cnn);
-              break;
+        if(types.includes(cnn.cnn_type)) {
+          for(const row of cnn.cnn_elmnts) {
+            if(row.nom1 === nom1) {
+              if(row.nom2 === nom2 ||
+                (row.nom2.empty() && cnn.cnn_elmnts.find((row) => row.nom2 === nom2 && row.nom1.empty()))) {
+                res.push(cnn);
+                break;
+              }
             }
           }
         }

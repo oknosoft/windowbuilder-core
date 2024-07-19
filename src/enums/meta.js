@@ -1,4 +1,6 @@
 
+import {classes, exclude} from './classes';
+
 export const meta = {
   alignTypes: [
     {
@@ -1680,3 +1682,4 @@ export const meta = {
   ],
 };
 
+export {classes, exclude};

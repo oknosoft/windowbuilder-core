@@ -265,6 +265,15 @@ export class CnnPoint {
     }
   }
 
+  get profilePointOuter() {
+    const {profileOuter, vertex} = this;
+    for(const cnnPoint of vertex.cnnPoints) {
+      if(cnnPoint.owner === profileOuter) {
+        return cnnPoint;
+      }
+    }
+  }
+
   /**
    * @summary Признак Т-соединения
    * @type {Boolean}
