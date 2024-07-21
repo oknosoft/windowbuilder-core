@@ -182,16 +182,16 @@ export class ToolSelect extends ToolSelectable {
     this.mousemove(ev);
   }
 
-  mousedrag(ev) {
+  mousedrag({modifiers, point}) {
     if (this.mode === 'move-shapes' || this.mode === 'move-points') {
       const {props: {gridStep}, activeLayer}  = this.project;
-      let delta = ev.point.subtract(this.mouseStartPos);
-      if (!ev.modifiers.shift) {
+      let delta = point.subtract(this.mouseStartPos);
+      if (!modifiers.shift) {
         delta = delta.snapToAngle().snap(gridStep);
       }
       if(delta.length > 8) {
-        this.mousePos = ev.point.clone();
-        activeLayer.mover.tryMovePoints(this.mouseStartPos, delta);
+        this.mousePos = point.clone();
+        activeLayer.mover.tryMovePoints(this.mouseStartPos, delta, modifiers.shift);
       }
     }
   }
@@ -296,7 +296,7 @@ export class ToolSelect extends ToolSelectable {
           delta.y = step;
         }
         activeLayer.mover.prepareMovePoints();
-        activeLayer.mover.tryMovePoints(pt, delta);
+        activeLayer.mover.tryMovePoints(pt, delta, modifiers.shift);
         activeLayer.mover.applyMovePoints();
         project.redraw();
       }

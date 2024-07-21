@@ -161,7 +161,7 @@ export class Mover {
    * @param {paper.Point} start
    * @param {paper.Point} delta
    */
-  tryMovePoints(start, delta) {
+  tryMovePoints(start, delta, shift) {
 
     const cmax = this.#raw.owner.profiles.length > 100 ? 40000 : lmax;
     const {vertexes} = this.#raw;
@@ -173,7 +173,7 @@ export class Mover {
       if(move.level === 0) {
         const test = move.startPoint.add(delta);
         if(vertex.isT) {
-          this.tryMoveImpost({vertex, move, test, delta});
+          this.tryMoveImpost({vertex, move, test, delta, shift});
         }
         else {
           // узел угла не должен порождать длины < lmin и > cmax
@@ -183,9 +183,9 @@ export class Mover {
               initial: move.startPoint,
               test,
               free: true,
-              min: lmin,
-              imin: li,
-              max: cmax,
+              min: shift ? 10 : lmin,
+              imin: shift ? 10 : li,
+              max: shift ? Infinity : cmax,
             });
             if(pos?.delta?.length > epsilon || pos?.stop) {
               // на текущем профиле перевёртыш - ищем точку
@@ -193,8 +193,8 @@ export class Mover {
                 const pos = edge.profile.generatrix.directedMinPosition({
                   base: me.other.point,
                   initial: move.startPoint,
-                  min: lmin,
-                  imin: li,
+                  min: shift ? 10 : lmin,
+                  imin: shift ? 10 : li,
                 });
                 move.delta = pos.delta;
                 break;
@@ -212,7 +212,7 @@ export class Mover {
       if(move.level && vertex.isT) {
         // ищем точку на будущей образующей
         const test = move.startPoint.clone();
-        this.tryMoveImpost({vertex, move, test, delta});
+        this.tryMoveImpost({vertex, move, test, delta, shift});
       }
     }
     let reset;
@@ -236,7 +236,7 @@ export class Mover {
     this.drawMoveRibs();
   }
 
-  tryMoveImpost({vertex, move, test, delta}) {
+  tryMoveImpost({vertex, move, test, delta, shift}) {
     // узел импоста не должен покидать родительский профиль и приближаться к углам ближе li
     const cmax = this.#raw.owner.profiles.length > 100 ? 40000 : lmax;     
     const {profile} = this.edgesProfile(move.edges, false, vertex);
@@ -277,8 +277,8 @@ export class Mover {
           pos = gen.joinedDirectedPosition({
             test: new paper.Path({insert: false, segments}),
             initial: move.startPoint,
-            min: li,
-            max: cmax,
+            min: shift ? 10 :li,
+            max: shift ? cmax * 2 : cmax,
           });
         }
       }
@@ -303,7 +303,7 @@ export class Mover {
           base2,
           initial: move.startPoint,
           test,
-          min: li,
+          min: shift ? 10 :li,
         });
       }
       if(pos?.reset) {
