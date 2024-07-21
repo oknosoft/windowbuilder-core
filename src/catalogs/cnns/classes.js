@@ -17,7 +17,7 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
       const kind = isT ? 't' : (isI ? 'i' : 'a');
       const cache = this[kind];
       let nom1 = elm1.nom;
-      let nom2 = isI ? null : elm2.nom;
+      let nom2 = (isI || !elm2) ? null : elm2.nom;
       if(nom1?.empty()) {
         nom1 = null;
       }

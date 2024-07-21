@@ -40,6 +40,7 @@ export class CnnPoint {
     if(stamp !== this.#raw.stamp) {
       const raw = this.#raw;
       raw.profile = null;
+      raw.profileOuter = null;
       raw.isT = null;
       raw.stamp = stamp;
       raw.outer.removeSegments();
@@ -226,24 +227,38 @@ export class CnnPoint {
   get profile() {
     this.checkActual();
     if(this.#raw.profile === null) {
-      const {point, owner} = this;
+      const {point, owner, vertex} = this;
       const profiles = [];
-      for(const cnnPoint of this.vertex.cnnPoints) {
+      for(const cnnPoint of vertex.cnnPoints) {
         if(cnnPoint !== this) {
           profiles.push(cnnPoint.owner);
         }
       }
+      // если это соединение T, смотрим на рёбра
       if(!profiles.length) {
+        // for(const profile of vertex.profiles) {
+        //   if(profile !== owner) {
+        //     profiles.push(profile);
+        //   }
+        // }
         for(const profile of owner.layer.profiles) {
           if(profile !== owner && profile.generatrix.isNearest(point)) {
             profiles.push(profile);
           }
         }
       }
-      if(profiles.length > 1) {
-        
+      if(profiles.length === 1) {
+        this.#raw.profile = profiles[0];
       }
-      this.#raw.profile = profiles[0]; 
+      else {
+        for(const profile of profiles) {
+          if(owner.generatrix.pointPos(profile.generatrix.interiorPoint, point) < 0) {
+            this.#raw.profile = profile;
+            break;
+          }
+        }
+        
+      }       
     }
     return this.#raw.profile;
   }
@@ -253,7 +268,20 @@ export class CnnPoint {
    * @type {null|GeneratrixElement}
    */
   get profileOuter() {
-    return this.hasOuter ? undefined: null;
+    if(!this.hasOuter) {
+      return null;
+    }
+    this.checkActual();
+    if(this.#raw.profileOuter === null) {
+      const {point, owner, profile: main, vertex} = this;
+      for(const profile of vertex.profiles) {
+        if(profile !== owner && profile !== main && owner.generatrix.pointPos(profile.generatrix.interiorPoint, point) > 0) {
+          this.#raw.profileOuter = profile;
+          break;
+        }
+      }
+    }
+    return this.#raw.profileOuter;
   }
 
   get profilePoint() {
@@ -296,7 +324,7 @@ export class CnnPoint {
   }
   
   get hasOuter() {
-    return false;
+    return this.vertex.cnnPoints.length > 2;
   }
   
   get cnns() {
