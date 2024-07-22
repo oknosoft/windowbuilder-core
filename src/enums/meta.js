@@ -26,70 +26,70 @@ export const meta = {
       name: "УгловоеДиагональное",
       synonym: "Угловое диагональное",
       latin: "ad",
-      "css": "tb_img_cnn_ad"
+      css: "tb_img_cnn_ad"
     },
     {
       order: 1,
       name: "УгловоеКВертикальной",
       synonym: "Угловое к вертикальной",
       latin: "av",
-      "css": "tb_img_cnn_short"
+      css: "tb_img_cnn_short"
     },
     {
       order: 2,
       name: "УгловоеКГоризонтальной",
       synonym: "Угловое к горизонтальной",
       latin: "ah",
-      "css": "tb_img_cnn_long"
+      css: "tb_img_cnn_long"
     },
     {
       order: 3,
       name: "ТОбразное",
       synonym: "Т-образное",
       latin: "t",
-      "css": "tb_img_cnn_t"
+      css: "tb_img_cnn_t"
     },
     {
       order: 4,
       name: "Наложение",
       synonym: "Наложение",
       latin: "ii",
-      "css": "tb_img_cnn_ii"
+      css: "tb_img_cnn_ii"
     },
     {
       order: 5,
       name: "НезамкнутыйКонтур",
       synonym: "Незамкнутый контур",
       latin: "i",
-      "css": "tb_img_cnn_i"
+      css: "tb_img_cnn_i"
     },
     {
       order: 6,
       name: "КрестВСтык",
       synonym: "Крест в стык",
       latin: "xx",
-      "css": "tb_img_cnn_xx"
+      css: "tb_img_cnn_xx"
     },
     {
       order: 7,
       name: "КрестПересечение",
       synonym: "Крест пересечение",
       latin: "xt",
-      "css": "tb_img_cnn_xt"
+      css: "tb_img_cnn_xt"
     },
     {
       order: 8,
       name: "Короткое",
       synonym: "Короткое",
       latin: "short",
-      "css": "tb_img_cnn_short"
+      css: "tb_img_cnn_short"
     },
     {
       order: 9,
       name: "Длинное",
       synonym: "Длинное",
       latin: "long",
-      "css": "tb_img_cnn_long"
+      css: "tb_img_cnn_long"
     },
     {
       tag: "Типы соединений",
