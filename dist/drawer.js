@@ -6430,10 +6430,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
   redraw() {
-    const {path, imposts, glbeads, _attr, is_rectangular} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, project: {bounds: pbounds, ox}} = this;
     const {elm_font_size, font_family} = consts;
-    const fontSize = elm_font_size * (2 / 3);
-    const maxTextWidth = 600;
+    const max = Math.max(pbounds.width, pbounds.height);
+    let fontSize = elm_font_size * (2 / 3);
+    if(max > 3000) {
+      fontSize += fontSize * (max - 3000) / 3000;
+    }
+    const maxTextWidth = 900;
     path.visible = true;
     imposts.forEach((elm) => elm.redraw());
     this.purge_paths();
@@ -6483,6 +6487,22 @@ class Filling extends AbstractFilling(BuilderElement) {
           _attr._text.rotation += 180;
         }
       }
+    }
+    const param = $p.cch.properties.predefined('glass_separately');
+    if(param && ox.params.find({param, value: true})) {
+      if(!_attr._text_sep){
+        _attr._text_sep = _attr._text.clone();
+        _attr._text_sep.fontSize *= 2.2;
+        _attr._text_sep.fillColor = 'green';
+        _attr._text_sep.content = '⓿';
+        _attr._text_sep.justification = 'right';
+        _attr._text_sep.rotation = 0;
+      }
+      _attr._text_sep.point = bounds.bottomRight.add([-fontSize * 1.2, -fontSize]);
+    }
+    else if(_attr._text_sep){
+      _attr._text_sep.remove();
+      _attr._text_sep = null;
     }
     for(const glbead of glbeads) {
       glbead.redraw();
