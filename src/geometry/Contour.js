@@ -322,17 +322,30 @@ export class Contour extends paper.Layer {
   }
   
   drawVisualization() {
-    const {project: {props}, children: {visualization}, skeleton} = this;
+    const {project: {props}, children: {visualization}, skeleton, profiles, layer} = this;
     visualization.children.graph.clear();
     if(props.carcass === 'carcass') {
+      // подписи узлов
       for(const vertex of skeleton.getAllVertices()) {
         new paper.PointText({
           point: vertex.point.add([20, -20]),
-          content: vertex.value,
+          content: `(${vertex.value})`,
           parent: visualization.children.graph,
           fontSize: props.fontSize(),
           fontFamily: props.fontFamily(),
-        })
+        });
+      }
+      // подписи профилей
+      for(const profile of profiles) {
+        const loc = profile.generatrix.getLocationAt(profile.generatrix.length / 3);
+        new paper.PointText({
+          position: loc.point.add(loc.normal.multiply(layer ? -20 : 20)),
+          content: profile._index+1,
+          parent: visualization.children.graph,
+          fontSize: props.fontSize(),
+          fontFamily: props.fontFamily(),
+          justification: 'center'
+        });
       }
     }
   }
