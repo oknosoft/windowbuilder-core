@@ -27,6 +27,11 @@ export class Contour extends paper.Layer {
     const {layer} = this;
     return layer ? layer.index + 1 : 0;
   }
+  
+  get presentation() {
+    const {index, level} = this;
+    return `${level ? 'Створка' : 'Рама'} №${index}`;
+  }
 
   get skeleton() {
     return this.#raw.skeleton;

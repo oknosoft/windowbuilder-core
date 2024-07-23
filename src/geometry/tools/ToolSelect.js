@@ -28,7 +28,7 @@ export class ToolSelect extends ToolSelectable {
     //this.hitTest(ev);
     const {body, activeElement} = document;
     const {project, view} = this;
-    const {gridStep} = project.props;
+    const {gridStep, snap, snapAngle} = project.props;
     const hitItem = this.get('hitItem');
     if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
       activeElement.blur();
@@ -40,7 +40,7 @@ export class ToolSelect extends ToolSelectable {
         
     const select = [];
     const deselect = [];
-    this.mouseStartPos = ev.point.snap(gridStep);
+    this.mouseStartPos = hitItem?.point || ev.point.snap(gridStep);
     this.get('node').visible = false;
 
     if(hitItem && !alt) {
@@ -84,7 +84,9 @@ export class ToolSelect extends ToolSelectable {
           }
           if(item instanceof GeneratrixElement) {
             this.mode = 'move-shapes';
-            this.mouseStartPos = hitItem.point.snap(gridStep);
+            if(snap === 'grid') {
+              this.mouseStartPos = hitItem.point.snap(gridStep);
+            }
           }
         }
         else if(deselect.length) {
@@ -123,7 +125,9 @@ export class ToolSelect extends ToolSelectable {
           }
         }
         this.mode = 'move-points';
-        this.mouseStartPos = hitItem.point.snap(gridStep);
+        if(snap === 'grid') {
+          this.mouseStartPos = hitItem.point.snap(gridStep);
+        }
       }
       else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
         this.mode = 'move-handle';
@@ -160,7 +164,12 @@ export class ToolSelect extends ToolSelectable {
       }
 
     }
-    this.mousePos = this.mouseStartPos?.snap(gridStep) || null;
+    if(this.mouseStartPos) {
+      this.mousePos = snap === 'grid' ? this.mouseStartPos?.snap(gridStep) : this.mouseStartPos.clone();
+    }
+    else {
+      this.mousePos = null;  
+    }
     
     deselect.length && this._scope.cmd('deselect', deselect);
     select.length && this._scope.cmd('select', select);
@@ -184,10 +193,15 @@ export class ToolSelect extends ToolSelectable {
 
   mousedrag({modifiers, point}) {
     if (this.mode === 'move-shapes' || this.mode === 'move-points') {
-      const {props: {gridStep}, activeLayer}  = this.project;
+      const {props: {gridStep, snap, snapAngle}, activeLayer}  = this.project;
       let delta = point.subtract(this.mouseStartPos);
       if (!modifiers.shift) {
-        delta = delta.snapToAngle().snap(gridStep);
+        if(snap === 'angle') {
+          delta = delta.snapToAngle(snapAngle); 
+        }
+        else if(snap === 'grid') {
+          delta = delta.snap(gridStep);
+        }
       }
       if(delta.length > 8) {
         this.mousePos = point.clone();

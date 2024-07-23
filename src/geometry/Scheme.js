@@ -33,6 +33,10 @@ export class Scheme extends paper.Project {
     return this.rootLayer.children.dimensions;
   }
 
+  get dots() {
+    return this.rootLayer.children.dots;
+  }
+
   get bounds() {
     return this.layers.reduce((sum, {bounds}) => {
       if(!bounds.width || !bounds.height) {
@@ -133,6 +137,7 @@ export class Scheme extends paper.Project {
       item.redraw?.();
     }
     this.dimensions.redraw();
+    this.dots.redraw();
     if(!silent) {
       this.root.md.emit_promise('redraw', this);
     }

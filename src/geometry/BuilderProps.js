@@ -48,6 +48,27 @@ export class BuilderProps  {
     this.#raw.project._scope.settings.gridStep = parseInt(v, 10) || 10;
   }
 
+  get snapAngle() {
+    return this.#raw.project._scope.settings.snapAngle;
+  }
+  set snapAngle(v) {
+    this.#raw.project._scope.settings.snapAngle = parseInt(v, 10) || 45;
+  }
+  
+  get showGrid() {
+    return Boolean(this.#raw.project._scope.settings.showGrid);
+  }
+  set showGrid(v) {
+    this.#raw.project._scope.settings.showGrid = v;
+  }
+
+  get snap() {
+    return this.#raw.project._scope.settings.snap || 'none';
+  }
+  set snap(v) {
+    this.#raw.project._scope.settings.snap = v;
+  }
+
   get loading() {
     return Boolean(this.#raw.loading);
   }

@@ -1,13 +1,60 @@
 import {Contour} from './Contour';
 import {DimensionDrawer, MapedGroup} from './DimensionDrawer';
-
+import paper from 'paper/dist/paper-core';
 
 class GroupText extends MapedGroup {}
+
+class GroupDots extends paper.Group {
+  constructor(attr) {
+    super(Object.assign(attr, {guide: true}));
+    this.symbol = new paper.Symbol(new paper.Path.Rectangle({
+      point: [0, 0],
+      size: [1, 1],
+      strokeColor: 'black',
+      guide: true,
+      insert: false,
+    }));
+    this.current = {
+      gridStep: 0,
+    }
+  }
+  
+  redraw() {
+    const {symbol, current, project, children} = this;
+    let {props: {gridStep, showGrid}, bounds} = project;
+    if(!showGrid) {
+      return this.removeChildren();
+    }
+    if(!bounds) {
+      bounds = {left: -1000, right: 1000, top: -1000, bottom: 1000};
+    }
+    if(showGrid && (!children.length || current.gridStep !== gridStep ||
+      current.left > bounds.left + 500 ||
+      current.right < bounds.right - 500 ||
+      current.top > bounds.top + 500||
+      current.bottom < bounds.bottom - 500
+    )) {
+      current.gridStep = gridStep;
+      current.left = bounds.left;
+      current.right = bounds.right;
+      current.top = bounds.top;
+      current.bottom = bounds.bottom;
+      this.removeChildren();
+      for(let x = bounds.left - 1000; x < bounds.right + 1000; x += gridStep) {
+        for(let y = bounds.top - 1000; y < bounds.bottom + 1000 ; y += gridStep) {
+          const item = symbol.place(new paper.Point(x, y));
+          item.parent = this;
+        }
+      }
+    }
+  }
+}
 
 export class ContourRoot extends Contour {
 
   constructor(attr) {
     super(attr);
+    new GroupDots({parent: this, name: 'dots'});
     new DimensionDrawer({parent: this, name: 'dimensions'});
     new GroupText({parent: this, name: 'text'});
   }

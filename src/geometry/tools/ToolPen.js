@@ -24,6 +24,14 @@ export class ToolPen extends ToolSelectable {
         this.onZoomFit();
         this.get('line').strokeWidth = 3;
       },
+      deactivate() {
+        const {node, line} = this.get('node,line');
+        if(node && line) {
+          node.visible = false;
+          line.visible = false;
+        }
+        this.reset();
+      },
       mousedown: this.mousedown,
       // mouseup: this.mouseup,
       // mousedrag: this.mousedrag,
@@ -36,7 +44,8 @@ export class ToolPen extends ToolSelectable {
     this.hitTest(ev);
     const {shift, space, control, alt} = ev.modifiers;
     const {hitItem, node, line} = this.get('hitItem,node,line');
-    const {mode, profile, path} = this;
+    const {mode, profile, path, project} = this;
+    const {gridStep, snap, snapAngle} = project.props;
     if(node && line) {
       node.visible = false;
       line.visible = false;
@@ -68,8 +77,13 @@ export class ToolPen extends ToolSelectable {
     if(mode === 1 && path) {
       let pt = hitItem?.point || ev.point;
       let delta = pt.subtract(path.firstSegment.point);
-      if (!shift && !profile.elm_type.is('size')) {
-        delta = delta.snapToAngle();
+      if (!hitItem?.point && !shift && !profile.elm_type.is('size')) {
+        if(snap === 'angle') {
+          delta = delta.snapToAngle(Math.PI*snapAngle/180);
+        }
+        else if(snap === 'grid') {
+          delta = delta.snap(gridStep);
+        }        
         pt = path.firstSegment.point.add(delta);
       }
       if(delta.length > 10) {
@@ -124,6 +138,7 @@ export class ToolPen extends ToolSelectable {
   mousedown(ev) {
     const {hitItem, node} = this.get('hitItem,node,line');
     const {mode, profile, project} = this;
+    const {gridStep} = project.props;
     if(ev.event?.which > 1) {
       project.deselectAll();
       return this.reset(ev);
@@ -135,7 +150,7 @@ export class ToolPen extends ToolSelectable {
       else if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
         return this.reset(ev);
       }
-      const pt = (hitItem?.point || ev.point).snap();
+      const pt = hitItem?.point || ev.point.snap(gridStep);
       this.hit1 = {...hitItem, point: pt};
       this.path = new paper.Path({
         segments: [pt.clone(), pt.clone()],
