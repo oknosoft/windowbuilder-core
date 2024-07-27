@@ -605,12 +605,16 @@ EditorInvisible.ToolElement = ToolElement;
 })();
 class BuilderElement extends paper.Group {
   constructor(attr) {
+    const proto = attr?.proto;
+    if(proto) {
+      delete attr.proto;
+    }
     super(attr);
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(!attr.parent && attr.proto.parent && attr.proto.parent !== this.parent){
-      this.parent = attr.proto.parent;
+    else if(!attr.parent && proto.parent && proto.parent !== this.parent){
+      this.parent = proto.parent;
     }
     if(!attr.row){
       attr.row = this.layer._ox.coordinates.add();
@@ -626,20 +630,20 @@ class BuilderElement extends paper.Group {
       this._attr.simulated = true;
       this._row.elm_type = $p.enm.elm_types.Створка;
     }
-    if(attr.proto){
-      if(attr.proto.inset){
-        this.set_inset(attr.proto.inset, true);
+    if(proto){
+      if(proto.inset){
+        this.set_inset(proto.inset, true);
       }
-      if(attr.proto instanceof Profile){
-        this.insertBelow(attr.proto);
+      if(proto instanceof Profile){
+        this.insertBelow(proto);
       }
-      this.clr = attr.proto.clr;
+      this.clr = proto.clr;
     }
     if(!this._row.cnstr && this.layer.cnstr){
       this._row.cnstr = this.layer.cnstr;
     }
     if(this._row.elm_type.empty() && !this.inset.empty()){
-      this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
+      this._row.elm_type = proto?.elm_type || this.nom.elm_type;
     }
     this.project.register_change();
     if(this.getView()?._countItemEvent) {

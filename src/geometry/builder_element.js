@@ -23,12 +23,16 @@ class BuilderElement extends paper.Group {
    */
   constructor(attr) {
 
+    const proto = attr?.proto;
+    if(proto) {
+      delete attr.proto;
+    }
     super(attr);
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(!attr.parent && attr.proto.parent && attr.proto.parent !== this.parent){
-      this.parent = attr.proto.parent;
+    else if(!attr.parent && proto.parent && proto.parent !== this.parent){
+      this.parent = proto.parent;
     }
 
     if(!attr.row){
@@ -50,17 +54,17 @@ class BuilderElement extends paper.Group {
       this._row.elm_type = $p.enm.elm_types.Створка;
     }
 
-    if(attr.proto){
+    if(proto){
 
-      if(attr.proto.inset){
-        this.set_inset(attr.proto.inset, true);
+      if(proto.inset){
+        this.set_inset(proto.inset, true);
       }
 
-      if(attr.proto instanceof Profile){
-        this.insertBelow(attr.proto);
+      if(proto instanceof Profile){
+        this.insertBelow(proto);
       }
 
-      this.clr = attr.proto.clr;
+      this.clr = proto.clr;
 
     }
 
@@ -69,7 +73,7 @@ class BuilderElement extends paper.Group {
     }
 
     if(this._row.elm_type.empty() && !this.inset.empty()){
-      this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
+      this._row.elm_type = proto?.elm_type || this.nom.elm_type;
     }
 
     this.project.register_change();
@@ -93,17 +97,16 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
+   * @summary Примыкающий внешний элемент
+   * @desc имеет смысл для сегментов створок, доборов и рам с внешними соединителями
    * @abstract
    * @return {BuilderElement|void}
    */
   nearest() {}
 
   /**
-   * Образующая
-   *
-   * прочитать - установить путь образующей. здесь может быть линия, простая дуга или безье
-   * по ней будут пересчитаны pathData и прочие свойства
+   * @summary Образующая
+   * @desc Здесь может быть линия, простая дуга или безье. По ней будут пересчитаны pathData и прочие свойства
    * @type paper.Path
    */
   get generatrix() {
