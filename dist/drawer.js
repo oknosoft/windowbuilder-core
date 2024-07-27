@@ -13022,9 +13022,18 @@ class Scheme extends paper.Project {
     if(ox.clr.empty()) {
       return this.check_clr();
     }
+    const cache = new Map();
+    const {clr: {_manager}, specification}  = ox;
+    const {clr_conformity} = _dp.sys;
     this.getItems({class: ProfileItem}).forEach((elm) => {
       if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
-        elm.clr = clr;
+        const region = elm.rnum || 0;
+        if(!cache.has(region)) {
+          const row = clr_conformity.find({region});
+          cache.set(region, row?.clr);
+        }
+        const conformity = cache.get(region);
+        elm.clr = conformity ? _manager.by_predefined(conformity, clr, clr, elm, specification) : clr;
       }
     });
   }
