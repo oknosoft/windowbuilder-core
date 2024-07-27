@@ -288,6 +288,12 @@ export default function (paper) {
 
         return tmp;
       },
+
+      directedAngle() {
+        return this.firstSegment.point.
+        this.lastSegment.point
+        
+      },
       
       directedPosition({base, initial, test, free, min, imin, max}) {
         const lb = this.getNearestLocation(base);

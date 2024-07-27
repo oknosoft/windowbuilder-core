@@ -25,11 +25,6 @@ export class ToolPen extends ToolSelectable {
         this.get('line').strokeWidth = 3;
       },
       deactivate() {
-        const {node, line} = this.get('node,line');
-        if(node && line) {
-          node.visible = false;
-          line.visible = false;
-        }
         this.reset();
       },
       mousedown: this.mousedown,
@@ -43,12 +38,11 @@ export class ToolPen extends ToolSelectable {
   mousemove(ev) {
     this.hitTest(ev);
     const {shift, space, control, alt} = ev.modifiers;
-    const {hitItem, node, line} = this.get('hitItem,node,line');
+    const {hitItem, node, line, text1, text2} = this.get('hitItem,node,line,text1,text2');
     const {mode, profile, path, project} = this;
     const {gridStep, snap, snapAngle} = project.props;
     if(node && line) {
-      node.visible = false;
-      line.visible = false;
+      this.hideDecor();
       if (hitItem) {
         let item = hitItem.item.parent;
         if(space && item?.nearest?.()) {
@@ -94,6 +88,26 @@ export class ToolPen extends ToolSelectable {
           pt = hitItem.location.path.getNearestPoint(pt);
         }
         path.lastSegment.point = pt;
+      }
+      if(path.length > 200) {
+        const {length, firstSegment} = path;
+        const loc = path.getLocationAt(length / 2);
+        const {quadrant, angle} = loc.tangent
+        text1.position = loc.point.add(loc.normal.multiply(text1.fontSize));
+        text1.content = length.round();
+        text1.visible = true;
+
+        text2.position = firstSegment.point.add(loc.normal.multiply(text1.fontSize));
+        text2.content = `${angle.round()}°`;
+        text2.visible = true;
+        if([1,2].includes(quadrant)) {
+          text1.justification = 'right';
+          text2.justification = 'right';
+        }
+        else {
+          text1.justification = 'left';
+          text2.justification = 'left';
+        }
       }
     }
     else if(mode === 2 && path) {
@@ -241,6 +255,7 @@ export class ToolPen extends ToolSelectable {
   }
   
   reset(ev) {
+    this.hideDecor();
     this.mode = 0;
     this.path?.remove?.();
     this.callout1?.remove?.();

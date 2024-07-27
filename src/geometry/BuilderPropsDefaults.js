@@ -8,7 +8,7 @@ export default function defaults(project, props) {
     settings.gridStep = 50;
     settings.showGrid = true;    
     settings.snapAngle = 45;
-    settings.snap = 'angle'; //angle,grid,none 
+    settings.snap = 'grid'; //angle,grid,none 
   }
   
   const base_sys = project.root?.cch.predefinedElmnts.find({synonym: "base_sys"});

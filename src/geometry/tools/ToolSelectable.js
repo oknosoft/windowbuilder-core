@@ -52,6 +52,15 @@ export class ToolSelectable extends ToolElement {
     }
   }
   
+  hideDecor() {
+    if(this.#raw.node) {
+      this.#raw.node.visible = false;
+      this.#raw.line.visible = false;
+      this.#raw.text1.visible = false;
+      this.#raw.text2.visible = false;
+    }
+  }
+  
   onZoomFit() {
     if(this.#raw.node) {
       this.#raw.node.remove();
@@ -59,7 +68,11 @@ export class ToolSelectable extends ToolElement {
     if(this.#raw.line) {
       this.#raw.line.remove();
     }
-    const {size, parent} = this;
+    if(this.#raw.text1) {
+      this.#raw.text1.remove();
+      this.#raw.text2.remove();
+    }
+    const {size, parent, project} = this;
     this.#raw.node = new paper.Path.Rectangle({
       point: [0, 0],
       size: [size, size],
@@ -78,10 +91,20 @@ export class ToolSelectable extends ToolElement {
       visible: false,
       guide: true,
       strokeColor: 'blue',
-      strokeWidth: 5,
+      strokeWidth: 4,
       strokeScaling: false,
       strokeCap: 'round',
     });
+    this.#raw.text1 = new paper.PointText({
+      opacity: 0.7,
+      parent,
+      visible: false,
+      guide: true,
+      fillColor: 'blue',
+      fontFamily: project.props.fontFamily(),
+      fontSize: project.props.fontSize(),
+    });
+    this.#raw.text2 = this.#raw.text1.clone();
   }
   
 
