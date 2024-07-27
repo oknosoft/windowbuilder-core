@@ -134,12 +134,25 @@ class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
   set hide(v){this._setter('hide',v)}
 }
 
-class CatProduction_paramsFurn_paramsRow extends HideForciblyParamsRow{}
+class CatProduction_paramsFurn_paramsRow extends HideForciblyParamsRow{
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
+}
 
 class CatProduction_paramsProduct_paramsRow extends HideForciblyParamsRow{
   get elm(){return this._getter('elm')}
   set elm(v){this._setter('elm',v)}
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
 }
+
+class CatProduction_paramsParamsRow extends HideForciblyParamsRow{
+  get elm(){return this._getter('elm')}
+  set elm(v){this._setter('elm',v)}
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
+}
+
 
 class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
   get pos(){return this._getter('pos')}
@@ -283,6 +296,7 @@ Object.assign($p, {
   DpBuyers_orderProduct_paramsRow,
   CatProduction_paramsFurn_paramsRow,
   CatProduction_paramsProduct_paramsRow,
+  CatProduction_paramsParamsRow,
   CatInsertsProduct_paramsRow,
   CatCnnsSizesRow,
   CatInsertsSelection_paramsRow,

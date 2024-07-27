@@ -27,6 +27,8 @@ $p.enm.create('sketch_view');
 $p.enm.create('debit_credit_kinds');
 $p.enm.create('contract_kinds');
 $p.enm.create('inventory_kinds');
+$p.enm.create('product_link_kinds');
+$p.enm.create('layer_kinds');
 $p.enm.create('elm_visualization');
 $p.enm.create('predefined_formulas');
 $p.enm.create('text_aligns');
@@ -3195,6 +3197,8 @@ get templates(){return this._getter_ts('templates')}
 set templates(v){this._setter_ts('templates',v)}
 get color_price_groups(){return this._getter_ts('color_price_groups')}
 set color_price_groups(v){this._setter_ts('color_price_groups',v)}
+get clr_conformity(){return this._getter_ts('clr_conformity')}
+set clr_conformity(v){this._setter_ts('clr_conformity',v)}
 
 
   /**
@@ -3600,19 +3604,6 @@ get value(){return this._getter('value')}
 set value(v){this._setter('value',v)}
 }
 $p.CatProduction_paramsProductionRow = CatProduction_paramsProductionRow;
-class CatProduction_paramsParamsRow extends TabularSectionRow{
-get param(){return this._getter('param')}
-set param(v){this._setter('param',v)}
-get value(){return this._getter('value')}
-set value(v){this._setter('value',v)}
-get hide(){return this._getter('hide')}
-set hide(v){this._setter('hide',v)}
-get forcibly(){return this._getter('forcibly')}
-set forcibly(v){this._setter('forcibly',v)}
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
-}
-$p.CatProduction_paramsParamsRow = CatProduction_paramsParamsRow;
 class CatProduction_paramsColorsRow extends TabularSectionRow{
 get base_clr(){return this._getter('base_clr')}
 set base_clr(v){this._setter('base_clr',v)}
@@ -3632,6 +3623,13 @@ get clr_group(){return this._getter('clr_group')}
 set clr_group(v){this._setter('clr_group',v)}
 }
 $p.CatProduction_paramsColor_price_groupsRow = CatProduction_paramsColor_price_groupsRow;
+class CatProduction_paramsClr_conformityRow extends TabularSectionRow{
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+get clr(){return this._getter('clr')}
+set clr(v){this._setter('clr',v)}
+}
+$p.CatProduction_paramsClr_conformityRow = CatProduction_paramsClr_conformityRow;
 class CatProduction_paramsManager extends CatManager {
 
   // после загрузки, установим признак dhtmlxro цветам основы
@@ -7614,6 +7612,104 @@ set calc_order(v){this._setter('calc_order',v)}
 }
 $p.CatPlanning_keys = CatPlanning_keys;
 $p.cat.create('planning_keys');
+class CatProducts extends CatObj{
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
+get obj_delivery_state(){return this._getter('obj_delivery_state')}
+set obj_delivery_state(v){this._setter('obj_delivery_state',v)}
+get route(){return this._getter('route')}
+set route(v){this._setter('route',v)}
+get branch(){return this._getter('branch')}
+set branch(v){this._setter('branch',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+get links(){return this._getter_ts('links')}
+set links(v){this._setter_ts('links',v)}
+get struct(){return this._getter_ts('struct')}
+set struct(v){this._setter_ts('struct',v)}
+get params(){return this._getter_ts('params')}
+set params(v){this._setter_ts('params',v)}
+get profiles(){return this._getter_ts('profiles')}
+set profiles(v){this._setter_ts('profiles',v)}
+}
+$p.CatProducts = CatProducts;
+class CatProductsLinksRow extends TabularSectionRow{
+get kind(){return this._getter('kind')}
+set kind(v){this._setter('kind',v)}
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
+get address(){return this._getter('address')}
+set address(v){this._setter('address',v)}
+}
+$p.CatProductsLinksRow = CatProductsLinksRow;
+class CatProductsStructRow extends TabularSectionRow{
+get kind(){return this._getter('kind')}
+set kind(v){this._setter('kind',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get address(){return this._getter('address')}
+set address(v){this._setter('address',v)}
+get sys(){return this._getter('sys')}
+set sys(v){this._setter('sys',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
+get furn(){return this._getter('furn')}
+set furn(v){this._setter('furn',v)}
+get params(){return this._getter('params')}
+set params(v){this._setter('params',v)}
+get svg_path(){return this._getter('svg_path')}
+set svg_path(v){this._setter('svg_path',v)}
+get children(){return this._getter('children')}
+set children(v){this._setter('children',v)}
+get profiles(){return this._getter('profiles')}
+set profiles(v){this._setter('profiles',v)}
+}
+$p.CatProductsStructRow = CatProductsStructRow;
+class CatProductsParamsRow extends TabularSectionRow{
+get param(){return this._getter('param')}
+set param(v){this._setter('param',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
+get hide(){return this._getter('hide')}
+set hide(v){this._setter('hide',v)}
+}
+$p.CatProductsParamsRow = CatProductsParamsRow;
+class CatProductsProfilesRow extends TabularSectionRow{
+get bv(){return this._getter('bv')}
+set bv(v){this._setter('bv',v)}
+get bx(){return this._getter('bx')}
+set bx(v){this._setter('bx',v)}
+get by(){return this._getter('by')}
+set by(v){this._setter('by',v)}
+get bcnn(){return this._getter('bcnn')}
+set bcnn(v){this._setter('bcnn',v)}
+get bcnno(){return this._getter('bcnno')}
+set bcnno(v){this._setter('bcnno',v)}
+get ev(){return this._getter('ev')}
+set ev(v){this._setter('ev',v)}
+get ex(){return this._getter('ex')}
+set ex(v){this._setter('ex',v)}
+get ey(){return this._getter('ey')}
+set ey(v){this._setter('ey',v)}
+get ecnn(){return this._getter('ecnn')}
+set ecnn(v){this._setter('ecnn',v)}
+get ecnno(){return this._getter('ecnno')}
+set ecnno(v){this._setter('ecnno',v)}
+get offset(){return this._getter('offset')}
+set offset(v){this._setter('offset',v)}
+get svg_path(){return this._getter('svg_path')}
+set svg_path(v){this._setter('svg_path',v)}
+get params(){return this._getter('params')}
+set params(v){this._setter('params',v)}
+get children(){return this._getter('children')}
+set children(v){this._setter('children',v)}
+}
+$p.CatProductsProfilesRow = CatProductsProfilesRow;
+$p.cat.create('products');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -9937,12 +10033,25 @@ class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
   set hide(v){this._setter('hide',v)}
 }
 
-class CatProduction_paramsFurn_paramsRow extends HideForciblyParamsRow{}
+class CatProduction_paramsFurn_paramsRow extends HideForciblyParamsRow{
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
+}
 
 class CatProduction_paramsProduct_paramsRow extends HideForciblyParamsRow{
   get elm(){return this._getter('elm')}
   set elm(v){this._setter('elm',v)}
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
 }
+
+class CatProduction_paramsParamsRow extends HideForciblyParamsRow{
+  get elm(){return this._getter('elm')}
+  set elm(v){this._setter('elm',v)}
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
+}
+
 
 class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
   get pos(){return this._getter('pos')}
@@ -10086,6 +10195,7 @@ Object.assign($p, {
   DpBuyers_orderProduct_paramsRow,
   CatProduction_paramsFurn_paramsRow,
   CatProduction_paramsProduct_paramsRow,
+  CatProduction_paramsParamsRow,
   CatInsertsProduct_paramsRow,
   CatCnnsSizesRow,
   CatInsertsSelection_paramsRow,

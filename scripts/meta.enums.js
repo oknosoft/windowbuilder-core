@@ -36,7 +36,7 @@ const custom_constructor = [
   'DpBuyers_orderProduct_paramsRow',
   'CatProduction_paramsFurn_paramsRow',
   'CatProduction_paramsProduct_paramsRow',
-  'CatProduction_paramsFurn_paramsRow',
+  'CatProduction_paramsParamsRow',
   'CatInsertsProduct_paramsRow',
   'CatCnnsSizesRow',
   'CatInsertsSelection_paramsRow',
