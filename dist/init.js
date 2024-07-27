@@ -460,6 +460,8 @@ set hide(v){this._setter_ts('hide',v)}
       prm_row,
       elm,
       elm2,
+      node,
+      node2,
       ox,
       layer,
       ...other,

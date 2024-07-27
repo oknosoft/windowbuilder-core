@@ -166,6 +166,8 @@ exports.CchProperties = class CchProperties extends Object {
       prm_row,
       elm,
       elm2,
+      node,
+      node2,
       ox,
       layer,
       ...other,
