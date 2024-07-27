@@ -11791,6 +11791,9 @@ class ProfileConnective extends ProfileItem {
   get elm_type() {
     return $p.enm.elm_types.Соединитель;
   }
+  get d0() {
+    return this.offset;
+  }
   cnn_point(node) {
     return this.rays[node];
   }
