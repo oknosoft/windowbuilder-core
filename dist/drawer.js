@@ -18682,7 +18682,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(elm) {
               const {layer: {bounds}, orientation} = elm;
               const {sticking} = consts;
-              for(const node of ['b', 'e']) {
+              const nodes = node ? [node] : ['b', 'e']; 
+              for(const node of nodes) {
                 const pt = elm[node];
                 if(orientation?.is('hor') && (pt.x < bounds.left + sticking) || (pt.x > bounds.right - sticking)) {
                   return true;
