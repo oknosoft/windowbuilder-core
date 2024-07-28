@@ -209,18 +209,22 @@ export class ToolPen extends ToolSelectable {
       return this.reset(ev);
     }
     else if(mode === 2 && this.path?.length) {
-      const {parent, hit1, hit2} = this;
+      const {parent, hit1, hit2, callout1, callout2} = this;
       const elm1 = hit1.segment.path.parent;
       const elm2 = hit2.segment.path.parent;
       const p1 = elm1.b.point.equals(hit1.point) ? 'b' : 'e';
       const p2 = elm2.b.point.equals(hit2.point) ? 'b' : 'e';
+      const nearest = elm1.layer.bounds.nearestRib(this.path.interiorPoint);
       new DimensionLineCustom({
-        parent: elm1.layer.children.dimensions, 
+        owner: elm1.layer,
+        parent: project.dimensions,
         project,
         elm1,
         elm2,
         p1,
         p2,
+        offset: -(callout1.length + callout2.length)/2,
+        pos: nearest?.pos,
       });
       project.redraw();
       return this.reset(ev);

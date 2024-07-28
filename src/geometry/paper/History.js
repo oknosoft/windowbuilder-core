@@ -1,4 +1,5 @@
 import {Contour} from '../Contour';
+import {DimensionLine} from '../DimensionLine';
 
 export class History {
 
@@ -26,6 +27,10 @@ export class History {
       if(item instanceof Contour) {
         item.activate();
         eve.emit_promise('select', {type: 'layer', project, layer: item, shift});
+      }
+      else if(item instanceof DimensionLine) {
+        item.selected = true;
+        eve.emit_promise('select', {type: 'dimension', project, elm: item, layer: null, shift});
       }
       else if(item) {
         item.layer?.activate?.();

@@ -135,7 +135,13 @@ export class ToolSelect extends ToolSelectable {
         this.originalHandleOut = hitItem.segment.handleOut.clone();
       }
       else if(hitItem.type == 'dimension') {
-        return item.szStart(ev);
+        if(!control && !alt) {
+          return item.szStart(ev);
+        }
+        else {
+          this._scope.cmd('deselect', [{item: null, shift}]);
+          this._scope.cmd('select', [{item}]);
+        }        
       }
 
       // подключаем диалог свойств элемента
@@ -259,7 +265,7 @@ export class ToolSelect extends ToolSelectable {
   keydown(ev) {
     const {project, mode, _scope} = this;
     const {event: {code, key, target}, modifiers} = ev;
-    const {activeLayer} = project;
+    const {activeLayer, dimensions} = project;
     const arrow = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
     if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
       this.mode = null;
@@ -270,7 +276,7 @@ export class ToolSelect extends ToolSelectable {
     }
     else if (code === 'Delete') {
       let rm;
-      for(const elm of activeLayer.profiles) {
+      for(const elm of activeLayer.profiles.concat(dimensions.children)) {
         if(elm.selected) {
           try{
             elm.remove();
