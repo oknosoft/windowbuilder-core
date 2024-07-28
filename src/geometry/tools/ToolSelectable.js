@@ -129,6 +129,13 @@ export class ToolSelectable extends ToolElement {
       if (hit) {
         this.#raw.hitItem = hit;
       }
+
+      if(this.#raw.hitItem?.type === 'stroke') {
+        const {gridStep, snap} = project.props;
+         if(snap === 'grid') {
+           this.#raw.hitItem.point = this.#raw.hitItem.item.snap(this.#raw.hitItem.point, gridStep);
+         }
+      }
       
       if(!this.#raw.hitItem) {
         hit = project.hitTest(point, {class: paper.PointText, fill: true, tolerance});
@@ -143,7 +150,7 @@ export class ToolSelectable extends ToolElement {
           this.#raw.hitItem = {...hit, type: 'filling'};
         }
       }
-
+      
       // Hit test points
       // hit = project.hitPoints(point, 26, true);
       //

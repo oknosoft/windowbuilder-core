@@ -289,10 +289,40 @@ export default function (paper) {
         return tmp;
       },
 
-      directedAngle() {
-        return this.firstSegment.point.
-        this.lastSegment.point
-        
+      snap(point, step = 10) {
+        let delta = Infinity, count = 0;
+        while (delta > epsilon && count < 3) {
+          const x = (point.x / step).round() * step;
+          const y = (point.y / step).round() * step;
+          const hor = new paper.Path({
+            insert: false,
+            segments: [[x - step, y], [x + step, y]],
+          });
+          const vert = new paper.Path({
+            insert: false,
+            segments: [[x, step + y], [x, step - y]],
+          });
+          const base = new paper.Point(x, y);
+          let tmp = this.getNearestPoint(base);
+          if(!hor.contains(tmp) && !vert.contains(tmp)) {
+            const ihor = this.getCrossings(hor);
+            const ivert = this.getCrossings(vert);
+            if(!ihor.length && ivert.length) {
+              tmp = ivert[0].point;
+            }
+            else if(!ivert.length && ihor.length) {
+              tmp = ihor[0].point;
+            }
+            else if(ivert.length && ihor.length) {
+              tmp = base.getDistance(ihor[0].point, true) < base.getDistance(ivert[0].point, true) ? 
+                ihor[0].point : ivert[0].point;
+            }
+          }
+          delta = tmp.getDistance(point);
+          point = tmp;
+          count++
+        }        
+        return point;
       },
       
       directedPosition({base, initial, test, free, min, imin, max}) {
