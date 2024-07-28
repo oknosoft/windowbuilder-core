@@ -2,6 +2,7 @@
 import {ToolElement} from './ToolElement';
 import {DimensionLine} from '../DimensionLine';
 import {Filling} from '../Filling';
+import {ContainerBlank} from '../ContainerBlank';
 import paper from 'paper/dist/paper-core';
 
 export class ToolSelectable extends ToolElement {
@@ -146,7 +147,7 @@ export class ToolSelectable extends ToolElement {
 
       if(!this.#raw.hitItem) {
         hit = project.hitTest(point, {fill: true});
-        if(hit?.item?.parent instanceof Filling) {
+        if(hit?.item?.parent instanceof Filling || hit?.item?.parent instanceof ContainerBlank) {
           this.#raw.hitItem = {...hit, type: 'filling'};
         }
       }

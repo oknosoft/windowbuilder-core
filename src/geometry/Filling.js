@@ -1,16 +1,8 @@
 import paper from 'paper/dist/paper-core';
-import {BuilderElement} from './BuilderElement';
+import {ContainerBlank} from './ContainerBlank';
 
-export class Filling extends BuilderElement {
-
-  constructor({loading, pathOuter, ...attr}) {
-    super(attr);
-    this.raw('path', new paper.Path({parent: this, name: 'path'}));
-    if(pathOuter) {
-      this.path = pathOuter;
-    }
-  }
-  
+export class Filling extends ContainerBlank {
+    
   get path() {
     return this.children.path;
   }
@@ -24,13 +16,21 @@ export class Filling extends BuilderElement {
       stops: ['#def', '#d0ddff', '#eff'],
       origin: bounds.bottomLeft,
       destination: bounds.topRight,
-      alpha: 0.9
     });
   }
   
   redraw() {
-    //this.checkActual();
-    const {carcass} = this.project.props;
-    this.path.opacity = carcass === 'normal' ? 0.9: 0.2;
+    super.redraw();
+    const {children: {text}, project: {props}} = this;
+    this.path.opacity = props.carcass === 'normal' ? 0.9: 0.4;
+    text.content = 'Заполнение';
+  }
+
+  remove() {
+    const {container} = this;
+    super.remove();
+    if(container) {
+      container.createChild({kind: 'blank'});
+    }
   }
 }

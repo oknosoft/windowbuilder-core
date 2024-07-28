@@ -2,7 +2,6 @@
 import paper from 'paper/dist/paper-core';
 import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
-import {Filling} from '../Filling';
 
 const {Point} = paper;
 
@@ -51,7 +50,7 @@ export class ToolSelect extends ToolSelectable {
         item = item.nearest();
       }
 
-      if(item && (hitItem.type == 'fill' || hitItem.type == 'stroke' || hitItem.type == 'filling')) {
+      if(item && ['filling', 'fill', 'stroke'].includes(hitItem.type)) {
         if(shift) {
           if(item.selected) {
             deselect.push({item, node: null, shift});

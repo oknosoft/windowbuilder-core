@@ -9,6 +9,7 @@ import {Contour} from './Contour';
 import {DimensionLine} from './DimensionLine';
 import {DimensionLineCustom} from './DimensionLineCustom';
 import {Filling} from './Filling';
+import {ContainerBlank} from './ContainerBlank';
 import {GeneratrixElement} from './GeneratrixElement';
 
 const geometry = {
@@ -20,6 +21,7 @@ const geometry = {
   DimensionLine,
   DimensionLineCustom,
   Filling,
+  ContainerBlank,
 };
 Object.assign(paper.constructor.prototype, geometry);
 export default geometry;

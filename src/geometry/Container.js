@@ -3,6 +3,7 @@
 // import {LayerGroup} from './DimensionDrawer';
 import {Contour} from './Contour';
 import {Filling} from './Filling';
+import {ContainerBlank} from './ContainerBlank';
 
 /**
  * @summary Область-проём для слоёв и заполнений
@@ -24,6 +25,10 @@ export class Container  {
   
   get kind() {
     return this.#raw.kind;
+  }
+  
+  get child() {
+    return this.#raw.child;
   }
 
   /**
@@ -89,8 +94,9 @@ export class Container  {
    */
   createChild({kind}) {
     if(kind !== this.#raw.kind) {
-      this.#raw.child?.remove();
-      const {pathInner, layer} = this;
+      const {pathInner, layer, child} = this;
+      this.#raw.child = null;
+      child?.remove();
       if(kind === 'flap') {
         const child = new Contour({
           project: layer.project,
@@ -109,6 +115,14 @@ export class Container  {
       }
       else if(kind === 'glass') {
         this.#raw.child = new Filling({
+          project: layer.project,
+          layer,
+          parent: layer.children.fillings,
+          pathOuter: pathInner,
+        });
+      }
+      else if(kind === 'blank') {
+        this.#raw.child = new ContainerBlank({
           project: layer.project,
           layer,
           parent: layer.children.fillings,
@@ -142,7 +156,7 @@ export class Container  {
         }
       }
     }
-    else if(kind === 'glass') {
+    else if(['glass', 'blank'].includes(kind)) {
       child.path = pathInner;
     }
   }
