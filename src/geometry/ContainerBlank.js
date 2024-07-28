@@ -16,6 +16,7 @@ export class ContainerBlank extends BuilderElement {
     });
     if(pathOuter) {
       this.path = pathOuter;
+      this.redraw();
     }
   }
   

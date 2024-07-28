@@ -96,7 +96,15 @@ export class Container  {
     if(kind !== this.#raw.kind) {
       const {pathInner, layer, child} = this;
       this.#raw.child = null;
+      const clayer = child?.layer;
+      if(clayer) {
+        clayer._removing = true;
+      }
       child?.remove();
+      if(clayer) {
+        delete clayer._removing;
+      }
+      layer.project.props.registerChange();
       if(kind === 'flap') {
         const child = new Contour({
           project: layer.project,
@@ -130,9 +138,11 @@ export class Container  {
         });
       }
       this.#raw.kind = kind;
-      return;
     }
-    this.sync();
+    else {
+      this.sync();
+    }
+    return this.#raw.child;
   }
 
   remove() {

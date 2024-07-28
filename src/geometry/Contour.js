@@ -44,6 +44,16 @@ export class Contour extends paper.Layer {
   get three() {
     return this.#raw.three;
   }
+
+  get container() {
+    if(this.isInserted() && this.layer) {
+      for(const container of this.layer.containers) {
+        if(container.child === this) {
+          return container;
+        }
+      }
+    }
+  }
   
   /**
    * @summary Возвращает массив вложенных контуров текущего контура
@@ -304,6 +314,7 @@ export class Contour extends paper.Layer {
   }
 
   remove() {
+    const {container} = this;
     this._removing = true;
     for(const contour of this.contours) {
       contour.remove();
@@ -317,6 +328,9 @@ export class Contour extends paper.Layer {
     this.children.visualization.clear();
     this.project.props.registerChange();
     super.remove();
+    if(container) {
+      container.createChild({kind: 'blank'});
+    }
     delete this._removing;
   }
 
