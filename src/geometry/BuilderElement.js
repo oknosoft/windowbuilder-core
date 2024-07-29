@@ -115,12 +115,14 @@ export class BuilderElement extends paper.Group {
     return this.project.root.cat.inserts.get(this.#raw.inset);
   }
   set inset(v) {
-    const {project} = this;
+    const {project, layer} = this;
     v = project.root.cat.inserts.get(v);
     if(v !== this.#raw.inset) {
       this.#raw.inset = v;
       project.props.registerChange();
-      project.redraw();
+      if(!project.props.loading && !layer._removing) {
+        project.redraw();
+      }
     }
   }
 

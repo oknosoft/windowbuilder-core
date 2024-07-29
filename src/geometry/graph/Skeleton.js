@@ -262,7 +262,19 @@ export class Skeleton extends Graph {
         // }
       }
     }
+  }
 
+  addProfiles(profiles) {
+    for(const profile of profiles) {
+      this.addProfile(profile);
+    }
+    for(const profile of profiles) {
+      profile.defaults();
+    }
+    for(const {b, e} of profiles) {
+      b.defaults();
+      e.defaults();
+    }
   }
 
   /**

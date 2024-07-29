@@ -91,7 +91,7 @@ export class GeneratrixElement extends BuilderElement {
    * @final
    */
   get d0() {
-    return 0;
+    return this.offset;
   }
 
   /**
@@ -115,10 +115,11 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * @summary вспомогательный метод для sizeb
-   * @return {Number}
+   * @summary Смещение внешнего ребра от опорной линии
+   * @desc для рам, как правило = 0, для импостов - половине ширины
+   * @type {Number}
    */
-  getSizeb() {
+  get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
       const {nom} = this;
@@ -144,47 +145,16 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
-   * @summary Опорный размер
-   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
-   * @type {Number}
-   */
-  get sizeb() {
-    return this.getSizeb();
-  }
-
-  /**
    * @summary Задаваемое пользователем смещение от образующей
    * @desc Особенно актуально для наклонных элементов а так же, в случае,
    * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю
    * @type Number
    */
   get offset() {
-    return this._row?.offset || 0;
+    return this.raw('offset') || 0;
   }
   set offset(v) {
-    const {_row, _attr, selected} = this;
-    v = parseFloat(v) || 0;
-    if(_row && _row.offset !== v) {
-      _row.offset = v;
-      /*
-      if(selected) {
-        this.selected = false;
-      }
-      const nearests = this.joined_nearests ? this.joined_nearests() : [];
-      if(this.joined_imposts) {
-        const imposts = this.joined_imposts();
-        nearests.push.apply(nearests, imposts.inner.map((v) => v.profile).concat(imposts.outer.map((v) => v.profile)));
-      }
-      for(const profile of nearests) {
-        profile._attr._rays && profile._attr._rays.clear();
-      }
-      _attr._rays && _attr._rays.clear();
-      this.project.register_change(true);
-      if(selected) {
-        this.selected = true;
-      }      
-      */
-    }
+    this.raw('offset', parseFloat(v) || 0);
   }
 
   get imposts() {
@@ -223,6 +193,21 @@ export class GeneratrixElement extends BuilderElement {
     //   }
     // }
     return {inner, outer};
+  }
+
+  /**
+   * @summary Умолчания при изменении окружения
+   * @desc Уточняет цвет, вставку и параметры
+   */
+  defaults() {
+    const {layer: {sys}, elmType, inset} = this;
+    if(inset.empty()) { // || checkActual
+      const inserts = sys.inserts({elmTypes: elmType, elm: this});
+      if(inserts.length) {
+        this.inset = inserts[0];
+      }
+    }
+    
   }
 
   cnnSide(profile, interior) {

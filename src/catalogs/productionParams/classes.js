@@ -14,18 +14,17 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
      * @return {boolean}
      */
     isElmType(inset, elmType) {
-      const inserts = this.inserts(elmType, 'rows').map((e) => e.nom);
+      const inserts = this.inserts(elmType);
       return inserts.includes(inset);
     }
 
     /**
-     * Возвращает доступные в данной системе элементы (вставки)
+     * @summary Возвращает доступные в данной системе элементы (вставки)
      * @param {EnmElmTypes|Array.<EnmElmTypes>} elmTypes - допустимые типы элементов
-     * @param {String} [rows] - возвращать вставки или строки табчасти "Элементы"
      * @param {BuilderElement} [elm] - указатель на элемент или проект, чтобы отфильтровать по ключам
      * @return {Array.<CatInserts|CatProductionParamsElmntsRow>}
      */
-    inserts({elmTypes, rows, elm}){
+    inserts({elmTypes, elm}){
       const noms = new Set();
       if(elm && !elmTypes) {
         elmTypes = [elm.elmType];

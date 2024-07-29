@@ -65,6 +65,26 @@ export class CnnPoint {
     }
     return this;
   }
+
+  /**
+   * @summary Умолчания при изменении окружения
+   * @desc Уточняет соединение и параметры
+   */
+  defaults() {
+    const {owner, profile, profileOuter, hasOuter, cnn, cnnOuter} = this;
+    if(cnn.empty()) {
+      const {cnns} = this;
+      if(cnns.length) {
+        this.cnn = cnns[0];
+      }
+    }
+    if(hasOuter && cnnOuter.empty()) {
+      const {cnnsOuter} = this;
+      if(cnnsOuter.length) {
+        this.cnnOuter = cnnsOuter[0];
+      }
+    }
+  }
   
   get name() {
     return this.#raw.name;
@@ -210,7 +230,7 @@ export class CnnPoint {
     return this.owner.root.cat.cnns.get(this.#raw.cnn);
   }
   set cnn(v) {
-    this.#raw.cnn = cnn;
+    this.#raw.cnn = v;
   }
 
   get cnnOuter() {
