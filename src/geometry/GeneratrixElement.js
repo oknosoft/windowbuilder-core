@@ -67,6 +67,22 @@ export class GeneratrixElement extends BuilderElement {
     return this.raw('e');
   }
 
+  get x1(){
+    return this.b.point.x;
+  }
+
+  get x2(){
+    return this.e.point.x;
+  }
+
+  get y1(){
+    return this.b.point.y;
+  }
+
+  get y2(){
+    return this.e.point.y;
+  }
+
   /**
    * @summary Путь фактического реза элемента
    * @type {paper.Path}
@@ -193,6 +209,44 @@ export class GeneratrixElement extends BuilderElement {
     //   }
     // }
     return {inner, outer};
+  }
+
+  /**
+   * @summary Положение элемента в контуре
+   * @type {EnmElmPositions}
+   */
+  get pos() {
+    const {layer, project: {root}} = this;
+    const {top, bottom, left, right} = layer.profilesBySide();
+    const {Верх, Низ, Лев, Прав, Центр} = root.enm.positions;
+    if(top === this) {
+      return Верх;
+    }
+    if(bottom === this) {
+      return Низ;
+    }
+    if(left === this) {
+      return Лев;
+    }
+    if(right === this) {
+      return Прав;
+    }
+    const {x1, x2, y1, y2} = this;
+    const delta = 60;
+    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+      return Верх;
+    }
+    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+      return Низ;
+    }
+    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+      return Лев;
+    }
+    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+      return Прав;
+    }
+    // TODO: рассмотреть случай с выносом стоек и разрывами
+    return Центр;
   }
 
   /**

@@ -26,11 +26,14 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
      */
     inserts({elmTypes, elm}){
       const noms = new Set();
+      const pos = elm?.pos || enm.positions.any;
       if(elm && !elmTypes) {
         elmTypes = [elm.elmType];
       }
       this.elmnts.findRows({elm_type: elmTypes}, row => {
-        noms.add(row.nom);
+        if(row.pos.empty() || row.pos.is('any') || pos.empty() || pos.is('any') || row.pos === pos) {
+          noms.add(row.nom);
+        }
       });
       return Array.from(noms);
     }

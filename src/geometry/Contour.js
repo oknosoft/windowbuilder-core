@@ -98,10 +98,10 @@ export class Contour extends paper.Layer {
       })
     }
 
-    for(const profile of this.profiles) {
+    for(const profile of profiles) {
       const {b, e} = profile;
-      const x = b.x + e.x;
-      const y = b.y + e.y;
+      const x = b.point.x + e.point.x;
+      const y = b.point.y + e.point.y;
       if(x < bounds.left){
         bounds.left = x;
       }

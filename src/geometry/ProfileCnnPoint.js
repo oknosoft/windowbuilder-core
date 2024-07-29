@@ -181,7 +181,7 @@ export class CnnPoint {
     if(!pts.inner || !pts.outer) {
       const {owner, point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
       const {cnnTypes} = owner.root.enm;
-      const cnnType = profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i;
+      const cnnType = (!cnn || cnn.empty()) ? (profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i) : cnn.cnn_type;
       let prays, orays;
       switch (cnnType) {
         case cnnTypes.i: {
@@ -189,10 +189,17 @@ export class CnnPoint {
           pts.outer = outer.getNearestPoint(point);
           break;
         }
-        case cnnTypes.t: {
+        case cnnTypes.t:
+        case cnnTypes.short:{
           const {prays} = this;
           pts.inner = prays.inner.intersectPoint(inner);
           pts.outer = prays.inner.intersectPoint(outer);
+          break;
+        }
+        case cnnTypes.long: {
+          const {prays} = this;
+          pts.inner = prays.outer.intersectPoint(inner);
+          pts.outer = prays.outer.intersectPoint(outer);
           break;
         }
         case cnnTypes.ad: {
@@ -230,14 +237,28 @@ export class CnnPoint {
     return this.owner.root.cat.cnns.get(this.#raw.cnn);
   }
   set cnn(v) {
-    this.#raw.cnn = v;
+    if(this.#raw.cnn != v) {
+      const {project, layer} = this.owner;
+      this.#raw.cnn = v;
+      project.props.registerChange();
+      if(!project.props.loading && !layer._removing) {
+        project.redraw();
+      }
+    }
   }
 
   get cnnOuter() {
     return this.hasOuter ? this.owner.root.cat.cnns.get(this.#raw.cnnOuter) : null;
   }
   set cnnOuter(v) {
-    this.#raw.cnnOuter = v;
+    if(this.#raw.cnnOuter != v) {
+      const {project, layer} = this.owner;
+      this.#raw.cnnOuter = v;
+      project.props.registerChange();
+      if(!project.props.loading && !layer._removing) {
+        project.redraw();
+      }
+    }
   }
 
   /**
