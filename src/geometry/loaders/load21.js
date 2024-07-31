@@ -1,6 +1,6 @@
 
 export function load21(raw) {
-  const {props} = this;
+  const {props, _scope: {Path}} = this;
   props.loading = true;
   props.sys = raw.sys;
   this.clear();
@@ -9,7 +9,7 @@ export function load21(raw) {
       this.addLayer().activate();
     }
     this.activeLayer.cnstr = row.cnstr;
-    loadLayer(this.activeLayer, raw, row);
+    loadLayer(this.activeLayer, raw, row, Path);
   }
   props.loading = false;
   props.registerChange();
@@ -19,16 +19,76 @@ export function load21(raw) {
 
 const elm_types = ['Рама', 'Створка', 'Импост'];
 
-function loadLayer(layer, raw, crow) {
+function findRibs(child, raw, crow, Path) {
+  const {pathInner} = child;
+  const map = new Map();
+  for(const row of raw.coordinates.filter((row) => row.cnstr === crow.cnstr && row.elm_type === 'Створка')) {
+    // находим ближайшее ребро
+    let rib;
+    const tmp = new Path({insert: false, pathData: row.path_data});
+    for(let i = 0; i < pathInner.length; i++) {
+      const b = pathInner[i];
+      const e = pathInner[i === pathInner.length - 1 ? 0 : i + 1];
+      if(tmp.firstSegment.point.isNearest(b, 30000) && tmp.lastSegment.point.isNearest(e, 30000)) {
+        rib = {b, e, edge: b.edge};
+        break;
+      }
+    }
+    if(!rib) {
+      return;
+    }
+    map.set(row, rib);
+  }
+  return map;
+}
+
+function findContainer(layer, raw, crow, Path) {
+  for(const id in layer.containers.children) {
+    const child = layer.containers.children[id];
+    if(child.kind !== 'flap') {
+      const ribs = findRibs(child, raw, crow, Path);
+      if(ribs) {
+        return {child, ribs};
+      }
+    }
+  }
+}
+
+function loadLayer(layer, raw, crow, Path) {
   const profiles = [];
+  const container = crow.parent ? layer.container : null;
+  const pathInner = container ? container.pathInner : null;
   for(const row of raw.coordinates.filter((row) => row.cnstr === crow.cnstr && elm_types.includes(row.elm_type))) {
-    profiles.push(layer.createProfile({
-      b: [row.x1, row.y1],
-      e: [row.x2, row.y2],
-      pathData: row.path_data,
-      inset: row.inset,
-    }));
+    if(crow.parent && crow.ribs) {
+      if(row.elm_type === 'Створка') {
+        // находим ближайшее ребро
+        let rib = crow.ribs.get(row);
+        if(rib) {
+          profiles.push(layer.createProfile({...rib, inset: row.inset}));
+        }
+      }
+    }
+    else {
+      profiles.push(layer.createProfile({
+        b: [row.x1, row.y1],
+        e: [row.x2, row.y2],
+        pathData: row.path_data,
+        inset: row.inset,
+      }));
+    }
   }
   layer.skeleton.addProfiles(profiles);
+  for(const profile of profiles) {
+    profile.redraw?.();
+  }
   layer.containers.sync();
+  for(const row of raw.constructions.filter((row) => row.parent === crow.cnstr)) {
+    const container = findContainer(layer, raw, row, Path);
+    if(container) {
+      const flap = container.child.createChild({kind: 'flap', skipProfiles: true});
+      flap.cnstr = row.cnstr;
+      row.ribs = container.ribs;
+      loadLayer(flap, raw, row, Path);
+    }
+  }
 }

@@ -92,7 +92,7 @@ export class Container  {
   /**
    * @summary Создаёт дочернее заполнение или слой
    */
-  createChild({kind}) {
+  createChild({kind, skipProfiles}) {
     if(kind !== this.#raw.kind) {
       const {pathInner, layer, child} = this;
       this.#raw.child = null;
@@ -110,14 +110,14 @@ export class Container  {
           project: layer.project,
           parent: layer.children.topLayers,
         });
-        const profiles = [];
-        for(let i = 0; i < pathInner.length; i++) {
-          const b = pathInner[i];
-          const e = pathInner[i === pathInner.length - 1 ? 0 : i + 1];
-          profiles.push(child.createProfile({b, e, edge: b.edge, loading: true}));
-        }
-        for(const profile of profiles) {
-          child.skeleton.addProfile(profile);
+        if(!skipProfiles) {
+          const profiles = [];
+          for(let i = 0; i < pathInner.length; i++) {
+            const b = pathInner[i];
+            const e = pathInner[i === pathInner.length - 1 ? 0 : i + 1];
+            profiles.push(child.createProfile({b, e, edge: b.edge, loading: true}));
+          }
+          child.skeleton.addProfiles(profiles);
         }
         this.#raw.child = child; 
       }
