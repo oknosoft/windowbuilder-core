@@ -95,6 +95,7 @@ export class Container  {
   createChild({kind, skipProfiles}) {
     if(kind !== this.#raw.kind) {
       const {pathInner, layer, child} = this;
+      const {project} = layer;
       this.#raw.child = null;
       const clayer = child?.layer;
       if(clayer) {
@@ -103,11 +104,13 @@ export class Container  {
       child?.remove();
       if(clayer) {
         delete clayer._removing;
-      }
-      layer.project.props.registerChange();
+      }       
+      project.props.registerChange();
       if(kind === 'flap') {
-        const child = new Contour({
-          project: layer.project,
+        const {loading} = project.props; 
+        project.props.loading = true;
+        const child = this.#raw.child = new Contour({
+          project,
           parent: layer.children.topLayers,
         });
         if(!skipProfiles) {
@@ -119,11 +122,11 @@ export class Container  {
           }
           child.skeleton.addProfiles(profiles);
         }
-        this.#raw.child = child; 
+        project.props.loading = loading;
       }
       else if(kind === 'glass') {
         this.#raw.child = new Filling({
-          project: layer.project,
+          project,
           layer,
           parent: layer.children.fillings,
           pathOuter: pathInner,
@@ -131,7 +134,7 @@ export class Container  {
       }
       else if(kind === 'blank') {
         this.#raw.child = new ContainerBlank({
-          project: layer.project,
+          project,
           layer,
           parent: layer.children.fillings,
           pathOuter: pathInner,

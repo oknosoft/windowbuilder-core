@@ -25,12 +25,4 @@ export class Filling extends ContainerBlank {
     this.path.opacity = props.carcass === 'normal' ? 0.9: 0.4;
     text.content = 'Заполнение';
   }
-
-  remove() {
-    const {container} = this;
-    super.remove();
-    if(container) {
-      container.createChild({kind: 'blank'});
-    }
-  }
 }

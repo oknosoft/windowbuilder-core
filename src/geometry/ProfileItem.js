@@ -9,7 +9,6 @@ export class Profile extends GeneratrixElement {
     this.raw('outer', new paper.Path({insert: false}));
     if(!(loading || this.project.props.loading)) {
       this.skeleton.addProfile(this);
-      this.layer.recalcFillings();
     }
   }
 

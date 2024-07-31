@@ -280,13 +280,6 @@ export class Contour extends paper.Layer {
   }
 
   /**
-   * @summary Создаёт при необходимости, заполнения в замкнутых областях 
-   */
-  recalcFillings() {
-    
-  }
-
-  /**
    * @summary Перерисовывает все элементы слоя
    */
   redraw() {
