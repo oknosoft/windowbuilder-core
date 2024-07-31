@@ -3,6 +3,7 @@ import paper from 'paper/dist/paper-core';
 import {BuilderProps} from './BuilderProps';
 import {Contour} from './Contour';
 import {ContourRoot} from './ContourRoot';
+import {load21} from './loaders/load21';
 
 export class Scheme extends paper.Project {
   
@@ -141,6 +142,10 @@ export class Scheme extends paper.Project {
     if(!silent) {
       this.root.md.emit_promise('redraw', this);
     }
+  }
+
+  load21(raw) {
+    return load21.call(this, raw);
   }
   
   // deprecated
