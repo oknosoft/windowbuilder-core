@@ -2217,7 +2217,7 @@ class ProfileItem extends GeneratrixElement {
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && (!cnn_point.profile_point || cnn_point.profile_point === 't'))) {
 
         const {width} = this;
-        const w2 = width * width;
+        const w2 = width * width / 4;
         const nodes = new Set();
         let profile2;
         cnn_point.point && !(this instanceof Onlay) && (profiles || this.layer.profiles).forEach((profile) => {
@@ -2238,7 +2238,7 @@ class ProfileItem extends GeneratrixElement {
                 }
               }
             }
-            else if(profile.generatrix.is_nearest(cnn_point.point, true)) {
+            else if(profile.generatrix.is_nearest(cnn_point.point, w2)) {
               nodes.add(profile);
             }
           }
