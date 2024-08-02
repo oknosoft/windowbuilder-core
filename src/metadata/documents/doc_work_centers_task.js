@@ -556,6 +556,9 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
           if(row.record_kind.is('credit') || (!row.width && row.len === nom.len) || (row.width === nom.width && row.len === nom.len)) {
             rm.push(row);
           }
+          else {
+            row.dop = {svg: ''};
+          }
         });
       }
     }

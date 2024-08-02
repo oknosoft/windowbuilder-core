@@ -8412,6 +8412,9 @@ set set(v){this._setter_ts('set',v)}
           if(row.record_kind.is('credit') || (!row.width && row.len === nom.len) || (row.width === nom.width && row.len === nom.len)) {
             rm.push(row);
           }
+          else {
+            row.dop = {svg: ''};
+          }
         });
       }
     }
