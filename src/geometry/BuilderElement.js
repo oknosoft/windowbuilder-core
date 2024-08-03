@@ -39,7 +39,7 @@ export class BuilderElement extends paper.Group {
   }
 
   /**
-   * Корень метадаты
+   * @summary Указатель на текущий экземпляр метадаты
    * @type {MetaEngine}
    */
   get root() {

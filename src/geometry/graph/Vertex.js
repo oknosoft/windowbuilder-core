@@ -16,6 +16,15 @@ export class GraphVertex {
     this.endEdges = new LinkedList(GraphVertex.edgeComparator);
     this.neighborsConverter = this.neighborsConverter.bind(this);
     this.cnnPoints = [point instanceof paper.Point ? {point} : point];
+    this._cnnType = null;
+  }
+
+  /**
+   * @summary Указатель на текущий экземпляр метадаты
+   * @type {MetaEngine}
+   */
+  get root() {
+    return (this.edges.head || this.endEdges.head)?.profile?.root;
   }
 
   /**
@@ -35,6 +44,22 @@ export class GraphVertex {
   
   get isT() {
     return this.cnnPoints.some(pt => pt.isT);
+  }
+
+  /**
+   * @summary Интеграл соединений, входящих в узел
+   * @desc Истина, если выделен хотя бы один из сегментов профилей узла.
+   * Направление импостов, может отличаться
+   * @type {EnmCnnTypes}
+   */
+  get cnnType() {
+    const {_cnnType, root} = this;
+    if(_cnnType) {
+      return root.enm.cnnTypes.get(_cnnType);
+    }
+  }
+  set cnnType(v) {
+
   }
 
   /**
@@ -143,7 +168,7 @@ export class GraphVertex {
    * @summary Узел выделен
    * @desc Истина, если выделен хотя бы один из сегментов профилей узла.
    * Направление импостов, может отличаться
-   * @type Boolean
+   * @type {Boolean}
    */
   get selected() {
     const {cnnPoints, point} = this;

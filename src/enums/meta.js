@@ -92,6 +92,24 @@ export const meta = {
       css: "tb_img_cnn_long"
     },
     {
+      order: 10,
+      name: "Разрыв0",
+      synonym: "Разрыв симметричный",
+      latin: "cut0",
+      css: "tb_img_cnn_cut0",
+      css90: "tb_img_cnn_cut0_90",
+      css180: "tb_img_cnn_cut0_180",
+      css270: "tb_img_cnn_cut0_270",
+    },
+    {
+      order: 11,
+      name: "Т2",
+      synonym: "Т с двух сторон",
+      latin: "tt",
+      css: "tb_img_cnn_tt",
+      css90: "tb_img_cnn_tt_90"
+    },
+    {
       tag: "Типы соединений",
       aliases: ['cnn_types'],
       id: 'ecn'
