@@ -426,6 +426,7 @@ export class Mover {
         }
         else {
           vertex.point = move.point;
+          this.#raw.owner.project.props.registerChange();
         }
       }
     }

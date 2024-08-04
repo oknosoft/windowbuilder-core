@@ -24,7 +24,7 @@ export class GraphVertex {
    * @type {MetaEngine}
    */
   get root() {
-    return (this.edges.head || this.endEdges.head)?.profile?.root;
+    return (this.edges.head?.value || this.endEdges.head?.value)?.profile?.root;
   }
 
   /**
@@ -53,13 +53,41 @@ export class GraphVertex {
    * @type {EnmCnnTypes}
    */
   get cnnType() {
-    const {_cnnType, root} = this;
-    if(_cnnType) {
-      return root.enm.cnnTypes.get(_cnnType);
+    let {_cnnType, root} = this;
+    if(!_cnnType) {
+      const {cnnTypes} = this;
+      if(cnnTypes.length === 1) {
+        this._cnnType = _cnnType = cnnTypes[0];
+      }
     }
+    return root.enm.cnnTypes.get(_cnnType);
   }
   set cnnType(v) {
+    this._cnnType = v;
+  }
 
+  /**
+   * @summary Доступные типы соединений
+   * @type {Array.<EnmCnnTypes>}
+   */
+  get cnnTypes() {
+    const {cnnPoints: {length}, root: {enm}} = this;
+    const types = [];
+    if(length) {
+      if(length === 1) {
+        types.push(this.isT ? 't' : 'i');
+      }
+      else if(length == 2) {
+        types.push('ad', 'ah', 'av');
+      }
+      else if(length == 3) {
+        types.push('cut0');
+      }
+      else {
+        types.push('tt');
+      }
+    }
+    return types.map((v) => enm.cnnTypes.get(v));
   }
 
   /**
