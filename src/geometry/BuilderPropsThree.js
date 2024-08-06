@@ -33,7 +33,7 @@ class Degree {
   }
 }
 
-export class Three {
+export class Props3D {
 
   #raw = {};
   

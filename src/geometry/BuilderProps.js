@@ -1,4 +1,4 @@
-import {Three} from './Three';
+import {Props3D} from './BuilderPropsThree';
 import defaults from './BuilderPropsDefaults';
 
 export class BuilderProps  {
@@ -7,7 +7,7 @@ export class BuilderProps  {
   constructor(project) {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
-    this.#raw.three = new Three();
+    this.#raw.three = new Props3D();
     defaults(project, this);
   }
   

@@ -4,7 +4,7 @@ import {Mover} from './graph/Mover';
 
 import {Profile} from './ProfileItem';
 import {contourGroups} from './ContourGroups';
-import {Three} from './Three';
+import {Props3D} from './BuilderPropsThree';
 
 export class Contour extends paper.Layer {
 
@@ -14,7 +14,7 @@ export class Contour extends paper.Layer {
     super(attr);
     this.#raw.skeleton = new Skeleton(this);
     this.#raw.mover = new Mover(this);
-    this.#raw.three = new Three();
+    this.#raw.three = new Props3D();
     contourGroups(this);
   }
   
@@ -305,10 +305,11 @@ export class Contour extends paper.Layer {
     }
     this.drawVisualization();
   }
-
-  remove() {
-    const {container} = this;
-    this._removing = true;
+  
+  clear(interactive) {
+    if(interactive) {
+      this._removing = true;
+    }
     for(const contour of this.contours) {
       contour.remove();
     }
@@ -320,6 +321,15 @@ export class Contour extends paper.Layer {
     }
     this.children.visualization.clear();
     this.project.props.registerChange();
+    if(interactive) {
+      delete this._removing;
+    }
+  }
+  
+  remove() {
+    const {container} = this;
+    this._removing = true;
+    this.clear();
     super.remove();
     if(container) {
       container.createChild({kind: 'blank'});
