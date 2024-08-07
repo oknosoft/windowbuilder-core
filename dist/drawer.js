@@ -18613,6 +18613,31 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return set.size > 1;
           };
           break;
+        case 'flap_overlay':
+          _data._formula = function ({elm}) {
+            if(elm?.joined_nearests) {
+              const nearests = {inner: [], outer: []};
+              const {rays, layer} = elm;
+              for(const profile of elm.joined_nearests()) {
+                if(elm.cnn_side(profile, null, rays).is('outer')){
+                  nearests.outer.push(profile);
+                }
+                else {
+                  nearests.inner.push(profile);
+                }
+              }
+              for(const {generatrix: test1} of nearests.inner) {
+                for(const test2 of nearests.outer) {
+                  const sub = test1.get_subpath(test2.b, test2.e);
+                  if(sub?.length > consts.sticking) {
+                    return true;
+                  }
+                }
+              }
+            }
+            return false;
+          };
+          break;
         case 'nearest_flap_z':
           _data._formula = function ({elm}) {
             let res = 0;
@@ -18814,6 +18839,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'layer_weight',    
     'is_node_last',    
     'joins_last_elm',  
+    'flap_overlay',    
     'cnn_side',        
     'elm_type',        
     'elm_rectangular', 

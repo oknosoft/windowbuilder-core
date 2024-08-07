@@ -161,6 +161,33 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'flap_overlay':
+          _data._formula = function ({elm}) {
+            if(elm?.joined_nearests) {
+              const nearests = {inner: [], outer: []};
+              // учтём сторону
+              const {rays, layer} = elm;
+              for(const profile of elm.joined_nearests()) {
+                if(elm.cnn_side(profile, null, rays).is('outer')){
+                  nearests.outer.push(profile);
+                }
+                else {
+                  nearests.inner.push(profile);
+                }
+              }
+              for(const {generatrix: test1} of nearests.inner) {
+                for(const test2 of nearests.outer) {
+                  const sub = test1.get_subpath(test2.b, test2.e);
+                  if(sub?.length > consts.sticking) {
+                    return true;
+                  }
+                }
+              }
+            }
+            return false;
+          };
+          break;
+          
         case 'nearest_flap_z':
           _data._formula = function ({elm}) {
             let res = 0;
@@ -381,6 +408,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'layer_weight',     // масса слоя с учётом признака 'Фильтр по тяжелой створке'
     'is_node_last',     // крайний по координатам узел в текущем слое
     'joins_last_elm',   // примыкает крайний элемент
+    'flap_overlay',     // есть наложение створок
     'cnn_side',         // сторона соединения (изнутри-снаружи)
     'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента
