@@ -3716,6 +3716,8 @@ get sd2(){return this._getter('sd2')}
 set sd2(v){this._setter('sd2',v)}
 get sz(){return this._getter('sz')}
 set sz(v){this._setter('sz',v)}
+get szz(){return this._getter('szz')}
+set szz(v){this._setter('szz',v)}
 get cnn_type(){return this._getter('cnn_type')}
 set cnn_type(v){this._setter('cnn_type',v)}
 get ahmin(){return this._getter('ahmin')}
@@ -7712,6 +7714,25 @@ set children(v){this._setter('children',v)}
 }
 $p.CatProductsProfilesRow = CatProductsProfilesRow;
 $p.cat.create('products');
+class CatMargin_coefficients extends CatObj{
+get is_buyer(){return this._getter('is_buyer')}
+set is_buyer(v){this._setter('is_buyer',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+get extra_charge(){return this._getter_ts('extra_charge')}
+set extra_charge(v){this._setter_ts('extra_charge',v)}
+}
+$p.CatMargin_coefficients = CatMargin_coefficients;
+class CatMargin_coefficientsExtra_chargeRow extends TabularSectionRow{
+get period(){return this._getter('period')}
+set period(v){this._setter('period',v)}
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
+get coefficient(){return this._getter('coefficient')}
+set coefficient(v){this._setter('coefficient',v)}
+}
+$p.CatMargin_coefficientsExtra_chargeRow = CatMargin_coefficientsExtra_chargeRow;
+$p.cat.create('margin_coefficients');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -10066,6 +10087,8 @@ class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
 }
 
 class CatCnnsSizesRow extends SelectionParamsRow{
+  get coordinate(){return this._getter('coordinate')}
+  set coordinate(v){this._setter('coordinate',v)}
   get key(){return this._getter('key')}
   set key(v){this._setter('key',v)}
 }

@@ -162,6 +162,8 @@ class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
 }
 
 class CatCnnsSizesRow extends SelectionParamsRow{
+  get coordinate(){return this._getter('coordinate')}
+  set coordinate(v){this._setter('coordinate',v)}
   get key(){return this._getter('key')}
   set key(v){this._setter('key',v)}
 }
