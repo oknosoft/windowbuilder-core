@@ -188,6 +188,34 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'flap_overlay_axis':
+          _data._formula = function ({elm}) {
+            if(elm?.joined_nearests) {
+              const nearests = {inner: [], outer: []};
+              // учтём сторону
+              const {rays, layer} = elm;
+              for(const profile of elm.joined_nearests()) {
+                if(elm.cnn_side(profile, null, rays).is('outer')){
+                  nearests.outer.push(profile);
+                }
+                else {
+                  nearests.inner.push(profile);
+                }
+              }
+              for(const test1 of nearests.inner) {
+                for(const test2 of nearests.outer) {
+                  const sub = test1.generatrix.get_subpath(test2.b, test2.e);
+                  if(sub?.length > consts.sticking) {
+                    // учтём ось поворота
+                    return test1.layer.is_rotation_axis(test1) && test2.layer.is_rotation_axis(test2);
+                  }
+                }
+              }
+            }
+            return false;
+          };
+          break;
+          
         case 'nearest_flap_z':
           _data._formula = function ({elm}) {
             let res = 0;
@@ -409,6 +437,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'is_node_last',     // крайний по координатам узел в текущем слое
     'joins_last_elm',   // примыкает крайний элемент
     'flap_overlay',     // есть наложение створок
+    'flap_overlay_axis',// есть наложение створок с осями поворота
     'cnn_side',         // сторона соединения (изнутри-снаружи)
     'elm_type',         // тип элемента
     'elm_rectangular',  // прямоугольность элемента

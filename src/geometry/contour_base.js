@@ -1072,6 +1072,25 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  /**
+   * @summary Проверяет, есть ли на текущем профиле ось поворота
+   * @param {Profile} profile
+   * @return {Boolean}
+   */
+  is_rotation_axis(profile) {
+    const cache = {
+      profiles: this.outer_nodes,
+      bottom: this.profiles_by_side('bottom'),
+    };
+    for(const row of this.furn.open_tunes) {
+      if (row.rotation_axis) {
+        if(profile === this.profile_by_furn_side(row.side, cache)) {
+          return true;
+        }
+      }
+    }
+  }
+
 
   /**
    * Возвращает ребро текущего контура по узлам

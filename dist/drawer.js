@@ -2487,6 +2487,19 @@ class Contour extends AbstractFilling(paper.Layer) {
     };
     return next();
   }
+  is_rotation_axis(profile) {
+    const cache = {
+      profiles: this.outer_nodes,
+      bottom: this.profiles_by_side('bottom'),
+    };
+    for(const row of this.furn.open_tunes) {
+      if (row.rotation_axis) {
+        if(profile === this.profile_by_furn_side(row.side, cache)) {
+          return true;
+        }
+      }
+    }
+  }
   profile_by_nodes(n1, n2, point) {
     const {profiles} = this;
     for (let i = 0; i < profiles.length; i++) {
@@ -18638,6 +18651,31 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
+        case 'flap_overlay_axis':
+          _data._formula = function ({elm}) {
+            if(elm?.joined_nearests) {
+              const nearests = {inner: [], outer: []};
+              const {rays, layer} = elm;
+              for(const profile of elm.joined_nearests()) {
+                if(elm.cnn_side(profile, null, rays).is('outer')){
+                  nearests.outer.push(profile);
+                }
+                else {
+                  nearests.inner.push(profile);
+                }
+              }
+              for(const test1 of nearests.inner) {
+                for(const test2 of nearests.outer) {
+                  const sub = test1.generatrix.get_subpath(test2.b, test2.e);
+                  if(sub?.length > consts.sticking) {
+                    return test1.layer.is_rotation_axis(test1) && test2.layer.is_rotation_axis(test2);
+                  }
+                }
+              }
+            }
+            return false;
+          };
+          break;
         case 'nearest_flap_z':
           _data._formula = function ({elm}) {
             let res = 0;
@@ -18840,6 +18878,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'is_node_last',    
     'joins_last_elm',  
     'flap_overlay',    
+    'flap_overlay_axis',
     'cnn_side',        
     'elm_type',        
     'elm_rectangular', 
