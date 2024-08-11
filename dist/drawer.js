@@ -15097,10 +15097,13 @@ class Pricing {
     return prm.price_type;
   }
   calc_first_cost(prm) {
-    const {marginality_in_spec, price_grp_in_spec} = $p.job_prm.pricing;
+    const {job_prm, cat} = $p;
+    const {marginality_in_spec, price_grp_in_spec} = job_prm.pricing;
     const fake_row = {};
     const {calc_order_row, spec, date} = prm;
     const price_grp = new Map();
+    const slice = marginality_in_spec === 1 ?
+      cat.margin_coefficients.slice({date, calc_order_row}) : new Map();
     if(!spec) {
       return;
     }
@@ -15133,10 +15136,15 @@ class Pricing {
           this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj, null, prm.price_type.formula, date);
           _obj.amount = _obj.price * _obj.totqty1;
           if(marginality_in_spec){
-            fake_row.nom = nom;
-            const tmp_price = this.nom_price(
-              nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula, date);
-            _obj.amount_marged = tmp_price * _obj.totqty1;
+            if(marginality_in_spec === 1) {
+              _obj.amount_marged = _obj.amount * slice.coefficient(row);
+            }
+            else {
+              fake_row.nom = nom;
+              const tmp_price = this.nom_price(
+                nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula, date);
+              _obj.amount_marged = tmp_price * _obj.totqty1;
+            }
           }
         }
       });

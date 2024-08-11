@@ -7732,7 +7732,38 @@ get coefficient(){return this._getter('coefficient')}
 set coefficient(v){this._setter('coefficient',v)}
 }
 $p.CatMargin_coefficientsExtra_chargeRow = CatMargin_coefficientsExtra_chargeRow;
-$p.cat.create('margin_coefficients');
+class CatMargin_coefficientsManager extends CatManager {
+
+  /**
+   * @summary Возвращает срез маржинальных коэффициентов для отдела на дату
+   * @param {Date} date
+   * @param {DocCalc_orderProductionRow} calc_order_row
+   * @return {CoefficientsMap}
+   */
+  slice({date, calc_order_row}) {
+    const {CoefficientsMap} = this.constructor;
+    const res = new CoefficientsMap();
+    for(const obj of this) {
+      
+    }
+    return res;
+  }
+  
+  static CoefficientsMap = class CoefficientsMap extends Map {
+
+    /**
+     * @summary Возвращает коэффициент для строки спецификации
+     * @desc В зависимости от происхождения (система, фурнитура, ценовая группа, вставка)
+     * @param {CatCharacteristicsSpecificationRow} row
+     * @return {Number}
+     * 
+     */
+    coefficient(row) {
+      return 1;
+    }
+  }
+}
+$p.cat.create('margin_coefficients', CatMargin_coefficientsManager, false);
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
