@@ -75,8 +75,12 @@ $p.enm.create('individual_legal');
 class CchPredefined_elmnts extends CatObj{
 
   get value() {
-    const {_obj, type, _manager} = this;
-    const {utils} = _manager._owner.$p;
+    let {_obj, type, parent, synonym, _manager} = this;
+    const {utils, cch} = _manager._owner.$p;
+    let override = cch.properties.predefined(`${parent.synonym}/${synonym}`);
+    if(override) {
+      type = override.type;
+    }
     const res = _obj ? _obj.value : '';
 
     if(_obj.is_folder) {
@@ -107,13 +111,19 @@ class CchPredefined_elmnts extends CatObj{
       }
     }
     else if(type.date_part) {
-      return utils.fix_date(_obj.value, true);
+      return utils.fix_date(res, true);
+    }
+    else if(type.digits && typeof res === 'number') {
+      return res;
+    }
+    else if(type.types.includes('boolean') && typeof res === 'boolean') {
+      return res;
     }
     else if(type.digits) {
-      return utils.fix_number(_obj.value, !type.hasOwnProperty('str_len'));
+      return utils.fix_number(res, !type.hasOwnProperty('str_len'));
     }
-    else if(type.types[0] == 'boolean') {
-      return utils.fix_boolean(_obj.value);
+    else if(type.types.includes('boolean')) {
+      return utils.fix_boolean(res);
     }
     else {
       return _obj.value || '';
