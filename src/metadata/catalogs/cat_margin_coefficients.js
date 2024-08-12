@@ -10,9 +10,17 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
    */
   slice({date, calc_order_row}) {
     const {CoefficientsMap} = this.constructor;
+    const {branch} = calc_order_row._owner._owner;
     const res = new CoefficientsMap();
     for(const obj of this) {
-      
+      for(const row of obj.extra_charge) {
+        if(row.date > date) {
+          continue;
+        }
+        if(!res.has(row.obj) || (!branch.empty() && branch._hierarchy(row.obj))) {
+          res.set(row.obj, row);
+        }
+      }
     }
     return res;
   }
@@ -27,7 +35,29 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
      * 
      */
     coefficient(row) {
-      return 1;
+      const crow = row.elm < 0 && row._owner._owner.constructions.find({cnstr: -row.elm});
+      const obj = crow?.furn || row._owner._owner.sys;
+      if(!this.has(obj)) {
+        for(const [key, value] of this) {
+          // ищем по иерархии системы или фурнитуры и запоминаем
+          if(obj._hierarchy(key)) {
+            this.set(obj, value);
+          }
+        }
+        // если не нашлось по иерархии, ищем максимум по типу
+        if(!this.has(obj)) {
+          let test;
+          for(const [key, value] of this) {
+            if(key._manager === obj._manager) {
+              if(!test || test.coefficient < value.coefficient) {
+                test = value;
+              }
+            }
+          }
+          this.set(obj, test || {coefficient: 1});
+        }
+      }
+      return this.get(obj).coefficient;
     }
   }
 }
