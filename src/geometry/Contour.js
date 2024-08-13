@@ -8,7 +8,7 @@ import {Props3D} from './BuilderPropsThree';
 
 export class Contour extends paper.Layer {
 
-  #raw = {};
+  #raw = {hidden: false};
 
   constructor(attr) {
     super(attr);
@@ -52,6 +52,26 @@ export class Contour extends paper.Layer {
           return container;
         }
       }
+    }
+  }
+
+  /**
+   * Признак сокрытия слоя
+   * @type {boolean}
+   */
+  get hidden() {
+    return this.#raw.hidden;
+  }
+  set hidden(v) {
+    if (this.hidden != v) {
+      this.#raw.hidden = v;
+      const visible = !this.#raw.hidden;
+      for(const elm of this.profiles.concat(this.fillings)) {
+        elm.visible = visible;
+      }
+      this.children.visualization.visible = visible;
+      //this.l_dimensions.redraw();
+      //this.project.draw_sizes();
     }
   }
   
