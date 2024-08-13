@@ -18647,11 +18647,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                   nearests.inner.push(profile);
                 }
               }
-              for(const {generatrix: test1} of nearests.inner) {
+              for(const test1 of nearests.inner) {
                 for(const test2 of nearests.outer) {
-                  const sub = test1.get_subpath(test2.b, test2.e);
+                  const sub = test1.generatrix.get_subpath(test2.b, test2.e);
                   if(sub?.length > consts.sticking) {
-                    return true;
+                    return test1.layer.is_rotation_axis(test1) || test2.layer.is_rotation_axis(test2);
                   }
                 }
               }
