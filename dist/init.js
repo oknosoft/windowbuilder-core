@@ -383,6 +383,8 @@ get inheritance(){return this._getter('inheritance')}
 set inheritance(v){this._setter('inheritance',v)}
 get conserve(){return this._getter('conserve')}
 set conserve(v){this._setter('conserve',v)}
+get deposit(){return this._getter('deposit')}
+set deposit(v){this._setter('deposit',v)}
 get list_presentation(){return this._getter('list_presentation')}
 set list_presentation(v){this._setter('list_presentation',v)}
 get captured(){return this._getter('captured')}
