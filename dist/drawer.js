@@ -41,11 +41,10 @@ module.exports = function({$p, paper}) {const consts = {
 	move_handle: 'move_handle',
 	move_shapes: 'move-shapes',
   get base_offset() {
-	  const {font_size} = this;
-    return font_size < 80 ? 90 : font_size + 18;
+    return this.font_size * 1.2;
   },
   get dop_offset() {
-	  return this.base_offset + 44;
+	  return this.base_offset + this.font_size * 0.7;
   }
 };
 class EditorInvisible extends paper.PaperScope {
@@ -5290,7 +5289,7 @@ class DimensionLine extends paper.Group {
   static _font_size({width, height}) {
     const {cutoff, font_size} = consts;
     const size = Math.max(width - cutoff, height - cutoff) / 60;
-    return font_size + (size > 0 ? size : 0);
+    return Math.min(font_size + (size > 0 ? size : 0), font_size * 1.5);
   }
 }
 class DimensionLineCustom extends DimensionLine {
