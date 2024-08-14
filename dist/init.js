@@ -7761,8 +7761,9 @@ class CatMargin_coefficientsManager extends CatManager {
         if(row.date > date) {
           continue;
         }
-        if(!res.has(row.obj) || (!branch.empty() && branch._hierarchy(row.obj))) {
-          res.set(row.obj, row);
+        const {obj} = row;
+        if(obj && (!res.has(obj) || (!branch.empty() && branch._hierarchy(obj)))) {
+          res.set(obj, row);
         }
       }
     }
