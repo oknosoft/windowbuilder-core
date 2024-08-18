@@ -10243,7 +10243,6 @@ class CatProjectsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatStoresExtra_fieldsRow extends Extra_fieldsRow{}
 class CatCharacteristicsExtra_fieldsRow extends Extra_fieldsRow{}
 class DocPurchaseExtra_fieldsRow extends Extra_fieldsRow{}
-class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{}
 class DocCredit_card_orderExtra_fieldsRow extends Extra_fieldsRow{}
 class DocDebit_bank_orderExtra_fieldsRow extends Extra_fieldsRow{}
 class DocCredit_bank_orderExtra_fieldsRow extends Extra_fieldsRow{}
@@ -10258,6 +10257,18 @@ class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatWork_centersExtra_fieldsRow extends Extra_fieldsRow{}
+
+class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
+  value_change(field, type, value) {
+    const res = super.value_change(field, type, value);
+    if(field === 'value' && res !== false) {
+      this.value = value;
+      const {insert_bind, characteristics} = $p.cat;
+      insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+    }
+    return res;
+  }
+}
 
 
 class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
