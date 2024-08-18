@@ -18610,6 +18610,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return weight;
           };
           break;
+        case 'has_glasses':
+          _data._formula = function ({ox}) {
+            for(const row of ox.calc_order.production) {
+              if(row.characteristic.glasses.count()) {
+                return true;
+              }
+            }
+            return false;
+          };
+          break;  
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
             if(elm instanceof EditorInvisible.ProfileAdjoining) {
@@ -18879,6 +18889,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   for(const name of [
     'clr_product',     
     'up_glasses_weight',
+    'has_glasses',     
     'elm_weight',      
     'elm_orientation', 
     'elm_pos',         

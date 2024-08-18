@@ -134,6 +134,17 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'has_glasses':
+          _data._formula = function ({ox}) {
+            for(const row of ox.calc_order.production) {
+              if(row.characteristic.glasses.count()) {
+                return true;
+              }
+            }
+            return false;
+          };
+          break;  
+          
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
             if(elm instanceof EditorInvisible.ProfileAdjoining) {
@@ -430,6 +441,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   for(const name of [
     'clr_product',      // цвет изделия
     'up_glasses_weight',// масса заполнений, опирающихся на профиль
+    'has_glasses',      // бит в заказе есть заполнения
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
