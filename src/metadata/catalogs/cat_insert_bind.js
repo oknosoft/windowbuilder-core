@@ -155,10 +155,22 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
           new_rows.push(row);
           cx.specification.clear();
           inset.calculate_spec({elm, len_angl, ox: cx});
-          const attr = {calc_order_row: row, date: ox.calc_order.price_date, spec: cx.specification};
-          pricing.price_type(attr);
-          pricing.calc_first_cost(attr);
-          pricing.calc_amount(attr);
+          if(cx.specification.count()) {
+            cx.product = row.row;
+            cx.name = cx.prod_name();
+            row.nom = cx.owner;
+            row.unit = row.nom.storage_unit;
+            row.qty = 1;
+            row.quantity = 1;
+            const attr = {calc_order_row: row, date: ox.calc_order.price_date, spec: cx.specification};
+            pricing.price_type(attr);
+            pricing.calc_first_cost(attr);
+            pricing.calc_amount(attr);
+            ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
+          }
+          else {
+            production.del(row);
+          }
         }
         else {
           inset.calculate_spec({elm, len_angl, ox, spec});
@@ -169,6 +181,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
     for(const rm of old_rows) {
       if(!new_rows.includes(rm)) {
         rm._owner.del(rm);
+        ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
       }
     }
   }
