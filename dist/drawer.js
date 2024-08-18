@@ -16187,11 +16187,11 @@ class SpecBuilding {
       adel.length = 0;
       calc_order.production.forEach((row) => {
         if (row.ordn === ox){
-          if (ox._order_rows.indexOf(row.characteristic) === -1){
-            adel.push(row);
+          if (ox._order_rows.includes(row.characteristic)){
+            order_rows.set(row.characteristic, row);
           }
           else {
-            order_rows.set(row.characteristic, row);
+            adel.push(row);
           }
         }
       });
@@ -16224,6 +16224,7 @@ class SpecBuilding {
     if(order_rows.size){
       attr.order_rows = order_rows;
     }
+    cat.insert_bind.deposit({ox, order: true});
     if(with_price){
       pricing.calc_first_cost(attr);
       pricing.calc_amount(attr);
@@ -16410,6 +16411,7 @@ $p.spec_building = new SpecBuilding($p);
     _mgr.slope,    
     _mgr.profile,  
     _mgr.cut,      
+    _mgr.packing,  
     _mgr.mount,    
     _mgr.delivery, 
     _mgr.set,      
@@ -19057,10 +19059,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(!ox) {
           ox = elm?.ox;
         }
-        const calc_order = ox?.calc_order;
-        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
-          const parts = key.split(':');
-          const row = calc_order.production.find({characteristic: parts[0]});
+        const push = (row) => {
           for(const glrow of row?.characteristic?.glasses || []) {
             res.push({
               formula: glrow.formula,
@@ -19073,7 +19072,19 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               weight: row.characteristic.elm_weight(glrow.elm),
             });
           }
-        });
+        }
+        const calc_order = ox?.calc_order;
+        if(Array.isArray(elm?.row_spec?.[prm.ref]?.keys)) {
+          elm.row_spec[prm.ref].keys.forEach((key) => {
+            const parts = key.split(':');
+            push(calc_order.production.find({characteristic: parts[0]}));
+          });
+        }
+        else if(calc_order) {
+          for(const row of calc_order.production) {
+            push(row);
+          }
+        }
         return res;
       };
       prm.products = function ({elm, ox}) {

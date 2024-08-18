@@ -227,7 +227,7 @@ exports.CchProperties = class CchProperties extends Object {
         });
       }
     };
-    if(params) {
+    if(params || prm_row?.origin?.is?.('order')) {
       const {enm: {plan_detailing}, utils, CatInserts, EditorInvisible} = $p;
       let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
@@ -237,7 +237,7 @@ exports.CchProperties = class CchProperties extends Object {
         switch (src) {
         case plan_detailing.order:
           const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
-          return prow && prow.value;
+          return prow?.value;
           
         case plan_detailing.nearest:
           find_nearest();

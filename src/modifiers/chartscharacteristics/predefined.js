@@ -645,10 +645,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(!ox) {
           ox = elm?.ox;
         }
-        const calc_order = ox?.calc_order;
-        elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
-          const parts = key.split(':'); // ref:specimen:cnstr
-          const row = calc_order.production.find({characteristic: parts[0]});
+        const push = (row) => {
           for(const glrow of row?.characteristic?.glasses || []) {
             res.push({
               formula: glrow.formula,
@@ -661,8 +658,19 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               weight: row.characteristic.elm_weight(glrow.elm),
             });
           }
-        });
-
+        }
+        const calc_order = ox?.calc_order;
+        if(Array.isArray(elm?.row_spec?.[prm.ref]?.keys)) {
+          elm.row_spec[prm.ref].keys.forEach((key) => {
+            const parts = key.split(':'); // ref:specimen:cnstr
+            push(calc_order.production.find({characteristic: parts[0]}));
+          });
+        }
+        else if(calc_order) {
+          for(const row of calc_order.production) {
+            push(row);
+          }
+        }
         return res;
       };
 
