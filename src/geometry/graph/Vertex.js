@@ -71,7 +71,7 @@ export class GraphVertex {
    * @type {Array.<EnmCnnTypes>}
    */
   get cnnTypes() {
-    const {cnnPoints: {length}, root: {enm}} = this;
+    const {cnnPoints: {length}, root} = this;
     const types = [];
     if(length) {
       if(length === 1) {
@@ -87,7 +87,7 @@ export class GraphVertex {
         types.push('tt');
       }
     }
-    return types.map((v) => enm.cnnTypes.get(v));
+    return types.map((v) => (root || $p).enm.cnnTypes.get(v));
   }
 
   /**

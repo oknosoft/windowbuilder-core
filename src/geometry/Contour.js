@@ -93,6 +93,10 @@ export class Contour extends paper.Layer {
     return [...this.children.profiles.children];
   }
   
+  get selectedProfiles() {
+    return this.profiles.filter(v => v.selected);
+  }
+  
   /**
    * @summary Возвращает структуру профилей по сторонам
    * @param {String} [side]

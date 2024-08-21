@@ -343,7 +343,7 @@ export class GeneratrixElement extends BuilderElement {
 
   redraw() {
     this.checkActual();
-    this.project.props.loading
+    //this.project.props.loading
     const {path, project, generatrix, inset} = this;
     if(project.props.carcass !== 'normal') {
       path.selected = false;

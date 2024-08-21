@@ -4,6 +4,7 @@ import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
 
 const {Point} = paper;
+const arrowKeys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
 
 export class ToolSelect extends ToolSelectable {
   
@@ -22,12 +23,22 @@ export class ToolSelect extends ToolSelectable {
       keydown: this.keydown,
     });
   }
+  
+  get mover() {
+    const {activeLayer, rootLayer} = this.project;
+    return rootLayer.selectedProfiles.length ? rootLayer.mover : activeLayer.mover;
+  }
+
+  get selectedProfiles() {
+    const {activeLayer, rootLayer} = this.project;
+    return rootLayer.selectedProfiles.concat(activeLayer.selectedProfiles);
+  }
 
   mousedown(ev) {
     //this.hitTest(ev);
     const {body, activeElement} = document;
-    const {project, view} = this;
-    const {gridStep, snap, snapAngle} = project.props;
+    const {project, view, mover} = this;
+    const {gridStep, snap} = project.props;
     const hitItem = this.get('hitItem');
     if(activeElement !== body && activeElement.parentNode !== view.element.parentNode) {
       activeElement.blur();
@@ -46,8 +57,8 @@ export class ToolSelect extends ToolSelectable {
       
 
       let item = hitItem.item.parent;
-      if(space && item?.nearest?.()) {
-        item = item.nearest();
+      if(space && item?.nearest) {
+        item = item.nearest;
       }
 
       if(item && ['filling', 'fill', 'stroke'].includes(hitItem.type)) {
@@ -107,7 +118,7 @@ export class ToolSelect extends ToolSelectable {
           }
         }
       }
-      else if(hitItem.type == 'segment') {
+      else if(hitItem.type === 'segment') {
         const node = item.generatrix.firstSegment.point.isNearest(hitItem.segment.point, true) ? 'b' : 'e';
         if(shift) {
           if(hitItem.segment.selected) {
@@ -128,12 +139,12 @@ export class ToolSelect extends ToolSelectable {
           this.mouseStartPos = hitItem.point.snap(gridStep);
         }
       }
-      else if(hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
+      else if(hitItem.type === 'handle-in' || hitItem.type === 'handle-out') {
         this.mode = 'move-handle';
         this.originalHandleIn = hitItem.segment.handleIn.clone();
         this.originalHandleOut = hitItem.segment.handleOut.clone();
       }
-      else if(hitItem.type == 'dimension') {
+      else if(hitItem.type === 'dimension') {
         if(!control && !alt) {
           return item.szStart(ev);
         }
@@ -179,13 +190,13 @@ export class ToolSelect extends ToolSelectable {
     deselect.length && this._scope.cmd('deselect', deselect);
     select.length && this._scope.cmd('select', select);
 
-    this.project.activeLayer.mover.prepareMovePoints(space ? 'space' : true);
+    mover.prepareMovePoints(space ? 'space' : true);
   }
 
   mouseup(ev) {
-    const {mode, project} = this;
+    const {mode, project, mover} = this;
     if (mode === 'move-shapes' || mode === 'move-points') {
-      if(project.activeLayer.mover.applyMovePoints()) {
+      if(mover.applyMovePoints()) {
         project.props.registerChange();
         project.redraw();
       }
@@ -198,7 +209,7 @@ export class ToolSelect extends ToolSelectable {
 
   mousedrag({modifiers, point}) {
     if (this.mode === 'move-shapes' || this.mode === 'move-points') {
-      const {props: {gridStep, snap, snapAngle}, activeLayer}  = this.project;
+      const {props: {gridStep, snap, snapAngle}}  = this.project;
       let delta = point.subtract(this.mouseStartPos);
       if (!modifiers.shift) {
         if(snap === 'angle') {
@@ -210,7 +221,7 @@ export class ToolSelect extends ToolSelectable {
       }
       if(delta.length > 8) {
         this.mousePos = point.clone();
-        activeLayer.mover.tryMovePoints(this.mouseStartPos, delta, modifiers.shift);
+        this.mover.tryMovePoints(this.mouseStartPos, delta, modifiers.shift);
       }
     }
   }
@@ -223,10 +234,10 @@ export class ToolSelect extends ToolSelectable {
       node.visible = false;
       line.visible = false;
       if (hitItem) {
-        if(hitItem.type == 'filling') {
+        if(hitItem.type === 'filling') {
           canvasCursor('cursor-arrow-white-point');
         }
-        else if (hitItem.type == 'fill' || hitItem.type == 'stroke') {
+        else if (hitItem.type === 'fill' || hitItem.type === 'stroke') {
           // if (hitItem.item.parent instanceof DimensionLine) {
           //   // размерные линии сами разберутся со своими курсорами
           // }
@@ -262,20 +273,18 @@ export class ToolSelect extends ToolSelectable {
   }
 
   keydown(ev) {
-    const {project, mode, _scope} = this;
-    const {event: {code, key, target}, modifiers} = ev;
-    const {activeLayer, dimensions} = project;
-    const arrow = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
+    const {project, mode} = this;
+    const {event: {code, key}, modifiers} = ev;
     if (code === 'Escape' && (mode === 'move-shapes' || mode === 'move-points')) {
       this.mode = null;
-      activeLayer.mover.cancelMovePoints();
+      this.mover.cancelMovePoints();
       if(this.mousePos) {
         this.hitTest({point: this.mousePos});
       }
     }
     else if (code === 'Delete') {
       let rm;
-      for(const elm of activeLayer.profiles.concat(dimensions.children)) {
+      for(const elm of this.selectedProfiles.concat(project.dimensions.children)) {
         if(elm.selected) {
           try{
             elm.remove();
@@ -291,32 +300,33 @@ export class ToolSelect extends ToolSelectable {
         this.mousemove(ev);
       }
     }
-    else if(arrow.includes(code) || arrow.includes(key)) {
-      const profiles = activeLayer.profiles.filter(p => p.selected);
-      if(profiles.length) {
+    else if(arrowKeys.includes(code) || arrowKeys.includes(key)) {
+      const {selectedProfiles} = this;
+      if(selectedProfiles.length) {
         const {node, line} = this.get('node,line');
         if(node && line) {
           node.visible = false;
           line.visible = false;
         }
         const step = modifiers.shift ? 1 : project.props.gridStep;
-        const pt = profiles[0].generatrix.interiorPoint;
+        const pt = selectedProfiles[0].generatrix.interiorPoint;
         const delta = new Point();
-        if(code === arrow[0] || key === arrow[0]) {
+        if(code === arrowKeys[0] || key === arrowKeys[0]) {
           delta.x = step;
         }
-        else if(code === arrow[1] || key === arrow[1]) {
+        else if(code === arrowKeys[1] || key === arrowKeys[1]) {
           delta.x = -step;
         }
-        else if(code === arrow[2] || key === arrow[2]) {
+        else if(code === arrowKeys[2] || key === arrowKeys[2]) {
           delta.y = -step;
         }
-        else if(code === arrow[3] || key === arrow[3]) {
+        else if(code === arrowKeys[3] || key === arrowKeys[3]) {
           delta.y = step;
         }
-        activeLayer.mover.prepareMovePoints();
-        activeLayer.mover.tryMovePoints(pt, delta, modifiers.shift);
-        activeLayer.mover.applyMovePoints();
+        const {mover} = this;
+        mover.prepareMovePoints();
+        mover.tryMovePoints(pt, delta, modifiers.shift);
+        mover.applyMovePoints();
         project.redraw();
       }
     }

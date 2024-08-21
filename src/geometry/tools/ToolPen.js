@@ -45,8 +45,8 @@ export class ToolPen extends ToolSelectable {
       this.hideDecor();
       if (hitItem) {
         let item = hitItem.item.parent;
-        if(space && item?.nearest?.()) {
-          item = item.nearest();
+        if(space && item?.nearest) {
+          item = item.nearest;
         }
         if(item instanceof GeneratrixElement) {
           if (!profile.elm_type.is('size') && (hitItem.type == 'fill' || hitItem.type == 'stroke')) {
@@ -158,7 +158,7 @@ export class ToolPen extends ToolSelectable {
       return this.reset(ev);
     }
     if(!mode) {
-      if(profile.elm_type.is('rama')) {
+      if(profile.elm_type.is('rama') || profile.elm_type.is('impost') || profile.elm_type.is('linking')) {
         
       }
       else if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
@@ -244,8 +244,8 @@ export class ToolPen extends ToolSelectable {
       const {hitItem, node, line} = this.get('hitItem,node,line');
       if(line.visible) {
         let item = hitItem.item.parent;
-        if(space && item?.nearest?.()) {
-          item = item.nearest();
+        if(space && item?.nearest) {
+          item = item.nearest;
         }
         if(item instanceof GeneratrixElement) {
           try{
