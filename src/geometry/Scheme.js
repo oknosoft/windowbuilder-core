@@ -134,6 +134,7 @@ export class Scheme extends paper.Project {
    * @summary Перерисовывает все слои изделия
    */
   redraw(silent) {
+    this.rootLayer.redraw();
     for(const item of this.contours) {
       item.redraw?.();
     }

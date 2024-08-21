@@ -1,7 +1,7 @@
 import paper from 'paper/dist/paper-core';
 import {GeneratrixElement} from './GeneratrixElement';
 
-export class Profile extends GeneratrixElement {
+export class ProfileConnective extends GeneratrixElement {
   
   constructor({loading, ...attr}) {
     super(attr);
@@ -11,11 +11,7 @@ export class Profile extends GeneratrixElement {
   }
 
   get elmType() {
-    const {project: {root}, layer, b, e} = this;
-    if(b.isT || e.isT) {
-      return root.enm.elmTypes.impost;
-    }
-    return root.enm.elmTypes[layer.layer ? 'flap' : 'rama']; 
+    return this.project.root.enm.elmTypes.linking;
   }
   
 }
