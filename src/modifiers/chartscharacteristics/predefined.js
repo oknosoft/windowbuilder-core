@@ -657,7 +657,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(!ox) {
           ox = elm?.ox;
         }
-        const push = (row) => {
+        const push = (row, specimen) => {
           for(const glrow of row?.characteristic?.glasses || []) {
             res.push({
               formula: glrow.formula,
@@ -668,6 +668,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               is_rectangular: glrow.is_rectangular,
               is_sandwich: glrow.is_sandwich,
               weight: row.characteristic.elm_weight(glrow.elm),
+              specimen,
             });
           }
         }
@@ -675,12 +676,14 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         if(Array.isArray(elm?.row_spec?.[prm.ref]?.keys)) {
           elm.row_spec[prm.ref].keys.forEach((key) => {
             const parts = key.split(':'); // ref:specimen:cnstr
-            push(calc_order.production.find({characteristic: parts[0]}));
+            push(calc_order.production.find({characteristic: parts[0]}), parts[1]);
           });
         }
         else if(calc_order) {
           for(const row of calc_order.production) {
-            push(row);
+            for(let specimen = 1; specimen <= row.quantity; specimen++) {
+              push(row, specimen);
+            }
           }
         }
         return res;
@@ -697,19 +700,20 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           const parts = key.split(':'); // ref:specimen:cnstr
           const row = calc_order.production.find({characteristic: parts[0]});
           if(row) {
-            res.push(row.characteristic);
+            const cx = row.characteristic;
+            res.push({
+              cx,
+              width: cx.x,
+              height: cx.y,
+              area: cx.s,
+              weight: cx.elm_weight(),
+              specimen: parts[1],
+              cnstr: parts[2],
+            });
           }
         });
 
-        return res.map((cx) => {
-          const weight = cx.elm_weight();
-          return {
-            width: cx.x,
-            height: cx.y,
-            area: cx.s,
-            weight,
-          };
-        });
+        return res;
       };
     }
   })('compound');
