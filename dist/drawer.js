@@ -6183,13 +6183,16 @@ class DimensionRadius extends DimensionLineCustom {
 EditorInvisible.DimensionRadius = DimensionRadius;
 class Filling extends AbstractFilling(BuilderElement) {
   constructor(attr) {
-    const {path} = attr;
+    const {path, proto} = attr;
     if(path){
       delete attr.path;
     }
     super(attr);
     if(path){
       attr.path = path;
+    }
+    if(proto){
+      attr.proto = proto;
     }
     this.create_groups();
     this.initialize(attr);
