@@ -7,6 +7,8 @@ export class ProfileConnective extends GeneratrixElement {
   constructor({loading, ...attr}) {
     super(attr);
     this.raw('nearests', []);
+    this.raw('rotate3D', 0);
+    this.raw('base3D', this.project.root.enm.positions.right);
     const {props} = this.project;
     if(!(loading || props.loading)) {
       this.skeleton.addProfile(this);
@@ -98,6 +100,25 @@ export class ProfileConnective extends GeneratrixElement {
       return this.width / 2;
     }
     return sizeb || 0;
+  }
+  
+  get base3D() {
+    return this.raw('base3D');
+  }
+  set base3D(v) {
+    this.raw('base3D', this.project.root.enm.positions.get(v));
+    this.applyRotate3D(this.rotate3D);
+  }
+  
+  get rotate3D() {
+    return this.orientation.is('vert') ? this.raw('rotate3D') : undefined;
+  }
+  set rotate3D(v) {
+    this.applyRotate3D(v);
+  }
+  
+  applyRotate3D(v) {
+    this.raw('rotate3D', v);
   }
 
   remove() {

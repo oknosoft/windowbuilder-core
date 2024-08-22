@@ -1,4 +1,5 @@
 import paper from 'paper/dist/paper-core';
+import {epsilon} from './paper/Point';
 import {BuilderElement} from './BuilderElement';
 import {CnnPoint} from './ProfileCnnPoint';
 
@@ -173,6 +174,45 @@ export class GeneratrixElement extends BuilderElement {
   }
   set offset(v) {
     this.raw('offset', parseFloat(v) || 0);
+  }
+
+  /**
+   * @summary Угол к горизонту
+   * @desc Рассчитывается для прямой, проходящей через узлы
+   *
+   * @type Number
+   * @final
+   */
+  get angleHor() {
+    const {b: {point: b}, e: {point: e}} = this;
+    const res = (new paper.Point(e.x - b.x, b.y - e.y)).angle.round(2);
+    return res < 0 ? (res < -epsilon ? res + 360 : 0) : res;
+  }
+
+  /**
+   * @summary Ориентация профиля
+   * @desc Вычисляется по гулу к горизонту.
+   * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
+   *
+   * @type EnmOrientations
+   * @final
+   */
+  get orientation() {
+    let {angleHor, project} = this;
+    const {orientations} = project.root.enm;
+    const delta = 10;
+    if(angleHor > 180) {
+      angleHor -= 180;
+    }
+    if((angleHor > -delta && angleHor < delta) ||
+      (angleHor > 180 - delta && angleHor < 180 + delta)) {
+      return orientations.hor;
+    }
+    if((angleHor > 90 - delta && angleHor < 90 + delta) ||
+      (angleHor > 270 - delta && angleHor < 270 + delta)) {
+      return orientations.vert;
+    }
+    return orientations.incline;
   }
 
   get imposts() {
