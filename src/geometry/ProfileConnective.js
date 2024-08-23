@@ -8,7 +8,6 @@ export class ProfileConnective extends GeneratrixElement {
     super(attr);
     this.raw('nearests', []);
     this.raw('rotate3D', 0);
-    this.raw('base3D', this.project.root.enm.positions.right);
     const {props} = this.project;
     if(!(loading || props.loading)) {
       this.skeleton.addProfile(this);
@@ -90,6 +89,10 @@ export class ProfileConnective extends GeneratrixElement {
     return this.project.root.enm.elmTypes.linking;
   }
 
+  get width() {
+    return 50;
+  }
+
   get sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
@@ -102,12 +105,31 @@ export class ProfileConnective extends GeneratrixElement {
     return sizeb || 0;
   }
   
-  get base3D() {
-    return this.raw('base3D');
-  }
-  set base3D(v) {
-    this.raw('base3D', this.project.root.enm.positions.get(v));
-    this.applyRotate3D(this.rotate3D);
+  layers3D() {
+    const {b, e, inner, outer} = this;
+    const line = new paper.Line(b.point, e.point);
+    const res = {base: [], rotate: []};
+    const bySide = new Map();
+    for(const {layer} of this.raw('nearests')) {
+      const {bounds} = layer;
+      const side = line.getSide(bounds.center, true);
+      if(!bySide.has(side)) {
+        bySide.set(side, []);
+      }
+      bySide.get(side).push(layer);
+    }
+    // будем поворачивать слой с бОльшим индексом
+    if(bySide.has(-1) && bySide.has(1)) {
+      if(bySide.get(-1)[0]._index > bySide.get(1)[0]._index) {
+        res.base = bySide.get(1);
+        res.rotate = bySide.get(-1);
+      }
+      else {
+        res.base = bySide.get(-1);
+        res.rotate = bySide.get(1);
+      }
+    }
+    return res;
   }
   
   get rotate3D() {
@@ -119,6 +141,20 @@ export class ProfileConnective extends GeneratrixElement {
   
   applyRotate3D(v) {
     this.raw('rotate3D', v);
+    const {base, rotate} = this.layers3D();
+    const {three: bthree, bounds: bbounds} = base[0]; 
+    for(const layer of rotate) {
+      const {three, bounds} = layer;
+      three.parent = bthree.owner;
+      if(!bthree.children.includes(layer)) {
+        bthree.children.push(layer);
+      }
+      three.degree.y = bthree.degree.y + v;
+    }
+    if(!this.project.props.loading) {
+      this.project.props.registerChange();
+      this.project.redraw();
+    }
   }
 
   remove() {

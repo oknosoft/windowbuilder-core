@@ -198,21 +198,31 @@ export class DimensionDrawer extends MapedGroup {
   /**
    * @summary Стирает размерные линии
    */
-  clear(local) {
-
-    this.ihor.clear();
-    this.ivert.clear();
-
-    for (const pos of ['bottom', 'top', 'right', 'left']) {
-      if(this[pos]) {
-        this[pos].removeChildren();
-        this[pos].remove();
-        this[pos] = null;
+  clear(layer) {
+    
+    if(layer) {
+      const rm = [];
+      for(const elm of this.children) {
+        const [owner, elm1, elm2] = elm.raw(['owner', 'elm1', 'elm2']);
+        if(owner === layer || elm1?.layer === layer || elm2?.layer === layer) {
+          rm.push(elm);
+        }
+      }
+      for(const elm of rm) {
+        elm.remove();
       }
     }
+    else {
+      this.ihor.clear();
+      this.ivert.clear();
 
-    if(!local) {
-      this.layer?.layer?.children?.dimensions?.clear();
+      for (const pos of ['bottom', 'top', 'right', 'left']) {
+        if(this[pos]) {
+          this[pos].removeChildren();
+          this[pos].remove();
+          this[pos] = null;
+        }
+      }
     }
   }
   

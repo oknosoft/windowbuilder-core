@@ -15,7 +15,7 @@ export class Contour extends paper.Layer {
     super(attr);
     this.#raw.skeleton = new Skeleton(this);
     this.#raw.mover = new Mover(this);
-    this.#raw.three = new Props3D();
+    this.#raw.three = new Props3D({owner: this});
     contourGroups(this);
   }
   
@@ -346,6 +346,7 @@ export class Contour extends paper.Layer {
       profile.remove();
     }
     this.children.visualization.clear();
+    this.project.dimensions.clear(this);
     this.project.props.registerChange();
     if(interactive) {
       delete this._removing;
@@ -353,10 +354,16 @@ export class Contour extends paper.Layer {
   }
   
   remove() {
-    const {container} = this;
+    const {container, three} = this;
+    // блокируем лишние пересчёты
     this._removing = true;
+    // чистим элементы
     this.clear();
+    // чистим свойства 3D
+    three.clear();
+    // собственно, удаляем
     super.remove();
+    // создаём при необходимости на освободившемся месте, пустоту
     if(container) {
       container.createChild({kind: 'blank'});
     }

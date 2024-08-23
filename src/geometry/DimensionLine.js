@@ -58,6 +58,19 @@ export class DimensionLine extends paper.Group {
     this.szClick = this.szClick.bind(this);
   }
 
+  /**
+   * @summary Доступ к сырым данным
+   * @param {String|Array} name
+   * @param {Any} [value]
+   * @return {Any}
+   */
+  raw(name, value) {
+    if(arguments.length > 1) {
+      this.#raw[name] = value;
+    }
+    return Array.isArray(name) ? name.map(n => this.#raw[n]) : this.#raw[name];
+  }
+
   // размер
   get size() {
     return (this.children.text && parseFloat(this.children.text.content)) || 0;
