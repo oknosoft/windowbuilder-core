@@ -51,10 +51,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupFillings({parent: this, name: 'fillings'});
     new GroupProfiles({parent: this, name: 'profiles'});
     new GroupSectionals({parent: this, name: 'sectionals'});
-    new GroupLayers({parent: this, name: 'topLayers'});    
-    new GroupVisualization({parent: this, name: 'visualization', guide: true});
+    new GroupLayers({parent: this, name: 'topLayers'});
     super.create_groups();
-    new GroupText({parent: this, name: 'text'});    
+    new GroupText({parent: this, name: 'text'});
+    this._attr.visualization = new GroupVisualization({owner: this, guide: true});
   }
 
   /**
@@ -1132,13 +1132,13 @@ class Contour extends AbstractFilling(paper.Layer) {
   remove() {
     this.clearChildren();
     // и всех остальных детей
-    const {children, project, _row, cnstr, _ox} = this;
+    const {children, project, _row, cnstr, _ox, l_visualization} = this;
     while (children.length) {
       if(children[0].remove() === false) {
         return;
       }
     }
-
+    l_visualization.remove();
     project._scope.eve.emit('elm_removed', this);
 
     if (_row) {
@@ -1336,19 +1336,13 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_static_errors() {
     const {l_visualization, sys} = this;
-
+    l_visualization.static.removeChildren();
+    
     if(!sys.check_static) {
       return;
     }
 
     const {Рама, Импост} = $p.enm.elm_types;
-
-    if(l_visualization._static) {
-      l_visualization._static.removeChildren();
-    }
-    else {
-      l_visualization._static = new paper.Group({parent: l_visualization});
-    }
 
     for (let i = 0; i < this.profiles.length; i++) {
 
@@ -1363,7 +1357,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           strokeCap: 'round',
           strokeScaling: false,
           guide: true,
-          parent: l_visualization._static,
+          parent: l_visualization.static,
           fillColor: 'red'
         });
       }
@@ -1378,12 +1372,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {l_visualization, project: {_scope: {eve}}} = this;
     const {job_prm: {nom}, msg} = $p;
 
-    if (l_visualization._cnn) {
-      l_visualization._cnn.removeChildren();
-    }
-    else {
-      l_visualization._cnn = new paper.Group({parent: l_visualization});
-    }
+    l_visualization.cnn.removeChildren();
 
     if(eve._async?.move_points?.timer) {
       return;
@@ -1397,7 +1386,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       dashOffset: 4,
       dashArray: [4, 4],
       guide: true,
-      parent: l_visualization._cnn,
+      parent: l_visualization.cnn,
     };
 
     // ошибки соединений с заполнениями
@@ -1417,9 +1406,10 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
         err = true;
       }
-      
-      if(!inset.check_base_restrictions(inset, glass)) {
-        glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
+
+      let text = inset.check_base_restrictions(inset, glass);
+      if(text !== true) {
+        glass.err_spec_row(nom.info_error, `${msg.err_sizes} ${text}`, inset);
         err = true;
       }
 
@@ -1832,15 +1822,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     };
 
     // подготавливаем слой для рисования
-    if (!l_visualization._opening) {
-      l_visualization._opening = new paper.CompoundPath({
-        parent: l_visualization,
-        strokeColor: 'black',
-      });
-    }
-    else {
-      l_visualization._opening.removeChildren();
-    }
+    l_visualization._opening.removeChildren();
 
     // рисуем раправление открывания
     return furn.is_sliding ? sliding() : rotary_folding();
@@ -1857,8 +1839,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
     const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
 
-    l_visualization.by_spec.removeChildren();
     l_visualization.by_insets.removeChildren();
+    l_visualization.by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
     const hide_by_spec = !builder_props.visualization;
@@ -2765,9 +2747,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         cnstr: {in: [0, this.cnstr]},
         inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
       }, (row) => {
-        if(!prow || row.cnstr) {
+        if(!prow || row.cnstr === this.cnstr) {
           prow = row;
-          return false;
         }
       });
       if(prow) {
@@ -2970,7 +2951,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     furn_set.specification.find_rows({dop: 0}, (row) => {
 
       // проверяем, проходит ли строка
-      if (!row.quantity || !row.check_restrictions(this, cache)) {
+      if (!row.quantity || row.check_restrictions(this, cache) !== true) {
         return;
       }
       if (set_handle_height(row)) {
@@ -3152,7 +3133,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {paper.Group}
    */
   get l_visualization() {
-    return this.children.visualization;
+    return this.project.l_visualization.map.get(this);
   }
 
   /**

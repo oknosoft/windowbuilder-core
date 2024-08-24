@@ -58,10 +58,11 @@ const consts = {
 	move_shapes: 'move-shapes',
 
   get base_offset() {
-    return this.font_size * 1.2;
+	  const {font_size} = this;
+    return font_size < 80 ? 90 : font_size + 18;
   },
   get dop_offset() {
-	  return this.base_offset + this.font_size * 0.7;
+	  return this.base_offset + 44;
   }
 
 };

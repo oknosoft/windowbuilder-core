@@ -369,7 +369,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
   prm_defaults(param, cnstr) {
     const ts = param instanceof CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
-    return ts.find({param});
+    return ts.find({param}) || this.product_params.find({param});
   }
 
   graph_restrictions(spoint, clr) {

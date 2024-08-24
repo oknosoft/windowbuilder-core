@@ -41,10 +41,11 @@ module.exports = function({$p, paper}) {const consts = {
 	move_handle: 'move_handle',
 	move_shapes: 'move-shapes',
   get base_offset() {
-    return this.font_size * 1.2;
+	  const {font_size} = this;
+    return font_size < 80 ? 90 : font_size + 18;
   },
   get dop_offset() {
-	  return this.base_offset + this.font_size * 0.7;
+	  return this.base_offset + 44;
   }
 };
 class EditorInvisible extends paper.PaperScope {
@@ -1617,10 +1618,36 @@ class LayerGroup extends paper.Group {
   }
 }
 class GroupVisualization extends LayerGroup {
-  constructor(attr) {
+  constructor({owner, ...attr}) {
+    const {l_visualization} = owner.project;
+    attr.layer = attr.parent = l_visualization;
     super(attr);
     new paper.Group({parent: this, name: 'by_insets'});
     new paper.Group({parent: this, name: 'by_spec'});
+    new paper.Group({parent: this, name: 'static'});
+    new paper.Group({parent: this, name: 'cnn'});
+    new paper.CompoundPath({parent: this, name: '_opening', strokeColor: 'black'});
+    this.owner = owner;
+    l_visualization.map.set(owner, this);
+  }
+  remove() {
+    this.project.l_visualization.map.delete(this.owner);
+    super.remove();
+  }
+  clear() {
+    this.children.by_insets.clear();
+    this.children.by_spec.clear();
+    this.children.static.clear();
+    this.children.cnn.clear();
+  }
+  get cnn() {
+    return this.children.cnn;
+  }
+  get _opening() {
+    return this.children._opening;
+  }
+  get static() {
+    return this.children.static;
   }
   get by_insets() {
     return this.children.by_insets;
@@ -1766,10 +1793,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupFillings({parent: this, name: 'fillings'});
     new GroupProfiles({parent: this, name: 'profiles'});
     new GroupSectionals({parent: this, name: 'sectionals'});
-    new GroupLayers({parent: this, name: 'topLayers'});    
-    new GroupVisualization({parent: this, name: 'visualization', guide: true});
+    new GroupLayers({parent: this, name: 'topLayers'});
     super.create_groups();
-    new GroupText({parent: this, name: 'text'});    
+    new GroupText({parent: this, name: 'text'});
+    this._attr.visualization = new GroupVisualization({owner: this, guide: true});
   }
   get ProfileConstructor() {
     return Profile;
@@ -2522,12 +2549,13 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   remove() {
     this.clearChildren();
-    const {children, project, _row, cnstr, _ox} = this;
+    const {children, project, _row, cnstr, _ox, l_visualization} = this;
     while (children.length) {
       if(children[0].remove() === false) {
         return;
       }
     }
+    l_visualization.remove();
     project._scope.eve.emit('elm_removed', this);
     if (_row) {
       if(!project.ox.empty()) {
@@ -2668,16 +2696,11 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   draw_static_errors() {
     const {l_visualization, sys} = this;
+    l_visualization.static.removeChildren();
     if(!sys.check_static) {
       return;
     }
     const {Рама, Импост} = $p.enm.elm_types;
-    if(l_visualization._static) {
-      l_visualization._static.removeChildren();
-    }
-    else {
-      l_visualization._static = new paper.Group({parent: l_visualization});
-    }
     for (let i = 0; i < this.profiles.length; i++) {
       if([Рама, Импост].includes(this.profiles[i].elm_type) &&
         this.profiles[i].static_load().can_use === false) {
@@ -2689,7 +2712,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           strokeCap: 'round',
           strokeScaling: false,
           guide: true,
-          parent: l_visualization._static,
+          parent: l_visualization.static,
           fillColor: 'red'
         });
       }
@@ -2698,12 +2721,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_cnn_errors() {
     const {l_visualization, project: {_scope: {eve}}} = this;
     const {job_prm: {nom}, msg} = $p;
-    if (l_visualization._cnn) {
-      l_visualization._cnn.removeChildren();
-    }
-    else {
-      l_visualization._cnn = new paper.Group({parent: l_visualization});
-    }
+    l_visualization.cnn.removeChildren();
     if(eve._async?.move_points?.timer) {
       return;
     }
@@ -2715,7 +2733,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       dashOffset: 4,
       dashArray: [4, 4],
       guide: true,
-      parent: l_visualization._cnn,
+      parent: l_visualization.cnn,
     };
     this.glasses(false, true).forEach(glass => {
       let err;
@@ -2731,8 +2749,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
         err = true;
       }
-      if(!inset.check_base_restrictions(inset, glass)) {
-        glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
+      let text = inset.check_base_restrictions(inset, glass);
+      if(text !== true) {
+        glass.err_spec_row(nom.info_error, `${msg.err_sizes} ${text}`, inset);
         err = true;
       }
       if (err) {
@@ -3072,15 +3091,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       _opening.visible = true;
     };
-    if (!l_visualization._opening) {
-      l_visualization._opening = new paper.CompoundPath({
-        parent: l_visualization,
-        strokeColor: 'black',
-      });
-    }
-    else {
-      l_visualization._opening.removeChildren();
-    }
+    l_visualization._opening.removeChildren();
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows, region = 0) {
@@ -3088,8 +3099,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
     const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
-    l_visualization.by_spec.removeChildren();
     l_visualization.by_insets.removeChildren();
+    l_visualization.by_spec.removeChildren();
     const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
       rows = [];
@@ -3743,9 +3754,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         cnstr: {in: [0, this.cnstr]},
         inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
       }, (row) => {
-        if(!prow || row.cnstr) {
+        if(!prow || row.cnstr === this.cnstr) {
           prow = row;
-          return false;
         }
       });
       if(prow) {
@@ -3899,7 +3909,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     furn_set.specification.find_rows({dop: 0}, (row) => {
-      if (!row.quantity || !row.check_restrictions(this, cache)) {
+      if (!row.quantity || row.check_restrictions(this, cache) !== true) {
         return;
       }
       if (set_handle_height(row)) {
@@ -4022,7 +4032,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     return this.children.text;
   }
   get l_visualization() {
-    return this.children.visualization;
+    return this.project.l_visualization.map.get(this);
   }
   get opacity() {
     for(const elm of this.profiles) {
@@ -4825,6 +4835,17 @@ class ContourVirtual extends Contour {
   }
 }
 EditorInvisible.ContourVirtual = ContourVirtual;
+class ContourVisualization extends paper.Layer {
+  constructor(attr) {
+    super(attr);
+    this.map = new Map();
+  }
+  clear() {
+    for(const [layer, group] of this.map) {
+      group.clear();
+    }
+  }
+}
 class DimensionLine extends paper.Group {
   constructor(attr) {
     super({parent: attr.parent, project: attr.project});
@@ -12997,6 +13018,7 @@ class Scheme extends paper.Project {
     this._dp = $p.dp.buyers_order.create();
     this.isBrowser = typeof requestAnimationFrame === 'function';
     this.redraw = this.redraw.bind(this);
+    const {l_connective, l_dimensions, l_visualization} = this;
     if(!_attr._silent) {
       this._dp_listener = this._dp_listener.bind(this);
       this._dp._manager.on('update', this._dp_listener);
@@ -13531,6 +13553,9 @@ class Scheme extends paper.Project {
     if(this.l_connective.isBelow(this.l_dimensions)) {
       this.l_connective.insertAbove(this.l_dimensions);
     }
+    if(this.l_visualization.isBelow(this.l_connective)) {
+      this.l_visualization.insertAbove(this.l_connective);
+    }
     this.view.update();
     _ch.length = 0;
     for(const deffer of _deffer) {
@@ -13629,14 +13654,19 @@ class Scheme extends paper.Project {
     return Contour.prototype.params_links(attr, sys, cnstr);
   }
   clear() {
-    const {_attr} = this;
+    const {_attr, _children, l_visualization} = this;
     const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service,_regions';
     for (let fld in _attr) {
       if(!pnames.match(fld)) {
         delete _attr[fld];
       }
     }
-    super.clear();
+    l_visualization.clear();
+    for (let i = _children.length - 1; i >= 0; i--) {
+      if(_children[i] !== l_visualization) {
+        _children[i].remove();
+      }
+    }
   }
   unload() {
     const {_dp, _attr, _calc_order_row, _deffer} = this;
@@ -14040,6 +14070,17 @@ class Scheme extends paper.Project {
       }  
     }
     return _attr.l_connective;
+  }
+  get l_visualization() {
+    const {layers} = this;
+    if(!layers.visualization) {
+      const {activeLayer} = this;
+      new ContourVisualization({project: this, name: 'visualization'});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }
+    }
+    return layers.visualization;
   }
   draw_sizes() {
     this.l_dimensions.draw_sizes();
@@ -16614,7 +16655,7 @@ $p.cat.contracts.__define({
 $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm(layer, force=false) {
     const {project, furn_set, cnstr, sys} = layer;
-    const fprms = project.ox.params;
+    const {params} = project.ox;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
     const aprm = furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
@@ -16624,12 +16665,12 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         return;
       }
       let prm_row, forcibly = true;
-      fprms.find_rows({param: v, cnstr: cnstr}, (row) => {
+      params.find_rows({param: v, cnstr: cnstr}, (row) => {
         prm_row = row;
         return forcibly = force;
       });
       if(!prm_row){
-        prm_row = fprms.add({param: v, cnstr: cnstr}, true);
+        prm_row = params.add({param: v, cnstr: cnstr}, true);
       }
       const {param} = prm_row;
       const drow = sys.prm_defaults(param, cnstr);
@@ -16648,12 +16689,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }), prm_row); 
     }
     const adel = [];
-    fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {
-      if(aprm.indexOf(row.param) == -1){
+    params.find_rows({cnstr, inset: utils.blank.guid}, (row) => {
+      if(!aprm.includes(row.param) || 
+          params.find({cnstr: 0, inset: utils.blank.guid, param: row.param, value: row.value})){
         adel.push(row);
       }
     });
-    adel.forEach((row) => fprms.del(row, true));
+    adel.forEach((row) => params.del(row, true));
   }
   find_set(layer) {
     const {weight, w, h} = layer;
@@ -16710,7 +16752,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
              Не найден объект с uid ${row_furn._obj.nom}`);
       }
-      if(!row_furn.check_restrictions(contour, cache)){
+      if(row_furn.check_restrictions(contour, cache) !== true){
         return;
       }
       if(!exclude_dop){
@@ -16719,7 +16761,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             throw new Error(`Фурнитура ${this.name} ${this.id} elm ${dop_row.elm} dop ${dop_row.dop} \n
              Не найден объект с uid ${dop_row._obj.nom}`);
           }
-          if(!dop_row.check_restrictions(contour, cache)){
+          if(dop_row.check_restrictions(contour, cache) !== true){
             return;
           }
           if(dop_row.is_procedure_row){
@@ -16953,8 +16995,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       if(!cache.hasOwnProperty('weight')) {
         if(contour.sys.flap_weight_max) {
           const weights = [];
-          for(const cnt of contour.layer.contours) {
-            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+          const contours = contour.layer ? contour.layer.contours : [contour];
+          for(const cnt of contours) {
+            if(cnt === contour || !cnt.furn.open_type.is('Неподвижное')) {
+              weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+            }
           }
           cache.weight = Math.max(...weights);
         }
@@ -17627,8 +17672,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
     }
     check_restrictions(row, elm, by_perimetr, len_angl) {
-      if(!this.check_base_restrictions(row, elm)) {
-        return false;
+      let text = this.check_base_restrictions(row, elm);
+      if(text !== true) {
+        return text;
       }
       const {_row} = elm;
       const is_row = !utils.is_data_obj(row);
@@ -17652,15 +17698,21 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
           else {
             const len = len_angl ? len_angl.len : (_row.len || elm.length);
-            if (row.lmin > len || (row.lmax < len && row.lmax)) {
-              return false;
+            if (row.lmin > len) {
+              return `длина < ${row.lmin}`;
+            }
+            if (row.lmax < len && row.lmax) {
+              return `длина > ${row.lmax}`;
             }
           }
         }
         if (is_row) {
           const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
-          if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
-            return false;
+          if (row.ahmin > angle_hor) {
+            return `угол к горизонту < ${row.ahmin}`;
+          }
+          if (row.ahmax < angle_hor) {
+            return `угол к горизонту > ${row.ahmax}`;
           }
         }
       }
@@ -17670,8 +17722,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {_row} = elm;
       if(elm instanceof Filling) {
         const {form_area} = elm
-        if(row.smin > form_area || (form_area && row.smax && row.smax < form_area)){
-          return false;
+        if(row.smin > form_area){
+          return `площадь < ${row.smin}`;
+        }
+        if(form_area && row.smax && row.smax < form_area){
+          return `площадь > ${row.smax}`;
         }
         if(row instanceof CatInserts) {
           const {width, height} = elm.bounds;
@@ -17682,27 +17737,27 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             const w2 = height > lmin && height < lmax;
             const h2 = width > hmin && width < hmax;
             if (!((w1 && h1) || (w2 && h2))) {
-              return false;
+              return `габариты [${lmin}-${lmax}]x[${hmin}-${hmax}]`;
             }
           }
           else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
-            return false;
+            return `габариты [${lmin}-${lmax}]x[${hmin}-${hmax}]`;
           }
         }
       }
       else {
         const is_linear = elm.is_linear ? elm.is_linear() : true;
         if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
-          return false;
+          return `изгиб элемента`;
         }
       }
       if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
-        return false;
+        return `радиус изгиба ${row.rmin}-${row.rmax}`;
       }
       return true;
     }
     check_main_restrictions(row, elm) {
-      if(!this.check_base_restrictions(row, elm)) {
+      if(this.check_base_restrictions(row, elm) !== true) {
         return false;
       }
       if(elm instanceof ProfileItem) {
@@ -17792,7 +17847,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       const {flipped} = elm.layer || {};
       this.specification.forEach((row) => {
-        if(!this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl)){
+        if(this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl) !== true){
           return;
         }
         if(this.insert_type.is('mosquito') && !elm.perimeter 
@@ -17893,8 +17948,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           res.push(row);
         }
       });
-      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl)){
-        elm.err_spec_row(job_prm.nom.critical_error, this);
+      if(_types_main.includes(insert_type)){
+        const text = this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl);
+        if(text !== true) {
+          elm.err_spec_row(job_prm.nom.critical_error, text, this);
+        }
       }
       return res;
     }
@@ -17980,7 +18038,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             perimeter.forEach((rib) => {
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
-              if(this.check_restrictions(row_ins_spec, row_prm, true) && check_params({
+              if(this.check_restrictions(row_ins_spec, row_prm, true) === true && check_params({
                 params: (row_ins_spec.origin || this).selection_params,
                 ox,
                 elm: row_prm,
@@ -18244,7 +18302,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         const {_ox} = elm.layer;
         let thickness = 0;
         for(const row of this.specification) {
-          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({
+          if(row.quantity && this.check_base_restrictions(row, elm) === true && check_params({
             params: this.selection_params,
             ox: _ox,
             elm,
@@ -18589,7 +18647,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 return 0;
               }
               const weights = [];
-              const contours = layer.layer ? layer.layer.contours : [layer]; 
+              const contours = (layer.layer && layer.sys.flap_weight_max) ? layer.layer.contours : [layer]; 
               for(const cnt of contours) {
                 if(cnt === layer || !cnt.furn.open_type.is('Неподвижное')) {
                   weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));

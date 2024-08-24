@@ -775,12 +775,14 @@
      */
     check_restrictions(row, elm, by_perimetr, len_angl) {
 
-      if(!this.check_base_restrictions(row, elm)) {
-        return false;
+      let text = this.check_base_restrictions(row, elm);
+      if(text !== true) {
+        return text;
       }
 
       const {_row} = elm;
       const is_row = !utils.is_data_obj(row);
+      
 
       // Главный элемент с нулевым количеством не включаем
       if(is_row && row.is_main_elm && !row.quantity){
@@ -805,15 +807,21 @@
           }
           else {
             const len = len_angl ? len_angl.len : (_row.len || elm.length);
-            if (row.lmin > len || (row.lmax < len && row.lmax)) {
-              return false;
+            if (row.lmin > len) {
+              return `длина < ${row.lmin}`;
+            }
+            if (row.lmax < len && row.lmax) {
+              return `длина > ${row.lmax}`;
             }
           }
         }
         if (is_row) {
           const angle_hor = len_angl && len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : _row.angle_hor;
-          if (row.ahmin > angle_hor || row.ahmax < angle_hor) {
-            return false;
+          if (row.ahmin > angle_hor) {
+            return `угол к горизонту < ${row.ahmin}`;
+          }
+          if (row.ahmax < angle_hor) {
+            return `угол к горизонту > ${row.ahmax}`;
           }
         }
       }
@@ -827,7 +835,7 @@
      * Проверяет базовые ограничения вставки или строки вставки
      * @param {CatInsertsSpecificationRow} row
      * @param {BuilderElement} elm
-     * @return {boolean}
+     * @return {Boolean|String}
      */
     check_base_restrictions(row, elm) {
       const {_row} = elm;
@@ -835,8 +843,11 @@
       if(elm instanceof Filling) {
         // проверяем площадь
         const {form_area} = elm
-        if(row.smin > form_area || (form_area && row.smax && row.smax < form_area)){
-          return false;
+        if(row.smin > form_area){
+          return `площадь < ${row.smin}`;
+        }
+        if(form_area && row.smax && row.smax < form_area){
+          return `площадь > ${row.smax}`;
         }
         // и фильтр по габаритам
         if(row instanceof CatInserts) {
@@ -849,11 +860,11 @@
             const w2 = height > lmin && height < lmax;
             const h2 = width > hmin && width < hmax;
             if (!((w1 && h1) || (w2 && h2))) {
-              return false;
+              return `габариты [${lmin}-${lmax}]x[${hmin}-${hmax}]`;
             }
           }
           else if ((lmin > width) || (lmax && lmax < width) || (hmin > height) || (hmax && hmax < height)) {
-            return false;
+            return `габариты [${lmin}-${lmax}]x[${hmin}-${hmax}]`;
           }
         }
       }
@@ -861,12 +872,12 @@
         const is_linear = elm.is_linear ? elm.is_linear() : true;
         // только для прямых или только для кривых профилей
         if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
-          return false;
+          return `изгиб элемента`;
         }
       }
 
       if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
-        return false;
+        return `радиус изгиба ${row.rmin}-${row.rmax}`;
       }
 
       return true;
@@ -879,7 +890,7 @@
      * @return {boolean}
      */
     check_main_restrictions(row, elm) {
-      if(!this.check_base_restrictions(row, elm)) {
+      if(this.check_base_restrictions(row, elm) !== true) {
         return false;
       }
       if(elm instanceof ProfileItem) {
@@ -997,7 +1008,7 @@
       this.specification.forEach((row) => {
 
         // Проверяем ограничения строки вставки
-        if(!this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl)){
+        if(this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl) !== true){
           return;
         }
           
@@ -1107,8 +1118,11 @@
       });
 
       // контроль массы, размеров основной вставки
-      if(_types_main.includes(insert_type) && !this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl)){
-        elm.err_spec_row(job_prm.nom.critical_error, this);
+      if(_types_main.includes(insert_type)){
+        const text = this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl);
+        if(text !== true) {
+          elm.err_spec_row(job_prm.nom.critical_error, text, this);
+        }
       }
 
       return res;
@@ -1221,7 +1235,7 @@
             perimeter.forEach((rib) => {
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
-              if(this.check_restrictions(row_ins_spec, row_prm, true) && check_params({
+              if(this.check_restrictions(row_ins_spec, row_prm, true) === true && check_params({
                 params: (row_ins_spec.origin || this).selection_params,
                 ox,
                 elm: row_prm,
@@ -1514,7 +1528,7 @@
         const {_ox} = elm.layer;
         let thickness = 0;
         for(const row of this.specification) {
-          if(row.quantity && this.check_base_restrictions(row, elm) && check_params({
+          if(row.quantity && this.check_base_restrictions(row, elm) === true && check_params({
             params: this.selection_params,
             ox: _ox,
             elm,

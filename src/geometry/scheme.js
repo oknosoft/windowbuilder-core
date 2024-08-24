@@ -48,6 +48,9 @@ class Scheme extends paper.Project {
 
     // биндим redraw
     this.redraw = this.redraw.bind(this);
+    
+    // служебные слои
+    const {l_connective, l_dimensions, l_visualization} = this;
 
     // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
@@ -842,6 +845,9 @@ class Scheme extends paper.Project {
     if(this.l_connective.isBelow(this.l_dimensions)) {
       this.l_connective.insertAbove(this.l_dimensions);
     }
+    if(this.l_visualization.isBelow(this.l_connective)) {
+      this.l_visualization.insertAbove(this.l_connective);
+    }
 
     // обновляем изображение на экране
     this.view.update();
@@ -1015,7 +1021,7 @@ class Scheme extends paper.Project {
    * Чистит изображение
    */
   clear() {
-    const {_attr} = this;
+    const {_attr, _children, l_visualization} = this;
     const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service,_regions';
     for (let fld in _attr) {
       if(!pnames.match(fld)) {
@@ -1023,7 +1029,13 @@ class Scheme extends paper.Project {
       }
     }
 
-    super.clear();
+    l_visualization.clear();
+    for (let i = _children.length - 1; i >= 0; i--) {
+      if(_children[i] !== l_visualization) {
+        _children[i].remove();
+      }
+    }
+      
     //new paper.Layer({project: this});
   }
 
@@ -1609,6 +1621,25 @@ class Scheme extends paper.Project {
     }
     return _attr.l_connective;
   }
+
+  /**
+   * Служебный слой визуализации
+   *
+   * @type ContourVisualization
+   * @final
+   */
+  get l_visualization() {
+    const {layers} = this;
+    if(!layers.visualization) {
+      const {activeLayer} = this;
+      new ContourVisualization({project: this, name: 'visualization'});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }
+    }
+    return layers.visualization;
+  }
+  
 
   /**
    * @summary Создаёт и перерисовавает габаритные линии изделия

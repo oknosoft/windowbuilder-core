@@ -1736,13 +1736,17 @@ set params(v){this._setter_ts('params',v)}
           }, attributes, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
+          const fillColor = elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr);
+          if(dashArray && reflected) {
+            fillColor.alpha = 0.12;
+          }
           subpath = new CompoundPath(Object.assign({
             project,
             layer,
             parent: layer.by_spec,
             pathData: this.svg_path,
             strokeColor: 'black',
-            fillColor: elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr),
+            fillColor,
             strokeScaling: false,
             dashArray,
             pivot: [0, 0],
@@ -3581,7 +3585,7 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
 
   prm_defaults(param, cnstr) {
     const ts = param instanceof CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
-    return ts.find({param});
+    return ts.find({param}) || this.product_params.find({param});
   }
 
   graph_restrictions(spoint, clr) {

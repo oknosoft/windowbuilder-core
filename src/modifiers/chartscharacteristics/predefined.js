@@ -108,7 +108,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 return 0;
               }
               const weights = [];
-              const contours = layer.layer ? layer.layer.contours : [layer]; 
+              const contours = (layer.layer && layer.sys.flap_weight_max) ? layer.layer.contours : [layer]; 
               for(const cnt of contours) {
                 if(cnt === layer || !cnt.furn.open_type.is('Неподвижное')) {
                   weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));

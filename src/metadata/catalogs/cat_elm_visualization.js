@@ -136,13 +136,17 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
           }, attributes, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
+          const fillColor = elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr);
+          if(dashArray && reflected) {
+            fillColor.alpha = 0.12;
+          }
           subpath = new CompoundPath(Object.assign({
             project,
             layer,
             parent: layer.by_spec,
             pathData: this.svg_path,
             strokeColor: 'black',
-            fillColor: elm.constructor.clr_by_clr.call(elm, clr.empty() ? elm._row.clr : clr),
+            fillColor,
             strokeScaling: false,
             dashArray,
             pivot: [0, 0],

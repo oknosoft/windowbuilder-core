@@ -223,10 +223,41 @@ class LayerGroup extends paper.Group {
 }
 
 class GroupVisualization extends LayerGroup {
-  constructor(attr) {
+  constructor({owner, ...attr}) {
+    const {l_visualization} = owner.project;
+    attr.layer = attr.parent = l_visualization;
     super(attr);
     new paper.Group({parent: this, name: 'by_insets'});
     new paper.Group({parent: this, name: 'by_spec'});
+    new paper.Group({parent: this, name: 'static'});
+    new paper.Group({parent: this, name: 'cnn'});
+    new paper.CompoundPath({parent: this, name: '_opening', strokeColor: 'black'});
+    this.owner = owner;
+    l_visualization.map.set(owner, this);
+  }
+  
+  remove() {
+    this.project.l_visualization.map.delete(this.owner);
+    super.remove();
+  }
+
+  clear() {
+    this.children.by_insets.clear();
+    this.children.by_spec.clear();
+    this.children.static.clear();
+    this.children.cnn.clear();
+  }
+
+  get cnn() {
+    return this.children.cnn;
+  }
+
+  get _opening() {
+    return this.children._opening;
+  }
+  
+  get static() {
+    return this.children.static;
   }
   
   get by_insets() {
