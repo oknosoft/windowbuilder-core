@@ -620,7 +620,7 @@ set hide(v){this._setter_ts('hide',v)}
       else {
         params.find_rows({
           param: this,
-          cnstr: (cnstr > 0 || !elm._row) ? cnstr : (elm._row ? {in: [0, cnstr || 0, -elm._row.elm]} : 0),
+          cnstr: (cnstr > 0 || !elm._row) ? (cnstr || 0) : (elm._row ? {in: [0, cnstr || 0, -elm._row.elm]} : 0),
           inset,
         }, (row) => {
           if(!prow || (!prow.cnstr && row.cnstr) || (prow.cnstr > 0 && row.cnstr < 0)) {
