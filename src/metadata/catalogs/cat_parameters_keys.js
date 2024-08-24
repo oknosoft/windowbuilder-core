@@ -43,6 +43,9 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
       for(const prm_row of grp) {
         const {property, origin} = prm_row;
         grp_ok = property.check_condition({prm_row, elm, elm2, origin, ox, calc_order, layer, calc_order_row, ...other});
+        if (!grp_ok) {
+          break;
+        }
       }
       res = grp_ok;
       if(res) {
