@@ -15,7 +15,7 @@ export class StandardForms {
     props.loading = true;
 
     layer.clear();
-    const {bounds} = project;
+    const {bounds, contours} = project;
     // спросить привязку
     if(bounds?.area && profilesBounds.area) {
       return ui.dialogs.input_value({
@@ -24,10 +24,10 @@ export class StandardForms {
         list,
         initialValue: positions.right,
       })
-        .then((pos) => {
-          offset.pos = pos || 'right';
+        .then((bind) => {
+          offset.bind = bind || 'right';
           const light = 360;
-          switch (pos) {
+          switch (bind) {
             case 'left':
               offset.x = bounds.bottomLeft.x - profilesBounds.width - light;
               break;
@@ -41,7 +41,14 @@ export class StandardForms {
               offset.x = bounds.bottomRight.x + light;
           }
           layer.three.rotation = [0, 0, 0];
-          layer.three.position = [offset.x, 0, 0];
+          layer.three.position = [0, 0, 0];
+          for(const contour of contours) {
+            if(contour !== layer && contour.bounds[offset.bind] === bounds[offset.bind]) {
+              layer.three.bind = offset.bind;
+              layer.three.parent = contour;
+              break;
+            }
+          }
           return {project, offset, profilesBounds};
         });
     }

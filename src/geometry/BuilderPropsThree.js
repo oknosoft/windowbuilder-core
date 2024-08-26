@@ -42,15 +42,15 @@ export class Props3D {
       position: new Vector3(),
       rotation: new Vector3(),
       degree: new Degree(this),
+      parent: null,
     });
-    this.parent = null;
     this.children = [];
     if(raw) {
       this.fill(raw);
     }    
   }
   
-  fill({position, rotation, parent, children, owner}) {
+  fill({position, rotation, parent, children, owner, bind}) {
     if(position) {
       this.#raw.position.fromArray(position);
     }
@@ -62,11 +62,16 @@ export class Props3D {
     }
     if(owner) {
       this.owner = owner;
+      this._manager = new owner.project.root.classes.MetaEventEmitter();
+      if(bind) {
+        this.#raw.bind = bind;
+      }
     }
     if(children) {
       this.children.length = 0;
       this.children.push(...children);
     }
+    
   }
 
   clear() {
@@ -85,24 +90,34 @@ export class Props3D {
     this.owner = null;
   }
   
-  get pos() {
-    const {owner, parent} = this;
-    if(owner && parent) {
-      const obounds = owner.bounds;
-      const pbounds = parent.bounds;
-      if(obounds.right <= pbounds.left) {
-        return 'left';
-      }
-      if(obounds.left >= pbounds.right) {
-        return 'right';
-      }
-      if(obounds.bottom <= pbounds.top) {
-        return 'top';
-      }
-      if(obounds.top >= pbounds.bottom) {
-        return 'bottom';
+  get parent() {
+    return this.#raw.parent;
+  }
+  set parent(v) {
+    const {parent, owner} = this;
+    if(parent && v !== parent) {
+      const index = parent.three.children.indexOf(owner);
+      if(index !== -1) {
+        parent.three.children.splice(index, 1);
       }
     }
+    this.#raw.parent = v;
+    if(v?.three && !v.three.children.includes(owner)) {
+      v.three.children.push(owner);
+    }
+  }
+  
+  get bindable() {
+    return paper.project.contours.length > 1;
+  }
+  
+  get bind() {
+    const {positions} = this.owner.project.root.enm; 
+    return positions.get(this.#raw.bind);
+  }
+  set bind(v) {
+    this.#raw.bind = v;
+    this._manager.emit('update', this, {bind: v});
   }
   
   get position() {
@@ -115,6 +130,31 @@ export class Props3D {
     else {
       Object.assign(this.#raw.position, v);
     }
+  }
+  
+  get calculatedPosition() {
+    const {position, bind, owner, parent} = this;
+    const {positions} = owner.project.root.enm;
+    let pos = position.clone();
+    if(parent) {
+      switch (bind) {
+        case positions.right:
+          pos.x += parent.bounds.width;
+          break;
+        case positions.left:
+          pos.x -= owner.bounds.width;
+          break;
+        case positions.top:
+          pos.y += parent.bounds.height;
+          break;
+        case positions.bottom:
+          pos.y -= owner.bounds.height;
+          break;
+        case positions.top:
+          return pos;
+      }
+    }
+    return pos;
   }
 
   get rotation() {
