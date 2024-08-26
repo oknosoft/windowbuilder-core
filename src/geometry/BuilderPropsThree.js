@@ -77,16 +77,16 @@ export class Props3D {
   clear() {
     const {children, parent, owner} = this;
     if(parent && owner) {
+      this.parent = null;
       const index = parent.three.children.indexOf(owner);
       if(index !== -1) {
         parent.three.children.splice(index, 1);
       }
     }
-    for(const child of children) {
-      child.parent = null;
+    for(const {three} of children) {
+      three.parent = null;
     }
     children.length = 0;
-    this.parent = null;
     this.owner = null;
   }
   

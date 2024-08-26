@@ -95,9 +95,9 @@ export class Scheme extends paper.Project {
     const {scaling} = view._decompose();
     view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
 
-    const dx = view.viewSize.width - width * zoom;
-    const dy = view.viewSize.height - height * zoom * 1.2;
-    view.center = center.add([Math.sign(scaling.x) * dx, -Math.sign(scaling.y) * dy]);
+    let dx = (view.viewSize.width - width * zoom) / 2;
+    let dy = (view.viewSize.height - height * zoom) / 2;
+    view.center = center.add([-Math.sign(scaling.x) * dx, -Math.sign(scaling.y) * dy]);
 
     this._scope?.tool?.onZoomFit?.();
   }
