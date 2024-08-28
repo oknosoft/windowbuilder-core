@@ -68,7 +68,8 @@ export class Contour extends paper.Layer {
       this.#raw.hidden = v;
       const visible = !this.#raw.hidden;
       for(const elm of this.profiles.concat(this.fillings)) {
-        elm.visible = visible;
+        //elm.visible = visible;
+        elm.opacity = visible ? 1 : 0.1;
       }
       this.children.visualization.visible = visible;
       //this.l_dimensions.redraw();

@@ -2,6 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {epsilon} from './paper/Point';
 import {BuilderElement} from './BuilderElement';
 import {CnnPoint} from './ProfileCnnPoint';
+import {rama, impost, flap, loader, svgStub} from './ProfileShapes';
 
 export const pathAttr = {
   strokeColor: 'black',
@@ -315,6 +316,33 @@ export class GeneratrixElement extends BuilderElement {
       this.tuneRays();
     }
     return inner;
+  }
+  
+  get shape() {
+    const {nom, elmType} = this;
+    let shape = elmType.is('impost') ? impost : (elmType.is('flap') ? flap : rama);
+    if(!nom.empty()) {
+      if(nom.shape) {
+        shape = nom.shape; 
+      }
+      else if(nom.shape !== null) {
+        const {svg_path} = nom.visualization;
+        if(svg_path) {
+          try {
+            const svg = loader.parse(svgStub.replace('%', svg_path));
+            shape = svg.paths[0].toShapes(true)[0];
+            nom.shape = shape;
+          }
+          catch (e) {
+            nom.shape = null;
+          }
+        }
+        else {
+          nom.shape = null;
+        }
+      }
+    }
+    return shape;
   }
 
   /**
