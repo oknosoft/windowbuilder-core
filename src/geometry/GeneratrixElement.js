@@ -346,6 +346,16 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * 
+   * @param {paper.Point} interiorPoint
+   */
+  innerRib(interiorPoint) {
+    const line = new paper.Line(this.b.point, this.e.point);
+    const side = line.getSide(interiorPoint, true);
+    return side < 0 ? this.outer : this.inner;
+  }
+
+  /**
    * @summary Выделяем только образующую
    * @param {Boolean} selection
    */

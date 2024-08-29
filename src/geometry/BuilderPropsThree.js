@@ -132,6 +132,20 @@ export class Props3D {
     }
   }
   
+  offsetZ() {
+    const {owner} = this;
+    let res = 0;
+    if(owner.layer) {
+      for(const profile of owner.profiles) {
+        
+      }
+      if(!res) {
+        res = 15;
+      }
+    }
+    return res;
+  }
+  
   get calculatedPosition() {
     const {position, bind, owner, parent} = this;
     const {positions} = owner.project.root.enm;
@@ -150,10 +164,10 @@ export class Props3D {
         case positions.bottom:
           pos.y -= owner.bounds.height;
           break;
-        case positions.top:
-          return pos;
       }
     }
+    // сдвиг по Z
+    pos.z += this.offsetZ();
     return pos;
   }
 

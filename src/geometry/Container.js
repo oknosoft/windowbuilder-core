@@ -53,22 +53,46 @@ export class Container  {
   get perimeter() {
     return this.#raw.cycle;
   }
+
+  /**
+   * @summary Точка внутри контейнера
+   * @Type {paper.Point}
+   */
+  get interiorPoint() {
+    const {cycle} = this.#raw;
+    const points = [cycle[0].startVertex.point];
+    if(cycle.length > 1) {
+      if(cycle.length < 4) {
+        points.push(cycle[0].endVertex.point);
+      }
+      if(cycle.length > 3) {
+        points.push(cycle[1].endVertex.point);
+      }
+    }
+    return new paper.Point(points
+      .reduce((sum, curr) => [sum[0] + curr[0], sum[1] + curr[1]], [0, 0])
+      .map(v => [v[0] / points.length, v[1] / points.length]));
+  }
   
   get pathInner() {
-    const offset = -30;
+    const offset = 15;
+    const faltz = 20;
     const {cycle} = this.#raw;
+    const {interiorPoint} = this;
     const paths = [];
     const res = [];
     if(cycle.length > 1) {
       for(let i = 0; i < cycle.length; i++) {
         const {startVertex, endVertex, profile} = cycle[i];
-        paths.push(new paper.Path({insert: false, segments: [startVertex.point, endVertex.point]}).equidistant(offset));
+        // внутреннее по отношению к контейнеру ребро профиля + фальц
+        const rib = profile.innerRib(interiorPoint);
+        paths.push(rib.equidistant(faltz + offset));
       }
       for(let i = 0; i < cycle.length; i++) {
         const prev = paths[i === 0 ? cycle.length -1 : i - 1];
         const curr = paths[i];
         const next = paths[i === cycle.length - 1 ? 0 : i + 1];
-        res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point, Math.abs(offset) * 3), {edge: cycle[i]}));
+        res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point, (offset + faltz) * 3), {edge: cycle[i]}));
       }
     }
     return res;
