@@ -124,6 +124,9 @@ export class GeneratrixElement extends BuilderElement {
     }
     return root.cat.cnns.get();
   }
+  set cnnII(v) {
+    this.raw('cnnII', this.root.cat.cnns.get(v));
+  }
   
   /**
    * @summary Расстояние от узла до опорной линии
