@@ -2358,6 +2358,8 @@ get arc_elongation(){return this._getter('arc_elongation')}
 set arc_elongation(v){this._setter('arc_elongation',v)}
 get sizeb(){return this._getter('sizeb')}
 set sizeb(v){this._setter('sizeb',v)}
+get szc(){return this._getter('szc')}
+set szc(v){this._setter('szc',v)}
 get loss_factor(){return this._getter('loss_factor')}
 set loss_factor(v){this._setter('loss_factor',v)}
 get rounding_quantity(){return this._getter('rounding_quantity')}
@@ -4238,7 +4240,9 @@ class CatCnnsManager extends CatManager {
     const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = $p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
-    const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
+    const sys = (elm1 instanceof BuilderElement && elm1.isInserted()) ? 
+      elm1.layer.sys : 
+      (elm2 instanceof BuilderElement && elm2.isInserted() && elm2.layer.sys);
     const priority = (cnn) => {
       let finded;
       if(sys && orientation) {

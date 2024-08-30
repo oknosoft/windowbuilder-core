@@ -1916,6 +1916,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     return contour;
   }
   presentation(bounds) {
+    if(!this.isInserted()) {
+      return 'Удалён';
+    }
     if(!bounds){
       bounds = this.bounds;
     }
