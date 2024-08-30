@@ -71,9 +71,17 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
       return cnns;
     }
     
-    elmCnns(elm1, elm2) {
+    iiCnns(elm1, elm2) {
       const nom1 = elm1.nom;
       const nom2 = elm2.nom;
+      if(!nomCache.ii.has(nom1)) {
+        nomCache.ii.set(nom1, new Map());
+      }
+      const cache = nomCache.ii.get(nom1);
+      if(!cache.has(nom2)) {
+        cache.set(nom2, this.byNoms(nom1, nom2, enm.cnnTypes.acn.ii));
+      }
+      return cache.get(nom2);
     }
   }
   classes.CatCnnsManager = CatCnnsManager;
@@ -82,6 +90,28 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
 
     nom(elm) {
       return 'nom';
+    }
+
+    /**
+     * Параметрический размер соединения
+     * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
+     * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+     * @param {Number} [region] - номер ряда
+     * @return Number
+     */
+    size(elm1, elm2, region=0) {
+      return this.sz;
+    }
+
+    /**
+     * Параметрический размер по Z
+     * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
+     * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+     * @param {Number} [region] - номер ряда
+     * @return Number
+     */
+    sizeZ(elm1, elm2, region=0) {
+      return this.szz;
     }
   }
   classes.CatCnns = CatCnns;

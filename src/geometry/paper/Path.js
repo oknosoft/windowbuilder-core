@@ -178,8 +178,8 @@ export default function (paper) {
        */
       isCollinear(test) {
         const tn = test instanceof paper.Point ? test : test.getTangentAt(0);
-        const normal = this.getTangentAt(0);
-        return normal.isCollinear(tn);
+        const tangent = this.getTangentAt(0);
+        return tangent.isCollinear(tn);
       },
 
       /**

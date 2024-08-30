@@ -70,13 +70,12 @@ export class Container  {
       }
     }
     return new paper.Point(points
-      .reduce((sum, curr) => [sum[0] + curr[0], sum[1] + curr[1]], [0, 0])
-      .map(v => [v[0] / points.length, v[1] / points.length]));
+      .reduce((sum, curr) => sum ? [sum[0] + curr.x, sum[1] + curr.y] : [curr.x, curr.y], null)
+      .map(v => v / points.length));
   }
   
   get pathInner() {
-    const offset = 15;
-    const faltz = 20;
+    const offset = 16;
     const {cycle} = this.#raw;
     const {interiorPoint} = this;
     const paths = [];
@@ -85,14 +84,15 @@ export class Container  {
       for(let i = 0; i < cycle.length; i++) {
         const {startVertex, endVertex, profile} = cycle[i];
         // внутреннее по отношению к контейнеру ребро профиля + фальц
-        const rib = profile.innerRib(interiorPoint);
-        paths.push(rib.equidistant(faltz + offset));
+        const rib = profile.innerRib(interiorPoint, startVertex.point, endVertex.point);
+        paths.push(rib.equidistant(offset));
       }
+      // TODO организовать прочистку здесь или отдельным циклом
       for(let i = 0; i < cycle.length; i++) {
         const prev = paths[i === 0 ? cycle.length -1 : i - 1];
         const curr = paths[i];
         const next = paths[i === cycle.length - 1 ? 0 : i + 1];
-        res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point, (offset + faltz) * 3), {edge: cycle[i]}));
+        res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point, (offset) * 3), {edge: cycle[i]}));
       }
     }
     return res;

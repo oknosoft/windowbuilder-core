@@ -92,7 +92,7 @@ export class BuilderElement extends paper.Group {
    * @type BuilderElement
    */
   get nearest() {
-    return this.#raw.nearest;
+    return this.#raw.nearest || this.#raw.edge?.profile;
   }
   
 

@@ -31,8 +31,11 @@ export class GeneratrixElement extends BuilderElement {
     if(generatrix) {
       generatrix.set({parent: this, name: 'generatrix'});
     }
+    if(cnns?.ii) {
+      this.raw('cnnII', cnns?.ii);
+    }
     if(edge) {
-      this.raw('edge', edge);  
+      this.raw('edge', edge);
     }
     this.raw('b', new CnnPoint({owner: this, name: 'b', cnn: cnns?.b, cnnOuter: cnns?.bOuter}));
     this.raw('e', new CnnPoint({owner: this, name: 'e', cnn: cnns?.e, cnnOuter: cnns?.eOuter}));
@@ -103,6 +106,25 @@ export class GeneratrixElement extends BuilderElement {
     return this.raw('edge');
   }
 
+  get cnnII() {
+    let [edge, nearest, cnnII] = this.raw(['edge', 'nearest', 'cnnII']);
+    if(cnnII) {
+      return cnnII;
+    }
+    if(!nearest && edge) {
+      nearest = edge.profile;
+    }
+    const {inset, project: {root}} = this;
+    if(nearest && !inset.empty()) {
+      const cnns = root.cat.cnns.iiCnns(this, nearest);
+      if(cnns.length) {
+        this.raw('cnnII', cnns[0]);
+        return cnns[0];
+      }
+    }
+    return root.cat.cnns.get();
+  }
+  
   /**
    * @summary Расстояние от узла до опорной линии
    * @desc Для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений,
@@ -111,7 +133,8 @@ export class GeneratrixElement extends BuilderElement {
    * @final
    */
   get d0() {
-    return this.offset;
+    const {cnnII, offset} = this;
+    return offset - cnnII.size(this);
   }
 
   /**
@@ -348,11 +371,20 @@ export class GeneratrixElement extends BuilderElement {
   /**
    * 
    * @param {paper.Point} interiorPoint
+   * @param {paper.Point} b
+   * @param {paper.Point} e
    */
-  innerRib(interiorPoint) {
+  innerRib(interiorPoint, b, e) {
     const line = new paper.Line(this.b.point, this.e.point);
     const side = line.getSide(interiorPoint, true);
-    return side < 0 ? this.outer : this.inner;
+    const rib = (side > 0 ? this.outer : this.inner).clone({insert: false});
+    // сравним направление
+    const v0 = e.subtract(b);
+    const v1 = rib.lastSegment.point.subtract(rib.firstSegment.point);
+    if(Math.abs(v1.angle - v0.angle) > 40) {
+      rib.reverse();
+    }
+    return rib;
   }
 
   /**

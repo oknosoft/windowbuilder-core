@@ -64,6 +64,14 @@ export const meta= {
         fraction: 2
       }
     },
+    szz: {
+      synonym: "Размер Z",
+      type: {
+        types: ["number"],
+        digits: 8,
+        fraction: 2
+      }
+    },
     cnn_type: {
       synonym: "Тип соединения",
       tooltip: "Угловое, Т, Примыкающее и т.д.",
@@ -626,6 +634,16 @@ export const meta= {
       synonym: "Размеры",
       tooltip: "Варианты размеров с фильтром по параметрам",
       fields: {
+        coordinate: {
+          synonym: "Направление 2D или Z",
+          type: {
+            types: [
+              "number"
+            ],
+            digits: 1,
+            fraction: 0
+          }
+        },
         elm: {
           synonym: "Размер",
           type: {
