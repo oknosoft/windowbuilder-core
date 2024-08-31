@@ -19020,7 +19020,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   ((name) => {
     const prm = formulate(name);
     if(prm) {
-      prm.check_condition = function ({layer, prm_row}) {
+      prm.check_condition = function ({layer, elm, prm_row}) {
+        if(!layer && elm) {
+          layer = elm.layer;
+        }
         if(layer) {
           const {level} = layer;
           return utils.check_compare(level, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
