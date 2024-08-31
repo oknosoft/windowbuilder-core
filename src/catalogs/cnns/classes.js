@@ -72,6 +72,12 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
     }
     
     iiCnns(elm1, elm2) {
+      if(!elm2) {
+        elm2 = elm1.nearest;
+      }
+      if(!elm2) {
+        return [];
+      }
       const nom1 = elm1.nom;
       const nom2 = elm2.nom;
       if(!nomCache.ii.has(nom1)) {

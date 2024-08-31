@@ -230,6 +230,14 @@ export const meta= {
         fraction: 2
       }
     },
+    szc: {
+      synonym: "Размер фальца штапика - C",
+      type: {
+        types: ["number"],
+        digits: 8,
+        fraction: 2
+      }
+    },
     loss_factor: {
       synonym: "Коэффициент потерь",
       tooltip: "Плановый коэффициент потерь (обрезь, усушка)",

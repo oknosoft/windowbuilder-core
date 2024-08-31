@@ -26,7 +26,7 @@ export class Contour extends paper.Layer {
 
   get level() {
     const {layer} = this;
-    return layer ? layer.index + 1 : 0;
+    return layer ? layer.level + 1 : 0;
   }
   
   get presentation() {

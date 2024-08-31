@@ -126,6 +126,7 @@ export class GeneratrixElement extends BuilderElement {
   }
   set cnnII(v) {
     this.raw('cnnII', this.root.cat.cnns.get(v));
+    this.project.props.registerChange();
   }
   
   /**

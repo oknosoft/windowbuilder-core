@@ -136,11 +136,13 @@ export class Props3D {
     const {owner} = this;
     let res = 0;
     if(owner.layer) {
-      for(const profile of owner.profiles) {
-        
+      for(const {cnnII} of owner.profiles) {
+        if(Math.abs(cnnII.szz) > Math.abs(res)) {
+          res = cnnII.szz;
+        }        
       }
       if(!res) {
-        res = 15;
+        res = 18;
       }
     }
     return res;
