@@ -29,7 +29,7 @@
     "metadata-abstract-ui": "2.0.35-beta.1",
     "metadata-core": "2.0.35-beta.1",
     "metadata-pouchdb": "2.0.35-beta.1",
-    "paper-jsdom-canvas": "0.12.17"
+    "paper-jsdom-canvas": "0.12.18"
   },
   "devDependencies": {
     "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
