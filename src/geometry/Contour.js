@@ -3,7 +3,6 @@ import {Skeleton} from './graph/Skeleton';
 import {Mover} from './graph/Mover';
 
 import {Profile} from './ProfileItem';
-import {ProfileConnective} from './ProfileConnective';
 import {contourGroups} from './ContourGroups';
 import {Props3D} from './BuilderPropsThree';
 
@@ -256,6 +255,10 @@ export class Contour extends paper.Layer {
   set furn(v) {
     
   }
+  
+  ProfileConstructor(attr) {
+    return Profile;
+  }
 
   /**
    * @summary Создаёт профиль и помещает его в своё семейство профилей
@@ -296,8 +299,8 @@ export class Contour extends paper.Layer {
       strokeScaling: false,
     });
     // TODO: defaultInset
-    const Constructor = other?.elmType?.is('linking') ? ProfileConnective : Profile;
-    const profile = new Constructor({
+    const ProfileConstructor = this.ProfileConstructor(other);
+    const profile = new ProfileConstructor({
       layer: this,
       parent: this.children.profiles,
       generatrix,

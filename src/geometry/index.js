@@ -6,6 +6,7 @@ import {Scheme} from './Scheme';
 import {EditorInvisible} from './paper/EditorInvisible';
 import {BuilderElement} from './BuilderElement';
 import {Contour} from './Contour';
+import './ContourVirtual';
 import {DimensionLine} from './DimensionLine';
 import {DimensionLineCustom} from './DimensionLineCustom';
 import {Filling} from './Filling';

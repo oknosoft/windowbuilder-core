@@ -1,9 +1,17 @@
+import paper from 'paper/dist/paper-core';
 import {Contour} from './Contour';
 import {DimensionDrawer, MapedGroup} from './DimensionDrawer';
-import paper from 'paper/dist/paper-core';
+import {ProfileConnective} from './ProfileConnective';
 
+/**
+ * @summary Группа произвольных надписей
+ */
 class GroupText extends MapedGroup {}
 
+/**
+ * @summary Группа визуализации точек
+ * @desc К узлам этой сетки, могут привязываться инструменты
+ */
 class GroupDots extends paper.Group {
   constructor(attr) {
     super(Object.assign(attr, {guide: true}));
@@ -50,6 +58,10 @@ class GroupDots extends paper.Group {
   }
 }
 
+/**
+ * @summary Слой соединительных профилей и проёмов
+ * @desc Корневой слой проекта
+ */
 export class ContourRoot extends Contour {
 
   constructor(attr) {
@@ -57,6 +69,10 @@ export class ContourRoot extends Contour {
     new GroupDots({parent: this, name: 'dots'});
     new DimensionDrawer({parent: this, name: 'dimensions'});
     new GroupText({parent: this, name: 'text'});
+  }
+
+  ProfileConstructor(attr) {
+    return ProfileConnective;
   }
    
   activate() {

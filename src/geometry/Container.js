@@ -130,10 +130,11 @@ export class Container  {
         delete clayer._removing;
       }       
       project.props.registerChange();
-      if(kind === 'flap') {
+      if(['flap', 'virtual'].includes(kind)) {
         const {loading} = project.props; 
         project.props.loading = true;
-        const child = this.#raw.child = new Contour({
+        const ContourConstructor = kind === 'flap' ? Contour : Contour.Virtual;
+        const child = this.#raw.child = new ContourConstructor({
           project,
           parent: layer.children.topLayers,
         });
