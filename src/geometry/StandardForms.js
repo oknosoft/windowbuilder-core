@@ -26,7 +26,7 @@ export class StandardForms {
       })
         .then((bind) => {
           offset.bind = bind || 'right';
-          const light = 360;
+          const light = 0;
           switch (bind) {
             case 'left':
               offset.x = bounds.bottomLeft.x - profilesBounds.width - light;

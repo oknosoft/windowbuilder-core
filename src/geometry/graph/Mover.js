@@ -137,8 +137,6 @@ export class Mover {
     this.#raw.space = false;
     if(interactive && vertexes.size) {
       this.#raw.interactive = true;
-      this.#raw.initialCarcass = owner.project.props.carcass; 
-      owner.project.props.carcass = 'carcass';
       if(interactive === 'space') {
         this.#raw.space = true;
       }
@@ -149,10 +147,9 @@ export class Mover {
    * @summary При завершении или отмене сдвига
    */
   cancelMovePoints() {
-    const {owner, vertexes, initialCarcass} = this.#raw;
+    const {owner, vertexes} = this.#raw;
     vertexes.clear();
     owner.children.visualization.ribs.clear();
-    owner.project.props.carcass = initialCarcass;
     this.#raw.interactive = false;
   }
 
@@ -163,8 +160,20 @@ export class Mover {
    */
   tryMovePoints(start, delta, shift) {
 
-    const cmax = this.#raw.owner.profiles.length > 100 ? 40000 : lmax;
-    const {vertexes} = this.#raw;
+    const {vertexes, interactive, owner} = this.#raw;
+    const cmax = owner.profiles.length > 100 ? 40000 : lmax;
+    // интерактивные сдвиги разрешены только в режиме проволочной модели
+    if(interactive && vertexes.size && owner.project.props.carcass !== 'carcass') {
+      if(delta.length) {
+        owner.project.root.ui.dialogs.alert({
+          title: 'Сдвиг профилей',
+          text: 'Для интерактивного сдвига, переведите редактор в режим проволочной модели'
+        });
+        this.cancelMovePoints();
+      }
+      return;
+    }
+    
     // сначала, для узлов нулевого уровня
     for(const [vertex, move] of vertexes) {
       if(!move.startPoint) {

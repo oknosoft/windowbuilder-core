@@ -66,7 +66,7 @@ export class Container  {
         points.push(cycle[0].endVertex.point);
       }
       if(cycle.length > 3) {
-        points.push(cycle[1].endVertex.point);
+        points.push(cycle[Math.floor(cycle.length/2) - 1].endVertex.point);
       }
     }
     return new paper.Point(points
@@ -92,7 +92,11 @@ export class Container  {
         const prev = paths[i === 0 ? cycle.length -1 : i - 1];
         const curr = paths[i];
         const next = paths[i === cycle.length - 1 ? 0 : i + 1];
-        res.push(Object.assign(curr.intersectPoint(prev, curr.firstSegment.point, (offset) * 3), {edge: cycle[i]}));
+        const ipoint = curr.intersectPoint(prev, curr.firstSegment.point, offset * 4);
+        if(ipoint) {
+          ipoint.edge = cycle[i];
+          res.push(ipoint);
+        }
       }
     }
     return res;

@@ -491,7 +491,7 @@ export class DimensionLine extends paper.Group {
         }
       }
       delta._dimln = true;
-      owner.mover.prepareMovePoints(true);
+      owner.mover.prepareMovePoints(false);
       owner.mover.tryMovePoints(new paper.Point, delta);
       if(owner.mover.applyMovePoints()) {
         project.props.registerChange();
