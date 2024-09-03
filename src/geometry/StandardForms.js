@@ -46,6 +46,15 @@ export class StandardForms {
             if(contour !== layer && contour.bounds[offset.bind] === bounds[offset.bind]) {
               layer.three.bind = offset.bind;
               layer.three.parent = contour;
+              const rm = [];
+              for(const dl of project.dimensions.children) {
+                if(dl.raw('owner') === contour && dl.pos == bind) {
+                  rm.push(dl);
+                }             
+              }
+              for(const dl of rm) {
+                dl.remove();
+              }
               break;
             }
           }
