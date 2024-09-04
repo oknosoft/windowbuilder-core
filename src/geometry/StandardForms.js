@@ -15,19 +15,20 @@ export class StandardForms {
     props.loading = true;
 
     layer.clear();
-    const {bounds, contours} = project;
+    const {bounds, contours, _scope} = project;
     // спросить привязку
     if(bounds?.area && profilesBounds.area) {
-      return ui.dialogs.input_value({
-        title: 'Положение элементов',
-        text: 'С какой стороны расположить новые элементы по отношению к нарисованным ранее?',
-        list,
-        initialValue: positions.right,
+      return new Promise((resolve, reject) => {
+        const tool = _scope.tools.find(({name}) => name === 'selectLayer');
+        tool.currentLayer = layer;
+        tool.onSelect = resolve;
+        tool.onCancel = reject;
+        tool.activate();
       })
-        .then((bind) => {
-          offset.bind = bind || 'right';
+        .then(({pos}) => {
+          offset.bind = pos.pos;
           const light = 0;
-          switch (bind) {
+          switch (pos.pos) {
             case 'left':
               offset.x = bounds.bottomLeft.x - profilesBounds.width - light;
               break;
@@ -42,21 +43,16 @@ export class StandardForms {
           }
           layer.three.rotation = [0, 0, 0];
           layer.three.position = [0, 0, 0];
-          for(const contour of contours) {
-            if(contour !== layer && contour.bounds[offset.bind] === bounds[offset.bind]) {
-              layer.three.bind = offset.bind;
-              layer.three.parent = contour;
-              const rm = [];
-              for(const dl of project.dimensions.children) {
-                if(dl.raw('owner') === contour && dl.pos == bind) {
-                  rm.push(dl);
-                }             
-              }
-              for(const dl of rm) {
-                dl.remove();
-              }
-              break;
+          layer.three.bind = offset.bind;
+          layer.three.parent = pos.layer;
+          const rm = [];
+          for(const dl of project.dimensions.children) {
+            if(dl.raw('owner') === pos.layer && dl.pos == pos.pos) {
+              rm.push(dl);
             }
+          }
+          for(const dl of rm) {
+            dl.remove();
           }
           return {project, offset, profilesBounds};
         });
