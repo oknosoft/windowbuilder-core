@@ -7832,6 +7832,22 @@ class CatMargin_coefficientsManager extends CatManager {
   
   static CoefficientsMap = class CoefficientsMap extends Map {
 
+    replenish(obj) {
+      for(const [key, value] of this) {
+        // ищем по иерархии системы или фурнитуры и запоминаем
+        if(obj._hierarchy(key)) {
+          // приоритет по равенству или прямому родителю
+          if(obj === key) {
+            this.set(obj, value);
+            break;
+          }
+          if(obj.parent === key || !this.has(obj)) {
+            this.set(obj, value);
+          }
+        }
+      }
+    }
+
     /**
      * @summary Возвращает коэффициент для строки спецификации
      * @desc В зависимости от происхождения (система, фурнитура, ценовая группа, вставка)
@@ -7841,28 +7857,29 @@ class CatMargin_coefficientsManager extends CatManager {
      */
     coefficient(row) {
       const crow = row.elm < 0 && row._owner._owner.constructions.find({cnstr: -row.elm});
-      const obj = crow?.furn || row._owner._owner.sys;
+      let obj = crow?.furn || row._owner._owner.sys;
       if(!this.has(obj)) {
-        for(const [key, value] of this) {
-          // ищем по иерархии системы или фурнитуры и запоминаем
-          if(obj._hierarchy(key)) {
-            this.set(obj, value);
-          }
-        }
+        this.replenish(obj);
         // если не нашлось по иерархии, ищем максимум по типу
         if(!this.has(obj)) {
-          let test;
-          for(const [key, value] of this) {
-            if(key._manager === obj._manager) {
-              if(!test || test.coefficient < value.coefficient) {
-                test = value;
-              }
+          if(obj === crow?.furn) {
+            const {sys} = row._owner._owner;
+            if(!this.has(sys)) {
+              this.replenish(sys);
+            }
+            if(this.has(sys)) {
+              this.set(obj, this.get(sys));
+            }
+            else {
+              this.set(obj, {coefficient: 0});
             }
           }
-          this.set(obj, test || {coefficient: 1});
+          else {
+            this.set(obj, {coefficient: 0});
+          }
         }
       }
-      return this.get(obj).coefficient;
+      return this.get(obj).coefficient || 0;
     }
   }
 }
