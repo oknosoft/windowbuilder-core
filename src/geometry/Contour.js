@@ -17,6 +17,10 @@ export class Contour extends paper.Layer {
     this.#raw.three = new Props3D({owner: this});
     contourGroups(this);
   }
+
+  get _manager() {
+    return this.project;
+  }
   
   get index() {
     const {layer, _index} = this;
@@ -92,9 +96,44 @@ export class Contour extends paper.Layer {
   get profiles() {
     return [...this.children.profiles.children];
   }
-  
+
+  /**
+   * @summary Массив выделенных профилей текущего слоя
+   * @type {Array.<Profile>}
+   */
   get selectedProfiles() {
     return this.profiles.filter(v => v.selected);
+  }
+
+  /**
+   * @summary Тип открывания
+   * @type {EnmOpenTypes}
+   */
+  get openType() {
+    const {project, layer} = this;
+    const {openTypes} = project.root.enm;
+    return layer.layer ? openTypes.get(this.#raw.openType) : openTypes.get();
+  }
+  set openType(v) {
+    this.#raw.openType = v;
+    this.project.props.registerChange();
+    if(this.furn.open_type !== this.openType) {
+      //TODO: подобрать фурнитуру
+    }
+  }
+
+  /**
+   * @summary Направление открывания
+   * @type {EnmOpenDirections}
+   */
+  get direction() {
+    const {project, layer} = this;
+    const {openDirections} = project.root.enm;
+    return layer.layer ? openDirections.get(this.#raw.direction) : openDirections.get();
+  }
+  set direction(v) {
+    this.#raw.direction = v;
+    this.project.props.registerChange();
   }
   
   /**
@@ -250,10 +289,13 @@ export class Contour extends paper.Layer {
   }
   
   get furn() {
-    
+    const {project, layer} = this;
+    const {furns} = project.root.cat;
+    return layer.layer ? furns.get(this.#raw.furn) : furns.get();
   }
   set furn(v) {
-    
+    this.#raw.furn = v;
+    this.project.props.registerChange();
   }
   
   ProfileConstructor(attr) {
