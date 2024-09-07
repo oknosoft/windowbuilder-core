@@ -5,6 +5,30 @@ export class StandardForms {
   constructor(project) {
     this.project = project;
   }
+  
+  mirrorPos(pos) {
+    const {Верх, Низ, Лев, Прав} = this.project.root.enm.positions;
+    switch (pos) {
+      case 'left':
+        return 'right';
+      case 'right':
+        return 'left';
+      case 'top':
+        return 'bottom';
+      case 'bottom':
+        return 'top';
+      case Верх:
+        return Низ;
+      case Низ:
+        return Верх;
+      case Лев:
+        return Прав;
+      case Прав:
+        return Прав;
+      default:
+        return pos;
+    }
+  }
 
   prepare({layer, profiles}) {
     const {project} = this;
@@ -15,7 +39,7 @@ export class StandardForms {
     props.loading = true;
 
     layer.clear();
-    const {bounds, contours, _scope} = project;
+    let {bounds, contours, _scope} = project;
     // спросить привязку
     if(bounds?.area && profilesBounds.area) {
       return new Promise((resolve, reject) => {
@@ -27,19 +51,24 @@ export class StandardForms {
       })
         .then(({pos}) => {
           offset.bind = pos.pos;
+          bounds = pos.layer.bounds;
           const light = 0;
           switch (pos.pos) {
             case 'left':
               offset.x = bounds.bottomLeft.x - profilesBounds.width - light;
+              offset.y = bounds.topLeft.y - light;
               break;
             case 'top':
-              offset.y = -bounds.topLeft.y - profilesBounds.height - light;
+              offset.x = bounds.topLeft.x - light;
+              offset.y = bounds.topLeft.y - profilesBounds.height - light;
               break;
             case 'bottom':
+              offset.x = bounds.bottomLeft.x + light;
               offset.y = bounds.bottomLeft.y + light;
               break;
             default:
               offset.x = bounds.bottomRight.x + light;
+              offset.y = bounds.topLeft.y - light;
           }
           layer.three.rotation = [0, 0, 0];
           layer.three.position = [0, 0, 0];
