@@ -112,7 +112,7 @@ export class Contour extends paper.Layer {
   get openType() {
     const {project, layer} = this;
     const {openTypes} = project.root.enm;
-    return layer.layer ? openTypes.get(this.#raw.openType) : openTypes.get();
+    return layer ? openTypes.get(this.#raw.openType) : openTypes.get();
   }
   set openType(v) {
     this.#raw.openType = v;
@@ -129,7 +129,7 @@ export class Contour extends paper.Layer {
   get direction() {
     const {project, layer} = this;
     const {openDirections} = project.root.enm;
-    return layer.layer ? openDirections.get(this.#raw.direction) : openDirections.get();
+    return layer ? openDirections.get(this.#raw.direction) : openDirections.get();
   }
   set direction(v) {
     this.#raw.direction = v;
