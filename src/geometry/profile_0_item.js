@@ -362,7 +362,7 @@ class CnnPoint {
       const {parent, node, cnn_types, cnn} = this;
       const {cnn_elmnts} = parent.ox;
       const row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
-      if(row === this._row) {
+      if(row && row === this._row) {
         this.correct_profile(other, row.cnn);
       }
       if(row) {
