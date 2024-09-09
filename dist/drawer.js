@@ -6538,8 +6538,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(param && ox.params.find({param, value: true})) {
       if(!_attr._text_sep){
         _attr._text_sep = _attr._text.clone();
-        _attr._text_sep.fontSize *= 2.2;
+        _attr._text_sep.fontSize *= 1.8;
         _attr._text_sep.fillColor = 'green';
+        _attr._text_sep.fillColor.alpha = 0.8;
         _attr._text_sep.content = '⓿';
         _attr._text_sep.justification = 'right';
         _attr._text_sep.rotation = 0;
@@ -6853,6 +6854,18 @@ class Filling extends AbstractFilling(BuilderElement) {
         generatrix.selected = false;
       }
     }
+  }
+  elm_props(inset) {
+    const res = super.elm_props(inset);
+    let {ox: {params}, layer: {sys}} = this;
+    const {glass_separately} = $p.job_prm.properties; 
+    if([1, 2].includes(glass_separately?.inheritance)) {
+      const prow = sys.product_params.find({param: glass_separately});
+      if(!prow?.hide) {
+        res.unshift(glass_separately);
+      }
+    }
+    return res;
   }
   get imposts() {
     return this.getItems({class: Onlay});
@@ -8659,22 +8672,19 @@ class CnnPoint {
       other = this.find_other();
     }
     if(other) {
-      const {parent, node} = this;
+      const {parent, node, cnn_types, cnn} = this;
       const {cnn_elmnts} = parent.ox;
-      let row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
-      if(!row) {
-        row = cnn_elmnts.find({elm1: other.profile.elm, elm2: parent.elm, node1: other.node});
-      }
-      else if(row === this._row) {
+      const row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
+      if(row === this._row) {
         this.correct_profile(other, row.cnn);
       }
       if(row) {
         this._cnno = {
           elm2: other.profile.elm,
           node2: other.node,
-          cnn: row.cnn,
+          cnn: $p.cat.cnns.elm_cnn(this, other.profile, cnn_types, cnn, false, false, this),
         };
-        return row.cnn;
+        return this._cnno.cnn;
       }
     }
     else if(this._cnno) {

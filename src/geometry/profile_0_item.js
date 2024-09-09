@@ -359,22 +359,19 @@ class CnnPoint {
       other = this.find_other();
     }
     if(other) {
-      const {parent, node} = this;
+      const {parent, node, cnn_types, cnn} = this;
       const {cnn_elmnts} = parent.ox;
-      let row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
-      if(!row) {
-        row = cnn_elmnts.find({elm1: other.profile.elm, elm2: parent.elm, node1: other.node});
-      }
-      else if(row === this._row) {
+      const row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
+      if(row === this._row) {
         this.correct_profile(other, row.cnn);
       }
       if(row) {
         this._cnno = {
           elm2: other.profile.elm,
           node2: other.node,
-          cnn: row.cnn,
+          cnn: $p.cat.cnns.elm_cnn(this, other.profile, cnn_types, cnn, false, false, this),
         };
-        return row.cnn;
+        return this._cnno.cnn;
       }
     }
     else if(this._cnno) {

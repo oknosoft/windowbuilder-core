@@ -453,8 +453,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(param && ox.params.find({param, value: true})) {
       if(!_attr._text_sep){
         _attr._text_sep = _attr._text.clone();
-        _attr._text_sep.fontSize *= 2.2;
+        _attr._text_sep.fontSize *= 1.8;
         _attr._text_sep.fillColor = 'green';
+        _attr._text_sep.fillColor.alpha = 0.8;
         _attr._text_sep.content = '⓿';
         _attr._text_sep.justification = 'right';
         _attr._text_sep.rotation = 0;
@@ -840,6 +841,26 @@ class Filling extends AbstractFilling(BuilderElement) {
         generatrix.selected = false;
       }
     }
+  }
+
+  /**
+   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * [inset] {CatInserts} - указываем для дополнительных вставок
+   * @override
+   * @return {Array}
+   */
+  elm_props(inset) {
+    const res = super.elm_props(inset);
+    let {ox: {params}, layer: {sys}} = this;
+    
+    const {glass_separately} = $p.job_prm.properties; 
+    if([1, 2].includes(glass_separately?.inheritance)) {
+      const prow = sys.product_params.find({param: glass_separately});
+      if(!prow?.hide) {
+        res.unshift(glass_separately);
+      }
+    }
+    return res;
   }
 
   /**
