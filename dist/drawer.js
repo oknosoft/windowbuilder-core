@@ -7232,6 +7232,22 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 }
 EditorInvisible.Filling = Filling;
+$p.md.once('predefined_elmnts_inited', () => {
+  const {glass_separately} = $p.job_prm.properties;
+  if([1, 2].includes(glass_separately?.inheritance)) {
+    Object.defineProperty(Filling.prototype, glass_separately.ref, {
+      get() {
+        const {ox, elm} = this;
+        return Boolean(ox.params.find({param: glass_separately, cnstr: -elm, value: true}));
+      },
+      set(v) {
+        const {ox, elm} = this;
+        const row = ox.params.find({param: glass_separately, cnstr: -elm}) || ox.params.add({param: glass_separately, cnstr: -elm});
+        row.value = Boolean(v);
+      }
+    })
+  }
+});
 class FreeText extends paper.PointText {
   constructor(attr) {
     if(!attr.fontSize){
