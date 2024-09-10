@@ -192,6 +192,14 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * @summary Размер фальца штапика
+   * @type {Number}
+   */
+  get szc() {
+    return this.nom.szc;
+  }
+
+  /**
    * @summary Задаваемое пользователем смещение от образующей
    * @desc Особенно актуально для наклонных элементов а так же, в случае,
    * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю
@@ -202,6 +210,11 @@ export class GeneratrixElement extends BuilderElement {
   }
   set offset(v) {
     this.raw('offset', parseFloat(v) || 0);
+    const {project} = this;
+    if(!project.props.loading) {
+      project.props.registerChange();
+      project.redraw();
+    }
   }
 
   /**

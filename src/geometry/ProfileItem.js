@@ -12,10 +12,11 @@ export class Profile extends GeneratrixElement {
 
   get elmType() {
     const {project: {root}, layer, b, e} = this;
+    const {elmTypes} = root.enm; 
     if(b.isT || e.isT) {
-      return root.enm.elmTypes.impost;
+      return elmTypes.impost;
     }
-    return root.enm.elmTypes[layer.layer ? 'flap' : 'rama']; 
+    return layer.layer?.virtual ? elmTypes.rama : elmTypes[layer.layer ? 'flap' : 'rama'];
   }
   
 }

@@ -75,7 +75,6 @@ export class Container  {
   }
   
   get pathInner() {
-    const offset = 16;
     const {cycle} = this.#raw;
     const {interiorPoint} = this;
     const paths = [];
@@ -85,14 +84,14 @@ export class Container  {
         const {startVertex, endVertex, profile} = cycle[i];
         // внутреннее по отношению к контейнеру ребро профиля + фальц
         const rib = profile.innerRib(interiorPoint, startVertex.point, endVertex.point);
-        paths.push(rib.equidistant(offset));
+        paths.push(rib.equidistant(profile.szc));
       }
       // TODO организовать прочистку здесь или отдельным циклом
       for(let i = 0; i < cycle.length; i++) {
         const prev = paths[i === 0 ? cycle.length -1 : i - 1];
         const curr = paths[i];
         const next = paths[i === cycle.length - 1 ? 0 : i + 1];
-        const ipoint = curr.intersectPoint(prev, curr.firstSegment.point, offset * 4);
+        const ipoint = curr.intersectPoint(prev, curr.firstSegment.point, cycle[i].profile.width * 2);
         if(ipoint) {
           ipoint.edge = cycle[i];
           res.push(ipoint);
@@ -188,7 +187,7 @@ export class Container  {
   sync() {
     const {pathInner} = this;
     const {kind, child} = this.#raw;
-    if(kind === 'flap') {
+    if(['flap', 'virtual'].includes(kind)) {
       for(let i = 0; i < pathInner.length; i++) {
         const b = pathInner[i];
         for(const profile of child.profiles) {

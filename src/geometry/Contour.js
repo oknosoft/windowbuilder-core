@@ -33,8 +33,8 @@ export class Contour extends paper.Layer {
   }
   
   get presentation() {
-    const {index, level} = this;
-    return `${level ? 'Створка' : 'Рама'} №${index}`;
+    const {index, level, layer} = this;
+    return `${level ? (layer.virtual ? 'Вложение' : 'Створка') : 'Рама'} №${index}`;
   }
 
   get skeleton() {
