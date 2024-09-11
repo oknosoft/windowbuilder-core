@@ -107,63 +107,59 @@ export class ToolSelectable extends ToolElement {
     });
     this.#raw.text2 = this.#raw.text1.clone();
   }
-  
 
+  hitTestItem(item, point) {
+    const tolerance = 26;
+    
+    // отдаём предпочтение выделенным ранее элементам
+    this.#raw.hitItem = item.hitTest(point, {selected: true, stroke: true, tolerance});
+
+    // во вторую очередь - тем элементам, которые не скрыты
+    if (!this.#raw.hitItem) {
+      this.#raw.hitItem = item.hitTest(point, {stroke: true, visible: true, tolerance});
+    }
+
+    // если мышь около сегмента - ему предпочтение
+    let hit = item.hitTest(point, {ends: true, tolerance});
+    if (hit) {
+      this.#raw.hitItem = hit;
+    }
+
+    if(this.#raw.hitItem?.type === 'stroke') {
+      const {gridStep, snap} = this.project.props;
+      if(snap === 'grid') {
+        this.#raw.hitItem.point = this.#raw.hitItem.item.snap(this.#raw.hitItem.point, gridStep);
+      }
+    }
+
+    if(!this.#raw.hitItem) {
+      hit = item.hitTest(point, {class: paper.PointText, fill: true, tolerance});
+      if(hit?.item?.parent instanceof DimensionLine) {
+        this.#raw.hitItem = {...hit, type: 'dimension'};
+      }
+    }
+
+    if(!this.#raw.hitItem) {
+      hit = item.hitTest(point, {fill: true});
+      if(hit?.item?.parent instanceof Filling || hit?.item?.parent instanceof ContainerBlank) {
+        this.#raw.hitItem = {...hit, type: 'filling'};
+      }
+      else {
+        this.#raw.hitItem = hit;
+      }
+    }
+  }
+  
   hitTest(ev) {
     const {point} = ev;
-    const tolerance = 26;
-    const {project, canvasCursor, mode} = this;
+    const {project} = this;
     this.#raw.hitItem = null;
 
     if (point) {
-
-      // отдаём предпочтение выделенным ранее элементам
-      this.#raw.hitItem = project.hitTest(point, {selected: true, stroke: true, tolerance});
-
-      // во вторую очередь - тем элементам, которые не скрыты
-      if (!this.#raw.hitItem) {
-        this.#raw.hitItem = project.hitTest(point, {stroke: true, visible: true, tolerance});
-      }
-
-      // если мышь около сегмента - ему предпочтение
-      let hit = project.hitTest(point, {ends: true, tolerance});
-      if (hit) {
-        this.#raw.hitItem = hit;
-      }
-
-      if(this.#raw.hitItem?.type === 'stroke') {
-        const {gridStep, snap} = project.props;
-         if(snap === 'grid') {
-           this.#raw.hitItem.point = this.#raw.hitItem.item.snap(this.#raw.hitItem.point, gridStep);
-         }
-      }
-      
+      this.hitTestItem(project.activeLayer, point);
       if(!this.#raw.hitItem) {
-        hit = project.hitTest(point, {class: paper.PointText, fill: true, tolerance});
-        if(hit?.item?.parent instanceof DimensionLine) {
-          this.#raw.hitItem = {...hit, type: 'dimension'};
-        }
+        this.hitTestItem(project, point);
       }
-
-      if(!this.#raw.hitItem) {
-        hit = project.hitTest(point, {fill: true});
-        if(hit?.item?.parent instanceof Filling || hit?.item?.parent instanceof ContainerBlank) {
-          this.#raw.hitItem = {...hit, type: 'filling'};
-        }
-      }
-      
-      // Hit test points
-      // hit = project.hitPoints(point, 26, true);
-      //
-      // if (hit) {
-      //   if (hit.item.parent instanceof ProfileItem) {
-      //     if (hit.item.parent.generatrix === hit.item) {
-      //       this.#raw.hitItem = hit;
-      //     }
-      //   } else {
-      //     this.#raw.hitItem = hit;
-      //   }
-      // }
     }
   }
 

@@ -95,7 +95,7 @@ export class ToolSelect extends ToolSelectable {
           if(item instanceof GeneratrixElement) {
             this.mode = 'move-shapes';
             if(snap === 'grid') {
-              this.mouseStartPos = hitItem.point.snap(gridStep);
+              this.mouseStartPos = (hitItem.point || ev.point).snap(gridStep);
             }
           }
         }
@@ -136,7 +136,7 @@ export class ToolSelect extends ToolSelectable {
         }
         this.mode = 'move-points';
         if(snap === 'grid') {
-          this.mouseStartPos = hitItem.point.snap(gridStep);
+          this.mouseStartPos = (hitItem.point || ev.point).snap(gridStep);
         }
       }
       else if(hitItem.type === 'handle-in' || hitItem.type === 'handle-out') {
