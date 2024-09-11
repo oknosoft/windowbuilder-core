@@ -22,30 +22,34 @@ export class History {
    */
   select(items) {
     const {project, editor: {eve}} = this;
-    let deselect;
+    const events = {};
     for(const {item, node, shift} of items) {
       if(item instanceof Contour) {
         item.activate();
-        eve.emit_promise('select', {type: 'layer', project, layer: item, shift});
+        events.layer = {project, layer: item, shift};
+        events.last = 'layer';
       }
       else if(item instanceof DimensionLine) {
         item.selected = true;
-        eve.emit_promise('select', {type: 'dimension', project, elm: item, layer: null, shift});
+        events.dimension = {project, elm: item, layer: null, shift};
+        events.last = 'dimension';
       }
       else if(item) {
         item.layer?.activate?.();
         if(node) {
-          item.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment'].selected = true;
-          eve.emit_promise('select', {type: 'elm', project, elm: item, node, layer: item.layer, shift});
+          item[node].point.selected = true;
+          events.node = {project, elm: item, node: item[node], layer: item.layer, shift};
+          events.last = 'node';
         }
         else {
-          deselect = true;
           item.selected = true;
-          eve.emit_promise('select', {type: 'elm', project, elm: item, layer: item.layer, shift});
+          const {selectedElements} = project;
+          events.elm = {project, elm: selectedElements?.length > 1 ? selectedElements : item, layer: item.layer, shift};
+          events.last = 'elm';
         }
       }
     }
-    //deselect && project.deselect_all_points();
+    eve.emit_promise('select', {type: events.last, ...events[events.last]});
   }
 
   /**
@@ -61,12 +65,12 @@ export class History {
       for(const {item, node} of items) {
         if(item) {
           if(node) {
-            item.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment'].selected = false;
-            eve.emit_promise('deselect', {type: 'node', project, elm: item, node});
+            item[node].point.selected = false;
+            eve.emit_promise('deselect', {type: 'node', project});
           }
           else {
             item.selected = false;
-            eve.emit_promise('deselect', {type: 'elm', project, elm: item});
+            eve.emit_promise('deselect', {type: 'elm', project});
           }
         }
       }

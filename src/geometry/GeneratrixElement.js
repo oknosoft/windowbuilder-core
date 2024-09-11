@@ -6,9 +6,16 @@ import {rama, impost, flap, loader, svgStub} from './ProfileShapes';
 
 export const pathAttr = {
   strokeColor: 'black',
+  dashArray: [],
   fillColor: 'white',
   strokeWidth: 1,
   strokeScaling: false,
+  strokeCap: 'round'
+};
+export const selectedAttr = {
+  strokeColor: new paper.Color(0.2, 0.2, 0.5, 0.7),
+  dashArray: [4, 6],
+  strokeWidth: 2,
 };
 
 export class GeneratrixElement extends BuilderElement {
@@ -412,6 +419,7 @@ export class GeneratrixElement extends BuilderElement {
     const {path} = this;
     super.setSelection(selection);
     path.setSelection(0);
+    path.set(selection ? selectedAttr : pathAttr);
   }
 
   checkActual() {

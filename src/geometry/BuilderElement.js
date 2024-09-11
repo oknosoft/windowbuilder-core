@@ -259,7 +259,7 @@ export class BuilderElement extends paper.Group {
     if(layer && !project.props.loading) {
       if(layer.isInserted() && !layer._removing) {
         project.props.registerChange();
-        project.root.md.emit('select', {project, elm: null, layer, type: 'layer'});
+        project.root.md.emit_promise('select', {project, elm: null, layer, type: 'layer'});
         project.redraw();
       }
     }

@@ -4,6 +4,7 @@ import {BuilderProps} from './BuilderProps';
 import {Contour} from './Contour';
 import {ContourRoot} from './ContourRoot';
 import {StandardForms} from './StandardForms';
+import {BuilderElement} from './BuilderElement';
 import {load21} from './loaders/load21';
 
 export class Scheme extends paper.Project {
@@ -105,6 +106,10 @@ export class Scheme extends paper.Project {
   get contours() {
     const {rootLayer, layers} = this;
     return layers.filter(v => v instanceof Contour && v !== rootLayer);
+  }
+  
+  get selectedElements() {
+    return this.selectedItems.filter(elm => elm instanceof BuilderElement);
   }
   
   clear() {

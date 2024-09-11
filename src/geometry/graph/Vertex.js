@@ -2,6 +2,8 @@
 import {LinkedList} from './LinkedList';
 import paper from 'paper/dist/paper-core';
 
+const fullSelected = ({profile: {selected, b, e}}) => selected && (!b.selected && !e.selected || b.selected && e.selected);
+
 /**
  * Узел Графа
  */
@@ -202,7 +204,6 @@ export class GraphVertex {
     const {cnnPoints, point} = this;
     let selected = cnnPoints.some(({selected}) => selected);
     if(!selected) {
-      const fullSelected = ({profile: {selected, b, e}}) => selected && (!b.selected && !e.selected || b.selected && e.selected);
       selected = this.getEdges().some(fullSelected) || this.getEndEdges().some(fullSelected);
     }
     return selected;
