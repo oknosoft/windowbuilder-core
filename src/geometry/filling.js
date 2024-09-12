@@ -379,7 +379,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     //this.sendToBack();
 
-    const {path, imposts, glbeads, _attr, is_rectangular, project: {bounds: pbounds, ox}} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}} = this;
     const {elm_font_size, font_family} = consts;
     const max = Math.max(pbounds.width, pbounds.height);
     let fontSize = elm_font_size * (2 / 3);
@@ -450,7 +450,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     
     // Заполнения отдельно
     const param = $p.cch.properties.predefined('glass_separately');
-    if(param && ox.params.find({param, value: true})) {
+    if(param?.extract_pvalue({ox, cnstr: -elm, elm: this})) {
       if(!_attr._text_sep){
         _attr._text_sep = _attr._text.clone();
         _attr._text_sep.fontSize *= 1.8;
@@ -1359,12 +1359,23 @@ $p.md.once('predefined_elmnts_inited', () => {
     Object.defineProperty(Filling.prototype, glass_separately.ref, {
       get() {
         const {ox, elm} = this;
-        return Boolean(ox.params.find({param: glass_separately, cnstr: -elm, value: true}));
+        return glass_separately?.extract_pvalue({ox, cnstr: -elm, elm: this});
       },
       set(v) {
         const {ox, elm} = this;
-        const row = ox.params.find({param: glass_separately, cnstr: -elm}) || ox.params.add({param: glass_separately, cnstr: -elm});
-        row.value = Boolean(v);
+        let row = ox.params.find({param: glass_separately, cnstr: -elm});
+        const row0 = ox.params.find({param: glass_separately, cnstr: 0});
+        if(row0?.value == Boolean(v)) {
+          if(row) {
+            ox.params.del(row);
+          }
+        }
+        else {
+          if(!row) {
+            row = ox.params.add({param: glass_separately, cnstr: -elm});
+          }
+          row.value = Boolean(v);
+        }
       }
     })
   }
