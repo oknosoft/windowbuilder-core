@@ -19175,7 +19175,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           ox = elm?.ox;
         }
         const push = (row, specimen) => {
-          for(const glrow of row?.characteristic?.glasses || []) {
+          const {leading_product, leading_elm} = row?.characteristic || {};
+          const characteristic = leading_product && !leading_product.empty() && leading_elm ? 
+            leading_product : row?.characteristic;
+          const glasses = leading_product && !leading_product.empty() && leading_elm ?
+            [characteristic.glasses.find({elm: leading_elm})] : (characteristic.glasses || []);
+          for(const glrow of glasses) {
             res.push({
               formula: glrow.formula,
               thickness: glrow.thickness,
@@ -19184,11 +19189,14 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               area: glrow.s,
               is_rectangular: glrow.is_rectangular,
               is_sandwich: glrow.is_sandwich,
-              weight: row.characteristic.elm_weight(glrow.elm),
+              weight: characteristic.elm_weight(leading_product && !leading_product.empty() && leading_elm ?
+                undefined : glrow.elm),
+              ref: characteristic.ref,
+              elm: glrow.elm,
               specimen,
             });
           }
-        }
+        };
         const calc_order = ox?.calc_order;
         if(Array.isArray(elm?.row_spec?.[prm.ref]?.keys)) {
           elm.row_spec[prm.ref].keys.forEach((key) => {
@@ -19197,9 +19205,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           });
         }
         else if(calc_order) {
+          const {glasses} = $p.job_prm.nom;
           for(const row of calc_order.production) {
-            for(let specimen = 1; specimen <= row.quantity; specimen++) {
-              push(row, specimen);
+            if(glasses.includes(row.nom)) {
+              for(let specimen = 1; specimen <= row.quantity; specimen++) {
+                push(row, specimen);
+              } 
             }
           }
         }
