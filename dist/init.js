@@ -7856,14 +7856,18 @@ class CatMargin_coefficientsManager extends CatManager {
      * 
      */
     coefficient(row) {
-      const crow = row.elm < 0 && row._owner._owner.constructions.find({cnstr: -row.elm});
-      let obj = crow?.furn || row._owner._owner.sys;
+      const {_owner} = row._owner;
+      const crow = row.elm < 0 && _owner.constructions.find({cnstr: -row.elm});
+      let obj = crow?.furn || _owner.sys;
+      if(obj.empty()) {
+        obj = _owner.origin;
+      }
       if(!this.has(obj)) {
         this.replenish(obj);
-        // если не нашлось по иерархии, ищем максимум по типу
+        // если не нашлось по иерархии, ищем максимум по системе
         if(!this.has(obj)) {
           if(obj === crow?.furn) {
-            const {sys} = row._owner._owner;
+            const {sys} = _owner;
             if(!this.has(sys)) {
               this.replenish(sys);
             }
