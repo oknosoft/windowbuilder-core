@@ -15457,7 +15457,7 @@ class ProductsBuilding {
             origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
           }, null, nearest);
         }
-        else {
+        else if(!(elm instanceof ProfileSegment)) {
           let enom = nom.cnn_ii_error || nom.info_error;
           if(nearest instanceof ProfileVirtual && nom.cnn_vii_error) {
             enom = nom.cnn_vii_error;
@@ -18604,7 +18604,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params}, 
-    EditorInvisible, utils} = $p;
+    EditorInvisible, utils, job_prm} = $p;
   function formulate(name) {
     const prm = properties.predefined(name);
     if(prm) {
@@ -18634,7 +18634,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'inset':
           _data._formula = function ({elm, prm_row, ox, row}) {
             if(prm_row?.origin?.is('nearest')){
-              if(elm instanceof $p.EditorInvisible.Filling) {
+              if(elm instanceof EditorInvisible.Filling) {
                 const res = new Set();
                 ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                   if(row && inset !== row._owner?._owner) {
@@ -18655,7 +18655,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'inserts_glass_type':
           _data._formula = function ({elm, prm_row, ox, row}) {
-            if(elm instanceof $p.EditorInvisible.Filling) {
+            if(elm instanceof EditorInvisible.Filling) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                 if(!inset.insert_glass_type.empty()) {
@@ -18720,7 +18720,18 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             return false;
           };
-          break;  
+          break;
+        case 'has_glasses_separately':
+          _data._formula = function ({ox}) {
+            const {glasses} = job_prm.nom;
+            for(const row of ox.calc_order.production) {
+              if(glasses.includes(row.nom)) {
+                return true;
+              }
+            }
+            return false;
+          };
+          break;
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
             if(elm instanceof EditorInvisible.ProfileAdjoining) {
@@ -18991,6 +19002,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'clr_product',     
     'up_glasses_weight',
     'has_glasses',     
+    'has_glasses_separately',
     'elm_weight',      
     'elm_orientation', 
     'elm_pos',         
@@ -19205,7 +19217,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           });
         }
         else if(calc_order) {
-          const {glasses} = $p.job_prm.nom;
+          const {glasses} = job_prm.nom;
           for(const row of calc_order.production) {
             if(glasses.includes(row.nom)) {
               for(let specimen = 1; specimen <= row.quantity; specimen++) {

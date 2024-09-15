@@ -608,7 +608,7 @@ exports.CchProperties = class CchProperties extends Object {
     if(brow) {
       return brow.value;
     }
-    if(ox) {
+    if(ox?.params) {
       const {blank} = $p.utils;
       brow = ox.params.find({param: this, cnstr, inset: blank.guid});
       if(!brow && cnstr) {

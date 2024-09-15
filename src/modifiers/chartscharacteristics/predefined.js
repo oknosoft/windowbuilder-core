@@ -10,7 +10,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params}, 
-    EditorInvisible, utils} = $p;
+    EditorInvisible, utils, job_prm} = $p;
 
   // стандартная часть создания fake-формулы
   function formulate(name) {
@@ -48,7 +48,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
             // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
             if(prm_row?.origin?.is('nearest')){
-              if(elm instanceof $p.EditorInvisible.Filling) {
+              if(elm instanceof EditorInvisible.Filling) {
                 const res = new Set();
                 ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                   if(row && inset !== row._owner?._owner) {
@@ -73,7 +73,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           _data._formula = function ({elm, prm_row, ox, row}) {
 
             // если запросили вставку состава заполнения, возвращаем массив
-            if(elm instanceof $p.EditorInvisible.Filling) {
+            if(elm instanceof EditorInvisible.Filling) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                 if(!inset.insert_glass_type.empty()) {
@@ -143,7 +143,19 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             return false;
           };
-          break;  
+          break;
+
+        case 'has_glasses_separately':
+          _data._formula = function ({ox}) {
+            const {glasses} = job_prm.nom;
+            for(const row of ox.calc_order.production) {
+              if(glasses.includes(row.nom)) {
+                return true;
+              }
+            }
+            return false;
+          };
+          break;
           
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
@@ -442,6 +454,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'clr_product',      // цвет изделия
     'up_glasses_weight',// масса заполнений, опирающихся на профиль
     'has_glasses',      // бит в заказе есть заполнения
+    'has_glasses_separately',// бит в заказе есть заполнения отдельно
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
@@ -693,7 +706,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           });
         }
         else if(calc_order) {
-          const {glasses} = $p.job_prm.nom;
+          const {glasses} = job_prm.nom;
           for(const row of calc_order.production) {
             if(glasses.includes(row.nom)) {
               for(let specimen = 1; specimen <= row.quantity; specimen++) {

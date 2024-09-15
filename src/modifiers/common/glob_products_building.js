@@ -223,7 +223,7 @@ class ProductsBuilding {
             origin: cnn_row(elm.elm, nearest.elm, _attr._nearest_cnn)
           }, null, nearest);
         }
-        else {
+        else if(!(elm instanceof ProfileSegment)) {
           let enom = nom.cnn_ii_error || nom.info_error;
           if(nearest instanceof ProfileVirtual && nom.cnn_vii_error) {
             enom = nom.cnn_vii_error;
