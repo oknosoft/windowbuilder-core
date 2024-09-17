@@ -2357,8 +2357,8 @@ class ProfileItem extends GeneratrixElement {
                 pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
               }
               else {
-                pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
-                pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
               }
 
               intersect_point(oinner2, oinner, 5);
@@ -2384,8 +2384,8 @@ class ProfileItem extends GeneratrixElement {
                 pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);                
               }
               else {
-                pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
-                pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
               }
 
               intersect_point(oinner2, oinner, 6);
