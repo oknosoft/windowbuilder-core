@@ -8598,9 +8598,9 @@ class CnnPoint {
       if(!cnn.cnn_type.is('t') && profile && profile_point) {
         const other = profile.rays[profile_point]?.cnn?.cnn_type;
         if(other) {
-          if((cnn.cnn_type.is('xx') && !other.is('xx')) ||
+          if((cnn.cnn_type.is('xx') && !other.is('xx') && !other.is('ad')) ||
             (cnn.cnn_type.is('ad') && !other.is('ad')) ||
-            (!cnn.cnn_type.is('ad') && other.is('ad'))) {
+            (!cnn.cnn_type.is('ad') && !cnn.cnn_type.is('xx') && other.is('ad'))) {
             aerr = true;
           }
         }
