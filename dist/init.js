@@ -4779,6 +4779,8 @@ get predefined_name(){return this._getter('predefined_name')}
 set predefined_name(v){this._setter('predefined_name',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
+get composition(){return this._getter_ts('composition')}
+set composition(v){this._setter_ts('composition',v)}
 
 
   /**
@@ -4856,6 +4858,15 @@ set parent(v){this._setter('parent',v)}
   }
 }
 $p.CatClrs = CatClrs;
+class CatClrsCompositionRow extends TabularSectionRow{
+get is_supplier(){return this._getter('is_supplier')}
+set is_supplier(v){this._setter('is_supplier',v)}
+get nom(){return this._getter('nom')}
+set nom(v){this._setter('nom',v)}
+get coefficient(){return this._getter('coefficient')}
+set coefficient(v){this._setter('coefficient',v)}
+}
+$p.CatClrsCompositionRow = CatClrsCompositionRow;
 class CatClrsManager extends CatManager {
 
   /**
@@ -6383,7 +6394,7 @@ set demand(v){this._setter_ts('demand',v)}
     }
     for(const prop in defaults){
       if(tmp.hasOwnProperty(prop)) {
-        props[prop] = typeof tmp[prop] === 'number' ? tmp[prop] : !!tmp[prop];
+        props[prop] = ((prop === 'onlay_regions') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
       }
       else {
         props[prop] = defaults[prop];
@@ -6961,6 +6972,7 @@ set demand(v){this._setter_ts('demand',v)}
     glass_numbers: false,
     bw: false,
     mode: 0,
+    onlay_regions: '',
   };}
 $p.CatCharacteristics = CatCharacteristics;
 class CatCharacteristicsConstructionsRow extends TabularSectionRow{
@@ -7733,6 +7745,10 @@ get sys(){return this._getter('sys')}
 set sys(v){this._setter('sys',v)}
 get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
+get open_type(){return this._getter('open_type')}
+set open_type(v){this._setter('open_type',v)}
+get direction(){return this._getter('direction')}
+set direction(v){this._setter('direction',v)}
 get furn(){return this._getter('furn')}
 set furn(v){this._setter('furn',v)}
 get params(){return this._getter('params')}

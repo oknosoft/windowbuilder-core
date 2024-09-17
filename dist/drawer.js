@@ -6476,8 +6476,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
   redraw() {
-    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}, visible} = this;
     const {elm_font_size, font_family} = consts;
+    const {builder_props} = ox;
     const max = Math.max(pbounds.width, pbounds.height);
     let fontSize = elm_font_size * (2 / 3);
     if(max > 3000) {
@@ -6485,7 +6486,10 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     const maxTextWidth = 900;
     path.visible = true;
-    imposts.forEach((elm) => elm.redraw());
+    imposts.forEach((elm) => {
+      elm.redraw();
+      elm.visible = visible && !(builder_props.onlay_regions && elm.region != builder_props.onlay_regions);
+    });
     this.purge_paths();
     if(!_attr._text){
       _attr._text = new paper.PointText({
@@ -12628,7 +12632,7 @@ class Onlay extends ProfileItem {
   }
   nearest() {}
   joined_imposts(check_only) {
-    const {rays, generatrix, parent} = this;
+    const {rays, generatrix, parent, region} = this;
     const tinner = [];
     const touter = [];
     const candidates = {b: [], e: []};
@@ -12642,7 +12646,7 @@ class Onlay extends ProfileItem {
       }
     };
     if(parent.imposts.some((curr) => {
-        if(curr != this) {
+        if(curr != this && curr.region === region) {
           for(const pn of ['b', 'e']) {
             const p = curr.cnn_point(pn);
             if(p.profile == this && p.cnn) {
@@ -12776,8 +12780,8 @@ class Onlay extends ProfileItem {
     if(!glasses){
       glasses = [this.parent];
     }
+    const {b, e, generatrix, region } = this;
     for(const glass of glasses) {
-      const {b, e, generatrix } = this;
       const other = node === 'b' ? e : b;
       let line;
       if(this.is_linear()) {
@@ -12810,7 +12814,7 @@ class Onlay extends ProfileItem {
         res.cnn_types = $p.enm.cnn_types.acn.t;
         const ares = [];
         for(let elm of glass.imposts){
-          if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
+          if (elm !== this && elm.region === region && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
             ares.push({
               profile_point: res.profile_point,
               profile: res.profile,
@@ -12836,7 +12840,7 @@ class Onlay extends ProfileItem {
   }
   move_nodes(from, to) {
     for(let elm of this.parent.imposts){
-      if(elm == this){
+      if(elm == this || !elm.visible){
         continue;
       }
       if(elm.b.is_nearest(from)){

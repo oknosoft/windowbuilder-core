@@ -83,7 +83,7 @@ class Onlay extends ProfileItem {
    */
   joined_imposts(check_only) {
 
-    const {rays, generatrix, parent} = this;
+    const {rays, generatrix, parent, region} = this;
     const tinner = [];
     const touter = [];
 
@@ -101,7 +101,7 @@ class Onlay extends ProfileItem {
     };
 
     if(parent.imposts.some((curr) => {
-        if(curr != this) {
+        if(curr != this && curr.region === region) {
           for(const pn of ['b', 'e']) {
             const p = curr.cnn_point(pn);
             if(p.profile == this && p.cnn) {
@@ -284,9 +284,9 @@ class Onlay extends ProfileItem {
       glasses = [this.parent];
     }
 
+    const {b, e, generatrix, region } = this;
     // сначала, к образующим заполнений
     for(const glass of glasses) {
-      const {b, e, generatrix } = this;
       const other = node === 'b' ? e : b;
       let line;
       if(this.is_linear()) {
@@ -323,7 +323,7 @@ class Onlay extends ProfileItem {
         res.cnn_types = $p.enm.cnn_types.acn.t;
         const ares = [];
         for(let elm of glass.imposts){
-          if (elm !== this && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
+          if (elm !== this && elm.region === region && elm.project.check_distance(elm, null, res, point, "node_generatrix") === false ){
             ares.push({
               profile_point: res.profile_point,
               profile: res.profile,
@@ -360,7 +360,7 @@ class Onlay extends ProfileItem {
    */
   move_nodes(from, to) {
     for(let elm of this.parent.imposts){
-      if(elm == this){
+      if(elm == this || !elm.visible){
         continue;
       }
       if(elm.b.is_nearest(from)){

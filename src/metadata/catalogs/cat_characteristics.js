@@ -498,7 +498,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     }
     for(const prop in defaults){
       if(tmp.hasOwnProperty(prop)) {
-        props[prop] = typeof tmp[prop] === 'number' ? tmp[prop] : !!tmp[prop];
+        props[prop] = ((prop === 'onlay_regions') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
       }
       else {
         props[prop] = defaults[prop];
@@ -1076,5 +1076,6 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     glass_numbers: false,
     bw: false,
     mode: 0,
+    onlay_regions: '',
   };
 }

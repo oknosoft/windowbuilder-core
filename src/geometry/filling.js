@@ -379,8 +379,9 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     //this.sendToBack();
 
-    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}, visible} = this;
     const {elm_font_size, font_family} = consts;
+    const {builder_props} = ox;
     const max = Math.max(pbounds.width, pbounds.height);
     let fontSize = elm_font_size * (2 / 3);
     if(max > 3000) {
@@ -388,7 +389,10 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     const maxTextWidth = 900;
     path.visible = true;
-    imposts.forEach((elm) => elm.redraw());
+    imposts.forEach((elm) => {
+      elm.redraw();
+      elm.visible = visible && !(builder_props.onlay_regions && elm.region != builder_props.onlay_regions);
+    });
 
     // прочистим пути
     this.purge_paths();
