@@ -816,8 +816,7 @@ class ProductsBuilding {
       base_spec(scheme);
 
       // сворачиваем
-      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
-
+      this.after_spec_calculated(ox);
 
       // console.timeEnd('base_spec');
       // console.profileEnd();
@@ -931,6 +930,44 @@ class ProductsBuilding {
       .then(() => {
         return ox;
       });
+  }
+
+  /**
+   * Обработчик после расчёта спецификации
+   * @param {CatCharacteristics} ox
+   */
+  after_spec_calculated(ox) {
+    const {specification} = ox;
+    const delta = 0.001;
+    const byNom = new Map();
+    for(const row of specification) {
+      if(row.len && !row.width) {
+        if(!byNom.has(row.nom)) {
+          byNom.set(row.nom, new Map());
+        }
+        byNom.get(row.nom).set(row.len, row.len);
+      }
+    }
+    for(const [nom, map] of byNom) {
+      const lengths = Array.from(map.keys());
+      lengths.sort((a, b) => a - b);
+      for(let i=1; i < lengths.length; i++) {
+        if(lengths[i] - lengths[i - 1] <= delta) {
+          map.set(lengths[i - 1], lengths[i]);
+          if(lengths[i + 1] && lengths[i + 1] - lengths[i] <= delta) {
+            map.set(lengths[i + 1], lengths[i]);
+            i++;
+          }
+        }
+      }
+    }
+    for(const row of specification) {
+      const map = byNom.get(row.nom);
+      if(map) {
+        row.len = map.get(row.len);
+      }
+    }
+    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
   }
 
   /**

@@ -14921,7 +14921,7 @@ class Sectional extends GeneratrixElement {
   }
   get length() {
     const {generatrix, zoom} = this._attr;
-    return generatrix.length / zoom;
+    return (2 * generatrix.length / zoom).round() / 2;
   }
   get rays() {
     return this._attr._rays;
@@ -15880,7 +15880,7 @@ class ProductsBuilding {
       ox.calc_order.accessories('clear', ox);
       ox._order_rows = [];
       base_spec(scheme);
-      spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
+      this.after_spec_calculated(ox);
       scheme.draw_visualization();
       Promise.resolve()
         .then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
@@ -15964,6 +15964,39 @@ class ProductsBuilding {
       .then(() => {
         return ox;
       });
+  }
+  after_spec_calculated(ox) {
+    const {specification} = ox;
+    const delta = 0.001;
+    const byNom = new Map();
+    for(const row of specification) {
+      if(row.len && !row.width) {
+        if(!byNom.has(row.nom)) {
+          byNom.set(row.nom, new Map());
+        }
+        byNom.get(row.nom).set(row.len, row.len);
+      }
+    }
+    for(const [nom, map] of byNom) {
+      const lengths = Array.from(map.keys());
+      lengths.sort((a, b) => a - b);
+      for(let i=1; i < lengths.length; i++) {
+        if(lengths[i] - lengths[i - 1] <= delta) {
+          map.set(lengths[i - 1], lengths[i]);
+          if(lengths[i + 1] && lengths[i + 1] - lengths[i] <= delta) {
+            map.set(lengths[i + 1], lengths[i]);
+            i++;
+          }
+        }
+      }
+    }
+    for(const row of specification) {
+      const map = byNom.get(row.nom);
+      if(map) {
+        row.len = map.get(row.len);
+      }
+    }
+    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
   }
   static check_params({params, row_spec, count_calc_method, ...other}) {
     let ok = true;
@@ -19223,7 +19256,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         else if(calc_order) {
           const {glasses} = job_prm.nom;
           for(const row of calc_order.production) {
-            if(glasses.includes(row.nom)) {
+            if(glasses?.includes(row.nom)) {
               for(let specimen = 1; specimen <= row.quantity; specimen++) {
                 push(row, specimen);
               } 

@@ -708,7 +708,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         else if(calc_order) {
           const {glasses} = job_prm.nom;
           for(const row of calc_order.production) {
-            if(glasses.includes(row.nom)) {
+            if(glasses?.includes(row.nom)) {
               for(let specimen = 1; specimen <= row.quantity; specimen++) {
                 push(row, specimen);
               } 
