@@ -2,7 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {epsilon} from './paper/Point';
 import {BuilderElement} from './BuilderElement';
 import {CnnPoint} from './ProfileCnnPoint';
-import {rama, impost, flap, loader, svgStub} from './ProfileShapes';
+import {rama, impost, flap, connective, loader, svgStub} from './ProfileShapes';
 
 export const pathAttr = {
   strokeColor: 'black',
@@ -367,7 +367,7 @@ export class GeneratrixElement extends BuilderElement {
   
   get shape() {
     const {nom, elmType} = this;
-    let shape = elmType.is('impost') ? impost : (elmType.is('flap') ? flap : rama);
+    let shape = elmType.is('impost') ? impost : (elmType.is('flap') ? flap : (elmType.is('linking') ? connective : rama));
     if(!nom.empty()) {
       if(nom.shape) {
         shape = nom.shape; 
