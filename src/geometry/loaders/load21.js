@@ -1,6 +1,6 @@
 
 export function load21(raw) {
-  const {props, _scope: {Path}} = this;
+  const {props, _scope: {Path}, rootLayer} = this;
   props.loading = true;
   props.sys = raw.sys;
   this.clear();
@@ -11,13 +11,14 @@ export function load21(raw) {
     this.activeLayer.cnstr = row.cnstr;
     loadLayer(this.activeLayer, raw, row, Path);
   }
+  loadLayer(rootLayer, raw, {cnstr: 0}, Path);
   props.loading = false;
   props.registerChange();
   this.redraw();
   this.zoomFit();
 }
 
-const elm_types = ['Рама', 'Створка', 'Импост'];
+const elm_types = ['Рама', 'Створка', 'Импост', 'Соединитель'];
 
 function findRibs(child, raw, crow, Path) {
   const {pathInner} = child;
@@ -80,6 +81,9 @@ function loadLayer(layer, raw, crow, Path) {
   layer.skeleton.addProfiles(profiles);
   for(const profile of profiles) {
     profile.redraw?.();
+    if(profile.elmType.is('linking')) {
+      profile.findNearests();
+    }
   }
   layer.containers.sync();
   for(const row of raw.constructions.filter((row) => row.parent === crow.cnstr)) {
