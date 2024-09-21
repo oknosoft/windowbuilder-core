@@ -54,7 +54,7 @@ export class ToolPen extends ToolSelectable {
             line.addSegments(hitItem.item.segments.map(({point, handleIn, handleOut}) => ({point, handleIn, handleOut})));
             line.visible = true;
           }
-          if(!profile.elm_type.is('size') || hitItem.type === 'segment') {
+          if(hitItem.point && (!profile.elm_type.is('size') || hitItem.type === 'segment')) {
             node.position = hitItem.point.clone();
             node.visible = true;
           }

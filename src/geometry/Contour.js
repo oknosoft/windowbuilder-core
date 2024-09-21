@@ -98,6 +98,28 @@ export class Contour extends paper.Layer {
   }
 
   /**
+   * @summary Массив профилей текущего слоя вместе с соединителями за вычетом общих из родительского
+   * @desc Соединители добавляем только к родительским слоям (тем, у которых есть зависимые 3D слои).
+   * Из массива наших, исключаем общие профили
+   * @type {Array.<Profile>}
+   */
+  get profilesFor3D() {
+    const {three: {children, parent}, profiles} = this;
+    if(children.length) {
+      const connectives = [];
+      for(const {nearest: our} of profiles) {
+        if(our) {
+          if(children.some(layer => layer.profiles.some(profile => profile.nearest === our))) {
+            connectives.push(our);
+          }
+        }
+      }
+      connectives.length && profiles.push(...connectives);
+    }
+    return profiles;
+  }
+
+  /**
    * @summary Массив выделенных профилей текущего слоя
    * @type {Array.<Profile>}
    */
