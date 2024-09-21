@@ -94,7 +94,16 @@ export class BuilderElement extends paper.Group {
   get nearest() {
     return this.#raw.nearest || this.#raw.edge?.profile;
   }
-  
+
+  /**
+   * @summary Указатель на фактический профиль
+   * @desc имеет смысл в 3D, когда элемент текущего слоя, фактически расположен в родительском
+   * @abstract
+   * @type BuilderElement
+   */
+  get imitationOf() {
+    return this.#raw.imitationOf;
+  }
 
   /**
    * @summary Видимый путь элемента

@@ -104,7 +104,8 @@ export class Contour extends paper.Layer {
    * @type {Array.<Profile>}
    */
   get profilesFor3D() {
-    const {three: {children, parent}, profiles} = this;
+    const {three: {children, parent}, profiles: allProfiles} = this;
+    const profiles = allProfiles.filter(elm => !elm.imitationOf);
     if(children.length) {
       const connectives = [];
       for(const {nearest: our} of profiles) {
@@ -233,6 +234,21 @@ export class Contour extends paper.Layer {
    */
   get bounds() {
     return this.children.profiles.bounds;
+  }
+
+  /**
+   * @summary Габариты за вычетом имитаций
+   * @type {paper.Rectangle}
+   */
+  get bounds3D() {
+    let bounds;
+    for(const profile of this.profiles) {
+      if(!profile.imitationOf) {
+        const curr = profile.path.bounds;
+        bounds = bounds ? bounds.unite(curr) : curr;
+      }
+    }
+    return bounds || new paper.Rectangle();
   }
 
   get strokeBounds() {
