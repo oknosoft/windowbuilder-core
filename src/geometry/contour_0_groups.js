@@ -232,6 +232,7 @@ class GroupVisualization extends LayerGroup {
     new paper.Group({parent: this, name: 'static'});
     new paper.Group({parent: this, name: 'cnn'});
     new paper.CompoundPath({parent: this, name: '_opening', strokeColor: 'black'});
+    new paper.CompoundPath({parent: this, name: '_opening2', strokeColor: 'black', dashArray: [70, 50]});
     this.owner = owner;
     l_visualization.map.set(owner, this);
   }
@@ -254,6 +255,9 @@ class GroupVisualization extends LayerGroup {
 
   get _opening() {
     return this.children._opening;
+  }
+  get _opening2() {
+    return this.children._opening2;
   }
   
   get static() {

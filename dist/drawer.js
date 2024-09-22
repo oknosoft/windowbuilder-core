@@ -11339,7 +11339,7 @@ class Profile extends ProfileItem {
     if(typeof kind === 'number') {
       articles = kind;
     }
-    if(articles && nom.width > 2) {
+    if(articles && nom.width > 2 && layer.visible && !layer.hidden) {
       const impost = this.elm_type.is('impost');
       let {level} = layer;
       const nearest = this.nearest();
@@ -11464,6 +11464,17 @@ class Profile extends ProfileItem {
   redraw() {
     super.redraw();
     return this.draw_articles();
+  }
+  remove() {
+    const res = super.remove();
+    if(res !== false) {
+      const {l_dimensions} = this.project;
+      if(l_dimensions.articles.map.has(this)) {
+        l_dimensions.articles.map.get(this).remove();
+        l_dimensions.articles.map.delete(this);
+      }
+    }
+    return res;
   }
 }
 EditorInvisible.Profile = Profile;

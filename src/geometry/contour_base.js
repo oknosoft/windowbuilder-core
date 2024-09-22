@@ -1748,6 +1748,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
       }
+      if (l_visualization?._opening2?.visible) {
+        l_visualization._opening2.visible = false;
+      }
       return;
     }
 
@@ -1760,7 +1763,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // рисует линии открывания на поворотной, поворотнооткидной и фрамужной фурнитуре
     const rotary_folding = () => {
 
-      const {_opening} = l_visualization;
+      const {_opening, _opening2} = l_visualization;
       const {side_count, project: {sketch_view}} = this;
       
       if(side_count < furn.side_count) {
@@ -1772,19 +1775,32 @@ class Contour extends AbstractFilling(paper.Layer) {
           const axis = this.profile_by_furn_side(row.side, cache);
           const other = this.profile_by_furn_side(
             row.side + 2 <= side_count ? row.side + 2 : row.side - 2, cache);
-
+          
+          const center = other.rays.inner.getPointAt(other.rays.inner.length / 2);
           _opening.moveTo(axis.corns(3));
-          _opening.lineTo(other.rays.inner.getPointAt(other.rays.inner.length / 2));
+          _opening.lineTo(center);
           _opening.lineTo(axis.corns(4));
 
+          if(furn.open_type.is('pendulum')) {
+            const loc = axis.generatrix.getLocationAt(0);
+            _opening2.moveTo(axis.corns(3).add(loc.normal.multiply(-30)));
+            _opening2.lineTo(center.add(loc.tangent.multiply(40)));
+            _opening2.moveTo(center.add(loc.tangent.multiply(-40)));
+            _opening2.lineTo(axis.corns(4).add(loc.normal.multiply(-30)));
+          }
         }
       });
 
-      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
-        _opening.dashArray = [70, 50];
+      if(furn.open_type.is('pendulum')) {
+        _opening2.visible = true;
       }
-      else if(_opening.dashArray.length) {
-        _opening.dashArray = [];
+      else {
+        if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
+          _opening.dashArray = [70, 50];
+        }
+        else if(_opening.dashArray.length) {
+          _opening.dashArray = [];
+        }
       }
       _opening.visible = true;
     };
@@ -1826,6 +1842,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // подготавливаем слой для рисования
     l_visualization._opening.removeChildren();
+    l_visualization._opening2.removeChildren();
 
     // рисуем раправление открывания
     return furn.is_sliding ? sliding() : rotary_folding();
