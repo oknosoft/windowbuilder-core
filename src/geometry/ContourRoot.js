@@ -79,3 +79,5 @@ export class ContourRoot extends Contour {
     
   }
 }
+
+Contour.Root = ContourRoot;

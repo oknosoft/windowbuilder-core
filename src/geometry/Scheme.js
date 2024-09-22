@@ -2,7 +2,6 @@
 import paper from 'paper/dist/paper-core';
 import {BuilderProps} from './BuilderProps';
 import {Contour} from './Contour';
-import {ContourRoot} from './ContourRoot';
 import {StandardForms} from './StandardForms';
 import {BuilderElement} from './BuilderElement';
 import {load21} from './loaders/load21';
@@ -15,7 +14,7 @@ export class Scheme extends paper.Project {
       Object.defineProperty(this, 'root', {value: root});
     }
     Object.defineProperties(this, {
-      rootLayer: {value: new ContourRoot({project: this, insert: true})},
+      rootLayer: {value: new Contour.Root({project: this, insert: true})},
       props: {value: new BuilderProps(this)},
       standardForms: {value: new StandardForms(this)},
     });
@@ -133,7 +132,7 @@ export class Scheme extends paper.Project {
     }
   }
 
-  addLayer() {
+  addLayer(attr) {
     const layer = new Contour({project: this, insert: true});
     this.props.registerChange();
     return layer;

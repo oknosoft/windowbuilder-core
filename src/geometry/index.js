@@ -7,6 +7,7 @@ import {EditorInvisible} from './paper/EditorInvisible';
 import {BuilderElement} from './BuilderElement';
 import {Contour} from './Contour';
 import './ContourVirtual';
+import './ContourRoot';
 import {DimensionLine} from './DimensionLine';
 import {DimensionLineCustom} from './DimensionLineCustom';
 import {Filling} from './Filling';
