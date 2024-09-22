@@ -181,7 +181,13 @@ export class CnnPoint {
     if(!pts.inner || !pts.outer) {
       const {owner, point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
       const {cnnTypes} = owner.root.enm;
-      const cnnType = (!cnn || cnn.empty()) ? (profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i) : cnn.cnn_type;
+      let cnnType = (!cnn || cnn.empty()) ? (profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i) : cnn.cnn_type;
+      if(cnnType.is('av')) {
+        cnnType = owner.orientation.is('vert') ? cnnTypes.long : cnnTypes.short; 
+      }
+      else if(cnnType.is('ah')) {
+        cnnType = owner.orientation.is('vert') ? cnnTypes.short : cnnTypes.long;
+      }
       let prays, orays;
       switch (cnnType) {
         case cnnTypes.i: {
