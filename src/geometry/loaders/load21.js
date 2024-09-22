@@ -6,7 +6,7 @@ export function load21(raw) {
   this.clear();
   for(const row of raw.constructions.filter((row) => !row.parent)) {
     if(this.activeLayer.hasOwnProperty('cnstr')) {
-      this.addLayer().activate();
+      this.addLayer(row).activate();
     }
     this.activeLayer.cnstr = row.cnstr;
     loadLayer(this.activeLayer, raw, row, Path);
@@ -104,7 +104,18 @@ function loadLayer(layer, raw, crow, Path) {
   for(const row of raw.constructions.filter((row) => row.parent === crow.cnstr)) {
     const container = findContainer(layer, raw, row, Path);
     if(container) {
-      const flap = container.child.createChild({kind: 'flap', skipProfiles: true});
+      /*
+      0 - обычный слой
+      1 - виртуальный
+      2 - вложенное изделие
+      3 - слой родительского изделия
+      4 - разрыв заполнения
+      5 - слой ряда
+      10 - вирт. изделие к слою
+      11 - вирт. изделие к изделию
+      */
+      const kind = [1, 2].includes(row.kind) ? 'virtual' : 'flap';
+      const flap = container.child.createChild({kind, skipProfiles: true});
       flap.cnstr = row.cnstr;
       row.ribs = container.ribs;
       loadLayer(flap, raw, row, Path);
