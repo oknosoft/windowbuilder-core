@@ -118,6 +118,9 @@ function loadLayer(layer, raw, crow, Path) {
       const flap = container.child.createChild({kind, skipProfiles: true});
       flap.cnstr = row.cnstr;
       row.ribs = container.ribs;
+      if(row.dop?.sys) {
+        flap.sys = row.dop.sys;
+      }
       loadLayer(flap, raw, row, Path);
     }
   }
