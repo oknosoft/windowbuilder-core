@@ -24,10 +24,10 @@ export class ToolSelectLayer extends ToolElement {
       parent,
       owner: this,
       pos,
-      pathData: `M -30,-10 H -10 V -30 H 10 v 20 h 20 V 10 h -20 v 20 H -10 v -20 H -30 Z`,
+      pathData: `M -40,-15 h 25 v -25 h 30 v 25 H 40 V 15 H 15 V 40 H -15 V 15 h -25 z`,
       fillColor: 'green',
       closed: true,
-      position: generatrix.interiorPoint.add(generatrix.getNormalAt(generatrix.length / 2).multiply(80)),
+      position: generatrix.interiorPoint.add(generatrix.getNormalAt(generatrix.length / 2).multiply(100)),
       onClick() {
         this.owner.onSelect?.(this);
         this.owner.deactivate();
@@ -70,8 +70,8 @@ export class ToolSelectLayer extends ToolElement {
         // рисуем кнопки
         const bySide = layer.profilesBySide();
         for(const pos of ['top', 'bottom', 'left', 'right']) {
-          if(layer.isPos(pos)) {
-            this.button({layer, pos, profile: bySide[pos]});
+          if(layer.isPos(pos, bounds)) {
+            this.button({layer, bind: pos, profile: bySide[pos]});
           }
         }
       }

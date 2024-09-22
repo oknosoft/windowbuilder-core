@@ -258,18 +258,23 @@ export class Contour extends paper.Layer {
   /**
    * @summary Тест положения контура в изделии
    * @param {EnmElm_positions} pos
+   * @param {paper.Rectangle} [projectBounds]
    * @return {Boolean}
    */
-  isPos(pos) {
+  isPos(pos, projectBounds) {
     const {project, layer} = this;
     // если в изделии один контур или если контур является створкой, он занимает одновременно все положения
     if(project.contours.count == 1 || layer){
       return true;
     }
+    
+    if(!projectBounds) {
+      projectBounds = project.bounds;
+    }
 
     // если контур реально верхний или правый и т.д. - возвращаем результат сразу
     const {bounds} = this;
-    let res = Math.abs(bounds[pos] - project.bounds[pos]) < project.props.sticking;
+    let res = Math.abs(bounds[pos] - projectBounds[pos]) < project.props.sticking;
 
     if(!res){
       let rect;

@@ -60,12 +60,26 @@ function loadLayer(layer, raw, crow, Path) {
   const container = crow.parent ? layer.container : null;
   const pathInner = container ? container.pathInner : null;
   for(const row of raw.coordinates.filter((row) => row.cnstr === crow.cnstr && elm_types.includes(row.elm_type))) {
+    const cnns = {};
+    for(const cnrow of raw.cnn_elmnts) {
+      if(cnrow.elm1 === row.elm) {
+        if(cnrow.node1 === 'b') {
+          cnns.b = cnrow.cnn;
+        }
+        else if(cnrow.node1 === 'e') {
+          cnns.e = cnrow.cnn;
+        }
+        if(cnns.b && cnns.e) {
+          break;
+        }
+      }
+    }
     if(crow.parent && crow.ribs) {
       if(row.elm_type === 'Створка') {
         // находим ближайшее ребро
         let rib = crow.ribs.get(row);
         if(rib) {
-          profiles.push(layer.createProfile({...rib, inset: row.inset}));
+          profiles.push(layer.createProfile({...rib, inset: row.inset, cnns}));
         }
       }
     }
@@ -75,6 +89,7 @@ function loadLayer(layer, raw, crow, Path) {
         e: [row.x2, row.y2],
         pathData: row.path_data,
         inset: row.inset,
+        cnns,
       }));
     }
   }
