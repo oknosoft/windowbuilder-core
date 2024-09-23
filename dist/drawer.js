@@ -1627,6 +1627,7 @@ class GroupVisualization extends LayerGroup {
     new paper.Group({parent: this, name: 'static'});
     new paper.Group({parent: this, name: 'cnn'});
     new paper.CompoundPath({parent: this, name: '_opening', strokeColor: 'black'});
+    new paper.CompoundPath({parent: this, name: '_opening2', strokeColor: 'black', dashArray: [70, 50]});
     this.owner = owner;
     l_visualization.map.set(owner, this);
   }
@@ -1645,6 +1646,9 @@ class GroupVisualization extends LayerGroup {
   }
   get _opening() {
     return this.children._opening;
+  }
+  get _opening2() {
+    return this.children._opening2;
   }
   get static() {
     return this.children.static;
@@ -3033,6 +3037,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
       }
+      if (l_visualization?._opening2?.visible) {
+        l_visualization._opening2.visible = false;
+      }
       return;
     }
     const cache = {
@@ -3040,7 +3047,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       bottom: this.profiles_by_side('bottom'),
     };
     const rotary_folding = () => {
-      const {_opening} = l_visualization;
+      const {_opening, _opening2} = l_visualization;
       const {side_count, project: {sketch_view}} = this;
       if(side_count < furn.side_count) {
         return;
@@ -3050,16 +3057,29 @@ class Contour extends AbstractFilling(paper.Layer) {
           const axis = this.profile_by_furn_side(row.side, cache);
           const other = this.profile_by_furn_side(
             row.side + 2 <= side_count ? row.side + 2 : row.side - 2, cache);
+          const center = other.rays.inner.getPointAt(other.rays.inner.length / 2);
           _opening.moveTo(axis.corns(3));
-          _opening.lineTo(other.rays.inner.getPointAt(other.rays.inner.length / 2));
+          _opening.lineTo(center);
           _opening.lineTo(axis.corns(4));
+          if(furn.open_type.is('pendulum')) {
+            const loc = axis.generatrix.getLocationAt(0);
+            _opening2.moveTo(axis.corns(3).add(loc.normal.multiply(-30)));
+            _opening2.lineTo(center.add(loc.tangent.multiply(40)));
+            _opening2.moveTo(center.add(loc.tangent.multiply(-40)));
+            _opening2.lineTo(axis.corns(4).add(loc.normal.multiply(-30)));
+          }
         }
       });
-      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
-        _opening.dashArray = [70, 50];
+      if(furn.open_type.is('pendulum')) {
+        _opening2.visible = true;
       }
-      else if(_opening.dashArray.length) {
-        _opening.dashArray = [];
+      else {
+        if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
+          _opening.dashArray = [70, 50];
+        }
+        else if(_opening.dashArray.length) {
+          _opening.dashArray = [];
+        }
       }
       _opening.visible = true;
     };
@@ -3095,6 +3115,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _opening.visible = true;
     };
     l_visualization._opening.removeChildren();
+    l_visualization._opening2.removeChildren();
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows, region = 0) {
@@ -13677,7 +13698,7 @@ class Scheme extends paper.Project {
     return bounds;
   }
   get strokeBounds() {
-    let bounds = this.l_dimensions.strokeBounds;
+    let bounds = this.l_dimensions.strokeBounds.unite(this.l_connective.strokeBounds);
     this.contours.forEach((l) => bounds = bounds.unite(l.strokeBounds));
     return bounds;
   }

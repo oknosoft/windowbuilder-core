@@ -960,7 +960,7 @@ class Scheme extends paper.Project {
    *
    */
   get strokeBounds() {
-    let bounds = this.l_dimensions.strokeBounds;
+    let bounds = this.l_dimensions.strokeBounds.unite(this.l_connective.strokeBounds);
     this.contours.forEach((l) => bounds = bounds.unite(l.strokeBounds));
     return bounds;
   }
