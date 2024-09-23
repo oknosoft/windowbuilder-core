@@ -11,6 +11,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     cch: {properties},
     cat: {formulas, clrs, production_params}, 
     EditorInvisible, utils, job_prm} = $p;
+  
+  function specifyNearest(elm, prm_row) {
+    if(prm_row?.origin?.is('parent') || prm_row?.origin?.is('nearest')) {
+      const nearest = elm.nearest();
+      if(nearest) {
+        return nearest;
+      }
+    }
+    return elm;
+  }
 
   // стандартная часть создания fake-формулы
   function formulate(name) {
@@ -185,7 +195,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
           
         case 'flap_overlay':
-          _data._formula = function ({elm}) {
+          _data._formula = function ({elm, prm_row}) {
+            elm = specifyNearest(elm, prm_row);
             if(elm?.joined_nearests) {
               const nearests = {inner: [], outer: []};
               // учтём сторону
@@ -213,7 +224,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
           
         case 'flap_overlay_axis':
-          _data._formula = function ({elm}) {
+          _data._formula = function ({elm, prm_row}) {
+            elm = specifyNearest(elm, prm_row);
             if(elm?.joined_nearests) {
               const nearests = {inner: [], outer: []};
               // учтём сторону
