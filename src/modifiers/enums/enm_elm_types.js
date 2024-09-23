@@ -56,5 +56,8 @@
 
 	});
 
+  mgr.ОшибкаИнфо.error = true;
+  mgr.ОшибкаКритическая.error = true;
+
 
 })($p.enm.elm_types);

@@ -15413,16 +15413,21 @@ class ProductsBuilding {
         const elm = {elm: -cnstr, clr: blank_clr};
         const row_spec = new_spec_row({elm, row_base: row, origin: row.origin, specify: row.specify, spec, ox});
         if(row.is_procedure_row) {
-          row_spec.elm = row.handle_height_min;
-          row_spec.len = row.coefficient / 1000;
-          row_spec.qty = 0;
-          if(row.quantity && row.nom.demand.count()) {
-            row_spec.totqty = row.quantity;
-            row_spec.totqty1 = row.quantity;
+          if(row_spec.nom.elm_type.error && row.side) {
+            row_spec.elm = contour.profile_by_furn_side(row.side, furn_cache)?.elm;
           }
           else {
-            row_spec.totqty = 1;
-            row_spec.totqty1 = 1;
+            row_spec.elm = row.handle_height_min;
+            row_spec.len = row.coefficient / 1000;
+            row_spec.qty = 0;
+            if(row.quantity && row.nom.demand.count()) {
+              row_spec.totqty = row.quantity;
+              row_spec.totqty1 = row.quantity;
+            }
+            else {
+              row_spec.totqty = 1;
+              row_spec.totqty1 = 1;
+            }
           }
         }
         else if((!row.contraction_option.empty() || row.contraction || row.coefficient) && !row.nom.is_pieces) {
@@ -16554,6 +16559,8 @@ $p.spec_building = new SpecBuilding($p);
 			}
 		}
 	});
+  mgr.ОшибкаИнфо.error = true;
+  mgr.ОшибкаКритическая.error = true;
 })($p.enm.elm_types);
 (function(_mgr){
   _mgr.additions_groups = [
