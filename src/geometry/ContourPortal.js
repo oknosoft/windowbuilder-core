@@ -1,19 +1,23 @@
 import paper from 'paper/dist/paper-core';
 import {Contour} from './Contour';
-import {ProfileVirtual} from './ProfileVirtual';
+import {ProfilePortal} from './ProfilePortal';
 
 /**
  * @summary Виртуальный слой
  * @desc Изолирует проём от внешней части проекта
  */
-export class ContourVirtual extends Contour {
+export class ContourPortal extends Contour {
 
   ProfileConstructor(attr) {
-    return ProfileVirtual;
+    return ProfilePortal;
+  }
+
+  get level() {
+    return -1;
   }
 
   get presentation() {
-    return `Вирт №${this.index}`;
+    return `Проем №${this.index}`;
   }
 
   get virtual() {
@@ -22,4 +26,4 @@ export class ContourVirtual extends Contour {
   
 }
 
-Contour.Virtual = ContourVirtual;
+Contour.Portal = ContourPortal;
