@@ -5,7 +5,7 @@ export function load21(raw) {
   props.sys = raw.sys;
   this.clear();
   for(const row of raw.constructions.filter((row) => !row.parent)) {
-    if(this.activeLayer.hasOwnProperty('cnstr')) {
+    if(this.workLayer.hasOwnProperty('cnstr')) {
       this.addLayer(row).activate();
     }
     this.activeLayer.cnstr = row.cnstr;

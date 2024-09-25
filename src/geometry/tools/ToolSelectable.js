@@ -156,7 +156,7 @@ export class ToolSelectable extends ToolElement {
     this.#raw.hitItem = null;
 
     if (point) {
-      this.hitTestItem(project.activeLayer, point);
+      this.hitTestItem(project.activeLayer || project.rootLayer, point);
       if(!this.#raw.hitItem) {
         this.hitTestItem(project, point);
       }

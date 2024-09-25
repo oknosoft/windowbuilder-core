@@ -20,6 +20,7 @@ export class ToolPen extends ToolSelectable {
     })
     this.on({
       activate: () => {
+        this.project.workLayer;
         this.onActivate('cursor-autodesk');
         this.onZoomFit();
         this.get('line').strokeWidth = 3;

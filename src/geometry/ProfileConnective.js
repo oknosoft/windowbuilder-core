@@ -13,8 +13,8 @@ export class ProfileConnective extends GeneratrixElement {
       this.skeleton.addProfile(this);
       // ищем и расталкиваем примыкания
       if(this.findNearests().length) {
-        // this.hustleNearests();
-        // props.registerChange();
+        this.hustleNearests();
+        props.registerChange();
       }      
     }
   }

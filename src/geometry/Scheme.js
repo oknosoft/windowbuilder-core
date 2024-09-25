@@ -22,7 +22,7 @@ export class Scheme extends paper.Project {
 
   get activeLayer() {
     const {_activeLayer, rootLayer} = this;
-    if(_activeLayer && _activeLayer !== rootLayer) {
+    if(_activeLayer instanceof Contour && _activeLayer !== rootLayer) {
       return _activeLayer;
     }
     for(const layer of this.layers) {
@@ -31,7 +31,16 @@ export class Scheme extends paper.Project {
         return layer;
       }
     }
-    return this.addLayer();
+    return null;
+  }
+  
+  get workLayer() {
+    let {activeLayer} = this;
+    if(!activeLayer) {
+      activeLayer = this.addLayer();
+      activeLayer.activate();
+    }
+    return activeLayer;
   }
   
   get dimensions() {
@@ -112,24 +121,13 @@ export class Scheme extends paper.Project {
   }
   
   clear() {
-    const {contours, dimensions, props} = this;
+    const {contours, dimensions, rootLayer, props} = this;
     for(const contour of contours) {
       contour.remove();
     }
+    rootLayer.clear();
     dimensions.clear();
     dimensions.removeChildren();
-  }
-  
-  activate() {
-    const {_scope, _view} = this;
-    if(_scope.project !== this) {
-      _scope.project?.deselectAll?.();
-      super.activate();
-      this.deselectAll();
-      if(_view) {
-        _scope.View._viewsById[_view._id] = _view;
-      }
-    }
   }
 
   addLayer(attr) {
