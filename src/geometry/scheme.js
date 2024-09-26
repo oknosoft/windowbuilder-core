@@ -1561,7 +1561,8 @@ class Scheme extends paper.Project {
    * @final
    */
   get area() {
-    return this.contours.reduce((sum, {area}) => sum + area, 0).round(4);
+    const {l_connective, contours} = this;
+    return [l_connective].concat(contours).reduce((sum, {area}) => sum + area, 0).round(4);
   }
 
   /**

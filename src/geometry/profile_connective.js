@@ -353,7 +353,7 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив профилей текущего слоя
-   * @returns {Array.<ProfileItem>}
+   * @type {Array.<ProfileItem>}
    */
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
@@ -361,10 +361,18 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив раскладок текущего слоя
-   * @return {Array}
+   * @type {Array}
    */
   get onlays() {
     return [];
+  }
+
+  /**
+   * Площадь профилей слоя соединителей
+   * @type {number}
+   */
+  get area() {
+    return (this.profiles.reduce((sum, {path}) => sum + path.area, 0) /1e6).round(4);
   }
 
   /**

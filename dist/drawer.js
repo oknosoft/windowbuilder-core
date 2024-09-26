@@ -12186,6 +12186,9 @@ class ConnectiveLayer extends paper.Layer {
   get onlays() {
     return [];
   }
+  get area() {
+    return (this.profiles.reduce((sum, {path}) => sum + path.area, 0) /1e6).round(4);
+  }
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
   }
@@ -14114,7 +14117,8 @@ class Scheme extends paper.Project {
     return this.layers.filter((l) => l instanceof Contour);
   }
   get area() {
-    return this.contours.reduce((sum, {area}) => sum + area, 0).round(4);
+    const {l_connective, contours} = this;
+    return [l_connective].concat(contours).reduce((sum, {area}) => sum + area, 0).round(4);
   }
   get form_area() {
     return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(4);
