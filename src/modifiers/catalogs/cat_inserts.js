@@ -1215,6 +1215,8 @@
               }
             }
           }
+          // доп вставка
+          row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
         }
         else{
 
@@ -1361,26 +1363,8 @@
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
 
-                if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
-                  const row_prm = {
-                    clr: elm.clr,
-                    layer: elm.layer,
-                    nom: row_ins_spec.nom,
-                    inset: row_ins_spec.inset,
-                    is_linear() {
-                      return true;
-                    },
-                    _row: {len: len_angl?.len || _row.len, angle_hor: 0, s: _row.s}
-                  };
-                  const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len});
-                  row_ins_spec.inset.calculate_spec({
-                    elm: row_prm,
-                    len_angl: tmp_len_angl,
-                    ox,
-                    spec,
-                    clr: clr || elm.clr,
-                    own_row: row_ins_spec});
-                }
+                // доп вставка
+                row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
               }
               row_spec = null;
             }
@@ -1511,6 +1495,46 @@
       }
     }
 
+    dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row}) {
+      if(!this.empty()) {
+        const {nom, count_calc_method} = row_ins_spec;
+        if(nom instanceof CatNom) {
+          if(!clr) {
+            clr = $p.cat.clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec, null, row_ins_spec);
+          }
+          const tmp_inset = this._manager.create({insert_type: row_ins_spec._owner._owner.insert_type}, false, true);
+          const row_prm = {
+            clr,
+            elm: elm.elm,
+            layer: elm.layer,
+            nom: nom,
+            inset: tmp_inset,
+            is_linear() {
+              return true;
+            },
+            _row: {
+              len: count_calc_method.is('element') ? 1 : (len_angl?.len || _row.len),
+              angle_hor: 0,
+              s: _row.s || 0,
+            }
+          };
+          const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len});
+          const fake_row = tmp_inset.specification.add(row_ins_spec);
+          fake_row.inset = null;
+          fake_row.clr = null;
+          fake_row.nom = this;
+          tmp_inset.calculate_spec({
+            elm: row_prm,
+            len_angl: tmp_len_angl,
+            ox,
+            spec,
+            clr,
+            own_row: row_ins_spec});
+          tmp_inset.unload();
+        }
+      }
+    }
+    
     /**
      * Возвращает толщину вставки
      * @param elm {BuilderElement}
