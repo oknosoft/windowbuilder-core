@@ -44,7 +44,6 @@ export class ToolSelect extends ToolSelectable {
       activeElement.blur();
     }
     const {shift, space, control, alt} = ev.modifiers;
-    const imitation = this.mode === 'select-imitation';
 
     this.mode = null;
     this.changed = false;
@@ -117,10 +116,6 @@ export class ToolSelect extends ToolSelectable {
             //   }
             // }
           }
-        }
-        // если imitationTarget, назначаем ему выделяемый элемент
-        if(imitation && this.imitationTarget && select[0]?.item instanceof GeneratrixElement) {
-          this.imitationTarget.raw('imitationOf', select[0]?.item === this.imitationTarget ? null : select[0]?.item);
         }
       }
       else if(hitItem.type === 'segment') {
@@ -289,26 +284,15 @@ export class ToolSelect extends ToolSelectable {
     }
     else if (code === 'Delete') {
       let rm;
-      if(mode === 'select-imitation') {
-        const {selectedProfiles} = this;
-        this.mode === null;
-        if(selectedProfiles.length === 1 && selectedProfiles[0].imitationOf) {
-          selectedProfiles[0].raw('imitationOf', null);
-          rm = true;
-          project.props.registerChange();
-        }
-      }
-      else {
-        for(const elm of this.selectedProfiles.concat(project.dimensions.children)) {
-          if(elm.selected) {
-            try{
-              elm.remove();
-            }
-            catch (err) {
-              alert(err.message);
-            }
-            rm = true;
+      for(const elm of this.selectedProfiles.concat(project.dimensions.children)) {
+        if(elm.selected) {
+          try{
+            elm.remove();
           }
+          catch (err) {
+            alert(err.message);
+          }
+          rm = true;
         }
       }
       if(rm) {
@@ -344,13 +328,6 @@ export class ToolSelect extends ToolSelectable {
         mover.tryMovePoints(pt, delta, modifiers.shift);
         mover.applyMovePoints();
         project.redraw();
-      }
-    }
-    else if(modifiers.control && code === 'KeyI') {
-      const {selectedProfiles} = this;
-      if(selectedProfiles.length === 1) {
-        this.mode = 'select-imitation';
-        this.imitationTarget = selectedProfiles[0];
       }
     }
   }

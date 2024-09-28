@@ -1,9 +1,9 @@
 
-export const exclude = ['enm.cnnTypes'];
+export const exclude = ['enm.cnnTypes', 'enm.positions'];
 
 export function classes({enm, classes, symbols, utils}, exclude)  {
 
-  const {EnumManager} = classes;
+  const {EnumManager, EnumObj} = classes;
   class EnmCnnTypesManager extends EnumManager {
     get acn() {
       const {index} = this;
@@ -20,4 +20,22 @@ export function classes({enm, classes, symbols, utils}, exclude)  {
     }
   }
   classes.EnmCnnTypesManager = EnmCnnTypesManager;
+
+  class EnmPositions extends EnumObj {
+    invert() {
+      const {latin, _manager} = this;
+      switch (latin) {
+        case 'top':
+          return _manager.bottom;
+        case 'bottom':
+          return _manager.top;
+        case 'left':
+          return _manager.right;
+        case 'right':
+          return _manager.left;
+      }
+      return this;
+    }
+  }
+  classes.EnmPositions = EnmPositions;
 }
