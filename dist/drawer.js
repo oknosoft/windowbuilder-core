@@ -6562,15 +6562,16 @@ class Filling extends AbstractFilling(BuilderElement) {
     const param = $p.cch.properties.predefined('glass_separately');
     if(param?.extract_pvalue({ox, cnstr: -elm, elm: this})) {
       if(!_attr._text_sep){
-        _attr._text_sep = _attr._text.clone();
-        _attr._text_sep.fontSize *= 1.8;
-        _attr._text_sep.fillColor = 'green';
-        _attr._text_sep.fillColor.alpha = 0.8;
-        _attr._text_sep.content = '⓿';
-        _attr._text_sep.justification = 'right';
-        _attr._text_sep.rotation = 0;
+        _attr._text_sep = new paper.Path.Circle({
+          parent: this.children.text,
+          center: [0, 0],
+          radius: fontSize * 0.8,
+          strokeColor: 'green',
+          strokeWidth: fontSize / 2,
+        });
+        _attr._text_sep.strokeColor.alpha = 0.8;
       }
-      _attr._text_sep.point = bounds.bottomRight.add([-fontSize * 1.2, -fontSize]);
+      _attr._text_sep.position = bounds.bottomRight.add([-fontSize * 1.6, -fontSize * 1.6]);
     }
     else if(_attr._text_sep){
       _attr._text_sep.remove();
