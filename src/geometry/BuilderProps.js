@@ -32,12 +32,10 @@ export class BuilderProps  {
   }
   set carcass(v) {
     const change = this.carcass !== v;
-    const {_scope} = this.#raw.project;
-    _scope.settings.carcass = v;
+    const {project} = this;
+    project._scope.settings.carcass = v;
     if(change) {
-      for(const project of _scope.projects) {
-        project.redraw(true);
-      }
+      project.redraw(true);
     }
   }
   

@@ -49,8 +49,9 @@ export class ToolSelectLayer extends ToolElement {
     //'cursor-text-select'
     //'cursor-disabled'
     super.onActivate('cursor-text-select');
-    let bounds;
-    for(const layer of this.project.contours) {
+    let bounds, setMode;
+    const {contours, props} = this.project;
+    for(const layer of contours) {
       if(layer === this.currentLayer) {
         layer.opacity = 0.2;
       }
@@ -65,16 +66,20 @@ export class ToolSelectLayer extends ToolElement {
         }
       }
     }
-    for(const layer of this.project.contours) {
+    for(const layer of contours) {
       if(layer !== this.currentLayer) {
         // рисуем кнопки
         const bySide = layer.profilesBySide();
         for(const pos of ['top', 'bottom', 'left', 'right']) {
           if(layer.isPos(pos, bounds)) {
             this.button({layer, bind: pos, profile: bySide[pos]});
+            setMode = true;
           }
         }
       }
+    }
+    if(setMode) {
+      props.carcass = "carcass";
     }
   }
 

@@ -50,10 +50,10 @@ export class StandardForms {
         tool.activate();
       })
         .then(({pos}) => {
-          offset.bind = pos.pos;
+          offset.bind = pos.bind;
           bounds = pos.layer.bounds;
           const light = 0;
-          switch (pos.pos) {
+          switch (pos.bind) {
             case 'left':
               offset.x = bounds.bottomLeft.x - profilesBounds.width - light;
               offset.y = bounds.topLeft.y - light;
@@ -72,8 +72,8 @@ export class StandardForms {
           }
           layer.three.rotation = [0, 0, 0];
           layer.three.position = [0, 0, 0];
-          layer.three.bind = offset.bind;
           layer.three.parent = pos.layer;
+          layer.three.bind = pos.bind;
           const rm = [];
           for(const dl of project.dimensions.children) {
             if(dl.raw('owner') === pos.layer && dl.pos == pos.pos) {
