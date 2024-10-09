@@ -269,10 +269,11 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   get hidden() {
-    return !this.visible;
+    return !this.visible || this.project.builder_props.cnns === false;
   }
   set hidden(v) {
     this.visible = !v;
+    this.redraw();
   }
 
 
@@ -303,7 +304,16 @@ class ConnectiveLayer extends paper.Layer {
 
   redraw() {
     const {_errors, children} = this;
-    children.forEach((elm) => elm !== _errors && elm.redraw());
+    const visible = !this.hidden;
+    children.forEach((elm) => {
+      if(elm !== _errors) {
+        elm.visible = visible;
+        elm.redraw?.();
+        if(elm instanceof ProfileItem) {
+          elm.path.fillColor = BuilderElement.clr_by_clr.call(elm, elm.clr);
+        }
+      }
+    });
     _errors.removeChildren();
     //_errors.bringToFront();
   }

@@ -3214,6 +3214,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const visible = !this._hidden;
       for(const elm of this.children.profiles.children.concat(this.children.fillings.children)) {
         elm.visible = visible;
+        elm.redraw();
       }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
@@ -12140,10 +12141,11 @@ class ConnectiveLayer extends paper.Layer {
     return false;
   }
   get hidden() {
-    return !this.visible;
+    return !this.visible || this.project.builder_props.cnns === false;
   }
   set hidden(v) {
     this.visible = !v;
+    this.redraw();
   }
   get _ox() {
     return this.project.ox;
@@ -12156,7 +12158,16 @@ class ConnectiveLayer extends paper.Layer {
   }
   redraw() {
     const {_errors, children} = this;
-    children.forEach((elm) => elm !== _errors && elm.redraw());
+    const visible = !this.hidden;
+    children.forEach((elm) => {
+      if(elm !== _errors) {
+        elm.visible = visible;
+        elm.redraw?.();
+        if(elm instanceof ProfileItem) {
+          elm.path.fillColor = BuilderElement.clr_by_clr.call(elm, elm.clr);
+        }
+      }
+    });
     _errors.removeChildren();
   }
   save_coordinates() {
