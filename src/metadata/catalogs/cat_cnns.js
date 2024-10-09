@@ -595,7 +595,7 @@ exports.CatCnns = class CatCnns extends Object {
       }
 
       // проверяем параметры изделия и добавляем, если проходит по ограничениям
-      if(correct || check_params({params: selection_params, row_spec: row, elm, elm2, ox, node: len_angl?.node})) {
+      if(check_params({params: selection_params, row_spec: row, elm, elm2, ox, node: len_angl?.node})) {
         res.push(row);
       }
 
