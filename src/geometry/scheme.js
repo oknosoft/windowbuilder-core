@@ -918,9 +918,9 @@ class Scheme extends paper.Project {
    * @type Rectangle
    */
   get bounds() {
-    const {_attr} = this;
+    const {_attr, l_connective} = this;
     if(!_attr._bounds) {
-      this.contours.forEach((l) => {
+      this.contours.concat([l_connective]).forEach((l) => {
         if(!_attr._bounds) {
           _attr._bounds = l.bounds;
         }
