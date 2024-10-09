@@ -56,7 +56,8 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
       const crow = row.elm < 0 && _owner.constructions.find({cnstr: -row.elm});
       let obj = crow?.furn || _owner.sys;
       if(obj.empty()) {
-        obj = _owner.origin;
+        const {leading_product, origin} = _owner;
+        obj = leading_product.empty() ? origin : leading_product.sys;
       }
       if(!this.has(obj)) {
         this.replenish(obj);
