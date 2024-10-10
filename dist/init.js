@@ -7883,7 +7883,21 @@ class CatMargin_coefficientsManager extends CatManager {
         this.replenish(obj);
         // если не нашлось по иерархии, ищем максимум по системе
         if(!this.has(obj)) {
-          if(obj === crow?.furn) {
+          if(obj instanceof CatInsert_bind) {
+            for(const {inset} of obj.inserts) {
+              if(!this.has(inset)) {
+                this.replenish(inset);
+              }
+              if(this.has(inset)) {
+                this.set(obj, this.get(inset));
+                break;
+              }
+              else {
+                this.set(obj, {coefficient: 0});
+              }
+            }
+          }
+          else if(obj === crow?.furn) {
             const {sys} = _owner;
             if(!this.has(sys)) {
               this.replenish(sys);
