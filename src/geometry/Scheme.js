@@ -131,7 +131,8 @@ export class Scheme extends paper.Project {
   }
 
   addLayer(attr) {
-    const layer = new Contour({project: this, insert: true});
+    const Constructor = attr?.portal ? Contour.Portal : Contour;
+    const layer = new Constructor({project: this, insert: true});
     this.props.registerChange();
     return layer;
   }
