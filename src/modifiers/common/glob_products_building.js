@@ -1273,13 +1273,16 @@ class ProductsBuilding {
 
     if(angle_calc_method_prev && !nom.is_pieces) {
 
-      const {Основной, СварнойШов, СоединениеПополам, Соединение, _90} = $p.enm.angle_calculating_ways;
+      const {Основной, СварнойШов, СоединениеПополам, Соединение, _90, _4590} = $p.enm.angle_calculating_ways;
 
-      if((angle_calc_method_prev == Основной) || (angle_calc_method_prev == СварнойШов)) {
+      if(angle_calc_method_prev == Основной || angle_calc_method_prev == СварнойШов) {
         row_spec.alp1 = row_coord.alp1;
       }
       else if(angle_calc_method_prev == _90) {
         row_spec.alp1 = 90;
+      }
+      else if(angle_calc_method_prev == _4590) {
+        row_spec.alp1 = 45;
       }
       else if(angle_calc_method_prev == СоединениеПополам) {
         row_spec.alp1 = (alp1 || row_coord.alp1) / 2;
@@ -1288,10 +1291,10 @@ class ProductsBuilding {
         row_spec.alp1 = (alp1 || row_coord.alp1);
       }
 
-      if((angle_calc_method_next == Основной) || (angle_calc_method_next == СварнойШов)) {
+      if(angle_calc_method_next == Основной || angle_calc_method_next == СварнойШов) {
         row_spec.alp2 = row_coord.alp2;
       }
-      else if(angle_calc_method_next == _90) {
+      else if(angle_calc_method_next == _90 || angle_calc_method_next == _4590) {
         row_spec.alp2 = 90;
       }
       else if(angle_calc_method_next == СоединениеПополам) {
