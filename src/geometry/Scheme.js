@@ -4,6 +4,7 @@ import {BuilderProps} from './BuilderProps';
 import {Contour} from './Contour';
 import {StandardForms} from './StandardForms';
 import {BuilderElement} from './BuilderElement';
+import {ProfileCut} from './ProfileCut';
 import {load21} from './loaders/load21';
 
 export class Scheme extends paper.Project {
@@ -118,6 +119,10 @@ export class Scheme extends paper.Project {
   
   get selectedElements() {
     return this.selectedItems.filter(elm => elm instanceof BuilderElement);
+  }
+  
+  get activeCut() {
+    return this.rootLayer.children.profiles.getItem({selected: true, class: ProfileCut});
   }
   
   clear() {

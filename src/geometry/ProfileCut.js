@@ -1,7 +1,6 @@
 import paper from 'paper/dist/paper-core';
 import {GeneratrixElement} from './GeneratrixElement';
 
-const {PathUnselectable, TextUnselectable, Item} = paper;
 const letters = ['A','B','C','D','E','F','G','H','I','J','K'];
 
 export class ProfileCut extends GeneratrixElement.Profile {
@@ -10,6 +9,7 @@ export class ProfileCut extends GeneratrixElement.Profile {
     super(attr);
 
     // создаём детей
+    const {PathUnselectable, TextUnselectable} = paper;
     const {props} = this.project;
     const content = this.textContent();
     new PathUnselectable({parent: this, name: 'callout1', strokeColor: 'black', guide: true, strokeScaling: false});
@@ -43,7 +43,7 @@ export class ProfileCut extends GeneratrixElement.Profile {
   }
 
   setSelection(selection) {
-    Item.prototype.setSelection.call(this.generatrix, selection);
+    paper.Item.prototype.setSelection.call(this.generatrix, selection);
   }
 
   textContent() {
