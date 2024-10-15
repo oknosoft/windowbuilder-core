@@ -35,3 +35,5 @@ export class ProfileVirtual extends GeneratrixElement {
   }
 
 }
+
+GeneratrixElement.Virtual = ProfileVirtual;

@@ -2,7 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {Skeleton} from './graph/Skeleton';
 import {Mover} from './graph/Mover';
 
-import {Profile} from './ProfileItem';
+import {GeneratrixElement} from './GeneratrixElement';
 import {contourGroups} from './ContourGroups';
 import {Props3D} from './BuilderPropsThree';
 
@@ -342,7 +342,7 @@ export class Contour extends paper.Layer {
   }
   
   ProfileConstructor(attr) {
-    return Profile;
+    return GeneratrixElement.Profile;
   }
 
   /**

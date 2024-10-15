@@ -163,3 +163,5 @@ export class ProfileConnective extends GeneratrixElement {
   }
   
 }
+
+GeneratrixElement.Connective = ProfileConnective;

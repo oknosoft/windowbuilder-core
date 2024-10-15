@@ -20,3 +20,5 @@ export class Profile extends GeneratrixElement {
   }
   
 }
+
+GeneratrixElement.Profile = Profile;

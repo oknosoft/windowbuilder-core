@@ -159,7 +159,11 @@ export class ToolPen extends ToolSelectable {
       return this.reset(ev);
     }
     if(!mode) {
-      if(profile.elm_type.is('rama') || profile.elm_type.is('impost') || profile.elm_type.is('linking')) {
+      if(profile.elm_type.is('rama') || 
+        profile.elm_type.is('impost') || 
+        profile.elm_type.is('linking') || 
+        profile.elm_type.is('line') || 
+        profile.elm_type.is('cut')) {
         
       }
       else if(!node.visible || (profile.elm_type.is('size') && hitItem.type !== 'segment')) {
@@ -199,7 +203,7 @@ export class ToolPen extends ToolSelectable {
         this.mode = 2;
         return;
       }
-      else if(profile.elm_type.is('linking')) {
+      else if(profile.elm_type.is('linking') || profile.elm_type.is('cut') || profile.elm_type.is('line')) {
         project.rootLayer.createProfile({
           b: this.path.firstSegment.point,
           e: this.path.lastSegment.point,
@@ -210,6 +214,7 @@ export class ToolPen extends ToolSelectable {
         project.activeLayer.createProfile({
           b: this.path.firstSegment.point,
           e: this.path.lastSegment.point,
+          elmType: profile.elm_type,
         });
       }
       project.redraw();

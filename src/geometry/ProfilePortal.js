@@ -58,3 +58,5 @@ export class ProfilePortal extends GeneratrixElement {
   }
 
 }
+
+GeneratrixElement.Portal = ProfilePortal;

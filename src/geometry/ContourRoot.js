@@ -1,7 +1,7 @@
 import paper from 'paper/dist/paper-core';
 import {Contour} from './Contour';
 import {DimensionDrawer, MapedGroup} from './DimensionDrawer';
-import {ProfileConnective} from './ProfileConnective';
+import {GeneratrixElement} from './GeneratrixElement';
 
 /**
  * @summary Группа произвольных надписей
@@ -72,7 +72,13 @@ export class ContourRoot extends Contour {
   }
 
   ProfileConstructor(attr) {
-    return ProfileConnective;
+    if(attr?.elmType?.is('line')) {
+      return GeneratrixElement.Line;
+    }
+    if(attr?.elmType?.is('cut')) {
+      return GeneratrixElement.Cut;
+    }
+    return GeneratrixElement.Connective;
   }
    
   activate() {

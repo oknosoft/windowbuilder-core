@@ -14,6 +14,8 @@ import {DimensionLineCustom} from './DimensionLineCustom';
 import {Filling} from './Filling';
 import {ContainerBlank} from './ContainerBlank';
 import {GeneratrixElement} from './GeneratrixElement';
+import './ProfileCut';
+import './ProfileLine';
 
 const geometry = {
   Scheme,
