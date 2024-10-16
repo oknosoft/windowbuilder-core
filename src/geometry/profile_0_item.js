@@ -974,6 +974,23 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
+  
+  
+  bringUp() {
+    const {b, e, rays} = this;
+    const node = b.selected ? rays.b : (e.selected ? rays.e : null);
+    if(node?.profile?.isAbove(this)) {
+      this.insertAbove(node?.profile);
+    }
+  }
+
+  bringDown() {
+    const {b, e, rays} = this;
+    const node = b.selected ? rays.b : (e.selected ? rays.e : null);
+    if(node?.profile?.isBelow(this)) {
+      this.insertBelow(node?.profile);
+    }
+  }
 
   /**
    * Угол к соседнему элементу
@@ -1582,7 +1599,7 @@ class ProfileItem extends GeneratrixElement {
    */
   save_coordinates() {
 
-    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix, layer} = this;
 
     if(!generatrix) {
       return;
@@ -1657,6 +1674,8 @@ class ProfileItem extends GeneratrixElement {
 
 
       if(!(this instanceof ProfileSegment)) {
+
+        _row.dop = {index: layer.profiles.indexOf(this)};
 
         // в том числе - о соединениях с другой стороны
         if(b._cnno && row_b.elm2 !== b._cnno.elm2) {

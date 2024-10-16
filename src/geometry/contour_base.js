@@ -123,9 +123,16 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
 
-    const {elm_types} = $p.enm;
+    const {enm: {elm_types}, utils} = $p;
     const glasses = [];
+    const rows = [];
     coordinates.find_rows({cnstr, region: 0}, (row) => {
+      const {index} = row.dop;
+      row.dopIndex = (index === -1 || typeof index !== 'number') ? Infinity : index;
+      rows.push(row);
+    });
+    rows.sort(utils.sort('dopIndex'));
+    for(const row of rows) {
       const attr = {row, parent: this.children.profiles};
       // профили и доборы
       if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
@@ -148,7 +155,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(row.elm_type === elm_types.text) {
         new FreeText({row, parent: this.l_text})
       }
-    });
+    }
     for(const row of glasses) {
       new Filling({row, parent: this.children.fillings});
     }
@@ -2406,24 +2413,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(b.profile?.isBelow(elm)) {
         b.profile?.insertAbove(elm);
       }
-      if(b.profile?.e?.is_nearest(b.point, 20000)) {
-        b.profile.rays.e.profile?.bringToFront?.();
-      }
-      else if(b.profile?.b?.is_nearest(b.point, 20000)) {
-        b.profile.rays.b.profile?.bringToFront?.();
-      }
       if(e.profile?.isBelow(elm)) {
         e.profile?.insertAbove(elm);
       }
-      if(e.profile?.e?.is_nearest(e.point, 20000)) {
-        e.profile.rays.e.profile?.bringToFront?.();
-      }
-      else if(e.profile?.b?.is_nearest(e.point, 20000)) {
-        e.profile.rays.b.profile?.bringToFront?.();
-      }
-    }
-    for (const elm of Array.from(other)) {
-      //elm?.bringToFront?.();
     }
     // z-index доборов
     for (const elm of addls) {

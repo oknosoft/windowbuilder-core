@@ -1848,9 +1848,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (!cnstr) {
       return;
     }
-    const {elm_types} = $p.enm;
+    const {enm: {elm_types}, utils} = $p;
     const glasses = [];
+    const rows = [];
     coordinates.find_rows({cnstr, region: 0}, (row) => {
+      const {index} = row.dop;
+      row.dopIndex = (index === -1 || typeof index !== 'number') ? Infinity : index;
+      rows.push(row);
+    });
+    rows.sort(utils.sort('dopIndex'));
+    for(const row of rows) {
       const attr = {row, parent: this.children.profiles};
       if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
         if(this instanceof ContourVirtual && row.elm_type === elm_types.impost) {
@@ -1869,7 +1876,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       else if(row.elm_type === elm_types.text) {
         new FreeText({row, parent: this.l_text})
       }
-    });
+    }
     for(const row of glasses) {
       new Filling({row, parent: this.children.fillings});
     }
@@ -3521,23 +3528,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(b.profile?.isBelow(elm)) {
         b.profile?.insertAbove(elm);
       }
-      if(b.profile?.e?.is_nearest(b.point, 20000)) {
-        b.profile.rays.e.profile?.bringToFront?.();
-      }
-      else if(b.profile?.b?.is_nearest(b.point, 20000)) {
-        b.profile.rays.b.profile?.bringToFront?.();
-      }
       if(e.profile?.isBelow(elm)) {
         e.profile?.insertAbove(elm);
       }
-      if(e.profile?.e?.is_nearest(e.point, 20000)) {
-        e.profile.rays.e.profile?.bringToFront?.();
-      }
-      else if(e.profile?.b?.is_nearest(e.point, 20000)) {
-        e.profile.rays.b.profile?.bringToFront?.();
-      }
-    }
-    for (const elm of Array.from(other)) {
     }
     for (const elm of addls) {
       const {b, e} = elm.rays;
@@ -9122,6 +9115,20 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
+  bringUp() {
+    const {b, e, rays} = this;
+    const node = b.selected ? rays.b : (e.selected ? rays.e : null);
+    if(node?.profile?.isAbove(this)) {
+      this.insertAbove(node?.profile);
+    }
+  }
+  bringDown() {
+    const {b, e, rays} = this;
+    const node = b.selected ? rays.b : (e.selected ? rays.e : null);
+    if(node?.profile?.isBelow(this)) {
+      this.insertBelow(node?.profile);
+    }
+  }
   angle_at(node) {
     const {profile, point} = this.rays[node] || this.cnn_point(node);
     if(!profile || !point) {
@@ -9555,7 +9562,7 @@ class ProfileItem extends GeneratrixElement {
     }
   }
   save_coordinates() {
-    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix, layer} = this;
     if(!generatrix) {
       return;
     }
@@ -9617,6 +9624,7 @@ class ProfileItem extends GeneratrixElement {
         }
       }
       if(!(this instanceof ProfileSegment)) {
+        _row.dop = {index: layer.profiles.indexOf(this)};
         if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
           cnn_elmnts.add({
             elm1: _row.elm,
