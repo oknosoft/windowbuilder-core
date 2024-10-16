@@ -252,8 +252,10 @@ export class ToolSelect extends ToolSelectable {
             canvasCursor('cursor-arrow-white-shape');
           }
           line.removeSegments();
-          line.addSegments(hitItem.item.segments.map(({point, handleIn, handleOut}) => ({point, handleIn, handleOut})));
-          line.visible = true;
+          if(Array.isArray(hitItem.item.segments)) {
+            line.addSegments(hitItem.item.segments.map(({point, handleIn, handleOut}) => ({point, handleIn, handleOut})));
+            line.visible = true;
+          }
         }
         else if (hitItem.type == 'segment' || hitItem.type == 'handle-in' || hitItem.type == 'handle-out') {
           node.position = hitItem.point.clone();

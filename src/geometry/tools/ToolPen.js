@@ -50,7 +50,7 @@ export class ToolPen extends ToolSelectable {
           item = item.nearest;
         }
         if(item instanceof GeneratrixElement) {
-          if (!profile.elm_type.is('size') && (hitItem.type == 'fill' || hitItem.type == 'stroke')) {
+          if (!profile.elm_type.is('size') && (hitItem.type == 'fill' || hitItem.type == 'stroke') && Array.isArray(hitItem.item.segments)) {
             line.removeSegments();
             line.addSegments(hitItem.item.segments.map(({point, handleIn, handleOut}) => ({point, handleIn, handleOut})));
             line.visible = true;
