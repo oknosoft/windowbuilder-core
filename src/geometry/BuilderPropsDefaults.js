@@ -1,9 +1,9 @@
 
 export default function defaults(project, props) {
 
-  const {settings} = project._scope;
+  const {_scope: {settings}, root} = project;
   if(!settings.carcass) {
-    settings.carcass = 'carcass'; // carcass|normal|plane
+    settings.carcass = root.jobPrm.get('carcass') || 'carcass'; // carcass|normal|plane
     settings.handleSize = 14;
     settings.gridStep = 50;
     settings.showGrid = true;    

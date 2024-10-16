@@ -35,6 +35,7 @@ export class BuilderProps  {
     const {project} = this;
     project._scope.settings.carcass = v;
     if(change) {
+      project.root.jobPrm.set('carcass', v);
       project.redraw(true);
     }
   }
