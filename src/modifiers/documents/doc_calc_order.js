@@ -754,11 +754,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @return {Array<Object>}
    */
   product_rows(save, attr) {
-    let res = [];
+    let res = [], weight = 0;
     const {production, partner, obj_delivery_state, department} = this;
     const {utils, wsql} = $p;
-    const user = wsql.get_user_param('user_name');
-    this.production.forEach(({row, characteristic}) => {
+    const user = wsql.get_user_param('user_name');    
+    this.production.forEach(({row, characteristic, quantity}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
         if(characteristic.product !== row || characteristic._modified ||
           characteristic.partner !== partner ||
@@ -799,8 +799,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           }
         }
+        weight += (quantity * characteristic.weight).round(2);
       }
     });
+    // масса изделий заказа
+    this.weight = weight;
     return res;
   }
 
