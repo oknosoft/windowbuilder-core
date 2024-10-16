@@ -996,13 +996,13 @@ class Filling extends AbstractFilling(BuilderElement) {
         for (let i = 0; i < length; i++) {
           nominate(i);
           if(!curr.pb) {
-            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
+            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking + Math.abs(curr.profile.d2));
             if(prev !== curr && !prev.pe) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
-            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
+            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking + Math.abs(curr.profile.d2));
             if(next !== curr && !next.pb) {
               next.pb = curr.pe;
             }

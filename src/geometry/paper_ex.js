@@ -322,9 +322,11 @@ Object.defineProperties(paper.Path.prototype, {
 
           if(firstSegment.handleIn.length){
             res.firstSegment.handleIn = firstSegment.handleIn.clone();
+            res.firstSegment.handleIn.length /= 2;
           }
           if(firstSegment.handleOut.length){
             res.firstSegment.handleOut = firstSegment.handleOut.clone();
+            res.firstSegment.handleOut.length /= 2;
           }
 
           // для кривого бежим по точкам
@@ -336,26 +338,31 @@ Object.defineProperties(paper.Path.prototype, {
             step = len * 0.014;
           }
 
+          let addLast;
           for(let i = step; i < len; i += step) {
             point = this.getPointAt(i);
             if(!point)
               continue;
             normal = this.getNormalAt(i);
             res.add(point.add(normal.multiply(delta)));
+            addLast = len - 1 > 0.2;
           }
 
           // добавляем последнюю точку
-          normal = this.getNormalAt(len);
-          res.add(lastSegment.point.add(normal.multiply(delta)));
+          if(addLast) {
+            normal = this.getNormalAt(len);
+            res.add(lastSegment.point.add(normal.multiply(delta)));
+          }
 
           if(lastSegment.handleIn.length){
             res.lastSegment.handleIn = lastSegment.handleIn.clone();
+            res.lastSegment.handleIn.length /= 2;
           }
           if(lastSegment.handleOut.length){
             res.lastSegment.handleOut = lastSegment.handleOut.clone();
+            res.lastSegment.handleOut.length /= 2;
           }
-
-          res.simplify(0.8);
+          res.simplify(0.6);
         }
 
         return res.elongation(elong);
