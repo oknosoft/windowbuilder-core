@@ -3126,23 +3126,33 @@ class Contour extends AbstractFilling(paper.Layer) {
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows, region = 0) {
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
-    const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
-    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
+    const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
+    const glass_separately = cch.properties.predefined('glass_separately');
+    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped;
     l_visualization.by_insets.removeChildren();
     l_visualization.by_spec.removeChildren();
     const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
-      rows = [];
-      this._ox.specification.find_rows({dop: -1}, (row) => {
-        const {sketch_view} = row.nom.visualization; 
+      const push = (row) => {
+        const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
           (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
           return;
         }
         rows.push(row);
-      });
+      };
+      rows = [];
+      _ox.specification.find_rows({dop: -1}, push);
+      if(glass_separately) {
+        for(const elm of glasses) {
+          if(glass_separately?.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm})) {
+            const ox = cat.characteristics.find({leading_product: _ox, leading_elm: elm.elm});
+            ox?.specification?.find_rows({dop: -1}, push);
+          }
+        }
+      }
     }
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
