@@ -20073,10 +20073,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           }
         }
-        weight += (quantity * characteristic.weight).round(2);
+        weight += quantity * characteristic.weight;
       }
     });
-    this.weight = weight;
+    this.weight = weight.round(2);
     return res;
   }
   dispatching_totals() {

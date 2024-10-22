@@ -969,7 +969,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         }
       });
     }
-    return weight;
+    return weight.round(3);
   }
 
   /**
