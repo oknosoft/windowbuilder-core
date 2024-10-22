@@ -18745,7 +18745,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   const {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
-    cat: {formulas, clrs, production_params}, 
+    cat: {formulas, clrs, production_params, property_values}, 
     EditorInvisible, utils, job_prm} = $p;
   function specifyNearest(elm, prm_row) {
     if(prm_row?.origin?.is('parent') || prm_row?.origin?.is('nearest')) {
@@ -18780,6 +18780,20 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               ox.inserts.find_rows({cnstr}, row => (clr = row.clr));
             }
             return clr;
+          };
+          break;
+        case 'clr_grp':
+          _data._formula = function ({elm, clr, layer}) {
+            if(!prm.values) {
+              prm.values = property_values.find_rows({owner: prm});
+            }
+            if(!clr) {
+              clr = elm.clr;
+            }
+            if(clr.grouping.empty()) {
+              clr.set_grouping(prm.values);
+            }
+            return clr.grouping;
           };
           break;
         case 'inset':
@@ -19152,7 +19166,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     return prm;
   }
   for(const name of [
-    'clr_product',     
     'up_glasses_weight',
     'has_glasses',     
     'has_glasses_separately',
@@ -19171,7 +19184,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',          
     'inset',           
     'inserts_glass_type', 
+    'clr_product',     
     'clr_inset',       
+    'clr_grp',         
     'handle_height',   
     'width',           
     'height',          

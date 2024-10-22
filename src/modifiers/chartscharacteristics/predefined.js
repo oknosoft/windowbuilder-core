@@ -9,7 +9,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   const {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
-    cat: {formulas, clrs, production_params}, 
+    cat: {formulas, clrs, production_params, property_values}, 
     EditorInvisible, utils, job_prm} = $p;
   
   function specifyNearest(elm, prm_row) {
@@ -50,6 +50,21 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               ox.inserts.find_rows({cnstr}, row => (clr = row.clr));
             }
             return clr;
+          };
+          break;
+          
+        case 'clr_grp':
+          _data._formula = function ({elm, clr, layer}) {
+            if(!prm.values) {
+              prm.values = property_values.find_rows({owner: prm});
+            }
+            if(!clr) {
+              clr = elm.clr;
+            }
+            if(clr.grouping.empty()) {
+              clr.set_grouping(prm.values);
+            }
+            return clr.grouping;
           };
           break;
 
@@ -463,7 +478,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
   // создаём те, где нужна только формула со стандартным check_condition
   for(const name of [
-    'clr_product',      // цвет изделия
     'up_glasses_weight',// масса заполнений, опирающихся на профиль
     'has_glasses',      // бит в заказе есть заполнения
     'has_glasses_separately',// бит в заказе есть заполнения отдельно
@@ -482,7 +496,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',           // отдел абонента текущего контекста
     'inset',            // вставка текущего элемента
     'inserts_glass_type',  // тип вставки заполнения
+    'clr_product',      // цвет изделия
     'clr_inset',        // цвет вставки в элемент
+    'clr_grp',          // группа цветов с учётом перевёрта сторон (каширование)
     'handle_height',    // высота ручки
     'width',            // ширина из параметра
     'height',           // высота слоя или изделия
