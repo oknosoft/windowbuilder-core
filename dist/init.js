@@ -6886,7 +6886,7 @@ set demand(v){this._setter_ts('demand',v)}
         }
       });
     }
-    return weight;
+    return weight.round(3);
   }
 
   /**
