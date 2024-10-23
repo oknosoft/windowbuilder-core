@@ -230,7 +230,7 @@ class EditorInvisible extends paper.PaperScope {
         const by_side = glass.profiles_by_side(null, profiles);
         res.width = (by_side.right.b.x + by_side.right.e.x - by_side.left.b.x - by_side.left.e.x) / 2;
         res.height = (by_side.bottom.b.y + by_side.bottom.e.y - by_side.top.b.y - by_side.top.e.y) / 2;
-        medium += name == 'width' ? res.width : res.height;
+        medium += res[name];
       }
       else{
         medium += bounds[name];
@@ -242,7 +242,7 @@ class EditorInvisible extends paper.PaperScope {
             glmap.set(profile, {dx: new Set, dy: new Set});
           }
           const gl = glmap.get(profile);
-          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile) == enm.cnn_sides.outer)){
+          if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile, bounds.center) == enm.cnn_sides.outer)){
             gl.is_outer = true;
           }
           else{
@@ -352,13 +352,16 @@ class EditorInvisible extends paper.PaperScope {
     });
     return res;
   }
-  glass_align(name = 'auto', glasses, geometric) {
+  async glass_align(name = 'auto', glasses, geometric) {
     const shift = this.do_glass_align(name, glasses, geometric);
     if(!shift){
       return;
     }
-    const {_attr, contours} = this.project;
+    const {project: {_attr, _ch}, eve} = this;
     if(!_attr._align_counter){
+      clearTimeout(_attr._align_timer);
+      clearTimeout(_attr._vis_timer);
+      clearTimeout(_attr._update_timer);
       _attr._align_counter = 1;
     }
     if(_attr._align_counter > 20){
@@ -367,16 +370,18 @@ class EditorInvisible extends paper.PaperScope {
     }
     if(shift.some((delta) => delta.length > 0.1)) {
       _attr._align_counter++;
-      for (const layer of contours) {
-        layer.redraw();
+      const {utils} = $p;
+      while (eve._async?.move_points?.timer) {
+        await utils.sleep(10);
+      }      
+      while (_ch.length) {
+        this.project.redraw();
       }
       return this.glass_align(name, glasses, geometric);
     }
     else {
       _attr._align_counter = 0;
-      for (const layer of contours) {
-        layer.redraw();
-      }
+      this.project.register_change(true);
       return true;
     }
   }
