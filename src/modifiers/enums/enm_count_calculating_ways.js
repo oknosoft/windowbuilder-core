@@ -51,6 +51,7 @@
             });
             recipe_row.qty = quantity;
             recipe_row.len = row_spec.len;
+            recipe_row.width = row_spec.width;
             recipe_row.s = row_spec.s * crow.coefficient / 100;
             calc_count_area_mass(recipe_row, spec);
           }
