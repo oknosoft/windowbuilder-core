@@ -14,7 +14,7 @@
   const is_side = (side) => ['_in', '_out'].includes(side);
 
   coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {
-    let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula} = row_ins_spec;
+    let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula, algorithm} = row_ins_spec;
     if(!_clr) {
       _clr = elm.clr;
     }
@@ -22,7 +22,9 @@
     if(prefix) {
       const {_row} = elm;
       const nom = elm.inset === inset ? elm.nom : inset.nom(elm);
-      row_spec.clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
+      const clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
+            
+      row_spec.clr = clr;
 
       if(is_side(_clr_side)) {
         row_spec.width = nom._extra(prefix + _clr_side);
@@ -35,6 +37,24 @@
         row_spec.qty = quantity;
         row_spec.len = (elm.length / 1000).round(3);
         row_spec.s = (row_spec.len * row_spec.width * (coefficient || 1)).round(4);
+        
+        if(algorithm.is('recipe') && clr.composition.count()) {
+          for(const crow of clr.composition) {
+            row_ins_spec.nom = crow.nom;
+            recipe_row = new_spec_row({
+              elm,
+              row_base: row_ins_spec,
+              origin: row_ins_spec._origin,
+              specify: algorithm,
+              spec,
+              ox,
+            });
+            recipe_row.qty = quantity;
+            recipe_row.len = row_spec.len;
+            recipe_row.s = row_spec.s * crow.coefficient / 100;
+            calc_count_area_mass(recipe_row, spec);
+          }
+        }
       }
     }
     if(!row_spec.width) {
