@@ -98,7 +98,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           _data._formula = function ({elm, prm_row, ox, row}) {
 
             // если запросили вставку состава заполнения, возвращаем массив
-            if(elm instanceof EditorInvisible.Filling) {
+            if(elm instanceof EditorInvisible.Filling || elm?.is_glass) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                 if(!inset.insert_glass_type.empty()) {

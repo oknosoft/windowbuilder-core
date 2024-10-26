@@ -16733,7 +16733,7 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
   if(field === 'inset' && value != this.inset) {
     this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
     const ox = this._owner._owner;
-    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});
+    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset, is_glass: true});
   }
 };
 Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
@@ -18847,7 +18847,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'inserts_glass_type':
           _data._formula = function ({elm, prm_row, ox, row}) {
-            if(elm instanceof EditorInvisible.Filling) {
+            if(elm instanceof EditorInvisible.Filling || elm?.is_glass) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                 if(!inset.insert_glass_type.empty()) {

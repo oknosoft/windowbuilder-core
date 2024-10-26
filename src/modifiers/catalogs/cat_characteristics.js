@@ -98,7 +98,7 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
     this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
     // fake-элемент
     const ox = this._owner._owner;
-    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});
+    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset, is_glass: true});
   }
 };
 
