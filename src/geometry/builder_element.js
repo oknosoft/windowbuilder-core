@@ -696,7 +696,7 @@ class BuilderElement extends paper.Group {
           }
           else {
             for(const arow of param.applying) {
-              if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+              if((arow.elm_type.empty() || arow.elm_type == elm_type || (elm_type.is('region') && arow.elm_type == this.nearest().elm_type)) &&
                 (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
                 props.push(param);
                 break;
