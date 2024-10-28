@@ -20478,6 +20478,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return ro;
   }
+  get areas() {
+    const sum = {prod: 0, all: 0};
+    for(const row of this.production) {
+      sum.all += row.s * row.quantity;
+      if(row.characteristic.leading_product.calc_order !== this) {
+        sum.prod += row.s * row.quantity;
+      }
+    }
+    return sum.prod === sum.all ?
+      sum.prod.round(2).toLocaleString('ru-RU') :
+      `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
+  }
   load_production(forse, db) {
     const prod = [];
     const {characteristics} = $p.cat;

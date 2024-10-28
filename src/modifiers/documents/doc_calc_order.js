@@ -655,8 +655,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this;
   }
-
-
+  
   // при удалении строки
   after_del_row(name) {
     if(name === 'production'){
@@ -1243,6 +1242,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ro = obj_delivery_state != Черновик && obj_delivery_state != Отозван && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     return ro;
+  }
+
+  /**
+   * Площадь изделий заказа
+   * @type {String}
+   */
+  get areas() {
+    const sum = {prod: 0, all: 0};
+    for(const row of this.production) {
+      sum.all += row.s * row.quantity;
+      if(row.characteristic.leading_product.calc_order !== this) {
+        sum.prod += row.s * row.quantity;
+      }
+    }
+    return sum.prod === sum.all ?
+      sum.prod.round(2).toLocaleString('ru-RU') :
+      `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
   }
 
   /**
