@@ -213,7 +213,21 @@ exports.CchProperties = class CchProperties extends Object {
 
     let prow, cnstr0, elm0;
     const {product_params, params} = ox;
+    const {enm: {plan_detailing}, utils, CatInserts, EditorInvisible} = $p;
     const find_nearest = () => {
+      if([1, 2].includes(this.inheritance) && elm instanceof EditorInvisible.ProfileRegion && !elm2) {
+        const top = elm.nearest().nearest();
+        const rlayer = top?.layer.contours.find(({region}) => region === elm.rnum);
+        if(rlayer) {
+          const nprofile = rlayer.profiles.find(profile => profile.nearest() === top);
+          if(nprofile) {
+            elm2 = nprofile;
+            elm0 = elm;
+            elm = {};
+            return;
+          }          
+        }
+      }
       if(cnstr && ox.constructions) {
         cnstr0 = cnstr;
         elm0 = elm;
@@ -228,7 +242,6 @@ exports.CchProperties = class CchProperties extends Object {
       }
     };
     if(params || prm_row?.origin?.is?.('order')) {
-      const {enm: {plan_detailing}, utils, CatInserts, EditorInvisible} = $p;
       let src = prm_row?.origin;
       if(src === plan_detailing.algorithm) {
         src = plan_detailing.get();
