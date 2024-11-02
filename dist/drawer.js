@@ -19388,7 +19388,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           const glasses = leading_product && !leading_product.empty() && leading_elm ?
             [characteristic.glasses.find({elm: leading_elm})] : (characteristic.glasses || []);
           for(const glrow of glasses) {
-            res.push({
+            const glass = {
               formula: glrow.formula,
               thickness: glrow.thickness,
               width: glrow.width.round(1),
@@ -19401,7 +19401,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               ref: characteristic.ref,
               elm: glrow.elm,
               specimen,
-            });
+            };
+            if(glass.width < glass.height) {
+              [glass.width, glass.height] = [glass.height, glass.width];
+            }
+            res.push(glass);
           }
         };
         const calc_order = ox?.calc_order;
