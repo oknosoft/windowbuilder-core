@@ -78,6 +78,9 @@ export class ContourRoot extends Contour {
     if(attr?.elmType?.is('cut')) {
       return GeneratrixElement.Cut;
     }
+    if(attr?.elmType?.is('adjoining')) {
+      return GeneratrixElement.Adjoining;
+    }
     return GeneratrixElement.Connective;
   }
    

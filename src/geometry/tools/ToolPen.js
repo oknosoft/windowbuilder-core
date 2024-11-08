@@ -203,7 +203,8 @@ export class ToolPen extends ToolSelectable {
         this.mode = 2;
         return;
       }
-      else if(profile.elm_type.is('linking') || profile.elm_type.is('cut') || profile.elm_type.is('line')) {
+      else if(profile.elm_type.is('linking') || profile.elm_type.is('cut') ||
+          profile.elm_type.is('line') || profile.elm_type.is('adjoining')) {
         project.rootLayer.createProfile({
           b: this.path.firstSegment.point,
           e: this.path.lastSegment.point,
