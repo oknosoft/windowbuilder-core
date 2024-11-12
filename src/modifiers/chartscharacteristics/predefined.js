@@ -181,14 +181,26 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
+
+        case 'thickness':
+          _data._formula = function ({elm, prm_row}) {
+            return elm.thickness;
+          };
+          break;
           
+        case 'region_thickness':
+          _data._formula = function ({elm, prm_row}) {
+            return elm.thickness;
+          };
+          break;
+            
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
             if(elm instanceof EditorInvisible.ProfileAdjoining) {
               elm = elm.nearest();
               elm2 = null;
             }
-            let thickness = elm2 ? elm2.thickness : 0;
+            let thickness = elm2?.thickness || 0;
             if(!thickness && elm?.joined_glasses) {
               thickness = Math.max(...elm.joined_glasses().map((gl) => gl.thickness || 0));
             }
@@ -505,6 +517,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'region',           // ряд
     'is_composite',     // у элемента составной цвет
     'rotation_axis',    // у слоя есть ось поворота
+    'thickness',        // толщина элемента 
+    'region_thickness', // толщина ряда заполнения
     'nearest_gl_thickness',// толщина примыкающего заполнения
     'nearest_gl_var',   // бит отличия толщин примыкающих заполнений
     'nearest_flap_z',   // z-индекс примыкающей створки 
