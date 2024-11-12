@@ -1,10 +1,16 @@
-
+import paper from 'paper/dist/paper-core';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 export const loader = new SVGLoader();
 
 export const svgStub = '<svg xmlns="http://www.w3.org/2000/svg"><g>\n<path d="%" stroke="#000000"></path>\n</g></svg>';
 
-const ramaSvg = loader.parse(svgStub.replace('%', `m 70.164399,-58.102802
+const fakePath = new paper.Path({
+  insert: false,
+  project: {
+    _insertItem(){},
+    _changed(){},
+  }});
+let pathData = `m 70.164399,-58.102802
 h -4.6
 v 1.7
 h 2.9
@@ -40,10 +46,13 @@ v 3.2999995
 h -1.7
 v 1.69999992
 h 3.4
-z`));
-export const rama = ramaSvg.paths[0].toShapes(true)[0];
+z`;
+let svg = loader.parse(svgStub.replace('%', pathData));
+export const rama = svg.paths[0].toShapes(true)[0];
+fakePath.pathData = pathData;
+rama.bounds = fakePath.bounds;
 
-const impostSvg = loader.parse(svgStub.replace('%', `m 70.348683,-40.981074
+pathData = `m 70.348683,-40.981074
 h -4.6
 v 1.7
 h 2.9
@@ -82,10 +91,13 @@ v 24.266176
 l -2.899998,6.68e-4
 v 2.18348
 l 4.599679,0.0053
-z`));
-export const impost = impostSvg.paths[0].toShapes(true)[0];
+z`;
+svg = loader.parse(svgStub.replace('%', pathData));
+export const impost = svg.paths[0].toShapes(true)[0];
+fakePath.pathData = pathData;
+impost.bounds = fakePath.bounds;
 
-const flapSvg = loader.parse(svgStub.replace('%', `m 80.7,-74.9
+pathData = `m 80.7,-74.9
 h -4.6
 v 1.7
 h 2.9
@@ -115,10 +127,13 @@ v 3.3
 h -1.7
 v 1.7
 h 3.4
-z`));
-export const flap = flapSvg.paths[0].toShapes(true)[0];
+z`;
+svg = loader.parse(svgStub.replace('%', pathData));
+export const flap = svg.paths[0].toShapes(true)[0];
+fakePath.pathData = pathData;
+flap.bounds = fakePath.bounds;
 
-const cnnSvg = loader.parse(svgStub.replace('%', `M 69.6,-69.7
+pathData = `M 69.6,-69.7
 H 0.5
 v 4.3
 H 2.3
@@ -133,5 +148,8 @@ v 2.8
 h -1.7
 v 1.7
 h 3.4
-z`));
-export const connective = cnnSvg.paths[0].toShapes(true)[0];
+z`;
+svg = loader.parse(svgStub.replace('%', pathData));
+export const connective = svg.paths[0].toShapes(true)[0];
+fakePath.pathData = pathData;
+connective.bounds = fakePath.bounds;

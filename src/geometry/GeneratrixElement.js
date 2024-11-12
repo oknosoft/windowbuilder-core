@@ -379,6 +379,7 @@ export class GeneratrixElement extends BuilderElement {
             const svg = loader.parse(svgStub.replace('%', svg_path));
             shape = svg.paths[0].toShapes(true)[0];
             nom.shape = shape;
+            shape.bounds = new paper.Path({pathData: svg_path, insert: false}).bounds;
           }
           catch (e) {
             nom.shape = null;

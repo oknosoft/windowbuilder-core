@@ -150,7 +150,8 @@ export class Props3D {
   
   get calculatedPosition() {
     const {position, bind, owner, parent} = this;
-    const {positions} = owner.project.root.enm;
+    const {imitationOf, project} = owner;
+    const {positions} = project.root.enm;
     let pos = position.clone();
     if(parent) {
       switch (bind) {
@@ -170,6 +171,15 @@ export class Props3D {
     }
     // сдвиг по Z
     pos.z += this.offsetZ();
+    // сдвиги профиля имитации
+    if(imitationOf) {
+      const {shape} = imitationOf;
+      if(shape) {
+        const {width, height, x, y} = shape.bounds;
+        pos.x -= height + y;
+        pos.z += width + x;
+      }
+    }
     return pos;
   }
 

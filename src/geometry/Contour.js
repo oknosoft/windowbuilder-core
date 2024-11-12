@@ -121,6 +121,17 @@ export class Contour extends paper.Layer {
   }
 
   /**
+   * @summary Ищет профиль имитации в текущем слое 
+   * @desc имеет смысл в 3D, когда текущий слой подчинён ведущему
+   * @abstract
+   * @type BuilderElement
+   */
+  get imitationOf() {
+    const {three: {parent}, profiles} = this;
+    return parent && profiles.find(elm => elm.imitationOf);
+  }
+
+  /**
    * @summary Массив выделенных профилей текущего слоя
    * @type {Array.<Profile>}
    */
