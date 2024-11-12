@@ -920,16 +920,18 @@ class Scheme extends paper.Project {
   get bounds() {
     const {_attr, l_connective} = this;
     if(!_attr._bounds) {
-      this.contours.concat([l_connective]).forEach((l) => {
-        if(!_attr._bounds) {
-          _attr._bounds = l.bounds;
-        }
-        else {
-          _attr._bounds = _attr._bounds.unite(l.bounds);
+      this.contours.concat([l_connective]).forEach(({bounds}) => {
+        if(bounds.width && bounds.height) {
+          if(!_attr._bounds) {
+            _attr._bounds = bounds;
+          }
+          else {
+            _attr._bounds = _attr._bounds.unite(bounds);
+          }
         }
       });
     }
-    return _attr._bounds;
+    return _attr._bounds || new paper.Rectangle();
   }
 
   /**

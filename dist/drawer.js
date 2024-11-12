@@ -13717,16 +13717,18 @@ class Scheme extends paper.Project {
   get bounds() {
     const {_attr, l_connective} = this;
     if(!_attr._bounds) {
-      this.contours.concat([l_connective]).forEach((l) => {
-        if(!_attr._bounds) {
-          _attr._bounds = l.bounds;
-        }
-        else {
-          _attr._bounds = _attr._bounds.unite(l.bounds);
+      this.contours.concat([l_connective]).forEach(({bounds}) => {
+        if(bounds.width && bounds.height) {
+          if(!_attr._bounds) {
+            _attr._bounds = bounds;
+          }
+          else {
+            _attr._bounds = _attr._bounds.unite(bounds);
+          }
         }
       });
     }
-    return _attr._bounds;
+    return _attr._bounds || new paper.Rectangle();
   }
   get dimension_bounds() {
     let {bounds} = this;
@@ -18924,13 +18926,23 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
+        case 'thickness':
+          _data._formula = function ({elm, prm_row}) {
+            return elm.thickness;
+          };
+          break;
+        case 'region_thickness':
+          _data._formula = function ({elm, prm_row}) {
+            return elm.thickness;
+          };
+          break;
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
             if(elm instanceof EditorInvisible.ProfileAdjoining) {
               elm = elm.nearest();
               elm2 = null;
             }
-            let thickness = elm2 ? elm2.thickness : 0;
+            let thickness = elm2?.thickness || 0;
             if(!thickness && elm?.joined_glasses) {
               thickness = Math.max(...elm.joined_glasses().map((gl) => gl.thickness || 0));
             }
@@ -19220,6 +19232,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'region',          
     'is_composite',    
     'rotation_axis',   
+    'thickness',       
+    'region_thickness',
     'nearest_gl_thickness',
     'nearest_gl_var',  
     'nearest_flap_z',  
