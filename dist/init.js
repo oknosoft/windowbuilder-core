@@ -7874,8 +7874,13 @@ class CatMargin_coefficientsManager extends CatManager {
           continue;
         }
         const {obj} = row;
-        if(obj && (!res.has(obj) || (!branch.empty() && branch._hierarchy(obj)))) {
-          res.set(obj, row);
+        if(obj) {
+          if(!res.has(obj) || (!branch.empty() && branch._hierarchy(obj))) {
+            res.set(obj, row);
+          }
+        }
+        else if(!res.has(null)) {
+          res.set(null, row);
         }
       }
     }
@@ -7896,6 +7901,12 @@ class CatMargin_coefficientsManager extends CatManager {
           if(obj.parent === key || !this.has(obj)) {
             this.set(obj, value);
           }
+        }
+      }
+      if(!this.has(obj) && obj instanceof CatProduction_params) {
+        const pl = obj._extra('product_line');
+        if(pl && !pl.empty() && this.has(pl)) {
+          this.set(obj, this.get(pl));
         }
       }
     }
@@ -7929,7 +7940,7 @@ class CatMargin_coefficientsManager extends CatManager {
                 break;
               }
               else {
-                this.set(obj, {coefficient: 0});
+                this.set(obj, this.get(null) || {coefficient: 0});
               }
             }
           }
@@ -7942,11 +7953,11 @@ class CatMargin_coefficientsManager extends CatManager {
               this.set(obj, this.get(sys));
             }
             else {
-              this.set(obj, {coefficient: 0});
+              this.set(obj, this.get(null) || {coefficient: 0});
             }
           }
           else {
-            this.set(obj, {coefficient: 0});
+            this.set(obj, this.get(null) || {coefficient: 0});
           }
         }
       }
