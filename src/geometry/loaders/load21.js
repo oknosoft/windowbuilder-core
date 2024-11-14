@@ -59,6 +59,7 @@ function loadLayer(layer, raw, crow, Path) {
   const profiles = [];
   const container = crow.parent ? layer.container : null;
   const pathInner = container ? container.pathInner : null;
+  const pmap = new Map();
   for(const row of raw.coordinates.filter((row) => row.cnstr === crow.cnstr && elm_types.includes(row.elm_type))) {
     const cnns = {};
     for(const cnrow of raw.cnn_elmnts) {
@@ -74,24 +75,27 @@ function loadLayer(layer, raw, crow, Path) {
         }
       }
     }
+    let profile;
     if(crow.parent && crow.ribs) {
       if(row.elm_type === 'Створка') {
         // находим ближайшее ребро
         let rib = crow.ribs.get(row);
         if(rib) {
-          profiles.push(layer.createProfile({...rib, inset: row.inset, cnns}));
+          profile = layer.createProfile({...rib, inset: row.inset, cnns});
         }
       }
     }
     else {
-      profiles.push(layer.createProfile({
+      profile = layer.createProfile({
         b: [row.x1, row.y1],
         e: [row.x2, row.y2],
         pathData: row.path_data,
         inset: row.inset,
         cnns,
-      }));
+      });
     }
+    profiles.push(profile);
+    pmap.set(profile, row);
   }
   layer.skeleton.addProfiles(profiles);
   for(const profile of profiles) {
@@ -123,6 +127,27 @@ function loadLayer(layer, raw, crow, Path) {
         flap.sys = row.dop.sys;
       }
       loadLayer(flap, raw, row, Path);
+    }
+  }
+  // свойства 3d
+  const three = crow.dop?.three; 
+  if(three) {
+    const parent = layer.project.contours.find(l => l.cnstr === three.parent);
+    if(parent) {
+      layer.three.parent = parent;
+      layer.three.bind = three.bind;
+      const {bind} = layer.three;
+      if(three.rotation) {
+        const fld = (bind.is('top') || bind.is('bottom')) ? 'x' : 'y';
+        layer.three.degree[fld] = three.rotation; 
+      }
+      // возможно, есть профиль имитации
+      for(const profile of profiles) {
+        const row = pmap.get(profile);
+        if(row.dop?.imitationOf) {
+          profile.raw('imitationOf', parent.profilesBySide()[bind.valueOf()]);
+        }
+      }
     }
   }
 }

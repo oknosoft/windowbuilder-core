@@ -3,8 +3,8 @@ import {epsilon} from '../paper/Point';
 
 // извлекаем разрешенные диапазоны из шаблона
 let li = 220;
-let lmin = 400;
-let lmax = 2200;
+let lmin = 360;
+let lmax = 5000;
 
 export class Mover {
 

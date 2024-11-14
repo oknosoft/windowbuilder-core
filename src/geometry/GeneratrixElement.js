@@ -393,6 +393,11 @@ export class GeneratrixElement extends BuilderElement {
     return shape;
   }
 
+  points(mode) {
+    const {b, e} = this;
+    return {b: b.points(mode), e: e.points(mode)};
+  }
+  
   /**
    * 
    * @param {paper.Point} interiorPoint
@@ -489,9 +494,8 @@ export class GeneratrixElement extends BuilderElement {
     else {
       path.visible = true;
       if(!path.segments.length) {
-        const {b, e} = this;
-        const points = {b: b.points(), e: e.points()};
-        path.addSegments([points.b.outer, points.e.outer, points.e.inner, points.b.inner]);
+        const {b, e} = this.points();
+        path.addSegments([b.outer, e.outer, e.inner, b.inner]);
         path.closePath();
       }
       generatrix.strokeColor = new paper.Color(0.5, 0.5);

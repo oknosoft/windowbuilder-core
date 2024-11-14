@@ -178,17 +178,21 @@ export class CnnPoint {
   points(mode) {
     const {pts} = this.#raw;
     this.checkActual();
-    if(!pts.inner || !pts.outer) {
+    if(!pts.inner || !pts.outer || mode) {
       const {owner, point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
       const {cnnTypes} = owner.root.enm;
       let cnnType = (!cnn || cnn.empty()) ? (profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i) : cnn.cnn_type;
+      Object.assign(pts, {cnn, cnno, cnnType});
       if(cnnType.is('av')) {
         cnnType = owner.orientation.is('vert') ? cnnTypes.long : cnnTypes.short; 
       }
       else if(cnnType.is('ah')) {
         cnnType = owner.orientation.is('vert') ? cnnTypes.short : cnnTypes.long;
       }
-      let prays, orays;
+      const {prays} = this;
+      if(mode && !cnnType.is('ad')) {
+        prays.inner = prays.inner.equidistant(cnn.size(owner, profile));
+      }
       switch (cnnType) {
         case cnnTypes.i: {
           pts.inner = inner.getNearestPoint(point);
@@ -197,19 +201,16 @@ export class CnnPoint {
         }
         case cnnTypes.t:
         case cnnTypes.short:{
-          const {prays} = this;
           pts.inner = prays.inner.intersectPoint(inner);
           pts.outer = prays.inner.intersectPoint(outer);
           break;
         }
         case cnnTypes.long: {
-          const {prays} = this;
           pts.inner = prays.outer.intersectPoint(inner);
           pts.outer = prays.outer.intersectPoint(outer);
           break;
         }
         case cnnTypes.ad: {
-          const {prays} = this;
           pts.inner = prays.inner.intersectPoint(inner);
           pts.outer = prays.outer.intersectPoint(outer);
           break;

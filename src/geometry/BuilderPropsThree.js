@@ -176,8 +176,8 @@ export class Props3D {
       const {shape} = imitationOf;
       if(shape) {
         const {width, height, x, y} = shape.bounds;
-        pos.x -= height + y;
-        pos.z += width + x;
+        pos.x -= width + x;
+        pos.z -= x;
       }
     }
     return pos;
