@@ -18933,7 +18933,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'region_thickness':
           _data._formula = function ({elm, prm_row}) {
-            return elm.thickness;
+            return elm.inset?.thickness(elm) || 0;
           };
           break;
         case 'nearest_gl_thickness':
