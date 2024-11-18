@@ -148,7 +148,7 @@ class Pricing {
     
     (log || console.log)(`load prices: page №${step}`);
 
-    return utils.sleep(limit)
+    return utils.sleep(limit / 2)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
@@ -183,12 +183,11 @@ class Pricing {
     date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
-      const onom = nom.get(row.nom, true);
-
-      // если в озу нет подходящей номенклатуры или в строке не задан тип цен - уходим
-      if (!onom || !onom._data || !row.price_type){
+      // если не задан тип цен - уходим
+      if (!row.price_type || !utils.is_guid(row.nom) || utils.is_empty_guid(row.nom)){
         continue;
       }
+      const onom = nom.create({ref: row.nom}, false, true);
 
       let _price;
       if(cache) {
