@@ -56,6 +56,20 @@ export const meta= {
         fraction: 0
       }
     },
+    node1: {
+      synonym: "Узел1",
+      choiceGrp: "elm",
+      type: {
+        types: ["cat.elm_visualization"]
+      }
+    },
+    node2: {
+      synonym: "Узел2",
+      choiceGrp: "elm",
+      type: {
+        types: ["cat.elm_visualization"]
+      }
+    },
     sz: {
       synonym: "Размер",
       type: {

@@ -18,7 +18,7 @@ export function load21(raw) {
   this.zoomFit();
 }
 
-const elm_types = ['Рама', 'Створка', 'Импост', 'Соединитель'];
+const elm_types = ['Рама', 'Створка', 'Импост', 'Соединитель', 'Линия', 'Сечение'];
 
 function findRibs(child, raw, crow, Path) {
   const {pathInner} = child;
@@ -56,6 +56,7 @@ function findContainer(layer, raw, crow, Path) {
 }
 
 function loadLayer(layer, raw, crow, Path) {
+  const {elmTypes} = layer.project.root.enm;
   const profiles = [];
   const container = crow.parent ? layer.container : null;
   const pathInner = container ? container.pathInner : null;
@@ -92,6 +93,7 @@ function loadLayer(layer, raw, crow, Path) {
         pathData: row.path_data,
         inset: row.inset,
         cnns,
+        elmType: elmTypes.get(row.elm_type),
       });
     }
     profiles.push(profile);

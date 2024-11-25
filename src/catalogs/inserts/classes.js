@@ -78,6 +78,10 @@ return filtered.length ? filtered : [main_rows[0]];
       }
       return nom;
     }
+
+    thickness(elm) {
+      return elm.nom.thickness || 0;
+    }
   }
 
   classes.CatInserts = CatInserts;
