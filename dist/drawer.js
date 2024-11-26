@@ -13513,6 +13513,13 @@ class Scheme extends paper.Project {
                   _scheme.draw_visualization();
                   if(from_service){
                     _scheme.zoom_fit();
+                    if(from_service.redraw) {
+                      let i = 10;
+                      while (i > 0 && _scheme._ch.length) {
+                        i--;
+                        _scheme.redraw();
+                      }
+                    }
                     return resolve();
                   }
                 }

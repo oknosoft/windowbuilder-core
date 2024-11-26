@@ -15,6 +15,7 @@ $p.enm.create('data_field_kinds');
 $p.enm.create('standard_period');
 $p.enm.create('quick_access');
 $p.enm.create('report_output');
+$p.enm.create('abc');
 $p.enm.create('path_kind');
 $p.enm.create('inset_attrs_options');
 $p.enm.create('transfer_operations_options');
