@@ -2,7 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {epsilon} from './paper/Point';
 import {BuilderElement} from './BuilderElement';
 import {CnnPoint} from './ProfileCnnPoint';
-import {rama, impost, flap, connective, loader, svgStub} from './ProfileShapes';
+import {rama, impost, flap, connective, loader, svgStubs} from './ProfileShapes';
 
 export const pathAttr = {
   strokeColor: 'black',
@@ -373,13 +373,18 @@ export class GeneratrixElement extends BuilderElement {
         shape = nom.shape; 
       }
       else if(nom.shape !== null) {
-        const {svg_path} = nom.visualization;
+        const svg_path = nom.visualization.svg_path.trim();
         if(svg_path) {
           try {
-            const svg = loader.parse(svgStub.replace('%', svg_path));
+            const svg = loader.parse(svg_path.startsWith('<path') ?
+              svgStubs[1].replace('%', svg_path) : svgStubs[0].replace('%', svg_path));
             shape = svg.paths[0].toShapes(true)[0];
             nom.shape = shape;
-            shape.bounds = new paper.Path({pathData: svg_path, insert: false}).bounds;
+            shape.bounds = new paper.Path({
+              pathData: svg_path.startsWith('<path') ?
+                svg_path.replace('id="','~').split('d="')[1].split('"')[0] : svg_path,
+              insert: false
+            }).bounds;
           }
           catch (e) {
             nom.shape = null;

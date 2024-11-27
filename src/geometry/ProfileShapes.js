@@ -2,7 +2,11 @@ import paper from 'paper/dist/paper-core';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 export const loader = new SVGLoader();
 
-export const svgStub = '<svg xmlns="http://www.w3.org/2000/svg"><g>\n<path d="%" stroke="#000000"></path>\n</g></svg>';
+export const svgStubs = [
+  `<svg xmlns="http://www.w3.org/2000/svg"><path d="%" stroke="#000000"/></svg>`,
+  `<svg xmlns="http://www.w3.org/2000/svg">%</svg>`,
+];
+const svgStub = svgStubs[0];
 
 const fakePath = new paper.Path({
   insert: false,
