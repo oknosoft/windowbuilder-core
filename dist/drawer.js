@@ -13510,9 +13510,7 @@ class Scheme extends paper.Project {
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
-                  _scheme.draw_visualization();
                   if(from_service){
-                    _scheme.zoom_fit();
                     if(from_service.redraw) {
                       let i = 10;
                       while (i > 0 && _scheme._ch.length) {
@@ -13520,7 +13518,12 @@ class Scheme extends paper.Project {
                         _scheme.redraw();
                       }
                     }
+                    _scheme.draw_visualization();
+                    _scheme.zoom_fit();
                     return resolve();
+                  }
+                  else {
+                    _scheme.draw_visualization();
                   }
                 }
                 else {
@@ -13756,7 +13759,11 @@ class Scheme extends paper.Project {
     return bounds;
   }
   get strokeBounds() {
-    let bounds = this.l_dimensions.strokeBounds.unite(this.l_connective.strokeBounds);
+    let bounds = this.l_dimensions.strokeBounds;
+    const {strokeBounds} = this.l_connective;
+    if(strokeBounds.width && strokeBounds.height) {
+      bounds = bounds.unite(strokeBounds)
+    }
     this.contours.forEach((l) => bounds = bounds.unite(l.strokeBounds));
     return bounds;
   }
@@ -13993,8 +14000,7 @@ class Scheme extends paper.Project {
       if(!isNode) {
         isNode = $p.wsql.alasql.utils.isNode;
       }
-      const space = isNode ? 160 : 320;
-      const min = 900;
+      const space = 320, min = 900;
       let {width, height, center} = bounds;
       if (width < min) {
         width = min;
@@ -14010,7 +14016,7 @@ class Scheme extends paper.Project {
       view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
       const dx = view.viewSize.width - width * zoom;
       if(isNode) {
-        const dy = view.viewSize.height - height * zoom;
+        const dy = view.viewSize.height - height * zoom - 20;
         view.center = center.add([Math.sign(scaling.y) * dx, -Math.sign(scaling.y) * dy]);
       }
       else {
