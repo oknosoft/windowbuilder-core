@@ -214,6 +214,31 @@ export class BuilderElement extends paper.Group {
   }
 
   /**
+   * @summary Скрытый
+   * @desc элемент рисуется полупрозрачным
+   * @type Boolean
+   */
+  get hidden() {
+    return this.opacity < 0.5;
+  }
+  set hidden(v) {
+    this.opacity = v ? 0.1 : 1;
+  }
+
+  /**
+   * @summary Видимый
+   * @desc элемент нормальной прозрачности
+   * @type Boolean
+   */
+  get shown() {
+    return !this.hidden;
+  }
+  set shown(v) {
+    this.hidden = !v;
+  }
+  
+
+  /**
    * @summary Цвет элемента
    * @type CatClrs
    */
