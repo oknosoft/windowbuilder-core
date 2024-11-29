@@ -412,7 +412,8 @@ export default function (paper) {
             const tangent = this.getTangentAt(0);
             this.firstSegment.point = this.firstSegment.point.add(tangent.multiply(-delta));
             this.lastSegment.point = this.lastSegment.point.add(tangent.multiply(delta));
-          }else{
+          }
+          else{
             const {length} = this;
             let tangent = this.getTangentAt(length * 0.01);
             this.insert(0, this.firstSegment.point.add(tangent.multiply(-delta)));

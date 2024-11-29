@@ -176,13 +176,13 @@ export class CnnPoint {
   }
 
   points(mode) {
-    const {pts} = this.#raw;
+    const {pts, name} = this.#raw;
     this.checkActual();
     if(!pts.inner || !pts.outer || mode) {
       const {owner, point, isT, cnn, cnno, profile, profileOuter, inner, outer} = this.tuneRays();
       const {cnnTypes} = owner.root.enm;
       let cnnType = (!cnn || cnn.empty()) ? (profile ? (isT ? cnnTypes.t : cnnTypes.ad) : cnnTypes.i) : cnn.cnn_type;
-      Object.assign(pts, {cnn, cnno, cnnType});
+      Object.assign(pts, {name, cnn, cnno, cnnType});
       if(cnnType.is('av')) {
         cnnType = owner.orientation.is('vert') ? cnnTypes.long : cnnTypes.short; 
       }
