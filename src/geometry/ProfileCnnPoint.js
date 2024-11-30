@@ -191,7 +191,14 @@ export class CnnPoint {
       }
       const {prays} = this;
       if(mode && !cnnType.is('ad')) {
-        prays.inner = prays.inner.equidistant(cnn.size(owner, profile));
+        const size = cnn.size(owner, profile);
+        if(size) {
+          const pt = prays.inner.getNearestPoint(pts.interior);
+          const loc = prays.inner.getLocationOf(pt);
+          const line = new paper.Line(pt, pt.add(loc.tangent));
+          const side = -line.getSide(pts.interior, true);
+          prays.inner = prays.inner.equidistant(side * size);
+        }
       }
       switch (cnnType) {
         case cnnTypes.i: {
