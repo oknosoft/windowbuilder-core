@@ -68,5 +68,9 @@ exports.CatPartners = class CatPartners extends Object {
 
     return this?.toJSON ? this.toJSON() : this;
   }
+  
+  get abc() {
+    return $p.enm.abc.c;
+  }
 
 };

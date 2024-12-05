@@ -2282,6 +2282,10 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
     return this?.toJSON ? this.toJSON() : this;
   }
+  
+  get abc() {
+    return $p.enm.abc.c;
+  }
 }
 $p.CatPartners = CatPartners;
 class CatPartnersContact_informationRow extends TabularSectionRow{
@@ -7826,6 +7830,8 @@ $p.cat.create('products');
 class CatMargin_coefficients extends CatObj{
 get is_buyer(){return this._getter('is_buyer')}
 set is_buyer(v){this._setter('is_buyer',v)}
+get kind(){return this._getter('kind')}
+set kind(v){this._setter('kind',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get extra_charge(){return this._getter_ts('extra_charge')}
@@ -7845,29 +7851,33 @@ class CatMargin_coefficientsManager extends CatManager {
 
   /**
    * @summary Возвращает срез маржинальных коэффициентов для отдела на дату
-   * @param {Date} date
+   * @param {Date} date - дата среза
+   * @param {Number} kind - вид (0 - коэффициент, 1 - Скидка % мин, 2 - Скидка % макс)
    * @param {DocCalc_orderProductionRow} calc_order_row
    * @return {CoefficientsMap}
    */
-  slice({date, calc_order_row}) {
+  slice({date, kind = 0, calc_order_row}) {
     const {CoefficientsMap} = this.constructor;
-    const {branch} = calc_order_row._owner._owner;
+    const {branch, partner} = calc_order_row._owner._owner;
     const res = new CoefficientsMap();
-    for(const obj of this) {
-      for(const row of obj.extra_charge) {
-        if(row.date > date) {
-          continue;
-        }
-        const {obj} = row;
-        if(obj) {
-          if(!res.has(obj) || (!branch.empty() && branch._hierarchy(obj))) {
-            res.set(obj, row);
-          }
-        }
-        else if(!res.has(null)) {
-          res.set(null, row);
+    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
+    let source;
+    this.find_rows({kind, is_buyer: partner.abc}, obj => {
+      if(!source) {
+        source = obj;
+      }
+      else if(!branch.empty() && branch._hierarchy(obj.owner)){
+        if(branch === obj.owner || obj.owner._hierarchy(source.owner)) {
+          source = obj;
         }
       }
+    });
+    for(const row of source?.extra_charge) {
+      if(row.period > date) {
+        continue;
+      }
+      const obj = row.obj || null;
+      res.set(obj, row);
     }
     return res;
   }
@@ -7904,13 +7914,20 @@ class CatMargin_coefficientsManager extends CatManager {
      * 
      */
     coefficient(row) {
-      const {_owner} = row._owner;
-      const crow = row.elm < 0 && _owner.constructions.find({cnstr: -row.elm});
-      let obj = crow?.furn || _owner.sys;
-      if(obj.empty()) {
-        const {leading_product, origin} = _owner;
-        obj = leading_product.empty() ? origin : leading_product.sys;
+      const {_owner: {_owner}, nom: {price_group}} = row;
+      let obj, crow;
+      if(this.price_groups.includes(price_group)) {
+        obj = price_group;
       }
+      else {
+        crow = row.elm < 0 && _owner.constructions.find({cnstr: -row.elm});
+        obj = crow?.furn || _owner.sys;
+        if(obj.empty()) {
+          const {leading_product, origin} = _owner;
+          obj = leading_product.empty() ? origin : leading_product.sys;
+        }  
+      }
+      
       if(!this.has(obj)) {
         this.replenish(obj);
         // если не нашлось по иерархии, ищем максимум по системе
