@@ -9277,7 +9277,7 @@ class ProfileItem extends GeneratrixElement {
   get angle_hor() {
     const {b, e} = this;
     const res = (new paper.Point(e.x - b.x, b.y - e.y)).angle.round(2);
-    return res < 0 ? (res < -.5 ? res + 360 : 0) : res;
+    return res < 0 ? (res < -.12 ? res + 360 : 0) : res;
   }
   get length() {
     const {b, e, outer} = this.rays;
