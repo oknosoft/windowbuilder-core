@@ -278,13 +278,27 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Contour}
    */
   prod_layer() {
-    let {kind} = this._row;
+    let {kind, _owner} = this._row;
     let layer = this;
+    const {separate_frame_layers} = $p.job_prm.builder;
     while (kind === 0 && layer) {
-      layer = layer.layer;
-      if(!layer) {
+      
+      if(!layer.layer) {
+        if(separate_frame_layers) {
+          let min = Infinity;
+          _owner.find_rows({parent: 0}, ({cnstr}) => {
+            if(cnstr < min) {
+              min = cnstr;
+            }
+          });
+          if(layer.cnstr > min) {
+            return layer;
+          }
+        }
         break;
       }
+      
+      layer = layer.layer;      
       if([10, 11].includes(layer._row?.kind)) {
         return layer;
       }

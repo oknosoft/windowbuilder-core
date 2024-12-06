@@ -1964,13 +1964,25 @@ class Contour extends AbstractFilling(paper.Layer) {
     return kind;
   }
   prod_layer() {
-    let {kind} = this._row;
+    let {kind, _owner} = this._row;
     let layer = this;
+    const {separate_frame_layers} = $p.job_prm.builder;
     while (kind === 0 && layer) {
-      layer = layer.layer;
-      if(!layer) {
+      if(!layer.layer) {
+        if(separate_frame_layers) {
+          let min = Infinity;
+          _owner.find_rows({parent: 0}, ({cnstr}) => {
+            if(cnstr < min) {
+              min = cnstr;
+            }
+          });
+          if(layer.cnstr > min) {
+            return layer;
+          }
+        }
         break;
       }
+      layer = layer.layer;      
       if([10, 11].includes(layer._row?.kind)) {
         return layer;
       }
@@ -15908,7 +15920,7 @@ class ProductsBuilding {
           const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
           spec = cx.specification;
           if(!spec.count()) {
-            cx.sys = ox.sys;
+            cx.sys = layer.sys;
             cx.clr = ox.clr;
             const {bounds} = layer;
             cx.x = bounds.width;
@@ -15917,9 +15929,9 @@ class ProductsBuilding {
             cx.calc_order_row.nom = cx.prod_nom;
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
-            if(contour === layer) {
-              cx.svg = layer.get_svg();
-            }
+          }
+          if(!cx.svg) {
+            cx.svg = layer.get_svg();
           }
         }
       }

@@ -697,14 +697,15 @@ class ProductsBuilding {
 
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
+
+      // если текущий слой должен формировать виртуальное изделие - создаём
       function prod_row(contour) {
-        // если текущий слой должен формировать виртуальное изделие - создаём
         const layer = contour.prod_layer();
         if(layer) {
           const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
           spec = cx.specification;
           if(!spec.count()) {
-            cx.sys = ox.sys;
+            cx.sys = layer.sys;
             cx.clr = ox.clr;
             const {bounds} = layer;
             cx.x = bounds.width;
@@ -713,9 +714,9 @@ class ProductsBuilding {
             cx.calc_order_row.nom = cx.prod_nom;
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
-            if(contour === layer) {
-              cx.svg = layer.get_svg();
-            }
+          }
+          if(!cx.svg) {
+            cx.svg = layer.get_svg();
           }
         }
       }

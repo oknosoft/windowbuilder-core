@@ -344,6 +344,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       _order_rows.push(cx);
       cx.specification.clear();
+      cx.svg = '';
       if(!cx.calc_order_row) {
         calc_order.production.add({characteristic: cx});
       }
