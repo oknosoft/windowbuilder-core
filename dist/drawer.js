@@ -1938,8 +1938,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, weight} = this;
-    return (layer ? 'Створка №' : 'Рама №') + cnstr +
+    const {cnstr, level, weight} = this;
+    return (level ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
@@ -1983,11 +1983,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         break;
       }
       layer = layer.layer;      
-      if([10, 11].includes(layer._row?.kind)) {
+      if([1, 10, 11].includes(layer._row?.kind)) {
         return layer;
       }
     }
-    return [10, 11].includes(kind) ? layer : null;
+    return [1, 10, 11].includes(kind) ? layer : null;
   }
   get_svg(attr = {}) {
     for(const item of this.children) {
@@ -3143,7 +3143,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows, region = 0) {
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
     const glass_separately = cch.properties.predefined('glass_separately');
@@ -3161,7 +3161,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         rows.push(row);
       };
       rows = [];
-      _ox.specification.find_rows({dop: -1}, push);
+      prod_ox.specification.find_rows({dop: -1}, push);
       if(glass_separately) {
         for(const elm of glasses) {
           if(glass_separately?.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm})) {
@@ -3218,8 +3218,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.draw_glass_numbers();
     }
     for(const contour of contours){
-      contour.draw_visualization(
-        contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows), region);
+      contour.draw_visualization(contour.prod_ox === prod_ox ? rows : null, region);
     }
   }
   draw_glass_numbers() {
@@ -4844,7 +4843,7 @@ class ContourVirtual extends Contour {
     }
   }
   get level() {
-    return this.layer.level;
+    return -1;
   }
   presentation(bounds) {
     const text = super.presentation(bounds);
@@ -11133,10 +11132,7 @@ class Profile extends ProfileItem {
     if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
       return elm_types.impost;
     }
-    if(this.layer?.layer instanceof Contour) {
-      return elm_types.flap;
-    }
-    return elm_types.rama;
+    return this.layer?.level ? elm_types.flap : elm_types.rama;
   }
   get is_bundle() {
     return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
@@ -15474,8 +15470,7 @@ class ProductsBuilding {
       cnn.calculate_spec({elm, elm2, len_angl, cnn_other, ox, spec});
     }
     function furn_spec(contour) {
-      const {ContourNested} = EditorInvisible;
-      if(!contour.parent || contour instanceof ContourNested || contour.parent instanceof ContourNested || contour._ox !== spec._owner) {
+      if(!contour.level) {
         return false;
       }
       const {furn_cache, furn} = contour;

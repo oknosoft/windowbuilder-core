@@ -113,7 +113,7 @@ class ContourVirtual extends Contour {
    * @return {number}
    */
   get level() {
-    return this.layer.level;
+    return -1;
   }
 
   presentation(bounds) {

@@ -223,8 +223,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, weight} = this;
-    return (layer ? 'Створка №' : 'Рама №') + cnstr +
+    const {cnstr, level, weight} = this;
+    return (level ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
@@ -299,11 +299,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       
       layer = layer.layer;      
-      if([10, 11].includes(layer._row?.kind)) {
+      if([1, 10, 11].includes(layer._row?.kind)) {
         return layer;
       }
     }
-    return [10, 11].includes(kind) ? layer : null;
+    return [1, 10, 11].includes(kind) ? layer : null;
   }
 
   /**
@@ -1875,7 +1875,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_visualization(rows, region = 0) {
 
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
     const glass_separately = cch.properties.predefined('glass_separately');
@@ -1896,7 +1896,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         rows.push(row);
       };
       rows = [];
-      _ox.specification.find_rows({dop: -1}, push);
+      prod_ox.specification.find_rows({dop: -1}, push);
       // для заполнений отдельно, дополняем строки визуализации
       if(glass_separately) {
         for(const elm of glasses) {
@@ -1970,8 +1970,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     
     // перерисовываем вложенные контуры
     for(const contour of contours){
-      contour.draw_visualization(
-        contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows), region);
+      contour.draw_visualization(contour.prod_ox === prod_ox ? rows : null, region);
     }
 
   }

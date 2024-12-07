@@ -96,11 +96,7 @@ class Profile extends ProfileItem {
     }
 
     // Если вложенный контур, значит это створка
-    if(this.layer?.layer instanceof Contour) {
-      return elm_types.flap;
-    }
-
-    return elm_types.rama;
+    return this.layer?.level ? elm_types.flap : elm_types.rama;
   }
 
   /**

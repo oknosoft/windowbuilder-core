@@ -94,10 +94,9 @@ class ProductsBuilding {
      * @param contour {Contour}
      */
     function furn_spec(contour) {
-
-      const {ContourNested} = EditorInvisible;
+      
       // у рамных контуров и вложенных изделий, фурнитуры не бывает
-      if(!contour.parent || contour instanceof ContourNested || contour.parent instanceof ContourNested || contour._ox !== spec._owner) {
+      if(!contour.level) {
         return false;
       }
 
