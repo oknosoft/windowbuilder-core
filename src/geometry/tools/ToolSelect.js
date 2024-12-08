@@ -27,7 +27,7 @@ export class ToolSelect extends ToolSelectable {
   
   get mover() {
     const {activeLayer, rootLayer} = this.project;
-    return rootLayer.selectedProfiles.length ? rootLayer.mover : activeLayer.mover;
+    return (!activeLayer || rootLayer.selectedProfiles.length) ? rootLayer.mover : activeLayer.mover;
   }
 
   get selectedProfiles() {
