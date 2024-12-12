@@ -37,7 +37,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
   
   static CoefficientsMap = class CoefficientsMap extends Map {
 
-    replenish(obj) {
+    replenish(obj, ox) {
       for(const [key, value] of this) {
         // ищем по иерархии системы или фурнитуры и запоминаем
         if(obj._hierarchy(key)) {
@@ -52,8 +52,8 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
         }
       }
       if(!this.has(obj) && obj instanceof CatProduction_params) {
-        const pl = obj._extra('product_line');
-        if(pl && !pl.empty() && this.has(pl)) {
+        const pl = ox.owner.nom_group;
+        if(!pl.empty() && this.has(pl)) {
           this.set(obj, this.get(pl));
         }
       }
@@ -67,8 +67,9 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
      * 
      */
     coefficient(row) {
-      const {_owner: {_owner}, nom: {price_group}} = row;
+      let {_owner: {_owner}, nom: {price_group}} = row;
       let obj, crow;
+      // если вытесняющая ценовая группа
       if(this.price_groups.includes(price_group)) {
         obj = price_group;
       }
@@ -77,18 +78,24 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
         obj = crow?.furn || _owner.sys;
         if(obj.empty()) {
           const {leading_product, origin} = _owner;
-          obj = leading_product.empty() ? origin : leading_product.sys;
+          if(leading_product.empty()) {
+            obj = origin;
+          }
+          else {
+            obj = leading_product.sys;
+            _owner = leading_product;
+          }
         }  
       }
       
       if(!this.has(obj)) {
-        this.replenish(obj);
+        this.replenish(obj, _owner);
         // если не нашлось по иерархии, ищем максимум по системе
         if(!this.has(obj)) {
           if(obj instanceof CatInsert_bind) {
             for(const {inset} of obj.inserts) {
               if(!this.has(inset)) {
-                this.replenish(inset);
+                this.replenish(inset, _owner);
               }
               if(this.has(inset)) {
                 this.set(obj, this.get(inset));
@@ -102,7 +109,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
           else if(obj === crow?.furn) {
             const {sys} = _owner;
             if(!this.has(sys)) {
-              this.replenish(sys);
+              this.replenish(sys, _owner);
             }
             if(this.has(sys)) {
               this.set(obj, this.get(sys));
