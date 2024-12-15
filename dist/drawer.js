@@ -19496,6 +19496,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('has_region_elm');
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      prm.fetch_value = utils.translit;
+    }
+  })('mark_latin');
 });
 class FakeLenAngl {
   constructor({len, inset}) {
