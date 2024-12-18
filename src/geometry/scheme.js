@@ -351,6 +351,11 @@ class Scheme extends paper.Project {
     }
   }
 
+  get is_read_only() {
+    const {obj_delivery_state, posted} = this.ox.calc_order;
+    return posted || obj_delivery_state.is('Отправлен') || obj_delivery_state.is('Подтвержден');
+  }
+
   /**
    * Алиас к табчасти соединений текущей продукции
    */

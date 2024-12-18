@@ -208,7 +208,7 @@ class ProfileGlBead extends ProfileItem {
     }
 
     // Если привязка не нарушена, возвращаем предыдущее значение
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
       check_distance(res.profile);
       if(res.distance < consts.sticking){
         return res;

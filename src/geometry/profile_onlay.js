@@ -238,7 +238,7 @@ class Onlay extends ProfileItem {
     const is_filling = res.profile instanceof Filling;
 
     // Если привязка не нарушена, возвращаем предыдущее значение
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
 
       if(is_filling){
         const np = res.profile.path.getNearestPoint(point);

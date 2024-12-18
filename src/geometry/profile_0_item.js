@@ -136,7 +136,7 @@ class CnnPoint {
   }
 
   clear(mode) {
-    const {_attr} = this._parent;
+    const {_attr, project} = this._parent;
     if(mode === 'with_neighbor') {
       _attr._corns.length = 0;
       delete _attr.d0;
@@ -152,9 +152,11 @@ class CnnPoint {
     if(this.is_cut) {
       this.is_cut = false;
     }
-    const {_row} = this;
-    if(_row) {
-      _row.elm2 = 0;
+    if(!project.is_read_only) {
+      const {_row} = this;
+      if(_row) {
+        _row.elm2 = 0;
+      }
     }
     this.profile = null;
     this.err = null;
@@ -1575,18 +1577,22 @@ class ProfileItem extends GeneratrixElement {
     const {_row, _attr, length, glbeads, angle_hor} = this;
     // сохраняем угол к горизонту и длину профиля в _row
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
-      if(!this.project._attr._loading) {
+      const {_attr, is_read_only} = this.project;
+      if(is_read_only) {
+        return;
+      }
+      if(!_attr?._loading) {
         _row.len = length;
         _row.angle_hor = angle_hor;
       }
-      if(_attr && _attr._rays) {
+      if(_attr?._rays) {
         const {nom: old} = _attr;
         delete _attr.nom;
         const {nom} = this;
         if(old !== nom) {
           arr.push(this);
         }
-      }      
+      }
     }
     for(const chld of this.getItems({class: ProfileItem}).concat(glbeads)) {
       chld.check_nom(arr);

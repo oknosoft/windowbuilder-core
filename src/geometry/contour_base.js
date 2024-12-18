@@ -2537,7 +2537,10 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
     const {project, sys, own_sys, prod_ox, params, layer} = this;
-    const {_dp, _attr} = project;
+    const {_dp, _attr, is_read_only} = project;
+    if(is_read_only) {
+      return;
+    }
     const {blank} = $p.utils;
     let notify;
 

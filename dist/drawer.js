@@ -3618,7 +3618,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   refresh_prm_links(root) {
     const cnstr = root ? 0 : this.cnstr || -9999;
     const {project, sys, own_sys, prod_ox, params, layer} = this;
-    const {_dp, _attr} = project;
+    const {_dp, _attr, is_read_only} = project;
+    if(is_read_only) {
+      return;
+    }
     const {blank} = $p.utils;
     let notify;
     params.find_rows({cnstr, inset: blank.guid}, (prow) => {
@@ -8580,7 +8583,7 @@ class CnnPoint {
     return this._parent;
   }
   clear(mode) {
-    const {_attr} = this._parent;
+    const {_attr, project} = this._parent;
     if(mode === 'with_neighbor') {
       _attr._corns.length = 0;
       delete _attr.d0;
@@ -8596,9 +8599,11 @@ class CnnPoint {
     if(this.is_cut) {
       this.is_cut = false;
     }
-    const {_row} = this;
-    if(_row) {
-      _row.elm2 = 0;
+    if(!project.is_read_only) {
+      const {_row} = this;
+      if(_row) {
+        _row.elm2 = 0;
+      }
     }
     this.profile = null;
     this.err = null;
@@ -9581,18 +9586,22 @@ class ProfileItem extends GeneratrixElement {
   check_nom(arr) {
     const {_row, _attr, length, glbeads, angle_hor} = this;
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
-      if(!this.project._attr._loading) {
+      const {_attr, is_read_only} = this.project;
+      if(is_read_only) {
+        return;
+      }
+      if(!_attr?._loading) {
         _row.len = length;
         _row.angle_hor = angle_hor;
       }
-      if(_attr && _attr._rays) {
+      if(_attr?._rays) {
         const {nom: old} = _attr;
         delete _attr.nom;
         const {nom} = this;
         if(old !== nom) {
           arr.push(this);
         }
-      }      
+      }
     }
     for(const chld of this.getItems({class: ProfileItem}).concat(glbeads)) {
       chld.check_nom(arr);
@@ -10916,7 +10925,7 @@ class ProfileSegment extends ProfileItem {
     if(!point){
       point = this[node];
     }
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
       if(!res.cnn) {
         res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
       }
@@ -11989,7 +11998,7 @@ class ProfileAddl extends ProfileItem {
     if(!point){
       point = this[node];
     }
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
       check_distance(res.profile);
       if(res.distance < consts.sticking){
         return res;
@@ -12462,7 +12471,7 @@ class ProfileGlBead extends ProfileItem {
     if(!point){
       point = this[node];
     }
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
       check_distance(res.profile);
       if(res.distance < consts.sticking){
         return res;
@@ -12838,7 +12847,7 @@ class Onlay extends ProfileItem {
       point = this[node];
     }
     const is_filling = res.profile instanceof Filling;
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
       if(is_filling){
         const np = res.profile.path.getNearestPoint(point);
         if(np.getDistance(point) < consts.sticking_l){
@@ -13358,6 +13367,10 @@ class Scheme extends paper.Project {
       const res = o1._owner.cnn_elmnts._obj.find((row) => row.elm1 === e1 && row.elm2 === e2);
       return res && res._row.cnn;
     }
+  }
+  get is_read_only() {
+    const {obj_delivery_state, posted} = this.ox.calc_order;
+    return posted || obj_delivery_state.is('Отправлен') || obj_delivery_state.is('Подтвержден');
   }
   get cnns() {
     return this.ox.cnn_elmnts;
