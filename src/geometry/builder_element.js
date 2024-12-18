@@ -824,7 +824,7 @@ class BuilderElement extends paper.Group {
     const {clr_group} = _row.inset;
     let clr = _row.clr._manager.getter(v);
 
-    if(clr.empty() || !clr_group.contains(clr)) {
+    if(!project.is_read_only && (clr.empty() || !clr_group.contains(clr))) {
       const {sys} = this.layer;
       const group = clr_group.empty() ? sys.clr_group : clr_group;
       let {default_clr} = sys;
@@ -837,7 +837,7 @@ class BuilderElement extends paper.Group {
       clr = default_clr;
     }
 
-    if(clr_group.contains(clr) && _row.clr != clr) {
+    if((clr_group.contains(clr) || project.is_read_only) && _row.clr != clr) {
       _row.clr = clr;
       project.register_change();
     }

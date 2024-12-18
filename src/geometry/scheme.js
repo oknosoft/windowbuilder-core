@@ -129,6 +129,9 @@ class Scheme extends paper.Project {
    * Освежает отбор в метаданных доступных цветов и при необходимости, цвет изделия
    */
   check_clr() {
+    if(this.is_read_only) {
+      return;
+    }
     const {ox, _dp} = this;
     const {cat, utils} = $p;
     const cmeta = _dp._metadata('clr');
