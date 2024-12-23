@@ -32,7 +32,7 @@ export const meta= {
     base_unit: {
       synonym: "Базовая единица измерения",
       choiceGrp: "elm",
-      "mandatory": true,
+      mandatory: true,
       type: {
         types: ["cat.units"]
       }
@@ -90,7 +90,7 @@ export const meta= {
       "multiline_mode": false,
       "tooltip": "Для подстановки в документы",
       "choice_groups_elm": "elm",
-      "mandatory": true,
+      mandatory: true,
       "type": {
         "types": [
           "enm.vat_rates"

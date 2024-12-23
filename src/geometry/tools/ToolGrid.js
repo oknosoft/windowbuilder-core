@@ -9,8 +9,13 @@ export class ToolGrid extends ToolElement {
     super();
     Object.assign(this, {
       name: 'grid',
-      distanceThreshold: 10,
-      minDistance: 10,
+      dp: $p.dp.builderGrid.create({
+        split: 'ДелениеГоризонтальных',
+        w: 6000,
+        h: 3000,
+        elm_by_x: 6,
+        elm_by_y: 3,
+      }),
     });
     this.on({
       activate() {

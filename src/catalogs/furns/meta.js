@@ -759,7 +759,7 @@ export const meta= {
           multiline: false,
           tooltip: "",
           choiceGrp: "elm",
-          "mandatory": true,
+          mandatory: true,
           type: {
             types: [
               "cch.properties"

@@ -203,7 +203,7 @@ export const meta = {
         choiceGrp: "elm",
         type: {
           types: [
-            "enm.lay_split_types"
+            "enm.laySplitTypes"
           ]
         }
       },
@@ -366,7 +366,7 @@ export const meta = {
             synonym: "Размер",
             multiline: false,
             tooltip: "Размер ячейки. Порядок в номере строки, направление в elm",
-            "mandatory": true,
+            mandatory: true,
             type: {
               types: [
                 "string"
