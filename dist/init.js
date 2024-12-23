@@ -8141,8 +8141,8 @@ set qty(v){this._setter('qty',v)}
 $p.DocInventory_goodsGoodsRow = DocInventory_goodsGoodsRow;
 $p.doc.create('inventory_goods');
 class DocWork_centers_task extends DocObj{
-get key(){return this._getter('key')}
-set key(v){this._setter('key',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
 get recipient(){return this._getter('recipient')}
 set recipient(v){this._setter('recipient',v)}
 get biz_cuts(){return this._getter('biz_cuts')}
@@ -9996,6 +9996,8 @@ get elm(){return this._getter('elm')}
 set elm(v){this._setter('elm',v)}
 get sz(){return this._getter('sz')}
 set sz(v){this._setter('sz',v)}
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
 get changed(){return this._getter('changed')}
 set changed(v){this._setter('changed',v)}
 }
