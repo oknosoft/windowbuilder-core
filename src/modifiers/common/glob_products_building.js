@@ -863,6 +863,19 @@ class ProductsBuilding {
         // сохраняем картинку вместе с изделием
         if(attr.svg !== false) {
           ox.svg = scheme.get_svg();
+          if($p.job_prm.builder.separate_frame_layers) {
+            const {contours} = scheme;
+            if(contours.length > 1) {
+              let min = Infinity, root;
+              for(const layer of contours) {
+                if(layer.cnstr < min) {
+                  min = layer.cnstr;
+                  root = layer;
+                }
+              }
+              root.dop = {svg: root.get_svg()};
+            }
+          }
         }
 
         return this.saver({ox, scheme, attr, finish})
