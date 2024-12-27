@@ -1258,14 +1258,16 @@ class Scheme extends paper.Project {
     ox.glasses.clear();
     
     // пустые строки в glass_specification
-    const rm = [];
-    for(const row of ox.glass_specification) {
-      if(row.inset.empty()) {
-        rm.push(row);
+    if(attr.save) {
+      const rm = [];
+      for(const row of ox.glass_specification) {
+        if(row.inset.empty()) {
+          rm.push(row);
+        }
       }
-    }
-    for(const row of rm) {
-      ox.glass_specification.del(row);
+      for(const row of rm) {
+        ox.glass_specification.del(row);
+      }
     }
 
     let res = Promise.resolve();
