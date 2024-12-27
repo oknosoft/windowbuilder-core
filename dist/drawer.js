@@ -13980,6 +13980,15 @@ class Scheme extends paper.Project {
       return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
+    const rm = [];
+    for(const row of ox.glass_specification) {
+      if(row.inset.empty()) {
+        rm.push(row);
+      }
+    }
+    for(const row of rm) {
+      ox.glass_specification.del(row);
+    }
     let res = Promise.resolve();
     const push = (contour) => {
       res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
