@@ -7120,6 +7120,8 @@ $p.CatCharacteristicsGlassesRow = CatCharacteristicsGlassesRow;
 class CatCharacteristicsSpecificationRow extends TabularSectionRow{
 get elm(){return this._getter('elm')}
 set elm(v){this._setter('elm',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
 get nom(){return this._getter('nom')}
 set nom(v){this._setter('nom',v)}
 get clr(){return $p.cat.clrs.getter(this._obj.clr)}
