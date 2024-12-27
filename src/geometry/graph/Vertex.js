@@ -26,7 +26,7 @@ export class GraphVertex {
    * @type {MetaEngine}
    */
   get root() {
-    return (this.edges.head?.value || this.endEdges.head?.value)?.profile?.root;
+    return (this.edges.head?.value || this.endEdges.head?.value)?.profile?.root || $p;
   }
 
   /**
@@ -73,23 +73,24 @@ export class GraphVertex {
    * @type {Array.<EnmCnnTypes>}
    */
   get cnnTypes() {
-    const {cnnPoints: {length}, root} = this;
+    const {cnnPoints, root} = this;
+    const {length} = cnnPoints;
     const types = [];
     if(length) {
-      if(length === 1) {
+      if(length === 3) {
+        types.push('cut0');
+      }
+      else if(length === 1 || cnnPoints.every(cnnPoint => cnnPoint.isT)) {
         types.push(this.isT ? 't' : 'i');
       }
-      else if(length == 2) {
+      else if(length === 2) {
         types.push('ad', 'ah', 'av');
-      }
-      else if(length == 3) {
-        types.push('cut0');
       }
       else {
         types.push('tt');
       }
     }
-    return types.map((v) => (root || $p).enm.cnnTypes.get(v));
+    return types.map((v) => root.enm.cnnTypes.get(v));
   }
 
   /**
