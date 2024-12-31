@@ -28,10 +28,8 @@ export class GeneratrixElement extends BuilderElement {
    *  @param {CatInserts} [attr.inset] - вставка элемента. если не указано, будет вычислена по типу элемента
    *  @param {paper.Path} [attr.generatrix] - путь образующей
    *  @param {Object} [attr.cnns] - соединения концов профиля
-   *  @param {CatCnns} [attr.cnns.b]
-   *  @param {CatCnns} [attr.cnns.e]
-   *  @param {CatCnns} [attr.cnns.bOuter]
-   *  @param {CatCnns} [attr.cnns.eOuter]
+   *  @param {Object} [attr.cnns.b] - {cnn, cnnOuter, profile, profileOuter}
+   *  @param {Object} [attr.cnns.e]
    */
   constructor({generatrix, cnns, edge, ...attr}) {
     super(attr);
@@ -44,8 +42,8 @@ export class GeneratrixElement extends BuilderElement {
     if(edge) {
       this.raw('edge', edge);
     }
-    this.raw('b', new CnnPoint({owner: this, name: 'b', cnn: cnns?.b, cnnOuter: cnns?.bOuter}));
-    this.raw('e', new CnnPoint({owner: this, name: 'e', cnn: cnns?.e, cnnOuter: cnns?.eOuter}));
+    this.raw('b', new CnnPoint({owner: this, name: 'b', ...cnns?.b}));
+    this.raw('e', new CnnPoint({owner: this, name: 'e', ...cnns?.e}));
     this.raw('inner', new paper.Path({insert: false}));
     this.raw('outer', new paper.Path({insert: false}));
     this.raw('cut', new paper.Path({insert: false}));

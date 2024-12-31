@@ -393,6 +393,28 @@ export class Contour extends paper.Layer {
       strokeColor: project.props.carcass === 'normal' ? new paper.Color(0.5, 0.5) : (other.inset ? '#00a' : '#a00'),
       strokeScaling: false,
     });
+    // профили на концах
+    if(!other.cnns) {
+      other.cnns = {};
+    }
+    if(!other.cnns.b) {
+      for(const profile of this.profiles) {
+        if(profile.generatrix.isNearest(b)) {
+          if(!other.cnns.b) {
+            other.cnns.b = {profile}
+          }
+        }
+      }
+    }
+    if(!other.cnns.e) {
+      for(const profile of this.profiles) {
+        if(profile.generatrix.isNearest(e)) {
+          if(!other.cnns.e) {
+            other.cnns.e = {profile}
+          }
+        }
+      }
+    }
     // TODO: defaultInset
     const ProfileConstructor = this.ProfileConstructor(other);
     const profile = new ProfileConstructor({

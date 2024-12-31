@@ -35,12 +35,17 @@ export class CnnPoint {
     });
   }
   
+  reset() {
+    this.#raw.profile = null;
+    this.#raw.profileOuter = null;
+  }
+  
   checkActual() {
     const {stamp} = this.owner.project.props;
     if(stamp !== this.#raw.stamp) {
       const raw = this.#raw;
-      raw.profile = null;
-      raw.profileOuter = null;
+      // raw.profile = null;
+      // raw.profileOuter = null;
       raw.isT = null;
       raw.stamp = stamp;
       raw.outer.removeSegments();
@@ -280,22 +285,17 @@ export class CnnPoint {
    * @type {null|GeneratrixElement}
    */
   get profile() {
-    this.checkActual();
     if(this.#raw.profile === null) {
-      const {point, owner, vertex} = this;
+      const {owner, vertex} = this;
+      const {point, cnnPoints} = vertex;
       const profiles = [];
-      for(const cnnPoint of vertex.cnnPoints) {
-        if(cnnPoint !== this) {
-          profiles.push(cnnPoint.owner);
+      for(const cnnPoint of cnnPoints) {
+        if(cnnPoint !== this) { // && someSide
+          profiles.push(cnnPoint.isT ? cnnPoint.profile : cnnPoint.owner);
         }
       }
       // если это соединение T, смотрим на рёбра
       if(!profiles.length) {
-        // for(const profile of vertex.profiles) {
-        //   if(profile !== owner) {
-        //     profiles.push(profile);
-        //   }
-        // }
         for(const profile of owner.layer.profiles) {
           if(profile !== owner && profile.generatrix.isNearest(point)) {
             profiles.push(profile);
@@ -364,8 +364,15 @@ export class CnnPoint {
   get isT() {
     this.checkActual();
     if(typeof this.#raw.isT !== 'boolean') {
-      const {profile, point} = this;
-      this.#raw.isT = profile && !profile.b.point.isNearest(point) && !profile.e.point.isNearest(point);
+      const {name, vertex, owner} = this;
+      const edges = (name === 'b' ? vertex.getEndEdges() : vertex.getEdges()).filter(v => v.profile !== owner);
+      if(edges.length) {
+        this.#raw.isT = edges.some(({profile}) => profile.b.vertex !== vertex && profile.e.vertex !== vertex);
+      }
+      else {
+        const {profile} = this;
+        this.#raw.isT = profile && profile.b.vertex !== vertex && profile.e.vertex !== vertex;
+      }
     }
     return this.#raw.isT;
   }

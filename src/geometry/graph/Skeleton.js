@@ -233,35 +233,45 @@ export class Skeleton extends Graph {
       this.addEdge(new GraphEdge({startVertex: endVertex, endVertex: startVertex, profile}));
     }
 
-    // проверим соседей. возможно, им нужно обратное ребро
-    const checked = new Set();
-    for(const vertex of [startVertex, endVertex]) {
-      for(const edge of vertex.getEdges()) {
-        if(edge.profile === profile || checked.has(edge.profile)) {
-          continue;
+    // если нет рёбер, исходящих из конечной точки, добавляем
+    if(!endVertex.getEdges().length) {
+      for(const endEdge of endVertex.getEndEdges()) {
+        if(endEdge.profile !== profile) {
+          this.addEdge(new GraphEdge({startVertex: endEdge.endVertex, endVertex: endEdge.startVertex, profile: endEdge.profile}));
+          break;
         }
-        for(const endEdge of vertex.getEndEdges()) {
-          if(edge.profile === endEdge.profile) {
-            checked.add(edge.profile);
-            break;
-          }
-        }
-        if(checked.has(edge.profile)) {
-          continue;
-        }
-        // for(const corn of [ab, ae]) {
-        //   if((corn.elm1 === profile.elm && corn.elm2 === edge.profile.elm) || (corn.elm2 === profile.elm || corn.elm1 === edge.profile.elm)) {
-        //     if(edge.startVertex.point.isNearest(edge.profile.b)) {
-        //       const startVertex = this.createVertexByPoint(edge.profile.e);
-        //       const outer_adge = new GraphEdge({startVertex, endVertex: edge.startVertex, profile: edge.profile});
-        //       this.addEdge(outer_adge);
-        //       console.log(edge.profile);
-        //       checked.add(edge.profile);
-        //     }
-        //   }
-        // }
       }
     }
+
+    // проверим соседей. возможно, им нужно обратное ребро
+    // const checked = new Set();
+    // for(const vertex of [startVertex, endVertex]) {
+    //   for(const edge of vertex.getEdges()) {
+    //     if(edge.profile === profile || checked.has(edge.profile)) {
+    //       continue;
+    //     }
+    //     for(const endEdge of vertex.getEndEdges()) {
+    //       if(edge.profile === endEdge.profile) {
+    //         checked.add(edge.profile);
+    //         break;
+    //       }
+    //     }
+    //     if(checked.has(edge.profile)) {
+    //       continue;
+    //     }
+    //     // for(const corn of [ab, ae]) {
+    //     //   if((corn.elm1 === profile.elm && corn.elm2 === edge.profile.elm) || (corn.elm2 === profile.elm || corn.elm1 === edge.profile.elm)) {
+    //     //     if(edge.startVertex.point.isNearest(edge.profile.b)) {
+    //     //       const startVertex = this.createVertexByPoint(edge.profile.e);
+    //     //       const outer_adge = new GraphEdge({startVertex, endVertex: edge.startVertex, profile: edge.profile});
+    //     //       this.addEdge(outer_adge);
+    //     //       console.log(edge.profile);
+    //     //       checked.add(edge.profile);
+    //     //     }
+    //     //   }
+    //     // }
+    //   }
+    // }
   }
 
   addProfiles(profiles) {
@@ -286,10 +296,16 @@ export class Skeleton extends Graph {
     const to = vertex.getEndEdges();
     for(const toEdge of to) {
       for(const fromEdge of from) {
-        if(fromEdge.profile === toEdge.profile && fromEdge.startVertex === vertex && toEdge.endVertex === vertex) {
+        if(fromEdge.profile === toEdge.profile && 
+            fromEdge.startVertex === vertex && 
+            toEdge.endVertex === vertex &&
+            fromEdge.profile.b.vertex !== vertex &&
+            fromEdge.profile.e.vertex !== vertex) {
           this.deleteEdge(fromEdge);
           this.deleteEdge(toEdge);
-          this.addEdge(new GraphEdge({startVertex: toEdge.startVertex, endVertex: fromEdge.endVertex, profile: fromEdge.profile}));
+          if(!toEdge.startVertex.hasNeighbor(fromEdge.endVertex)) {
+            this.addEdge(new GraphEdge({startVertex: toEdge.startVertex, endVertex: fromEdge.endVertex, profile: fromEdge.profile}));
+          }
           const {b, e} = fromEdge.profile;
           toEdge.startVertex.addCnnPointIfNearest(b);
           fromEdge.endVertex.addCnnPointIfNearest(b);
@@ -418,9 +434,9 @@ export class Skeleton extends Graph {
             }
             const ntangent = edge.getTangentAt(edge.startVertex);
             let angle = tangent.getDirectedAngle(ntangent);
-            if(angle < 0) {
-              angle += 360;
-            }
+            // if(angle < 0) {
+            //   angle += 360;
+            // }
             if(angle > maxAngle) {
               maxAngle = angle;
             }
