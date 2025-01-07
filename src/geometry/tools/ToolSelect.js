@@ -3,6 +3,7 @@ import paper from 'paper/dist/paper-core';
 import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
 import {BuilderElement} from '../BuilderElement';
+import {DimensionLine} from '../DimensionLine';
 
 const {Point} = paper;
 const arrowKeys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
@@ -58,7 +59,7 @@ export class ToolSelect extends ToolSelectable {
       
 
       let item = hitItem.item.parent;
-      if(item && !(item instanceof BuilderElement)) {
+      if(item && !(item instanceof BuilderElement || item instanceof DimensionLine)) {
         item = item.parent;
       }
       if(space && item?.nearest) {

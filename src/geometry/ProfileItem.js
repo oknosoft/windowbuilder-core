@@ -11,9 +11,9 @@ export class Profile extends GeneratrixElement {
   }
 
   get elmType() {
-    const {project: {root}, layer, b, e} = this;
-    const {elmTypes} = root.enm; 
-    if(b.isT || e.isT) {
+    const {project: {root}, layer, b, e, edges} = this;
+    const {elmTypes} = root.enm;
+    if(b.isT || e.isT || Array.from(edges).some(edge => edge.isOuter())) {
       return elmTypes.impost;
     }
     return layer.layer?.virtual ? elmTypes.rama : elmTypes[layer.layer ? 'flap' : 'rama'];

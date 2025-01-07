@@ -27,29 +27,20 @@ export class Skeleton extends Graph {
       .find((vertex) => vertex.point.isNearest(point, delta));
   }
 
-  /**
-   * Возвращает массив узлов, связанных с текущим профилем
-   * @param profile
-   * @return {GraphVertex[]}
-   */
-  vertexesByProfile(profile) {
-    const res = new Set();
-    this.getAllEdges().forEach((edge) => {
-      if(edge.profile === profile) {
-        res.add(edge.startVertex);
-        res.add(edge.endVertex);
-      }
-    });
-    return Array.from(res);
+  addEdge(edge) {
+    const {profile} = edge;
+    if(profile?.edges && !profile.edges.has(edge)) {
+      profile.edges.add(edge);
+    }
+    return super.addEdge(edge);
   }
 
-  /**
-   * Возвращает массив рёбер, связанных с текущим профилем
-   * @param profile
-   * @return {GraphEdge[]}
-   */
-  edgesByProfile(profile) {
-    return this.getAllEdges().filter((edge) => edge.profile === profile);
+  deleteEdge(edge) {
+    super.deleteEdge(edge);
+    const {profile} = edge;
+    if(profile?.edges?.has(edge)) {
+      profile.edges.delete(edge);
+    }
   }
 
   /**
@@ -65,7 +56,7 @@ export class Skeleton extends Graph {
       right: [],
       offset: generatrix.getOffsetOf(generatrix.getNearestPoint(point)),
     };
-    for(const vertex of this.vertexesByProfile(profile)) {
+    for(const vertex of profile.vertexes) {
       const offset = generatrix.getOffsetOf(generatrix.getNearestPoint(vertex.point));
       if(offset < res.offset) {
         res.left.push({vertex, offset});
@@ -325,15 +316,15 @@ export class Skeleton extends Graph {
    */
   removeProfile(profile) {
     // если к профилю есть примыкания импостов, удалять нельзя
-    const vertexes = this.vertexesByProfile(profile);
+    const {vertexes} = profile;
     if(vertexes.length > 2) {
       throw new Error('Сначала удалите примыкающие импосты');
     }
-    this.edgesByProfile(profile).some((edge) => {
+    for(const edge of profile.edges) {
       this.deleteEdge(edge);
       this.unSplitEdges(edge.startVertex, profile);
       this.unSplitEdges(edge.endVertex, profile);
-    });
+    }
     // если узел не содержит профилей, удаляем
     for(const vertex of vertexes) {
       if(!vertex.edges.head && !vertex.endEdges.head) {

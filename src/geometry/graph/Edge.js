@@ -77,13 +77,13 @@ export class GraphEdge {
       return cache.get(null).isOuter;
     }
 
-    const {profile, startVertex: {point: b}, endVertex: {point: e}} = this;
-    if(profile.b.point.isNearest(b) || profile.e.point.isNearest(e)) {
+    const {profile, startVertex, endVertex} = this;
+    if(profile.b.vertex === startVertex || profile.e.vertex === endVertex) {
       return false;
     }
     const {generatrix} = profile;
-    const nb = generatrix.getNearestPoint(b);
-    const ne = generatrix.getNearestPoint(e);
+    const nb = generatrix.getNearestPoint(startVertex.point);
+    const ne = generatrix.getNearestPoint(endVertex.point);
     const isOuter = generatrix.getOffsetOf(nb) > generatrix.getOffsetOf(ne);
     cache.set(null, {isOuter});
     return isOuter;

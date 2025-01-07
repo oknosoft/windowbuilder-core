@@ -48,6 +48,7 @@ export class GeneratrixElement extends BuilderElement {
     this.raw('outer', new paper.Path({insert: false}));
     this.raw('cut', new paper.Path({insert: false}));
     this.raw('path', new paper.Path({parent: this, name: 'path', ...pathAttr}));
+    this.edges = new Set();
   }
   
   get skeleton() {
@@ -109,6 +110,15 @@ export class GeneratrixElement extends BuilderElement {
    */
   get edge() {
     return this.raw('edge');
+  }
+  
+  get vertexes() {
+    const res = new Set();
+    for(const edge of this.edges) {
+      res.add(edge.startVertex);
+      res.add(edge.endVertex);
+    }
+    return Array.from(res);
   }
 
   get cnnII() {
