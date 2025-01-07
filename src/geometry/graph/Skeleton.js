@@ -291,7 +291,7 @@ export class Skeleton extends Graph {
    * Объединяет сегменты при удалении или отрыве импоста или склейке профилей
    * @param vertex
    */
-  unSplitEdges(vertex) {
+  unSplitEdges(vertex, profile) {
     const from = vertex.getEdges();
     const to = vertex.getEndEdges();
     for(const toEdge of to) {
@@ -299,8 +299,11 @@ export class Skeleton extends Graph {
         if(fromEdge.profile === toEdge.profile && 
             fromEdge.startVertex === vertex && 
             toEdge.endVertex === vertex &&
+            toEdge.startVertex !== fromEdge.endVertex &&
             fromEdge.profile.b.vertex !== vertex &&
-            fromEdge.profile.e.vertex !== vertex) {
+            fromEdge.profile.e.vertex !== vertex &&
+            fromEdge.isSomeSide(profile, vertex) &&
+            toEdge.isSomeSide(profile, vertex)) {
           this.deleteEdge(fromEdge);
           this.deleteEdge(toEdge);
           if(!toEdge.startVertex.hasNeighbor(fromEdge.endVertex)) {
@@ -328,8 +331,8 @@ export class Skeleton extends Graph {
     }
     this.edgesByProfile(profile).some((edge) => {
       this.deleteEdge(edge);
-      this.unSplitEdges(edge.startVertex);
-      this.unSplitEdges(edge.endVertex);
+      this.unSplitEdges(edge.startVertex, profile);
+      this.unSplitEdges(edge.endVertex, profile);
     });
     // если узел не содержит профилей, удаляем
     for(const vertex of vertexes) {

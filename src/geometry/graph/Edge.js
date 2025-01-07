@@ -117,26 +117,26 @@ export class GraphEdge {
     }
     const {cache} = this;
     if(cache.has(profile)) {
-      return cache.get(profile).some_side;
+      return cache.get(profile).someSide;
     }
 
-    let some_side = profile.has_cnn(this.profile, vertex.point);
-    if(some_side) {
+    let someSide = profile.hasCnn(this.profile, vertex);
+    if(someSide) {
       const {b, e, generatrix} = profile;
       let pt;
-      if(b.getDistance(vertex.point, true) < e.getDistance(vertex.point, true)) {
+      if(b.point.getDistance(vertex.point, true) < e.point.getDistance(vertex.point, true)) {
         pt = generatrix.getPointAt(100);
       }
       else {
         pt = generatrix.getPointAt(generatrix.length - 100);
       }
 
-      const profile_outer = this.profile.generatrix.point_pos(pt, vertex.point) < 0;
-      some_side = Boolean(this.isOuter() ^ profile_outer);
+      const profileOuter = this.profile.generatrix.pointPos(pt, vertex.point) < 0;
+      someSide = Boolean(this.isOuter() ^ profileOuter);
     }
-    cache.set(profile, {some_side});
+    cache.set(profile, {someSide});
 
-    return some_side;
+    return someSide;
   }
   
   other(vertex) {

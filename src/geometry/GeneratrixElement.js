@@ -476,6 +476,19 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * Выясняет, имеет ли текущий профиль соединение с `profile` в узле `vertex`
+   */
+  hasCnn(profile, vertex) {
+
+    const {b, e} = this;
+
+    if((b.vertex === vertex && b.profile === profile) || (e.vertex === vertex && e.profile == profile)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * @summary При удалении элемента
    * @desc Проверяем возможность удаления и сначала удаляем из скелетона
    */
