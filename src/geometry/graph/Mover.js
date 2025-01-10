@@ -67,7 +67,7 @@ export class Mover {
 
     const ncandidates = [];
     if(!level) {
-      for(const ov of edge.allProfileVertexes()) {
+      for(const ov of edge.profile.vertexes) {
         if(ov !== vertex && !ov.selected && !vertexes.has(ov)) {
           for(const otherEdge of ov.getAllEdges()) {
             if(!candidates.find((c) => c.vertex === ov && c.edge === otherEdge)) {
@@ -253,11 +253,21 @@ export class Mover {
       let gen = profile.generatrix.clone({insert: false, deep: false}), base1, base2;
       for(const [edge, me] of move.edges) {
         if(edge.profile === profile) {
-          if(edge.startVertex === vertex) {
-            base1 = edge.endVertex.point;
+          if(edge.isOuter()) {
+            if(edge.startVertex === vertex) {
+              base2 = edge.endVertex.point;
+            }
+            else if(edge.endVertex === vertex) {
+              base1 = edge.startVertex.point;
+            }
           }
-          else if(edge.endVertex === vertex) {
-            base2 = edge.startVertex.point;
+          else {
+            if(edge.startVertex === vertex) {
+              base1 = edge.endVertex.point;
+            }
+            else if(edge.endVertex === vertex) {
+              base2 = edge.startVertex.point;
+            }
           }
         }
       }
@@ -376,7 +386,7 @@ export class Mover {
               }
             }
             circle(move.point);
-            for(const tv of edge.allProfileVertexes()) {
+            for(const tv of edge.profile.vertexes) {
               if(tv !== vertex) {
                 const tm = this.#raw.vertexes.get(tv);
                 if(tm) {
