@@ -985,7 +985,7 @@ class ProductsBuilding {
         row.len = map.get(row.len);
       }
     }
-    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
+    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
   }
 
   /**
@@ -1103,13 +1103,16 @@ class ProductsBuilding {
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
     if(origin && debug) {
-      row_spec.origin = origin;
+      row_spec.origin = Array.isArray(origin) ? JSON.stringify(origin) : origin;
     }
     if(specify) {
       row_spec.specify = specify;
     }
     if(row_base?.stage && !row_base.stage.empty()) {
       row_spec.stage = row_base.stage;
+    }
+    if(row_base?.region) {
+      row_spec.region = row_base.region;
     }
 
     // если алгоритм = характеристика по цвету

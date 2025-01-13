@@ -16145,7 +16145,7 @@ class ProductsBuilding {
         row.len = map.get(row.len);
       }
     }
-    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,stage,dop', 'qty,totqty,totqty1');
+    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
   }
   static check_params({params, row_spec, count_calc_method, ...other}) {
     let ok = true;
@@ -16229,13 +16229,16 @@ class ProductsBuilding {
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
     if(origin && debug) {
-      row_spec.origin = origin;
+      row_spec.origin = Array.isArray(origin) ? JSON.stringify(origin) : origin;
     }
     if(specify) {
       row_spec.specify = specify;
     }
     if(row_base?.stage && !row_base.stage.empty()) {
       row_spec.stage = row_base.stage;
+    }
+    if(row_base?.region) {
+      row_spec.region = row_base.region;
     }
     if(row_base?.algorithm === cx_clr) {
       const clr = row_base?._clr || row_spec.clr;
@@ -18036,16 +18039,28 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
       function fake_row(sub_row, row) {
-        const fakerow = {};
+        const fakerow = {_origin: []};
         if(sub_row._metadata) {
           for (let fld in sub_row._metadata().fields) {
             fakerow[fld] = sub_row[fld];
           }
         }
         else {
-          Object.assign(fakerow, sub_row);
+          const {_origin, ...other} = sub_row;
+          Object.assign(fakerow, other);
         }
         fakerow._owner = sub_row._owner;
+        fakerow.row = sub_row.row;
+        if(row?._origin) {
+          fakerow._origin.push(...row?._origin);
+        }
+        else if(row) {
+          fakerow._origin.push(`ins|${row._owner._owner.ref}|${row.row}`);
+        }
+        const origin = `ins|${sub_row._owner._owner.ref}|${sub_row.row}`;
+        if(!fakerow._origin.includes(origin)) {
+          fakerow._origin.push(origin);
+        }
         if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
@@ -18072,6 +18087,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return own_row instanceof CatCnnsSpecificationRow && own_row.quantity && own_row.quantity !== 1;
       }
       if(is_high_level_call && _types_filling.includes(insert_type)){
+        const fill_regions = $p.job_prm.planning.glass_regions;
         const glass_rows = [];
         ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {
           glass_rows.push(row);
@@ -18082,7 +18098,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
-              frow.origin = row.inset;
+              if(fill_regions) {
+                frow.region = index + 1;
+              }
               for(const {kind} of srow.nom.demand) {
                 if(kind.applying.is('region')) {
                   frow.specify = index + 1;
@@ -18152,7 +18170,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               if(check_params(selector)) {
                 row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
-                  fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
                   if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
@@ -18164,7 +18181,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               if(check_params(selector)) {
                 row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
-                  fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
                   if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
@@ -18176,7 +18192,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             else {
               row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
                 const fakerow = fake_row(subrow, row);
-                fakerow._origin = row.nom;
                 fakerow._clr = eclr;
                 if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                   res.push(fakerow);
@@ -18187,7 +18202,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           else {
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
-              fakerow._origin = row.nom;
               if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
               }
@@ -18195,7 +18209,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         }
         else{
-          res.push(row);
+          res.push(fake_row(row));
         }
       });
       if(_types_main.includes(insert_type)){
@@ -18521,7 +18535,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             _owner.y = bounds.x * 1000;
             _owner.s = (bounds.x * bounds.y).round(4);
         }
-        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
       }
     }
     dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row}) {
@@ -20715,7 +20729,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           .then((row_prod) => {
             this.accessories('clear', row_prod.characteristic);
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
-            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,dop', 'qty,totqty,totqty1');
+            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
             row_dp.characteristic = row_prod.characteristic;
             return row_prod;
           });

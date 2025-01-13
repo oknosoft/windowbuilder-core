@@ -934,17 +934,30 @@
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
-        const fakerow = {};
+        const fakerow = {_origin: []};
         if(sub_row._metadata) {
           for (let fld in sub_row._metadata().fields) {
             fakerow[fld] = sub_row[fld];
           }
         }
         else {
-          Object.assign(fakerow, sub_row);
+          const {_origin, ...other} = sub_row;
+          Object.assign(fakerow, other);
         }
         fakerow._owner = sub_row._owner;
+        fakerow.row = sub_row.row;
 
+        if(row?._origin) {
+          fakerow._origin.push(...row?._origin);
+        }
+        else if(row) {
+          fakerow._origin.push(`ins|${row._owner._owner.ref}|${row.row}`);
+        }
+        const origin = `ins|${sub_row._owner._owner.ref}|${sub_row.row}`;
+        if(!fakerow._origin.includes(origin)) {
+          fakerow._origin.push(origin);
+        }
+        
         // количество по параметру
         if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
@@ -977,6 +990,8 @@
 
       // для заполнений, можно переопределить состав верхнего уровня
       if(is_high_level_call && _types_filling.includes(insert_type)){
+        
+        const fill_regions = $p.job_prm.planning.glass_regions;
 
         const glass_rows = [];
         ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {
@@ -990,7 +1005,9 @@
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
-              frow.origin = row.inset;
+              if(fill_regions) {
+                frow.region = index + 1;
+              }
               for(const {kind} of srow.nom.demand) {
                 if(kind.applying.is('region')) {
                   frow.specify = index + 1;
@@ -1069,7 +1086,6 @@
               if(check_params(selector)) {
                 row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
-                  fakerow._origin = row.nom;
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
                   if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
@@ -1081,7 +1097,6 @@
               if(check_params(selector)) {
                 row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
-                  fakerow._origin = row.nom;
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
                   if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
@@ -1093,7 +1108,6 @@
             else {
               row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
                 const fakerow = fake_row(subrow, row);
-                fakerow._origin = row.nom;
                 fakerow._clr = eclr;
                 if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                   res.push(fakerow);
@@ -1104,7 +1118,6 @@
           else {
             row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
-              fakerow._origin = row.nom;
               if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
               }
@@ -1112,7 +1125,7 @@
           }
         }
         else{
-          res.push(row);
+          res.push(fake_row(row));
         }
 
       });
@@ -1491,7 +1504,7 @@
             _owner.y = bounds.x * 1000;
             _owner.s = (bounds.x * bounds.y).round(4);
         }
-        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,dop', 'qty,totqty,totqty1');
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
       }
     }
 

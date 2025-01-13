@@ -1465,7 +1465,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             // рассчитываем спецификацию
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
             // сворачиваем
-            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,dop', 'qty,totqty,totqty1');
+            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
             // помещаем характеристику в текущую строку обработки dp
             row_dp.characteristic = row_prod.characteristic;
             return row_prod;
