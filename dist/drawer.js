@@ -19730,10 +19730,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
-    if(!job_prm.debug) {
-      this.production.forEach(({amount, amount_internal, characteristic}) => {
-        doc_amount += amount;
-        internal += amount_internal;
+    this.production.forEach(({amount, amount_internal, characteristic}) => {
+      doc_amount += amount;
+      internal += amount_internal;
+      if(!job_prm.debug) {
         characteristic.specification.forEach(({nom, elm}) => {
           if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
             if(!errors.has(characteristic)){
@@ -19749,8 +19749,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             errors.get(nom.elm_type).add(nom);
           }
         });
-      });
-    }
+      }
+    });
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
     this.amount_operation = this.doc_currency.to_currency(doc_amount, this.price_date).round(rounding);
@@ -21074,7 +21074,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       const doc = _owner._owner;
       if(doc.vat_consider) {
         const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = enm.vat_rates;
-        _obj.vat_rate = (nom.vat_rate.empty() ? НДС18 : nom.vat_rate).ref;
+        _obj.vat_rate = (nom.vat_rate.empty() ? НДС20 : nom.vat_rate).ref;
         switch (this.vat_rate) {
         case НДС18:
         case НДС18_118:
