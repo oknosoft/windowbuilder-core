@@ -76,16 +76,13 @@ export class CnnPoint {
    * @desc Уточняет соединение и параметры
    */
   defaults() {
-    const {owner, profile, profileOuter, hasOuter, cnn, cnnOuter} = this;
-    if(cnn.empty()) {
-      const {cnns} = this;
-      if(cnns.length) {
-        this.cnn = cnns[0];
-      }
+    const {owner, profile, profileOuter, hasOuter, cnn, cnnOuter, cnns} = this;
+    if(cnns.length && !cnns.includes(cnn)) {
+      this.cnn = cnns[0];
     }
-    if(hasOuter && cnnOuter.empty()) {
+    if(hasOuter) {
       const {cnnsOuter} = this;
-      if(cnnsOuter.length) {
+      if(cnnsOuter.length && !cnnsOuter.includes(cnnOuter)) {
         this.cnnOuter = cnnsOuter[0];
       }
     }

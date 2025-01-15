@@ -8,6 +8,10 @@ export class BuilderProps  {
     this.#raw.project = project;
     this.#raw.stamp = Date.now();
     this.#raw.three = new Props3D();
+    const base_sys = project.root?.cch.predefinedElmnts.find({synonym: "base_sys"});
+    if(base_sys) {
+      this.#raw.sys = base_sys.value;
+    }
     defaults(project, this);
   }
   
@@ -94,7 +98,11 @@ export class BuilderProps  {
     return project.root.cat.productionParams.get(sys);
   }
   set sys(v) {
-    this.#raw.sys = this.#raw.project.root.cat.productionParams.get(v);
+    const sys = this.#raw.project.root.cat.productionParams.get(v);
+    if(this.#raw.sys !== sys) {
+      this.#raw.sys = sys;
+      this.#raw.project.defaults();
+    }
   }
   
   fontFamily() {

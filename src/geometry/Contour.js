@@ -331,7 +331,7 @@ export class Contour extends paper.Layer {
         contour.defaults(withChildren, true);
       }      
     }
-    if(!childCall) {
+    if(!childCall && !project.props.loading) {
       project.redraw();
     }
   }
@@ -365,7 +365,14 @@ export class Contour extends paper.Layer {
     }
   }
   set sys(v) {
-    this.#raw.sys = this.project.root.cat.productionParams.get(v);
+    const {sys, project} = this;
+    if(this.#raw.sys && this.#raw.sys === sys) {
+      delete this.#raw.sys;
+    }
+    else {
+      this.#raw.sys = project.root.cat.productionParams.get(v);
+      this.defaults(true);
+    }
   }
   
   get furn() {

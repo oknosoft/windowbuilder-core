@@ -10,9 +10,4 @@ export default function defaults(project, props) {
     settings.snapAngle = 45;
     settings.snap = 'grid'; //angle,grid,none 
   }
-  
-  const base_sys = project.root?.cch.predefinedElmnts.find({synonym: "base_sys"});
-  if(base_sys) {
-    props.sys = base_sys.value;
-  }
 }
