@@ -534,18 +534,33 @@ export class Contour extends paper.Layer {
   drawVisualization() {
     const {project: {props}, children: {visualization}, skeleton, profiles, layer} = this;
     visualization.children.graph.clear();
-    if(props.carcass === 'carcass') {
-      // подписи узлов
+    // подписи узлов
+    if(props.carcass === 'carcass' || props.showVertexes) {
       for(const vertex of skeleton.getAllVertices()) {
+        let content = vertex.value;
+        for(const {profile} of vertex.getAllEdges()) {
+          if(profile?.selected) {
+            if(profile.b.vertex === vertex) {
+              content += 'b';
+              break;
+            }
+            if(profile.e.vertex === vertex) {
+              content += 'e';
+              break;
+            }
+          }
+        }
         new paper.PointText({
           point: vertex.point.add([20, -20]),
-          content: `(${vertex.value})`,
+          content: `(${content})`,
           parent: visualization.children.graph,
           fontSize: props.fontSize(),
           fontFamily: props.fontFamily(),
         });
       }
-      // подписи профилей
+    }
+    // подписи профилей
+    if(props.carcass === 'carcass') {
       for(const profile of profiles) {
         const loc = profile.generatrix.getLocationAt(profile.generatrix.length / 3);
         new paper.PointText({

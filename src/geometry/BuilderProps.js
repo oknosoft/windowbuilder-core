@@ -65,6 +65,13 @@ export class BuilderProps  {
     this.#raw.project._scope.settings.showGrid = v;
   }
 
+  get showVertexes() {
+    return Boolean(this.#raw.project._scope.settings.showVertexes);
+  }
+  set showVertexes(v) {
+    this.#raw.project._scope.settings.showVertexes = v;
+  }
+
   get snap() {
     return this.#raw.project._scope.settings.snap || 'none';
   }

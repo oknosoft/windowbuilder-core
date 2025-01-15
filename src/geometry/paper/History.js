@@ -46,6 +46,7 @@ export class History {
           const {selectedElements} = project;
           events.elm = {project, elm: selectedElements?.length > 1 ? selectedElements : item, layer: item.layer, shift};
           events.last = 'elm';
+          item.layer?.drawVisualization?.();
         }
       }
     }
