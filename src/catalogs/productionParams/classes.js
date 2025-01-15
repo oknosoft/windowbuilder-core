@@ -22,20 +22,50 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
      * @summary Возвращает доступные в данной системе элементы (вставки)
      * @param {EnmElmTypes|Array.<EnmElmTypes>} elmTypes - допустимые типы элементов
      * @param {BuilderElement} [elm] - указатель на элемент или проект, чтобы отфильтровать по ключам
-     * @return {Array.<CatInserts|CatProductionParamsElmntsRow>}
+     * @return {Array.<CatInserts>}
      */
     inserts({elmTypes, elm}){
-      const noms = new Set();
+      const noms = [];
       const pos = elm?.pos || enm.positions.any;
       if(elm && !elmTypes) {
         elmTypes = [elm.elmType];
       }
       this.elmnts.findRows({elm_type: elmTypes}, row => {
         if(row.pos.empty() || row.pos.is('any') || pos.empty() || pos.is('any') || row.pos === pos) {
-          noms.add(row.nom);
+          // TODO: добавить проверку ключа
+          if(row.nom instanceof classes.CchPredefinedElmnts) {
+            for(const {value} of row.nom.elmnts) {
+              noms.push({
+                nom: value,
+                elm_type: row.elm_type,
+                pos: row.pos,
+                by_default: row.by_default,
+              });
+            }
+          }
+          noms.push(row);
         }
       });
-      return Array.from(noms);
+      noms.sort((a, b) => {
+        if(a.by_default && !b.by_default) {
+          return -1;
+        }
+        else if(!a.by_default && b.by_default) {
+          return 1;
+        }
+        else {
+          if(a.nom.name < b.nom.name) {
+            return -1;
+          }
+          else if(a.nom.name > b.nom.name) {
+            return 1;
+          }
+          else {
+            return 0;
+          }
+        }
+      });
+      return noms.map(v => v.nom);
     }
     
   }

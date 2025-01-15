@@ -371,7 +371,7 @@ export class CnnPoint {
       }
       else {
         const {profile} = this;
-        this.#raw.isT = profile && profile.b.vertex !== vertex && profile.e.vertex !== vertex;
+        this.#raw.isT = profile?.b?.vertex && profile.b.vertex !== vertex && profile?.e?.vertex && profile.e.vertex !== vertex;
       }
     }
     return this.#raw.isT;

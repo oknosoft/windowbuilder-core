@@ -267,7 +267,7 @@ export class Contour extends paper.Layer {
   
   /**
    * @summary Тест положения контура в изделии
-   * @param {EnmElm_positions} pos
+   * @param {EnmElmPositions} pos
    * @param {paper.Rectangle} [projectBounds]
    * @return {Boolean}
    */
@@ -307,6 +307,33 @@ export class Contour extends paper.Layer {
     }
 
     return res;
+  }
+
+  /**
+   * @summary Умолчания при изменении окружения
+   * @desc Уточняет цвет, вставку и параметры элементов слоя
+   * @param {Boolean} withChildren
+   */
+  defaults(withChildren, childCall) {
+    const {profiles, fillings, contours, project} = this;
+    for(const profile of profiles) {
+      profile.defaults();
+    }
+    for(const {b, e} of profiles) {
+      b.defaults();
+      e.defaults();
+    }
+    for(const filling of fillings) {
+      //filling.defaults();
+    }
+    if(withChildren) {
+      for(const contour of contours) {
+        contour.defaults(withChildren, true);
+      }      
+    }
+    if(!childCall) {
+      project.redraw();
+    }
   }
 
   /**

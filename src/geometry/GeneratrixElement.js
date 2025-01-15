@@ -469,13 +469,10 @@ export class GeneratrixElement extends BuilderElement {
    */
   defaults() {
     const {layer: {sys}, elmType, inset} = this;
-    if(inset.empty()) { // || checkActual
-      const inserts = sys.inserts({elmTypes: elmType, elm: this});
-      if(inserts.length) {
-        this.inset = inserts[0];
-      }
-    }
-    
+    const inserts = sys.inserts({elmTypes: elmType, elm: this});
+    if(inserts.length && !inserts.includes(inset)) { // || checkActual
+      this.inset = inserts[0];
+    }    
   }
 
   cnnSide(profile, interior) {

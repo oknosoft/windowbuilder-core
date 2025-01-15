@@ -135,6 +135,16 @@ export class Scheme extends paper.Project {
     dimensions.removeChildren();
   }
 
+  /**
+   * @summary Умолчания при изменении окружения
+   * @desc Уточняет цвет, вставку и параметры элементов
+   */
+  defaults() {
+    for(const contour of this.contours) {
+      contour.defaults(true);
+    }
+  }
+
   addLayer(attr) {
     const Constructor = attr?.portal ? Contour.Portal : Contour;
     const layer = new Constructor({project: this, insert: true});
