@@ -2138,6 +2138,15 @@ get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+
+
+  save(attr) {
+    const {owner} = this;
+    const {_manager, _data, ref, _rev, class_name} = owner;
+    _manager.metadata().check_rev = false;
+    const raw = {_manager, _obj: owner.toJSON(), _data, ref, _rev, class_name, is_new() {return owner.is_new()}};
+    return _manager.adapter.save_obj(raw, attr || {});
+  }
 }
 $p.CatContracts = CatContracts;
 class CatContractsExtra_fieldsRow extends TabularSectionRow{
