@@ -256,11 +256,7 @@ Object.defineProperties(paper.Path.prototype, {
 
           if(this.is_linear()){
             // для прямого формируем новый путь из двух точек
-            tmp = new paper.Path({
-              project,
-              segments: [loc1.point, loc2.point],
-              insert: false
-            });
+            tmp = new paper.Path({project, segments: [loc1.point, loc2.point], insert: false});
           }
           else{
             // для кривого, создаём клон, вырезаем и добавляем плоский хвостик
@@ -454,7 +450,8 @@ Object.defineProperties(paper.Path.prototype, {
           if(!this.length || !path.length) {
             return null;
           }
-
+          
+          const project = this.project || path.project;
           const path1 = clone ? this.clone({insert: false, deep: false}) : this;
           const path2 = clone ? path.clone({insert: false, deep: false}) : path;
 

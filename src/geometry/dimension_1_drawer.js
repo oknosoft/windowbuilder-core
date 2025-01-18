@@ -73,12 +73,14 @@ class DimensionLayer extends paper.Layer {
    */
   draw_sizes() {
 
-    const {bounds, builder_props, contours} = this.project;
+    const {project} = this;
+    const {bounds, builder_props, contours} = project;
 
     if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
 
       if(!this.bottom) {
         this.bottom = new DimensionLine({
+          project,
           pos: 'bottom',
           parent: this,
           offset: -120
@@ -90,6 +92,7 @@ class DimensionLayer extends paper.Layer {
 
       if(!this.right) {
         this.right = new DimensionLine({
+          project,
           pos: 'right',
           parent: this,
           offset: -120
@@ -295,7 +298,7 @@ class DimensionDrawer extends paper.Group {
    * Формирует пользовательские линии по импостам
    */
   draw_by_imposts() {
-    const {parent} = this;
+    const {parent, project} = this;
     this.clear();
 
     // для всех палок контура
@@ -330,13 +333,14 @@ class DimensionDrawer extends paper.Group {
         }
 
         this.ihor[`i${++index}`] = new DimensionLineImpost({
+          project,
+          parent: this,
           elm1: elm,
           elm2: elm,
           p1: invert ? dx : 'b',
           p2: invert ? 'b' : dx,
           dx1,
           dx2,
-          parent: this,
           offset: invert ? -150 : 150,
           outer: outer.includes(impost),
         });
@@ -422,7 +426,8 @@ class DimensionDrawer extends paper.Group {
    */
   by_imposts(arr, collection, pos) {
     let {base_offset, dop_offset} = consts;
-    const {_regions} = this.project._attr;
+    const {project} = this;
+    const {_regions} = project._attr;
     if(_regions) {
       base_offset += 80;
       dop_offset = base_offset + 40;
@@ -439,12 +444,13 @@ class DimensionDrawer extends paper.Group {
           }
         }
         collection[i] = new DimensionLine({
+          project,
+          parent: this,
           pos: pos,
           elm1: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
           p1: arr[i].p,
           elm2: arr[i + 1].elm instanceof GlassSegment ? arr[i + 1].elm._sub : arr[i + 1].elm,
           p2: arr[i + 1].p,
-          parent: this,
           offset: offset - shift,
           impost: true
         });
@@ -462,12 +468,13 @@ class DimensionDrawer extends paper.Group {
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
         collection[i - 1] = new DimensionLine({
+          project: this.project,
+          parent: this,
           pos: pos,
           elm1: arr[0].elm instanceof GlassSegment ? arr[0].elm._sub : arr[0].elm,
           p1: arr[0].p,
           elm2: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
           p2: arr[i].p,
-          parent: this,
           offset: offset,
           impost: true
         });
@@ -496,8 +503,9 @@ class DimensionDrawer extends paper.Group {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
-              pos: 'left',
+              project,
               parent: this,
+              pos: 'left',
               offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
               contour: true
             });
@@ -518,8 +526,9 @@ class DimensionDrawer extends paper.Group {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
-              pos: 'right',
+              project,
               parent: this,
+              pos: 'right',
               offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
               contour: true
             });
@@ -540,6 +549,7 @@ class DimensionDrawer extends paper.Group {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
+              project,
               pos: 'top',
               parent: this,
               offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
@@ -562,6 +572,7 @@ class DimensionDrawer extends paper.Group {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
+              project,
               pos: 'bottom',
               parent: this,
               offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
@@ -594,8 +605,9 @@ class DimensionDrawer extends paper.Group {
     const {base_offset} = consts;
     if (!this.left) {
       this.left = new DimensionLine({
-        pos: 'left',
+        project: this.project,
         parent: this,
+        pos: 'left',
         offset: base_offset,
         contour: true,
         faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
@@ -603,8 +615,9 @@ class DimensionDrawer extends paper.Group {
     }
     if(!this.top) {
       this.top = new DimensionLine({
-        pos: 'top',
+        project: this.project,
         parent: this,
+        pos: 'top',
         offset: base_offset,
         contour: true,
         faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
