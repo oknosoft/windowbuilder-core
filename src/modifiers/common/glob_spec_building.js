@@ -61,11 +61,11 @@ class SpecBuilding {
       adel.length = 0;
       calc_order.production.forEach((row) => {
         if (row.ordn === ox){
-          if (ox._order_rows.indexOf(row.characteristic) === -1){
-            adel.push(row);
+          if (ox._order_rows.includes(row.characteristic)){
+            order_rows.set(row.characteristic, row);
           }
           else {
-            order_rows.set(row.characteristic, row);
+            adel.push(row);
           }
         }
       });
@@ -103,6 +103,9 @@ class SpecBuilding {
     if(order_rows.size){
       attr.order_rows = order_rows;
     }
+
+    // находим привязанные к заказу вставки и выполняем
+    cat.insert_bind.deposit({ox, order: true});
 
     if(with_price){
       // рассчитываем плановую себестоимость

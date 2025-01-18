@@ -15,7 +15,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   constructor(attr) {
 
-    const {path} = attr;
+    const {path, proto} = attr;
     if(path){
       delete attr.path;
     }
@@ -25,10 +25,21 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(path){
       attr.path = path;
     }
+    if(proto){
+      attr.proto = proto;
+    }
+    
+    this.create_groups();
 
     // initialize
     this.initialize(attr);
 
+  }
+
+  create_groups() {
+    super.create_groups();
+    new GroupLayers({parent: this, name: 'tearings'});
+    new GroupText({parent: this, name: 'text'});
   }
 
   initialize(attr) {
@@ -133,7 +144,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   save_coordinates() {
 
-    const {_row, project, layer, profiles, bounds, imposts, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
+    const {_row, project, layer, profiles, bounds, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
 
@@ -230,8 +241,10 @@ class Filling extends AbstractFilling(BuilderElement) {
       delete profiles[i].aperture_path;
     }
 
-    // дочерние раскладки
-    imposts.forEach((onlay) => onlay.save_coordinates());
+    // дочерние раскладки и разрывы заполнений
+    for(const child of this.imposts.concat(this.children.tearings.children)) {
+      child.save_coordinates?.();
+    }
   }
 
   /**
@@ -254,7 +267,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         kind = 1;
       }
     }
-    const cattr = {project, kind, parent: this.parent};
+    const cattr = {project, kind, parent: layer.children.topLayers};
     // фурнитура и параметры по умолчанию
     if(direction) {
       cattr.direction = direction;
@@ -278,7 +291,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.remove();
     }
     else {
-      this.parent = contour;
+      this.parent = contour.children.fillings;
       _row.cnstr = contour.cnstr;
       // проверим вставку
       this.set_inset(project.default_inset({
@@ -364,14 +377,22 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   redraw() {
 
-    this.sendToBack();
+    //this.sendToBack();
 
-    const {path, imposts, glbeads, _attr, is_rectangular} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}, visible} = this;
     const {elm_font_size, font_family} = consts;
-    const fontSize = elm_font_size * (2 / 3);
-    const maxTextWidth = 600;
+    const {builder_props} = ox;
+    const max = Math.max(pbounds.width, pbounds.height);
+    let fontSize = elm_font_size * (2 / 3);
+    if(max > 3000) {
+      fontSize += fontSize * (max - 3000) / 3000;
+    }
+    const maxTextWidth = 900;
     path.visible = true;
-    imposts.forEach((elm) => elm.redraw());
+    imposts.forEach((elm) => {
+      elm.redraw();
+      elm.visible = visible && (!builder_props.onlay_regions || elm.region == builder_props.onlay_regions);
+    });
 
     // прочистим пути
     this.purge_paths();
@@ -379,7 +400,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     // если текст не создан - добавляем
     if(!_attr._text){
       _attr._text = new paper.PointText({
-        parent: this,
+        parent: this.children.text,
         fillColor: 'black',
         fontFamily: font_family,
         fontSize,
@@ -430,6 +451,26 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
+    
+    // Заполнения отдельно
+    const param = $p.cch.properties.predefined('glass_separately');
+    if(param?.extract_pvalue({ox, cnstr: -elm, elm: this})) {
+      if(!_attr._text_sep){
+        _attr._text_sep = new paper.Path.Circle({
+          parent: this.children.text,
+          center: [0, 0],
+          radius: fontSize * 0.8,
+          strokeColor: 'green',
+          strokeWidth: fontSize / 2,
+        });
+        _attr._text_sep.strokeColor.alpha = 0.8;
+      }
+      _attr._text_sep.position = bounds.bottomRight.add([-fontSize * 1.6, -fontSize * 1.6]);
+    }
+    else if(_attr._text_sep){
+      _attr._text_sep.remove();
+      _attr._text_sep = null;
+    }
 
     for(const glbead of glbeads) {
       glbead.redraw();
@@ -442,7 +483,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Рисует заполнение отдельным элементом
    */
   draw_fragment(no_zoom) {
-    const {l_dimensions, layer, path, imposts} = this;
+    const {l_dimensions, layer, path, imposts, project: {builder_props}} = this;
     this.visible = true;
     path.set({
       strokeColor: 'black',
@@ -450,11 +491,14 @@ class Filling extends AbstractFilling(BuilderElement) {
       strokeScaling: false,
       opacity: 0.6,
     });
-    imposts.forEach((elm) => elm.redraw());
+    imposts.forEach((elm) => {
+      elm.visible = !builder_props.onlay_regions || elm.region == builder_props.onlay_regions;
+      elm.redraw();
+    });
     l_dimensions.redraw(true);
     layer.draw_visualization();
     const {l_visualization: lv} = layer;
-    lv._by_insets && lv._by_insets.removeChildren();
+    lv.by_insets && lv.by_insets.removeChildren();
     lv._cnn && lv._cnn.removeChildren();
     lv._opening && lv._opening.removeChildren();
     lv.visible = true;
@@ -465,18 +509,24 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Рисует при необходимости ряды
    */
   draw_regions() {
-    const {inset, elm, layer, _attr: {paths, _text}} = this;
+    const {inset, elm, layer, _attr: {paths, _text}, project: {builder_props}} = this;
     if(inset.region && !(layer instanceof ContourTearing)) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
-        if([1, 2, -1].includes(row.region)) {
+        // 0 - не ряд
+        // 1 - ряд внутри элемента
+        // >1 - за элементом
+        // <0 - перед элементом
+        if([1, 2, 3, -1, -2].includes(row.region)) {
           const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
-            paths.set(row.region, new paper.Path({parent: this, strokeColor: 'gray', opacity: 0.88}));
+            const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
+            paths.set(row.region, new paper.Path({parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
+          rpath._owner = this;
           rpath.removeSegments();
           // получаем периметр ряда
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
@@ -574,20 +624,14 @@ class Filling extends AbstractFilling(BuilderElement) {
           if(strip_path.segments.length && !strip_path.closed){
             strip_path.closePath(true);
           }
-          if(row.region > 0) {
-            rpath.insertBelow(path);  
-          }
-          else {
-            for(const {profile} of profiles) {
-              profile.insertBelow(this);
-            }
-            rpath.insertAbove(path);
+          if(row.region < 0) {
             _text?.insertAbove(rpath);
-            path.opacity = 0.7;
+            rpath.opacity = 0.7;  
           }
           if(strip_path.segments.length){
             strip_path = rpath.exclude(strip_path);
             strip_path.fillColor = 'grey';
+            strip_path._owner = this;
             const old = paths.get(`s${row.region}`); 
             if(old && old !== strip_path) {
               old.remove();
@@ -600,6 +644,11 @@ class Filling extends AbstractFilling(BuilderElement) {
           }
         }
       });
+      for(const [region, elm] of paths) {
+        if(elm?.isInserted()){
+          elm.visible = builder_props.glass_regions;
+        }
+      }
     }
     else if(paths.size) {
       for(const [region, elm] of paths) {
@@ -611,11 +660,8 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   
   reset_fragment() {
-    const {_attr, layer, path} = this;
-    if(_attr._dimlns) {
-      _attr._dimlns.remove();
-      delete _attr._dimlns;
-    }
+    const {children, layer, path} = this;
+    children.dimlns.clear(true);
     path.set({
       strokeColor: null,
       strokeWidth: 0,
@@ -665,7 +711,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           selm.set_inset(inset, true, force);
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
-          // если тип стеклопаке - заполняем по умолчанию
+          // если тип стеклопакет - заполняем по умолчанию
           if(insert_type === insert_type._manager.Стеклопакет) {
             for(const row of inset.specification) {
               row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});
@@ -806,6 +852,26 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
+   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
+   * [inset] {CatInserts} - указываем для дополнительных вставок
+   * @override
+   * @return {Array}
+   */
+  elm_props(inset) {
+    const res = super.elm_props(inset);
+    let {ox: {params}, layer: {sys}} = this;
+    
+    const {glass_separately} = $p.job_prm.properties; 
+    if([1, 2].includes(glass_separately?.inheritance)) {
+      const prow = sys.product_params.find({param: glass_separately});
+      if(!prow?.hide) {
+        res.unshift(glass_separately);
+      }
+    }
+    return res;
+  }
+
+  /**
    * Массив раскладок
    */
   get imposts() {
@@ -888,7 +954,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return this._attr.path;
   }
   set path(attr) {
-    let {_attr, path, project} = this;
+    let {_attr, path, project, children} = this;
 
     // чистим старый путь
     if(path){
@@ -896,6 +962,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     else{
       path = _attr.path = new paper.Path({parent: this});
+    }
+    if(children.tearings.isBelow(path)) {
+      path.insertBelow(children.tearings);
     }
 
     // чистим старые сегменты
@@ -924,19 +993,19 @@ class Filling extends AbstractFilling(BuilderElement) {
           nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
-          curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this) : 20));
+          curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this, curr.profile) : 20));
         }
         // получаем пересечения
         for (let i = 0; i < length; i++) {
           nominate(i);
           if(!curr.pb) {
-            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking);
+            curr.pb = curr.sub_path.intersect_point(prev.sub_path, curr.b, consts.sticking + Math.abs(curr.profile.d2));
             if(prev !== curr && !prev.pe) {
               prev.pe = curr.pb;
             }
           }
           if(!curr.pe) {
-            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking);
+            curr.pe = curr.sub_path.intersect_point(next.sub_path, curr.e, consts.sticking + Math.abs(curr.profile.d2));
             if(next !== curr && !next.pb) {
               next.pb = curr.pe;
             }
@@ -1037,9 +1106,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   get nodes() {
     let res = this.profiles.map((curr) => curr.b);
     if(!res.length){
-      const {path, parent} = this;
+      const {path, layer} = this;
       if(path){
-        res = parent.glass_nodes(path);
+        res = layer.glass_nodes(path);
       }
     }
     return res;
@@ -1290,3 +1359,32 @@ class Filling extends AbstractFilling(BuilderElement) {
 }
 
 EditorInvisible.Filling = Filling;
+
+// свойство `Заполнения отдельно`
+$p.md.once('predefined_elmnts_inited', () => {
+  const {glass_separately} = $p.job_prm.properties;
+  if([1, 2].includes(glass_separately?.inheritance)) {
+    Object.defineProperty(Filling.prototype, glass_separately.ref, {
+      get() {
+        const {ox, elm} = this;
+        return glass_separately?.extract_pvalue({ox, cnstr: -elm, elm: this});
+      },
+      set(v) {
+        const {ox, elm} = this;
+        let row = ox.params.find({param: glass_separately, cnstr: -elm});
+        const row0 = ox.params.find({param: glass_separately, cnstr: 0});
+        if(row0?.value == Boolean(v)) {
+          if(row) {
+            ox.params.del(row);
+          }
+        }
+        else {
+          if(!row) {
+            row = ox.params.add({param: glass_separately, cnstr: -elm});
+          }
+          row.value = Boolean(v);
+        }
+      }
+    })
+  }
+});

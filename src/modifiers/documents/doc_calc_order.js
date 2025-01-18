@@ -242,10 +242,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
-    if(!job_prm.debug) {
-      this.production.forEach(({amount, amount_internal, characteristic}) => {
-        doc_amount += amount;
-        internal += amount_internal;
+    this.production.forEach(({amount, amount_internal, characteristic}) => {
+      doc_amount += amount;
+      internal += amount_internal;
+      if(!job_prm.debug) {
         characteristic.specification.forEach(({nom, elm}) => {
           if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
             if(!errors.has(characteristic)){
@@ -262,8 +262,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             errors.get(nom.elm_type).add(nom);
           }
         });
-      });
-    }
+      }
+    });
 
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
@@ -370,19 +370,33 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
     const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
       .then(({rows}) => {
-        let res = Promise.resolve();
-        let deleted = 0;
+        if(!rows.length) {
+          return 0;
+        }
+        const keys = [];
         for (const {id} of rows) {
           const ref = id.substring(20);
           if(this.production.find({characteristic: ref})) {
             continue;
           }
-          deleted ++;
-          res = res
-            .then(() => cat.characteristics.get(ref, 'promise'))
-            .then((ox) => !ox.is_new() && !ox._deleted && ox.mark_deleted(true));
+          keys.push(id);
         }
-        return res.then(() => deleted);
+        const  timestamp = {
+          moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'), 
+          user: wsql.get_user_param('user_name')
+        };
+        return db.allDocs({keys, limit: keys.length})
+          .then(({rows}) => {
+            keys.length = 0;
+            for(const {doc, key, error, value} of rows) {
+              if(error || value.deleted) {
+                continue;
+              }
+              keys.push({_id: key, _rev: value.rev, _deleted: true, timestamp});
+            }
+            return db.bulkDocs(keys)
+              .then(() => keys.length);
+          })
       })
       .then((res) => {
         res && _manager.emit_async('svgs', this);
@@ -641,11 +655,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this;
   }
-
-
+  
   // при удалении строки
   after_del_row(name) {
-    name === 'production' && this.product_rows();
+    if(name === 'production'){
+      this.product_rows();
+      !this._slave_recalc && this.reset_specify();
+    }
     return this;
   }
 
@@ -737,11 +753,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @return {Array<Object>}
    */
   product_rows(save, attr) {
-    let res = [];
+    let res = [], weight = 0;
     const {production, partner, obj_delivery_state, department} = this;
     const {utils, wsql} = $p;
-    const user = wsql.get_user_param('user_name');
-    this.production.forEach(({row, characteristic}) => {
+    const user = wsql.get_user_param('user_name');    
+    this.production.forEach(({row, characteristic, quantity}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
         if(characteristic.product !== row || characteristic._modified ||
           characteristic.partner !== partner ||
@@ -782,8 +798,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             }
           }
         }
+        weight += quantity * characteristic.weight;
       }
     });
+    // масса изделий заказа
+    this.weight = weight.round(2);
     return res;
   }
 
@@ -1226,6 +1245,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * Площадь изделий заказа
+   * @type {String}
+   */
+  get areas() {
+    const sum = {prod: 0, all: 0};
+    for(const row of this.production) {
+      sum.all += row.s * row.quantity;
+      if(row.characteristic.leading_product.calc_order !== this) {
+        sum.prod += row.s * row.quantity;
+      }
+    }
+    return sum.prod === sum.all ?
+      sum.prod.round(2).toLocaleString('ru-RU') :
+      `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
+  }
+
+  /**
    * Загружает в RAM данные характеристик продукций заказа
    * @return {Promise}
    */
@@ -1267,7 +1303,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     //nom,characteristic,note,quantity,unit,qty,len,width,s,first_cost,marginality,price,discount_percent,discount_percent_internal,
     //discount,amount,margin,price_internal,amount_internal,vat_rate,vat_amount,ordn,changed
 
-    row._data._loading = true;
+    this._data._loading = true;
     row.nom = ox.owner;
     row.note = _dp.note;
     row.quantity = _dp.quantity || 1;
@@ -1279,7 +1315,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row.unit.owner != row.nom) {
       row.unit = row.nom.storage_unit;
     }
-    row._data._loading = false;
+    this.reset_specify();
+    this._data._loading = false;
   }
 
   /**
@@ -1361,7 +1398,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.x = row_spec.len;
           ox.y = row_spec.height;
           ox.z = row_spec.depth;
-          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(3);
+          ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(4);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
 
@@ -1428,7 +1465,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             // рассчитываем спецификацию
             row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
             // сворачиваем
-            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,dop', 'qty,totqty,totqty1');
+            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
             // помещаем характеристику в текущую строку обработки dp
             row_dp.characteristic = row_prod.characteristic;
             return row_prod;
@@ -1607,7 +1644,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               this._data._templates_loaded = true;
               return this;
             })
-        });
+        })
+        .then(() => this._manager.emit('templates_loaded', this));
       return this._data._templates_loading;
     }
     return this.load_production()
@@ -1626,6 +1664,90 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
         return prod;
       });
+  }
+
+  /**
+   * Удаляет распределение обрези из спецификаций всех изделий заказа
+   */
+  reset_specify(cond) {
+    this._slave_recalc = true;
+    const rm = [];
+    for(const row of this.production) {
+      if(row.changed === 3) {
+        if(!cond || (cond === '2D' && row.s) || (cond === '1D' && !row.s)) {
+          rm.push(row);
+        }
+      }
+    }
+    for(const row of rm) {
+      this.production.del(row);
+    }
+    for(const row of this.production) {
+      const {characteristic} = row;
+      if (characteristic.calc_order === this) {
+        if(!cond) {
+          characteristic.specification.clear({dop: -3});
+        }
+        else if(cond === '2D') {
+          characteristic.specification.clear({dop: -3, s: {ne: 0}});
+        }
+        else {
+          characteristic.specification.clear({dop: -3, s: 0});
+        }
+        row.value_change('quantity', 'update', row.quantity);
+      }
+    }
+    this._slave_recalc = false;
+  }
+
+  /**
+   * @summary Сырая потребность в материалах
+   * @param {DocCalc_orderProductionRow} [prow] - если указано, получаем потребность единственной строки, а не всего заказа
+   * @returns {DpBuyers_order}
+   */
+  aggregate_specification(prow) {
+    const dp = $p.dp.buyers_order.create();
+    if(prow) {
+      const {characteristic, quantity} = prow;
+      for(const srow of characteristic.specification) {
+        if(!srow.totqty1 || srow.nom.is_service || srow.nom.is_procedure) {
+          continue;
+        }
+        const row = dp.specification.add({
+          nom: srow.nom,
+          nom_characteristic: srow.characteristic,
+          clr: srow.clr,
+          quantity: quantity * srow.totqty1,
+        });
+      }
+    }
+    else {
+      // заполняем табчасть потребностью всех продукций заказа
+      for(const {nom, characteristic, quantity} of this.production) {
+        if(characteristic.calc_order === this) {
+          for(const srow of characteristic.specification) {
+            if(!srow.totqty1 || srow.nom.is_service || srow.nom.is_procedure) {
+              continue;
+            }
+            const row = dp.specification.add({
+              nom: srow.nom,
+              nom_characteristic: srow.characteristic,
+              clr: srow.clr,
+              quantity: quantity * srow.totqty1,
+            });
+          }
+        }
+        else {
+          if(!quantity || nom.is_service || nom.is_procedure) {
+            continue;
+          }
+          const row = dp.specification.add({nom, nom_characteristic: characteristic, clr: characteristic.clr, quantity});
+        }
+      }
+    }
+    // сворачиваем
+    dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
+    return dp;
   }
 
   /**
@@ -1666,8 +1788,13 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     let {_obj, _owner, nom, characteristic, unit} = this;
     let recalc;
     const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, enm} = $p;
+    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, job_prm, enm} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
+    let reset_specify;
+    if(field === 'quantity' && !_slave_recalc) {
+      reset_specify = true;
+      characteristic.specification.clear({dop: -3});
+    }
 
     if(rfield) {
 
@@ -1703,7 +1830,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         characteristic.specification.clear();
         characteristic.x = this.len;
         characteristic.y = this.width;
-        characteristic.s = (this.s || this.len * this.width / 1e6).round(3);
+        characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
         const len_angl = new FakeLenAngl({len: this.len, inset: origin});
         const elm = new FakeElm(this);
         origin.calculate_spec({elm, len_angl, ox: characteristic});
@@ -1749,17 +1876,21 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // если есть внешняя цена дилера, получим текущую дилерскую наценку
       if(!no_extra_charge) {
         const prm = {calc_order_row: this};
-        let extra_charge = wsql.get_user_param('surcharge_internal', 'number');
+        let extra_charge = 0;
+        if(job_prm.pricing.use_internal !== false) {
+          extra_charge = wsql.get_user_param('surcharge_internal', 'number');
 
-        // если пересчет выполняется менеджером, используем наценку по умолчанию
-        if(!manager.partners_uids.length || !extra_charge) {
-          pricing.price_type(prm);
-          extra_charge = prm.price_type.extra_charge_external;
+          // если пересчет выполняется менеджером, используем наценку по умолчанию
+          if(!manager.partners_uids.length || !extra_charge) {
+            pricing.price_type(prm);
+            extra_charge = prm.price_type.extra_charge_external;
+          }
+          // если есть наценка в строке применим ее
+          if (_obj.extra_charge_external !== 0) {
+            extra_charge = _obj.extra_charge_external;
+          }
         }
-        // если есть наценка в строке применим ее
-        if (_obj.extra_charge_external !== 0) {
-          extra_charge = _obj.extra_charge_external;
-        }
+        
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
         }
@@ -1771,7 +1902,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       const doc = _owner._owner;
       if(doc.vat_consider) {
         const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = enm.vat_rates;
-        _obj.vat_rate = (nom.vat_rate.empty() ? НДС18 : nom.vat_rate).ref;
+        _obj.vat_rate = (nom.vat_rate.empty() ? НДС20 : nom.vat_rate).ref;
         switch (this.vat_rate) {
         case НДС18:
         case НДС18_118:
@@ -1807,8 +1938,11 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _owner._owner._slave_recalc = true;
         _owner.forEach((row) => {
           if(row === this) return;
+          if(reset_specify) {
+            row.characteristic.specification.clear({dop: -3});
+          }
           const {origin} = row.characteristic;
-          if(origin && !origin.empty() && origin.slave) {
+          if(reset_specify || (origin && !origin.empty() && origin.slave)) {
             row.value_change('quantity', 'update', row.quantity, no_extra_charge);
           }
         });

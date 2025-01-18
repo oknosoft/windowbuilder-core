@@ -12,7 +12,9 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const {Editor: {ProfileItem, BuilderElement}, enm: {cnn_types: {t, xx}, cnn_sides}} = $p;
     const sides = [cnn_sides.inner, cnn_sides.outer];
     const orientation = elm1 instanceof ProfileItem && elm1.orientation;
-    const sys = elm1 instanceof BuilderElement ? elm1.layer.sys : (elm2 instanceof BuilderElement && elm2.layer.sys);
+    const sys = (elm1 instanceof BuilderElement && elm1.isInserted()) ? 
+      elm1.layer.sys : 
+      (elm2 instanceof BuilderElement && elm2.isInserted() && elm2.layer.sys);
     const priority = (cnn) => {
       let finded;
       if(sys && orientation) {
@@ -99,8 +101,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
     
     if(elm1.rnum && (!types.includes(i) || types.length > 1)) {
-      const parent_elm = elm2?.parent_elm || elm2; 
-      const side = parent_elm ? parent_elm.cnn_side?.(elm1?.parent_elm) : cnn_sides.inner;
+      const side = elm2?.cnn_side?.(elm1) || cnn_sides.inner;
       const res = this.region_cnn({
         region: elm1.rnum, 
         elm1,
@@ -272,7 +273,7 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
     const all = [];
     elm2.forEach(({nom, side}, index) => {
       for(const cnn of region_cache.get(nom)) {
-        if(cnn_types.includes(cnn.cnn_type) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
+        if((!cnn_types || cnn_types.includes(cnn.cnn_type)) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
           const is_nom = cnn.check_nom1(nom1);
           if(is_nom || art1glass) {
             all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + ((art1glass && cnn.sd2 === index) ? 10000 : 0)});
@@ -594,7 +595,7 @@ exports.CatCnns = class CatCnns extends Object {
       }
 
       // проверяем параметры изделия и добавляем, если проходит по ограничениям
-      if(correct || check_params({params: selection_params, row_spec: row, elm, elm2, ox})) {
+      if(check_params({params: selection_params, row_spec: row, elm, elm2, ox, node: len_angl?.node})) {
         res.push(row);
       }
 
@@ -639,7 +640,31 @@ exports.CatCnns = class CatCnns extends Object {
         const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, nom, spec, ox, len_angl});
 
         // рассчитаем количество
-        if(nom.is_pieces) {
+        const procedure = nom.is_procedure && this.coordinates.find({elm: row_base.elm}) && this.cnn_type.is('t'); 
+        if(procedure) {
+          const {Path} = elm.project._scope;
+          row_spec.elm = elm2.elm;
+          let ray;
+          if(elm2.cnn_side(elm).is('outer')) {
+            ray = elm2.rays.outer;
+          }
+          else {
+            ray = elm2.rays.inner.clone({insert: false, deep: false});
+            ray.reverse();
+          }
+          const pt = ray.getNearestPoint(elm[len_angl.node]);
+          const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
+          const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
+          const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
+          let offset = offset1 < offset4 ? offset1 : offset4;
+          if(offset7 && offset7 < offset) {
+            offset = offset7;
+          }
+          const pt0 = ray.getPointAt(offset);
+          const path = ray.get_subpath(pt0, pt);
+          row_spec.len = path.length * (row_base.coefficient || 0.001);
+        }
+        else if(nom.is_pieces) {
           if(!row_base.coefficient) {
             row_spec.qty = row_base.quantity;
           }
@@ -672,7 +697,7 @@ exports.CatCnns = class CatCnns extends Object {
             if(!row_spec.qty && finded && len_angl.art1) {
               row_spec.qty = qty;
             }
-            row_spec.len = (len_angl.len - sign * sz) * (row_base.coefficient || 0.001);
+            row_spec.len = (((len_angl.len - sign * sz) * 2).round() / 2) * (row_base.coefficient || 0.001) ;
           }
         }
 

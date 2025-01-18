@@ -135,7 +135,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
     else if(typeof elm_types == 'string') {
       elm_types = types[elm_types];
     }
-    else if(!Array.isArray(elm_types)) {
+    if(!Array.isArray(elm_types)) {
       elm_types = [elm_types];
     }
 
@@ -200,7 +200,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
    * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
    * @param [force] {Boolean} - перезаполнять принудительно
    * @param [project] {Scheme} - текущий проект
-   * @param [defaults] {TabularSection} - внешние умоляания
+   * @param [defaults] {TabularSection} - внешние умолчания
    */
   refill_prm(ox, cnstr = 0, force, project, defaults) {
 
@@ -369,7 +369,7 @@ exports.CatProduction_params = class CatProduction_params extends Object {
 
   prm_defaults(param, cnstr) {
     const ts = param instanceof CatNom ? this.params : (cnstr ? this.furn_params : this.product_params);
-    return ts.find({param});
+    return ts.find({param}) || this.product_params.find({param});
   }
 
   graph_restrictions(spoint, clr) {

@@ -32,7 +32,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   refill_prm(layer, force=false) {
 
     const {project, furn_set, cnstr, sys} = layer;
-    const fprms = project.ox.params;
+    const {params} = project.ox;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
 
     // формируем массив требуемых параметров по задействованным в contour.furn_set
@@ -49,12 +49,12 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
 
       let prm_row, forcibly = true;
-      fprms.find_rows({param: v, cnstr: cnstr}, (row) => {
+      params.find_rows({param: v, cnstr: cnstr}, (row) => {
         prm_row = row;
         return forcibly = force;
       });
       if(!prm_row){
-        prm_row = fprms.add({param: v, cnstr: cnstr}, true);
+        prm_row = params.add({param: v, cnstr: cnstr}, true);
       }
 
       // умолчания и скрытость по табчасти системы
@@ -78,12 +78,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
     // удаляем лишние строки, сохраняя параметры допвставок
     const adel = [];
-    fprms.find_rows({cnstr: cnstr, inset: utils.blank.guid}, (row) => {
-      if(aprm.indexOf(row.param) == -1){
+    params.find_rows({cnstr, inset: utils.blank.guid}, (row) => {
+      if(!aprm.includes(row.param) || 
+          params.find({cnstr: 0, inset: utils.blank.guid, param: row.param, value: row.value})){
         adel.push(row);
       }
     });
-    adel.forEach((row) => fprms.del(row, true));
+    adel.forEach((row) => params.del(row, true));
 
   }
   
@@ -168,7 +169,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
 
       // проверяем, проходит ли строка
-      if(!row_furn.check_restrictions(contour, cache)){
+      if(row_furn.check_restrictions(contour, cache) !== true){
         return;
       }
 
@@ -181,7 +182,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
              Не найден объект с uid ${dop_row._obj.nom}`);
           }
 
-          if(!dop_row.check_restrictions(contour, cache)){
+          if(dop_row.check_restrictions(contour, cache) !== true){
             return;
           }
 
@@ -476,8 +477,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       if(!cache.hasOwnProperty('weight')) {
         if(contour.sys.flap_weight_max) {
           const weights = [];
-          for(const cnt of contour.layer.contours) {
-            weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+          const contours = contour.layer ? contour.layer.contours : [contour];
+          for(const cnt of contours) {
+            if(cnt === contour || !cnt.furn.open_type.is('Неподвижное')) {
+              weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+            }
           }
           cache.weight = Math.max(...weights);
         }

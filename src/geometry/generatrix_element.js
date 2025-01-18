@@ -365,7 +365,7 @@ class GeneratrixElement extends BuilderElement {
    * @return {boolean|paper.Point}
    */
   do_sub_bind(profile, node) {
-    const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
+    const ppath = (!(profile instanceof ProfileRegion) && profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
     let mpoint = ppath.getNearestPoint(this[node]);
     if(!mpoint.is_nearest(this[node], 0)) {
       const gen = this.generatrix.clone({insert: false}).elongation(3000);

@@ -20,7 +20,7 @@ class ProfileNested extends Profile {
       const {coordinates} = this.layer._ox;
       const prow = coordinates.add({cnstr: 1, elm: attr.row.parent});
     }
-    const nearest = attr._nearest || attr.parent.layer.getItem({elm: attr.row.parent});
+    const nearest = attr._nearest || this.layer.layer.profiles.find(({elm}) => elm === attr.row.parent);
     Object.defineProperties(this._attr, {
       _nearest: {
         get() {return nearest;},

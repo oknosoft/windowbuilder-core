@@ -41,7 +41,8 @@ class ContourNestedContent extends Contour {
       const generatrix = proto.generatrix.clone({insert: false});
       generatrix.translate(delta);
       new ProfileNestedContent({
-        parent: this,
+        layer: this,
+        parent: this.children.profiles,
         generatrix,
         proto: {inset: proto.inset, clr: proto.clr},
         elm: map.get(proto.elm),
@@ -53,7 +54,8 @@ class ContourNestedContent extends Contour {
       path.translate(delta);
       const elm = map.get(proto.elm);
       new Filling({
-        parent: this,
+        layer: this,
+        parent: this.children.fillings,
         path,
         proto: {inset: proto.inset, clr: proto.clr},
         elm,

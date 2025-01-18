@@ -11,7 +11,7 @@
 class CnnPoint {
 
   /**
-   * 
+   *
    * @param {ProfileItem} parent - родительский профиль
    * @param {NodeBE} node - имя узла профиля
    */
@@ -37,25 +37,25 @@ class CnnPoint {
     const {cnn_types, orientations} = $p.enm;
 
     // если примыкание не в углу, это точно Т
-    if(profile && !profile_point) {
+    if (profile && !profile_point) {
       return true;
     }
 
     // если это угол, то точно не T
-    if(!cnn || cnn.cnn_type == cnn_types.ad) {
+    if (!cnn || cnn.cnn_type == cnn_types.ad) {
       return false;
     }
 
     // если это Ʇ, или † то без вариантов T
-    if(cnn.cnn_type == cnn_types.t) {
+    if (cnn.cnn_type == cnn_types.t) {
       return true;
     }
 
     // если это Ꞁ или └─, то может быть T в разрыв - проверяем
-    if(cnn.cnn_type == cnn_types.av && parent.orientation != orientations.vert) {
+    if (cnn.cnn_type == cnn_types.av && parent.orientation != orientations.vert) {
       return true;
     }
-    if(cnn.cnn_type == cnn_types.ah && parent.orientation != orientations.hor) {
+    if (cnn.cnn_type == cnn_types.ah && parent.orientation != orientations.hor) {
       return true;
     }
 
@@ -68,13 +68,16 @@ class CnnPoint {
   get is_tt() {
     // если это угол, то точно не T
     let {profile_point, profile, parent, point} = this;
-    if(!point) {
+    if (profile instanceof Filling) {
+      return true;
+    }
+    if (!point) {
       point = parent[this.node];
     }
-    if(this.is_i || profile_point === 'b' || profile_point === 'e' || profile === parent) {
+    if (this.is_i || profile_point === 'b' || profile_point === 'e' || profile === parent) {
       return false;
     }
-    if(profile && (!profile_point || profile_point === 't') && (profile.b.is_nearest(point) || profile.e.is_nearest(point))) {
+    if (profile && (!profile_point || profile_point === 't') && (profile.b.is_nearest(point) || profile.e.is_nearest(point))) {
       return false;
     }
     return true;
@@ -103,7 +106,7 @@ class CnnPoint {
    */
   get is_ll() {
     const {point, profile, parent} = this;
-    if(!parent._attr.sticking) {
+    if (!parent._attr.sticking) {
       parent._attr.sticking = Math.pow(parent.width * 2 / 3, 2);
     }
     return profile && (profile.b.is_nearest(point, parent._attr.sticking) || profile.e.is_nearest(point, parent._attr.sticking));
@@ -133,7 +136,7 @@ class CnnPoint {
   }
 
   clear(mode) {
-    const {_attr} = this._parent;
+    const {_attr, project} = this._parent;
     if(mode === 'with_neighbor') {
       _attr._corns.length = 0;
       delete _attr.d0;
@@ -148,6 +151,12 @@ class CnnPoint {
     }
     if(this.is_cut) {
       this.is_cut = false;
+    }
+    if(!project.is_read_only) {
+      const {_row} = this;
+      if(_row) {
+        _row.elm2 = 0;
+      }
     }
     this.profile = null;
     this.err = null;
@@ -188,21 +197,34 @@ class CnnPoint {
       return;
     }
     const len = node == 'b' ? _corns[1].getDistance(_corns[4]) : _corns[2].getDistance(_corns[3]);
-    const {cnn} = this;
+    const {cnn, profile, profile_point} = this;
     let angle = _parent.angle_at(node);
     let aerr;
-    if(cnn && cnn.amin && cnn.amax) {
-      if(angle > 180) {
-        angle = 360 - angle;
-      }
-      if(cnn.amin < 0 && cnn.amax < 0) {
-        if(-cnn.amin <= angle && -cnn.amax >= angle) {
-          aerr = true;
+    if(cnn) {
+      if(cnn.amin && cnn.amax) {
+        if(angle > 180) {
+          angle = 360 - angle;
+        }
+        if(cnn.amin < 0 && cnn.amax < 0) {
+          if(-cnn.amin <= angle && -cnn.amax >= angle) {
+            aerr = true;
+          }
+        }
+        else {
+          if(cnn.amin > angle || cnn.amax < angle) {
+            aerr = true;
+          }
         }
       }
-      else {
-        if(cnn.amin > angle || cnn.amax < angle) {
-          aerr = true;
+      if(!cnn.cnn_type.is('t') && profile && profile_point) {
+        const other = profile.rays[profile_point]?.cnn?.cnn_type;
+        if(other) {
+          // ad, av, ah, long, short, t, ii, i, xt, xx
+          if((cnn.cnn_type.is('xx') && !other.is('xx') && !other.is('ad')) ||
+            (cnn.cnn_type.is('ad') && !other.is('ad')) ||
+            (!cnn.cnn_type.is('ad') && !cnn.cnn_type.is('xx') && other.is('ad'))) {
+            aerr = true;
+          }
         }
       }
     }
@@ -250,26 +272,39 @@ class CnnPoint {
   }
 
   /**
+   * Строить ли при наличии соединения с другой стороны, по лучам другой стороны
+   * @type {boolean}
+   */
+  get elongate_by_other() {
+    const {elongate_by_other} = $p.job_prm.properties;
+    const {parent, node} = this;
+    return Boolean(elongate_by_other && parent.dop[node]?.[elongate_by_other.ref]);
+  }
+
+  /**
    * Возвращает профиль и узел, если есть соединение с outer-стороны профиля
    *
    * @return {NodeAndProfile}
    */
   find_other() {
 
-    let {parent, profile, point}  = this;
-    if(!point) {
+    let {parent, profile, point} = this;
+    if (!point) {
       point = parent[this.node];
     }
     const {rays, layer} = parent;
-    const {outer} = $p.enm.cnn_sides;
+    let {inner, outer} = $p.enm.cnn_sides;
+    if(parent.cnn_side(profile, null, rays) === outer){
+      outer = inner;
+    }
 
     // ищем концы профилей в окрестности нас
-    for(const elm of layer.profiles) {
-      if(elm === parent) {
+    for (const elm of layer.profiles) {
+      if (elm === parent || elm === profile) {
         continue;
       }
-      for(const node of 'be') {
-        if(elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) === outer) {
+      for (const node of 'be') {
+        if (elm[node].is_nearest(point, 1) && parent.cnn_side(elm, null, rays) === outer) {
           return {profile: elm, node};
         }
       }
@@ -282,7 +317,7 @@ class CnnPoint {
    * @return {void}
    */
   correct_profile({profile}, cnn) {
-    const {parent, point}  = this;
+    const {parent, point} = this;
     const {rays, layer} = parent;
     const {outer} = $p.enm.cnn_sides;
 
@@ -326,22 +361,19 @@ class CnnPoint {
       other = this.find_other();
     }
     if(other) {
-      const {parent, node} = this;
+      const {parent, node, cnn_types, cnn} = this;
       const {cnn_elmnts} = parent.ox;
-      let row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
-      if(!row) {
-        row = cnn_elmnts.find({elm1: other.profile.elm, elm2: parent.elm, node1: other.node});
-      }
-      else if(row === this._row) {
+      const row = cnn_elmnts.find({elm1: parent.elm, elm2: other.profile.elm, node1: node, node2: other.node});
+      if(row && row === this._row) {
         this.correct_profile(other, row.cnn);
       }
       if(row) {
         this._cnno = {
           elm2: other.profile.elm,
           node2: other.node,
-          cnn: row.cnn,
+          cnn: $p.cat.cnns.elm_cnn(this, other.profile, cnn_types, cnn, false, false, this),
         };
-        return row.cnn;
+        return this._cnno.cnn;
       }
     }
     else if(this._cnno) {
@@ -537,16 +569,6 @@ class ProfileRays {
       parent.layer.glasses(false, true).forEach((glass) => {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
-    }
-    
-    // чистим лучи рядов
-    const {_ranges} = this.parent._attr;
-    if(_ranges) {
-      for(const [key, region] of _ranges) {
-        if(typeof key === 'number') {
-          region._attr?._rays?.clear(with_cnn);
-        }
-      }
     }
   }
 
@@ -954,6 +976,23 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
+  
+  
+  bringUp() {
+    const {b, e, rays} = this;
+    const node = b.selected ? rays.b : (e.selected ? rays.e : null);
+    if(node?.profile?.isAbove(this)) {
+      this.insertAbove(node?.profile);
+    }
+  }
+
+  bringDown() {
+    const {b, e, rays} = this;
+    const node = b.selected ? rays.b : (e.selected ? rays.e : null);
+    if(node?.profile?.isBelow(this)) {
+      this.insertBelow(node?.profile);
+    }
+  }
 
   /**
    * Угол к соседнему элементу
@@ -1063,6 +1102,24 @@ class ProfileItem extends GeneratrixElement {
     return this.generatrix.ravg();
   }
 
+  get rinner() {
+    if(this.is_linear()) {
+      return 0;
+    }
+    const {rays, _attr: {_corns}} = this;
+    const sub = rays.inner.get_subpath(_corns[3], _corns[4]);
+    return sub.ravg();
+  }
+
+  get router() {
+    if(this.is_linear()) {
+      return 0;
+    }
+    const {rays, _attr: {_corns}} = this;
+    const sub = rays.outer.get_subpath(_corns[1], _corns[2]);
+    return sub.ravg();
+  }
+
   /**
    * Направление дуги сегмента профиля против часовой стрелки
    * @type Boolean
@@ -1125,7 +1182,7 @@ class ProfileItem extends GeneratrixElement {
   get angle_hor() {
     const {b, e} = this;
     const res = (new paper.Point(e.x - b.x, b.y - e.y)).angle.round(2);
-    return res < 0 ? (res < -.5 ? res + 360 : 0) : res;
+    return res < 0 ? (res < -.12 ? res + 360 : 0) : res;
   }
 
   /**
@@ -1315,7 +1372,7 @@ class ProfileItem extends GeneratrixElement {
           }
           const glpoint = glass.interiorPoint();
           const vector = generatrix.getNearestPoint(glpoint).subtract(glpoint);
-          if(orientation === orientation._manager.hor) {
+          if(orientation.is('hor')) {
             if(vector.y > 0) {
               res.top.push(glass);
             }
@@ -1323,7 +1380,7 @@ class ProfileItem extends GeneratrixElement {
               res.bottom.push(glass);
             }
           }
-          else if (orientation === orientation._manager.vert) {
+          else if (orientation.is('vert')) {
             if(vector.x < 0) {
               res.right.push(glass);
             }
@@ -1339,7 +1396,7 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    const {_attr: {generatrix, path, paths}, project} = this;
+    const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {
       return;
     }
@@ -1368,13 +1425,8 @@ class ProfileItem extends GeneratrixElement {
       for(const item of this.segms.concat(this.addls)) {
         item.setSelection(0);
       }
-      for(const [key, item] of paths) {
-        if(typeof key === 'number') {
-          item.setSelection(0);
-        }
-      }      
 
-      if([0, 1].includes(project.builder_props.mode)) {
+      if([0, 1].includes(project.builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
           const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
@@ -1525,18 +1577,22 @@ class ProfileItem extends GeneratrixElement {
     const {_row, _attr, length, glbeads, angle_hor} = this;
     // сохраняем угол к горизонту и длину профиля в _row
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
-      if(!this.project._attr._loading) {
+      const {_attr, is_read_only} = this.project;
+      if(is_read_only) {
+        return;
+      }
+      if(!_attr?._loading) {
         _row.len = length;
         _row.angle_hor = angle_hor;
       }
-      if(_attr && _attr._rays) {
+      if(_attr?._rays) {
         const {nom: old} = _attr;
         delete _attr.nom;
         const {nom} = this;
         if(old !== nom) {
           arr.push(this);
         }
-      }      
+      }
     }
     for(const chld of this.getItems({class: ProfileItem}).concat(glbeads)) {
       chld.check_nom(arr);
@@ -1549,7 +1605,7 @@ class ProfileItem extends GeneratrixElement {
    */
   save_coordinates() {
 
-    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix} = this;
+    const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix, layer} = this;
 
     if(!generatrix) {
       return;
@@ -1565,14 +1621,15 @@ class ProfileItem extends GeneratrixElement {
     _row.path_data = generatrix.pathData;
     _row.nom = this.nom;
 
-    // радиус, как дань традиции - вычисляем для внешнего ребра профиля
+    // радиус, как дань традиции - вычисляем для внешнего ребра профиля??
     if(generatrix.is_linear()) {
       _row.r = 0;
     }
     else {
-      const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
-      const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
-      _row.r = Math.max(r1, r2);
+      // const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
+      // const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
+      // _row.r = Math.max(r1, r2);
+      _row.r = generatrix.ravg().round(2);
     }
 
     if(this instanceof ProfileNested || this instanceof ProfileParent) {
@@ -1623,6 +1680,8 @@ class ProfileItem extends GeneratrixElement {
 
 
       if(!(this instanceof ProfileSegment)) {
+
+        _row.dop = {index: layer.profiles.indexOf(this)};
 
         // в том числе - о соединениях с другой стороны
         if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
@@ -1880,7 +1939,7 @@ class ProfileItem extends GeneratrixElement {
    */
   cnn_side(profile, interior, rays) {
     if(!interior) {
-      interior = profile.interiorPoint();
+      interior = profile?.interiorPoint?.();
     }
     if(!rays) {
       rays = this.rays;
@@ -1986,15 +2045,6 @@ class ProfileItem extends GeneratrixElement {
       });
       for(const row of rm) {
         _owner.inserts.del(row);
-        const {region} = row;
-        if(region) {
-          _attr._ranges.delete(region);
-          _attr._ranges.delete(`cnns${region}`);
-          if(_attr.paths.get(region)) {
-            _attr.paths.get(region).remove();
-            _attr.paths.delete(region);
-          }
-        }
       }
 
       project.register_change();
@@ -2096,7 +2146,7 @@ class ProfileItem extends GeneratrixElement {
    * @summary Рассчитывает точки пути
    * @desc на пересечении текущего и указанного профилей
    *
-   * @param {CnnPoint} cnn_point 
+   * @param {CnnPoint} cnn_point
    * @param {NodeBE} [profile_point]
    * @param {Array.<ProfileItem>} [profiles]
    */
@@ -2140,7 +2190,7 @@ class ProfileItem extends GeneratrixElement {
       }
       return delta;
     }
-    
+
     // возвращает лучи второго профиля
     const inner2 = (profile2) => {
       const interior = generatrix.getPointAt(generatrix.length/2)
@@ -2160,7 +2210,10 @@ class ProfileItem extends GeneratrixElement {
 
     // если пересечение в узлах, используем лучи профиля
     const other = cnn_point.profile;
-    const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {inner: other.path, outer: other.path} : undefined);
+    const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {
+      inner: other.path,
+      outer: other.path
+    } : undefined);
     const is_b = profile_point === 'b';
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
@@ -2186,7 +2239,7 @@ class ProfileItem extends GeneratrixElement {
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && (!cnn_point.profile_point || cnn_point.profile_point === 't'))) {
 
         const {width} = this;
-        const w2 = width * width;
+        const w2 = width * width / 4;
         const nodes = new Set();
         let profile2;
         cnn_point.point && !(this instanceof Onlay) && (profiles || this.layer.profiles).forEach((profile) => {
@@ -2207,7 +2260,7 @@ class ProfileItem extends GeneratrixElement {
                 }
               }
             }
-            else if(profile.generatrix.is_nearest(cnn_point.point, true)) {
+            else if(profile.generatrix.is_nearest(cnn_point.point, w2)) {
               nodes.add(profile);
             }
           }
@@ -2221,7 +2274,7 @@ class ProfileItem extends GeneratrixElement {
 
         if(profile2) {
           const [interior, oinner2] = inner2(profile2);
-          
+
           const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
           const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
@@ -2329,8 +2382,8 @@ class ProfileItem extends GeneratrixElement {
                 pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
               }
               else {
-                pt1 > pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
-                pt2 > pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
               }
 
               intersect_point(oinner2, oinner, 5);
@@ -2356,10 +2409,10 @@ class ProfileItem extends GeneratrixElement {
                 pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);                
               }
               else {
-                pt1 > pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
-                pt2 > pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
+                pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
+                pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
               }
-              
+
               intersect_point(oinner2, oinner, 6);
               if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
                 delete _corns[6];
@@ -2391,7 +2444,7 @@ class ProfileItem extends GeneratrixElement {
         }
 
       }
-      
+
       // варианты угловых соединений
       else {
         // если есть соединение с обратной стороны, его надо учитывать при отрисовке узла
@@ -2571,10 +2624,14 @@ class ProfileItem extends GeneratrixElement {
         }
 
         // длинное угловое к горизонтальной с учётом ориентации
-        else if((cnn_type === cnn_types.long) ||
-            (cnn_type === cnn_types.ah && orientation.is('hor')) ||
-            (cnn_type === cnn_types.av && orientation.is('vert'))) {
-          if(is_b) {
+        else if ((cnn_type === cnn_types.long) ||
+          (cnn_type === cnn_types.ah && orientation.is('hor')) ||
+          (cnn_type === cnn_types.av && orientation.is('vert'))) {
+          if(cnn_point.elongate_by_other && cnn_other) {
+            const prays = cnn_other.profile.rays;
+            oouter = prays[cnn_other.profile.cnn_side(this, null, prays).is('inner') ? 'outer' : 'inner'];
+          }
+          if (is_b) {
             intersect_point(oouter, rays.outer, 1);
             intersect_point(oouter, rays.inner, 4);
           }
@@ -2726,7 +2783,7 @@ class ProfileItem extends GeneratrixElement {
   /**
    * Выясняет, перпендикулярны ли профили в точке point
    * @param {ProfileItem} profile
-   * @param {paper.Point} point 
+   * @param {paper.Point} point
    * @param {Number} [delta]
    */
   is_orthogonal(profile, point, delta) {
@@ -2742,7 +2799,7 @@ class ProfileItem extends GeneratrixElement {
 
   /**
    * Считаем профиль штульпом, если к нему примыкает хотя бы одна штульповая фурнитура
-   * @return {boolean|Array.<ProfileItem>}
+   * @return {boolean}
    */
   is_shtulp() {
     if(this.elm_type.is('impost') && this.orientation.is('vert')) {
@@ -2765,6 +2822,7 @@ class ProfileItem extends GeneratrixElement {
   flip() {
     const nearests = this.joined_nearests();
     const {inner, outer} = this.joined_imposts();
+    const shtulp = this.is_shtulp();
 
     const {elm, rays, generatrix, ox, project, layer} = this;
     rays.b.clear();
@@ -2772,34 +2830,52 @@ class ProfileItem extends GeneratrixElement {
     rays.clear('with_neighbor');
     ox.cnn_elmnts.clear({elm1: elm});
     ox.cnn_elmnts.clear({elm2: elm});
-    
-    
+
+
     // если это штульп - меняем фурнитуру после переворота
-    const shtulp = this.is_shtulp();
-    const furns = [];
     if(shtulp && nearests.length === 2) {
-      for(const {layer: {furn, direction, h_ruch}} of nearests) {
-        const curr = {
+      nearests.forEach(({layer}, index) => {
+        const {cnstr, furn, direction, h_ruch} = layer;
+        nearests[index] = {
+          layer,
+          cnstr,
           shtulp_kind: furn.shtulp_kind(),
           furn,
           direction,
           h_ruch,
-          params: [],
+          params: new Map(),
         };
-        ox.params.find_rows({cnstr: layer.cnstr}, ({param, value, hide}) => {
-          curr.params.push({param, value, hide});
+      });
+      for(const row of nearests) {
+        ox.params.find_rows({cnstr: row.cnstr}, ({param, value, hide}) => {
+          row.params.set(param, {value, hide});
         });
-        furns.push(curr);
       }
     }
-    
+
     // переворот
     generatrix.reverse();
 
     // смена фурнитуры
     if(shtulp && nearests.length === 2) {
-      nearests[0].layer.furn = furns[1].furn;
-      nearests[1].layer.furn = furns[0].furn;
+      nearests[0].layer.furn = nearests[1].furn;
+      nearests[1].layer.furn = nearests[0].furn;
+      nearests[0].layer.h_ruch = nearests[1].h_ruch;
+      nearests[1].layer.h_ruch = nearests[0].h_ruch;
+
+      for(const prow of ox.params) {
+        let other;
+        if(prow.cnstr === nearests[0].cnstr) {
+          other = nearests[1].params.get(prow.param);
+        }
+        else if(prow.cnstr === nearests[1].cnstr) {
+          other = nearests[0].params.get(prow.param);
+        }
+        if(other) {
+          Object.assign(prow, other);
+        }
+      }
+
       // чистим пути рядов стеклопакетов
       for(const {layer} of nearests) {
         for(const {_attr} of layer.fillings) {
@@ -2808,8 +2884,8 @@ class ProfileItem extends GeneratrixElement {
               elm?.remove?.();
             }
             _attr.paths.clear();
-          } 
-        }          
+          }
+        }
       }
     }
 
@@ -2887,7 +2963,7 @@ class ProfileItem extends GeneratrixElement {
     path.add(this.corns(4));
     path.closePath();
     path.reduce();
-    
+
     // если задан frame_indent - рисуем
     if(_attr._corns.i1 && _attr._corns.i2) {
       if(!_attr.indent) {
@@ -2904,55 +2980,14 @@ class ProfileItem extends GeneratrixElement {
         _attr.indent.firstSegment.point = _attr._corns.i1;
         _attr.indent.lastSegment.point = _attr._corns.i2;
       }
-    } 
+    }
 
     // перерисовываем всех детей
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.observer?.(this);
       chld.redraw();
     }
-    
-    return this.draw_regions();
-  }
 
-  /**
-   * В зависимости от builder_props.mode, прячет основные пути и дорисовывает пути рядов 
-   * @return {ProfileItem}
-   */
-  draw_regions() {
-    const {layer, generatrix, path, project: {builder_props}, _attr: {paths}, elm, ox} = this;
-    if([0, 1].includes(builder_props.mode)) {
-      generatrix.opacity = 1;
-      path.opacity = 1;
-      for(const [region, elm] of paths) {
-        elm?.remove?.();
-      }
-      paths.clear();
-    }
-    else {
-      generatrix.opacity = 0.06;
-      path.opacity = 0.06;
-      let filter;
-      switch (builder_props.mode) {
-        case 2:
-          filter = (v) => v <= -1;
-          break;
-        case 3:
-          filter = (v) => v >= 1 && v < 2;
-          break;
-        case 4:
-          filter = (v) => v >= 2;
-          break;
-      }
-      filter && ox.inserts.find_rows({cnstr: -elm}, (row) => {
-        if(filter(row.region)) {
-          const r = this.region?.(row.region);
-          if(r && r !== this) {
-            r.path;
-          }
-        }
-      });
-    }
     return this;
   }
 
@@ -3001,12 +3036,14 @@ class ProfileItem extends GeneratrixElement {
       const res = {dist: Infinity, profile: this};
       let dist;
 
-      for (let i = 1; i < 5; i++) {
-        dist = _corns[i].getDistance(corn);
-        if(dist < res.dist) {
-          res.dist = dist;
-          res.point = _corns[i];
-          res.point_name = i;
+      if(_corns.length > 4) {
+        for (let i = 1; i < 5; i++) {
+          dist = _corns[i]?.getDistance(corn);
+          if (dist < res.dist) {
+            res.dist = dist;
+            res.point = _corns[i];
+            res.point_name = i;
+          }
         }
       }
 
@@ -3118,34 +3155,6 @@ class ProfileItem extends GeneratrixElement {
       return aa - ab;
     });
     return has_a;
-  }
-
-  /**
-   * Выводит текст с номером элемента
-   * @param show
-   */
-  show_number(show = true) {
-    let {elm_number} = this.children;
-    if(!show) {
-      return elm_number && elm_number.remove();
-    }
-    if(elm_number) {
-      elm_number.position = this.path.interiorPoint;
-    }
-    else {
-      elm_number = new paper.PointText({
-        parent: this,
-        guide: true,
-        name: 'elm_number',
-        justification: 'center',
-        fillColor: 'darkblue',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size * 1.1,
-        fontWeight: 'bold',
-        content: this.elm,
-        position: this.interiorPoint().add(this.generatrix.getTangentAt(this.generatrix.length / 1).multiply(consts.font_size * 2)),
-      });
-    }
   }
 
   remove() {

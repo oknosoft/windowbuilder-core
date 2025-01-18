@@ -23,12 +23,16 @@ class BuilderElement extends paper.Group {
    */
   constructor(attr) {
 
+    const proto = attr?.proto;
+    if(proto) {
+      delete attr.proto;
+    }
     super(attr);
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
-    else if(attr.proto && attr.proto.parent && attr.proto.parent !== this.parent){
-      this.parent = attr.proto.parent;
+    else if(!attr.parent && proto.parent && proto.parent !== this.parent){
+      this.parent = proto.parent;
     }
 
     if(!attr.row){
@@ -50,17 +54,17 @@ class BuilderElement extends paper.Group {
       this._row.elm_type = $p.enm.elm_types.Створка;
     }
 
-    if(attr.proto){
+    if(proto){
 
-      if(attr.proto.inset){
-        this.set_inset(attr.proto.inset, true);
+      if(proto.inset){
+        this.set_inset(proto.inset, true);
       }
 
-      if(attr.proto instanceof Profile){
-        this.insertBelow(attr.proto);
+      if(proto instanceof Profile){
+        this.insertBelow(proto);
       }
 
-      this.clr = attr.proto.clr;
+      this.clr = proto.clr;
 
     }
 
@@ -69,7 +73,7 @@ class BuilderElement extends paper.Group {
     }
 
     if(this._row.elm_type.empty() && !this.inset.empty()){
-      this._row.elm_type = attr.proto?.elm_type || this.nom.elm_type;
+      this._row.elm_type = proto?.elm_type || this.nom.elm_type;
     }
 
     this.project.register_change();
@@ -93,17 +97,16 @@ class BuilderElement extends paper.Group {
   }
 
   /**
-   * Примыкающий внешний элемент - имеет смысл для сегментов створок, доборов и рам с внешними соединителями
+   * @summary Примыкающий внешний элемент
+   * @desc имеет смысл для сегментов створок, доборов и рам с внешними соединителями
    * @abstract
    * @return {BuilderElement|void}
    */
   nearest() {}
 
   /**
-   * Образующая
-   *
-   * прочитать - установить путь образующей. здесь может быть линия, простая дуга или безье
-   * по ней будут пересчитаны pathData и прочие свойства
+   * @summary Образующая
+   * @desc Здесь может быть линия, простая дуга или безье. По ней будут пересчитаны pathData и прочие свойства
    * @type paper.Path
    */
   get generatrix() {
@@ -190,6 +193,8 @@ class BuilderElement extends paper.Group {
       _xfields = tabular_sections.coordinates.fields,
       inset = Object.assign({}, _xfields.inset),
       arc_h = Object.assign({}, _xfields.r, {synonym: 'Высота дуги'}),
+      rinner = Object.assign({}, _xfields.r, {synonym: 'Радиус внутр.', read_only: true}),
+      router = Object.assign({}, _xfields.r, {synonym: 'Радиус внешн.', read_only: true}),
       info = Object.assign({}, fields.note, {synonym: 'Элемент'}),
       cnn1 = Object.assign({}, tabular_sections.cnn_elmnts.fields.cnn, {synonym: 'Соединение 1'}),
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
@@ -375,6 +380,8 @@ class BuilderElement extends paper.Group {
       cnn3,
       arc_h,
       r: _xfields.r,
+      rinner,
+      router,
       arc_ccw: _xfields.arc_ccw,
       a1: Object.assign({}, _xfields.x1, {synonym: 'Угол 1'}),
       a2: Object.assign({}, _xfields.x1, {synonym: 'Угол 2'}),
@@ -641,8 +648,11 @@ class BuilderElement extends paper.Group {
    * @return {Array}
    */
   elm_props(inset) {
-    const {_attr, _row, layer, ox: {params}, rnum} = this;
     const {utils, md, enm: {positions}} = $p;
+    let {_attr, _row, layer, ox: {params}, rnum} = this;
+    if(this instanceof ProfileItem) {
+      rnum = 0;
+    }
     const concat = inset || rnum;
     if(!inset) {
       inset = this.inset;
@@ -686,7 +696,7 @@ class BuilderElement extends paper.Group {
           }
           else {
             for(const arow of param.applying) {
-              if((arow.elm_type.empty() || arow.elm_type == elm_type) &&
+              if((arow.elm_type.empty() || arow.elm_type == elm_type || (elm_type.is('region') && arow.elm_type == this.nearest().elm_type)) &&
                 (!arow.pos || arow.pos.empty() || arow.pos === positions.any || arow.pos === pos || arow.pos === orientation)) {
                 props.push(param);
                 break;
@@ -814,7 +824,7 @@ class BuilderElement extends paper.Group {
     const {clr_group} = _row.inset;
     let clr = _row.clr._manager.getter(v);
 
-    if(clr.empty() || !clr_group.contains(clr)) {
+    if(!project.is_read_only && (clr.empty() || !clr_group.contains(clr))) {
       const {sys} = this.layer;
       const group = clr_group.empty() ? sys.clr_group : clr_group;
       let {default_clr} = sys;
@@ -827,7 +837,7 @@ class BuilderElement extends paper.Group {
       clr = default_clr;
     }
 
-    if(clr_group.contains(clr) && _row.clr != clr) {
+    if((clr_group.contains(clr) || project.is_read_only) && _row.clr != clr) {
       _row.clr = clr;
       project.register_change();
     }
@@ -1005,6 +1015,8 @@ class BuilderElement extends paper.Group {
     if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});
       ox.inserts.clear({cnstr: -elm});
+      ox.cnn_elmnts.clear({elm1: elm});
+      ox.cnn_elmnts.clear({elm2: elm});   
       _row._owner.del(_row);
     }
 

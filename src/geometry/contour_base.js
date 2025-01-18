@@ -10,219 +10,6 @@
 
 
 /**
- * Сегмент заполнения
- *
- * содержит информацию о примыкающем профиле и координатах начала и конца
- */
-class GlassSegment {
-
-  constructor(profile, b, e, outer) {
-    this.profile = profile;
-    this.b = b.clone();
-    this.e = e.clone();
-    this.outer = outer;
-    this.segment();
-  }
-
-  /**
-   * часть конструктора оформлена отдельным методом из-за рекурсии
-   */
-  segment() {
-
-    let gen;
-    const {profile} = this;
-    const cond = profile.children.some((addl) => {
-
-      if (addl instanceof ProfileAddl && this.outer == addl.outer) {
-        if (!gen) {
-          gen = profile.generatrix;
-        }
-        const b = profile instanceof ProfileAddl ? profile.b : this.b;
-        const e = profile instanceof ProfileAddl ? profile.e : this.e;
-        
-        // TODO: учесть импосты, привязанные к добору
-
-        if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {
-          this.profile = addl;
-          this.outer = false;
-          return true;
-        }
-      }
-    });
-
-    if (cond) {
-      this.segment();
-    }
-  }
-
-  /**
-   * Проверяет наличие соединения по углам в узле
-   * @param nodes
-   * @param {Array} segments
-   * @param {ProfileItem} curr_profile
-   * @param {ProfileItem} segm_profile
-   * @return {Boolean}
-   */
-  break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {
-
-    const node = nodes.byPoint(point);
-    if(!node) {
-      return false;
-    }
-
-    let tangent = curr_profile.generatrix.getTangentAt(offset);
-    if(this.outer) {
-      tangent = tangent.negate();
-    }
-
-    const angles = [];
-    for(const elm of node) {
-      if(elm.profile === curr_profile) {
-        continue;
-      }
-      // сравним углы между образующими в точке
-      const {generatrix} = elm.profile;
-      const ppoint = generatrix.getNearestPoint(point);
-      const poffset = generatrix.getOffsetOf(ppoint);
-      const ptangent = generatrix.getTangentAt(poffset);
-      for(const segm of segments) {
-        if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {
-          angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});
-        }
-      }
-    }
-    let angle;
-    for(const elm of angles) {
-      if(elm.profile === segm_profile && (!angle || elm.angle > angle)) {
-        angle = elm.angle;
-      }
-    }
-    if(angle < 0) {
-      return true;
-    }
-    for(const elm of angles) {
-      if(elm.profile !== segm_profile && elm.angle > angle) {
-        return true;
-      }
-    }
-  }
-
-  /**
-   * Выясняет, есть ли у текущего сегмента соединение с соседним
-   * @param segm
-   * @param point
-   * @param nodes
-   */
-  has_cnn(segm, nodes, segments) {
-
-    // если узлы не совпадают - дальше не смотрим
-    const point = segm.b;
-    if(!this.e.is_nearest(point, 0)) {
-      return false;
-    }
-
-    // идём вверх по доборным профилям
-    let curr_profile = this.profile;
-    let segm_profile = segm.profile;
-    while (curr_profile instanceof ProfileAddl) {
-      if(!this.outer) {
-        this.outer = !curr_profile.is_collinear(curr_profile.parent);
-      }
-      curr_profile = curr_profile.parent;
-    }
-    while (segm_profile instanceof ProfileAddl) {
-      if(!segm.outer) {
-        segm.outer = !segm_profile.is_collinear(segm_profile.parent);
-      }
-      segm_profile = segm_profile.parent;
-    }
-
-    if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {
-      return false;
-    }
-    if(curr_profile.gb.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || curr_profile.rays.b.profile === segm_profile) {
-        return true;
-      }
-    }
-
-    if(curr_profile.ge.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = this.break_by_angle(nodes, segments, point, curr_profile.generatrix.length, curr_profile, segm_profile);
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || curr_profile.rays.e.profile === segm_profile) {
-        return true;
-      }
-    }
-
-    if(segm_profile.gb.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = segm.break_by_angle(nodes, segments, point, 0, segm_profile, curr_profile)
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || segm_profile.rays.b.profile == curr_profile) {
-        return true;
-      }
-    }
-
-    if(segm_profile.ge.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
-      const by_angle = segm.break_by_angle(nodes, segments, point, segm_profile.generatrix.length, segm_profile, curr_profile);
-      if(by_angle) {
-        return false;
-      }
-      // проверяем для обычного узла
-      else if(by_angle === undefined || segm_profile.rays.e.profile == curr_profile) {
-        return true;
-      }
-    }
-
-    return false;
-
-  }
-
-  get _sub() {
-    const {sub_path} = this;
-    return {
-      get b() {
-        return sub_path ? sub_path.firstSegment.point : new paper.Point();
-      },
-      set b(v) {
-        sub_path && (sub_path.firstSegment.point = v);
-      },
-      get e() {
-        return sub_path ? sub_path.lastSegment.point : new paper.Point();
-      },
-      set e(v) {
-        sub_path && (sub_path.lastSegment.point = v);
-      },
-    };
-  }
-}
-
-class PointMap extends Map {
-
-  byPoint(point) {
-    for(const [key, value] of this) {
-      if(point.is_nearest(key, 0)) {
-        return value.length > 2 && value;
-      }
-    }
-  }
-}
-
-/**
  * Контур (слой) изделия
  *
  * Новые элементы попадают в активный слой-контур и не могут его покинуть
@@ -235,9 +22,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     super({parent: attr.parent, project: attr.project});
 
     this._attr = {chnom: []};
-
+    
     // узлы и рёбра текущего слоя
     this._skeleton = new Skeleton(this);
+    this.create_groups();
 
     const {project} = this;
 
@@ -256,8 +44,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.prms = new BuilderPrms({layer: this});
     this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});
 
-    project.l_connective.bringToFront();
+  }
 
+  create_groups() {
+    new GroupLayers({parent: this, name: 'bottomLayers'});
+    new GroupFillings({parent: this, name: 'fillings'});
+    new GroupProfiles({parent: this, name: 'profiles'});
+    new GroupSectionals({parent: this, name: 'sectionals'});
+    new GroupLayers({parent: this, name: 'topLayers'});
+    super.create_groups();
+    new GroupText({parent: this, name: 'text'});
+    this._attr.visualization = new GroupVisualization({owner: this, guide: true});
   }
 
   /**
@@ -326,10 +123,17 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
 
-    const {elm_types} = $p.enm;
+    const {enm: {elm_types}, utils} = $p;
     const glasses = [];
+    const rows = [];
     coordinates.find_rows({cnstr, region: 0}, (row) => {
-      const attr = {row, parent: this};
+      const {index} = row.dop;
+      row.dopIndex = (index === -1 || typeof index !== 'number') ? Infinity : index;
+      rows.push(row);
+    });
+    rows.sort(utils.sort('dopIndex'));
+    for(const row of rows) {
+      const attr = {row, parent: this.children.profiles};
       // профили и доборы
       if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
         if(this instanceof ContourVirtual && row.elm_type === elm_types.impost) {
@@ -345,15 +149,15 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       // разрезы
       else if(row.elm_type === elm_types.drainage) {
-        new Sectional(attr)
+        new Sectional({row, parent: this.children.sectionals})
       }
       // остальные элементы (текст)
       else if(row.elm_type === elm_types.text) {
         new FreeText({row, parent: this.l_text})
       }
-    });
+    }
     for(const row of glasses) {
-      new Filling({row, parent: this});
+      new Filling({row, parent: this.children.fillings});
     }
   }
 
@@ -363,10 +167,20 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Contour}
    */
   static create(attr = {}) {
-    let {kind, row, project, parent} = attr;
+    let {kind, row, project, parent, layer} = attr;
     if(typeof kind === 'undefined') {
       kind = row ? row.kind : 0;
     }
+    if(parent instanceof Contour) {
+      if(!layer) {
+        layer = parent;
+      }
+      parent = (row?.dop?.grp === 'bottom' || row?.dop?.region > 1) ? layer.children.bottomLayers : layer.children.topLayers;
+    }
+    else if(!layer && parent) {
+      layer = parent.layer;
+    }
+    
     let Constructor = Contour;
     if(kind === 1) {
       Constructor = ContourVirtual;
@@ -380,31 +194,37 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 4) {
       Constructor = ContourTearing;
     }
-    else if(parent instanceof ContourNestedContent || parent instanceof ContourNested) {
+    else if(kind === 5) {
+      Constructor = ContourRegion;
+    }
+    else if(layer instanceof ContourNestedContent || layer instanceof ContourNested) {
       Constructor = ContourNestedContent;
     }
 
     // строка в таблице конструкций
     if (!attr.row) {
       const {constructions} = project.ox;
-      attr.row = constructions.add({parent: parent ? parent.cnstr : 0});
+      attr.row = constructions.add({parent: layer ? layer.cnstr : 0});
       attr.row.cnstr = constructions.aggregate([], ['cnstr'], 'MAX') + 1;
     }
-    if(kind) {
+    if(kind && attr.row.kind !== kind) {
       attr.row.kind = kind;
     }
     // оповещаем мир о новых слоях
-    const contour = new Constructor(attr);
+    const contour = new Constructor(Object.assign(attr, {layer, parent}));
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }
 
   presentation(bounds) {
+    if(!this.isInserted()) {
+      return 'Удалён';
+    }
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, weight} = this;
-    return (layer ? 'Створка №' : 'Рама №') + cnstr +
+    const {cnstr, level, weight} = this;
+    return (level ? 'Створка №' : 'Рама №') + cnstr +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
@@ -458,18 +278,32 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Contour}
    */
   prod_layer() {
-    let {kind} = this._row;
+    let {kind, _owner} = this._row;
     let layer = this;
+    const {separate_frame_layers} = $p.job_prm.builder;
     while (kind === 0 && layer) {
-      layer = layer.layer;
-      if(!layer) {
+      
+      if(!layer.layer) {
+        if(separate_frame_layers) {
+          let min = Infinity;
+          _owner.find_rows({parent: 0}, ({cnstr}) => {
+            if(cnstr < min) {
+              min = cnstr;
+            }
+          });
+          if(layer.cnstr > min) {
+            return layer;
+          }
+        }
         break;
       }
-      if([10, 11].includes(layer._row?.kind)) {
+      
+      layer = layer.layer;      
+      if([1, 10, 11].includes(layer._row?.kind)) {
         return layer;
       }
     }
-    return [10, 11].includes(kind) ? layer : null;
+    return [1, 10, 11].includes(kind) ? layer : null;
   }
 
   /**
@@ -502,11 +336,20 @@ class Contour extends AbstractFilling(paper.Layer) {
    * Перемещает слой выше-ниже по координате Z
    * @param {('up'|'down')} direction
    */
-  bring(direction = 'up') {
-    const {layer, project, _row} = this;
+  bring(direction = 'up', lock) {
+    const {layer, parent, project, _row} = this;
     const contours = layer ? layer.contours : project.contours;
     const index = contours.indexOf(this);
     if(contours.length < 2 || (direction === 'down' && index === 0) || (direction === 'up' && index === contours.length - 1) ) {
+      if(parent && !lock) {
+        if(direction === 'down' && index === 0 && parent === layer.children.topLayers) {
+          this.parent = layer.children.bottomLayers;
+        }
+        else if(direction === 'up' && index === contours.length - 1 && parent === layer.children.bottomLayers) {
+          this.parent = layer.children.topLayers;
+        }
+        project.register_change(true);
+      }
       return;
     }
     const other = direction === 'up' ? contours[index + 1] : contours[index - 1];
@@ -517,6 +360,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.insertBelow(other);
     }
     _row._owner.swap(_row, other._row);
+    project.register_change(true);
   }
 
   /**
@@ -575,7 +419,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type Number
    */
   get area() {
-    return (this.bounds.area/1e6).round(3);
+    return (this.bounds.area/1e6).round(4);
   }
 
   /**
@@ -594,7 +438,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         upath = path.clone({insert: false});
       }
     });
-    return (upath.area/1e6).round(3);
+    return (upath.area/1e6).round(4);
   }
 
   /**
@@ -639,7 +483,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // двигаем по Z
     switch(_row.furn.shtulp_kind()) {
     case 2: // пассивная
-      this.bring('down');
+      this.bring('down', true);
       break;
     case 1: // активная
       this.bring('up');
@@ -664,22 +508,44 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * Возвращает массив вложенных контуров текущего контура
+   * @memberOf AbstractFilling
+   * @instance
+   * @type Array.<Contour>
+   */
+  get contours() {
+    const {topLayers, bottomLayers} = this.children;
+    return [...bottomLayers.contours, ...topLayers.contours];
+  }
+
+  get tearings() {
+    const res = [];
+    for(const {children} of this.children.fillings.children) {
+      if(children.tearings) {
+        for(const tearing of children.tearings.children) {
+          res.push(tearing);
+        }
+      }
+    }
+    return res;
+  }
+
+  /**
    * Возвращает массив заполнений + створок текущего контура
    * @param [hide] {Boolean} - если истина, устанавливает для заполнений visible=false
    * @param [glass_only] {Boolean} - если истина, возвращает только заполнения
    * @return {Array.<Contour|Filling>}
    */
   glasses(hide, glass_only) {
-    return this.children.filter((elm) => {
-      if(elm instanceof ContourTearing) {
-        return false;
+    const {topLayers, bottomLayers, fillings} = this.children;
+    const res = glass_only ? [...fillings.children] : 
+      [...bottomLayers.contours, ...fillings.children, ...topLayers.contours]
+        .filter(v => !(v instanceof ContourRegion));
+    return res.filter((elm) => {
+      if (hide) {
+        elm.visible = false;
       }
-      if ((!glass_only && elm instanceof Contour) || elm instanceof Filling) {
-        if (hide) {
-          elm.visible = false;
-        }
-        return true;
-      }
+      return true;
     });
   }
 
@@ -867,6 +733,10 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     return crating;
   }
+  
+  defaultFilling() {
+    return this.getItem({class: Filling}) || this.project.getItem({class: Filling});
+  }
 
   /**
    * Получает замкнутые контуры, ищет подходящие створки или заполнения, при необходимости создаёт новые
@@ -941,16 +811,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         // добавляем заполнение
         // 1. ищем в изделии любое заполнение
         // 2. если не находим, используем умолчание системы
-        if (glass = this.getItem({class: Filling})) {
-
-        }
-        else if (glass = this.project.getItem({class: Filling})) {
-
-        }
-        else {
-
-        }
-        cglass = new Filling({proto: glass, parent: this, path: glcontour});
+        cglass = new Filling({
+          proto: this.defaultFilling(),
+          parent: this.children.fillings, 
+          path: glcontour
+        });
         cglass.redraw();
       }
     }
@@ -1060,10 +925,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     contours.concat(tearings).forEach((contour) => contour.profiles.forEach(crays));
     profiles.forEach(crays);
     project.register_change();
-  }
-  
-  get tearings() {
-    return this.children.filter((item) => item instanceof ContourTearing);
   }
 
   /**
@@ -1235,6 +1096,25 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  /**
+   * @summary Проверяет, есть ли на текущем профиле ось поворота
+   * @param {Profile} profile
+   * @return {Boolean}
+   */
+  is_rotation_axis(profile) {
+    const cache = {
+      profiles: this.outer_nodes,
+      bottom: this.profiles_by_side('bottom'),
+    };
+    for(const row of this.furn.open_tunes) {
+      if (row.rotation_axis) {
+        if(profile === this.profile_by_furn_side(row.side, cache)) {
+          return true;
+        }
+      }
+    }
+  }
+
 
   /**
    * Возвращает ребро текущего контура по узлам
@@ -1253,31 +1133,36 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
+  
+  clearChildren() {
+    // сначала удаляем створки и заполнения
+    for(const elm of this.glasses()) {
+      elm.remove();
+    }
+    // затем - импосты
+    for(const elm of this.imposts.reverse()) {
+      elm.remove();
+    }
+    // и остальные профили
+    for(const elm of this.profiles) {
+      elm.remove();
+    }
+  }
 
   /**
    * Удаляет контур из иерархии проекта
    * Одновлеменно, удаляет строку из табчасти _Конструкции_ и подчиненные строки из табчасти _Координаты_
    */
   remove() {
-
-    // сначала удаляем створки и заполнения
-    for(const elm of this.glasses()) {
-      elm.remove();
-    }
-
-    // затем - импосты
-    for(const elm of this.imposts.reverse()) {
-      elm.remove();
-    }
-
+    this.clearChildren();
     // и всех остальных детей
-    const {children, project, _row, cnstr, _ox} = this;
+    const {children, project, _row, cnstr, _ox, l_visualization} = this;
     while (children.length) {
       if(children[0].remove() === false) {
         return;
       }
     }
-
+    l_visualization.remove();
     project._scope.eve.emit('elm_removed', this);
 
     if (_row) {
@@ -1389,7 +1274,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get dimension_bounds() {
     let bounds = super.dimension_bounds;
-    const ib = this.l_visualization._by_insets.bounds;
+    const ib = this.l_visualization.by_insets.bounds;
     if (ib.height && ib.bottom > bounds.bottom) {
       const delta = ib.bottom - bounds.bottom + 10;
       bounds = bounds.unite(
@@ -1475,19 +1360,13 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_static_errors() {
     const {l_visualization, sys} = this;
-
+    l_visualization.static.removeChildren();
+    
     if(!sys.check_static) {
       return;
     }
 
     const {Рама, Импост} = $p.enm.elm_types;
-
-    if(l_visualization._static) {
-      l_visualization._static.removeChildren();
-    }
-    else {
-      l_visualization._static = new paper.Group({parent: l_visualization});
-    }
 
     for (let i = 0; i < this.profiles.length; i++) {
 
@@ -1502,7 +1381,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           strokeCap: 'round',
           strokeScaling: false,
           guide: true,
-          parent: l_visualization._static,
+          parent: l_visualization.static,
           fillColor: 'red'
         });
       }
@@ -1517,12 +1396,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {l_visualization, project: {_scope: {eve}}} = this;
     const {job_prm: {nom}, msg} = $p;
 
-    if (l_visualization._cnn) {
-      l_visualization._cnn.removeChildren();
-    }
-    else {
-      l_visualization._cnn = new paper.Group({parent: l_visualization});
-    }
+    l_visualization.cnn.removeChildren();
 
     if(eve._async?.move_points?.timer) {
       return;
@@ -1536,7 +1410,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       dashOffset: 4,
       dashArray: [4, 4],
       guide: true,
-      parent: l_visualization._cnn,
+      parent: l_visualization.cnn,
     };
 
     // ошибки соединений с заполнениями
@@ -1556,9 +1430,10 @@ class Contour extends AbstractFilling(paper.Layer) {
         glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
         err = true;
       }
-      
-      if(!inset.check_base_restrictions(inset, glass)) {
-        glass.err_spec_row(nom.info_error, msg.err_sizes, inset);
+
+      let text = inset.check_base_restrictions(inset, glass);
+      if(text !== true) {
+        glass.err_spec_row(nom.info_error, `${msg.err_sizes} ${text}`, inset);
         err = true;
       }
 
@@ -1604,8 +1479,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       elm.check_err(err_attrs);
       
     });
-
-    l_visualization.bringToFront();
+    
   }
 
   /**
@@ -1620,7 +1494,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       const {inset: origin} = row;
       if (origin.insert_type.is('mosquito')) {
         const props = {
-          parent: new paper.Group({parent: l_visualization._by_insets}),
+          parent: new paper.Group({parent: l_visualization.by_insets}),
           strokeColor: 'grey',
           strokeWidth: 3,
           dashArray: [6, 4],
@@ -1648,7 +1522,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
-          parent: props.parent,
+          parent: props.parent, // this.children.text,
           fillColor: 'black',
           fontFamily: font_family,
           fontSize: elm_font_size,
@@ -1722,7 +1596,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
 
         const props = {
-          parent: new paper.Group({parent: l_visualization._by_insets}),
+          parent: new paper.Group({parent: l_visualization.by_insets}),
           fillColor: BuilderElement.clr_by_clr.call(this, clr),
           shadowColor: 'lightgray',
           shadowBlur: 20,
@@ -1861,7 +1735,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const delta = (vlen - bottom.length) / 2;
 
         new paper.Path({
-          parent: new paper.Group({parent: l_visualization._by_insets}),
+          parent: new paper.Group({parent: l_visualization.by_insets}),
           strokeColor: 'grey',
           fillColor: BuilderElement.clr_by_clr.call(this, row.clr),
           shadowColor: 'grey',
@@ -1895,6 +1769,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
       }
+      if (l_visualization?._opening2?.visible) {
+        l_visualization._opening2.visible = false;
+      }
       return;
     }
 
@@ -1907,7 +1784,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     // рисует линии открывания на поворотной, поворотнооткидной и фрамужной фурнитуре
     const rotary_folding = () => {
 
-      const {_opening} = l_visualization;
+      const {_opening, _opening2} = l_visualization;
       const {side_count, project: {sketch_view}} = this;
       
       if(side_count < furn.side_count) {
@@ -1919,19 +1796,32 @@ class Contour extends AbstractFilling(paper.Layer) {
           const axis = this.profile_by_furn_side(row.side, cache);
           const other = this.profile_by_furn_side(
             row.side + 2 <= side_count ? row.side + 2 : row.side - 2, cache);
-
+          
+          const center = other.rays.inner.getPointAt(other.rays.inner.length / 2);
           _opening.moveTo(axis.corns(3));
-          _opening.lineTo(other.rays.inner.getPointAt(other.rays.inner.length / 2));
+          _opening.lineTo(center);
           _opening.lineTo(axis.corns(4));
 
+          if(furn.open_type.is('pendulum')) {
+            const loc = axis.generatrix.getLocationAt(0);
+            _opening2.moveTo(axis.corns(3).add(loc.normal.multiply(-30)));
+            _opening2.lineTo(center.add(loc.tangent.multiply(40)));
+            _opening2.moveTo(center.add(loc.tangent.multiply(-40)));
+            _opening2.lineTo(axis.corns(4).add(loc.normal.multiply(-30)));
+          }
         }
       });
 
-      if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
-        _opening.dashArray = [70, 50];
+      if(furn.open_type.is('pendulum')) {
+        _opening2.visible = true;
       }
-      else if(_opening.dashArray.length) {
-        _opening.dashArray = [];
+      else {
+        if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
+          _opening.dashArray = [70, 50];
+        }
+        else if(_opening.dashArray.length) {
+          _opening.dashArray = [];
+        }
       }
       _opening.visible = true;
     };
@@ -1972,15 +1862,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     };
 
     // подготавливаем слой для рисования
-    if (!l_visualization._opening) {
-      l_visualization._opening = new paper.CompoundPath({
-        parent: l_visualization,
-        strokeColor: 'black',
-      });
-    }
-    else {
-      l_visualization._opening.removeChildren();
-    }
+    l_visualization._opening.removeChildren();
+    l_visualization._opening2.removeChildren();
 
     // рисуем раправление открывания
     return furn.is_sliding ? sliding() : rotary_folding();
@@ -1990,40 +1873,56 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Рисует дополнительную визуализацию. Данные берёт из спецификации и проблемных соединений
    */
-  draw_visualization(rows) {
+  draw_visualization(rows, region = 0) {
 
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped} = this;
+    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
-    const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
-    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped
-
-    l_visualization._by_spec.removeChildren();
+    const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
+    const glass_separately = cch.properties.predefined('glass_separately');
+    const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped;
+    
+    l_visualization.by_insets.removeChildren();
+    l_visualization.by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
     const hide_by_spec = !builder_props.visualization;
     if(!rows && !hide_by_spec) {
-      rows = [];
-      this._ox.specification.find_rows({dop: -1}, (row) => {
-        const {sketch_view} = row.nom.visualization; 
+      const push = (row) => {
+        const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
           (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
           return;
         }
         rows.push(row);
-      });
+      };
+      rows = [];
+      prod_ox.specification.find_rows({dop: -1}, push);
+      // для заполнений отдельно, дополняем строки визуализации
+      if(glass_separately) {
+        for(const elm of glasses) {
+          if(glass_separately?.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm})) {
+            const ox = cat.characteristics.find({leading_product: _ox, leading_elm: elm.elm});
+            ox?.specification?.find_rows({dop: -1}, push);
+          }
+        }
+      }
     }
 
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
-        this.nom.visualization.draw({
-          elm,
-          layer: l_visualization,
-          offset: this.len * 1000,
-          offset0: this.width * 1000 * (this.alp1 || 1),
-          clr: this.clr,
-          reflected,
-        });
-        return true;
+        const {visualization} = this.nom;
+        const {attributes} = visualization;
+        if(!attributes?.regions || attributes.regions.includes?.(region)) {
+          visualization.draw({
+            elm,
+            layer: l_visualization,
+            offset: this.len * 1000,
+            offset0: this.width * 1000 * (this.alp1 || 1),
+            clr: this.clr,
+            reflected,
+          });
+          return true;
+        }
       }
     }
 
@@ -2044,14 +1943,18 @@ class Contour extends AbstractFilling(paper.Layer) {
           // визуализация для текущего заполнения
           glasses.some((elm) => {
             if(row.elm === elm.elm) {
-              row.nom.visualization.draw({
-                elm,
-                layer: l_visualization,
-                offset: [row.len * 1000, row.width * 1000],
-                clr: row.clr,
-                reflected,
-              });
-              return true;
+              const {visualization} = row.nom;
+              const {attributes} = visualization;
+              if(!attributes?.regions || attributes.regions.includes?.(region)) {
+                visualization.draw({
+                  elm,
+                  layer: l_visualization,
+                  offset: [row.len * 1000, row.width * 1000],
+                  clr: row.clr,
+                  reflected,
+                });
+                return true;
+              }
             }
             // визуализация для текущей раскладки
             return elm.imposts.some(draw.bind(row));
@@ -2060,14 +1963,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-    // подписи профилей
+    // подписи заполнений
     if(builder_props.glass_numbers) {
       this.draw_glass_numbers();
     }
     
     // перерисовываем вложенные контуры
     for(const contour of contours){
-      contour.draw_visualization(contour instanceof ContourNestedContent ? null : (contour instanceof ContourNested ? [] : rows));
+      contour.draw_visualization(contour.prod_ox === prod_ox ? rows : null, region);
     }
 
   }
@@ -2079,21 +1982,29 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {l_visualization} = this;
     for(const glass of this.glasses(false, true)) {
       const text = new paper.PointText({
-        parent: l_visualization._by_spec,
+        parent: l_visualization.by_spec,
         guide: true,
         //justification: 'left',
         fillColor: 'darkgreen',
         fontFamily: consts.font_family,
         fontSize: consts.font_size * 2,
         content: glass.elm,
-        position: glass.bounds.center,
+        position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
       });
     }
+  }
+
+  /**
+   * Надо ли строить авторазмерные линии
+   * @type {Boolean}
+   */
+  get show_dimensions() {
+    return !this.layer;
   }
   
   /**
    * Признак сокрытия слоя
-   * @return {boolean}
+   * @type {boolean}
    */
   get hidden() {
     return !!this._hidden;
@@ -2102,13 +2013,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (this.hidden != v) {
       this._hidden = v;
       const visible = !this._hidden;
-      this.children.forEach((elm) => {
-        if (elm instanceof BuilderElement) {
-          elm.visible = visible;
-        }
-      });
+      for(const elm of this.children.profiles.children.concat(this.children.fillings.children)) {
+        elm.visible = visible;
+        elm.redraw();
+      }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
+      this.l_dimensions.redraw();
+      this.project.draw_sizes();
     }
   }
 
@@ -2262,7 +2174,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         elm = new this.ProfileConstructor({
           generatrix: curr.profile.generatrix.get_subpath(curr.b, curr.e),
-          proto: outer_nodes.length ? outer_nodes[0] : {parent: this, clr: curr.profile.clr},
+          proto: outer_nodes.length ? outer_nodes[0] : {parent: this.children.profiles, clr: curr.profile.clr},
           _nearest: curr.profile,
         });
 
@@ -2428,7 +2340,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @returns {Array.<Profile>}
    */
   get profiles() {
-    return this.children.filter((elm) => elm instanceof Profile);
+    return this.children.profiles.children;
   }
 
   /**
@@ -2436,7 +2348,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Array.<Sectional>}
    */
   get sectionals() {
-    return this.children.filter((elm) => elm instanceof Sectional);
+    return this.children.sectionals.children;
   }
 
   /**
@@ -2474,35 +2386,43 @@ class Contour extends AbstractFilling(paper.Layer) {
     this._attr._bounds = null;
 
     // чистим визуализацию
-    const {l_visualization: {_by_insets, _by_spec}, project, profiles, _attr: {chnom}} = this;
+    const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
-    _by_insets.removeChildren();
-    !_attr._saving && _by_spec.removeChildren();
+    by_insets.removeChildren();
+    !_attr._saving && by_spec.removeChildren();
 
-    //$p.job_prm.debug && console.profile();
-
-    // сначала перерисовываем все профили контура
+    // перерисовываем все профили контура
     const imposts = [];
     const addls = [];
     const other = new Set();
     for(const elm of profiles) {
+      const {_rays} = elm._attr; 
       if(elm.elm_type.is('impost')) {
         imposts.push(elm);
+      }
+      else if(_rays?.b?.is_short && _rays?.e?.is_short) {
+        other.add(elm);
       }
       else {
         elm.redraw();
       }
     }
+    for(const elm of other) {
+      elm.redraw();
+    }
+    other.clear();
     for(const elm of profiles) {
       if(imposts.includes(elm)) {
         elm.redraw();
       }
       else {
         const {b, e} = elm.rays;
-        if(b.is_short) {
+        if(b.is_short && b.profile?.isBelow(elm)) {
+          b.profile.insertAbove(elm);
           other.add(b.profile);
         }
-        if(e.is_short) {
+        if(e.is_short && e.profile?.isBelow(elm)) {
+          e.profile.insertAbove(elm);
           other.add(e.profile);
         }
       }
@@ -2514,23 +2434,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     // упорядочиваем по z TODO: оптимизировать
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
-      b.profile?.bringToFront?.();
-      if(b.profile?.e?.is_nearest(b.point, 20000)) {
-        b.profile.rays.e.profile?.bringToFront?.();
+      if(b.profile?.isBelow(elm)) {
+        b.profile?.insertAbove(elm);
       }
-      else if(b.profile?.b?.is_nearest(b.point, 20000)) {
-        b.profile.rays.b.profile?.bringToFront?.();
+      if(e.profile?.isBelow(elm)) {
+        e.profile?.insertAbove(elm);
       }
-      e.profile?.bringToFront?.();
-      if(e.profile?.e?.is_nearest(e.point, 20000)) {
-        e.profile.rays.e.profile?.bringToFront?.();
-      }
-      else if(e.profile?.b?.is_nearest(e.point, 20000)) {
-        e.profile.rays.b.profile?.bringToFront?.();
-      }
-    }
-    for (const elm of Array.from(other)) {
-      elm?.bringToFront?.();
     }
     // z-index доборов
     for (const elm of addls) {
@@ -2563,24 +2472,13 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
-    
-    //$p.job_prm.debug && console.profileEnd();
 
     // рисуем направление открывания
     this.draw_opening();
 
-    // перерисовываем вложенные контуры
-    const children = this.contours.concat(this.tearings);
-    const left = this.children.filter((elm) => !children.includes(elm));
-    for(const elm of children) {
+    // перерисовываем вложенные контуры и ряды
+    for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
-      if(!elm.flipped) {
-        for(const lelm of left) {
-          if(lelm.isAbove(elm)) {
-            lelm.insertBelow(elm);
-          }
-        }
-      }
     }
 
     if(!_attr._hide_errors) {
@@ -2639,7 +2537,10 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     const cnstr = root ? 0 : this.cnstr || -9999;
     const {project, sys, own_sys, prod_ox, params, layer} = this;
-    const {_dp, _attr} = project;
+    const {_dp, _attr, is_read_only} = project;
+    if(is_read_only) {
+      return;
+    }
     const {blank} = $p.utils;
     let notify;
 
@@ -2700,6 +2601,9 @@ class Contour extends AbstractFilling(paper.Layer) {
                 prow.hide = true;
               }
               const {value} = prow;
+              if(typeof value === 'number') {
+                continue;
+              }
               if (!value || value?.empty() || (drow.list && !drow.list.includes(value.valueOf())) || drow.forcibly) {
                 prow.value = drow.option_value({elm: filling});
               }
@@ -2750,8 +2654,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       this._row.by_contour(this);
     }
     else {
-      const push = (contour) => {
-        res = res.then(() => contour.save_coordinates(short, save, close));
+      const push = (elm) => {
+        res = res.then(() => elm.save_coordinates(short, save, close));
       };
       // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
@@ -2759,13 +2663,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
 
       // запись в таблице координат, каждый элемент пересчитывает самостоятельно
-      const {l_text, l_dimensions} = this;
-      for (let elm of this.children) {
+      for (const elm of this.children) {
         if (elm.save_coordinates) {
           push(elm);
-        }
-        else if (elm === l_text || elm === l_dimensions) {
-          elm.children.forEach((elm) => elm.save_coordinates && push(elm));
         }
       }
       res = res.then(() => this._row.by_contour(this));
@@ -2847,15 +2747,18 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   /**
    * Возвращает значение параметра с учётом наследования
-   * @param param {CchProperties}
-   * @param cnstr {Number}
-   * @param elm {BuilderElement}
-   * @param origin {CatInserts|undefined}
+   * @param {CchProperties} param
+   * @param {Number} cnstr
+   * @param {BuilderElement} elm
+   * @param {BuilderElement} [elm2]
+   * @param {String} [node]
+   * @param {String} [node2]
+   * @param {CatInserts|undefined} [origin]
    * @param prm_row
    * @returns {*}
    */
-  extract_pvalue({param, cnstr, elm, origin, prm_row}) {
-    if(elm?.rnum) {
+  extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
+    if(!(elm instanceof ProfileItem) && elm?.rnum) {
       return elm[param.valueOf()];
     }
     const {layer, own_sys} = this;
@@ -2864,7 +2767,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     if(!cnstr) {
       if(layer && !own_sys && !(layer instanceof ContourParent)) {
-        return layer.extract_pvalue({param, cnstr, elm, origin, prm_row});
+        return layer.extract_pvalue({param, cnstr, elm, elm2, node, node2, origin, prm_row});
       }
     }
     const {enm: {plan_detailing}, utils, CatInserts} = $p;
@@ -2875,33 +2778,38 @@ class Contour extends AbstractFilling(paper.Layer) {
     // параметры, переопределяемые для отдела, читаем из отдела
     if(param.inheritance !== 3 &&
         plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
+      if(!cnstr && elm?.elm && [1, 2].includes(param.inheritance)) {
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
+      }
       let prow;
       _ox.params.find_rows({
         param,
         cnstr: {in: [0, this.cnstr]},
         inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
       }, (row) => {
-        if(!prow || row.cnstr) {
+        if(!prow || row.cnstr === this.cnstr) {
           prow = row;
-          return false;
         }
       });
       if(prow) {
         return prow.value;
       }
       else if(cnstr && layer && !own_sys) {
-        return layer.extract_pvalue({param, cnstr: 0, elm, origin, prm_row});
+        return layer.extract_pvalue({param, cnstr: 0, elm, elm2, node, node2, origin, prm_row});
       }
       if(param.inheritance === 4) {
-        return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+        return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
+      }
+      if(param.inheritance === 5) {
+        return param.template_value({ox: _ox, cnstr, project: this.project});
       }
       if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
-        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, origin, layer: this, prm_row});
+        return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
       console.info(`Не задано значение параметра ${param.toString()}`);
       return param.fetch_type();
     }
-    return param.extract_pvalue({ox: _ox, cnstr, elm, origin, layer: this, prm_row});
+    return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
   }
 
   /**
@@ -3083,7 +2991,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     furn_set.specification.find_rows({dop: 0}, (row) => {
 
       // проверяем, проходит ли строка
-      if (!row.quantity || !row.check_restrictions(this, cache)) {
+      if (!row.quantity || row.check_restrictions(this, cache) !== true) {
         return;
       }
       if (set_handle_height(row)) {
@@ -3257,16 +3165,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {paper.Group}
    */
   get l_text() {
-    const {_attr} = this;
-    if(!_attr._txt) {
-      _attr._txt = new paper.Group({parent: this});
-      for(const contour of this.contours) {
-        if(_attr._txt.isAbove(contour)) {
-          _attr._txt.insertBelow(contour);
-        }
-      }
-    }
-    return _attr._txt;
+    return this.children.text;
   }
 
   /**
@@ -3274,18 +3173,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {paper.Group}
    */
   get l_visualization() {
-    const {_attr} = this;
-    if (!_attr._visl) {
-      _attr._visl = new paper.Group({parent: this, guide: true});
-      _attr._visl._by_insets = new paper.Group({parent: _attr._visl});
-      _attr._visl._by_spec = new paper.Group({parent: _attr._visl});
-      for(const contour of this.contours) {
-        if(_attr._visl.isAbove(contour)) {
-          _attr._visl.insertBelow(contour);
-        }
-      }
-    }
-    return _attr._visl;
+    return this.project.l_visualization.map.get(this);
   }
 
   /**
@@ -3294,13 +3182,19 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {Boolean}
    */
   get opacity() {
-    return this.children.length ? this.children[0].opacity : 1;
+    for(const elm of this.profiles) {
+      if(elm.opacity !== 1) {
+        return elm.opacity;
+      }
+    }
+    return 1;
   }
   set opacity(v) {
-    this.children.forEach((elm) => {
-      if (elm instanceof BuilderElement)
+    for(const elm of [...this.profiles, ...this.glasses()]) {
+      if (elm instanceof BuilderElement) {
         elm.opacity = v;
-    });
+      }
+    }
   }
 
   /**
@@ -3317,8 +3211,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   on_remove_elm(elm) {
     // при удалении любого профиля, удаляем размрные линии импостов
-    if (this.parent) {
-      this.parent.on_remove_elm(elm);
+    if (this.layer) {
+      this.layer.on_remove_elm(elm);
     }
     if (elm instanceof Profile && !this.project._attr._loading) {
       this.l_dimensions.clear();
@@ -3330,8 +3224,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   on_insert_elm(elm) {
     // при вставке любого профиля, удаляем размрные линии импостов
-    if (this.parent) {
-      this.parent.on_remove_elm(elm);
+    if (this.layer) {
+      this.layer.on_insert_elm(elm);
     }
     if (elm instanceof Profile && !this.project._attr._loading) {
       this.l_dimensions.clear();
@@ -3389,10 +3283,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     });
   }
-  
+
+  /**
+   * @summary Порядок групп в зависимости от признака mirror
+   */
   apply_mirror() {
     
-    const {l_visualization, profiles, contours, project: {_attr}, flipped} = this;
+    const {l_visualization, contours, project: {_attr}, flipped, children} = this;
     
     // обновляем визуализацию
     this.draw_visualization();
@@ -3414,15 +3311,21 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
 
-    for(const layer of this.contours) {
+    for(const layer of contours) {
       layer.apply_mirror();
-      if(_attr._reflected || flipped) {
-        layer.sendToBack();
-      }
-      else {
-        layer.bringToFront();
-      }
     }
+
+    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children;
+    const order = (_attr._reflected && !flipped || !_attr._reflected && flipped) ?
+      [topLayers, fillings, profiles, sectionals, bottomLayers] :
+      [bottomLayers, fillings, profiles, sectionals, topLayers];
+    if(order.some((v, i) => children.indexOf(v) !== i)) {
+      for(const item of order) {
+        item.remove();
+      }
+      this.insertChildren(0, order);
+    }
+    
   }
 
   get sketch_view() {

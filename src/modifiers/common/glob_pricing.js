@@ -143,17 +143,17 @@ class Pricing {
    * @param startkey
    * @return {Promise}
    */
-  by_range({bookmark, step=1, limit=40, log=null, cache=null, price_type}) {
+  by_range({bookmark, step=1, limit=60, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
     
     (log || console.log)(`load prices: page №${step}`);
 
-    return utils.sleep(limit)
+    return utils.sleep(limit / 2)
       .then(() => pouch.remote.ram.find({
         selector: {
           class_name: 'doc.nom_prices_setup',
           posted: true,
-          price_type: price_type || {$in: abonents.price_types.map(v => v.valueOf())},
+          price_type: price_type || {$in: abonents.price_types.filter(v => v).map(v => v.valueOf())},
         },
         use_index: 'nom_prices_setup',
         limit,
@@ -183,12 +183,11 @@ class Pricing {
     date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
-      const onom = nom.get(row.nom, true);
-
-      // если в озу нет подходящей номенклатуры или в строке не задан тип цен - уходим
-      if (!onom || !onom._data || !row.price_type){
+      // если не задан тип цен - уходим
+      if (!row.price_type || !utils.is_guid(row.nom) || utils.is_empty_guid(row.nom)){
         continue;
       }
+      const onom = nom.create({ref: row.nom}, false, true);
 
       let _price;
       if(cache) {
@@ -352,19 +351,24 @@ class Pricing {
   }
 
   /**
-   * Рассчитывает плановую себестоимость строки документа Расчет
-   * Если есть спецификация, расчет ведется по ней. Иначе - по номенклатуре строки расчета
-   *
+   * @summary Рассчитывает плановую себестоимость строки документа Расчет
+   * @desc Если есть спецификация, расчет ведется по ней. Иначе - по номенклатуре строки расчета.
    * Аналог УПзП-шного __РассчитатьПлановуюСебестоимость__
-   * @param prm {Object}
-   * @param prm.calc_order_row {TabularSectionRow.doc.calc_order.production}
+   * 
+   * @param {Object} prm
+   * @param {DocCalc_orderProductionRow} prm.calc_order_row
+   * @param {Date} prm.date
+   * @param {TabularSection} prm.spec
    */
   calc_first_cost(prm) {
 
-    const {marginality_in_spec, price_grp_in_spec} = $p.job_prm.pricing;
+    const {job_prm, cat} = $p;
+    const {marginality_in_spec, price_grp_in_spec} = job_prm.pricing;
     const fake_row = {};
     const {calc_order_row, spec, date} = prm;
     const price_grp = new Map();
+    const slice = marginality_in_spec === 1 ?
+      cat.margin_coefficients.slice({date, calc_order_row}) : new Map();
 
     if(!spec) {
       return;
@@ -402,10 +406,15 @@ class Pricing {
           this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj, null, prm.price_type.formula, date);
           _obj.amount = _obj.price * _obj.totqty1;
           if(marginality_in_spec){
-            fake_row.nom = nom;
-            const tmp_price = this.nom_price(
-              nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula, date);
-            _obj.amount_marged = tmp_price * _obj.totqty1;
+            if(marginality_in_spec === 1) {
+              _obj.amount_marged = _obj.amount * slice.coefficient(row);
+            }
+            else {
+              fake_row.nom = nom;
+              const tmp_price = this.nom_price(
+                nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula, date);
+              _obj.amount_marged = tmp_price * _obj.totqty1;
+            }
           }
         }
       });
@@ -441,7 +450,7 @@ class Pricing {
   calc_amount(prm) {
 
     const {calc_order_row, price_type, first_cost, date} = prm;
-    const {marginality_in_spec, not_update} = $p.job_prm.pricing;
+    const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
     const {rounding, manager} = calc_order_row._owner._owner;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
@@ -472,11 +481,14 @@ class Pricing {
 
 
     // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
-    let extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
-    // если пересчет выполняется менеджером, используем наценку по умолчанию
-    if(!manager.partners_uids.length || !extra_charge) {
-      extra_charge = price_type.extra_charge_external || 0;
-    }
+    let extra_charge = 0;
+    if(use_internal !== false) {
+      extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
+      // если пересчет выполняется менеджером, используем наценку по умолчанию
+      if(!manager.partners_uids.length || !extra_charge) {
+        extra_charge = price_type.extra_charge_external || 0;
+      }
+    }    
 
     // TODO: учесть формулу
     calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);

@@ -28,11 +28,10 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
    * @return {DocWork_centers_task}
    */
   after_create() {
-    const {$p} = this._manager._owner;
-    if(this.date == $p.utils.blank.date) {
+    if(this.is_new()) {
       this.date = new Date();
     }
-    if(!$p.job_prm.is_node) {
+    if(!$p.job_prm.is_node && this.responsible.empty()) {
       this.responsible = $p.current_user;
     }
     return this;
@@ -53,7 +52,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
   }
 
   /**
-   * Заполняет план по заказу
+   * Заполняет план по массиву заказов
    * @param {Array<String|DataObj>} refs
    * @return {Promise<void>}
    */
@@ -97,13 +96,93 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       });
   }
 
+  fill_by_keys(opts = {}) {
+    const {set, cutting, planning, cuts, _manager} = this;
+    const {job_prm: {nom: {profile}}, enm: {debit_credit_kinds}} = $p;
+    // старый раскрой чистим
+    cutting.clear();
+    planning.clear();
+    cuts.clear({width: 0});
+    const noms = [];
+    for(const srow of set) {
+      const {obj: {obj, type, specimen, region}, stage} = srow;
+      // для ключей типа 'Изделие', добавляем все строки, привязанные к этапу производства
+      if(type.is('product')) {
+        obj.specification.find_rows({stage}, (row) => {
+          const {cutting_optimization_type: ct, is_procedure, is_service} = row.nom;
+          if(!row.len || is_procedure || is_service) {
+            return;
+          }
+          if(!ct.empty() && !ct.is('no')) {
+            const last = this.cutting_row({obj, specimen, row, opts});
+            if(last && !noms.find(({nom, characteristic}) => {nom === last.nom && characteristic === last.characteristic})) {
+              noms.push({nom: last.nom, characteristic: last.characteristic});
+            }
+          }
+        });
+      }
+    }
+    for(const {nom, characteristic} of noms) {
+      if(!nom._hierarchy(profile) && !cuts.find({nom, characteristic})) {
+        cuts.add({
+          record_kind: debit_credit_kinds.debit,
+          nom,
+          characteristic,
+          len: nom.len,
+          width: nom.width,
+          quantity: nom.width ? 100 : nom.len / 1000,
+        });
+      }
+    }
+  }
+
+  cutting_row({obj, specimen, elm, row, opts}) {
+    // если планирование до элемента...
+    if(elm && row.elm !== elm) {
+      return;
+    }
+    // по типам оптимизации
+    if((row.width && !opts.bilinear && !opts.c2d) || (!row.width && opts.linear === false)) {
+      return;
+    }
+    // должен существовать элемент
+    const coord = obj.coordinates.find({elm: row.elm});
+    if(!coord) {
+      return;
+    }
+    // только для цветных
+    if(opts.clr_only) {
+      if(row.clr.empty() || /Белый|БезЦвета/.test(row.clr.predefined_name) ) {
+        return;
+      }
+    }
+    let last;
+    for(let qty = 1;  qty <= row.qty; qty++) {
+      last = this.cutting.add({
+        production: obj,
+        specimen,
+        elm: row.elm,
+        nom: row.nom,
+        characteristic: row.characteristic.empty() ? row.clr : row.characteristic,
+        len: (row.len * 1000).round(1),
+        width: (row.width * 1000).round(1),
+        orientation: coord.orientation,
+        elm_type: coord.elm_type,
+        alp1: row.alp1,
+        alp2: row.alp2,
+      });
+    }
+    return last;
+  }
+  
   /**
    * Заполняет табчасть раскрой по плану
-   * @param opts {Object}
-   * @param opts.clear {Boolean}
-   * @param opts.linear {Boolean}
-   * @param opts.bilinear {Boolean}
-   * @param opts.clr_only {Boolean}
+   * @param {Object} [opts]
+   * @param {Boolean} [opts.clear]
+   * @param {Boolean} [opts.linear]
+   * @param {Boolean} [opts.bilinear]
+   * @param {Boolean} [opts.c2d]
+   * @param {Boolean} [opts.clr_only]
    * @return {Promise<void>}
    */
   fill_cutting(opts) {
@@ -117,56 +196,73 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         planning.forEach(({obj, specimen, elm}) => {
           obj.specification.forEach((row) => {
             // только строки подлежащие раскрою
-            if(!row.len || row.nom.cutting_optimization_type.empty() || row.nom.cutting_optimization_type.is('Нет')) {
+            if(!row.len || row.nom.cutting_optimization_type.empty() || row.nom.cutting_optimization_type.is('no')) {
               return;
             }
-            // если планирование до элемента...
-            if(elm && row.elm !== elm) {
-              return;
-            }
-            // по типам оптимизации
-            if(!opts.bilinear && row.width) {
-              return;
-            }
-            // должен существовать элемент
-            const coord = obj.coordinates.find({elm: row.elm});
-            if(!coord) {
-              return;
-            }
-            // только для цветных
-            if(opts.clr_only) {
-              if(row.clr.empty() || /Белый|БезЦвета/.test(row.clr.predefined_name) ) {
-                return;
-              }
-            }
-            for(let qty = 1;  qty <= row.qty; qty++) {
-              cutting.add({
-                production: obj,
-                specimen,
-                elm: row.elm,
-                nom: row.nom,
-                characteristic: row.characteristic.empty() ? row.clr : row.characteristic,
-                len: (row.len * 1000).round(0),
-                width: (row.width * 1000).round(0),
-                orientation: coord.orientation,
-                elm_type: coord.elm_type,
-                alp1: row.alp1,
-                alp2: row.alp2,
-              });
-            }
+            this.cutting_row({obj, specimen, elm, row, opts});
+            
+            
+            
           });
         });
       });
   }
+  
+  fill_cuts() {
+    const {debit} = $p.enm.debit_credit_kinds;
+    const {cutting, cuts} = this;
+    for(const {nom, characteristic} of cutting) {
+      if(!cuts.find({nom, characteristic})) {
+        cuts.add({
+          record_kind: debit,
+          nom,
+          characteristic,
+          len: nom.len,
+          width: nom.width,
+          quantity: nom.width ? 100 : nom.len / 1000,
+        });
+      }
+    }
+    return this;
+  }
 
+  fragments2D() {
+    const {debit} = $p.enm.debit_credit_kinds;
+    const res = {
+      products: [],
+      scraps: [],
+      options: {}
+    };
+    for(const row of this.cuts) {
+      if(row.record_kind.empty()) {
+        row.record_kind = debit;
+      }
+      if(!row.stick) {
+        row.stick = this.cuts.aggregate([], ['stick'], 'max') + 1;
+      }
+      if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
+        res.scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+      }
+    }
+    for(const row of this.cutting) {
+      if(row.width && row.len) {
+        res.products.push({id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row});
+      }
+    }
+    return res;
+  }
+  
   /**
    * Возвращает свёрнутую структуру номенклатур, характеристик и партий раскроя
    */
-  fragments(noParts) {
+  fragments1D(noParts) {
     const {_owner: {$p: {utils}}, cut_defaults} = this._manager;
     const res = new Map();
     const fin = [];
     for(const row of this.cutting) {
+      if(row.width) {
+        continue;
+      }
       if(!res.has(row.nom)) {
         res.set(row.nom, new Map());
       }
@@ -222,16 +318,53 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     return fin;
   }
 
+  onStep1D(state) {
+    return (status) => {
+      const {nom, characteristic} = status.cut_row;
+      const statuses = [...state.statuses];
+      let row;
+      if(!statuses.some((elm) => {
+        if(elm.nom === nom && elm.characteristic === characteristic) {
+          row = elm;
+          return true;
+        }
+      })) {
+        row = {nom, characteristic};
+        statuses.push(row);
+      }
+      Object.assign(row, status);
+
+      state.statuses = statuses;
+    };
+  }
+
   /**
-   * Выполняет оптимизацию раскроя
-   * @param opts
-   * @return {Promise<void>}
+   * @summary Выполняет оптимизацию раскроя
+   * @param {Function} [onStep]
+   * @param {Object} [state]
+   * @return {Promise<Awaited<unknown>[]>}
    */
-  optimize({onStep}) {
-    const {$p: {classes: {Cutting}}} = this._manager._owner;
-    let queue = Promise.resolve();
-    for(const {nom, characteristic, part, parts, rows} of this.fragments()) {
-      queue = queue.then(() => this.optimize_fragment({
+  optimize({onStep, state}) {
+    const {classes: {Cutting}} = $p;
+    if(!state) {
+      state = {statuses: []};
+    }
+    if(!onStep) {
+      onStep = this.onStep1D(state);
+    }
+    const keys = new Set();
+    const queues = [Promise.resolve(), Promise.resolve(), Promise.resolve()];
+    let index = -1;
+    for(const {nom, characteristic, part, parts, rows} of this.fragments1D()) {
+      const key = nom.valueOf() + characteristic.valueOf();
+      if(!keys.has(key)) {
+        keys.add(key);
+        index++;
+        if(index > 2) {
+          index = 0;
+        }
+      }
+      queues[index] = queues[index].then(() => this.optimize_fragment({
         cutting: new Cutting('1D'),
         rows,
         part,
@@ -239,7 +372,18 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         onStep,
       }));
     }
-    return queue;
+    const fin = [];
+    Object.values(queues).forEach((v, index) => {
+      const i = index % 2;
+      if(!fin[i]) {
+        fin[i] = v;
+      }
+      else {
+        fin[i] = fin[i].then(() => v);
+      }
+    })
+    return Promise.all(fin)
+      .then(() => state);
   }
 
   /**
@@ -271,6 +415,13 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       }
 
       const config = Object.assign({}, cut_defaults);
+      if(rows.length < 13) {
+        config.iterations = 100;
+      }
+      const len0 = rows[0].len;
+      if(rows.every(({len}) => len === len0)) {
+        config.iterations = 3;
+      }
       const userData = {
         products: rows.map((row) => row.len),
         workpieces: workpieces.map((row) => row.len - row.used),
@@ -322,7 +473,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
    * помещает результат раскроя в документ
    */
   push_cut_result(decision, fin) {
-    const {$p: {enm: {debit_credit_kinds}}} = this._manager._owner;
+    const {debit_credit_kinds} = $p.enm;
     // сначала добавляем заготовки
     for(let i = 0; i < decision.workpieces.length; i++) {
       let workpiece = decision.cuts[i];
@@ -379,5 +530,73 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     }
 
   }
+
+  /**
+   * @summary Чистит результаты раскроя в табчасти cutting
+   * @desc Параллельно, подчищает табчасть cuts
+   */
+  reset_sticks(kind) {
+    const noms = new Map();
+    for(const row of this.cutting) {
+      if(!kind || (kind === '1D' && !row.width) || (kind === '2D' && row.width)) {
+        if(noms.has(row.nom)) {
+          noms.get(row.nom).add(row.characteristic);
+        }
+        else {
+          noms.set(row.nom, new Set([row.characteristic]));
+        }
+        row.stick = 0;
+        row.pair = 0;
+      }
+    }
+    const rm = [];
+    for(const [nom, characteristics] of noms) {
+      for(const characteristic of characteristics) {
+        this.cuts.find_rows({nom, characteristic}, (row) => {
+          if(row.record_kind.is('credit') || (!row.width && row.len === nom.len) || (row.width === nom.width && row.len === nom.len)) {
+            rm.push(row);
+          }
+          else {
+            row.dop = {svg: ''};
+          }
+        });
+      }
+    }
+    for(const row of rm) {
+      this.cuts.del(row);
+    }
+  }
   
+  
+  /**
+   * @summary Загружает из сервиса планирования, задействованные ключи
+   * @return {Promise<DocWork_centers_task>}
+   */
+  load_keys() {
+    const {adapters: {pouch}, job_prm, cat: {planning_keys}} = $p;
+    const refs = new Set();
+    for(const {obj} of this.set) {
+      if(obj.is_new()) {
+        refs.add(obj.ref);
+      }
+    }
+    if(refs.size) {
+      const fetcher = typeof job_prm.planning_keys === 'function' ? 
+        job_prm.planning_keys(Array.from(refs)).then(rows => ({rows}))
+        :
+        pouch.fetch(`/adm/api/keys/rows`, {method: 'POST', body: JSON.stringify(Array.from(refs))})
+          .then(res => res.json());
+      
+      return fetcher.then(res => {
+          const rows = res.rows.map(({abonent, branch, year, barcode, characteristic, presentation, ...other}) => {
+            other.id = parseInt(barcode);
+            other.obj = other.type === 'order' ? other.calc_order : characteristic;
+            return other;
+          });          
+          planning_keys.load_array(rows);
+          return this;
+        });
+    }
+    return Promise.resolve(this);
+  }
 }

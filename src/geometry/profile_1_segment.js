@@ -117,7 +117,7 @@ class ProfileSegment extends ProfileItem {
     }
 
     // Если привязка не нарушена, возвращаем предыдущее значение
-    if(res.profile && res.profile.children.length){
+    if(res.profile?.children?.length){
       if(!res.cnn) {
         res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
       }

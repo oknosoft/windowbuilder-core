@@ -275,15 +275,17 @@ class DimensionLine extends paper.Group {
         }
         break;
         
-      case 'rateably':
+      case 'rateably': {
         event.divide = 2;
+        const {parent, pos, contour, elm1, elm2, p1, p2} = this._attr;
         if(this.pos == 'left' || this.pos == 'right') {
           event.name = 'top';
           event.cb = () => {
             delete event.cb;
             delete event.divide;
             event.name = 'bottom';
-            this._move_points(event, 'y');
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            dl._move_points(event, 'y');
           }
           this._move_points(event, 'y');
         }
@@ -293,11 +295,13 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'right';
-            this._move_points(event, 'x');
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            dl._move_points(event, 'x');
           }
           this._move_points(event, 'x');
         }
         break;
+      }
 
       case 'auto':
         const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
@@ -386,13 +390,13 @@ class DimensionLine extends paper.Group {
     children.callout2.visible = !this.hide_c2;
     children.scale.visible = !this.hide_line;
 
-    children.text.content = length.round(builder_props.rounding).toString();
+    children.text.content = length.round(length > 220 ? builder_props.rounding : 0).toString();
     children.text.rotation = e.subtract(b).angle;
     children.text.justification = align.ref;
 
     const font_size = this._font_size();
     const {isNode} = $p.wsql.alasql.utils;
-    children.text.fontSize = font_size;
+    children.text.fontSize = length < 220 ? font_size * 0.8 : font_size;
     if(align == $p.enm.text_aligns.left) {
       children.text.position = bs
         .add(path.getTangentAt(0).multiply(font_size))
@@ -413,7 +417,7 @@ class DimensionLine extends paper.Group {
 
   get path() {
 
-    const {parent, children, _attr, pos} = this;
+    const {parent, project, children, _attr, pos} = this;
     if(!children.length){
       return;
     }
@@ -443,6 +447,10 @@ class DimensionLine extends paper.Group {
       b = owner_bounds.bottomRight;
       e = owner_bounds.topRight;
       offset = owner_bounds[pos] - dimension_bounds[pos];
+    }
+    
+    if(project._attr._regions && parent.layer?.layer?.contours?.filter?.(l => l !== parent.layer)?.length) {
+      offset += (pos == 'right' || pos == 'bottom') ? -60 : 50;
     }
 
     // если точки профиля еще не нарисованы - выходим
@@ -563,7 +571,7 @@ class DimensionLine extends paper.Group {
   static _font_size({width, height}) {
     const {cutoff, font_size} = consts;
     const size = Math.max(width - cutoff, height - cutoff) / 60;
-    return font_size + (size > 0 ? size : 0);
+    return Math.min(font_size + (size > 0 ? size : 0), font_size * 1.5);
   }
 }
 

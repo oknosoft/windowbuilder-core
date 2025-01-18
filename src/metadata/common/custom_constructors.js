@@ -18,10 +18,11 @@ class ParamsRow extends TabularSectionRow{
     return (param && param.fetch_type && !param.empty()) ? param.fetch_type(this._obj.value) : this._getter('value');
   }
   set value(v){
-    if(typeof v === 'string' && v.length === 72 && this.param.type?.types?.includes('cat.clrs')) {
+    const {param} = this;
+    if(typeof v === 'string' && v.length === 72 && param.type?.types?.includes('cat.clrs')) {
       v = $p.cat.clrs.getter(v);
     }
-    this._setter('value',v);
+    this._setter('value', param.fetch_value ? param.fetch_value(v) : v);
   }
 }
 
@@ -134,12 +135,25 @@ class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
   set hide(v){this._setter('hide',v)}
 }
 
-class CatProduction_paramsFurn_paramsRow extends HideForciblyParamsRow{}
+class CatProduction_paramsFurn_paramsRow extends HideForciblyParamsRow{
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
+}
 
 class CatProduction_paramsProduct_paramsRow extends HideForciblyParamsRow{
   get elm(){return this._getter('elm')}
   set elm(v){this._setter('elm',v)}
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
 }
+
+class CatProduction_paramsParamsRow extends HideForciblyParamsRow{
+  get elm(){return this._getter('elm')}
+  set elm(v){this._setter('elm',v)}
+  get grouping(){return this._getter('grouping')}
+  set grouping(v){this._setter('grouping',v)}
+}
+
 
 class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
   get pos(){return this._getter('pos')}
@@ -149,6 +163,8 @@ class CatInsertsProduct_paramsRow extends HideForciblyParamsRow{
 }
 
 class CatCnnsSizesRow extends SelectionParamsRow{
+  get coordinate(){return this._getter('coordinate')}
+  set coordinate(v){this._setter('coordinate',v)}
   get key(){return this._getter('key')}
   set key(v){this._setter('key',v)}
 }
@@ -193,7 +209,6 @@ class CatProjectsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatStoresExtra_fieldsRow extends Extra_fieldsRow{}
 class CatCharacteristicsExtra_fieldsRow extends Extra_fieldsRow{}
 class DocPurchaseExtra_fieldsRow extends Extra_fieldsRow{}
-class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{}
 class DocCredit_card_orderExtra_fieldsRow extends Extra_fieldsRow{}
 class DocDebit_bank_orderExtra_fieldsRow extends Extra_fieldsRow{}
 class DocCredit_bank_orderExtra_fieldsRow extends Extra_fieldsRow{}
@@ -207,6 +222,20 @@ class CatOrganizationsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatDivisionsExtra_fieldsRow extends Extra_fieldsRow{}
 class CatUsersExtra_fieldsRow extends Extra_fieldsRow{}
 class CatProduction_paramsExtra_fieldsRow extends Extra_fieldsRow{}
+class CatWork_centersExtra_fieldsRow extends Extra_fieldsRow{}
+
+class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
+  value_change(field, type, value) {
+    const res = super.value_change(field, type, value);
+    if(field === 'value' && res !== false) {
+      this.value = value;
+      const {insert_bind, characteristics} = $p.cat;
+      insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+    }
+    return res;
+  }
+}
+
 
 class CatCharacteristicsCoordinatesRow extends TabularSectionRow{
   get cnstr(){return this._getter('cnstr')}
@@ -281,6 +310,7 @@ Object.assign($p, {
   DpBuyers_orderProduct_paramsRow,
   CatProduction_paramsFurn_paramsRow,
   CatProduction_paramsProduct_paramsRow,
+  CatProduction_paramsParamsRow,
   CatInsertsProduct_paramsRow,
   CatCnnsSizesRow,
   CatInsertsSelection_paramsRow,
@@ -309,6 +339,7 @@ Object.assign($p, {
   CatDivisionsExtra_fieldsRow,
   CatUsersExtra_fieldsRow,
   CatProduction_paramsExtra_fieldsRow,
+  CatWork_centersExtra_fieldsRow,
   CatParameters_keysParamsRow,
   CatCharacteristicsCoordinatesRow,
   CatCharacteristicsInsertsRow,

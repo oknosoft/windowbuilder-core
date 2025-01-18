@@ -7,7 +7,7 @@
  * - концы соединяются с пустотой
  * - имеет как минимум одно ii примыкающее соединение
  * - есть путь образующей - прямая или кривая линия, такая же, как у Profile
- * - слвиг и искривление пути передаются примыкающим профилям
+ * - сдвиг и искривление пути передаются примыкающим профилям
  * - соединительный профиль живёт в слое одного из рамных контуров изделия, но может оказывать влияние на соединёные с ним контуры
  * - длина соединительного профиля может отличаться от длин профилей, к которым он примыкает
  *
@@ -21,6 +21,11 @@ class ProfileConnective extends ProfileItem {
    */
   get elm_type() {
     return $p.enm.elm_types.Соединитель;
+  }
+
+  /** @override */
+  get d0() {
+    return this.offset;
   }
 
   /**
@@ -264,10 +269,11 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   get hidden() {
-    return !this.visible;
+    return !this.visible || this.project.builder_props.cnns === false;
   }
   set hidden(v) {
     this.visible = !v;
+    this.redraw();
   }
 
 
@@ -298,9 +304,18 @@ class ConnectiveLayer extends paper.Layer {
 
   redraw() {
     const {_errors, children} = this;
-    children.forEach((elm) => elm !== _errors && elm.redraw());
+    const visible = !this.hidden;
+    children.forEach((elm) => {
+      if(elm !== _errors) {
+        elm.visible = visible;
+        elm.redraw?.();
+        if(elm instanceof ProfileItem) {
+          elm.path.fillColor = BuilderElement.clr_by_clr.call(elm, elm.clr);
+        }
+      }
+    });
     _errors.removeChildren();
-    _errors.bringToFront();
+    //_errors.bringToFront();
   }
   
   save_coordinates() {
@@ -348,7 +363,7 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив профилей текущего слоя
-   * @returns {Array.<ProfileItem>}
+   * @type {Array.<ProfileItem>}
    */
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
@@ -356,10 +371,18 @@ class ConnectiveLayer extends paper.Layer {
 
   /**
    * Возвращает массив раскладок текущего слоя
-   * @return {Array}
+   * @type {Array}
    */
   get onlays() {
     return [];
+  }
+
+  /**
+   * Площадь профилей слоя соединителей
+   * @type {number}
+   */
+  get area() {
+    return (this.profiles.reduce((sum, {path}) => sum + path.area, 0) /1e6).round(4);
   }
 
   /**

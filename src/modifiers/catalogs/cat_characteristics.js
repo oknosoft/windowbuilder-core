@@ -98,7 +98,7 @@ $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (f
     this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
     // fake-элемент
     const ox = this._owner._owner;
-    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset});
+    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset, is_glass: true});
   }
 };
 
@@ -165,13 +165,14 @@ $p.cat.characteristics.metadata('glass_specification').fields.region = {
  * @param h {Number}
  * @param layer {paper.Layer}
  */
-$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer}) {
+$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer, parent}) {
   this.x = bounds ? bounds.width.round(4) : 0;
   this.y = bounds ? bounds.height.round(4) : 0;
   this.is_rectangular = is_rectangular;
   if (layer) {
     this.w = w.round(4);
     this.h = h.round(4);
+    this.dop = {grp: parent === layer.children.bottomLayers ? 'bottom' : 'top'}
   }
   else {
     this.w = 0;

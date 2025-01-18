@@ -9,7 +9,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   before_save(attr) {
 
     // уточняем номенклатуру системы
-    const {prod_nom, calc_order, _data} = this;
+    const {prod_nom, calc_order, params, _data} = this;
 
     // контроль прав на запись характеристики
     if(!attr.force && calc_order.is_read_only) {
@@ -37,6 +37,16 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
     // дублируем контрагента для целей RLS
     this.partner = calc_order.partner;
+    
+    // сохраним значения сохраняемых параметров
+    _data._loading = true;
+    for(const prow of params) {
+      const { param, cnstr, inset, region } = prow;
+      if(param.conserve && param.is_calculated) {
+        prow.value = param.calculated_value({ ox: this, cnstr, inset, region });
+      }
+    }
+    _data._loading = false;
 
     return this;
 
@@ -213,6 +223,70 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   }
 
   /**
+   * Рассчитывает наименование продукции
+   */
+  prod_name2({elm, cnstr}) {
+    const {params, coordinates, x, y, note} = this;
+    const main = [];
+    const other = [];
+    // параметры изделия
+    params.find_rows({cnstr: 0, region: 0}, ({param, value}) => {
+      if(param.is_calculated || param.predefined_name === 'auto_align') {
+        return;
+      }
+      main.push(value.toString());
+    });
+
+    // добавляем размеры
+    if(x && y) {
+      main.push(x.toFixed(0) + 'x' + y.toFixed(0));
+    }
+    else if(x) {
+      main.push(x.toFixed(0));
+    }
+    else if(y) {
+      main.push(y.toFixed(0));
+    }
+
+    // параметры вставки
+    params.find_rows({cnstr: -elm, region: 0}, ({param, value}) => {
+      if(param.type.types.includes('boolean')) {
+        if(value) {
+          other.push(param.caption || param.name);
+        }
+      }
+      else if(param.type.types.includes('number')) {
+        if(value) {
+          other.push(`${param.caption || param.name}: ${value}`);
+        }
+      }
+      else if(value && !value.empty() && value.toString() !== 'Нет') {
+        other.push(value.toString());
+      }
+    });
+
+    // параметры рёбер
+    const rrows = [];
+    coordinates.find_rows({cnstr, elm_type: 'Рама'}, (rrow) => {
+      rrows.push(rrow);
+    });
+    const rprops = new Set();
+    params.find_rows({cnstr: {in: rrows.map((v) => -v.elm)}, region: 0}, ({value}) => {
+      if(!value.empty() && value.toString() !== 'Нет') {
+        rprops.add(value.toString());
+      }
+    });
+    for(const rp of rprops) {
+      other.push(rp);
+    }
+    if(note) {
+      other.push(note);
+    }
+    
+    return {main, other};
+  }
+
+  /**
    * Открывает форму происхождения строки спецификации
    */
   open_origin(row_id) {
@@ -270,6 +344,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       _order_rows.push(cx);
       cx.specification.clear();
+      cx.svg = '';
       if(!cx.calc_order_row) {
         calc_order.production.add({characteristic: cx});
       }
@@ -390,6 +465,26 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   }
 
   /**
+   * @summary Номер изделия по порядку для экранных и печатных форм
+   * @type {Number}
+   */
+  get prod_sequence() {
+    const {calc_order, calc_order_row} = this;
+    let index = 0;
+    if(calc_order_row) {
+      for(const {characteristic} of calc_order_row._owner) {
+        if(characteristic.coordinates.count() || characteristic.leading_product.calc_order === calc_order) {
+          index++;
+        }
+        if(characteristic === this) {
+          break;
+        }
+      }
+    }
+    return index;
+  }
+
+  /**
    * Дополнительные свойства изделия для рисовалки
    */
   get builder_props() {
@@ -404,7 +499,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     }
     for(const prop in defaults){
       if(tmp.hasOwnProperty(prop)) {
-        props[prop] = typeof tmp[prop] === 'number' ? tmp[prop] : !!tmp[prop];
+        props[prop] = ((prop === 'onlay_regions') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
       }
       else {
         props[prop] = defaults[prop];
@@ -526,7 +621,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     return project.load(this, true)
       .then(() => {
         // выполняем пересчет
-        return project.save_coordinates(Object.assign({save: true, svg: false}, attr));
+        return project.save_coordinates(Object.assign({save: true, svg: attr.svg || false}, attr));
       })
       .then(() => {
         project.ox = '';
@@ -613,7 +708,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           for(const {sub_path} of perimetr) {
             ppath.addSegments(sub_path.segments);
             new EditorInvisible.Profile({
-              parent,
+              layer: parent,
+              parent: parent.children.profiles,
               generatrix: sub_path,
               proto: {
                 inset: irama,
@@ -644,7 +740,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
               }
               
               new EditorInvisible.Profile({
-                parent,
+                layer: parent,
+                parent: parent.children.profiles,
                 generatrix: impost,
                 proto: {
                   inset: iimpost,
@@ -698,7 +795,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           // добавляем текст
           const {elm_font_size, font_family} = editor.consts;
           new editor.PointText({
-            parent,
+            layer: parent,
+            parent: parent.children.text,
             fillColor: 'black',
             fontFamily: font_family,
             fontSize: elm_font_size * 1.2,
@@ -727,10 +825,29 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         .then(() => attr.res);
       
     }
-    
+
+    project._attr._regions = attr.regions;
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
+        
+        // видимость рядов профиля
+        // 0, undefined - только контур основных элементов
+        // 1 - только контур элементов ряда
+        // 2 - и ряд и основной элемент
+        if(attr.regions) {
+          for(const layer of project.getItems({class: EditorInvisible.Contour})) {
+            if(attr.regions === 1) {
+              layer.hidden = !(layer instanceof EditorInvisible.ContourRegion);
+            }
+            else {
+              layer.hidden = false;
+            }
+          }
+          project.redraw();
+          project.draw_visualization();
+        }
+        
         // формируем эскиз(ы) в соответствии с attr
         if(attr.elm) {
           const elmnts = Array.isArray(attr.elm) ? attr.elm : [attr.elm];
@@ -767,7 +884,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         }
         else {
           if(format === 'png') {
-            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substring(22);
           }
           else {
             link.imgs[`l0`] = project.get_svg(attr);
@@ -776,7 +893,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             constructions.forEach(({cnstr}) => {
               project.draw_fragment({elm: -cnstr});
               if(format === 'png') {
-                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substr(22);
+                link.imgs[`l${cnstr}`] = project.view.element.toDataURL('image/png').substring(22);
               }
               else {
                 link.imgs[`l${cnstr}`] = project.get_svg(attr);
@@ -853,7 +970,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         }
       });
     }
-    return weight;
+    return weight.round(3);
   }
 
   /**
@@ -879,6 +996,36 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
   }
 
   /**
+   * @summary Возвращает Map ошибок из спецификации (при их наличии)
+   * @param {Boolean} [checkOnly] - проверять только наличие критических ошибок
+   * @return @return {Map<EnmElmTypes, Map>|Boolean} 
+   */
+  errors(checkOnly = false) {
+    const errors = new Map();
+    const {elm_types} = $p.enm;
+    const err_types = [elm_types.ОшибкаКритическая];
+    if(!checkOnly) {
+      err_types.push(elm_types.ОшибкаИнфо);
+    }
+    
+    for(const {nom, elm} of this.specification) {
+      if(err_types.includes(nom.elm_type)) {
+        if(!errors.has(nom.elm_type)){
+          errors.set(nom.elm_type, new Map());
+        }
+        if(checkOnly) {
+          break;
+        }
+        if(!errors.get(nom.elm_type).has(nom)){
+          errors.get(nom.elm_type).set(nom, new Set())
+        }
+        errors.get(nom.elm_type).get(nom).add(elm);
+      }
+    }
+    return checkOnly ? errors.has(elm_types.ОшибкаКритическая) : errors;
+  }
+
+  /**
    * Формирует строку индекса слоя cnstr
    * @param cnstr {Number}
    * @return {String}
@@ -900,6 +1047,13 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     }
     return index;
   }
+  
+  get frame() {
+    if(!this._data.frame) {
+      this._data.frame = new CatCharacteristics.ProductFrame(this);
+    }
+    return this._data.frame;
+  }
 
   /**
    * Настройки отображения в рисовалке по умолчанию
@@ -912,6 +1066,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     cnns: true,
     visualization: true,
     txts: true,
+    glass_regions: true,
+    profile_regions: true,
     rounding: 0,
     mosquito: true,
     jalousie: true,
@@ -921,5 +1077,6 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     glass_numbers: false,
     bw: false,
     mode: 0,
+    onlay_regions: '',
   };
 }

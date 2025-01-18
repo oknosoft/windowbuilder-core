@@ -23,6 +23,7 @@
     _mgr.slope,     //Откос
     _mgr.profile,   //Профиль 
     _mgr.cut,       //Профиль в нарезку 
+    _mgr.packing,   //Упаковка 
     _mgr.mount,     //Монтаж 
     _mgr.delivery,  //Доставка
     _mgr.set,       //Набор

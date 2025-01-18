@@ -48,6 +48,9 @@ class Scheme extends paper.Project {
 
     // биндим redraw
     this.redraw = this.redraw.bind(this);
+    
+    // служебные слои
+    const {l_connective, l_dimensions, l_visualization} = this;
 
     // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
@@ -62,6 +65,21 @@ class Scheme extends paper.Project {
       _attr._vis_timer = setTimeout(this.draw_visualization.bind(this), 300);
     });
 
+  }
+
+  _insertItem(index, item, _created) {
+    if(index === undefined && !_created && (
+      item instanceof Contour || item instanceof ConnectiveLayer || item instanceof DimensionLayer 
+    )) {
+      const {layers} = this;
+      const index = layers.indexOf(item);
+      if(index > -1 && index < layers.length - 1) {
+        layers.splice(index, 1);
+        layers.push(item);
+        return;
+      }
+    }
+    return super._insertItem(index, item, _created);
   }
 
   /**
@@ -91,9 +109,18 @@ class Scheme extends paper.Project {
     if(ox.clr.empty()) {
       return this.check_clr();
     }
+    const cache = new Map();
+    const {clr: {_manager}, specification}  = ox;
+    const {clr_conformity} = _dp.sys;
     this.getItems({class: ProfileItem}).forEach((elm) => {
       if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
-        elm.clr = clr;
+        const region = elm.rnum || 0;
+        if(!cache.has(region)) {
+          const row = clr_conformity.find({region});
+          cache.set(region, row?.clr);
+        }
+        const conformity = cache.get(region);
+        elm.clr = conformity ? _manager.by_predefined(conformity, clr, clr, elm, specification) : clr;
       }
     });
   }
@@ -102,6 +129,9 @@ class Scheme extends paper.Project {
    * Освежает отбор в метаданных доступных цветов и при необходимости, цвет изделия
    */
   check_clr() {
+    if(this.is_read_only) {
+      return;
+    }
     const {ox, _dp} = this;
     const {cat, utils} = $p;
     const cmeta = _dp._metadata('clr');
@@ -324,6 +354,11 @@ class Scheme extends paper.Project {
     }
   }
 
+  get is_read_only() {
+    const {obj_delivery_state, posted} = this.ox.calc_order;
+    return posted || obj_delivery_state.is('Отправлен') || obj_delivery_state.is('Подтвержден');
+  }
+
   /**
    * Алиас к табчасти соединений текущей продукции
    */
@@ -525,10 +560,10 @@ class Scheme extends paper.Project {
           new ProfileConnective({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === elm_types.Линия) {
-          new BaseLine({row});
+          new BaseLine({row, parent: _scheme.l_connective});
         }
         else if(row.elm_type === elm_types.Сечение) {
-          new ProfileCut({row});
+          new ProfileCut({row, parent: _scheme.l_connective});
         }
       });
 
@@ -593,10 +628,20 @@ class Scheme extends paper.Project {
             .then(() => {
               if(_scheme.ox.coordinates.count()) {
                 if(_scheme.ox.specification.count() || from_service) {
-                  _scheme.draw_visualization();
                   if(from_service){
+                    if(from_service.redraw) {
+                      let i = 10;
+                      while (i > 0 && _scheme._ch.length) {
+                        i--;
+                        _scheme.redraw();
+                      }
+                    }
+                    _scheme.draw_visualization();
                     _scheme.zoom_fit();
                     return resolve();
+                  }
+                  else {
+                    _scheme.draw_visualization();
                   }
                 }
                 else {
@@ -716,6 +761,9 @@ class Scheme extends paper.Project {
         if(l.cnstr == cnstr) {
           l.hidden = false;
           l.hide_generatrix();
+          if(l instanceof ContourTearing) {
+            l.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
+          }           
           l.l_dimensions.redraw(attr.faltz || true);
           l.zoom_fit();
           return true;
@@ -727,6 +775,9 @@ class Scheme extends paper.Project {
       if(glasses.length) {
         attr.elm = glasses[0].elm;
         this.deselectAll();
+        if(glasses[0].layer instanceof ContourTearing) {
+          attr.elm = -glasses[0].layer.cnstr;
+        }
         return this.draw_fragment(attr);
       }
       else {
@@ -809,6 +860,12 @@ class Scheme extends paper.Project {
     
     // перерисовываем габаритные размерные линии изделия
     this.draw_sizes();
+    if(this.l_connective.isBelow(this.l_dimensions)) {
+      this.l_connective.insertAbove(this.l_dimensions);
+    }
+    if(this.l_visualization.isBelow(this.l_connective)) {
+      this.l_visualization.insertAbove(this.l_connective);
+    }
 
     // обновляем изображение на экране
     this.view.update();
@@ -838,10 +895,10 @@ class Scheme extends paper.Project {
     if(_attr._update_timer) {
       clearTimeout(_attr._update_timer);
     }
-    _attr._update_timer = setTimeout(() => {
-      this.view && this.view.update();
-      _attr._update_timer = 0;
-    }, 100);
+    // _attr._update_timer = setTimeout(() => {
+    //   this.view && this.view.update();
+    //   _attr._update_timer = 0;
+    // }, 100);
   }
 
   /**
@@ -879,18 +936,20 @@ class Scheme extends paper.Project {
    * @type Rectangle
    */
   get bounds() {
-    const {_attr} = this;
+    const {_attr, l_connective} = this;
     if(!_attr._bounds) {
-      this.contours.forEach((l) => {
-        if(!_attr._bounds) {
-          _attr._bounds = l.bounds;
-        }
-        else {
-          _attr._bounds = _attr._bounds.unite(l.bounds);
+      this.contours.concat([l_connective]).forEach(({bounds}) => {
+        if(bounds.width && bounds.height) {
+          if(!_attr._bounds) {
+            _attr._bounds = bounds;
+          }
+          else {
+            _attr._bounds = _attr._bounds.unite(bounds);
+          }
         }
       });
     }
-    return _attr._bounds;
+    return _attr._bounds || new paper.Rectangle();
   }
 
   /**
@@ -904,7 +963,7 @@ class Scheme extends paper.Project {
       }
     });
     this.contours.forEach(({l_visualization}) => {
-      const ib = l_visualization._by_insets.bounds;
+      const ib = l_visualization.by_insets.bounds;
       if(ib.height && ib.bottom > bounds.bottom) {
         const delta = ib.bottom - bounds.bottom + 10;
         bounds = bounds.unite(
@@ -922,6 +981,10 @@ class Scheme extends paper.Project {
    */
   get strokeBounds() {
     let bounds = this.l_dimensions.strokeBounds;
+    const {strokeBounds} = this.l_connective;
+    if(strokeBounds.width && strokeBounds.height) {
+      bounds = bounds.unite(strokeBounds)
+    }
     this.contours.forEach((l) => bounds = bounds.unite(l.strokeBounds));
     return bounds;
   }
@@ -982,15 +1045,21 @@ class Scheme extends paper.Project {
    * Чистит изображение
    */
   clear() {
-    const {_attr} = this;
-    const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service';
+    const {_attr, _children, l_visualization} = this;
+    const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service,_regions';
     for (let fld in _attr) {
       if(!pnames.match(fld)) {
         delete _attr[fld];
       }
     }
 
-    super.clear();
+    l_visualization.clear();
+    for (let i = _children.length - 1; i >= 0; i--) {
+      if(_children[i] !== l_visualization) {
+        _children[i].remove();
+      }
+    }
+      
     //new paper.Layer({project: this});
   }
 
@@ -1187,6 +1256,19 @@ class Scheme extends paper.Project {
       return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
+    
+    // пустые строки в glass_specification
+    if(attr.save) {
+      const rm = [];
+      for(const row of ox.glass_specification) {
+        if(row.inset.empty()) {
+          rm.push(row);
+        }
+      }
+      for(const row of rm) {
+        ox.glass_specification.del(row);
+      }
+    }
 
     let res = Promise.resolve();
     const push = (contour) => {
@@ -1195,8 +1277,8 @@ class Scheme extends paper.Project {
 
     if(bounds) {
       // устанавливаем размеры в характеристике
-      ox.x = bounds.width.round(1);
-      ox.y = bounds.height.round(1);
+      ox.x = bounds.width.round();
+      ox.y = bounds.height.round();
       ox.s = this.area;
 
       // вызываем метод save_coordinates в дочерних слоях
@@ -1250,8 +1332,7 @@ class Scheme extends paper.Project {
       if(!isNode) {
         isNode = $p.wsql.alasql.utils.isNode;
       }
-      const space = isNode ? 160 : 320;
-      const min = 900;
+      const space = 320, min = 900;
       let {width, height, center} = bounds;
       if (width < min) {
         width = min;
@@ -1268,7 +1349,7 @@ class Scheme extends paper.Project {
 
       const dx = view.viewSize.width - width * zoom;
       if(isNode) {
-        const dy = view.viewSize.height - height * zoom;
+        const dy = view.viewSize.height - height * zoom - 20;
         view.center = center.add([Math.sign(scaling.y) * dx, -Math.sign(scaling.y) * dy]);
       }
       else {
@@ -1305,7 +1386,7 @@ class Scheme extends paper.Project {
         if(el.l_visualization._opening) {
           el.l_visualization._opening.strokeScaling = false;
           el.l_visualization._opening.opacity = 0.8;
-          el.l_visualization._by_spec.opacity = 0.5;
+          el.l_visualization.by_spec.opacity = 0.5;
         }
       }
       this.zoom_fit();
@@ -1337,7 +1418,7 @@ class Scheme extends paper.Project {
         if(el.l_visualization._opening) {
           el.l_visualization._opening.strokeScaling = true;
           el.l_visualization._opening.opacity = 1;
-          el.l_visualization._by_spec.opacity = 1;
+          el.l_visualization.by_spec.opacity = 1;
         }
       }
       this.zoom_fit();
@@ -1369,13 +1450,11 @@ class Scheme extends paper.Project {
       ox._mixin(src, null,
         'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,obj_delivery_state,_rev'.split(','),
         true);
-
-      const {obj_delivery_states: {Шаблон}, inserts_types: {Заполнение, Стеклопакет}} = $p.enm;
-
+      
       // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
-        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state === Шаблон ||
-          obx.base_block.calc_order.obj_delivery_state === Шаблон) ? obx : obx.base_block;
+        ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state.is('Шаблон') ||
+          obx.base_block.calc_order.obj_delivery_state.is('Шаблон')) ? obx : obx.base_block;
         if(!no_refill && obx.calc_order.refill_props) {
           ox._data.refill_props = true;
         }
@@ -1383,10 +1462,10 @@ class Scheme extends paper.Project {
 
       // параметры составных пакетов
       for(const {elm, inset} of ox.coordinates) {
-        if(inset.insert_type === Заполнение) {
+        if(inset.insert_type.is('Заполнение')) {
           ox.glass_specification.clear({elm});
         }
-        else if(inset.insert_type === Стеклопакет) {
+        else if(inset.insert_type.is('Стеклопакет')) {
           if(!ox.glass_specification.find({elm})) {
             for(const row of inset.specification) {
               row.quantity && ox.glass_specification.add({elm, inset: row.nom});
@@ -1518,7 +1597,8 @@ class Scheme extends paper.Project {
    * @final
    */
   get area() {
-    return this.contours.reduce((sum, {area}) => sum + area, 0).round(3);
+    const {l_connective, contours} = this;
+    return [l_connective].concat(contours).reduce((sum, {area}) => sum + area, 0).round(4);
   }
 
   /**
@@ -1529,7 +1609,7 @@ class Scheme extends paper.Project {
    * @final
    */
   get form_area() {
-    return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(3);
+    return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(4);
   }
 
   /**
@@ -1580,66 +1660,32 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * Служебный слой визуализации
+   *
+   * @type ContourVisualization
+   * @final
+   */
+  get l_visualization() {
+    const {layers} = this;
+    if(!layers.visualization) {
+      const {activeLayer} = this;
+      new ContourVisualization({project: this, name: 'visualization'});
+      if(activeLayer instanceof Contour) {
+        activeLayer.activate();
+      }
+    }
+    return layers.visualization;
+  }
+  
+
+  /**
    * @summary Создаёт и перерисовавает габаритные линии изделия
    * @desc Отвечает только за габариты изделия
    * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
    *
    */
   draw_sizes() {
-
-    const {bounds, l_dimensions, builder_props} = this;
-
-    if(bounds && builder_props.auto_lines) {
-
-      if(!l_dimensions.bottom) {
-        l_dimensions.bottom = new DimensionLine({
-          pos: 'bottom',
-          parent: l_dimensions,
-          offset: -120
-        });
-      }
-      else {
-        l_dimensions.bottom.offset = -120;
-      }
-
-      if(!l_dimensions.right) {
-        l_dimensions.right = new DimensionLine({
-          pos: 'right',
-          parent: l_dimensions,
-          offset: -120
-        });
-      }
-      else {
-        l_dimensions.right.offset = -120;
-      }
-
-
-      // если среди размеров, сформированных контурами есть габарит - второй раз не выводим
-
-      if(this.contours.some((l) => l.l_dimensions.children.some((dl) =>
-          dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
-        l_dimensions.right.visible = false;
-      }
-      else {
-        l_dimensions.right.redraw();
-      }
-
-      if(this.contours.some((l) => l.l_dimensions.children.some((dl) =>
-          dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
-        l_dimensions.bottom.visible = false;
-      }
-      else {
-        l_dimensions.bottom.redraw();
-      }
-    }
-    else {
-      if(l_dimensions.bottom) {
-        l_dimensions.bottom.visible = false;
-      }
-      if(l_dimensions.right) {
-        l_dimensions.right.visible = false;
-      }
-    }
+    this.l_dimensions.draw_sizes();
   }
 
   /**
@@ -1726,7 +1772,7 @@ class Scheme extends paper.Project {
     // ищем по умолчанию + любое
     if(!inset) {
       rows.some((row) => {
-        if(row.pos == positions.any && row.by_default) {
+        if(row.by_default && (row.pos == positions.any || row.pos?.empty?.())) {
           return inset = row.nom;
         }
       });
@@ -1739,7 +1785,7 @@ class Scheme extends paper.Project {
         return this.default_inset(attr);
       }
       rows.some((row) => {
-        if(row.pos == positions.any) {
+        if(row.pos == positions.any || row.pos?.empty?.()) {
           return inset = row.nom;
         }
       });
@@ -1969,7 +2015,7 @@ class Scheme extends paper.Project {
     for(const item of selectedItems) {
       const {parent} = item;
       if(parent instanceof ProfileItem) {
-        if(all || !item.layer.parent || !parent.nearest || !parent.nearest(true)) {
+        if(all || !item.layer.layer || !parent.nearest || !parent.nearest(true)) {
           if(res.includes(parent)) {
             continue;
           }
@@ -2104,8 +2150,8 @@ class Scheme extends paper.Project {
     if(!layer) {
       layer = this.activeLayer;
     }
-    while (layer.parent) {
-      layer = layer.parent;
+    while (layer.layer) {
+      layer = layer.layer;
     }
     return layer;
   }
@@ -2198,12 +2244,7 @@ class Scheme extends paper.Project {
         const {scaling} = txt._decompose();
         txt.scaling = [-scaling.x, scaling.y];
       }
-      if(v) {
-        this._scope.select_tool?.('pan');
-      }
-      else {
-        this.register_change(true);
-      }
+      this.register_change(true);
     }
     this.zoom_fit();
     return _attr._reflected;

@@ -235,7 +235,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
           finded = this.by_predefined(sub_clr,  row.clr);
           return false;
         });
-        return finded || clr_elm;
+        return finded || this.by_predefined(sub_clr,  t_parent.clr, clr_sch, t_parent, spec, row, row_base);
 
       default :
         return clr_elm;
@@ -243,9 +243,36 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     }
     else if (clr instanceof $p.CatColor_price_groups) {
       const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row, row_base);
-      for(const row of clr.clr_conformity) {
-        if(row.clr1.contains(tmp)) {
-          return row.clr2;
+      if(tmp.is_composite()) {
+        let {clr_in, clr_out} = tmp;
+        let tin, tout;
+        for(const row of clr.clr_conformity) {
+          if(!tin && row.clr1.contains(clr_in)) {
+            tin = row.clr2;
+          }
+          if(!tout && row.clr1.contains(clr_out)) {
+            tout = row.clr2;
+          }
+          if(tin && tout) {
+            break;
+          }
+        }
+        if(tin){
+          clr_in = tin;
+        }
+        if(tout){
+          clr_out = tout;
+        }
+        if(clr_in === clr_out) {
+          return clr_in;
+        }
+        return this.getter(clr_in.ref + clr_out.ref);
+      }
+      else {
+        for(const row of clr.clr_conformity) {
+          if(row.clr1.contains(tmp)) {
+            return row.clr2;
+          }
         }
       }
       return tmp;
@@ -267,6 +294,45 @@ exports.CatClrsManager = class CatClrsManager extends Object {
     }
     const {clr_in, clr_out} = clr;
     return this.getter(`${clr_out.valueOf()}${clr_in.valueOf()}`);
+  }
+
+  /**
+   * @summary Формирует строки контрастных цветов
+   * @desc для подстановки в css
+   * @param clr_str
+   * @return {Object}
+   */
+  contrast(clr_str) {
+    let hex = '',
+      clrs = null;
+    if (clr_str.length === 3) {
+      hex = '';
+      for (let i = 0; i < 3; i++) {
+        hex += clr_str[i];
+        hex += clr_str[i];
+      }
+      hex = parseInt(hex, 16);
+    }
+    else if (clr_str.length === 6) {
+      hex = parseInt(clr_str, 16);
+    }
+    if (hex) {
+      let back = hex.toString(16);
+      while (back.length < 6) {
+        back = '0' + back;
+      }
+      back = '#' + back;
+      let clr = (0xafafaf ^ hex).toString(16);
+      while (clr.length < 6) {
+        clr = '0' + clr;
+      }
+      clr = '#' + clr;
+      clrs = {
+        backgroundColor: back,
+        color: clr
+      };
+    }
+    return clrs;
   }
 
   /**
@@ -400,7 +466,7 @@ exports.CatClrsManager = class CatClrsManager extends Object {
   find_group(sys, ox) {
     const {EditorInvisible: {BuilderElement, Filling}, classes: {DataProcessorObj}} = $p;
     let clr_group;
-    if(sys instanceof BuilderElement) {
+    if(sys instanceof BuilderElement && sys.isInserted()) {
       clr_group = sys.inset.clr_group;
       if(clr_group.empty() && !(sys instanceof Filling)) {
         clr_group = sys.layer.sys.find_group(ox);
@@ -410,10 +476,10 @@ exports.CatClrsManager = class CatClrsManager extends Object {
       const iclr_group = sys.profile.inset.clr_group;
       clr_group = iclr_group.empty() ? sys.sys.find_group(ox) : iclr_group;
     }
-    else if(sys.sys && sys.sys.find_group) {
+    else if(sys.sys?.find_group) {
       clr_group = sys.sys.find_group(ox);
     }
-    else if(sys.sys && sys.sys.clr_group) {
+    else if(sys.sys?.clr_group) {
       clr_group = sys.sys.clr_group;
     }
     else if(sys instanceof DataProcessorObj && ox) {
