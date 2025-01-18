@@ -20982,17 +20982,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 $p.DocCalc_order.FakeElm = FakeElm;
 $p.DocCalc_order.FakeLenAngl = FakeLenAngl;
 $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocCalc_orderProductionRow {
-  value_change(field, type, value, no_extra_charge) {
+  value_change(field, type, value) {
     let {_obj, _owner, nom, characteristic, unit} = this;
-    let recalc;
-    const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, job_prm, enm} = $p;
+    const {rounding, manager, price_date: date} = _owner._owner;
+    const {DocCalc_orderProductionRow, utils, wsql, pricing, job_prm, enm: {vat_rates}} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
-    let reset_specify;
-    if(field === 'quantity' && !_slave_recalc) {
-      reset_specify = true;
-      characteristic.specification.clear({dop: -3});
-    }
     if(rfield) {
       _obj[field] = rfield === 'n' ? parseFloat(value || 0) : '' + value;
       nom = this.nom;
@@ -21009,71 +21003,34 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       if(unit.owner != nom) {
         _obj.unit = nom.storage_unit.ref;
       }
-      if(field === 'nom' && !this.quantity) {
-        _obj.quantity = 1;
-      }
-      const {origin} = characteristic;
-      if(origin && !origin.empty() && origin.slave) {
-        characteristic.specification.clear();
-        characteristic.x = this.len;
-        characteristic.y = this.width;
-        characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
-        const len_angl = new FakeLenAngl({len: this.len, inset: origin});
-        const elm = new FakeElm(this);
-        origin.calculate_spec({elm, len_angl, ox: characteristic});
-        recalc = true;
-      }
-      const fake_prm = {
-        calc_order_row: this,
-        spec: characteristic.specification,
-        date,
-      };
-      const {price, price_internal} = _obj;
-      pricing.price_type(fake_prm);
-      if(origin instanceof DocPurchase_order) {
-        fake_prm.first_cost = _obj.first_cost;
-      }
-      else {
-        pricing.calc_first_cost(fake_prm);
-      }
-      pricing.calc_amount(fake_prm);
-      if(price && !_obj.price) {
-        _obj.price = price;
-        _obj.price_internal = price_internal;
-        recalc = true;
-      }
     }
-    if(DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
-      if(!recalc) {
-        _obj[field] = parseFloat(value || 0);
-      }
+    if(DocCalc_orderProductionRow.pfields.includes(field)) {
+      _obj[field] = parseFloat(value || 0);
       isNaN(_obj.price) && (_obj.price = 0);
       isNaN(_obj.extra_charge_external) && (_obj.extra_charge_external = 0);
       isNaN(_obj.price_internal) && (_obj.price_internal = 0);
       isNaN(_obj.discount_percent) && (_obj.discount_percent = 0);
       isNaN(_obj.discount_percent_internal) && (_obj.discount_percent_internal = 0);
       _obj.amount = (_obj.price * ((100 - _obj.discount_percent) / 100) * _obj.quantity).round(rounding);
-      if(!no_extra_charge) {
-        const prm = {calc_order_row: this};
-        let extra_charge = 0;
-        if(job_prm.pricing.use_internal !== false) {
-          extra_charge = wsql.get_user_param('surcharge_internal', 'number');
-          if(!manager.partners_uids.length || !extra_charge) {
-            pricing.price_type(prm);
-            extra_charge = prm.price_type.extra_charge_external;
-          }
-          if (_obj.extra_charge_external !== 0) {
-            extra_charge = _obj.extra_charge_external;
-          }
+      const prm = {calc_order_row: this};
+      let extra_charge = 0;
+      if(job_prm.pricing.use_internal !== false) {
+        extra_charge = wsql.get_user_param('surcharge_internal', 'number');
+        if(!manager.partners_uids.length || !extra_charge) {
+          pricing.price_type(prm);
+          extra_charge = prm.price_type.extra_charge_external;
         }
-        if(field != 'price_internal' && _obj.price) {
-          _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
+        if (_obj.extra_charge_external !== 0) {
+          extra_charge = _obj.extra_charge_external;
         }
+      }
+      if(field != 'price_internal' && _obj.price) {
+        _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
       }
       _obj.amount_internal = (_obj.price_internal * ((100 - _obj.discount_percent_internal) / 100) * _obj.quantity).round(rounding);
       const doc = _owner._owner;
       if(doc.vat_consider) {
-        const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = enm.vat_rates;
+        const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = vat_rates;
         _obj.vat_rate = (nom.vat_rate.empty() ? НДС20 : nom.vat_rate).ref;
         switch (this.vat_rate) {
         case НДС18:
@@ -21103,23 +21060,9 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.vat_rate = '';
         _obj.vat_amount = 0;
       }
-      if(!_slave_recalc){
-        _owner._owner._slave_recalc = true;
-        _owner.forEach((row) => {
-          if(row === this) return;
-          if(reset_specify) {
-            row.characteristic.specification.clear({dop: -3});
-          }
-          const {origin} = row.characteristic;
-          if(reset_specify || (origin && !origin.empty() && origin.slave)) {
-            row.value_change('quantity', 'update', row.quantity, no_extra_charge);
-          }
-        });
-        _owner._owner._slave_recalc = false;
-      }
       if(field === 'quantity' && !characteristic.empty() && !characteristic.calc_order.empty()) {
         this._owner.find_rows({ordn: characteristic}, (row) => {
-          row.value_change('quantity', type, _obj.quantity, no_extra_charge);
+          row.value_change('quantity', type, _obj.quantity);
         });
       }
       const amount = _owner.aggregate([], ['amount', 'amount_internal']);
