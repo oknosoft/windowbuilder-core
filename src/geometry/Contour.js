@@ -335,6 +335,30 @@ export class Contour extends paper.Layer {
       project.redraw();
     }
   }
+  
+  resetDefaults(withChildren, childCall) {
+    const {profiles, fillings, contours, project, sys} = this;
+    for(const profile of profiles) {
+      profile.inset = null;
+    }
+    for(const {b, e} of profiles) {
+      b.defaults();
+      e.defaults();
+    }
+    for(const filling of fillings) {
+      //filling.defaults();
+    }
+    if(withChildren) {
+      for(const contour of contours) {
+        if(contour.sys === sys) {
+          contour.resetDefaults(withChildren, true);
+        }
+      }
+    }
+    if(!childCall && !project.props.loading) {
+      project.redraw();
+    }
+  }
 
   /**
    * @summary Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
@@ -365,13 +389,17 @@ export class Contour extends paper.Layer {
     }
   }
   set sys(v) {
-    const {sys, project} = this;
-    if(this.#raw.sys && this.#raw.sys === sys) {
+    const {sys, project, layer} = this;
+    const ch = sys != v;
+    const parentSys = layer ? layer.sys : project.props.sys;
+    if(this.#raw.sys && parentSys == v) {
       delete this.#raw.sys;
     }
     else {
       this.#raw.sys = project.root.cat.productionParams.get(v);
-      this.defaults(true);
+    }
+    if(ch) {
+      this.resetDefaults(true);
     }
   }
   

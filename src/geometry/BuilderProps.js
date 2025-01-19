@@ -108,7 +108,7 @@ export class BuilderProps  {
     const sys = this.#raw.project.root.cat.productionParams.get(v);
     if(this.#raw.sys !== sys) {
       this.#raw.sys = sys;
-      this.#raw.project.defaults();
+      this.#raw.project.resetDefaults();
     }
   }
   

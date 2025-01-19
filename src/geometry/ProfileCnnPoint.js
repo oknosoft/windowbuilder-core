@@ -80,10 +80,16 @@ export class CnnPoint {
     if(cnns.length && !cnns.includes(cnn)) {
       this.cnn = cnns[0];
     }
+    else if(!cnn.empty()) {
+      this.cnn = null;
+    }
     if(hasOuter) {
       const {cnnsOuter} = this;
       if(cnnsOuter.length && !cnnsOuter.includes(cnnOuter)) {
         this.cnnOuter = cnnsOuter[0];
+      }
+      else if(!cnnsOuter.empty()) {
+        this.cnnOuter = null;
       }
     }
   }
