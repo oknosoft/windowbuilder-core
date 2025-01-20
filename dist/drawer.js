@@ -19957,21 +19957,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           errors.get(nom.elm_type).add(nom);
         }
       };
-      const slice = margin_coefficients.slice({date, kind: 2, calc_order_row});
-      const discountMax = slice.coefficient({
-        elm: 0,
-        _owner: {_owner: characteristic},
-        nom,
-      });
-      if(discountMax > 0 && (discount_percent > discountMax || discount_percent_internal > discountMax)) {
-        registerError({
-          nom: job_prm.nom.discount_error || job_prm.nom.critical_error, 
+      if(job_prm.pricing.marginality_in_spec === 1) {
+        const slice = margin_coefficients.slice({date, kind: 2, calc_order_row});
+        const discountMax = slice.coefficient({
           elm: 0,
-        })
+          _owner: {_owner: characteristic},
+          nom,
+        });
+        if(discountMax > 0 && (discount_percent > discountMax || discount_percent_internal > discountMax)) {
+          registerError({
+            nom: job_prm.nom.discount_error || job_prm.nom.critical_error,
+            elm: 0,
+          })
+        }
       }
-      if(!job_prm.debug) {
-        characteristic.specification.forEach(registerError);
-      }
+      characteristic.specification.forEach(registerError);
     });
     this.doc_amount = doc_amount.round(rounding);
     this.amount_internal = internal.round(rounding);
