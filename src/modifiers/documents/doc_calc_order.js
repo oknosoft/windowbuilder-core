@@ -175,7 +175,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save(attr) {
 
-    const {ui, utils, adapters: {pouch}, wsql, job_prm, md, cat, enm: {
+    const {ui, utils, adapters: {pouch}, wsql, md, enm: {
       obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -240,34 +240,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
-    let doc_amount = 0, internal = 0;
-    const errors = this._data.errors = new Map();
-    this.production.forEach(({amount, amount_internal, characteristic}) => {
-      doc_amount += amount;
-      internal += amount_internal;
-      if(!job_prm.debug) {
-        characteristic.specification.forEach(({nom, elm}) => {
-          if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
-            if(!errors.has(characteristic)){
-              errors.set(characteristic, new Map());
-            }
-            if(!errors.has(nom.elm_type)){
-              errors.set(nom.elm_type, new Set());
-            }
-            // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
-            if(!errors.get(characteristic).has(nom)){
-              errors.get(characteristic).set(nom, new Set());
-            }
-            errors.get(characteristic).get(nom).add(elm);
-            errors.get(nom.elm_type).add(nom);
-          }
-        });
-      }
-    });
-
-    this.doc_amount = doc_amount.round(rounding);
-    this.amount_internal = internal.round(rounding);
-    this.amount_operation = this.doc_currency.to_currency(doc_amount, this.price_date).round(rounding);
+    const errors = this.before_save_errors();
 
     if (errors.size) {
       let critical, text = '';
@@ -494,6 +467,59 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           save_error(`${err.message} повторите попытку записи через минуту`);
         }
       });
+  }
+
+  /**
+   * Рассчитывает итоговые суммы документа и наличие обычных и критических ошибок
+   */
+  before_save_errors() {
+    let doc_amount = 0, internal = 0;
+    const errors = this._data.errors = new Map();
+    const {price_date: date, rounding} = this;
+    const {cat: {margin_coefficients}, enm: {elm_types: {ОшибкаКритическая, ОшибкаИнфо}}, job_prm} = $p;
+    this.production.forEach((calc_order_row) => {
+      const {amount, amount_internal, characteristic, nom, discount_percent, discount_percent_internal} = calc_order_row;
+
+      doc_amount += amount;
+      internal += amount_internal;
+      
+      const registerError = ({nom, elm}) => {
+        if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
+          if(!errors.has(characteristic)){
+            errors.set(characteristic, new Map());
+          }
+          if(!errors.has(nom.elm_type)){
+            errors.set(nom.elm_type, new Set());
+          }
+          // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
+          if(!errors.get(characteristic).has(nom)){
+            errors.get(characteristic).set(nom, new Set());
+          }
+          errors.get(characteristic).get(nom).add(elm);
+          errors.get(nom.elm_type).add(nom);
+        }
+      };
+      
+      const slice = margin_coefficients.slice({date, kind: 2, calc_order_row});
+      const discountMax = slice.coefficient({
+        elm: 0,
+        _owner: {_owner: characteristic},
+        nom,
+      });
+      if(discountMax > 0 && (discount_percent > discountMax || discount_percent_internal > discountMax)) {
+        registerError({
+          nom: job_prm.nom.discount_error || job_prm.nom.critical_error, 
+          elm: 0,
+        })
+      }
+      if(!job_prm.debug) {
+        characteristic.specification.forEach(registerError);
+      }
+    });
+    this.doc_amount = doc_amount.round(rounding);
+    this.amount_internal = internal.round(rounding);
+    this.amount_operation = this.doc_currency.to_currency(doc_amount, date).round(rounding);
+    return errors;
   }
 
   // шаблоны читаем из ram
