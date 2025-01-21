@@ -608,8 +608,6 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
-class Skeleton {
-};
 class BuilderElement extends paper.Group {
   constructor(attr) {
     const proto = attr?.proto;
@@ -970,16 +968,16 @@ class BuilderElement extends paper.Group {
       return this.width / 2;
     }
     else if(sizeb > 1000) {
-      const parts = sizeb.toFixed();
+      let parts = sizeb.toFixed();
+      while (parts.length < 6) {
+        parts = '0' + parts;
+      }
       const p1 = parts.substring(0, 3);
-      const {b, e} = this.rays;
-      if(b.is_cut() || b.is_t() || b.is_i() || e.is_cut() || e.is_t() || e.is_i()) {
+      const {_rays, _nearest} = this._attr;
+      if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
         return parseFloat(p1);
       }
-      let p2 = parts.substring(3, 3);
-      while (p2.length < 3) {
-        p2 += '0';
-      }
+      let p2 = parts.substring(3, 6);
       return parseFloat(p2);
     }
     return sizeb || 0;
@@ -15075,6 +15073,8 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
+class Skeleton {
+};
 class Pricing {
   constructor({md, adapters, job_prm}) {
     this.loading = [];
