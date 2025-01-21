@@ -11,7 +11,7 @@ class ProfileVirtual extends Profile {
 
   initialize(attr) {
     super.initialize(attr);
-    const nearest = super.nearest(true);
+    const nearest = attr._nearest || super.nearest(true);
     Object.defineProperties(this._attr, {
       _nearest: {
         get() {return nearest;},

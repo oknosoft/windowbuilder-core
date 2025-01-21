@@ -1395,6 +1395,72 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
 
+  /**
+   * Возвращает массив примыкающих импостов
+   * @param {Boolean} [check_only] - не формировать подробный ответ, только проверить наличие примыкающих импостов
+   * @returns {Object|Boolean}
+   */
+  joined_imposts(check_only) {
+
+    const {rays, generatrix, layer} = this;
+    const tinner = [];
+    const touter = [];
+    
+    if(this.isInserted()) {
+      // точки, в которых сходятся более 2 профилей
+      const candidates = {b: [], e: []};
+
+      const {outer} = $p.enm.cnn_sides;
+      const add_impost = (ip, curr, point) => {
+        const res = {point: generatrix.getNearestPoint(point), profile: curr};
+        if(this.cnn_side(curr, ip, rays) === outer) {
+          touter.push(res);
+        }
+        else {
+          tinner.push(res);
+        }
+      };
+
+      if(layer.profiles.some((curr) => {
+        if(curr != this) {
+          for(const pname of ['b', 'e']) {
+            const cpoint = curr.rays[pname];
+            if(cpoint.profile == this && cpoint.cnn) {
+              const ipoint = curr.interiorPoint();
+              if(cpoint.is_tt) {
+                if(check_only) {
+                  return true;
+                }
+                add_impost(ipoint, curr, cpoint.point);
+              }
+              else {
+                candidates[pname].push(ipoint);
+              }
+            }
+          }
+        }
+      })) {
+        return true;
+      }
+
+      // если в точке примыкает более 1 профиля...
+      ['b', 'e'].forEach((node) => {
+        if(candidates[node].length > 1) {
+          candidates[node].some((ip) => {
+            if(ip && this.cnn_side(null, ip, rays) === outer) {
+              //this.cnn_point(node).is_cut = true;
+              this.rays[node].is_cut = true;
+              return true;
+            }
+          });
+        }
+      });
+    }
+
+    return check_only ? false : {inner: tinner, outer: touter};
+
+  }
+
   setSelection(selection) {
     const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {

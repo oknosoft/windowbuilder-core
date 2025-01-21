@@ -1981,16 +1981,18 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_glass_numbers() {
     const {l_visualization} = this;
     for(const glass of this.glasses(false, true)) {
-      const text = new paper.PointText({
-        parent: l_visualization.by_spec,
-        guide: true,
-        //justification: 'left',
-        fillColor: 'darkgreen',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size * 2,
-        content: glass.elm,
-        position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
-      });
+      if(glass.visible && !glass.hidden) {
+        const text = new paper.PointText({
+          parent: l_visualization.by_spec,
+          guide: true,
+          //justification: 'left',
+          fillColor: 'darkgreen',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * 2,
+          content: glass.elm,
+          position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
+        });
+      }
     }
   }
 
@@ -2442,11 +2444,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     // z-index доборов
-    for (const elm of addls) {
-      const {b, e} = elm.rays;
-      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
-      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
-    }
+    // for (const elm of addls) {
+    //   const {b, e} = elm.rays;
+    //   b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
+    //   e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
+    // }
     // z-index штапиков
     for (const elm of this.getItems({class: ProfileGlBead})) {
       const {b, e} = elm.rays;

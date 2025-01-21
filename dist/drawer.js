@@ -3224,15 +3224,17 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_glass_numbers() {
     const {l_visualization} = this;
     for(const glass of this.glasses(false, true)) {
-      const text = new paper.PointText({
-        parent: l_visualization.by_spec,
-        guide: true,
-        fillColor: 'darkgreen',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size * 2,
-        content: glass.elm,
-        position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
-      });
+      if(glass.visible && !glass.hidden) {
+        const text = new paper.PointText({
+          parent: l_visualization.by_spec,
+          guide: true,
+          fillColor: 'darkgreen',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * 2,
+          content: glass.elm,
+          position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
+        });
+      }
     }
   }
   get show_dimensions() {
@@ -3557,11 +3559,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(e.profile?.isBelow(elm)) {
         e.profile?.insertAbove(elm);
       }
-    }
-    for (const elm of addls) {
-      const {b, e} = elm.rays;
-      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
-      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
     }
     for (const elm of this.getItems({class: ProfileGlBead})) {
       const {b, e} = elm.rays;
@@ -9431,6 +9428,56 @@ class ProfileItem extends GeneratrixElement {
     }
     return res;
   }
+  joined_imposts(check_only) {
+    const {rays, generatrix, layer} = this;
+    const tinner = [];
+    const touter = [];
+    if(this.isInserted()) {
+      const candidates = {b: [], e: []};
+      const {outer} = $p.enm.cnn_sides;
+      const add_impost = (ip, curr, point) => {
+        const res = {point: generatrix.getNearestPoint(point), profile: curr};
+        if(this.cnn_side(curr, ip, rays) === outer) {
+          touter.push(res);
+        }
+        else {
+          tinner.push(res);
+        }
+      };
+      if(layer.profiles.some((curr) => {
+        if(curr != this) {
+          for(const pname of ['b', 'e']) {
+            const cpoint = curr.rays[pname];
+            if(cpoint.profile == this && cpoint.cnn) {
+              const ipoint = curr.interiorPoint();
+              if(cpoint.is_tt) {
+                if(check_only) {
+                  return true;
+                }
+                add_impost(ipoint, curr, cpoint.point);
+              }
+              else {
+                candidates[pname].push(ipoint);
+              }
+            }
+          }
+        }
+      })) {
+        return true;
+      }
+      ['b', 'e'].forEach((node) => {
+        if(candidates[node].length > 1) {
+          candidates[node].some((ip) => {
+            if(ip && this.cnn_side(null, ip, rays) === outer) {
+              this.rays[node].is_cut = true;
+              return true;
+            }
+          });
+        }
+      });
+    }
+    return check_only ? false : {inner: tinner, outer: touter};
+  }
   setSelection(selection) {
     const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {
@@ -11255,54 +11302,6 @@ class Profile extends ProfileItem {
     }
     return true;
   }
-  joined_imposts(check_only) {
-    const {rays, generatrix, layer} = this;
-    const tinner = [];
-    const touter = [];
-    const candidates = {b: [], e: []};
-    const {outer} = $p.enm.cnn_sides;
-    const add_impost = (ip, curr, point) => {
-      const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === outer) {
-        touter.push(res);
-      }
-      else {
-        tinner.push(res);
-      }
-    };
-    if(layer.profiles.some((curr) => {
-      if(curr != this) {
-        for(const pname of ['b', 'e']) {
-          const cpoint = curr.rays[pname];
-          if(cpoint.profile == this && cpoint.cnn) {
-            const ipoint = curr.interiorPoint();
-            if(cpoint.is_tt) {
-              if(check_only) {
-                return true;
-              }
-              add_impost(ipoint, curr, cpoint.point);
-            }
-            else {
-              candidates[pname].push(ipoint);
-            }
-          }
-        }
-      }
-    })) {
-      return true;
-    }
-    ['b', 'e'].forEach((node) => {
-      if(candidates[node].length > 1) {
-        candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) === outer) {
-            this.rays[node].is_cut = true;
-            return true;
-          }
-        });
-      }
-    });
-    return check_only ? false : {inner: tinner, outer: touter};
-  }
   joined_nearests() {
     const res = [];
     this.layer.contours.forEach((contour) => {
@@ -11721,7 +11720,7 @@ EditorInvisible.ProfileNested = ProfileNested;
 class ProfileVirtual extends Profile {
   initialize(attr) {
     super.initialize(attr);
-    const nearest = super.nearest(true);
+    const nearest = attr._nearest || super.nearest(true);
     Object.defineProperties(this._attr, {
       _nearest: {
         get() {return nearest;},
