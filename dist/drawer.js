@@ -608,6 +608,8 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
+class Skeleton {
+};
 class BuilderElement extends paper.Group {
   constructor(attr) {
     const proto = attr?.proto;
@@ -15073,8 +15075,6 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
-class Skeleton {
-};
 class Pricing {
   constructor({md, adapters, job_prm}) {
     this.loading = [];
@@ -19189,7 +19189,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;          
         case 'elm_type':
-          _data._formula = function ({elm}) {
+          _data._formula = function ({elm, elm2, row}) {
+            if(elm2 && row?.set_specification?.is?.('САртикулом2')) {
+              return elm2?.elm_type || elm_types.get();
+            }
             return elm?.elm_type || elm_types.get();
           };
           break;

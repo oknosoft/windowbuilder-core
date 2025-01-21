@@ -390,7 +390,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;          
           
         case 'elm_type':
-          _data._formula = function ({elm}) {
+          _data._formula = function ({elm, elm2, row}) {
+            if(elm2 && row?.set_specification?.is?.('САртикулом2')) {
+              return elm2?.elm_type || elm_types.get();
+            }
             return elm?.elm_type || elm_types.get();
           };
           break;
