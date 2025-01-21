@@ -19948,6 +19948,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
                 _obj._rev = row.rev;
                 o.after_save();
                 _data._modified = false;
+                _data._is_new = false;
                 _data._saving = 0;
                 _data._saving_trans = false;
                 fin = fin.then(() => mgr.emit_promise('after_save', o));
