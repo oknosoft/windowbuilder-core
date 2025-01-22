@@ -11546,7 +11546,7 @@ class Profile extends ProfileItem {
       children.back.segments[3].point = position.add([size.width/2, size.height/2]);
     }
     else {
-      if(l_dimensions.articles.map.has(this)) {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
         l_dimensions.articles.map.get(this).remove();
         l_dimensions.articles.map.delete(this);
       }
@@ -11561,7 +11561,7 @@ class Profile extends ProfileItem {
     const res = super.remove();
     if(res !== false) {
       const {l_dimensions} = this.project;
-      if(l_dimensions.articles.map.has(this)) {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
         l_dimensions.articles.map.get(this).remove();
         l_dimensions.articles.map.delete(this);
       }
@@ -13838,13 +13838,13 @@ class Scheme extends paper.Project {
   }
   clear() {
     const {_attr, _children, l_visualization} = this;
-    const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service,_regions';
+    const pnames = '_bounds,_update_timer,_loading,_removing,_snapshot,_silent,_from_service,_regions';
     for (let fld in _attr) {
       if(!pnames.match(fld)) {
         delete _attr[fld];
       }
     }
-    l_visualization.clear();
+    l_visualization?.clear();
     for (let i = _children.length - 1; i >= 0; i--) {
       if(_children[i] !== l_visualization) {
         _children[i].remove();
@@ -14245,7 +14245,7 @@ class Scheme extends paper.Project {
   }
   get l_dimensions() {
     const {_attr} = this;
-    if(!_attr.l_dimensions) {
+    if(!_attr.l_dimensions && !_attr._removing) {
       const {activeLayer} = this;
       _attr.l_dimensions = new DimensionLayer({project: this});
       if(activeLayer instanceof Contour) {
@@ -14256,7 +14256,7 @@ class Scheme extends paper.Project {
   }
   get l_connective() {
     const {_attr} = this;
-    if(!_attr.l_connective) {
+    if(!_attr.l_connective && !_attr._removing) {
       const {activeLayer} = this;
       _attr.l_connective = new ConnectiveLayer({project: this});
       if(activeLayer instanceof Contour) {

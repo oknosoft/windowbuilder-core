@@ -589,7 +589,7 @@ class Profile extends ProfileItem {
       children.back.segments[3].point = position.add([size.width/2, size.height/2]);
     }
     else {
-      if(l_dimensions.articles.map.has(this)) {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
         l_dimensions.articles.map.get(this).remove();
         l_dimensions.articles.map.delete(this);
       }
@@ -606,7 +606,7 @@ class Profile extends ProfileItem {
     const res = super.remove();
     if(res !== false) {
       const {l_dimensions} = this.project;
-      if(l_dimensions.articles.map.has(this)) {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
         l_dimensions.articles.map.get(this).remove();
         l_dimensions.articles.map.delete(this);
       }
