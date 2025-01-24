@@ -7910,10 +7910,13 @@ class CatMargin_coefficientsManager extends CatManager {
           }
         }
       }
-      if(!this.has(obj) && obj instanceof CatProduction_params) {
+      if(!this.has(obj) && ox && obj instanceof CatProduction_params) {
         const pl = ox.owner.nom_group;
-        if(!pl.empty() && this.has(pl)) {
-          this.set(obj, this.get(pl));
+        if(!pl.empty()) {
+          this.replenish(pl);
+          if(this.has(pl)) {
+            this.set(obj, this.get(pl));
+          }
         }
       }
     }
