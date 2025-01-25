@@ -376,7 +376,12 @@ export class Contour extends paper.Layer {
   get showDimensions() {
     return !this.layer;
   }
-  
+
+  /**
+   * @summary Система слоя
+   * @desc Может совпадать с системой изделия, а может от неё отличаться (для вложений)
+   * @type {CatProductionParams}
+   */
   get sys() {
     const {project, layer} = this;
     const {utils, cat} = project.root;
@@ -402,7 +407,11 @@ export class Contour extends paper.Layer {
       this.resetDefaults(true);
     }
   }
-  
+
+  /**
+   * @summary Фурнитура слоя
+   * @type {CatFurns}
+   */
   get furn() {
     const {project, layer} = this;
     const {furns} = project.root.cat;
@@ -514,7 +523,11 @@ export class Contour extends paper.Layer {
     }
     this.drawVisualization();
   }
-  
+
+  /**
+   * @summary Удаляет всех детей слоя
+   * @param {Boolean} [interactive]
+   */
   clear(interactive) {
     if(interactive) {
       this._removing = true;
@@ -535,7 +548,10 @@ export class Contour extends paper.Layer {
       delete this._removing;
     }
   }
-  
+
+  /**
+   * @summary Удаляет слой из иерархии родителя
+   */
   remove() {
     const {container, three} = this;
     // блокируем лишние пересчёты
@@ -553,12 +569,19 @@ export class Contour extends paper.Layer {
     delete this._removing;
   }
 
+  /**
+   * @summary Смещает слой и его детей в системе координат проекта
+   * @param {paper.Point} delta
+   */
   move(delta) {
     this.translate(delta);
     this.project.props.registerChange();
     this.project.redraw();
   }
-  
+
+  /**
+   * @summary Перерисовывает визуализацию
+   */
   drawVisualization() {
     const {project: {props}, children: {visualization}, skeleton, profiles, layer} = this;
     visualization.children.graph.clear();
@@ -601,5 +624,12 @@ export class Contour extends paper.Layer {
         });
       }
     }
+  }
+
+  /**
+   * @summary Рассчитывает спецификацию слоя
+   */
+  calculateSpec() {
+    
   }
 }
