@@ -18,6 +18,17 @@ export class Profile extends GeneratrixElement {
     }
     return layer.layer?.virtual ? elmTypes.rama : elmTypes[layer.layer ? 'flap' : 'rama'];
   }
+
+  /**
+   * @summary Вклад элемента в спецификацию слоя
+   */
+  calculateSpec() {
+    // уточняем длину с учётом соединений
+    // вклад концевых соединений
+    // вклад вставки
+    // вклад допвставок
+    // спецификация подчинённых элементов
+  }
   
 }
 

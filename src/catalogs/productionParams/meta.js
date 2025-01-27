@@ -17,7 +17,7 @@ export const meta= {
   id: "sys",
   aliases: ['production_params'],
   fields: {
-    "default_clr": {
+    default_clr: {
       synonym: "Осн цвет",
       multiline: false,
       tooltip: "Цвет изделия по умолчанию. Если указана цветогруппа, дожен входить в отбор. Иначе, используется первый цвет цветогруппы",
@@ -31,7 +31,7 @@ export const meta= {
         "strFix": true
       }
     },
-    "clr_group": {
+    clr_group: {
       synonym: "Доступность цветов",
       multiline: false,
       tooltip: "Группа цветов, доступных для профилей системы",
@@ -48,7 +48,7 @@ export const meta= {
         ]
       }
     },
-    "template": {
+    template: {
       synonym: "Это вложенное изделие ",
       multiline: false,
       tooltip: "Система для вложенных изделий",
@@ -58,7 +58,7 @@ export const meta= {
         ]
       }
     },
-    "flap_pos_by_impost": {
+    flap_pos_by_impost: {
       synonym: "Положение ств. по импостам.",
       multiline: false,
       tooltip: "Использовать положения Центр, Центр вертикаль и Центр горизонталь для створок",
@@ -68,7 +68,7 @@ export const meta= {
         ]
       }
     },
-    "flap_weight_max": {
+    flap_weight_max: {
       synonym: "Фильтр по тяжелой створке",
       multiline: false,
       tooltip: "Использовать в фильтре фурнитуры массу самой тяжелой створки изделия, вместо текущей створки",
@@ -78,7 +78,7 @@ export const meta= {
         ]
       }
     },
-    "formula": {
+    formula: {
       synonym: "График размеров",
       multiline: false,
       tooltip: "",
@@ -95,7 +95,7 @@ export const meta= {
         ]
       }
     },
-    "jx": {
+    jx: {
       synonym: "Момент инерции, см⁴",
       multiline: false,
       tooltip: "",
@@ -165,7 +165,7 @@ export const meta= {
         ]
       }
     },
-    "show_flipped": {
+    show_flipped: {
       synonym: "Показывать перевёрнутость",
       multiline: false,
       tooltip: "Показывать реквизит перевёрнутости слоя",
@@ -175,7 +175,7 @@ export const meta= {
         ]
       }
     },
-    "show_ii": {
+    show_ii: {
       synonym: "Показывать ошибку примыкания",
       multiline: false,
       tooltip: "Показывать ошибку примыкания слоёв в изделиях с несколькими рамными слоями",
@@ -185,7 +185,7 @@ export const meta= {
         ]
       }
     },
-    "glass_thickness": {
+    glass_thickness: {
       synonym: "Фильтр толщин заполнений",
       multiline: false,
       tooltip: "0 - по толщинам из списка\n1 - по списку\n2 - по вилке толщин (min max)\n3 - без ограничений",
@@ -197,7 +197,7 @@ export const meta= {
         "fraction": 0
       }
     },
-    "furn_level": {
+    furn_level: {
       synonym: "Слой фурнитуры min",
       multiline: false,
       tooltip: "Минимальный уровень вложенности, на котором разрешена фурнитура",
@@ -209,7 +209,7 @@ export const meta= {
         "fraction": 0
       }
     },
-    "base_clr": {
+    base_clr: {
       synonym: "Цвет основы",
       multiline: false,
       tooltip: "Параметр, используемый в данной системе, как цвет основы",
@@ -890,7 +890,7 @@ export const meta= {
       synonym: "Цвета не красить",
       tooltip: "Список цветов с учётом цвета основы, для которых не требуется вклад в спецификацию",
       fields: {
-        "base_clr": {
+        base_clr: {
           synonym: "Цвет основы",
           multiline: false,
           tooltip: "Имеет смысл, если цвет, не требующий отработки, зависит от цвета основы",
@@ -1113,7 +1113,7 @@ export const meta= {
       synonym: "Шаблоны",
       tooltip: "",
       fields: {
-        "template": {
+        template: {
           synonym: "Шаблон",
           multiline: false,
           tooltip: "",
@@ -1138,7 +1138,7 @@ export const meta= {
       synonym: "Доступность цветов",
       tooltip: "",
       fields: {
-        "base_clr": {
+        base_clr: {
           synonym: "Цвет основы",
           multiline: false,
           tooltip: "Значение цвета основы",
@@ -1224,7 +1224,7 @@ export const meta= {
             "fraction": 3
           }
         },
-        "clr_group": {
+        clr_group: {
           synonym: "Доступность цветов",
           multiline: false,
           tooltip: "Группа цветов, доступных для данного цвета основы",

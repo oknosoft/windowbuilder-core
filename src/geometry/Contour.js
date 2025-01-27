@@ -60,6 +60,16 @@ export class Contour extends paper.Layer {
   }
 
   /**
+   * @summary Указатель на спецификацию слоя
+   * @desc В большинстве случаев, указывает на спецификацию изделия
+   * @type {CatSpecifications}
+   */
+  get specification() {
+    const {project, layer} = this;
+    return layer ? layer.specification : project.specification;
+  }
+
+  /**
    * Признак сокрытия слоя
    * @type {boolean}
    */
@@ -413,9 +423,9 @@ export class Contour extends paper.Layer {
    * @type {CatFurns}
    */
   get furn() {
-    const {project, layer} = this;
+    const {project, level} = this;
     const {furns} = project.root.cat;
-    return layer.layer ? furns.get(this.#raw.furn) : furns.get();
+    return level > 0 ? furns.get(this.#raw.furn) : furns.get();
   }
   set furn(v) {
     this.#raw.furn = v;
@@ -630,6 +640,10 @@ export class Contour extends paper.Layer {
    * @summary Рассчитывает спецификацию слоя
    */
   calculateSpec() {
-    
+    const {contours, profiles, fillings, furn} = this;
+    for(const elm of profiles.concat(fillings).concat(contours)) {
+      elm.calculateSpec();
+    }
+    furn?.calculateSpec?.();
   }
 }

@@ -214,6 +214,15 @@ export class BuilderElement extends paper.Group {
   }
 
   /**
+   * @summary Указатель на спецификацию элемента
+   * @desc В большинстве случаев, совпадает со спецификацией слоя
+   * @type {CatSpecifications}
+   */
+  get specification() {
+    return this.layer.specification;
+  }
+
+  /**
    * @summary Скрытый
    * @desc элемент рисуется полупрозрачным
    * @type Boolean
@@ -287,6 +296,16 @@ export class BuilderElement extends paper.Group {
     this.dop = {note: v};
   }
 
+  /**
+   * @summary Вклад элемента в спецификацию слоя
+   */
+  calculateSpec() {
+
+  }
+
+  /**
+   * @summary Удаляет элемент из иерархии проекта
+   */
   remove() {
     const {project, layer} = this;
     super.remove();

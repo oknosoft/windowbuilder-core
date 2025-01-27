@@ -6,6 +6,7 @@ import {classes as insertsClasses, meta as inserts, exclude as insertsExclude} f
 import {classes as cnnsClasses, meta as cnns, exclude as cnnsExclude} from './cnns';
 import {classes as furnsClasses, meta as furns, exclude as furnsExclude} from './furns';
 import {classes as productionParamsClasses, meta as productionParams, exclude as productionParamsExclude} from './productionParams';
+import {meta as specifications} from './specifications/meta';
 
 export const meta = {
   currencies: {
@@ -470,6 +471,7 @@ export const meta = {
   cnns,
   furns,
   productionParams,
+  specifications,
   workCenterKinds: {
     name: "ВидыРабочихЦентров",
     synonym: "Этапы производства (Виды РЦ)",

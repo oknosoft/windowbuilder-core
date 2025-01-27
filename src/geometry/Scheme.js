@@ -12,7 +12,10 @@ export class Scheme extends paper.Project {
   constructor(attr, root) {
     super(attr);
     if(root) {
-      Object.defineProperty(this, 'root', {value: root});
+      Object.defineProperties(this, {
+        root: {value: root},
+        specification: {value: root.cat.specifications.create()},
+      });
     }
     Object.defineProperties(this, {
       rootLayer: {value: new Contour.Root({project: this, insert: true})},
@@ -152,6 +155,17 @@ export class Scheme extends paper.Project {
   resetDefaults() {
     for(const contour of this.contours) {
       contour.resetDefaults(true);
+    }
+  }
+
+  /**
+   * @summary Рассчитывает спецификацию слоя
+   */
+  calculateSpec() {
+    const {contours, rootLayer, specification} = this;
+    specification.composition.clear();
+    for(const elm of [rootLayer].concat(contours)) {
+      elm.calculateSpec();
     }
   }
 
