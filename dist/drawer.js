@@ -2082,6 +2082,32 @@ class Contour extends AbstractFilling(paper.Layer) {
     const {_ox, cnstr} = this;
     return _ox.elm_weight(-cnstr);
   }
+  thickness(withChildren) {
+    const {contours, profiles} = this;
+    let thickness = profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
+    if(withChildren) {
+      let add = 0;
+      for(const contour of contours) {
+        const test = contour.thickness(withChildren) - contour.offsetZ;
+        if(test > add) {
+          add = test;
+        }
+      }
+      thickness += add;
+    }
+    return thickness;
+  }
+  get offsetZ() {
+    const {layer, profiles} = this;
+    return layer ? profiles.reduce((sum, elm1) =>  {
+      const elm2 = elm1.nearest();
+      if(elm2 && elm1._attr._nearest_cnn) {
+        const sizeZ = elm1._attr._nearest_cnn.sizeZ(elm1, elm2);
+        return sizeZ > sum ? sizeZ : sum;
+      }
+      return sum;
+    }, 0) : 0;
+  }
   get furn() {
     return this._row.furn;
   }
@@ -12251,6 +12277,9 @@ class ConnectiveLayer extends paper.Layer {
   get area() {
     return (this.profiles.reduce((sum, {path}) => sum + path.area, 0) /1e6).round(4);
   }
+  thickness() {
+    return this.profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
+  }
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
   }
@@ -13790,6 +13819,12 @@ class Scheme extends paper.Project {
     this.contours.forEach((l) => bounds = bounds.unite(l.strokeBounds));
     return bounds;
   }
+  get thickness() {
+    return this.contours.reduce((sum, layer) => {
+      const thickness = layer.thickness(true);
+      return thickness > sum ? thickness : sum;
+    }, this.l_connective.thickness());
+  }
   get _calc_order_row() {
     const {_attr, ox} = this;
     if(!_attr._calc_order_row && !ox.empty()) {
@@ -13997,6 +14032,7 @@ class Scheme extends paper.Project {
     if(bounds) {
       ox.x = bounds.width.round();
       ox.y = bounds.height.round();
+      ox.z = this.thickness;
       ox.s = this.area;
       contours.forEach((contour) => {
         if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
@@ -14016,6 +14052,7 @@ class Scheme extends paper.Project {
     else {
       ox.x = 0;
       ox.y = 0;
+      ox.z = 0;
       ox.s = 0;
     }
     return res

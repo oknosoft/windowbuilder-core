@@ -459,16 +459,16 @@ exports.CatCnns = class CatCnns extends Object {
   
   /**
    * Параметрический размер соединения 
-   * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
+   * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
    * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
    * @param {Number} [region] - номер ряда
    * @return Number
    */
-  size(elm0, elm2, region=0) {
+  size(elm1, elm2, region=0) {
     let {sz, sizes} = this;
-    const {ox, layer} = elm0;
+    const {ox, layer} = elm1;
     for(const prm_row of sizes) {
-      let elm = elm0;
+      let elm = elm1;
       let cnstr = 0;
       if(prm_row.origin.is('layer')) {
         cnstr = layer.cnstr;
@@ -488,9 +488,20 @@ exports.CatCnns = class CatCnns extends Object {
         sz = prm_row.elm;
         break;
       }
-      //if(elm != elm0 && elm.inset.insert_type.is('composite')) {}
+      //if(elm != elm1 && elm.inset.insert_type.is('composite')) {}
     }
     return sz;
+  }
+
+  /**
+   * Параметрический размер по Z
+   * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
+   * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+   * @param {Number} [region] - номер ряда
+   * @return Number
+   */
+  sizeZ(elm1, elm2, region=0) {
+    return this.szz;
   }
 
   /**

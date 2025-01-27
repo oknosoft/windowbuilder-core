@@ -69,6 +69,7 @@ $p.enm.create('open_types');
 $p.enm.create('sz_line_types');
 $p.enm.create('cnn_types');
 $p.enm.create('specification_order_row_types');
+$p.enm.create('specification_row_type');
 $p.enm.create('elm_types');
 $p.enm.create('planning_phases');
 $p.enm.create('order_sending_stages');
@@ -1915,6 +1916,8 @@ set acl_obj(v){this._setter('acl_obj',v)}
 }
 $p.CatBranchesKeysRow = CatBranchesKeysRow;
 class CatBranchesInsertsRow extends TabularSectionRow{
+get available(){return this._getter('available')}
+set available(v){this._setter('available',v)}
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
 get name(){return this._getter('name')}
@@ -3921,16 +3924,16 @@ set coordinates(v){this._setter_ts('coordinates',v)}
   
   /**
    * Параметрический размер соединения 
-   * @param {BuilderElement} elm0 - Элемент, через который будем добираться до значений параметров
+   * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
    * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
    * @param {Number} [region] - номер ряда
    * @return Number
    */
-  size(elm0, elm2, region=0) {
+  size(elm1, elm2, region=0) {
     let {sz, sizes} = this;
-    const {ox, layer} = elm0;
+    const {ox, layer} = elm1;
     for(const prm_row of sizes) {
-      let elm = elm0;
+      let elm = elm1;
       let cnstr = 0;
       if(prm_row.origin.is('layer')) {
         cnstr = layer.cnstr;
@@ -3950,9 +3953,20 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         sz = prm_row.elm;
         break;
       }
-      //if(elm != elm0 && elm.inset.insert_type.is('composite')) {}
+      //if(elm != elm1 && elm.inset.insert_type.is('composite')) {}
     }
     return sz;
+  }
+
+  /**
+   * Параметрический размер по Z
+   * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
+   * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
+   * @param {Number} [region] - номер ряда
+   * @return Number
+   */
+  sizeZ(elm1, elm2, region=0) {
+    return this.szz;
   }
 
   /**
@@ -7990,6 +8004,82 @@ class CatMargin_coefficientsManager extends CatManager {
   }
 }
 $p.cat.create('margin_coefficients', CatMargin_coefficientsManager, false);
+class CatSpecifications extends CatObj{
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get characteristic(){return this._getter('characteristic')}
+set characteristic(v){this._setter('characteristic',v)}
+get production_kind(){return this._getter('production_kind')}
+set production_kind(v){this._setter('production_kind',v)}
+get owner(){return this._getter('owner')}
+set owner(v){this._setter('owner',v)}
+get composition(){return this._getter_ts('composition')}
+set composition(v){this._setter_ts('composition',v)}
+get procedures(){return this._getter_ts('procedures')}
+set procedures(v){this._setter_ts('procedures',v)}
+}
+$p.CatSpecifications = CatSpecifications;
+class CatSpecificationsCompositionRow extends TabularSectionRow{
+get composition_kinds(){return this._getter('composition_kinds')}
+set composition_kinds(v){this._setter('composition_kinds',v)}
+get nom(){return this._getter('nom')}
+set nom(v){this._setter('nom',v)}
+get characteristic(){return this._getter('characteristic')}
+set characteristic(v){this._setter('characteristic',v)}
+get unit(){return this._getter('unit')}
+set unit(v){this._setter('unit',v)}
+get specification(){return this._getter('specification')}
+set specification(v){this._setter('specification',v)}
+get quantity(){return this._getter('quantity')}
+set quantity(v){this._setter('quantity',v)}
+get cost_part(){return this._getter('cost_part')}
+set cost_part(v){this._setter('cost_part',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
+get region(){return this._getter('region')}
+set region(v){this._setter('region',v)}
+get clr(){return $p.cat.clrs.getter(this._obj.clr)}
+set clr(v){this._setter('clr',v)}
+get len(){return this._getter('len')}
+set len(v){this._setter('len',v)}
+get width(){return this._getter('width')}
+set width(v){this._setter('width',v)}
+get depth(){return this._getter('depth')}
+set depth(v){this._setter('depth',v)}
+get s(){return this._getter('s')}
+set s(v){this._setter('s',v)}
+get alp1(){return this._getter('alp1')}
+set alp1(v){this._setter('alp1',v)}
+get alp2(){return this._getter('alp2')}
+set alp2(v){this._setter('alp2',v)}
+get qty(){return this._getter('qty')}
+set qty(v){this._setter('qty',v)}
+get totqty(){return this._getter('totqty')}
+set totqty(v){this._setter('totqty',v)}
+get price(){return this._getter('price')}
+set price(v){this._setter('price',v)}
+get amount(){return this._getter('amount')}
+set amount(v){this._setter('amount',v)}
+get amount_marged(){return this._getter('amount_marged')}
+set amount_marged(v){this._setter('amount_marged',v)}
+get origin(){return this._getter('origin')}
+set origin(v){this._setter('origin',v)}
+}
+$p.CatSpecificationsCompositionRow = CatSpecificationsCompositionRow;
+class CatSpecificationsProceduresRow extends TabularSectionRow{
+get procedure(){return this._getter('procedure')}
+set procedure(v){this._setter('procedure',v)}
+get time_standard(){return this._getter('time_standard')}
+set time_standard(v){this._setter('time_standard',v)}
+get quantity(){return this._getter('quantity')}
+set quantity(v){this._setter('quantity',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+}
+$p.CatSpecificationsProceduresRow = CatSpecificationsProceduresRow;
+$p.cat.create('specifications');
 class CatLead_src extends CatObj{
 get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}

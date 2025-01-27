@@ -386,6 +386,16 @@ class ConnectiveLayer extends paper.Layer {
   }
 
   /**
+   * @summary Толщина слоя
+   * @desc Принимается равной максимальной толщине профиля
+   * @param {Boolean} [withChildren]
+   * @return {Number}
+   */
+  thickness() {
+    return this.profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
+  }
+
+  /**
    * Обработчик при изменении системы
    */
   on_sys_changed() {

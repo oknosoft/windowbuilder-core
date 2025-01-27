@@ -990,6 +990,18 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * @summary Толщина изделия
+   * @desc Вычисляется, как сумма толщин слоёв за вычетом размеров соединений по Z
+   * @type {Number}
+   */
+  get thickness() {
+    return this.contours.reduce((sum, layer) => {
+      const thickness = layer.thickness(true);
+      return thickness > sum ? thickness : sum;
+    }, this.l_connective.thickness());
+  }
+
+  /**
    * Строка табчасти продукция текущего заказа, соответствующая редактируемому изделию
    */
   get _calc_order_row() {
@@ -1279,6 +1291,7 @@ class Scheme extends paper.Project {
       // устанавливаем размеры в характеристике
       ox.x = bounds.width.round();
       ox.y = bounds.height.round();
+      ox.z = this.thickness;
       ox.s = this.area;
 
       // вызываем метод save_coordinates в дочерних слоях
@@ -1302,6 +1315,7 @@ class Scheme extends paper.Project {
     else {
       ox.x = 0;
       ox.y = 0;
+      ox.z = 0;
       ox.s = 0;
     }
 
