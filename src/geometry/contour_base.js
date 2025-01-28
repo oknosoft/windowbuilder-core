@@ -442,12 +442,51 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Масса слоя
-   * @return {Number}
+   * @summary Масса слоя
+   * @type {Number}
    */
   get weight() {
     const {_ox, cnstr} = this;
     return _ox.elm_weight(-cnstr);
+  }
+
+  /**
+   * @summary Толщина слоя
+   * @desc Принимается равной максимальной толщине профиля
+   * @param {Boolean} [withChildren]
+   * @return {Number}
+   */
+  thickness(withChildren) {
+    const {contours, profiles} = this;
+    let thickness = profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
+    if(withChildren) {
+      let add = 0;
+      for(const contour of contours) {
+        const test = contour.thickness(withChildren) - contour.offsetZ;
+        if(test > add) {
+          add = test;
+        }
+      }
+      thickness += add;
+    }
+    return thickness;
+  }
+
+  /**
+   * @summary Смещение слоя по Z
+   * @desc Относительно родительского слоя
+   * @type {Number}
+   */
+  get offsetZ() {
+    const {layer, profiles} = this;
+    return layer ? profiles.reduce((sum, elm1) =>  {
+      const elm2 = elm1.nearest();
+      if(elm2 && elm1._attr._nearest_cnn) {
+        const sizeZ = elm1._attr._nearest_cnn.sizeZ(elm1, elm2);
+        return sizeZ > sum ? sizeZ : sum;
+      }
+      return sum;
+    }, 0) : 0;
   }
   
   /**
@@ -1981,16 +2020,18 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_glass_numbers() {
     const {l_visualization} = this;
     for(const glass of this.glasses(false, true)) {
-      const text = new paper.PointText({
-        parent: l_visualization.by_spec,
-        guide: true,
-        //justification: 'left',
-        fillColor: 'darkgreen',
-        fontFamily: consts.font_family,
-        fontSize: consts.font_size * 2,
-        content: glass.elm,
-        position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
-      });
+      if(glass.visible && !glass.hidden) {
+        const text = new paper.PointText({
+          parent: l_visualization.by_spec,
+          guide: true,
+          //justification: 'left',
+          fillColor: 'darkgreen',
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size * 2,
+          content: glass.elm,
+          position: glass.bounds.center.add([consts.font_size * 1.2, consts.font_size/2]),
+        });
+      }
     }
   }
 
@@ -2442,11 +2483,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     // z-index доборов
-    for (const elm of addls) {
-      const {b, e} = elm.rays;
-      b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
-      e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
-    }
+    // for (const elm of addls) {
+    //   const {b, e} = elm.rays;
+    //   b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
+    //   e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
+    // }
     // z-index штапиков
     for (const elm of this.getItems({class: ProfileGlBead})) {
       const {b, e} = elm.rays;
