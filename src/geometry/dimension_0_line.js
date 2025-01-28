@@ -20,8 +20,9 @@
 class DimensionLine extends paper.Group {
 
   constructor(attr) {
-
+    
     super({parent: attr.parent, project: attr.project});
+    const {project} = this;
 
     const _attr = this._attr = {};
 
@@ -30,10 +31,10 @@ class DimensionLine extends paper.Group {
     if(this._row && this._row.path_data){
       attr._mixin(JSON.parse(this._row.path_data));
       if(attr.elm1){
-        attr.elm1 = this.project.getItem({elm: attr.elm1});
+        attr.elm1 = project.getItem({elm: attr.elm1});
       }
       if(attr.elm2){
-        attr.elm2 = this.project.getItem({elm: attr.elm2});
+        attr.elm2 = project.getItem({elm: attr.elm2});
       }
     }
     if(!attr.elm2) {
@@ -57,10 +58,11 @@ class DimensionLine extends paper.Group {
     }
 
     // создаём детей
-    new paper.Path({parent: this, name: 'callout1', strokeColor: 'black', guide: true});
-    new paper.Path({parent: this, name: 'callout2', strokeColor: 'black', guide: true});
-    new paper.Path({parent: this, name: 'scale', strokeColor: 'black', guide: true});
+    new paper.Path({project, parent: this, name: 'callout1', strokeColor: 'black', guide: true});
+    new paper.Path({project, parent: this, name: 'callout2', strokeColor: 'black', guide: true});
+    new paper.Path({project, parent: this, name: 'scale', strokeColor: 'black', guide: true});
     new paper.PointText({
+      project,
       parent: this,
       name: 'text',
       justification: 'center',
@@ -68,7 +70,7 @@ class DimensionLine extends paper.Group {
       fontFamily: consts.font_family,
       fontSize: this._font_size()});
 
-    !this.project._attr._from_service && this.on({
+    !project._attr._from_service && this.on({
       mouseenter: this._mouseenter,
       mouseleave: this._mouseleave,
       click: this._click
@@ -458,7 +460,7 @@ class DimensionLine extends paper.Group {
       return;
     }
 
-    const path = new paper.Path({ insert: false, segments: [b, e] });
+    const path = new paper.Path({project, insert: false, segments: [b, e] });
 
     if(_attr.elm1 && pos){
       b = path.getNearestPoint(_attr.elm1[_attr.p1]);
@@ -723,7 +725,7 @@ class DimensionLineCustom extends DimensionLine {
       const t = d.clone();
       t.angle = this.angle;
       // путь по углу
-      const path = new paper.Path({insert: false, segments: [b, b.add(t)]});
+      const path = new paper.Path({project: this.project, insert: false, segments: [b, b.add(t)]});
       // удлиненный путь
       path.lastSegment.point.add(t.multiply(10000));
       // обрезаем ближайшей точкой к 'e'

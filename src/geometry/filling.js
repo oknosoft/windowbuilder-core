@@ -56,25 +56,27 @@ class Filling extends AbstractFilling(BuilderElement) {
         const {bounds: lbounds} = layer;
         const x = lbounds.x + pbounds.x;
         const y = lbounds.y + pbounds.y;
-        const path = new paper.Path({pathData: _row.path_data, insert: false});
+        const path = new paper.Path({project, pathData: _row.path_data, insert: false});
         path.translate([x, y]);
         _row.path_data = path.pathData;
       }
-      _attr.path = new paper.Path(_row.path_data);
+      _attr.path = new paper.Path({project, pathData: _row.path_data});
     }
 
     else if(attr.path){
-      _attr.path = new paper.Path();
+      _attr.path = new paper.Path({project});
       this.path = attr.path;
     }
     else{
       const h = pbounds.height + pbounds.y;
-      _attr.path = new paper.Path([
-        [_row.x1, h - _row.y1],
-        [_row.x1, h - _row.y2],
-        [_row.x2, h - _row.y2],
-        [_row.x2, h - _row.y1]
-      ]);
+      _attr.path = new paper.Path({
+        project, 
+        segments: [
+          [_row.x1, h - _row.y1],
+          [_row.x1, h - _row.y2],
+          [_row.x2, h - _row.y2],
+          [_row.x2, h - _row.y1]
+        ]});
     }
 
     _attr.path.closePath(true);
@@ -379,7 +381,8 @@ class Filling extends AbstractFilling(BuilderElement) {
 
     //this.sendToBack();
 
-    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}, visible} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, elm, project, visible} = this;
+    const {bounds: pbounds, ox} = project;
     const {elm_font_size, font_family} = consts;
     const {builder_props} = ox;
     const max = Math.max(pbounds.width, pbounds.height);
@@ -400,6 +403,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     // если текст не создан - добавляем
     if(!_attr._text){
       _attr._text = new paper.PointText({
+        project,
         parent: this.children.text,
         fillColor: 'black',
         fontFamily: font_family,
@@ -457,6 +461,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(param?.extract_pvalue({ox, cnstr: -elm, elm: this})) {
       if(!_attr._text_sep){
         _attr._text_sep = new paper.Path.Circle({
+          project,
           parent: this.children.text,
           center: [0, 0],
           radius: fontSize * 0.8,
@@ -509,7 +514,8 @@ class Filling extends AbstractFilling(BuilderElement) {
    * Рисует при необходимости ряды
    */
   draw_regions() {
-    const {inset, elm, layer, _attr: {paths, _text}, project: {builder_props}} = this;
+    const {inset, elm, layer, _attr: {paths, _text}, project} = this;
+    const {builder_props} = project;
     if(inset.region && !(layer instanceof ContourTearing)) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
         // 0 - не ряд
@@ -522,7 +528,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
             const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
-            paths.set(row.region, new paper.Path({parent, strokeColor: 'gray', opacity: 0.88}));
+            paths.set(row.region, new paper.Path({project, parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
@@ -602,7 +608,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             }
           }
           // формируем пути внешнего заполнения и полосы
-          let strip_path = new paper.Path({insert: false});
+          let strip_path = new paper.Path({project, insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -961,7 +967,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       path.removeSegments();
     }
     else{
-      path = _attr.path = new paper.Path({parent: this});
+      path = _attr.path = new paper.Path({project, parent: this});
     }
     if(children.tearings.isBelow(path)) {
       path.insertBelow(children.tearings);
@@ -1092,7 +1098,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       const curr = path.segments[i];
       const next = i === (path.segments.length - 1) ? path.segments[0] : path.segments[i + 1];
       if(!prev.hasHandles() && !curr.hasHandles() && !next.hasHandles()) {
-        const tmp = new paper.Path({insert: false, segments: [prev, next]});
+        const tmp = new paper.Path({project, insert: false, segments: [prev, next]});
         if(tmp.is_nearest(curr.point, 1)) {
           curr.remove();
           continue;
@@ -1199,7 +1205,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @return {Rectangle}
    */
   bounds_light(size = 0) {
-    const path = new paper.Path({insert: false});
+    const path = new paper.Path({project: this.project, insert: false});
     for (const {sub_path} of this.perimeter_inner(size)) {
       path.addSegments(sub_path.segments);
     }

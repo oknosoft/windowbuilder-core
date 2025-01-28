@@ -4919,15 +4919,16 @@ class ContourVisualization extends paper.Layer {
 class DimensionLine extends paper.Group {
   constructor(attr) {
     super({parent: attr.parent, project: attr.project});
+    const {project} = this;
     const _attr = this._attr = {};
     this._row = attr.row;
     if(this._row && this._row.path_data){
       attr._mixin(JSON.parse(this._row.path_data));
       if(attr.elm1){
-        attr.elm1 = this.project.getItem({elm: attr.elm1});
+        attr.elm1 = project.getItem({elm: attr.elm1});
       }
       if(attr.elm2){
-        attr.elm2 = this.project.getItem({elm: attr.elm2});
+        attr.elm2 = project.getItem({elm: attr.elm2});
       }
     }
     if(!attr.elm2) {
@@ -4947,17 +4948,18 @@ class DimensionLine extends paper.Group {
       this.remove();
       return;
     }
-    new paper.Path({parent: this, name: 'callout1', strokeColor: 'black', guide: true});
-    new paper.Path({parent: this, name: 'callout2', strokeColor: 'black', guide: true});
-    new paper.Path({parent: this, name: 'scale', strokeColor: 'black', guide: true});
+    new paper.Path({project, parent: this, name: 'callout1', strokeColor: 'black', guide: true});
+    new paper.Path({project, parent: this, name: 'callout2', strokeColor: 'black', guide: true});
+    new paper.Path({project, parent: this, name: 'scale', strokeColor: 'black', guide: true});
     new paper.PointText({
+      project,
       parent: this,
       name: 'text',
       justification: 'center',
       fillColor: 'black',
       fontFamily: consts.font_family,
       fontSize: this._font_size()});
-    !this.project._attr._from_service && this.on({
+    !project._attr._from_service && this.on({
       mouseenter: this._mouseenter,
       mouseleave: this._mouseleave,
       click: this._click
@@ -5290,7 +5292,7 @@ class DimensionLine extends paper.Group {
     if(!b || !e){
       return;
     }
-    const path = new paper.Path({ insert: false, segments: [b, e] });
+    const path = new paper.Path({project, insert: false, segments: [b, e] });
     if(_attr.elm1 && pos){
       b = path.getNearestPoint(_attr.elm1[_attr.p1]);
       e = path.getNearestPoint(_attr.elm2[_attr.p2]);
@@ -5484,7 +5486,7 @@ class DimensionLineCustom extends DimensionLine {
       const d = e.subtract(b);
       const t = d.clone();
       t.angle = this.angle;
-      const path = new paper.Path({insert: false, segments: [b, b.add(t)]});
+      const path = new paper.Path({project: this.project, insert: false, segments: [b, b.add(t)]});
       path.lastSegment.point.add(t.multiply(10000));
       path.lastSegment.point = path.getNearestPoint(e);
       path.offset = 0;
@@ -5539,10 +5541,12 @@ class DimensionLayer extends paper.Layer {
     return this.project.dimension_bounds;
   }
   draw_sizes() {
-    const {bounds, builder_props, contours} = this.project;
+    const {project} = this;
+    const {bounds, builder_props, contours} = project;
     if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
       if(!this.bottom) {
         this.bottom = new DimensionLine({
+          project,
           pos: 'bottom',
           parent: this,
           offset: -120
@@ -5553,6 +5557,7 @@ class DimensionLayer extends paper.Layer {
       }
       if(!this.right) {
         this.right = new DimensionLine({
+          project,
           pos: 'right',
           parent: this,
           offset: -120
@@ -5701,7 +5706,7 @@ class DimensionDrawer extends paper.Group {
     }
   }
   draw_by_imposts() {
-    const {parent} = this;
+    const {parent, project} = this;
     this.clear();
     let index = 0;
     for (let elm of parent.profiles) {
@@ -5731,13 +5736,14 @@ class DimensionDrawer extends paper.Group {
           dx2 = dxi - nom.sizefaltz;
         }
         this.ihor[`i${++index}`] = new DimensionLineImpost({
+          project,
+          parent: this,
           elm1: elm,
           elm2: elm,
           p1: invert ? dx : 'b',
           p2: invert ? 'b' : dx,
           dx1,
           dx2,
-          parent: this,
           offset: invert ? -150 : 150,
           outer: outer.includes(impost),
         });
@@ -5798,7 +5804,8 @@ class DimensionDrawer extends paper.Group {
   }
   by_imposts(arr, collection, pos) {
     let {base_offset, dop_offset} = consts;
-    const {_regions} = this.project._attr;
+    const {project} = this;
+    const {_regions} = project._attr;
     if(_regions) {
       base_offset += 80;
       dop_offset = base_offset + 40;
@@ -5815,12 +5822,13 @@ class DimensionDrawer extends paper.Group {
           }
         }
         collection[i] = new DimensionLine({
+          project,
+          parent: this,
           pos: pos,
           elm1: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
           p1: arr[i].p,
           elm2: arr[i + 1].elm instanceof GlassSegment ? arr[i + 1].elm._sub : arr[i + 1].elm,
           p2: arr[i + 1].p,
-          parent: this,
           offset: offset - shift,
           impost: true
         });
@@ -5834,12 +5842,13 @@ class DimensionDrawer extends paper.Group {
     for (let i = 1; i < arr.length - 1; i++) {
       if(!collection[i - 1]) {
         collection[i - 1] = new DimensionLine({
+          project: this.project,
+          parent: this,
           pos: pos,
           elm1: arr[0].elm instanceof GlassSegment ? arr[0].elm._sub : arr[0].elm,
           p1: arr[0].p,
           elm2: arr[i].elm instanceof GlassSegment ? arr[i].elm._sub : arr[i].elm,
           p2: arr[i].p,
-          parent: this,
           offset: offset,
           impost: true
         });
@@ -5861,8 +5870,9 @@ class DimensionDrawer extends paper.Group {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
-              pos: 'left',
+              project,
               parent: this,
+              pos: 'left',
               offset: base_offset + (ihor.length > 2 ? dop_offset : 0),
               contour: true
             });
@@ -5882,8 +5892,9 @@ class DimensionDrawer extends paper.Group {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
-              pos: 'right',
+              project,
               parent: this,
+              pos: 'right',
               offset: ihor.length > 2 ? -dop_offset * 2 : -dop_offset,
               contour: true
             });
@@ -5903,6 +5914,7 @@ class DimensionDrawer extends paper.Group {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
+              project,
               pos: 'top',
               parent: this,
               offset: base_offset + (ivert.length > 2 ? dop_offset : 0),
@@ -5924,6 +5936,7 @@ class DimensionDrawer extends paper.Group {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
+              project,
               pos: 'bottom',
               parent: this,
               offset: ivert.length > 2 ? -dop_offset * 2 : -dop_offset,
@@ -5950,8 +5963,9 @@ class DimensionDrawer extends paper.Group {
     const {base_offset} = consts;
     if (!this.left) {
       this.left = new DimensionLine({
-        pos: 'left',
+        project: this.project,
         parent: this,
+        pos: 'left',
         offset: base_offset,
         contour: true,
         faltz: (by_side.top.nom.sizefurn + by_side.bottom.nom.sizefurn) / 2,
@@ -5959,8 +5973,9 @@ class DimensionDrawer extends paper.Group {
     }
     if(!this.top) {
       this.top = new DimensionLine({
-        pos: 'top',
+        project: this.project,
         parent: this,
+        pos: 'top',
         offset: base_offset,
         contour: true,
         faltz: (by_side.left.nom.sizefurn + by_side.right.nom.sizefurn) / 2,
@@ -6303,24 +6318,26 @@ class Filling extends AbstractFilling(BuilderElement) {
         const {bounds: lbounds} = layer;
         const x = lbounds.x + pbounds.x;
         const y = lbounds.y + pbounds.y;
-        const path = new paper.Path({pathData: _row.path_data, insert: false});
+        const path = new paper.Path({project, pathData: _row.path_data, insert: false});
         path.translate([x, y]);
         _row.path_data = path.pathData;
       }
-      _attr.path = new paper.Path(_row.path_data);
+      _attr.path = new paper.Path({project, pathData: _row.path_data});
     }
     else if(attr.path){
-      _attr.path = new paper.Path();
+      _attr.path = new paper.Path({project});
       this.path = attr.path;
     }
     else{
       const h = pbounds.height + pbounds.y;
-      _attr.path = new paper.Path([
-        [_row.x1, h - _row.y1],
-        [_row.x1, h - _row.y2],
-        [_row.x2, h - _row.y2],
-        [_row.x2, h - _row.y1]
-      ]);
+      _attr.path = new paper.Path({
+        project, 
+        segments: [
+          [_row.x1, h - _row.y1],
+          [_row.x1, h - _row.y2],
+          [_row.x2, h - _row.y2],
+          [_row.x2, h - _row.y1]
+        ]});
     }
     _attr.path.closePath(true);
     _attr.path.reduce();
@@ -6543,7 +6560,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
   redraw() {
-    const {path, imposts, glbeads, _attr, is_rectangular, elm, project: {bounds: pbounds, ox}, visible} = this;
+    const {path, imposts, glbeads, _attr, is_rectangular, elm, project, visible} = this;
+    const {bounds: pbounds, ox} = project;
     const {elm_font_size, font_family} = consts;
     const {builder_props} = ox;
     const max = Math.max(pbounds.width, pbounds.height);
@@ -6560,6 +6578,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.purge_paths();
     if(!_attr._text){
       _attr._text = new paper.PointText({
+        project,
         parent: this.children.text,
         fillColor: 'black',
         fontFamily: font_family,
@@ -6609,6 +6628,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(param?.extract_pvalue({ox, cnstr: -elm, elm: this})) {
       if(!_attr._text_sep){
         _attr._text_sep = new paper.Path.Circle({
+          project,
           parent: this.children.text,
           center: [0, 0],
           radius: fontSize * 0.8,
@@ -6651,7 +6671,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     !no_zoom && layer.zoom_fit();
   }
   draw_regions() {
-    const {inset, elm, layer, _attr: {paths, _text}, project: {builder_props}} = this;
+    const {inset, elm, layer, _attr: {paths, _text}, project} = this;
+    const {builder_props} = project;
     if(inset.region && !(layer instanceof ContourTearing)) {
       this.ox.glass_specification.find_rows({elm}, (row) => {
         if([1, 2, 3, -1, -2].includes(row.region)) {
@@ -6660,7 +6681,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
             const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
-            paths.set(row.region, new paper.Path({parent, strokeColor: 'gray', opacity: 0.88}));
+            paths.set(row.region, new paper.Path({project, parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
@@ -6738,7 +6759,7 @@ class Filling extends AbstractFilling(BuilderElement) {
               curr.strip_path = curr.strip_path.get_subpath(curr.sb, curr.se, true);
             }
           }
-          let strip_path = new paper.Path({insert: false});
+          let strip_path = new paper.Path({project, insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -6985,7 +7006,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       path.removeSegments();
     }
     else{
-      path = _attr.path = new paper.Path({parent: this});
+      path = _attr.path = new paper.Path({project, parent: this});
     }
     if(children.tearings.isBelow(path)) {
       path.insertBelow(children.tearings);
@@ -7098,7 +7119,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       const curr = path.segments[i];
       const next = i === (path.segments.length - 1) ? path.segments[0] : path.segments[i + 1];
       if(!prev.hasHandles() && !curr.hasHandles() && !next.hasHandles()) {
-        const tmp = new paper.Path({insert: false, segments: [prev, next]});
+        const tmp = new paper.Path({project, insert: false, segments: [prev, next]});
         if(tmp.is_nearest(curr.point, 1)) {
           curr.remove();
           continue;
@@ -7182,7 +7203,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
   }
   bounds_light(size = 0) {
-    const path = new paper.Path({insert: false});
+    const path = new paper.Path({project: this.project, insert: false});
     for (const {sub_path} of this.perimeter_inner(size)) {
       path.addSegments(sub_path.segments);
     }
@@ -8098,11 +8119,7 @@ Object.defineProperties(paper.Path.prototype, {
           const offset1 = loc1.offset;
           const offset2 = loc2.offset;
           if(this.is_linear()){
-            tmp = new paper.Path({
-              project,
-              segments: [loc1.point, loc2.point],
-              insert: false
-            });
+            tmp = new paper.Path({project, segments: [loc1.point, loc2.point], insert: false});
           }
           else{
             if(offset1 > offset2){
@@ -8242,6 +8259,7 @@ Object.defineProperties(paper.Path.prototype, {
           if(!this.length || !path.length) {
             return null;
           }
+          const project = this.project || path.project;
           const path1 = clone ? this.clone({insert: false, deep: false}) : this;
           const path2 = clone ? path.clone({insert: false, deep: false}) : path;
           let p1 = path1.getNearestPoint(point),
@@ -11553,7 +11571,7 @@ class Profile extends ProfileItem {
       children.back.segments[3].point = position.add([size.width/2, size.height/2]);
     }
     else {
-      if(l_dimensions.articles.map.has(this)) {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
         l_dimensions.articles.map.get(this).remove();
         l_dimensions.articles.map.delete(this);
       }
@@ -11568,7 +11586,7 @@ class Profile extends ProfileItem {
     const res = super.remove();
     if(res !== false) {
       const {l_dimensions} = this.project;
-      if(l_dimensions.articles.map.has(this)) {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
         l_dimensions.articles.map.get(this).remove();
         l_dimensions.articles.map.delete(this);
       }
@@ -13854,13 +13872,13 @@ class Scheme extends paper.Project {
   }
   clear() {
     const {_attr, _children, l_visualization} = this;
-    const pnames = '_bounds,_update_timer,_loading,_snapshot,_silent,_from_service,_regions';
+    const pnames = '_bounds,_update_timer,_loading,_removing,_snapshot,_silent,_from_service,_regions';
     for (let fld in _attr) {
       if(!pnames.match(fld)) {
         delete _attr[fld];
       }
     }
-    l_visualization.clear();
+    l_visualization?.clear();
     for (let i = _children.length - 1; i >= 0; i--) {
       if(_children[i] !== l_visualization) {
         _children[i].remove();
@@ -14263,7 +14281,7 @@ class Scheme extends paper.Project {
   }
   get l_dimensions() {
     const {_attr} = this;
-    if(!_attr.l_dimensions) {
+    if(!_attr.l_dimensions && !_attr._removing) {
       const {activeLayer} = this;
       _attr.l_dimensions = new DimensionLayer({project: this});
       if(activeLayer instanceof Contour) {
@@ -14274,7 +14292,7 @@ class Scheme extends paper.Project {
   }
   get l_connective() {
     const {_attr} = this;
-    if(!_attr.l_connective) {
+    if(!_attr.l_connective && !_attr._removing) {
       const {activeLayer} = this;
       _attr.l_connective = new ConnectiveLayer({project: this});
       if(activeLayer instanceof Contour) {
