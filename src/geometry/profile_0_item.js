@@ -3224,9 +3224,9 @@ class ProfileItem extends GeneratrixElement {
   }
 
   remove() {
-    const {layer} = this;
+    const {layer, project} = this;
     const res = super.remove(); 
-    if(res !== false) {
+    if(res !== false && !project?._attr?._removing) {
       for(const {rays} of layer?.profiles || []) {
         for(const node of ['b', 'e']) {
           if(rays[node].profile === this) {
