@@ -934,7 +934,7 @@
       const {check_params} = ProductsBuilding;
 
       function fake_row(sub_row, row) {
-        const fakerow = {_origin: []};
+        const fakerow = {_origin: [], _proto: sub_row};
         if(sub_row._metadata) {
           for (let fld in sub_row._metadata().fields) {
             fakerow[fld] = sub_row[fld];
@@ -1251,7 +1251,7 @@
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
               if(this.check_restrictions(row_ins_spec, row_prm, true) === true && check_params({
-                params: (row_ins_spec.origin || this).selection_params,
+                params: (row_ins_spec._proto?._owner?._owner || this).selection_params,
                 ox,
                 elm: row_prm,
                 row_spec: row_ins_spec,

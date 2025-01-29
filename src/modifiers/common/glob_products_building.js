@@ -1003,6 +1003,9 @@ class ProductsBuilding {
 
     // режем параметры по элементу сначала строим Map ИЛИ
     let {_or} = row_spec;
+    if(!_or && row_spec._proto) {
+      _or = row_spec._proto._or;
+    }
     if(!_or) {
       _or = new Map();
       const relm = row_spec.elm;
@@ -1013,6 +1016,9 @@ class ProductsBuilding {
         _or.get(_row.area).push(_row);
       }
       row_spec._or = _or;
+      if(row_spec._proto) {
+        row_spec._proto._or = _or;
+      }
     }
 
     for(const grp of _or.values()) {
