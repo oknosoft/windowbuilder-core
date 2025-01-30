@@ -5,10 +5,11 @@ export const exclude = ['cat.inserts'];
 
 export function classes({cat, classes, symbols}, exclude)  {
 
-  const {get, set} = symbols;
+  const {get, set, own} = symbols;
   const {CatObj, CatManager, TabularSectionRow} = classes;
 
-  class CatInserts extends CatObj {
+  const [DepositeSpecificationObj, DepositeSpecificationRow] = depositeSpecificationRow({CatObj, TabularSectionRow, get, set, own});
+  class CatInserts extends DepositeSpecificationObj {
     get article(){return this[get]('article')}
     set article(v){this[set]('article',v)}
     get insert_type(){return this[get]('insert_type')}
@@ -181,8 +182,7 @@ return filtered.length ? filtered : [main_rows[0]];
 
   const SelectionParamsRow = selectionParamsRow({TabularSectionRow, get, set});
   class CatInsertsSelectionParamsRow extends SelectionParamsRow {}
-
-  const DepositeSpecificationRow = depositeSpecificationRow({TabularSectionRow, get, set});
+  
   class CatInsertsSpecificationRow extends DepositeSpecificationRow {
     get angle_calc_method(){return this[get]('angle_calc_method')}
     set angle_calc_method(v){this[set]('angle_calc_method',v)}

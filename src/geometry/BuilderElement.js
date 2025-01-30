@@ -150,12 +150,15 @@ export class BuilderElement extends paper.Group {
   }
 
   /**
-   * @summary Номер элемента
+   * @summary Индекс элемента
    * @final
    * @type Number
    */
-  get elm() {
-    return (this.#raw.elm) || this.id || 0;
+  get index() {
+    const {layer, parent, _index} = this;
+    const parentIndex = parent instanceof BuilderElement ?
+      parent.index : (parent?.parent instanceof BuilderElement ? parent.parent.index : layer.index);
+    return `${parentIndex}-${_index + 1}`;
   }
 
   /**
@@ -174,7 +177,7 @@ export class BuilderElement extends paper.Group {
    * @type String
    */
   get presentation() {
-    return `${this.elmType} №${this.elm}`;
+    return `${this.elmType} №${this.index}`;
   }
 
   /**

@@ -271,6 +271,24 @@ export class GeneratrixElement extends BuilderElement {
     return orientations.incline;
   }
 
+  /**
+   * @summary Длина
+   * @desc финальная, без припусков на обработку
+   * @type Number
+   */
+  get length() {
+    return this.rawLength;
+  }
+
+  /**
+   * @summary Черновая длина
+   * @desc для спецификации, с припусками на обработку
+   * @type Number
+   */
+  get rawLength() {
+    return this.generatrix.length;
+  }
+
   get imposts() {
     const {b, e} = this;
     const inner = [], outer = [];

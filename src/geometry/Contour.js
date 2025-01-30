@@ -21,10 +21,15 @@ export class Contour extends paper.Layer {
   get _manager() {
     return this.project;
   }
-  
+
+  /**
+   * @summary Индекс слоя
+   * @final
+   * @type String
+   */
   get index() {
     const {layer, _index} = this;
-    return layer ? `${layer.index}-${_index+1}` : _index.toString();
+    return layer ? `${layer.index}:${_index+1}` : _index.toString();
   }
 
   get level() {

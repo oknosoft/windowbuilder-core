@@ -6,7 +6,7 @@ import {classes as insertsClasses, meta as inserts, exclude as insertsExclude} f
 import {classes as cnnsClasses, meta as cnns, exclude as cnnsExclude} from './cnns';
 import {classes as furnsClasses, meta as furns, exclude as furnsExclude} from './furns';
 import {classes as productionParamsClasses, meta as productionParams, exclude as productionParamsExclude} from './productionParams';
-import {meta as specifications} from './specifications/meta';
+import {classes as specificationsClasses, meta as specifications} from './specifications';
 
 export const meta = {
   currencies: {
@@ -630,4 +630,5 @@ export const classes = [
   cnnsClasses,
   furnsClasses,
   productionParamsClasses,
+  specificationsClasses,
 ];

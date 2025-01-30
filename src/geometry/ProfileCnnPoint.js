@@ -93,6 +93,30 @@ export class CnnPoint {
       }
     }
   }
+
+  /**
+   * @summary Дополняет спецификацию информацией об ошибках
+   * @desc Проверяет применимость концевого соединения
+   */
+  checkErr({rawLength, specification}) {
+    const {cnn, cnnOuter, hasOuter, owner} = this;
+    let error = cnn.empty() || hasOuter && (!cnnOuter || cnnOuter.empty());
+    if(error) {
+      const row = specification.specRow({elm: this});
+      row.nom = owner.project.root.cch.predefinedElmnts.find({synonym: 'cnn_node_error'})?.value;
+    }
+    return error;
+  }
+
+  /**
+   * @summary Индекс узла
+   * @final
+   * @type Number
+   */
+  get index() {
+    const {owner, name, vertex} = this;
+    return `${owner.index}/${name}(${vertex.key})`;
+  }
   
   get name() {
     return this.#raw.name;
