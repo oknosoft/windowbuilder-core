@@ -1928,6 +1928,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       attr.row.kind = kind;
     }
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
+    project.l_visualization.bringToFront();
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }
@@ -16204,6 +16205,9 @@ class ProductsBuilding {
   static check_params({params, row_spec, count_calc_method, ...other}) {
     let ok = true;
     let {_or} = row_spec;
+    if(!_or && row_spec._proto) {
+      _or = row_spec._proto._or;
+    }
     if(!_or) {
       _or = new Map();
       const relm = row_spec.elm;
@@ -16214,6 +16218,9 @@ class ProductsBuilding {
         _or.get(_row.area).push(_row);
       }
       row_spec._or = _or;
+      if(row_spec._proto) {
+        row_spec._proto._or = _or;
+      }
     }
     for(const grp of _or.values()) {
       let grp_ok = true;
@@ -18093,7 +18100,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
       function fake_row(sub_row, row) {
-        const fakerow = {_origin: []};
+        const fakerow = {_origin: [], _proto: sub_row};
         if(sub_row._metadata) {
           for (let fld in sub_row._metadata().fields) {
             fakerow[fld] = sub_row[fld];
@@ -18358,7 +18365,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_prm._row._mixin(rib);
               row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
               if(this.check_restrictions(row_ins_spec, row_prm, true) === true && check_params({
-                params: (row_ins_spec.origin || this).selection_params,
+                params: (row_ins_spec._proto?._owner?._owner || this).selection_params,
                 ox,
                 elm: row_prm,
                 row_spec: row_ins_spec,
