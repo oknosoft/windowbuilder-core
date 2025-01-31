@@ -103,7 +103,7 @@ export class CnnPoint {
     let error = cnn.empty() || hasOuter && (!cnnOuter || cnnOuter.empty());
     if(error) {
       const row = specification.specRow({elm: this});
-      row.nom = owner.project.root.cch.predefinedElmnts.find({synonym: 'cnn_node_error'})?.value;
+      row.nom = owner.project.root.cch.predefinedElmnts.predefined.cnn_node_error?.value;
     }
     return error;
   }

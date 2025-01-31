@@ -33,6 +33,10 @@ export class Filling extends ContainerBlank {
       destination: bounds.topRight,
     });
   }
+
+  get defaultClrStr() {
+    return '#def,#d0ddff,#eff';
+  }
   
   redraw() {
     super.redraw();

@@ -121,7 +121,7 @@ export class BuilderElement extends paper.Group {
    * @type CatInsets
    */
   get inset() {
-    return this.project.root.cat.inserts.get(this.#raw.inset);
+    return this.root.cat.inserts.get(this.#raw.inset);
   }
   set inset(v) {
     const {project, layer} = this;
@@ -255,10 +255,21 @@ export class BuilderElement extends paper.Group {
    * @type CatClrs
    */
   get clr() {
+    if(!this.#raw.clr) {
+      this.#raw.clr = this.root.cat.clrs.get();
+    }
     return this.#raw.clr;
   }
   set clr(v) {
-    this.#raw.clr = v;
+    const {project, path} = this;
+    v = project.root.cat.clrs.get(v);
+    if(v !== this.#raw.clr) {
+      this.#raw.clr = v;
+      project.props.registerChange();
+      if(path) {
+        path.fillColor = v.color(this);
+      }
+    }
   }
 
   get clrIn() {

@@ -7,6 +7,7 @@ import {classes as cnnsClasses, meta as cnns, exclude as cnnsExclude} from './cn
 import {classes as furnsClasses, meta as furns, exclude as furnsExclude} from './furns';
 import {classes as productionParamsClasses, meta as productionParams, exclude as productionParamsExclude} from './productionParams';
 import {classes as specificationsClasses, meta as specifications} from './specifications';
+import {classes as clrsClasses, meta as clrs, exclude as clrsExclude} from './clrs';
 
 export const meta = {
   currencies: {
@@ -610,6 +611,7 @@ export const meta = {
     cachable: "ram",
     id: "uc",
   },
+  clrs,
 };
 
 export const exclude = [
@@ -620,6 +622,7 @@ export const exclude = [
   ...cnnsExclude,
   ...furnsExclude,
   ...productionParamsExclude,
+  ...clrsExclude
 ];
 
 export const classes = [
@@ -631,4 +634,5 @@ export const classes = [
   furnsClasses,
   productionParamsClasses,
   specificationsClasses,
+  clrsClasses,
 ];

@@ -24,10 +24,14 @@ export class Profile extends GeneratrixElement {
    * @desc Проверяет допустимую длину, изогнутость, применимость концевых соединений
    */
   checkErr() {
-    const {b, e, rawLength, specification} = this;
+    const {b, e, rawLength, nom, specification} = this;
     let error = b.checkErr({rawLength, specification});
     error = e.checkErr({rawLength, specification}) || error;
-    return {b, e, rawLength, specification, error};
+    if(nom.empty()) {
+      const row = specification.specRow({elm: this});
+      row.nom = owner.project.root.cch.predefinedElmnts.predefined.cnn_node_error?.value;
+    }
+    return {b, e, rawLength, nom, specification, error};
   }
 
   /**
@@ -35,7 +39,11 @@ export class Profile extends GeneratrixElement {
    */
   calculateSpec() {
     // уточняем длину с учётом соединений
-    const {b, e, rawLength, specification, error} = this.checkErr();
+    const {clr} = this;
+    if(clr.is('ignored')) {
+      return;
+    }
+    const {b, e, rawLength, nom, specification, error} = this.checkErr();
     if(error) {
       return;
     }

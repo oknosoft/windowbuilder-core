@@ -233,7 +233,7 @@ export const meta = {
           }
         },
         quantity: {
-          synonym: "Количество",
+          synonym: "Количество +%",
           multiline: false,
           tooltip: "Количество номенклатуры состава изделия, работы",
           type: {

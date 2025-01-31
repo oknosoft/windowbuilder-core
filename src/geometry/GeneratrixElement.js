@@ -7,7 +7,6 @@ import {rama, impost, flap, connective, loader, svgStubs} from './ProfileShapes'
 export const pathAttr = {
   strokeColor: 'black',
   dashArray: [],
-  fillColor: 'white',
   strokeWidth: 1,
   strokeScaling: false,
   strokeCap: 'round'
@@ -47,7 +46,7 @@ export class GeneratrixElement extends BuilderElement {
     this.raw('inner', new paper.Path({insert: false}));
     this.raw('outer', new paper.Path({insert: false}));
     this.raw('cut', new paper.Path({insert: false}));
-    this.raw('path', new paper.Path({parent: this, name: 'path', ...pathAttr}));
+    this.raw('path', new paper.Path({parent: this, name: 'path', fillColor: 'white', ...pathAttr}));
     this.edges = new Set();
   }
   
@@ -422,6 +421,10 @@ export class GeneratrixElement extends BuilderElement {
       }
     }
     return shape;
+  }
+  
+  get defaultClrStr() {
+    return '#fefefe';
   }
 
   points(mode) {
