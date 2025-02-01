@@ -7,8 +7,8 @@ export function classes({cat, classes, symbols}, exclude)  {
 
   const {get, set, own} = symbols;
   const {CatObj, CatManager, TabularSectionRow} = classes;
-
   const [DepositeSpecificationObj, DepositeSpecificationRow] = depositeSpecificationRow({CatObj, TabularSectionRow, get, set, own});
+  
   class CatInserts extends DepositeSpecificationObj {
     get article(){return this[get]('article')}
     set article(v){this[set]('article',v)}
@@ -16,10 +16,6 @@ export function classes({cat, classes, symbols}, exclude)  {
     set insert_type(v){this[set]('insert_type',v)}
     get clr(){return this[get]('clr')}
     set clr(v){this[set]('clr',v)}
-    get lmin(){return this[get]('lmin')}
-    set lmin(v){this[set]('lmin',v)}
-    get lmax(){return this[get]('lmax')}
-    set lmax(v){this[set]('lmax',v)}
     get hmin(){return this[get]('hmin')}
     set hmin(v){this[set]('hmin',v)}
     get hmax(){return this[get]('hmax')}
@@ -48,8 +44,6 @@ export function classes({cat, classes, symbols}, exclude)  {
     set clr_group(v){this[set]('clr_group',v)}
     get is_order_row(){return this[get]('is_order_row')}
     set is_order_row(v){this[set]('is_order_row',v)}
-    get note(){return this[get]('note')}
-    set note(v){this[set]('note',v)}
     get insert_glass_type(){return this[get]('insert_glass_type')}
     set insert_glass_type(v){this[set]('insert_glass_type',v)}
     get available(){return this[get]('available')}
@@ -58,8 +52,6 @@ export function classes({cat, classes, symbols}, exclude)  {
     set slave(v){this[set]('slave',v)}
     get is_supplier(){return this[get]('is_supplier')}
     set is_supplier(v){this[set]('is_supplier',v)}
-    get region(){return this[get]('region')}
-    set region(v){this[set]('region',v)}
     get split_type(){return this[get]('split_type')}
     set split_type(v){this[set]('split_type',v)}
     get pair(){return this[get]('pair')}
@@ -70,10 +62,6 @@ export function classes({cat, classes, symbols}, exclude)  {
     set css(v){this[set]('css',v)}
     get flipped(){return this[get]('flipped')}
     set flipped(v){this[set]('flipped',v)}
-    get specification(){return this[get]('specification')}
-    set specification(v){this[get]('specification').load(v)}
-    get selection_params(){return this[get]('selection_params')}
-    set selection_params(v){this[get]('selection_params').load(v)}
     get product_params(){return this[get]('product_params')}
     set product_params(v){this[get]('product_params').load(v)}
     get inserts(){return this[get]('inserts')}
@@ -90,7 +78,7 @@ export function classes({cat, classes, symbols}, exclude)  {
 const {check_params} = ProductsBuilding;
 const ox = elm.prm_ox || elm.ox;
 const filtered = main_rows.filter((row) => {
-return this.checkMainRestrictions(row, elm) && check_params({
+return this.checkRestrictions(row, elm) && check_params({
  params: this.selection_params,
  ox,
  elm,
@@ -103,10 +91,6 @@ return filtered.length ? filtered : [main_rows[0]];
 */
       }
       return rows;
-    }
-
-    checkMainRestrictions(row, elm) {
-
     }
 
     nom(elm) {
@@ -154,7 +138,19 @@ return filtered.length ? filtered : [main_rows[0]];
     thickness(elm) {
       return elm.nom.thickness || 0;
     }
+
+    /**
+     * @summary Вклад в спецификацию
+     */
+    calculateSpec({elm, layer, rawLength, nom, specification}) {
+      for(const basis of this.specification) {
+        if(basis.checkRestrictions({elm, layer, rawLength}) && basis.checkParams({elm, layer, rawLength})) {
+          specification.byBasis({elm, layer, basis});
+        }
+      }
+    }
   }
+  classes.CatInserts = CatInserts;
 
   class CatInsertsInsertsRow extends TabularSectionRow {
     get inset(){return this[get]('inset')}
@@ -164,6 +160,7 @@ return filtered.length ? filtered : [main_rows[0]];
     get by_default(){return this[get]('by_default')}
     set by_default(v){this[set]('by_default',v)}
   }
+  classes.CatInsertsInsertsRow = CatInsertsInsertsRow;
 
   class CatInsertsProductParamsRow extends TabularSectionRow {
     get param(){return this[get]('param')}
@@ -179,9 +176,11 @@ return filtered.length ? filtered : [main_rows[0]];
     get list(){return this[get]('list')}
     set list(v){this[set]('list',v)}
   }
+  classes.CatInsertsProductParamsRow = CatInsertsProductParamsRow;
 
   const SelectionParamsRow = selectionParamsRow({TabularSectionRow, get, set});
   class CatInsertsSelectionParamsRow extends SelectionParamsRow {}
+  classes.CatInsertsSelectionParamsRow = CatInsertsSelectionParamsRow;
   
   class CatInsertsSpecificationRow extends DepositeSpecificationRow {
     get angle_calc_method(){return this[get]('angle_calc_method')}
@@ -218,15 +217,14 @@ return filtered.length ? filtered : [main_rows[0]];
     set attrs_option(v){this[set]('attrs_option',v)}
     get is_main_elm(){return this[get]('is_main_elm')}
     set is_main_elm(v){this[set]('is_main_elm',v)}
+
+    checkRestrictions({elm}) {
+
+    }
   }
+  classes.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
   
   class CatInsertsManager extends CatManager {}
-
-  classes.CatInserts = CatInserts;
-  classes.CatInsertsInsertsRow = CatInsertsInsertsRow;
-  classes.CatInsertsProductParamsRow = CatInsertsProductParamsRow;
-  classes.CatInsertsSelectionParamsRow = CatInsertsSelectionParamsRow;
-  classes.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
   classes.CatInsertsManager = CatInsertsManager;
   
   /*

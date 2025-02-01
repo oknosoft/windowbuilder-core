@@ -39,7 +39,7 @@ export class Profile extends GeneratrixElement {
    */
   calculateSpec() {
     // уточняем длину с учётом соединений
-    const {clr} = this;
+    const {clr, layer, inset} = this;
     if(clr.is('ignored')) {
       return;
     }
@@ -48,9 +48,15 @@ export class Profile extends GeneratrixElement {
       return;
     }
     // вклад концевых соединений
+    for(const node of [b, e]) {
+      node.cnn.calculateSpec({elm: this, elm2: node.profile, node: node.name, layer, rawLength, nom, specification});
+    }
     // вклад вставки
+    inset.calculateSpec({elm: this, layer, rawLength, nom, specification});
     // вклад допвставок
+    //
     // спецификация подчинённых элементов
+    //
   }
   
 }

@@ -12,7 +12,7 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
   }
   classes.CatFurnsManager = CatFurnsManager;
 
-  class CatFurns extends CatObj{
+  class CatFurns extends CatObj {
     
   }
   classes.CatFurns = CatFurns;

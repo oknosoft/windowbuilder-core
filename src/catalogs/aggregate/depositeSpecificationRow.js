@@ -74,7 +74,19 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
     }
     
     class DepositeSpecificationObj extends CatObj {
-      
+      get lmin(){return this[get]('lmin')}
+      set lmin(v){this[set]('lmin',v)}
+      get lmax(){return this[get]('lmax')}
+      set lmax(v){this[set]('lmax',v)}
+      get region(){return this[get]('region')}
+      set region(v){this[set]('region',v)}
+      get note(){return this[get]('note')}
+      set note(v){this[set]('note',v)}
+
+      get selection_params(){return this[get]('selection_params')}
+      set selection_params(v){this[get]('selection_params').load(v)}
+      get specification(){return this[get]('specification')}
+      set specification(v){this[get]('specification').load(v)}
     }
     
     constructors.push(DepositeSpecificationObj, DepositeSpecificationRow);
