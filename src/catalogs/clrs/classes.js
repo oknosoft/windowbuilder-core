@@ -33,10 +33,6 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
     get composition(){return this[get]('composition')}
     set composition(v){this[get]('composition').load(v)}
 
-    is(name) {
-      return this._manager.predefined[name] === this;
-    }
-
     color(elm) {
       let {clr_str, clr_in, clr_out} = this;
       let {project, layer}  = elm;

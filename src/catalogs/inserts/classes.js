@@ -218,9 +218,31 @@ return filtered.length ? filtered : [main_rows[0]];
     get is_main_elm(){return this[get]('is_main_elm')}
     set is_main_elm(v){this[set]('is_main_elm',v)}
 
-    checkRestrictions({elm}) {
-
+    checkRestrictions({elm, layer, rawLength, angleHor}) {
+      // главный элемент с нулевым количеством не включаем
+      if(this.is_main_elm && !this.quantity) {
+        return false;
+      }
+      // только для прямых или только для кривых профилей
+      const isLinear = elm.isLinear ? elm.isLinear() : true;
+      const {for_direct_profile_only: direct_only} = this;
+      if((direct_only > 0 && !isLinear) || (direct_only < 0 && isLinear)){
+        return false;
+      }
+      if(elm && elm instanceof elm.project._scope.ProfileItem) {
+        const {ahmin, ahmax, lmin, lmax} = this;
+        if(ahmin > 0 || (ahmax && ahmax < 360)) {
+          if (ahmin > angleHor || (ahmax && ahmax < angleHor)) {
+            return false;
+          }
+        }
+        if (lmin > rawLength || (lmax && lmax < rawLength)) {
+          return false;
+        }
+      }
+      return true;
     }
+    
   }
   classes.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
   

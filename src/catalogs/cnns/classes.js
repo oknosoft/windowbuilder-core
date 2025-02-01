@@ -266,8 +266,21 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
     get contour_number(){return this[get]('contour_number')}
     set contour_number(v){this[set]('contour_number',v)}
 
-    checkRestrictions({elm}) {
+    checkRestrictions({elm, layer, rawLength, angleHor, correct=false}) {
+      const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, alp2, set_specification} = this;
+      // при формировании спецификации, отбрасываем корректировочные строки и наоборот, при корректировке - обычные
+      if(!quantity && !correct || quantity && correct) {
+        return;
+      }
+      if(!nom || nom.empty() || nom.is('art1') || nom.is('art2')) {
+        return;
+      }
 
+      // только для прямых или только для кривых профилей
+      if((direct_only > 0 && !elm.is_linear()) || (direct_only < 0 && elm.is_linear())) {
+        return;
+      }
+      return true;
     }
   }
   classes.CatCnnsSpecificationRow = CatCnnsSpecificationRow;

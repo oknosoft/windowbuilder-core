@@ -29,7 +29,7 @@ export class Profile extends GeneratrixElement {
     error = e.checkErr({rawLength, specification}) || error;
     if(nom.empty()) {
       const row = specification.specRow({elm: this});
-      row.nom = owner.project.root.cch.predefinedElmnts.predefined.cnn_node_error?.value;
+      row.nom = owner.project.root.cat.nom.predefined('cnn_node_error');
     }
     return {b, e, rawLength, nom, specification, error};
   }
@@ -39,7 +39,7 @@ export class Profile extends GeneratrixElement {
    */
   calculateSpec() {
     // уточняем длину с учётом соединений
-    const {clr, layer, inset} = this;
+    const {clr, layer, inset, angleHor} = this;
     if(clr.is('ignored')) {
       return;
     }
@@ -48,11 +48,12 @@ export class Profile extends GeneratrixElement {
       return;
     }
     // вклад концевых соединений
+    const props = {elm: this, layer, rawLength, angleHor, nom, specification}
     for(const node of [b, e]) {
-      node.cnn.calculateSpec({elm: this, elm2: node.profile, node: node.name, layer, rawLength, nom, specification});
+      node.cnn.calculateSpec({...props, elm2: node.profile, node: node.name});
     }
     // вклад вставки
-    inset.calculateSpec({elm: this, layer, rawLength, nom, specification});
+    inset.calculateSpec(props);
     // вклад допвставок
     //
     // спецификация подчинённых элементов

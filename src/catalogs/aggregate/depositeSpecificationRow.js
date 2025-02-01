@@ -31,7 +31,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
 
       paramsRows() {
         const {elm} = this;
-        return this[own][own].params.filter((row) => row.elm === elm);
+        return this[own][own].selection_params.filter((row) => row.elm === elm);
       }
 
       checkParams(attr) {
