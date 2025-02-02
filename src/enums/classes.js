@@ -1,5 +1,7 @@
 
-export const exclude = ['enm.cnnTypes', 'enm.positions'];
+import {countCalculatingWays} from './countCalculatingWays';
+
+export const exclude = ['enm.cnnTypes', 'enm.positions', 'enm.countCalculatingWays'];
 
 export function classes({enm, classes, symbols, utils}, exclude)  {
 
@@ -38,4 +40,6 @@ export function classes({enm, classes, symbols, utils}, exclude)  {
     }
   }
   classes.EnmPositions = EnmPositions;
+
+  countCalculatingWays({enm, classes, symbols, utils});
 }

@@ -174,10 +174,10 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
     /**
      * @summary Вклад в спецификацию
      */
-    calculateSpec({elm, elm2, layer, rawLength, nom, specification}) {
+    calculateSpec({specification, ...other}) {
       for(const basis of this.specification) {
-        if(basis.checkRestrictions({elm, layer, rawLength}) && basis.checkParams({elm, layer, rawLength})) {
-          specification.byBasis({elm, layer, basis});
+        if(basis.checkRestrictions(other) && basis.checkParams(other)) {
+          specification.byBasis({...other, basis});
         }
       }
     }
@@ -265,6 +265,8 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
     set angle_calc_method(v){this[set]('angle_calc_method',v)}
     get contour_number(){return this[get]('contour_number')}
     set contour_number(v){this[set]('contour_number',v)}
+
+    get count_calc_method(){return enm.countCalculatingWays.cnn}
 
     checkRestrictions({elm, layer, rawLength, angleHor, correct=false}) {
       const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, alp2, set_specification} = this;

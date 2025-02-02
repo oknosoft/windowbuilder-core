@@ -23,16 +23,22 @@ export function classes({cat, classes, symbols}, exclude)  {
       const row = this.procedures.add({elm: elm?.index || -layer.index});
       return row;
     }
-    
-    byBasis({elm, layer, basis}) {
-      const {nom, algorithm, count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = basis;
+
+    /**
+     * @summary Вклад в спецификацию
+     * @desc Выполняет метод соответствующего EnmCountCalculatingWays или вызов по цепочке
+     * @param {DepositeSpecificationRow} basis
+     * @param {Array} [stack] - Предыдущие строки вызова
+     */
+    byBasis({basis, stack = [], ...other}) {
+      const {nom} = basis;
       if(nom instanceof classes.CatNom) {
-        
+        basis.count_calc_method.calculate({specification: this, basis, stack, ...other});
       }
       else {
-        
+        stack.push(basis);
+        nom.calculateSpec({specification: this, stack, ...other});
       }
-      
     }
 
   }

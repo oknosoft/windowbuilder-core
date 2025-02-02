@@ -63,6 +63,19 @@ export class BuilderElement extends paper.Group {
     return Array.isArray(name) ? name.map(n => this.#raw[n]) : this.#raw[name];
   }
 
+  /**
+   * @summary Является ли элемент экземпляром заданного класса
+   * @param {String} name
+   * @return {Boolean}
+   */
+  is(name) {
+    let Class;
+    for(const sub of name.split('.')) {
+      Class = Class ? Class[sub] : paper[sub];
+    }
+    return this instanceof Class;
+  }
+
   get isActual() {
     return this.project.props.stamp === this.#raw.stamp;
   }
@@ -249,7 +262,6 @@ export class BuilderElement extends paper.Group {
     this.hidden = !v;
   }
   
-
   /**
    * @summary Цвет элемента
    * @type CatClrs

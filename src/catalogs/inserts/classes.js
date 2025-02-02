@@ -142,10 +142,10 @@ return filtered.length ? filtered : [main_rows[0]];
     /**
      * @summary Вклад в спецификацию
      */
-    calculateSpec({elm, layer, rawLength, nom, specification}) {
+    calculateSpec({specification, ...other}) {
       for(const basis of this.specification) {
-        if(basis.checkRestrictions({elm, layer, rawLength}) && basis.checkParams({elm, layer, rawLength})) {
-          specification.byBasis({elm, layer, basis});
+        if(basis.checkRestrictions(other) && basis.checkParams(other)) {
+          specification.byBasis({basis, ...other});
         }
       }
     }
@@ -218,7 +218,7 @@ return filtered.length ? filtered : [main_rows[0]];
     get is_main_elm(){return this[get]('is_main_elm')}
     set is_main_elm(v){this[set]('is_main_elm',v)}
 
-    checkRestrictions({elm, layer, rawLength, angleHor}) {
+    checkRestrictions({elm, rawLength, angleHor}) {
       // главный элемент с нулевым количеством не включаем
       if(this.is_main_elm && !this.quantity) {
         return false;
@@ -229,7 +229,7 @@ return filtered.length ? filtered : [main_rows[0]];
       if((direct_only > 0 && !isLinear) || (direct_only < 0 && isLinear)){
         return false;
       }
-      if(elm && elm instanceof elm.project._scope.ProfileItem) {
+      if(elm?.is?.('GeneratrixElement')) {
         const {ahmin, ahmax, lmin, lmax} = this;
         if(ahmin > 0 || (ahmax && ahmax < 360)) {
           if (ahmin > angleHor || (ahmax && ahmax < angleHor)) {
