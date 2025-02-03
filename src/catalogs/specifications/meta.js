@@ -272,11 +272,8 @@ export const meta = {
           multiline: false,
           tooltip: "Номер элемента, если значение > 0, либо номер конструкции, если значение < 0",
           type: {
-            types: [
-              "number"
-            ],
-            digits: 6,
-            fraction: 0
+            types: ["string"],
+            strLen: 20,
           }
         },
         region: {

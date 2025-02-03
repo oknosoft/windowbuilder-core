@@ -16,6 +16,7 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
       }
       const specRow = specification.specRow({elm, layer});
       specRow.nom = nom;
+      return specRow;
     },
     
     coloring() {
@@ -28,6 +29,10 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
     
     len_prm() {
       
+    },
+
+    formulas(attr) {
+      const specRow = methods.element.call(this, attr);
     },
     
     not_found() {
