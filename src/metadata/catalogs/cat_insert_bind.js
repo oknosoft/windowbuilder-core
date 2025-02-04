@@ -60,16 +60,11 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
   deposit({ox, scheme, spec, order}) {
 
     const {enm: {elm_types}, EditorInvisible: {ContourVirtual}, CatInsert_bind, pricing} = $p;
-    const old_rows = [], new_rows = [];
-    if(order) {
-      for(const row of ox.calc_order.production) {
-        if(row.characteristic.origin instanceof CatInsert_bind) {
-          old_rows.push(row);
-        }
-      }      
-    }
+    const new_rows = [];
+    const old_rows = this.oldRows(ox, order);
+    const insets = this.insets(ox, order);
 
-    for (const {inset, elm_type, by_order, bind} of this.insets(ox, order)) {
+    for (const {inset, elm_type, by_order, bind} of insets) {
 
       const elm = {
         _row: {},
@@ -184,6 +179,18 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
         ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
       }
     }
+  }
+
+  oldRows(ox, order) {
+    const old_rows = [];
+    if(order) {
+      for(const row of ox.calc_order.production) {
+        if(row.characteristic.origin instanceof CatInsert_bind) {
+          old_rows.push(row);
+        }
+      }
+    }
+    return old_rows;
   }
 };
 
