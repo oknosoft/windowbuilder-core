@@ -40,7 +40,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
     replenish(obj, ox) {
       for(const [key, value] of this) {
         // ищем по иерархии системы или фурнитуры и запоминаем
-        if(obj._hierarchy(key)) {
+        if(key && obj._hierarchy(key)) {
           // приоритет по равенству или прямому родителю
           if(obj === key) {
             this.set(obj, value);
@@ -51,7 +51,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
           }
         }
       }
-      if(!this.has(obj) && ox && obj instanceof CatProduction_params) {
+      if(!this.has(obj) && ox) {
         const pl = ox.owner.nom_group;
         if(!pl.empty()) {
           this.replenish(pl);

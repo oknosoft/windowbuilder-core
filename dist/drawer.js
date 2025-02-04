@@ -7788,9 +7788,8 @@ class GeneratrixElement extends BuilderElement {
 }
 EditorInvisible.GeneratrixElement = GeneratrixElement;
 class GridCoordinates extends paper.Group {
-  constructor(attr) {
-    super(attr);
-    this.parent = this.project.l_dimensions;
+  constructor({parent, step, offset, angle, bind}) {
+    super({parent});
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
     const sel_color = new paper.Color(0.1, 0.4, 0, 0.9);
     const lines_color = new paper.Color(0, 0, 0.7, 0.8);
@@ -7798,10 +7797,10 @@ class GridCoordinates extends paper.Group {
       lines_color,
       points_color,
       sel_color,
-      step: attr.step,
-      offset: attr.offset,
-      angle: attr.angle,
-      bind: attr.bind,
+      step,
+      offset,
+      angle,
+      bind,
       line: new paper.Path({
         parent: this,
         strokeColor: new paper.Color(0, 0, 0.7),
@@ -15429,6 +15428,19 @@ class Pricing {
       fake_row.characteristic = calc_order_row.characteristic;
       calc_order_row.first_cost = this.nom_price(
         fake_row.nom, fake_row.characteristic, prm.price_type.price_type_first_cost, prm, fake_row, null, prm.price_type.formula, date);
+      if(marginality_in_spec === 1) {
+        calc_order_row.price = calc_order_row.first_cost * slice.coefficient({
+          nom: fake_row.nom,
+          _owner: {_owner: {
+              calc_order_row,
+              owner: fake_row.nom,
+              constructions: [],
+              sys: fake_row.nom.nom_group,
+              leading_product: calc_order_row.ordn, 
+              origin: fake_row.nom.nom_group,
+            }}
+        });
+      }
     }
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
@@ -15444,7 +15456,8 @@ class Pricing {
     const {calc_order_row, price_type, first_cost, date} = prm;
     const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
     const {rounding, manager} = calc_order_row._owner._owner;
-    if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
+    if(calc_order_row.price && (not_update?.includes(calc_order_row.nom) || not_update?.includes(calc_order_row.nom.parent) || (
+      marginality_in_spec === 1 && !prm.spec.count()))) {
       ;
     }
     else {

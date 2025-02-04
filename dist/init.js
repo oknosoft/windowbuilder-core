@@ -3056,12 +3056,12 @@ get nom_characteristic(){return this._getter('nom_characteristic')}
 set nom_characteristic(v){this._setter('nom_characteristic',v)}
 get clr(){return this._getter('clr')}
 set clr(v){this._setter('clr',v)}
-get quantity(){return this._getter('quantity')}
-set quantity(v){this._setter('quantity',v)}
-get sz(){return this._getter('sz')}
-set sz(v){this._setter('sz',v)}
 get coefficient(){return this._getter('coefficient')}
 set coefficient(v){this._setter('coefficient',v)}
+get sz(){return this._getter('sz')}
+set sz(v){this._setter('sz',v)}
+get quantity(){return this._getter('quantity')}
+set quantity(v){this._setter('quantity',v)}
 get angle_calc_method(){return this._getter('angle_calc_method')}
 set angle_calc_method(v){this._setter('angle_calc_method',v)}
 get count_calc_method(){return this._getter('count_calc_method')}
@@ -7913,7 +7913,7 @@ class CatMargin_coefficientsManager extends CatManager {
     replenish(obj, ox) {
       for(const [key, value] of this) {
         // ищем по иерархии системы или фурнитуры и запоминаем
-        if(obj._hierarchy(key)) {
+        if(key && obj._hierarchy(key)) {
           // приоритет по равенству или прямому родителю
           if(obj === key) {
             this.set(obj, value);
@@ -7924,7 +7924,7 @@ class CatMargin_coefficientsManager extends CatManager {
           }
         }
       }
-      if(!this.has(obj) && ox && obj instanceof CatProduction_params) {
+      if(!this.has(obj) && ox) {
         const pl = ox.owner.nom_group;
         if(!pl.empty()) {
           this.replenish(pl);

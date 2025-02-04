@@ -426,6 +426,19 @@ class Pricing {
       fake_row.characteristic = calc_order_row.characteristic;
       calc_order_row.first_cost = this.nom_price(
         fake_row.nom, fake_row.characteristic, prm.price_type.price_type_first_cost, prm, fake_row, null, prm.price_type.formula, date);
+      if(marginality_in_spec === 1) {
+        calc_order_row.price = calc_order_row.first_cost * slice.coefficient({
+          nom: fake_row.nom,
+          _owner: {_owner: {
+              calc_order_row,
+              owner: fake_row.nom,
+              constructions: [],
+              sys: fake_row.nom.nom_group,
+              leading_product: calc_order_row.ordn, 
+              origin: fake_row.nom.nom_group,
+            }}
+        });
+      }
     }
 
     // себестоимость вытянутых строк спецификации в заказ
@@ -454,7 +467,8 @@ class Pricing {
     const {rounding, manager} = calc_order_row._owner._owner;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
-    if(calc_order_row.price && not_update && (not_update.includes(calc_order_row.nom) || not_update.includes(calc_order_row.nom.parent))) {
+    if(calc_order_row.price && (not_update?.includes(calc_order_row.nom) || not_update?.includes(calc_order_row.nom.parent) || (
+      marginality_in_spec === 1 && !prm.spec.count()))) {
       ;
     }
     else {
