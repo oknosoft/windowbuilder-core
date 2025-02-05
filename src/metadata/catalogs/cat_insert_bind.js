@@ -18,12 +18,14 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
     const {enm, cat} = $p;
     const {inserts_types: {Заказ, Монтаж, Доставка, Упаковка}, elm_types: {flap}} = enm;
     for (const bind of this) {
-      const {production, inserts, key, calc_order} = bind;
+      const {production, inserts, key, calc_order, slave} = bind;
       if(!key.check_condition({ox})) {
         continue;
       }
       for (const {nom} of production) {
-        if(!nom || nom.empty() || sys?._hierarchy(nom) || owner?._hierarchy(nom)) {
+        if(!nom || nom.empty() || (!slave && (sys?._hierarchy(nom) || owner?._hierarchy(nom)) || (
+          slave && ox._order_rows.some(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
+        ))) {
           for (const {inset, elm_type} of inserts) {
             if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
               if((!order && !calc_order && inset.insert_type !== Заказ) || 
@@ -59,13 +61,12 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
    */
   deposit({ox, scheme, spec, order}) {
 
-    const {enm: {elm_types}, EditorInvisible: {ContourVirtual}, CatInsert_bind, pricing} = $p;
+    const {enm: {elm_types}, EditorInvisible: {ContourVirtual}, pricing} = $p;
     const new_rows = [];
     const old_rows = this.oldRows(ox, order);
     const insets = this.insets(ox, order);
-
-    for (const {inset, elm_type, by_order, bind} of insets) {
-
+    
+    function depositElm({inset, elm_type, by_order, bind, ox, spec}) {
       const elm = {
         _row: {},
         elm: 0,
@@ -97,80 +98,91 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
 
       // рассчитаем спецификацию вставки
       switch (elm_type) {
-      case elm_types.flap:
-        if(scheme) {
-          for (const {contours} of scheme.contours) {
-            contours.forEach(deposit_flap);
+        case elm_types.flap:
+          if(scheme) {
+            for (const {contours} of scheme.contours) {
+              contours.forEach(deposit_flap);
+            }
           }
-        }
-        break;
+          break;
 
-      case elm_types.rama:
-        if(scheme) {
-          for (const contour of scheme.contours) {
-            elm.layer = contour;
-            len_angl.cnstr = contour.cnstr;
-            inset.calculate_spec({elm, len_angl, ox, spec});
+        case elm_types.rama:
+          if(scheme) {
+            for (const contour of scheme.contours) {
+              elm.layer = contour;
+              len_angl.cnstr = contour.cnstr;
+              inset.calculate_spec({elm, len_angl, ox, spec});
+            }
           }
-        }
-        break;
+          break;
 
-      case elm_types.glass:
-        // только для составных пакетов
-        if(scheme) {
-          for (const elm of scheme.glasses) {
-            ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
-              if(row.inset.insert_glass_type === inset.insert_glass_type) {
-                inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
-              }
-            });
+        case elm_types.glass:
+          // только для составных пакетов
+          if(scheme) {
+            for (const elm of scheme.glasses) {
+              ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
+                if(row.inset.insert_glass_type === inset.insert_glass_type) {
+                  inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
+                }
+              });
+            }
           }
-        }
-        break;
+          break;
 
-      case elm_types.sandwich:
-        // в данном случае, sandwich - любое заполнение, не только непрозрачное
-        if(scheme) {
-          for (const elm of scheme.glasses) {
-            inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+        case elm_types.sandwich:
+          // в данном случае, sandwich - любое заполнение, не только непрозрачное
+          if(scheme) {
+            for (const elm of scheme.glasses) {
+              inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+            }
           }
-        }
-        break;
+          break;
 
-      default:
-        if(by_order) {
-          const {production} = ox.calc_order;
-          const cx = ox._manager.find({calc_order: ox.calc_order, leading_elm: 0, origin: bind}) ||
-            ox._manager.create({calc_order: ox.calc_order, leading_elm: 0,origin: bind}, false, true)._set_loaded();
-          const prow = inset.specification.find({quantity: 0, is_main_elm: true});
-          if(prow) {
-            cx.owner = prow.nom;
-          }
-          const row = production.find({characteristic: cx}) || production.add({nom: cx.owner, characteristic: cx});
-          new_rows.push(row);
-          cx.specification.clear();
-          inset.calculate_spec({elm, len_angl, ox: cx});
-          if(cx.specification.count()) {
-            cx.product = row.row;
-            cx.name = cx.prod_name();
-            row.nom = cx.owner;
-            row.unit = row.nom.storage_unit;
-            row.qty = 1;
-            row.quantity = 1;
-            const attr = {calc_order_row: row, date: ox.calc_order.price_date, spec: cx.specification};
-            pricing.price_type(attr);
-            pricing.calc_first_cost(attr);
-            pricing.calc_amount(attr);
-            ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
+        default:
+          if(by_order) {
+            const {production} = ox.calc_order;
+            const cx = ox._manager.find({calc_order: ox.calc_order, leading_elm: 0, origin: bind}) ||
+              ox._manager.create({calc_order: ox.calc_order, leading_elm: 0,origin: bind}, false, true)._set_loaded();
+            const prow = inset.specification.find({quantity: 0, is_main_elm: true});
+            if(prow) {
+              cx.owner = prow.nom;
+            }
+            const row = production.find({characteristic: cx}) || production.add({nom: cx.owner, characteristic: cx});
+            new_rows.push(row);
+            cx.specification.clear();
+            inset.calculate_spec({elm, len_angl, ox: cx});
+            if(cx.specification.count()) {
+              cx.product = row.row;
+              cx.name = cx.prod_name();
+              row.nom = cx.owner;
+              row.unit = row.nom.storage_unit;
+              row.qty = 1;
+              row.quantity = 1;
+              const attr = {calc_order_row: row, date: ox.calc_order.price_date, spec: cx.specification};
+              pricing.price_type(attr);
+              pricing.calc_first_cost(attr);
+              pricing.calc_amount(attr);
+              ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
+            }
+            else {
+              production.del(row);
+            }
           }
           else {
-            production.del(row);
+            inset.calculate_spec({elm, len_angl, ox, spec});
           }
-        }
-        else {
-          inset.calculate_spec({elm, len_angl, ox, spec});
+      }
+    }
+
+    for (const step of insets) {
+      if(step.bind.slave) {
+        for(const cx of ox._order_rows) {
+          depositElm({...step, ox: cx, spec: cx.specification});
         }
       }
+      else {
+        depositElm({...step, ox, spec});
+      }      
     }
     // старый вклад, не прошедший новые параметры - удаляем
     for(const rm of old_rows) {
@@ -180,6 +192,8 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
       }
     }
   }
+
+  
 
   oldRows(ox, order) {
     const old_rows = [];
