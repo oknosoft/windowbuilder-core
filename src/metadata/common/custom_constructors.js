@@ -229,8 +229,10 @@ class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
     const res = super.value_change(field, type, value);
     if(field === 'value' && res !== false) {
       this.value = value;
-      const {insert_bind, characteristics} = $p.cat;
-      insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      if(!this._data._loading) {
+        const {insert_bind, characteristics} = $p.cat;
+        insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      }
     }
     return res;
   }

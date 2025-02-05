@@ -7380,7 +7380,7 @@ class CatInsert_bindManager extends CatManager {
       }
       for (const {nom} of production) {
         if(!nom || nom.empty() || (!slave && (sys?._hierarchy(nom) || owner?._hierarchy(nom)) || (
-          slave && ox._order_rows.some(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
+          slave && ox._order_rows?.some?.(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
         ))) {
           for (const {inset, elm_type} of inserts) {
             if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
@@ -10548,8 +10548,10 @@ class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
     const res = super.value_change(field, type, value);
     if(field === 'value' && res !== false) {
       this.value = value;
-      const {insert_bind, characteristics} = $p.cat;
-      insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      if(!this._data._loading) {
+        const {insert_bind, characteristics} = $p.cat;
+        insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      }
     }
     return res;
   }

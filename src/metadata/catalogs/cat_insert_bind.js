@@ -24,7 +24,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
       }
       for (const {nom} of production) {
         if(!nom || nom.empty() || (!slave && (sys?._hierarchy(nom) || owner?._hierarchy(nom)) || (
-          slave && ox._order_rows.some(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
+          slave && ox._order_rows?.some?.(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
         ))) {
           for (const {inset, elm_type} of inserts) {
             if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
