@@ -2305,8 +2305,6 @@ get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
 get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
-get presentation(){return this._getter('presentation')}
-set presentation(v){this._setter('presentation',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -2321,6 +2319,10 @@ get phone_number(){return this._getter('phone_number')}
 set phone_number(v){this._setter('phone_number',v)}
 get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
+get presentation(){return this._getter('presentation')}
+set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 }
 $p.CatPartnersContact_informationRow = CatPartnersContact_informationRow;
 class CatPartnersManager extends CatManager {
@@ -2927,6 +2929,8 @@ get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
 get presentation(){return this._getter('presentation')}
 set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -5636,8 +5640,6 @@ get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
 get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
-get presentation(){return this._getter('presentation')}
-set presentation(v){this._setter('presentation',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -5654,6 +5656,10 @@ get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
 get list_view(){return this._getter('list_view')}
 set list_view(v){this._setter('list_view',v)}
+get presentation(){return this._getter('presentation')}
+set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 }
 $p.CatUsersContact_informationRow = CatUsersContact_informationRow;
 class CatUsersAcl_objsRow extends TabularSectionRow{
@@ -5883,6 +5889,8 @@ get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
 get presentation(){return this._getter('presentation')}
 set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -9170,6 +9178,8 @@ get phone_number(){return this._getter('phone_number')}
 set phone_number(v){this._setter('phone_number',v)}
 get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 }
 $p.DocCalc_orderContact_informationRow = DocCalc_orderContact_informationRow;
 class DocCalc_orderPlanningRow extends TabularSectionRow{
@@ -10547,10 +10557,22 @@ class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
   value_change(field, type, value) {
     const res = super.value_change(field, type, value);
     if(field === 'value' && res !== false) {
-      this.value = value;
-      if(!this._owner._owner.is_new()) {
-        const {insert_bind, characteristics} = $p.cat;
-        insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      const calc_order = this._owner._owner;
+      if(!calc_order.is_new()) {
+        const {iface, cat: {insert_bind, characteristics}} = $p;
+        if(iface) {
+          Promise.resolve()
+            .then(() => {
+              return insert_bind.deposit({ox: {calc_order, _manager: characteristics}, order: true});
+            })
+            .then(() => {
+              const amount = {
+                doc_amount: calc_order.doc_amount,
+                amount_internal: calc_order.amount_internal,
+              }
+              calc_order._manager.emit_async('update', calc_order, amount);
+            });
+        }
       }
     }
     return res;
