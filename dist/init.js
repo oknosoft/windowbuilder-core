@@ -7484,11 +7484,13 @@ class CatInsert_bindManager extends CatManager {
           // только для составных пакетов
           if(scheme) {
             for (const elm of scheme.glasses) {
-              ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
-                if(row.inset.insert_glass_type === inset.insert_glass_type) {
-                  inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
-                }
-              });
+              if(!ox.leading_elm || ox.leading_elm === elm.elm) {
+                ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
+                  if(row.inset.insert_glass_type === inset.insert_glass_type) {
+                    inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
+                  }
+                });
+              }
             }
           }
           break;
@@ -7497,7 +7499,7 @@ class CatInsert_bindManager extends CatManager {
           // в данном случае, sandwich - любое заполнение, не только непрозрачное
           if(scheme) {
             for (const elm of scheme.glasses) {
-              inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+              (!ox.leading_elm || ox.leading_elm === elm.elm) && inset.calculate_spec({elm, layer: elm.layer, ox, spec});
             }
           }
           break;
