@@ -178,7 +178,7 @@ return filtered.length ? filtered : [main_rows[0]];
   }
   classes.CatInsertsProductParamsRow = CatInsertsProductParamsRow;
 
-  const SelectionParamsRow = selectionParamsRow({TabularSectionRow, get, set});
+  const SelectionParamsRow = selectionParamsRow({classes, get, set});
   class CatInsertsSelectionParamsRow extends SelectionParamsRow {}
   classes.CatInsertsSelectionParamsRow = CatInsertsSelectionParamsRow;
   

@@ -444,6 +444,43 @@ export const meta = {
             ]
           }
         }
+      },
+      schemas: {
+        main: {
+          ref: 'f56d2210-e610-11ef-8d41-1dbaf385ba47',
+          fields: [
+            {
+              use: true,
+              field: 'elm',
+              width: 90,
+              caption: 'Элемент',
+              tooltip: '',
+              //ctrl_type: '',
+              formatter: 'Text',
+              editor: '',
+            },
+            {
+              use: true,
+              field: 'nom',
+              caption: 'Номенклатура',
+              formatter: 'Presentation',
+            },
+            {
+              use: true,
+              field: 'clr',
+              width: 120,
+              caption: 'Цвет',
+              formatter: 'Presentation',
+            },
+            {
+              use: true,
+              field: 'len',
+              width: 90,
+              caption: 'Длина',
+              formatter: 'Number',
+            },
+          ]
+        }
       }
     },
     procedures: {
