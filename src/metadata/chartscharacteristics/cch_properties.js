@@ -200,6 +200,7 @@ exports.CchProperties = class CchProperties extends Object {
 
   /**
    * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
+   * в новой редакции: contextValue
    */
   extract_pvalue({ox, cnstr, elm = {}, elm2, node, node2, origin, layer, prm_row}) {
     
@@ -378,6 +379,7 @@ exports.CchProperties = class CchProperties extends Object {
 
   /**
    * Извлекает значение из строки условия (то, с чем сравнивать extract_pvalue)
+   * в новой редакции: SelectionParamsRow.value
    */
   extract_value({comparison_type, txt_row, value}) {
 

@@ -156,9 +156,10 @@ $p.wsql.init((prm) => {
         fs.writeFileSync(path.resolve(__dirname, '../dist/init_meta.js'),
           '/* eslint-disable */\nmodule.exports = function init_meta({md}) {\n'+
           'md.init(' + JSON.stringify(_m) + ')};\n\n');
-        
+
+        const decomment = require('decomment');
         fs.writeFileSync(path.resolve(__dirname, '../dist/init.js'),
-          '/* eslint-disable */\nmodule.exports = function init_classes($p) {\n'+text+'};\n\n');
+          '/* eslint-disable */\nmodule.exports = function init_classes($p) {\n'+decomment(text, {safe: true, trim: true})+'};\n\n');
         
         process.exit(0);
       });
