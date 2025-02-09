@@ -1,6 +1,10 @@
 import {Props3D} from './BuilderPropsThree';
 import defaults from './BuilderPropsDefaults';
 
+/**
+ * @summary Runtime свойства проекта
+ * @desc Такие как, модифицированность, режим рисовалки, шаг и привязка к сетке и т.д.
+ */
 export class BuilderProps  {
   #raw = {sticking: 4};
   

@@ -1,5 +1,6 @@
 
 import paper from 'paper/dist/paper-core';
+import {ElementParams} from './BuilderParams';
 
 /**
  * @summary Элемент изделия
@@ -36,6 +37,7 @@ export class BuilderElement extends paper.Group {
       inset = this.root.cat.inserts.get(inset);
     }
     this.#raw.inset = inset;
+    this.params = new ElementParams(this)
   }
 
   /**
