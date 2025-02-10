@@ -13,19 +13,28 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
     const {CoefficientsMap} = this.constructor;
     const {branch, partner} = calc_order_row._owner._owner;
     const res = new CoefficientsMap();
-    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
+    const {job_prm} = $p;
+    res.price_groups = job_prm.pricing.displacing_price_group || [];
     let source;
     this.find_rows({kind, is_buyer: partner.abc}, obj => {
-      if(!source) {
+      if(obj.owner instanceof CatAbonents && obj.extra_charge.count()) {
         source = obj;
-      }
-      else if(!branch.empty() && branch._hierarchy(obj.owner)){
-        if(branch === obj.owner || obj.owner._hierarchy(source.owner)) {
-          source = obj;
-        }
+        return false;
       }
     });
-    for(const row of source?.extra_charge) {
+    if(!branch.empty()) {
+      this.find_rows({kind, is_buyer: partner.abc}, obj => {
+        if(branch._hierarchy(obj.owner) && obj.extra_charge.count()){
+          if(source.owner instanceof CatAbonents || obj.owner._hierarchy(source.owner)) {
+            source = obj;
+          }
+          if(branch === obj.owner) {
+            return false;
+          }
+        }
+      });
+    }
+    for(const row of (source?.extra_charge || [])) {
       if(row.period > date) {
         continue;
       }
