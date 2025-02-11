@@ -21082,7 +21082,7 @@ $p.DocCalc_order.FakeLenAngl = FakeLenAngl;
 $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocCalc_orderProductionRow {
   value_change(field, type, value) {
     let {_obj, _owner, nom, characteristic, unit} = this;
-    const {rounding, manager, price_date: date} = _owner._owner;
+    const {rounding, manager} = _owner._owner;
     const {DocCalc_orderProductionRow, utils, wsql, pricing, job_prm, enm: {vat_rates}} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
     if(rfield) {
@@ -21100,6 +21100,18 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
       if(unit.owner != nom) {
         _obj.unit = nom.storage_unit.ref;
+      }
+      if(['nom','characteristic'].includes(field)) {
+        if(characteristic.calc_order.empty()) {
+          const attr = {calc_order_row: this, date: _owner._owner.price_date, spec: characteristic.specification};
+          pricing.price_type(attr);
+          pricing.calc_first_cost(attr);
+          pricing.calc_amount(attr);
+          if(!_obj.quantity) {
+            _obj.quantity = 1;
+          }
+          this.value_change('quantity', type, _obj.quantity);
+        }
       }
     }
     if(DocCalc_orderProductionRow.pfields.includes(field)) {
