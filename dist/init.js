@@ -176,26 +176,18 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
     const {md, doc, adapters} = this._owner.$p;
 
     adapters.pouch.once('pouch_doc_ram_loaded', () => {
-      // загружаем предопределенные элементы
       this.job_prms();
-      // рассчеты, помеченные, как шаблоны, загрузим в память заранее
       doc.calc_order.load_templates && setTimeout(doc.calc_order.load_templates.bind(doc.calc_order), 1000);
-      // даём возможность завершиться другим обработчикам, подписанным на _pouch_load_data_loaded_
       setTimeout(() => md.emit('predefined_elmnts_inited'), 100);
     });
   }
 
-  /**
-   * этот метод адаптер вызывает перед загрузкой doc_ram
-   */
   job_prms() {
 
-    // создаём константы из alatable
     for(const o of this) {
       this.job_prm(o);
     }
 
-    // дополним автовычисляемыми свойствами, если им не назначены формулы
     const {job_prm: {properties}} = this._owner.$p;
     if(properties) {
       const {calculated, width, length} = properties;
@@ -210,10 +202,6 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
     }
   }
 
-  /**
-   * создаёт константу
-   * @param row
-   */
   job_prm(row) {
     if(row.is_folder || row._obj?.is_folder) {
       return;
@@ -327,20 +315,12 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
     }
   }
 
-  /**
-   * переопределяем load_array
-   * @param aattr {Array.<Object>}
-   * @param [forse] {Boolean}
-   * @override
-   */
   load_array(aattr, forse) {
     const {parents, _owner} = this;
     const {job_prm} = _owner.$p;
     const elmnts = [];
-    // метод по умолчанию
     super.load_array(aattr, forse);
     for (const row of aattr) {
-      // если элемент является папкой, создаём раздел в job_prm
       if(row.is_folder && row.synonym) {
         parents[row.ref] = row.synonym;
         !job_prm[row.synonym] && job_prm.__define(row.synonym, {value: {}});
@@ -405,11 +385,6 @@ get hide(){return this._getter_ts('hide')}
 set hide(v){this._setter_ts('hide',v)}
 
 
-  /**
-   * Является ли значение параметра вычисляемым
-   *
-   * @type Boolean
-   */
   get is_calculated() {
     return ($p.job_prm.properties.calculated || []).includes(this) || !this.calculated.empty();
   }
@@ -418,13 +393,6 @@ set hide(v){this._setter_ts('hide',v)}
     return ($p.job_prm.properties.show_calculated || []).includes(this) || this.showcalc;
   }
 
-  /**
-   * Рассчитывает значение вычисляемого параметра
-   * @param obj {Object}
-   * @param [obj.row]
-   * @param [obj.elm]
-   * @param [obj.ox]
-   */
   calculated_value(obj) {
     if(!this._calculated_value) {
       if(this._formula) {
@@ -440,9 +408,6 @@ set hide(v){this._setter_ts('hide',v)}
     return this._calculated_value.execute(obj);
   }
 
-  /**
-   * Проверяет условие в строке отбора
-   */
   check_condition({row_spec, prm_row, elm, elm2, node, node2, cnstr, origin, ox, layer, ...other}) {
 
     if(this.empty()) {
@@ -461,13 +426,11 @@ set hide(v){this._setter_ts('hide',v)}
       }
     }
 
-    // для параметров алгоритма, фильтр отключаем
     if((prm_row.origin == 'algorithm') || (row_spec && row_spec.algorithm === predefined_formulas.clr_prm &&
       (ct.empty() || ct === comparison_types.eq) && type.types.includes('cat.clrs') && (!prm_row.value || prm_row.value.empty()))) {
       return true;
     }
 
-    // значение параметра
     const val = is_calculated ? this.calculated_value({
       row: row_spec,
       cnstr: cnstr || 0,
@@ -483,7 +446,6 @@ set hide(v){this._setter_ts('hide',v)}
 
     let ok = false;
 
-    // если сравнение на равенство - решаем в лоб, если вычисляемый параметр типа массив - выясняем вхождение значения в параметр
     if(ox && !Array.isArray(val) && (ct.empty() || ct === comparison_types.eq)) {
       if(is_calculated) {
         ok = val == prm_row.value;
@@ -493,12 +455,10 @@ set hide(v){this._setter_ts('hide',v)}
         ok = value == val;
       }
     }
-    // вычисляемый параметр - его значение уже рассчитано формулой (val) - сравниваем со значением в строке ограничений
     else if(is_calculated) {
       const value = this.extract_value(prm_row);
       ok = utils.check_compare(val, value, ct, comparison_types);
     }
-    // параметр явно указан в табчасти параметров изделия
     else {
       const value = layer ? layer.extract_pvalue({param: this, cnstr, elm, elm2, node, node2, origin, prm_row}) : this.extract_pvalue({ox, cnstr, elm, elm2, node, node2, origin, prm_row});
       ok = (value !== undefined) && utils.check_compare(value, val, ct, comparison_types);
@@ -506,12 +466,8 @@ set hide(v){this._setter_ts('hide',v)}
     return ok;
   }
 
-  /**
-   * Извлекает значение из объекта (то, что будем сравнивать с extract_value)
-   */
   extract_pvalue({ox, cnstr, elm = {}, elm2, node, node2, origin, layer, prm_row}) {
-    
-    // для некоторых параметров, значения живут не в изделии, а в отделе абонента
+
     if(this.inheritance === 3) {
       return this.branch_value({project: elm.project, cnstr, ox});
     }
@@ -559,12 +515,12 @@ set hide(v){this._setter_ts('hide',v)}
         case plan_detailing.order:
           const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
           return prow?.value;
-          
-        case plan_detailing.nearest:
+
+                  case plan_detailing.nearest:
           find_nearest();
           break;
-          
-        case plan_detailing.layer_active:
+
+                  case plan_detailing.layer_active:
           if(!layer) {
             layer = elm.layer;
           }
@@ -572,8 +528,8 @@ set hide(v){this._setter_ts('hide',v)}
             find_nearest();
           }
           break;
-          
-        case plan_detailing.layer_passive:
+
+                  case plan_detailing.layer_passive:
           if(!layer) {
             layer = elm.layer;
           }
@@ -581,8 +537,8 @@ set hide(v){this._setter_ts('hide',v)}
             find_nearest();
           }
           break;
-          
-        case plan_detailing.parent:
+
+                  case plan_detailing.parent:
           if(cnstr && ox.constructions) {
             cnstr0 = cnstr;
             elm0 = elm;
@@ -594,8 +550,8 @@ set hide(v){this._setter_ts('hide',v)}
             }
           }
           break;
-          
-        case plan_detailing.product:
+
+                  case plan_detailing.product:
           if(cnstr) {
             cnstr0 = cnstr;
             elm0 = elm;
@@ -603,8 +559,8 @@ set hide(v){this._setter_ts('hide',v)}
             elm = {};
           }
           break;
-          
-        case plan_detailing.elm:
+
+                  case plan_detailing.elm:
         case plan_detailing.layer:
           break;
 
@@ -622,8 +578,8 @@ set hide(v){this._setter_ts('hide',v)}
             elm = {};
           }
           break;
-          
-        default:
+
+                  default:
           throw `Источник '${src.name}' не поддержан`;
         }
       }
@@ -684,9 +640,6 @@ set hide(v){this._setter_ts('hide',v)}
     return this.fetch_type();
   }
 
-  /**
-   * Извлекает значение из строки условия (то, с чем сравнивать extract_pvalue)
-   */
   extract_value({comparison_type, txt_row, value}) {
 
     const {enm: {comparison_types}, md, cat} = $p;
@@ -742,10 +695,6 @@ set hide(v){this._setter_ts('hide',v)}
     }
   }
 
-  /**
-   * Возвращает значение параметра с приведением типов
-   * @param v
-   */
   fetch_type(v) {
     const {type, _manager} = this;
     const {utils} = $p;
@@ -790,26 +739,19 @@ set hide(v){this._setter_ts('hide',v)}
     return v;
   }
 
-  /**
-   * Возвращает массив связей текущего параметра
-   */
   params_links(attr) {
 
-    // первым делом, выясняем, есть ли ограничитель на текущий параметр
     if(!this.hasOwnProperty('_params_links')) {
       this._params_links = $p.cat.params_links.find_rows({slave: this});
     }
 
     return this._params_links.filter((link) => {
-      //use_master бывает 0 - один ведущий, 1 - несколько ведущих через И, 2 - несколько ведущих через ИЛИ
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
-      //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущиъ для проверки
       const arr = !use_master ? [{key: link.master}] : link.leadings;
 
       arr.forEach((row_key) => {
         let ok_key = true;
-        // для всех записей ключа параметров сначала строим Map ИЛИ
         const or = new Map();
         for(const row of row_key.key.params) {
           if(!or.has(row.area)) {
@@ -820,7 +762,6 @@ set hide(v){this._setter_ts('hide',v)}
         for(const grp of or.values()) {
           let grp_ok = true;
           for(const row of grp) {
-            // выполнение условия рассчитывает объект CchProperties
             grp_ok = row.property.check_condition({
               cnstr: attr.grid ? attr.grid.selection.cnstr : 0,
               ox: attr.obj._owner ? attr.obj._owner._owner : attr.obj.ox,
@@ -828,7 +769,6 @@ set hide(v){this._setter_ts('hide',v)}
               elm: attr.obj,
               layer: attr.layer,
             });
-            // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
             if (!grp_ok) {
               break;
             }
@@ -839,33 +779,21 @@ set hide(v){this._setter_ts('hide',v)}
           }
         }
 
-        //Для проверки через ИЛИ логика накопительная - надо проверить все ключи до единого
         if (use_master == 2){
           ok = ok || ok_key;
         }
-        //Для проверки через И достаточно найти один неподходящий ключ, чтобы остановиться и признать связь неподходящей
         else if (!ok_key){
           ok = false;
           return false;
         }
       });
-      //Конечный возврат в функцию фильтрации массива связей
       return ok;
     });
   }
 
-  /**
-   * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
-   * @param links {Array}
-   * @param [prow] {CatCharacteristicsParamsRow|Object} - Eсли задан и текущее значение недопустимо, метод попытается установить корректное
-   * @param [values] {Array} - Выходной параметр, если передать его снаружы, будет наполнен доступными значениями
-   * @return {boolean}
-   */
   linked_values(links, prow, values = []) {
     let changed;
-    // собираем все доступные значения в одном массиве
     links.forEach((link) => link.append_values(values));
-    // если значение доступно в списке - спокойно уходим
     const value = prow?.value;
     if(value instanceof CatClrs && value.is_composite()) {
       const {clr_in, clr_out} = value;
@@ -878,7 +806,6 @@ set hide(v){this._setter_ts('hide',v)}
         return;
       }
     }
-    // если есть явный default - устанавливаем
     if(values.some((row) => {
       if(row.forcibly) {
         prow.value = row._obj.value;
@@ -891,7 +818,6 @@ set hide(v){this._setter_ts('hide',v)}
     })) {
       return true;
     }
-    // если не нашли лучшего, установим первый попавшийся
     if(changed) {
       return true;
     }
@@ -911,12 +837,6 @@ set hide(v){this._setter_ts('hide',v)}
     }
   }
 
-  /**
-   * Значение, уточняемое отделом абонента
-   * @param [project] {Scheme}
-   * @param [cnstr] {Number}
-   * @param [ox] {CatCharacteristics}
-   */
   branch_value({project, cnstr = 0, ox}) {
     let branch = project?.branch;
     if(!branch && ox) {
@@ -939,12 +859,6 @@ set hide(v){this._setter_ts('hide',v)}
     return brow ? brow.value : this.fetch_type();
   }
 
-  /**
-   * Значение из шаблона
-   * @param [project] {Scheme}
-   * @param [cnstr] {Number}
-   * @param [ox] {CatCharacteristics}
-   */
   template_value({project, cnstr = 0, ox}) {
     const {params} = (ox.obj_delivery_state.is('Шаблон') || ox.calc_order.obj_delivery_state.is('Шаблон')) ? ox : ox.base_block;
     let prow;
@@ -959,19 +873,11 @@ set hide(v){this._setter_ts('hide',v)}
     return prow ? prow.value : this.fetch_type();
   }
 
-  /**
-   * Дополняет отбор фильтром по параметрам выбора,
-   * используется в полях ввода экранных форм
-   * @param filter {Object} - дополняемый фильтр
-   * @param attr {Object} - атрибуты OCombo
-   */
   filter_params_links(filter, attr, links) {
-    // для всех отфильтрованных связей параметров
     if(!links) {
       links = this.params_links(attr);
     }
     links.forEach((link) => {
-      // если ключ найден в параметрах, добавляем фильтр
       if(!filter.ref) {
         filter.ref = {in: []};
       }
@@ -1004,19 +910,10 @@ set value(v){this._setter('value',v)}
 $p.CchPropertiesHideRow = CchPropertiesHideRow;
 class CchPropertiesManager extends ChartOfCharacteristicManager {
 
-  /**
-   * Проверяет заполненность обязательных полей
-   *
-   * @override
-   * @param prms {Array}
-   * @param title {String}
-   * @return {Boolean}
-   */
   check_mandatory(prms, title) {
 
     let t, row;
 
-    // проверяем заполненность полей
     for (t in prms) {
       row = prms[t];
       if(row.param.mandatory && (!row.value || row.value.empty())) {
@@ -1030,14 +927,6 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
     }
   }
 
-  /**
-   * Возвращает массив доступных для данного свойства значений
-   *
-   * @override
-   * @param prop {CatObj} - планвидовхарактеристик ссылка или объект
-   * @param ret_mgr {Object} - установить в этом объекте указатель на менеджера объекта
-   * @return {Array}
-   */
   slist(prop, ret_mgr) {
 
     let res = [], rt, at, pmgr, op = this.get(prop);
@@ -1045,7 +934,6 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
     if(op && op.type.is_ref) {
       const tso = $p.enm.open_directions;
 
-      // параметры получаем из локального кеша
       for (rt in op.type.types)
         if(op.type.types[rt].indexOf('.') > -1) {
           at = op.type.types[rt].split('.');
@@ -1115,12 +1003,6 @@ get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
 
 
-  /**
-   * Дополеняет массив разрешенными в текущей связи значениями
-   * @param values {Array}
-   * @param with_clr_grp {Boolean} - с учетом цветоценовых групп
-   * @return {Array}
-   */
   append_values(values = []) {
     this.values.forEach((row) => {
       if(row.value instanceof CatColor_price_groups) {
@@ -1186,28 +1068,22 @@ class CatChoice_paramsManager extends CatManager {
   load_array(aattr, forse) {
     const objs = super.load_array(aattr, forse);
     const {md, utils} = $p;
-    // бежим по загруженным объектам
     for(const obj of objs) {
-      // учитываем только те, что не runtime
       if(obj.runtime) {
         continue;
       }
-      // пропускаем отключенные
       if(obj.disabled) {
         continue;
       }
-      // выполняем формулу условия
       if(!obj.condition_formula.empty() && !obj.condition_formula.execute(obj)) {
         continue;
       }
-      // для всех полей из состава метаданных
       obj.composition.forEach(({field}) => {
         const path = field.split('.');
         const mgr = md.mgr_by_class_name(`${path[0]}.${path[1]}`);
         if(!mgr) {
           return;
         }
-        // получаем метаданные поля
         let mf = mgr.metadata(path[2]);
         if(path.length >= 4) {
           mf = mf.fields[path[3]];
@@ -1218,7 +1094,6 @@ class CatChoice_paramsManager extends CatManager {
         if(!mf.choice_params) {
           mf.choice_params = [];
         }
-        // дополняем отбор с поддержкой групп ИЛИ
         const or = new Map();
         for(const row of obj.key.params) {
           if(!or.has(row.area)) {
@@ -1433,7 +1308,6 @@ set params(v){this._setter_ts('params',v)}
     const {$p} = _manager._owner;
     const {ireg, msg, ui} = $p;
 
-    // создаём функцию из текста формулы
     if(!_data._formula && this.formula){
       try{
         if(this.jsx) {
@@ -1468,22 +1342,18 @@ set params(v){this._setter_ts('params',v)}
         return Promise.resolve();
       }
 
-      // рендерим jsx в новое окно
       if(this.jsx) {
         return ui.dialogs.window({
           Component: _formula,
           title: this.name,
-          //print: true,
           obj,
           attr,
         });
       }
 
-      // получаем HTMLDivElement с отчетом
       ireg.log?.timeStart?.(ref);
       return _formula(obj, $p, attr)
 
-      // показываем отчет в отдельном окне
         .then((doc) => {
           ireg.log?.timeEnd?.(ref);
           $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print();
@@ -1538,7 +1408,6 @@ class CatFormulasManager extends CatManager {
     const compare = utils.sort('name');
 
     filtered.sort(utils.sort('sorting_field')).forEach((formula) => {
-      // формируем списки печатных форм и внешних обработок
       if(formula.parent == parents[0]) {
         formula.params.find_rows({param: 'destination'}, (dest) => {
           const dmgr = md.mgr_by_class_name(dest.value);
@@ -1554,10 +1423,8 @@ class CatFormulasManager extends CatManager {
         });
       }
       else {
-        // выполняем модификаторы
         try {
           const res = formula.execute();
-          // еслм модификатор вернул задание кроносу - добавляем планировщик
           res && utils.cron && utils.cron(res);
         }
         catch (err) {
@@ -1566,7 +1433,6 @@ class CatFormulasManager extends CatManager {
     });
   }
 
-  // переопределяем load_array - не грузим неактивные формулы
   load_array(aattr, forse) {
     const res = super.load_array(aattr.filter((v) => !v.disabled || v.is_folder), forse);
     const modifiers = this.predefined('modifiers');
@@ -1625,20 +1491,10 @@ get params(){return this._getter_ts('params')}
 set params(v){this._setter_ts('params',v)}
 
 
-  /**
-   * Рисует визуализацию
-   * @param elm {BuilderElement} элемент, к которому привязана визуализация
-   * @param layer {Contour} слой, в который помещаем путь
-   * @param offset {Number|Array.<Number>}
-   * @param clr {CatClrs}
-   * @param [offset0] {Number}
-   * @param [reflected] {Boolean}
-   */
   draw({elm, layer, offset, clr, offset0, reflected}) {
     if(!layer.isInserted()) {
       return;
     }
-    // проверим, надо ли рисовать для текущего `reflected`
     let dashArray = undefined;
     let exit = this.sketch_view.count();
     for(const {kind} of this.sketch_view) {
@@ -1661,9 +1517,9 @@ set params(v){this._setter_ts('params',v)}
         }
       }
     }
-    
 
-    try {
+
+        try {
       const {project} = layer;
       const {CompoundPath, PointText, Path, constructor} = project._scope;
 
@@ -1737,7 +1593,6 @@ set params(v){this._setter_ts('params',v)}
       else if(this.svg_path){
 
         if(this.mode === 1) {
-          //const attr = JSON.parse(this.attributes || '{}');
           const {attributes} = this;
           subpath = new PointText(Object.assign({
             project,
@@ -1774,7 +1629,6 @@ set params(v){this._setter_ts('params',v)}
         }
         else {
           const {generatrix, rays: {inner, outer}} = elm;
-          // угол касательной
           let angle_hor;
           if(elm.is_linear() || offset < 0) {
             angle_hor = generatrix.getTangentAt(0).angle;
@@ -1795,18 +1649,15 @@ set params(v){this._setter_ts('params',v)}
           const p0 = generatrix.getPointAt(offset > generatrix.length ? generatrix.length : offset || 0);
 
           if(this.elm_side == -1){
-            // в середине элемента
             const p1 = inner.getNearestPoint(p0);
             const p2 = outer.getNearestPoint(p0);
 
             subpath.position = p1.add(p2).divide(2);
 
           }else if(!this.elm_side){
-            // изнутри
             subpath.position = inner.getNearestPoint(p0);
 
           }else{
-            // снаружи
             subpath.position = outer.getNearestPoint(p0);
           }
         }
@@ -1945,11 +1796,9 @@ class CatBranchesManager extends CatManager {
 
     const {adapters: {pouch}, job_prm, enm, cat, dp} = $p;
 
-    // после загрузки данных, надо настроить отборы в метаданных полей рисовалки
     !job_prm.is_node && pouch.once('pouch_complete_loaded', () => {
       const {current_user} = $p;
 
-      // если отделы не загружены и полноправный пользователь...
       let next = Promise.resolve();
 
       if(job_prm.properties && current_user && !current_user.branch.empty() && job_prm.builder) {
@@ -1957,7 +1806,6 @@ class CatBranchesManager extends CatManager {
         const {ПараметрВыбора} = enm.parameters_keys_applying;
         const {furn, sys, client_of_dealer_mode} = job_prm.properties;
 
-        // накапливаем
         const branch_filter = job_prm.builder.branch_filter = {furn: [], sys: []};
         next.then(() => current_user.branch.is_new() ? current_user.branch.load() : current_user.branch)
           .then(({keys, divisions}) => {
@@ -1983,7 +1831,6 @@ class CatBranchesManager extends CatManager {
           })
           .then(() => {
 
-            // применяем
             if(branch_filter.furn.length) {
               const mf = cat.characteristics.metadata('constructions').fields.furn;
               mf.choice_params.push({
@@ -2019,13 +1866,6 @@ get parameters_russian_recipe(){return this._getter('parameters_russian_recipe')
 set parameters_russian_recipe(v){this._setter('parameters_russian_recipe',v)}
 
 
-  /**
-   * Пересчитывает сумму из валюты в валюту
-   * @param amount {Number}
-   * @param [date] {Date}
-   * @param [to] {CatCurrencies}
-   * @return {Number}
-   */
   to_currency(amount, date, to) {
     if(this == to){
       return amount;
@@ -2261,8 +2101,8 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
   toJSON() {
     const {classes: {TabularSectionRow, CatObj}, CatPartners} = $p;
-    
-    if(this instanceof CatPartners) {
+
+        if(this instanceof CatPartners) {
       const json = CatObj.prototype.toJSON.call(this);
       const accounts = [];
       const contracts = [];
@@ -2294,8 +2134,8 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
     return this?.toJSON ? this.toJSON() : this;
   }
-  
-  get abc() {
+
+    get abc() {
     return $p.enm.abc.c;
   }
 }
@@ -2305,8 +2145,6 @@ get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
 get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
-get presentation(){return this._getter('presentation')}
-set presentation(v){this._setter('presentation',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -2321,12 +2159,15 @@ get phone_number(){return this._getter('phone_number')}
 set phone_number(v){this._setter('phone_number',v)}
 get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
+get presentation(){return this._getter('presentation')}
+set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 }
 $p.CatPartnersContact_informationRow = CatPartnersContact_informationRow;
 class CatPartnersManager extends CatManager {
 
   load_array(aattr, forse) {
-    // если внутри контрагента завёрнуты счета и договоры - вытаскиваем
     const aaccounts = [];
     const acontracts = [];
     for(const row of aattr) {
@@ -2446,9 +2287,6 @@ get colors(){return this._getter_ts('colors')}
 set colors(v){this._setter_ts('colors',v)}
 
 
-  /**
-   * Возвращает значение допреквизита группировка
-   */
   get grouping() {
     if(!this.hasOwnProperty('_grouping')){
       const {extra_fields, _manager} = this;
@@ -2466,9 +2304,6 @@ set colors(v){this._setter_ts('colors',v)}
     return this._grouping;
   }
 
-  /**
-   * Возвращает значение допреквизита минимальный объём
-   */
   get min_volume() {
     if(!this.hasOwnProperty('_min_volume')){
       const {extra_fields, _manager} = this;
@@ -2486,10 +2321,6 @@ set colors(v){this._setter_ts('colors',v)}
     return this._min_volume;
   }
 
-  /**
-   * Представление объекта
-   * @return {string}
-   */
   get presentation() {
     return (this.article ? this.article + ' ' : '') + this.name;
   }
@@ -2497,11 +2328,6 @@ set colors(v){this._setter_ts('colors',v)}
 
   }
 
-  /**
-   * Возвращает номенклатуру по ключу цветового аналога
-   * @param clr
-   * @return {any|CatNom}
-   */
   by_clr_key(clr) {
     if(this.clr == clr){
       return this;
@@ -2517,21 +2343,18 @@ set colors(v){this._setter_ts('colors',v)}
       return this;
     }
 
-    // получаем ссылку на ключ цветового аналога
     const {job_prm: {properties: {clr_key}}, cat} = $p;
     const clr_value = this._extra(clr_key);
     if(!clr_value){
       return this;
     }
 
-    // находим все номенклатуры с подходящим ключем цветового аналога
     const {ref} = clr_key;
     this._manager.alatable.forEach((nom) => {
       nom.extra_fields && nom.extra_fields.some((row) =>
         row.property === ref && row.value === clr_value && _clr_keys.set(cat.clrs.get(nom.clr), cat.nom.get(nom.ref)));
     });
 
-    // возарвщаем подходящую или себя
     if(_clr_keys.has(clr)){
       return _clr_keys.get(clr);
     }
@@ -2541,16 +2364,6 @@ set colors(v){this._setter_ts('colors',v)}
     return this;
   }
 
-  /**
-   * Возвращает цену номенклатуры указанного типа
-   * - на дату
-   * - с подбором характеристики по цвету
-   * - с пересчетом из валюты в валюту
-   *
-   * @param attr
-   * @return {Number|*}
-   * @private
-   */
   _price(attr) {
     const {
       job_prm: {pricing},
@@ -2585,15 +2398,12 @@ set colors(v){this._setter_ts('colors',v)}
         attr.characteristic = utils.blank.guid;
       }
       else if(utils.is_data_obj(attr.characteristic)){
-        // если передали уникальную характеристику продкции - ищем простую с тем же цветом и размерами
-        // TODO: здесь было бы полезно учесть соответствие цветов??
         attr.characteristic = ref;
         if(!calc_order.empty()){
           const tmp = [];
           for(let clrx in _price) {
             const cx = characteristics[clrx];
             if(cx && cx.clr == clr) {
-              // если на подходящую характеристику есть цена по нашему типу цен - запоминаем
               if(_price[clrx][attr.price_type]) {
                 if(cx.x && x && cx.x - x < -10) {
                   continue;
@@ -2619,7 +2429,6 @@ set colors(v){this._setter_ts('colors',v)}
         attr.date = new Date();
       }
 
-      // если для номенклатуры существует структура цен, ищем подходящую
       attr.pdate = start_date;
       if(_price){
         if(attr.clr && attr.characteristic == utils.blank.guid) {
@@ -2657,7 +2466,6 @@ set colors(v){this._setter_ts('colors',v)}
             });
           }
         }
-        // если нет цены на характеристику, ищем по цвету
         if(!price && attr.clr){
           for(let clrx in _price){
             const cx = characteristics[clrx];
@@ -2679,10 +2487,8 @@ set colors(v){this._setter_ts('colors',v)}
       }
     }
 
-    // если есть формула - выполняем вне зависимости от установленной цены
     if(attr.formula){
 
-      // если нет цены на характеристику, ищем цену без характеристики
       if(!price && _price && _price[utils.blank.guid]){
         if(_price[utils.blank.guid][attr.price_type]){
           _price[utils.blank.guid][attr.price_type].some((row) => {
@@ -2694,7 +2500,6 @@ set colors(v){this._setter_ts('colors',v)}
           });
         }
       }
-      // формулу выполняем в любом случае - она может и не опираться на цены из регистра
       price = attr.formula.execute({
         nom: this,
         characteristic: characteristics[attr.characteristic.valueOf()],
@@ -2704,16 +2509,9 @@ set colors(v){this._setter_ts('colors',v)}
       });
     }
 
-    // Пересчитать из валюты в валюту
     return currency.to_currency(price, attr.date, attr.currency);
   }
 
-  /**
-   * Выясняет, назначена ли данной номенклатуре хотя бы одна цена
-   * @param [cx] {String} если указано, проверяет наличие цены для конкретной характеристики
-   * @param [type] {String} если указано, проверяет наличие цены по этому типу
-   * @return {Boolean}
-   */
   has_price(cx, type) {
     const {_price} = this._data;
     const has = (prices) => Array.isArray(prices) && prices.find(({price}) => price >= 0.01);
@@ -2749,17 +2547,11 @@ set colors(v){this._setter_ts('colors',v)}
     }
   }
 
-  /**
-   * Возвращает массив связей текущей номенклатуры
-   */
   params_links(attr) {
     const {CchProperties} = this._manager._owner.$p;
     return CchProperties.prototype.params_links.call(this, attr);
   }
 
-  /**
-   * Проверяет и при необходимости перезаполняет или устанваливает умолчание value в prow
-   */
   linked_values(links, prow, values = []) {
     const {CchProperties} = this._manager._owner.$p;
     return CchProperties.prototype.linked_values.call(this, links, prow, values);
@@ -2802,7 +2594,6 @@ $p.CatNomColorsRow = CatNomColorsRow;
 class CatNomManager extends CatManager {
 
   load_array(aattr, forse) {
-    // если внутри номенклатуры завёрнуты единицы - вытаскиваем
     const units = [];
     const prices = {};
     for(const row of aattr) {
@@ -2832,7 +2623,6 @@ class CatNomManager extends CatManager {
     const {currencies, nom_units} = this._owner;
     units.length && nom_units.load_array(units, forse);
 
-    // если внутри номенклатуры завёрнуты цены - вытаскиваем
     for(const {_data, _obj} of res) {
       const _price = prices[_obj.ref];
       if(_price) {
@@ -2895,8 +2685,8 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
 
   toJSON() {
     const {classes: {TabularSectionRow, CatObj}, CatOrganizations} = $p;
-    
-    if(this instanceof CatOrganizations) {
+
+        if(this instanceof CatOrganizations) {
       const json = CatObj.prototype.toJSON.call(this);
       const accounts = [];
       this._manager._owner.partner_bank_accounts.find_rows({owner: this}, (o) => {
@@ -2915,8 +2705,8 @@ set extra_fields(v){this._setter_ts('extra_fields',v)}
         return _obj;
       }
     }
-    
-    return this?.toJSON ? this.toJSON() : this; 
+
+        return this?.toJSON ? this.toJSON() : this; 
   }
 }
 $p.CatOrganizations = CatOrganizations;
@@ -2927,6 +2717,8 @@ get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
 get presentation(){return this._getter('presentation')}
 set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -2950,7 +2742,6 @@ $p.CatOrganizationsContact_informationRow = CatOrganizationsContact_informationR
 class CatOrganizationsManager extends CatManager {
 
   load_array(aattr, forse) {
-    // если внутри организации завёрнуты счета - вытаскиваем
     const aaccounts = [];
     for(const row of aattr) {
       if(row.accounts) {
@@ -3056,12 +2847,12 @@ get nom_characteristic(){return this._getter('nom_characteristic')}
 set nom_characteristic(v){this._setter('nom_characteristic',v)}
 get clr(){return this._getter('clr')}
 set clr(v){this._setter('clr',v)}
-get quantity(){return this._getter('quantity')}
-set quantity(v){this._setter('quantity',v)}
-get sz(){return this._getter('sz')}
-set sz(v){this._setter('sz',v)}
 get coefficient(){return this._getter('coefficient')}
 set coefficient(v){this._setter('coefficient',v)}
+get sz(){return this._getter('sz')}
+set sz(v){this._setter('sz',v)}
+get quantity(){return this._getter('quantity')}
+set quantity(v){this._setter('quantity',v)}
 get angle_calc_method(){return this._getter('angle_calc_method')}
 set angle_calc_method(v){this._setter('angle_calc_method',v)}
 get count_calc_method(){return this._getter('count_calc_method')}
@@ -3153,7 +2944,6 @@ set params(v){this._setter_ts('params',v)}
     }
     const {calc_order} = ox;
 
-    // по таблице параметров сначала строим Map ИЛИ
     let {_or} = this;
     if(!_or) {
       _or = new Map();
@@ -3181,8 +2971,8 @@ set params(v){this._setter_ts('params',v)}
         break;
       }
     }
-    
-    return res;
+
+        return res;
   }
 }
 $p.CatParameters_keys = CatParameters_keys;
@@ -3260,10 +3050,6 @@ get clr_conformity(){return this._getter_ts('clr_conformity')}
 set clr_conformity(v){this._setter_ts('clr_conformity',v)}
 
 
-  /**
-   * возвращает доступные в данной системе элементы
-   * @type {Array.<CatInserts>}
-   */
   get noms() {
     const noms = [];
     for (const {nom} of this.elmnts) {
@@ -3279,10 +3065,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return noms;
   }
 
-  /**
-   * Массив доступных в данной системе толщин заполнений
-   * @typw {Array.<Number>}
-   */
   get thicknesses() {
     const {_data} = this;
     if(!_data.thin) {
@@ -3297,10 +3079,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return _data.thin;
   }
 
-  /**
-   * Минимальная толщина заполнения
-   * @type {Number}
-   */
   get tmin() {
     return this.glass_thickness === 3 ? 0 : this.thicknesses[0];
   }
@@ -3308,10 +3086,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return true;
   }
 
-  /**
-   * Максимальная толщина заполнения
-   * @type {Number}
-   */
   get tmax() {
     return this.glass_thickness === 3 ? Infinity : this.thicknesses[this.thicknesses.length - 1];
   }
@@ -3319,13 +3093,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return true;
   }
 
-  /**
-   * возвращает доступные в данной системе фурнитуры
-   * данные получает из справчоника СвязиПараметров, где ведущий = текущей системе и ведомый = фурнитура
-   * @param ox {CatCharacteristics}
-   * @param [layer] {Contour}
-   * @return {Array}
-   */
   furns(ox, layer) {
     const {job_prm: {properties}, cat: {furns}} = $p;
     const list = [];
@@ -3336,7 +3103,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
         layer
       });
       if(links.length) {
-        // собираем все доступные значения в одном массиве
         links.forEach((link) => link.values._obj.forEach(({value, by_default, forcibly}) => {
           const v = furns.get(value);
           v && list.push({furn: v, by_default, forcibly});
@@ -3346,11 +3112,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return list;
   }
 
-  /**
-   * Ищет цветогруппу системы с учётом цвета основы
-   * @param {CatCharacteristics} ox
-   * @return {CatColor_price_groups}
-   */
   find_group(ox) {
     const {base_clr, clr_group, color_price_groups} = this;
     if(!base_clr.empty()) {
@@ -3362,24 +3123,11 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return clr_group;
   }
 
-  /**
-   * Доступна ли вставка в данной системе в качестве elm_type
-   * @param nom {CatInserts}
-   * @param elm_type {EnmElmTypes|Array.<EnmElmTypes>}
-   * @return {boolean}
-   */
   is_elm_type(nom, elm_type) {
     const inserts = this.inserts(elm_type, 'rows').map((e) => e.nom);
     return inserts.includes(nom);
   }
 
-  /**
-   * Возвращает доступные в данной системе элементы (вставки)
-   * @param elm_types {EnmElmTypes|Array.<EnmElmTypes>} - допустимые типы элементов
-   * @param [rows] {String} - возвращать вставки или строки табчасти "Элементы"
-   * @param [elm] {BuilderElement} - указатель на элемент или проект, чтобы отфильтровать по ключам
-   * @return {Array.<CatInserts>}
-   */
   inserts(elm_types, rows, elm){
     const noms = [];
     const {elm_types: types} = $p.enm;
@@ -3441,21 +3189,10 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
     return noms.map((e) => e.nom);
   }
 
-  /**
-   * возвращает доступные в данной системе заполнения (вставки)
-   * @return {Array.<CatInserts>}
-   */
   glasses({elm, layer}) {
     return this.inserts($p.enm.elm_types.glasses, false, elm);
   }
 
-  /**
-   * @param ox {CatCharacteristics} - объект характеристики, табчасть которого надо перезаполнить
-   * @param cnstr {Number} - номер конструкции. Если 0 - перезаполняем параметры изделия, иначе - фурнитуры
-   * @param [force] {Boolean} - перезаполнять принудительно
-   * @param [project] {Scheme} - текущий проект
-   * @param [defaults] {TabularSection} - внешние умолчания
-   */
   refill_prm(ox, cnstr = 0, force, project, defaults) {
 
     const prm_ts = !cnstr ? this.product_params : this.furn_params;
@@ -3495,7 +3232,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
         }
       }
 
-      // если не найден параметр изделия - добавляем. если нет параметра фурнитуры - пропускаем
       if(!row){
         if(cnstr){
           return;
@@ -3512,7 +3248,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       if(proto.forcibly || drow || force === 1){
 
         if(param.inheritance === 3 || param.inheritance === 4) {
-          // пытаемся получить свойство из отдела абонента
           const bvalue = param.branch_value({project, cnstr, ox});
           if(bvalue !== undefined) {
             row.value = bvalue;
@@ -3526,7 +3261,6 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       }
     }
 
-    // если в характеристике есть лишние параметры - удаляем
     if(!cnstr){
       params.find_rows({cnstr: cnstr}, (row) => {
         const {param} = row;
@@ -3537,13 +3271,10 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
       adel.forEach((row) => params.del(row));
     }
 
-    // бежим по параметрам. при необходимости, добавляем или перезаполняем и устанавливаем признак hide
     prm_ts.forEach(add_prm);
 
-    // для шаблонов, добавляем параметр автоуравнивание
     !cnstr && auto_align && add_prm({param: auto_align, value: '', hide: false});
 
-    // устанавливаем систему и номенклатуру продукции
     if(!cnstr){
       ox.sys = this;
       ox.owner = ox.prod_nom;
@@ -3552,13 +3283,10 @@ set clr_conformity(v){this._setter_ts('clr_conformity',v)}
         return;
       }
 
-      // если текущая фурнитура недоступна для данной системы - меняем
-      // одновременно, перезаполним параметры фурнитуры
       ox.constructions.forEach((row) => {
         if(!row.furn.empty()) {
           let changed = force;
           const layer = project && project.getItem({class: Contour, cnstr: row.cnstr});
-          // если для системы через связи параметров ограничен список фурнитуры...
           const furns = this.furns(ox, layer);
           const shtulp_kind = row.furn.shtulp_kind();
           if(furns.length) {
@@ -3691,7 +3419,6 @@ set clr(v){this._setter('clr',v)}
 $p.CatProduction_paramsClr_conformityRow = CatProduction_paramsClr_conformityRow;
 class CatProduction_paramsManager extends CatManager {
 
-  // после загрузки, установим признак dhtmlxro цветам основы
   load_array(aattr, forse) {
     for(const obj of super.load_array(aattr, forse)) {
       if(!obj.base_clr.empty()) {
@@ -3700,18 +3427,11 @@ class CatProduction_paramsManager extends CatManager {
     }
   }
 
-  /**
-   * возвращает массив доступных для данного свойства значений
-   * @param prop {CatObj} - планвидовхарактеристик ссылка или объект
-   * @param is_furn {boolean} - интересуют свойства фурнитуры или объекта
-   * @return {Array}
-   */
   slist(prop, is_furn){
     let res = [], rt, at, pmgr, op = this.get(prop);
 
     if(op && op.type.is_ref){
       const tso = $p.enm.open_directions;
-      // параметры получаем из локального кеша
       for(rt in op.type.types)
         if(op.type.types[rt].indexOf(".") > -1){
           at = op.type.types[rt].split(".");
@@ -3839,21 +3559,16 @@ get coordinates(){return this._getter_ts('coordinates')}
 set coordinates(v){this._setter_ts('coordinates',v)}
 
 
-  /**
-   * Возвращает основную строку спецификации соединения между элементами
-   */
   main_row(elm) {
 
     let ares, nom = elm.nom;
     const {enm, job_prm, ProductsBuilding: {check_params}} = $p;
     const {specification, cnn_elmnts, selection_params, cnn_type} = this;
 
-    // если тип соединения угловой, то арт-1-2 определяем по ориентации элемента
     if(enm.cnn_types.acn.a.includes(cnn_type)){
       let art12 = elm.orientation.is('vert') ? job_prm.nom.art1 : job_prm.nom.art2;
       ares = specification.find_rows({nom: art12});
     }
-    // в прочих случаях, принадлежность к арт-1-2 определяем по табчасти СоединяемыеЭлементы
     if((!ares || !ares.length) && cnn_elmnts.find_rows({nom1: nom}).length){
       ares = specification.find_rows({nom: job_prm.nom.art1});
     }
@@ -3881,11 +3596,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
 
   }
 
-  /**
-   * Проверяет, есть ли nom в колонке nom2 соединяемых элементов
-   * @param {CatNom} nom
-   * @return Boolean
-   */
   check_nom2(nom) {
     const ref = nom.valueOf();
     return this.cnn_elmnts._obj.some((row) => row.nom2 == ref);
@@ -3896,19 +3606,10 @@ set coordinates(v){this._setter_ts('coordinates',v)}
     return this.cnn_elmnts._obj.some((row) => row.nom1 == ref);
   }
 
-  /**
-   * Проверяет применимость для xx и t
-   * @param {CnnPoint} cnn_point
-   * @return Boolean
-   */
   stop_applying(cnn_point) {
     const {applying, cnn_type, _manager} = this;
     let stop = applying && (cnn_type.is('t') || cnn_type.is('xx'));
     if(stop) {
-      // 0 - Везде
-      // 1 - Только стык
-      // 2 - Только T
-      // 3 - Только угол
       if(applying === 1 && !cnn_point.is_ll) {
         ;
       }
@@ -3921,14 +3622,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
     }
     return stop;
   }
-  
-  /**
-   * Параметрический размер соединения 
-   * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
-   * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
-   * @param {Number} [region] - номер ряда
-   * @return Number
-   */
+
   size(elm1, elm2, region=0) {
     let {sz, sizes} = this;
     const {ox, layer} = elm1;
@@ -3953,27 +3647,14 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         sz = prm_row.elm;
         break;
       }
-      //if(elm != elm1 && elm.inset.insert_type.is('composite')) {}
     }
     return sz;
   }
 
-  /**
-   * Параметрический размер по Z
-   * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
-   * @param {BuilderElement} [elm2] - Соседний элемент, если доступно в контексте вызова
-   * @param {Number} [region] - номер ряда
-   * @return Number
-   */
   sizeZ(elm1, elm2, region=0) {
     return this.szz;
   }
 
-  /**
-   * Выясняет, зависит ли размер соединения от текущего параметра
-   * @param param {CchProperties}
-   * @return {Boolean}
-   */
   is_depend_of(param) {
     for(const row of this.sizes) {
       if(row.param === param || (row.param.empty() && !row.key.empty())) {
@@ -3982,9 +3663,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
     }
   }
 
-  /**
-   * Укорочение для конкретной номенклатуры из спецификации
-   */
   nom_size({nom, elm, elm2, len_angl, ox}) {
     let sz = 0;
     this.filtered_spec({elm, elm2, len_angl, ox, correct: true}).some((row) => {
@@ -4001,14 +3679,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
     return sz;
   }
 
-  /**
-   * ПолучитьСпецификациюСоединенияСФильтром
-   * @param {BuilderElement} elm
-   * @param {BuilderElement} elm2
-   * @param {Object} len_angl
-   * @param {Object} ox
-   * @param {Boolean} [correct]
-   */
   filtered_spec({elm, elm2, len_angl, ox, correct = false}) {
     const res = [];
 
@@ -4024,7 +3694,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
 
     specification.forEach((row) => {
       const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, alp2, set_specification} = row;
-      // при формировании спецификации, отбрасываем корректировочные строки и наоборот, при корректировке - обычные
       if(!quantity && !correct || quantity && correct) {
         return;
       }
@@ -4032,12 +3701,10 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         return;
       }
 
-      // только для прямых или только для кривых профилей
       if((direct_only > 0 && !elm.is_linear()) || (direct_only < 0 && elm.is_linear())) {
         return;
       }
 
-      //TODO: реализовать фильтрацию
       if(cnn_type == ii) {
         const angle_hor = len_angl.hasOwnProperty('angle_hor') ? len_angl.angle_hor : elm.angle_hor;
         if(amin > angle_hor || amax < angle_hor || row.sz_min > len_angl.len || row.sz_max < len_angl.len) {
@@ -4061,16 +3728,13 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         }
       }
 
-      // "устанавливать с" проверяем только для соединений профиля
       if(!correct && ((set_specification == САртикулом1 && len_angl.art2) || (set_specification == САртикулом2 && len_angl.art1))) {
         return;
       }
-      // для угловых, разрешаем art2 только явно для art2
       if(!correct && len_angl.art2 && acn.a.includes(cnn_type) && !acn.xsl.includes(cnn_type) && set_specification != САртикулом2) {
         return;
       }
 
-      // проверяем параметры изделия и добавляем, если проходит по ограничениям
       if(check_params({params: selection_params, row_spec: row, elm, elm2, ox, node: len_angl?.node})) {
         res.push(row);
       }
@@ -4088,16 +3752,15 @@ set coordinates(v){this._setter_ts('coordinates',v)}
       utils,
       ProductsBuilding: {new_spec_row, calc_count_area_mass},
     } = $p;
-    
-    const sign = this.cnn_type == cnn_types.ii ? -1 : 1;
-    
-    if(!spec){
+
+        const sign = this.cnn_type == cnn_types.ii ? -1 : 1;
+
+        if(!spec){
       spec = ox.specification;
     }
     for(const row_base of this.filtered_spec({elm, elm2, len_angl, ox})) {
       const {nom} = row_base;
 
-      // TODO: nom может быть вставкой - в этом случае надо разузловать
       if(nom instanceof CatInserts) {
         if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
           const tmp_len_angl = Object.assign({}, len_angl);
@@ -4115,7 +3778,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
 
         const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, nom, spec, ox, len_angl});
 
-        // рассчитаем количество
         const procedure = nom.is_procedure && this.coordinates.find({elm: row_base.elm}) && this.cnn_type.is('t'); 
         if(procedure) {
           const {Path} = elm.project._scope;
@@ -4152,7 +3814,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         else {
           row_spec.qty = row_base.quantity;
 
-          // если указано cnn_other, берём не размер соединения, а размеры предыдущего и последующего
           if(![gb_short, gb_long].includes(row_base.algorithm) && (row_base.sz || row_base.coefficient)) {
             let sz = row_base.sz, finded, qty;
             if(cnn_other) {
@@ -4177,7 +3838,6 @@ set coordinates(v){this._setter_ts('coordinates',v)}
           }
         }
 
-        // если указана формула - выполняем
         if(!row_base.formula.empty()) {
           const qty = row_base.formula.execute({
             ox,
@@ -4188,13 +3848,11 @@ set coordinates(v){this._setter_ts('coordinates',v)}
             row_cnn: row_base,
             row_spec: row_spec
           });
-          // если формула является формулой условия, используем результат, как фильтр
           if(row_base.formula.condition_formula && !qty){
             row_spec.qty = 0;
           }
         }
 
-        // визуализация svg-dx
         if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
           const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
           const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
@@ -4330,7 +3988,6 @@ class CatCnnsManager extends CatManager {
 
     return function sort_cnns(a, b) {
 
-      // первым делом, учитываем приоритет (большой всплывает вверх)
       if (priority(a) > priority(b)) {
         return -1;
       }
@@ -4338,7 +3995,6 @@ class CatCnnsManager extends CatManager {
         return 1;
       }
 
-      // далее, отдаём предпочтение соединениям, для которых задана сторона
       if(sides.includes(a.sd1) && !sides.includes(b.sd1)){
         return -1;
       }
@@ -4346,7 +4002,6 @@ class CatCnnsManager extends CatManager {
         return 1;
       }
 
-      // соединения с одинаковым приоритетом и стороной сортируем по типу - опускаем вниз крест и Т
       if(a.cnn_type === xx && b.cnn_type !== xx){
         return 1;
       }
@@ -4360,7 +4015,6 @@ class CatCnnsManager extends CatManager {
         return -1;
       }
 
-      // в последнюю очередь, сортируем по имени
       if (a.name > b.name) {
         return -1;
       }
@@ -4371,27 +4025,16 @@ class CatCnnsManager extends CatManager {
     }
   }
 
-  /**
-   * Возвращает массив соединений, доступный для сочетания номенклатур.
-   * Для соединений с заполнениями учитывается толщина. Контроль остальных геометрических особенностей выполняется на стороне рисовалки
-   * @param elm1 {BuilderElement|CatNom}
-   * @param [elm2] {BuilderElement|CatNom}
-   * @param [cnn_types] {EnumObj|Array.<EnumObj>}
-   * @param [ign_side] {Boolean}
-   * @param [is_outer] {Boolean}
-   * @param [cnn_point] {CnnPoint}
-   * @return {Array}
-   */
   nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point) {
 
     const {
       Editor: {ProfileItem, BuilderElement, Filling},
-      enm: {orientations: {vert /*, hor, incline */}, cnn_types: {acn, ad, ii, i}, cnn_sides},
+      enm: {orientations: {vert }, cnn_types: {acn, ad, ii, i}, cnn_sides},
       cat: {nom}, utils} = $p;
 
     const types = Array.isArray(cnn_types) ? cnn_types : (acn.a.includes(cnn_types) ? acn.a : [cnn_types]);
-    
-    if(elm1.rnum && (!types.includes(i) || types.length > 1)) {
+
+        if(elm1.rnum && (!types.includes(i) || types.length > 1)) {
       const side = elm2?.cnn_side?.(elm1) || cnn_sides.inner;
       const res = this.region_cnn({
         region: elm1.rnum, 
@@ -4406,7 +4049,6 @@ class CatCnnsManager extends CatManager {
       return res;
     }
 
-    // если оба элемента - профили, определяем сторону
     let side = is_outer ? cnn_sides.outer :
       (!ign_side && elm1 instanceof ProfileItem && !elm1.rnum && elm2 instanceof ProfileItem && elm2.cnn_side(elm1));
     if(!side && !ign_side && is_outer === false) {
@@ -4431,7 +4073,7 @@ class CatCnnsManager extends CatManager {
       }
     }
 
-    const {ref: ref1} = elm1; // ref у BuilderElement равен ref номенклатуры или ref вставки
+    const {ref: ref1} = elm1; 
     const {ref: ref2} = onom2;
 
     if(!is_i){
@@ -4451,11 +4093,8 @@ class CatCnnsManager extends CatManager {
     a1 = this._nomcache[ref1];
     if(!a1[ref2]){
       a2 = (a1[ref2] = []);
-      // для всех элементов справочника соединения
       this.forEach((cnn) => {
-        // не рассматриваем соединения рядов
         if(!cnn.region || cnn.cnn_type === i) {
-          // если в строках соединяемых элементов есть наша - добавляем
           let is_nom1 = art1glass ? (cnn.art1glass && thickness1 >= cnn.tmin && thickness1 <= cnn.tmax && cnn.cnn_type == ii) : false,
             is_nom2 = art2glass ? (cnn.art2glass && thickness2 >= cnn.tmin && thickness2 <= cnn.tmax) : false;
 
@@ -4478,8 +4117,8 @@ class CatCnnsManager extends CatManager {
     }
 
     if(cnn_types){
-      
-      const res = a1[ref2]
+
+            const res = a1[ref2]
         .filter((cnn) => {
           if(types.includes(cnn.cnn_type)){
             if(cnn.amin && cnn.amax && cnn_point) {
@@ -4516,7 +4155,6 @@ class CatCnnsManager extends CatManager {
           }
         });
 
-      // если не нашлось подходящих и это угловое соединение и второй элемент вертикальный - меняем местами эл 1-2 при поиске
       if(!res.length && elm1 instanceof ProfileItem && elm2 instanceof ProfileItem &&
         types.includes(ad) && elm1.orientation != vert && elm2.orientation == vert ){
         return this.nom_cnn(elm2, elm1, types);
@@ -4532,8 +4170,8 @@ class CatCnnsManager extends CatManager {
 
     return a1[ref2];
   }
-  
-  region_cnn({region, elm1, nom1, elm2, art1glass, cnn_types, array}) {
+
+    region_cnn({region, elm1, nom1, elm2, art1glass, cnn_types, array}) {
     if(!nom1) {
       nom1 = elm1.nom;
     }
@@ -4576,24 +4214,12 @@ class CatCnnsManager extends CatManager {
     return array ? all.map(v => v.cnn) : all[0]?.cnn;
   }
 
-  /**
-   * Возвращает соединение между элементами
-   * @param {BuilderElement} elm1
-   * @param {BuilderElement} elm2
-   * @param {Array} [cnn_types]
-   * @param {CatCnns} [curr_cnn]
-   * @param {Boolean} [ign_side]
-   * @param {Boolean} [is_outer]
-   * @param {CnnPoint} [cnn_point]
-   */
   elm_cnn(elm1, elm2, cnn_types, curr_cnn, ign_side, is_outer, cnn_point){
 
     const {cnn_types: {acn, t, xx}, cnn_sides} = $p.enm;
 
-    // если установленное ранее соединение проходит по типу и стороне, нового не ищем
     if(curr_cnn && cnn_types && cnn_types.includes(curr_cnn.cnn_type) && (cnn_types !== acn.ii)){
 
-      // TODO: проверить геометрию
       if(!curr_cnn.stop_applying(cnn_point) && ign_side !== 0) {
         if(!ign_side && curr_cnn.sd1 == cnn_sides.inner){
           if(typeof is_outer == 'boolean'){
@@ -4619,29 +4245,20 @@ class CatCnnsManager extends CatManager {
 
     const cnns = this.nom_cnn(elm1, elm2, cnn_types, ign_side, is_outer, cnn_point);
 
-    // сортируем по непустой стороне и приоритету
     if(cnns.length){
       return curr_cnn && cnns.includes(curr_cnn) ? curr_cnn : cnns[0];
     }
-    // TODO: возможно, надо вернуть соединение с пустотой
     else{
 
     }
   }
 
-  /**
-   * Возвращает временное соединение по паре номенклатур и типу
-   * @param nom1 {CatNom}
-   * @param nom2 {CatNom}
-   * @param [cnn_type]
-   * @return {CatCnns}
-   */
   by_nom(nom1, nom2, cnn_type = 'ad') {
     if(typeof cnn_type === 'string') {
       cnn_type = $p.enm.cnn_types[cnn_type]; 
     }
-    
-    if(!this._by_cnn_type) {
+
+        if(!this._by_cnn_type) {
       this._by_cnn_type = new Map();
     }
     if(!this._by_cnn_type.has(cnn_type)) {
@@ -4846,27 +4463,15 @@ get composition(){return this._getter_ts('composition')}
 set composition(v){this._setter_ts('composition',v)}
 
 
-  /**
-   * Возвращает инверсный по отношению к текущему
-   * @returns {CatClrs}
-   */
   inverted() {
     return this._manager.inverted(this);
   }
 
-  /**
-   * Признак составного
-   * @returns {boolean}
-   */
   is_composite() {
     const {clr_in, clr_out} = this;
     return clr_in != clr_out && !(clr_in.empty() || clr_out.empty());
   }
 
-  /**
-   * Рассчитывает реквизит grouping
-   * @param values {Array}
-   */
   set_grouping(values) {
     const {clr_in, clr_out, _manager} = this;
     const white = _manager.predefined('Белый');
@@ -4880,10 +4485,6 @@ set composition(v){this._setter_ts('composition',v)}
     }
   }
 
-  /**
-   * Возвращает стороны, на которых цвет
-   * @return {Object}
-   */
   get sides() {
     const res = {is_in: false, is_out: false};
     if(!this.empty() && !this.predefined_name){
@@ -4903,13 +4504,6 @@ set composition(v){this._setter_ts('composition',v)}
     return res;
   }
 
-  /**
-   * Аналог метода `contains()` цветоценовых групп
-   * @param clr {CatClrs}
-   * @param [fake]
-   * @param [any] {Boolean}
-   * @return {Boolean}
-   */
   contains(clr, fake, any) {
     if(clr === this) {
       return true;
@@ -4932,10 +4526,6 @@ set coefficient(v){this._setter('coefficient',v)}
 $p.CatClrsCompositionRow = CatClrsCompositionRow;
 class CatClrsManager extends CatManager {
 
-  /**
-   * Получает цвет с учётом длинных гвидов
-   * при необходимости, создаёт составной на лету
-   */
   getter(ref) {
     if(ref && ref.length === 72) {
       const clr_in = ref.substring(0, 36);
@@ -4952,14 +4542,6 @@ class CatClrsManager extends CatManager {
     return this.get(ref);
   }
 
-  /**
-   * Ссылка составного цвета
-   *
-   * @param curr {('clr_in'|'clr_out')}
-   * @param other {CatClrs}
-   * @param v {CatClrs|String}
-   * @return {String}
-   */
   composite_ref(curr, other, v) {
     let clr = this.get(v);
     if(clr.empty()) {
@@ -4977,17 +4559,11 @@ class CatClrsManager extends CatManager {
     return curr === 'clr_in' ? clr.valueOf() + other.valueOf() : other.valueOf() + clr.valueOf();
   }
 
-  /**
-   * Ищет по цветам снаружи-изнутри
-   * @return {CatClrs}
-   */
   by_in_out({clr_in, clr_out}) {
     const {wsql, utils: {blank}} = $p;
-    // скомпилированный запрос
     if(!this._by_in_out) {
       this._by_in_out = wsql.alasql.compile('select top 1 ref from ? where clr_in = ? and clr_out = ? and (not ref = ?)');
     }
-    // ищем в справочнике цветов
     const ares = this._by_in_out([this.alatable, clr_in.valueOf(), clr_out.valueOf(), blank.guid]);
     return this.get(ares[0]);
   }
@@ -5028,17 +4604,6 @@ class CatClrsManager extends CatManager {
     return row_spec.clr;
   }
 
-  /**
-   * Возвращает цвет по предопределенному цвету при формировании спецификации
-   * @param {CatClrs} clr - цвет исходной строки соединения, фурнитуры или вставки
-   * @param {CatClrs} clr_elm - цвет элемента
-   * @param {CatClrs} clr_sch - цвет изделия
-   * @param {BuilderElement} [elm] - элемент рисовалки
-   * @param {TabularSection} [spec] - табчасть спецификации для поиска ведущих
-   * @param {CatCharacteristicsSpecificationRow} [row] - строка спецификации, где есть `nom`
-   * @param {CatInsertsSpecificationRow|CatFurnsSpecificationRow|CatCnnsSpecificationRow} [row_base] - исходная строка вставки, соединения или фурнитуры
-   * @return {CatClrs}
-   */
   by_predefined(clr, clr_elm, clr_sch, elm, spec, row, row_base) {
     const {predefined_name} = clr;
     const flipped = elm?.layer?.flipped;
@@ -5068,8 +4633,8 @@ class CatClrsManager extends CatManager {
         return flipped ?
           this.by_predefined({predefined_name: 'КакЭлементСнаружи'}, clr_elm) :
           clr_elm.clr_in.empty() ? clr_elm : clr_elm.clr_in;
-        
-      case 'КакЭлИзнутриПлюсКонст': {
+
+              case 'КакЭлИзнутриПлюсКонст': {
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
         }
@@ -5083,8 +4648,8 @@ class CatClrsManager extends CatManager {
         }
         return flipped ? this.inverted(clr_elm) : clr_elm;
       } 
-      
-      case 'КакЭлСнаружиПлюсКонст': {
+
+            case 'КакЭлСнаружиПлюсКонст': {
         if(clr_by_main_row && elm?._attr?.row_spec) {
           clr_elm = elm?._attr?.row_spec.clr;
         }
@@ -5214,11 +4779,6 @@ class CatClrsManager extends CatManager {
     return clr.empty() ? (flipped ? this.inverted(clr_elm) :  clr_elm) : clr;
   }
 
-  /**
-   * Инверсный цвет  
-   * Возвращает элемент, цвета которого изнутри и снаружи перевёрнуты местами
-   * @param clr {CatClrs} - исходный цвет
-   */
   inverted(clr){
     if(!clr.is_composite()) {
       return clr;
@@ -5227,12 +4787,6 @@ class CatClrsManager extends CatManager {
     return this.getter(`${clr_out.valueOf()}${clr_in.valueOf()}`);
   }
 
-  /**
-   * @summary Формирует строки контрастных цветов
-   * @desc для подстановки в css
-   * @param clr_str
-   * @return {Object}
-   */
   contrast(clr_str) {
     let hex = '',
       clrs = null;
@@ -5266,19 +4820,10 @@ class CatClrsManager extends CatManager {
     return clrs;
   }
 
-  /**
-   * Возвращает предопределенный цвет НеВключатьВСпецификацию
-   */
   ignored() {
     return this.predefined('НеВключатьВСпецификацию');
   }
 
-  /**
-   * Скрывает составные цвета в отборе
-   * @param mf {Object} метаданные поля
-   * @param [clr_group] {CatColor_price_groups} цветогруппа
-   * @param [side] {EmnCnnSides} сторона цвета
-   */
   hide_composite(mf, clr_group, side) {
     const choice_param = mf.choice_params && mf.choice_params.find(({name}) => name === 'parent');
     const {composite_clr_folder: ccf} = $p.job_prm.builder;
@@ -5312,12 +4857,6 @@ class CatClrsManager extends CatManager {
     }
   }
 
-  /**
-   * Дополняет связи параметров выбора отбором, исключающим служебные цвета
-   * @param mf {Object} - описание метаданных поля
-   * @param sys {Object} - объект, у которого можно спросить связи
-   * @param [project] {Scheme} - текущий проект
-   */
   selection_exclude_service(mf, sys, project) {
     if(mf.choice_params) {
       mf.choice_params.length = 0;
@@ -5327,8 +4866,8 @@ class CatClrsManager extends CatManager {
     }
 
     const {job_prm, cat: {clrs}, CatClrs, CatColor_price_groups, DpBuyers_order, Editor} = $p;
-    
-    if(!project && sys instanceof Editor.BuilderElement) {
+
+        if(!project && sys instanceof Editor.BuilderElement) {
       project = sys.project;
     }
 
@@ -5339,12 +4878,10 @@ class CatClrsManager extends CatManager {
 
     if(sys) {
 
-      // связи параметров для цвета изделия
       const {clr_product} = job_prm.properties;
       const filter = {}
       if(clr_product && sys instanceof DpBuyers_order) {
         const links = clr_product.params_links({obj: {project, _owner: {_owner: sys.characteristic}}});
-        // проверим вхождение значения в доступные и при необходимости изменим
         if(links.length) {
           clr_product.filter_params_links(filter, null, links);
           filter.ref && mf.choice_params.push({
@@ -5354,7 +4891,6 @@ class CatClrsManager extends CatManager {
         }
       }
 
-      // фильтр доступных цветов системы или вставки
       let clr_group = clrs.find_group(sys, project?.ox || project);
 
       mf.choice_params.push({
@@ -5367,7 +4903,6 @@ class CatClrsManager extends CatManager {
         }
       });
 
-      // подмешиваем признак сокрытия составных
       if(clr_group.hide_composite) {
         mf.hide_composite = true;
       }
@@ -5375,7 +4910,6 @@ class CatClrsManager extends CatManager {
         mf.hide_composite = false;
       }
 
-      // если разрешен единственный цвет, установим ro
       if(!clr_group.empty() && clr_group.clrs().length === 1) {
         mf.single_value = clr_group.clrs()[0];
       }
@@ -5389,11 +4923,6 @@ class CatClrsManager extends CatManager {
     }
   }
 
-  /**
-   * ищет цветогруппу для sys неопределенного типа
-   * @param sys
-   * @return {CatColor_price_groups}
-   */
   find_group(sys, ox) {
     const {EditorInvisible: {BuilderElement, Filling}, classes: {DataProcessorObj}} = $p;
     let clr_group;
@@ -5447,30 +4976,17 @@ get exclude(){return this._getter_ts('exclude')}
 set exclude(v){this._setter_ts('exclude',v)}
 
 
-  /**
-   * Рассчитывает и устанавливает при необходимости в obj цвет по умолчанию
-   * @param [obj] - если указано, в поле clr этого объекта будет установлен цвет
-   * @return CatClrs
-   */
   default_clr(obj = {}) {
 
-    // а надо ли устанавливать? если не задано ограничение, выходим
     const available = this.clrs();
 
-    // бежим по строкам ограничения цветов
     if(available.length && !this.contains(obj.clr, available)) {
-      // подставляем первый разрешенный
       obj.clr = available[0];
     }
 
     return obj.clr;
   }
 
-  /**
-   * Извлекает доступные цвета
-   * @param [side] {EmnCnnSides}
-   * @return {Array.<CatClrs>}
-   */
   clrs(side) {
     const {_manager: {_owner}, _data, condition_formula: formula, mode, clr_conformity} = this;
     const {cat} = _owner.$p;
@@ -5493,7 +5009,6 @@ set exclude(v){this._setter_ts('exclude',v)}
         }
       });
 
-      // уточним по формуле условия
       if(!formula.empty()) {
         const attr = {clrs};
         if(!mode) {
@@ -5526,13 +5041,6 @@ set exclude(v){this._setter_ts('exclude',v)}
     }) : _data.clrs;
   }
 
-  /**
-   * Проверяет, подходит ли цвет данной группе
-   * @param clr {CatClrs} - цвет, который проверяем
-   * @param [clrs] {Array} - массив clrs, если не задан, рассчитываем
-   * @param [any] {Boolean} - признак для составных - учитывать обе стороны или любую
-   * @returns {boolean}
-   */
   contains(clr, clrs, any) {
     if(this.empty() && !clrs) {
       return true;
@@ -5636,8 +5144,6 @@ get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
 get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
-get presentation(){return this._getter('presentation')}
-set presentation(v){this._setter('presentation',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -5654,6 +5160,10 @@ get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
 get list_view(){return this._getter('list_view')}
 set list_view(v){this._setter('list_view',v)}
+get presentation(){return this._getter('presentation')}
+set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 }
 $p.CatUsersContact_informationRow = CatUsersContact_informationRow;
 class CatUsersAcl_objsRow extends TabularSectionRow{
@@ -5683,7 +5193,6 @@ set roles(v){this._setter('roles',v)}
 $p.CatUsersSubscribersRow = CatUsersSubscribersRow;
 class CatUsersManager extends CatManager {
 
-  // после загрузки пользователей, морозим объект, чтобы его невозможно было изменить из интерфейса
   load_array(aattr, forse) {
     const res = [];
     for (let aobj of aattr) {
@@ -5723,7 +5232,6 @@ class CatUsersManager extends CatManager {
     return res;
   }
 
-  // пользователей не выгружаем
   unload_obj() {	}
 
 }
@@ -5883,6 +5391,8 @@ get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
 get presentation(){return this._getter('presentation')}
 set presentation(v){this._setter('presentation',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 get values_fields(){return this._getter('values_fields')}
 set values_fields(v){this._setter('values_fields',v)}
 get country(){return this._getter('country')}
@@ -5977,17 +5487,10 @@ get demand(){return this._getter_ts('demand')}
 set demand(v){this._setter_ts('demand',v)}
 
 
-  /**
-   * @param attr
-   * @returns {CatCharacteristics|boolean}
-   * перед записью надо пересчитать наименование и рассчитать итоги
-   */
   before_save(attr) {
 
-    // уточняем номенклатуру системы
     const {prod_nom, calc_order, params, _data} = this;
 
-    // контроль прав на запись характеристики
     if(!attr.force && calc_order.is_read_only) {
       _data._err = {
         title: 'Права доступа',
@@ -5997,24 +5500,19 @@ set demand(v){this._setter_ts('demand',v)}
       return false;
     }
 
-    // для шаблонов, ссылка на типовой блок не нужна
     if(calc_order.obj_delivery_state == 'Шаблон' && !this.base_block.empty()) {
       this.base_block = '';
     }
-    
-    // масса изделия
+
     this.weight = this.elm_weight();
 
-    // пересчитываем наименование
     const name = this.prod_name();
     if(name) {
       this.name = name;
     }
 
-    // дублируем контрагента для целей RLS
     this.partner = calc_order.partner;
-    
-    // сохраним значения сохраняемых параметров
+
     _data._loading = true;
     for(const prow of params) {
       const { param, cnstr, inset, region } = prow;
@@ -6028,7 +5526,6 @@ set demand(v){this._setter_ts('demand',v)}
 
   }
 
-  // шаблоны читаем из ram
   load(attr = {}) {
     if(this.obj_delivery_state == 'Шаблон') {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
@@ -6036,7 +5533,6 @@ set demand(v){this._setter_ts('demand',v)}
     return super.load(attr);
   }
 
-  // шаблоны сохраняем в базу ram
   save(post, operational, attachments, attr = {}) {
     if(this.obj_delivery_state == 'Шаблон') {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
@@ -6044,7 +5540,6 @@ set demand(v){this._setter_ts('demand',v)}
     return super.save(post, operational, attachments, attr);
   }
 
-  // при удалении строки вставок, удаляем параметры и соединения
   del_row(row) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {
       const {cnstr, inset, region, _owner} = row;
@@ -6061,7 +5556,6 @@ set demand(v){this._setter_ts('demand',v)}
     }
   }
 
-  // при добавлении строки вставок, устанавливаем ряд
   add_row(row, attr) {
     if(row instanceof $p.CatCharacteristicsInsertsRow) {
       if(attr.inset && !attr.region) {
@@ -6070,13 +5564,6 @@ set demand(v){this._setter_ts('demand',v)}
     }
   }
 
-  /**
-   * Добавляет параметры вставки, пересчитывает признак hide
-   * @param inset
-   * @param cnstr
-   * @param [blank_inset]
-   * @param [region]
-   */
   add_inset_params(inset, cnstr, blank_inset, region) {
     const ts_params = this.params;
     const params = new Set();
@@ -6100,9 +5587,6 @@ set demand(v){this._setter_ts('demand',v)}
     });
   }
 
-  /**
-   * Рассчитывает наименование продукции
-   */
   prod_name(short) {
     const {calc_order_row, calc_order, leading_product, sys, clr, origin} = this;
     let name = '';
@@ -6112,7 +5596,6 @@ set demand(v){this._setter_ts('demand',v)}
         name = calc_order.number_internal.trim();
       }
       else {
-        // убираем нули из середины номера
         let num0 = calc_order.number_doc, part = '';
         for (let i = 0; i < num0.length; i++) {
           if(isNaN(parseInt(num0[i]))) {
@@ -6133,13 +5616,11 @@ set demand(v){this._setter_ts('demand',v)}
 
       name += '/' + calc_order_row.row.pad();
 
-      // для подчиненных, номер строки родителя
       if(!leading_product.empty() && !leading_product.calc_order.empty()) {
         const {calc_order_row} = leading_product;
         name += ':' + (calc_order_row ? calc_order_row.row.pad() : '0');
       }
 
-      // добавляем название системы или вставки
       if(!sys.empty()) {
         name += '/' + sys.name;
       }
@@ -6149,12 +5630,10 @@ set demand(v){this._setter_ts('demand',v)}
 
       if(!short) {
 
-        // добавляем название цвета
         if(!clr.empty()) {
           name += '/' + this.clr.name;
         }
 
-        // добавляем размеры
         if(this.x && this.y) {
           name += '/' + this.x.toFixed(0) + 'x' + this.y.toFixed(0);
         }
@@ -6177,12 +5656,11 @@ set demand(v){this._setter_ts('demand',v)}
         if(this.s) {
           name += '/s:' + this.s.toFixed(3);
         }
-        
-        if(this.weight){
+
+                if(this.weight){
           name += `/m:${this.weight.toFixed(3)}`;
         }
 
-        // подмешиваем значения параметров
         let sprm = '';
         this.params.find_rows({cnstr: 0}, ({param, value}) => {
           if(param.include_to_name && sprm.indexOf(String(value)) == -1) {
@@ -6198,14 +5676,10 @@ set demand(v){this._setter_ts('demand',v)}
     return name;
   }
 
-  /**
-   * Рассчитывает наименование продукции
-   */
   prod_name2({elm, cnstr}) {
     const {params, coordinates, x, y, note} = this;
     const main = [];
     const other = [];
-    // параметры изделия
     params.find_rows({cnstr: 0, region: 0}, ({param, value}) => {
       if(param.is_calculated || param.predefined_name === 'auto_align') {
         return;
@@ -6213,7 +5687,6 @@ set demand(v){this._setter_ts('demand',v)}
       main.push(value.toString());
     });
 
-    // добавляем размеры
     if(x && y) {
       main.push(x.toFixed(0) + 'x' + y.toFixed(0));
     }
@@ -6224,7 +5697,6 @@ set demand(v){this._setter_ts('demand',v)}
       main.push(y.toFixed(0));
     }
 
-    // параметры вставки
     params.find_rows({cnstr: -elm, region: 0}, ({param, value}) => {
       if(param.type.types.includes('boolean')) {
         if(value) {
@@ -6241,7 +5713,6 @@ set demand(v){this._setter_ts('demand',v)}
       }
     });
 
-    // параметры рёбер
     const rrows = [];
     coordinates.find_rows({cnstr, elm_type: 'Рама'}, (rrow) => {
       rrows.push(rrow);
@@ -6258,13 +5729,10 @@ set demand(v){this._setter_ts('demand',v)}
     if(note) {
       other.push(note);
     }
-    
-    return {main, other};
+
+        return {main, other};
   }
 
-  /**
-   * Открывает форму происхождения строки спецификации
-   */
   open_origin(row_id) {
     try {
       let {origin} = this.specification.get(row_id);
@@ -6285,14 +5753,6 @@ set demand(v){this._setter_ts('demand',v)}
     }
   }
 
-  /**
-   * Ищет характеристику в озу, в indexeddb не лезет, если нет в озу - создаёт
-   * @param elm {Number} - номер элемента или контура
-   * @param [origin] {CatInserts} - порождающая вставка
-   * @param [modify] {Boolean} - если false - не изменяем - только поиск
-   * @param [_order_rows] {Array} - если указано и есть в массиве - не перезаполняем
-   * @return {CatCharacteristics}
-   */
   find_create_cx(elm, origin, modify, _order_rows) {
     const {_manager, calc_order, params, inserts} = this;
     const {job_prm, utils, cat} = $p;
@@ -6327,7 +5787,6 @@ set demand(v){this._setter_ts('demand',v)}
     }
 
     if(modify !== false) {
-      // переносим в cx параметры
       cx.params.clear();
       if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
         const {length, width} = job_prm.properties;
@@ -6342,14 +5801,12 @@ set demand(v){this._setter_ts('demand',v)}
       }
 
       if(elm > 0 || !utils.is_empty_guid(origin.valueOf())) {
-        // переносим в cx цвет
         inserts.find_rows({cnstr: -elm, inset: origin}, (row) => {
           cx.clr = row.clr;
         });
         cx.name = cx.prod_name();
       }
       else if(utils.is_empty_guid(origin.valueOf())) {
-        // если это продукция слоя, переносим в cx всё, что можно
         cx.constructions.clear();
         cx.inserts.clear();
         cx.coordinates.clear();
@@ -6362,11 +5819,6 @@ set demand(v){this._setter_ts('demand',v)}
     return cx;
   }
 
-  /**
-   * Копирует табчасти структуры изделия, начиная со слоя cnstr
-   * @param src {CatCharacteristics}
-   * @param cnstr {Number}
-   */
   cpy_recursive(src, cnstr) {
     const {params, inserts, coordinates, cnn_elmnts, glasses} = this;
     this.constructions.add(src.constructions.find({cnstr}));
@@ -6386,16 +5838,10 @@ set demand(v){this._setter_ts('demand',v)}
     src.constructions.find_rows({parent: cnstr}, (row) => this.cpy_recursive(src, row.cnstr));
   }
 
-  /**
-   * Возврвщает строку заказа, которой принадлежит продукция
-   */
   get calc_order_row() {
     return this.calc_order.production.find({characteristic: this});
   }
 
-  /**
-   * Возвращает номенклатуру продукции по системе
-   */
   get prod_nom() {
     const {sys, params, calc_order, calc_order_row} = this;
     if(!sys.empty()) {
@@ -6440,10 +5886,6 @@ set demand(v){this._setter_ts('demand',v)}
     return this.owner;
   }
 
-  /**
-   * @summary Номер изделия по порядку для экранных и печатных форм
-   * @type {Number}
-   */
   get prod_sequence() {
     const {calc_order, calc_order_row} = this;
     let index = 0;
@@ -6460,9 +5902,6 @@ set demand(v){this._setter_ts('demand',v)}
     return index;
   }
 
-  /**
-   * Дополнительные свойства изделия для рисовалки
-   */
   get builder_props() {
     const defaults = this.constructor.builder_props_defaults;
     const props = {};
@@ -6527,33 +5966,21 @@ set demand(v){this._setter_ts('demand',v)}
     }
   }
 
-  /**
-   * Выполняет замену системы, цвета и фурниутры
-   * если текущее изделие помечено в обработке
-   * @param engine {Scheme|CatInserts} - экземпляр рисовалки или вставки (соответственно, для изделий построителя и параметрика)
-   * @param dp {DpBuyers_order} - экземпляр обработки в реквизитах и табчастях которой, правила перезаполнения
-   * @return {Scheme|CatInserts}
-   */
   apply_props(engine, dp) {
-    // если в dp взведён флаг, выполняем подмену
     if(dp && dp.production.find({use: true, characteristic: this})) {
       const {Scheme, Filling, Contour} = $p.EditorInvisible;
       if(engine instanceof Scheme) {
         const {length} = engine._ch;
-        // цвет
         if(dp.use_clr && engine._dp.clr !== dp.clr) {
           engine._dp.clr = dp.clr;
           engine._dp_listener(engine._dp, {clr: true});
         }
-        // система
         if(dp.use_sys) {
           engine.set_sys(dp.sys);
         }
-        // вставки заполнений
         if(dp.use_inset) {
           engine.set_glasses(dp.inset);
         }
-        // подмена фурнитуры
         for(const contour of engine.getItems({class: Contour})) {
           const {furn} = contour;
           if(!furn.empty()) {
@@ -6568,7 +5995,6 @@ set demand(v){this._setter_ts('demand',v)}
           engine.redraw();
         }
       }
-      // подмена параметров - одинаково для рисовалки и параметрика
       dp.product_params.forEach(({param, value, _ch}) => {
         _ch && this.params.find_rows({param}, (row) => {
           row.value = value;
@@ -6578,17 +6004,8 @@ set demand(v){this._setter_ts('demand',v)}
     return engine;
   }
 
-  /**
-   * Пересчитывает изделие по тем же правилам, что и визуальная рисовалка
-   * @param attr {Object} - параметры пересчёта
-   * @param [editor] {EditorInvisible}
-   * @param [restore] {Scheme}
-   */
   recalc(attr = {}, editor, restore) {
 
-    // сначала, получаем объект заказа и продукции заказа в озу, т.к. пересчет изделия может приводить к пересчету соседних продукций
-
-    // загружаем изделие в редактор
     const remove = !editor;
     if(remove) {
       editor = new $p.EditorInvisible();
@@ -6596,7 +6013,6 @@ set demand(v){this._setter_ts('demand',v)}
     const project = editor.create_scheme();
     return project.load(this, true)
       .then(() => {
-        // выполняем пересчет
         return project.save_coordinates(Object.assign({save: true, svg: attr.svg || false}, attr));
       })
       .then(() => {
@@ -6613,11 +6029,6 @@ set demand(v){this._setter_ts('demand',v)}
       });
   }
 
-  /**
-   * Рисует изделие или фрагмент изделия в Buffer в соответствии с параметрами attr
-   * @param attr
-   * @param editor
-   */
   draw(attr = {}, editor) {
     const {utils, cch, cat, EditorInvisible} = $p;
     const link = {imgs: {}};
@@ -6632,18 +6043,15 @@ set demand(v){this._setter_ts('demand',v)}
       attr.res[utils.snake_ref(this.ref)] = link;
     }
     const {format, keep_editor} = attr;
-    
-    // загружаем изделие в редактор
+
     const remove = !editor;
     if(remove) {
       editor = new EditorInvisible();
     }
     const project = editor.create_scheme();
 
-    // если это москитка, полный проект можно не грузить
     if(this.origin?.insert_type?.is?.('mosquito')) {
       const {calc_order, leading_product, leading_elm, origin, x, y} = this;
-      // находим импосты и рамки
       let {sz, nom, imposts} = origin.mosquito_props();
       if(!nom) {
         return Promise
@@ -6662,8 +6070,8 @@ set demand(v){this._setter_ts('demand',v)}
       leading_product.params.find_rows({cnstr: 0}, (row) => ox.params.add(row));
       leading_product.constructions.find_rows({parent: 0}, (row) => ox.cpy_recursive(leading_product, row.cnstr));
       ox._set_loaded(ox.ref);
-      
-      const irama = cat.inserts.by_nom(nom);
+
+            const irama = cat.inserts.by_nom(nom);
       const lcnn = cat.cnns.by_nom(nom, nom);
       const iimpost = imposts && cat.inserts.by_nom(imposts.nom);
       const tcnn = imposts && cat.cnns.by_nom(imposts.nom, nom, 't');
@@ -6679,7 +6087,6 @@ set demand(v){this._setter_ts('demand',v)}
           }
           const parent = EditorInvisible.Contour.create({project});
 
-          // рисуем контур
           const ppath = new paper.Path({insert: false});
           for(const {sub_path} of perimetr) {
             ppath.addSegments(sub_path.segments);
@@ -6693,13 +6100,12 @@ set demand(v){this._setter_ts('demand',v)}
               },
             });
           }
-          
-          // рисуем импосты
+
           const {bounds} = ppath;
           if(imposts) {
             const add_impost = (y) => {
-              
-              const impost = new paper.Path({
+
+                            const impost = new paper.Path({
                 insert: false,
                 segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
               });
@@ -6714,8 +6120,8 @@ set demand(v){this._setter_ts('demand',v)}
                   impost.lastSegment.point = point;
                 }
               }
-              
-              new EditorInvisible.Profile({
+
+                            new EditorInvisible.Profile({
                 layer: parent,
                 parent: parent.children.profiles,
                 generatrix: impost,
@@ -6763,12 +6169,11 @@ set demand(v){this._setter_ts('demand',v)}
           else {
             parent.l_dimensions.visible = false;
           }
-          
-          for(const gl of parent.fillings) {
+
+                    for(const gl of parent.fillings) {
             gl.visible = false;
           }
 
-          // добавляем текст
           const {elm_font_size, font_family} = editor.consts;
           new editor.PointText({
             layer: parent,
@@ -6780,8 +6185,8 @@ set demand(v){this._setter_ts('demand',v)}
             content: this.origin.presentation,
             point: bounds.bottomLeft.add([nom.width * 1.4, -nom.width * 1.6]),
           });
-          
-          project.zoom_fit();
+
+                    project.zoom_fit();
           if(Array.isArray(format) ? format.includes('png') : format === 'png') {
             project.view.update();
             link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
@@ -6799,18 +6204,14 @@ set demand(v){this._setter_ts('demand',v)}
           return keep_editor ? null : (remove ? editor.unload() : project.unload());
         })
         .then(() => attr.res);
-      
-    }
+
+          }
 
     project._attr._regions = attr.regions;
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
-        
-        // видимость рядов профиля
-        // 0, undefined - только контур основных элементов
-        // 1 - только контур элементов ряда
-        // 2 - и ряд и основной элемент
+
         if(attr.regions) {
           for(const layer of project.getItems({class: EditorInvisible.Contour})) {
             if(attr.regions === 1) {
@@ -6823,8 +6224,7 @@ set demand(v){this._setter_ts('demand',v)}
           project.redraw();
           project.draw_visualization();
         }
-        
-        // формируем эскиз(ы) в соответствии с attr
+
         if(attr.elm) {
           const elmnts = Array.isArray(attr.elm) ? attr.elm : [attr.elm];
           for(const elm of elmnts) {
@@ -6845,7 +6245,6 @@ set demand(v){this._setter_ts('demand',v)}
           link.glasses = glasses.map((glass) => Object.assign({}, glass));
           link.glasses.forEach((row) => {
             const glass = project.draw_fragment({elm: row.elm});
-            // подтянем формулу стеклопакета
             if(format === 'png') {
               link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
             }
@@ -6885,13 +6284,6 @@ set demand(v){this._setter_ts('demand',v)}
       .then(() => attr.res);
   }
 
-  /**
-   * Значение параметра для текущего слоя или вставки
-   * @param cnstr
-   * @param inset
-   * @param param
-   * @return {*}
-   */
   extract_value({cnstr, inset, param}) {
     const {utils: {blank}, CatNom, cat} = $p;
     const is_nom = param instanceof CatNom;
@@ -6905,18 +6297,12 @@ set demand(v){this._setter_ts('demand',v)}
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
-  /**
-   * Рассчитывает массу фрагмента изделия
-   * @param [elmno] {Number|Array|undefined} - номер элемента или массив номеров (с полюсом) или слоя (с минусом)
-   * @return {Number}
-   */
   elm_weight(elmno) {
     const {coordinates, specification} = this;
     const map = new Map();
     const isArray = Array.isArray(elmno);
     let weight = 0;
     specification.forEach(({elm, nom, totqty}) => {
-      // отбрасываем лишние строки
       if(isArray) {
         if(!elmno.includes(elm)) {
           return;
@@ -6936,7 +6322,6 @@ set demand(v){this._setter_ts('demand',v)}
       }
       weight += nom.density * totqty;
     });
-    // элементы внутри слоя могут быть вынесены в отдельные строки заказа
     if(!isArray && elmno < 0) {
       const contour = {cnstr: -elmno};
       coordinates.find_rows(contour, ({elm, inset}) => {
@@ -6949,11 +6334,6 @@ set demand(v){this._setter_ts('demand',v)}
     return weight.round(3);
   }
 
-  /**
-   * Выясняет, есть ли в спецификации номенклатура из константы cname
-   * @param cname {String}
-   * @return {Boolean}
-   */
   has_nom(cname) {
     let noms = $p.job_prm.nom[cname];
     let res = false;
@@ -6971,11 +6351,6 @@ set demand(v){this._setter_ts('demand',v)}
     return res;
   }
 
-  /**
-   * @summary Возвращает Map ошибок из спецификации (при их наличии)
-   * @param {Boolean} [checkOnly] - проверять только наличие критических ошибок
-   * @return @return {Map<EnmElmTypes, Map>|Boolean} 
-   */
   errors(checkOnly = false) {
     const errors = new Map();
     const {elm_types} = $p.enm;
@@ -6983,8 +6358,8 @@ set demand(v){this._setter_ts('demand',v)}
     if(!checkOnly) {
       err_types.push(elm_types.ОшибкаИнфо);
     }
-    
-    for(const {nom, elm} of this.specification) {
+
+        for(const {nom, elm} of this.specification) {
       if(err_types.includes(nom.elm_type)) {
         if(!errors.has(nom.elm_type)){
           errors.set(nom.elm_type, new Map());
@@ -7001,19 +6376,12 @@ set demand(v){this._setter_ts('demand',v)}
     return checkOnly ? errors.has(elm_types.ОшибкаКритическая) : errors;
   }
 
-  /**
-   * Формирует строку индекса слоя cnstr
-   * @param cnstr {Number}
-   * @return {String}
-   */
   hierarchyName(cnstr) {
     const {constructions} = this;
-    // строка табчасти конструкций
     const row = constructions.find({cnstr});
     if(!row) {
       return '';
     }
-    // найдём все слои нашего уровня
     const rows = constructions.find_rows({parent: row.parent})
       .map((row) => row._row)
       .sort($p.utils.sort('cnstr'));
@@ -7023,19 +6391,14 @@ set demand(v){this._setter_ts('demand',v)}
     }
     return index;
   }
-  
-  get frame() {
+
+    get frame() {
     if(!this._data.frame) {
       this._data.frame = new CatCharacteristics.ProductFrame(this);
     }
     return this._data.frame;
   }
 
-  /**
-   * Настройки отображения в рисовалке по умолчанию
-   * @type {Object}
-   * @static
-   */
   static builder_props_defaults = {
     auto_lines: true,
     custom_lines: true,
@@ -7318,8 +6681,8 @@ class CatAbonentsManager extends CatManager {
     const {session_zone, zone} = $p.job_prm;
     return this.by_id(session_zone || zone);
   }
-  
-  get price_types() {
+
+    get price_types() {
     const {server} = $p.job_prm;
     const price_types = new Set();
     for(const id of server.abonents) {
@@ -7336,6 +6699,8 @@ get key(){return this._getter('key')}
 set key(v){this._setter('key',v)}
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
+get slave(){return this._getter('slave')}
+set slave(v){this._setter('slave',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -7360,24 +6725,20 @@ set elm_type(v){this._setter('elm_type',v)}
 $p.CatInsert_bindInsertsRow = CatInsert_bindInsertsRow;
 class CatInsert_bindManager extends CatManager {
 
-  /**
-   * Возвращает массив допвставок с привязками к изделию или слою
-   * @param ox {CatCharacteristics}
-   * @param [order] {Boolean} - выполнять для Заказа, а не его строки
-   * @return {Array}
-   */
   insets(ox, order = false) {
     const {sys, owner} = ox;
     const res = [];
     const {enm, cat} = $p;
     const {inserts_types: {Заказ, Монтаж, Доставка, Упаковка}, elm_types: {flap}} = enm;
     for (const bind of this) {
-      const {production, inserts, key, calc_order} = bind;
+      const {production, inserts, key, calc_order, slave} = bind;
       if(!key.check_condition({ox})) {
         continue;
       }
       for (const {nom} of production) {
-        if(!nom || nom.empty() || sys?._hierarchy(nom) || owner?._hierarchy(nom)) {
+        if(!nom || nom.empty() || (!slave && (sys?._hierarchy(nom) || owner?._hierarchy(nom)) || (
+          slave && ox._order_rows?.some?.(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
+        ))) {
           for (const {inset, elm_type} of inserts) {
             if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
               if((!order && !calc_order && inset.insert_type !== Заказ) || 
@@ -7387,7 +6748,6 @@ class CatInsert_bindManager extends CatManager {
             }
           }
         }
-        // створки виртуальных слоёв
         else if(!order) {
           for(const {dop} of ox.constructions) {
             if(dop.sys && cat.production_params.get(dop.sys)._hierarchy(nom)) {
@@ -7404,27 +6764,14 @@ class CatInsert_bindManager extends CatManager {
     return res;
   }
 
-  /**
-   * Вклад привязок вставок в основную спецификацию
-   * @param ox {CatCharacteristics}
-   * @param {Scheme} [scheme]
-   * @param {TabularSection} [spec]
-   * @param {Boolean} [order]
-   */
   deposit({ox, scheme, spec, order}) {
 
-    const {enm: {elm_types}, EditorInvisible: {ContourVirtual}, CatInsert_bind, pricing} = $p;
-    const old_rows = [], new_rows = [];
-    if(order) {
-      for(const row of ox.calc_order.production) {
-        if(row.characteristic.origin instanceof CatInsert_bind) {
-          old_rows.push(row);
-        }
-      }      
-    }
+    const {enm: {elm_types}, EditorInvisible: {ContourVirtual}, pricing} = $p;
+    const new_rows = [];
+    const old_rows = this.oldRows(ox, order);
+    const insets = this.insets(ox, order);
 
-    for (const {inset, elm_type, by_order, bind} of this.insets(ox, order)) {
-
+        function depositElm({inset, elm_type, by_order, bind, ox, spec}) {
       const elm = {
         _row: {},
         elm: 0,
@@ -7454,90 +6801,113 @@ class CatInsert_bindManager extends CatManager {
         }
       };
 
-      // рассчитаем спецификацию вставки
       switch (elm_type) {
-      case elm_types.flap:
-        if(scheme) {
-          for (const {contours} of scheme.contours) {
-            contours.forEach(deposit_flap);
+        case elm_types.flap:
+          if(scheme) {
+            for (const {contours} of scheme.contours) {
+              contours.forEach(deposit_flap);
+            }
           }
-        }
-        break;
+          break;
 
-      case elm_types.rama:
-        if(scheme) {
-          for (const contour of scheme.contours) {
-            elm.layer = contour;
-            len_angl.cnstr = contour.cnstr;
-            inset.calculate_spec({elm, len_angl, ox, spec});
+        case elm_types.rama:
+          if(scheme) {
+            for (const contour of scheme.contours) {
+              elm.layer = contour;
+              len_angl.cnstr = contour.cnstr;
+              inset.calculate_spec({elm, len_angl, ox, spec});
+            }
           }
-        }
-        break;
+          break;
 
-      case elm_types.glass:
-        // только для составных пакетов
-        if(scheme) {
-          for (const elm of scheme.glasses) {
-            ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
-              if(row.inset.insert_glass_type === inset.insert_glass_type) {
-                inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
+        case elm_types.glass:
+          if(scheme) {
+            for (const elm of scheme.glasses) {
+              if(!ox.leading_elm || ox.leading_elm === elm.elm) {
+                ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
+                  if(row.inset.insert_glass_type === inset.insert_glass_type) {
+                    inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
+                  }
+                });
               }
-            });
+            }
           }
-        }
-        break;
+          break;
 
-      case elm_types.sandwich:
-        // в данном случае, sandwich - любое заполнение, не только непрозрачное
-        if(scheme) {
-          for (const elm of scheme.glasses) {
-            inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+        case elm_types.sandwich:
+          if(scheme) {
+            for (const elm of scheme.glasses) {
+              (!ox.leading_elm || ox.leading_elm === elm.elm) && inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+            }
           }
-        }
-        break;
+          break;
 
-      default:
-        if(by_order) {
-          const {production} = ox.calc_order;
-          const cx = ox._manager.find({calc_order: ox.calc_order, leading_elm: 0, origin: bind}) ||
-            ox._manager.create({calc_order: ox.calc_order, leading_elm: 0,origin: bind}, false, true)._set_loaded();
-          const prow = inset.specification.find({quantity: 0, is_main_elm: true});
-          if(prow) {
-            cx.owner = prow.nom;
-          }
-          const row = production.find({characteristic: cx}) || production.add({nom: cx.owner, characteristic: cx});
-          new_rows.push(row);
-          cx.specification.clear();
-          inset.calculate_spec({elm, len_angl, ox: cx});
-          if(cx.specification.count()) {
-            cx.product = row.row;
-            cx.name = cx.prod_name();
-            row.nom = cx.owner;
-            row.unit = row.nom.storage_unit;
-            row.qty = 1;
-            row.quantity = 1;
-            const attr = {calc_order_row: row, date: ox.calc_order.price_date, spec: cx.specification};
-            pricing.price_type(attr);
-            pricing.calc_first_cost(attr);
-            pricing.calc_amount(attr);
-            ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
+        default:
+          if(by_order) {
+            const {production} = ox.calc_order;
+            const cx = ox._manager.find({calc_order: ox.calc_order, leading_elm: 0, origin: bind}) ||
+              ox._manager.create({calc_order: ox.calc_order, leading_elm: 0,origin: bind}, false, true)._set_loaded();
+            const prow = inset.specification.find({quantity: 0, is_main_elm: true});
+            if(prow) {
+              cx.owner = prow.nom;
+            }
+            const row = production.find({characteristic: cx}) || production.add({nom: cx.owner, characteristic: cx});
+            new_rows.push(row);
+            cx.specification.clear();
+            inset.calculate_spec({elm, len_angl, ox: cx});
+            if(cx.specification.count()) {
+              cx.product = row.row;
+              cx.name = cx.prod_name();
+              row.nom = cx.owner;
+              row.unit = row.nom.storage_unit;
+              row.qty = 1;
+              row.quantity = 1;
+              const attr = {calc_order_row: row, date: ox.calc_order.price_date, spec: cx.specification};
+              pricing.price_type(attr);
+              pricing.calc_first_cost(attr);
+              pricing.calc_amount(attr);
+              ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
+            }
+            else {
+              production.del(row);
+            }
           }
           else {
-            production.del(row);
+            inset.calculate_spec({elm, len_angl, ox, spec});
           }
-        }
-        else {
-          inset.calculate_spec({elm, len_angl, ox, spec});
-        }
       }
     }
-    // старый вклад, не прошедший новые параметры - удаляем
+
+    for (const step of insets) {
+      if(step.bind.slave) {
+        for(const cx of ox._order_rows) {
+          depositElm({...step, ox: cx, spec: cx.specification});
+        }
+      }
+      else {
+        depositElm({...step, ox, spec});
+      }      
+    }
     for(const rm of old_rows) {
       if(!new_rows.includes(rm)) {
         rm._owner.del(rm);
         ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
       }
     }
+  }
+
+
+
+    oldRows(ox, order) {
+    const old_rows = [];
+    if(order) {
+      for(const row of ox.calc_order.production) {
+        if(row.characteristic.origin instanceof CatInsert_bind) {
+          old_rows.push(row);
+        }
+      }
+    }
+    return old_rows;
   }
 }
 $p.cat.create('insert_bind', CatInsert_bindManager, false);
@@ -7694,9 +7064,9 @@ set owner(v){this._setter('owner',v)}
 get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
 
-  
-  
-  option_value({elm, ...other}) {
+
+
+      option_value({elm, ...other}) {
     const {values} = this;
     for(const {key, value} of values) {
       if(key.check_condition({elm, ...other})) {
@@ -7875,30 +7245,32 @@ set coefficient(v){this._setter('coefficient',v)}
 $p.CatMargin_coefficientsExtra_chargeRow = CatMargin_coefficientsExtra_chargeRow;
 class CatMargin_coefficientsManager extends CatManager {
 
-  /**
-   * @summary Возвращает срез маржинальных коэффициентов для отдела на дату
-   * @param {Date} date - дата среза
-   * @param {Number} kind - вид (0 - коэффициент, 1 - Скидка % мин, 2 - Скидка % макс)
-   * @param {DocCalc_orderProductionRow} calc_order_row
-   * @return {CoefficientsMap}
-   */
   slice({date, kind = 0, calc_order_row}) {
     const {CoefficientsMap} = this.constructor;
     const {branch, partner} = calc_order_row._owner._owner;
     const res = new CoefficientsMap();
-    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
+    const {job_prm} = $p;
+    res.price_groups = job_prm.pricing.displacing_price_group || [];
     let source;
     this.find_rows({kind, is_buyer: partner.abc}, obj => {
-      if(!source) {
+      if(obj.owner instanceof CatAbonents && obj.extra_charge.count()) {
         source = obj;
-      }
-      else if(!branch.empty() && branch._hierarchy(obj.owner)){
-        if(branch === obj.owner || obj.owner._hierarchy(source.owner)) {
-          source = obj;
-        }
+        return false;
       }
     });
-    for(const row of source?.extra_charge) {
+    if(!branch.empty()) {
+      this.find_rows({kind, is_buyer: partner.abc}, obj => {
+        if(branch._hierarchy(obj.owner) && obj.extra_charge.count()){
+          if(source.owner instanceof CatAbonents || obj.owner._hierarchy(source.owner)) {
+            source = obj;
+          }
+          if(branch === obj.owner) {
+            return false;
+          }
+        }
+      });
+    }
+    for(const row of (source?.extra_charge || [])) {
       if(row.period > date) {
         continue;
       }
@@ -7907,14 +7279,12 @@ class CatMargin_coefficientsManager extends CatManager {
     }
     return res;
   }
-  
-  static CoefficientsMap = class CoefficientsMap extends Map {
+
+    static CoefficientsMap = class CoefficientsMap extends Map {
 
     replenish(obj, ox) {
       for(const [key, value] of this) {
-        // ищем по иерархии системы или фурнитуры и запоминаем
-        if(obj._hierarchy(key)) {
-          // приоритет по равенству или прямому родителю
+        if(key && obj._hierarchy(key)) {
           if(obj === key) {
             this.set(obj, value);
             break;
@@ -7924,7 +7294,7 @@ class CatMargin_coefficientsManager extends CatManager {
           }
         }
       }
-      if(!this.has(obj) && ox && obj instanceof CatProduction_params) {
+      if(!this.has(obj) && ox) {
         const pl = ox.owner.nom_group;
         if(!pl.empty()) {
           this.replenish(pl);
@@ -7935,17 +7305,9 @@ class CatMargin_coefficientsManager extends CatManager {
       }
     }
 
-    /**
-     * @summary Возвращает коэффициент для строки спецификации
-     * @desc В зависимости от происхождения (система, фурнитура, ценовая группа, вставка)
-     * @param {CatCharacteristicsSpecificationRow} row
-     * @return {Number}
-     * 
-     */
     coefficient(row) {
       let {_owner: {_owner}, nom: {price_group}} = row;
       let obj, crow;
-      // если вытесняющая ценовая группа
       if(this.price_groups.includes(price_group)) {
         obj = price_group;
       }
@@ -7963,10 +7325,9 @@ class CatMargin_coefficientsManager extends CatManager {
           }
         }  
       }
-      
-      if(!this.has(obj)) {
+
+            if(!this.has(obj)) {
         this.replenish(obj, _owner);
-        // если не нашлось по иерархии, ищем максимум по системе
         if(!this.has(obj)) {
           if(obj instanceof CatInsert_bind) {
             for(const {inset} of obj.inserts) {
@@ -8267,10 +7628,6 @@ get set(){return this._getter_ts('set')}
 set set(v){this._setter_ts('set',v)}
 
 
-  /**
-   * значения по умолчанию при создании документа
-   * @return {DocWork_centers_task}
-   */
   after_create() {
     if(this.is_new()) {
       this.date = new Date();
@@ -8281,11 +7638,6 @@ set set(v){this._setter_ts('set',v)}
     return this;
   }
 
-  /**
-   * значения по умолчанию при добавлении строки
-   * @param {TabularSectionRow} row
-   * @param {Object} [attr]
-   */
   add_row(row, attr) {
     if(row?._owner === this.cuts) {
       if(!row.stick && !attr?.stick) {
@@ -8295,11 +7647,6 @@ set set(v){this._setter_ts('set',v)}
     }
   }
 
-  /**
-   * Заполняет план по массиву заказов
-   * @param {Array<String|DataObj>} refs
-   * @return {Promise<void>}
-   */
   fill_by_orders(refs) {
     const orders = [];
     const {$p: {utils}, calc_order} = this._manager._owner;
@@ -8320,11 +7667,9 @@ set set(v){this._setter_ts('set',v)}
             return order.load_production()
               .then((prod) => {
                 order.production.forEach((row) => {
-                  // нас интересуют только продукции
                   if(!prod.includes(row.characteristic)) {
                     return;
                   }
-                  // и только те продукции, у которых в спецификации есть материалы к раскрою
                   row.characteristic.specification.forEach((srow) => {
                     if(srow.len && !srow.nom.cutting_optimization_type.empty() && !srow.nom.cutting_optimization_type.is('Нет')){
                       for(let i = 1; i <= row.quantity; i++) {
@@ -8343,14 +7688,12 @@ set set(v){this._setter_ts('set',v)}
   fill_by_keys(opts = {}) {
     const {set, cutting, planning, cuts, _manager} = this;
     const {job_prm: {nom: {profile}}, enm: {debit_credit_kinds}} = $p;
-    // старый раскрой чистим
     cutting.clear();
     planning.clear();
     cuts.clear({width: 0});
     const noms = [];
     for(const srow of set) {
       const {obj: {obj, type, specimen, region}, stage} = srow;
-      // для ключей типа 'Изделие', добавляем все строки, привязанные к этапу производства
       if(type.is('product')) {
         obj.specification.find_rows({stage}, (row) => {
           const {cutting_optimization_type: ct, is_procedure, is_service} = row.nom;
@@ -8381,20 +7724,16 @@ set set(v){this._setter_ts('set',v)}
   }
 
   cutting_row({obj, specimen, elm, row, opts}) {
-    // если планирование до элемента...
     if(elm && row.elm !== elm) {
       return;
     }
-    // по типам оптимизации
     if((row.width && !opts.bilinear && !opts.c2d) || (!row.width && opts.linear === false)) {
       return;
     }
-    // должен существовать элемент
     const coord = obj.coordinates.find({elm: row.elm});
     if(!coord) {
       return;
     }
-    // только для цветных
     if(opts.clr_only) {
       if(row.clr.empty() || /Белый|БезЦвета/.test(row.clr.predefined_name) ) {
         return;
@@ -8418,41 +7757,29 @@ set set(v){this._setter_ts('set',v)}
     }
     return last;
   }
-  
-  /**
-   * Заполняет табчасть раскрой по плану
-   * @param {Object} [opts]
-   * @param {Boolean} [opts.clear]
-   * @param {Boolean} [opts.linear]
-   * @param {Boolean} [opts.bilinear]
-   * @param {Boolean} [opts.c2d]
-   * @param {Boolean} [opts.clr_only]
-   * @return {Promise<void>}
-   */
+
   fill_cutting(opts) {
     const {planning, cutting} = this;
     if(opts.clear) {
       cutting.clear();
     }
-    // получаем спецификации продукций
     return this.load_linked_refs()
       .then(() => {
         planning.forEach(({obj, specimen, elm}) => {
           obj.specification.forEach((row) => {
-            // только строки подлежащие раскрою
             if(!row.len || row.nom.cutting_optimization_type.empty() || row.nom.cutting_optimization_type.is('no')) {
               return;
             }
             this.cutting_row({obj, specimen, elm, row, opts});
-            
-            
-            
-          });
+
+
+
+                                              });
         });
       });
   }
-  
-  fill_cuts() {
+
+    fill_cuts() {
     const {debit} = $p.enm.debit_credit_kinds;
     const {cutting, cuts} = this;
     for(const {nom, characteristic} of cutting) {
@@ -8495,10 +7822,7 @@ set set(v){this._setter_ts('set',v)}
     }
     return res;
   }
-  
-  /**
-   * Возвращает свёрнутую структуру номенклатур, характеристик и партий раскроя
-   */
+
   fragments1D(noParts) {
     const {_owner: {$p: {utils}}, cut_defaults} = this._manager;
     const res = new Map();
@@ -8524,7 +7848,6 @@ set set(v){this._setter_ts('set',v)}
     if(noParts) {
       return res;
     }
-    // расставим партии
     for(const [nom, characteristics] of res) {
       for(const [characteristic, rows] of characteristics) {
         if(rows.length > cut_defaults.batch) {
@@ -8582,12 +7905,6 @@ set set(v){this._setter_ts('set',v)}
     };
   }
 
-  /**
-   * @summary Выполняет оптимизацию раскроя
-   * @param {Function} [onStep]
-   * @param {Object} [state]
-   * @return {Promise<Awaited<unknown>[]>}
-   */
   optimize({onStep, state}) {
     const {classes: {Cutting}} = $p;
     if(!state) {
@@ -8630,24 +7947,17 @@ set set(v){this._setter_ts('set',v)}
       .then(() => state);
   }
 
-  /**
-   * Выполняет оптимизацию фрагмента (номенклатура+характеристика+тип)
-   * @param opts
-   * @return {Promise<void>}
-   */
   optimize_fragment({cutting, rows, onStep, part, parts}) {
     const {_owner: {$p: {job_prm}}, cut_defaults} = this._manager;
-    
-    return new Promise((resolve) => {
+
+        return new Promise((resolve) => {
 
       const doc = this;
       const workpieces = [];
       const cut_row = rows[0];
       if(cut_row) {
-        // ищем запись в расходе - её туда могли положить руками, либо подтянулось из остатков
         this.cuts.find_rows({
           _top: 10e6,
-          //record_kind: debit_credit_kinds.debit,
           nom: cut_row.nom,
           characteristic: cut_row.characteristic,
         }, (row) => {
@@ -8686,7 +7996,6 @@ set set(v){this._setter_ts('set',v)}
           return;
         }
 
-        // текущий результат
         const decision = Object.assign({
           cut_row,
           userData,
@@ -8697,11 +8006,9 @@ set set(v){this._setter_ts('set',v)}
           progress: isFinished ? 1 : generation / this.configuration.iterations,
         }, this.fitness(pop[0].entity, true));
 
-        // обновляем интерфейс
         onStep(decision);
 
         if(isFinished) {
-          // обновляем документ
           doc.push_cut_result(decision, part + 1 === parts);
           resolve();
         }
@@ -8713,18 +8020,13 @@ set set(v){this._setter_ts('set',v)}
     });
   }
 
-  /**
-   * помещает результат раскроя в документ
-   */
   push_cut_result(decision, fin) {
     const {debit_credit_kinds} = $p.enm;
-    // сначала добавляем заготовки
     for(let i = 0; i < decision.workpieces.length; i++) {
       let workpiece = decision.cuts[i];
 
       if(workpiece) {
         workpiece.used = workpiece.len - decision.workpieces[i];
-        //workpiece.quantity = decision.workpieces[i] / 1000;
       }
       else {
         workpiece = this.cuts.add({
@@ -8738,7 +8040,6 @@ set set(v){this._setter_ts('set',v)}
       }
     }
 
-    // проставляем номера палок в раскрое
     for(let i = 0; i < decision.res.length; i++) {
       const {stick} = decision.cuts[decision.res[i]];
       decision.rows[i].stick = stick;
@@ -8750,7 +8051,6 @@ set set(v){this._setter_ts('set',v)}
       cut_row.used = len;
     }
     if(fin) {
-      // формируем приход деловых остатков
       const workpieces = [];
       this.cuts.find_rows({
         _top: 10e6,
@@ -8775,10 +8075,6 @@ set set(v){this._setter_ts('set',v)}
 
   }
 
-  /**
-   * @summary Чистит результаты раскроя в табчасти cutting
-   * @desc Параллельно, подчищает табчасть cuts
-   */
   reset_sticks(kind) {
     const noms = new Map();
     for(const row of this.cutting) {
@@ -8810,12 +8106,8 @@ set set(v){this._setter_ts('set',v)}
       this.cuts.del(row);
     }
   }
-  
-  
-  /**
-   * @summary Загружает из сервиса планирования, задействованные ключи
-   * @return {Promise<DocWork_centers_task>}
-   */
+
+
   load_keys() {
     const {adapters: {pouch}, job_prm, cat: {planning_keys}} = $p;
     const refs = new Set();
@@ -8830,8 +8122,8 @@ set set(v){this._setter_ts('set',v)}
         :
         pouch.fetch(`/adm/api/keys/rows`, {method: 'POST', body: JSON.stringify(Array.from(refs))})
           .then(res => res.json());
-      
-      return fetcher.then(res => {
+
+            return fetcher.then(res => {
           const rows = res.rows.map(({abonent, branch, year, barcode, characteristic, presentation, ...other}) => {
             other.id = parseInt(barcode);
             other.obj = other.type === 'order' ? other.calc_order : characteristic;
@@ -8968,20 +8260,20 @@ set power(v){this._setter('power',v)}
 }
 $p.DocWork_centers_taskSetRow = DocWork_centers_taskSetRow;
 class DocWork_centers_taskManager extends DocManager {
-  
-  get cut_defaults() {
+
+    get cut_defaults() {
     if(!this._cut_defaults) {
       const {$p: {job_prm}} = this._owner;
       this._cut_defaults = Object.freeze({
         iterations: 2900,
-        size: 210,        // размер популяции
+        size: 210,        
         crossover: 0.19,
         mutation: 0.26,
         random: 0.21,
-        skip: 55,         // прекращаем итерации, если решение не улучшилось за 55 шагов
+        skip: 55,         
         webWorkers: !job_prm.is_node,
-        batch: 101,       // размер партии
-        usefulscrap: 610, // деловой остаток
+        batch: 101,       
+        usefulscrap: 610, 
       });
     }
     return this._cut_defaults;
@@ -9147,6 +8439,8 @@ get phone_number(){return this._getter('phone_number')}
 set phone_number(v){this._setter('phone_number',v)}
 get phone_without_codes(){return this._getter('phone_without_codes')}
 set phone_without_codes(v){this._setter('phone_without_codes',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
 }
 $p.DocCalc_orderContact_informationRow = DocCalc_orderContact_informationRow;
 class DocCalc_orderPlanningRow extends TabularSectionRow{
@@ -9186,11 +8480,6 @@ class DocCalc_orderManager extends DocManager {
     }
   }
 
-  /**
-   * Загрузка из сырых данных для динсписка
-   * @param {Object} [force]
-   * @return {Promise<void>|*}
-   */
   direct_load(force) {
     if(this._direct_loaded && !force) {
       return Promise.resolve();
@@ -9220,12 +8509,6 @@ class DocCalc_orderManager extends DocManager {
       });
   }
 
-  /**
-   * Копирует заказ, возвращает промис с новым заказом
-   * @param src {Object}
-   * @param src.clone {Boolean} - если указано, создаётся копия объекта, иначе - новый объект с аналогичными свойствами
-   * @return {Promise<DocCalc_order>}
-   */
   async clone(src) {
     const {utils, cat} = $p;
     if(utils.is_guid(src)) {
@@ -9234,7 +8517,6 @@ class DocCalc_orderManager extends DocManager {
     if(src.load_linked_refs) {
       await src.load_linked_refs();
     }
-    // создаём заказ
     const {clone, refill_props} = src;
     const {organization, partner, contract, _rev, ...others} = (src._obj || src);
     const tmp = {date: new Date(), organization, partner, contract};
@@ -9251,10 +8533,8 @@ class DocCalc_orderManager extends DocManager {
       dst.extra_fields.load((src._obj || src).extra_fields);
     }
 
-    // заполняем продукцию и сохраненные эскизы
     const map = new Map();
 
-    // создаём характеристики и заполняем данными исходного заказа
     const src_ref = src.ref;
     src.production.forEach((row) => {
       const prow = Object.assign({}, row._obj || row);
@@ -9275,10 +8555,9 @@ class DocCalc_orderManager extends DocManager {
         }
         map.set(row.characteristic.ref, cx);
       }
-      dst.production.add(prow, true, null, true); // (attr = {}, silent, Constructor, raw)
+      dst.production.add(prow, true, null, true); 
     });
 
-    // обновляем leading_product
     dst.production.forEach((row) => {
       if(row.ordn) {
         const cx = map.get(row.ordn.ref);
@@ -9288,7 +8567,6 @@ class DocCalc_orderManager extends DocManager {
       }
     });
 
-    // пересчитываем
     if(!clone && dst.recalc) {
       await dst.recalc();
     }
@@ -9296,7 +8574,6 @@ class DocCalc_orderManager extends DocManager {
     return dst.save();
   }
 
-  // сворачивает в строку вместе с характеристиками и излучает событие
   export(ref) {
     if(!ref) {
       return this.emit_async('export_err', new Error('Пустой объект. Вероятно, не выбрана строка заказа'));
@@ -9318,7 +8595,6 @@ class DocCalc_orderManager extends DocManager {
       .catch((err) => this.emit_async('export_err', err));
   }
 
-  // излучает событие - нужен для совместимости с dhtmlx
   import() {
     this.emit_async('import_start');
   }
@@ -10295,15 +9571,6 @@ set power(v){this._setter('power',v)}
 $p.RepPlanningDataRow = RepPlanningDataRow;
 $p.rep.create('planning');
 
-/*
- * Подмешивается в конец init-файла
- *
- */
-
-/**
- * Абстрактная строка табчасти параметров
- * @class
- */
 class ParamsRow extends TabularSectionRow{
   get param(){
     return this._getter('param') || $p.cch.properties.get();
@@ -10322,28 +9589,16 @@ class ParamsRow extends TabularSectionRow{
   }
 }
 
-/**
- * Строка табчасти параметров с уточнением до элемента
- * @class
- */
 class ElmParamsRow extends ParamsRow{
   get elm(){return this._getter('elm')}
   set elm(v){this._setter('elm',v)}
 }
 
-/**
- * Строка табчасти параметров с признаком сокрытия
- * @class
- */
 class HideParamsRow extends ParamsRow{
   get hide(){return this._getter('hide')}
   set hide(v){this._setter('hide',v)}
 }
 
-/**
- * Строка табчасти параметров с признаками сокрытия и принудительной установки
- * @class
- */
 class HideForciblyParamsRow extends HideParamsRow{
   get forcibly(){return this._getter('forcibly')}
   set forcibly(v){this._setter('forcibly',v)}
@@ -10354,10 +9609,6 @@ class HideForciblyParamsRow extends HideParamsRow{
   }
 }
 
-/**
- * Строка табчасти отбора технологических справочников
- * @class
- */
 class SelectionParamsRow extends ElmParamsRow{
   get area(){return this._getter('area')}
   set area(v){this._setter('area',v)}
@@ -10369,10 +9620,6 @@ class SelectionParamsRow extends ElmParamsRow{
   set origin(v){this._setter('origin',v)}
 }
 
-/**
- * Строка табчасти допреквизитов
- * @class
- */
 class Extra_fieldsRow extends TabularSectionRow{
   get property(){return this._getter('property')}
   set property(v){this._setter('property',v)}
@@ -10390,10 +9637,6 @@ class Extra_fieldsRow extends TabularSectionRow{
   set txt_row(v){this._setter('txt_row',v)}
 }
 
-/**
- * Строка допреквизитов ключей параметров
- * @class
- */
 class CatParameters_keysParamsRow extends Extra_fieldsRow{
   get area(){return this._getter('area')}
   set area(v){this._setter('area',v)}
@@ -10403,10 +9646,6 @@ class CatParameters_keysParamsRow extends Extra_fieldsRow{
   set comparison_type(v){this._setter('comparison_type',v)}
 }
 
-/**
- * Строка табчасти назначения платежа
- * @class
- */
 class Payment_detailsRow extends TabularSectionRow{
   get cash_flow_article(){return this._getter('cash_flow_article')}
   set cash_flow_article(v){this._setter('cash_flow_article',v)}
@@ -10416,10 +9655,6 @@ class Payment_detailsRow extends TabularSectionRow{
   set amount(v){this._setter('amount',v)}
 }
 
-/**
- * Строка табчасти параметров формул
- * @class
- */
 class CatFormulasParamsRow extends ParamsRow{}
 
 class DpBuyers_orderProduct_paramsRow extends ElmParamsRow{
@@ -10524,9 +9759,23 @@ class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
   value_change(field, type, value) {
     const res = super.value_change(field, type, value);
     if(field === 'value' && res !== false) {
-      this.value = value;
-      const {insert_bind, characteristics} = $p.cat;
-      insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      const calc_order = this._owner._owner;
+      if(!calc_order.is_new()) {
+        const {iface, cat: {insert_bind, characteristics}} = $p;
+        if(iface) {
+          Promise.resolve()
+            .then(() => {
+              return insert_bind.deposit({ox: {calc_order, _manager: characteristics}, order: true});
+            })
+            .then(() => {
+              const amount = {
+                doc_amount: calc_order.doc_amount,
+                amount_internal: calc_order.amount_internal,
+              }
+              calc_order._manager.emit_async('update', calc_order, amount);
+            });
+        }
+      }
     }
     return res;
   }
@@ -10642,32 +9891,20 @@ Object.assign($p, {
 });
 
 
-/**
- * @typedef FrameRole {'aperture'|'child'|'parent'|'plane'|'none'}
- */
-
-/**
- * @summary 3D фрейм текущего изделия
- * @desc может быть плоскостью с положением и ориентацией, проёмом или каркасом вложенного изделия
- */
 class ProductFrame {
   constructor(owner) {
     this._ = {owner};
   }
-  
-  get raw() {
+
+    get raw() {
     return this._.owner.extra.frame || {};
   }
-  
-  set(props) {
+
+    set(props) {
     const frame = Object.assign(this.raw, props);
     this._.owner.extra = {frame};
   }
 
-  /**
-   * @summary Роль текущего фрейма
-   * @type {FrameRole}
-   */
   get role() {
     return this.raw.role || 'none';
   }
@@ -10675,35 +9912,18 @@ class ProductFrame {
     this.set({role})
   }
 
-  /**
-   * @summary Соседние фреймы
-   * @desc родительские изделия, проёмы и плоскости
-   * @type {Array}
-   */
   get others() {
     return this.raw.others || [];
   }
 
-  /**
-   * @summary 3D позиция плоскости
-   * @type {number[]}
-   */
   get position() {
     return this.raw.position || [0, 0, 0];
   }
 
-  /**
-   * @summary 3D поворот плоскости
-   * @type {number[]}
-   */
   get rotation() {
     return this.raw.rotation || [0, 0, 0];
   }
 
-  /**
-   * @summary Форма исходного проёма
-   * @type {paper.Path}
-   */
   get pathOuter() {
     if(!this._.pathOuter) {
       this._.pathOuter = new paper.Path({insert: false, pathData: this.raw.pathData});
@@ -10711,10 +9931,6 @@ class ProductFrame {
     return this._.pathOuter;
   }
 
-  /**
-   * @summary Форма проёма, на которую будет опираться изделие
-   * @type {paper.Path}
-   */
   get pathInner() {
     if(!this._.pathInner) {
       this._.pathInner = new paper.Path({insert: false, pathData: this.raw.pathData});

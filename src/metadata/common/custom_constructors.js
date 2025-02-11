@@ -228,9 +228,23 @@ class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
   value_change(field, type, value) {
     const res = super.value_change(field, type, value);
     if(field === 'value' && res !== false) {
-      this.value = value;
-      const {insert_bind, characteristics} = $p.cat;
-      insert_bind.deposit({ox: {calc_order: this._owner._owner, _manager: characteristics}, order: true});
+      const calc_order = this._owner._owner;
+      if(!calc_order.is_new()) {
+        const {iface, cat: {insert_bind, characteristics}} = $p;
+        if(iface) {
+          Promise.resolve()
+            .then(() => {
+              return insert_bind.deposit({ox: {calc_order, _manager: characteristics}, order: true});
+            })
+            .then(() => {
+              const amount = {
+                doc_amount: calc_order.doc_amount,
+                amount_internal: calc_order.amount_internal,
+              }
+              calc_order._manager.emit_async('update', calc_order, amount);
+            });
+        }
+      }
     }
     return res;
   }

@@ -9,9 +9,8 @@
 
 class GridCoordinates extends paper.Group {
 
-  constructor(attr) {
-    super(attr);
-    this.parent = this.project.l_dimensions;
+  constructor({parent, step, offset, angle, bind}) {
+    super({parent});
 
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
     const sel_color = new paper.Color(0.1, 0.4, 0, 0.9);
@@ -22,10 +21,10 @@ class GridCoordinates extends paper.Group {
       lines_color,
       points_color,
       sel_color,
-      step: attr.step,
-      offset: attr.offset,
-      angle: attr.angle,
-      bind: attr.bind,
+      step,
+      offset,
+      angle,
+      bind,
       line: new paper.Path({
         parent: this,
         strokeColor: new paper.Color(0, 0, 0.7),

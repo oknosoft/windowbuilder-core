@@ -13,19 +13,28 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
     const {CoefficientsMap} = this.constructor;
     const {branch, partner} = calc_order_row._owner._owner;
     const res = new CoefficientsMap();
-    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
+    const {job_prm} = $p;
+    res.price_groups = job_prm.pricing.displacing_price_group || [];
     let source;
     this.find_rows({kind, is_buyer: partner.abc}, obj => {
-      if(!source) {
+      if(obj.owner instanceof CatAbonents && obj.extra_charge.count()) {
         source = obj;
-      }
-      else if(!branch.empty() && branch._hierarchy(obj.owner)){
-        if(branch === obj.owner || obj.owner._hierarchy(source.owner)) {
-          source = obj;
-        }
+        return false;
       }
     });
-    for(const row of source?.extra_charge) {
+    if(!branch.empty()) {
+      this.find_rows({kind, is_buyer: partner.abc}, obj => {
+        if(branch._hierarchy(obj.owner) && obj.extra_charge.count()){
+          if(source.owner instanceof CatAbonents || obj.owner._hierarchy(source.owner)) {
+            source = obj;
+          }
+          if(branch === obj.owner) {
+            return false;
+          }
+        }
+      });
+    }
+    for(const row of (source?.extra_charge || [])) {
       if(row.period > date) {
         continue;
       }
@@ -40,7 +49,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
     replenish(obj, ox) {
       for(const [key, value] of this) {
         // ищем по иерархии системы или фурнитуры и запоминаем
-        if(obj._hierarchy(key)) {
+        if(key && obj._hierarchy(key)) {
           // приоритет по равенству или прямому родителю
           if(obj === key) {
             this.set(obj, value);
@@ -51,7 +60,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
           }
         }
       }
-      if(!this.has(obj) && ox && obj instanceof CatProduction_params) {
+      if(!this.has(obj) && ox) {
         const pl = ox.owner.nom_group;
         if(!pl.empty()) {
           this.replenish(pl);
