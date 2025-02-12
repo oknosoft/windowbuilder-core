@@ -66,6 +66,7 @@ $p.enm.create('lead_types');
 $p.enm.create('nom_types');
 $p.enm.create('cutting_optimization_types');
 $p.enm.create('open_types');
+$p.enm.create('surface_kind');
 $p.enm.create('sz_line_types');
 $p.enm.create('cnn_types');
 $p.enm.create('specification_order_row_types');
@@ -4453,6 +4454,8 @@ get clr_in(){return this._getter('clr_in')}
 set clr_in(v){this._setter('clr_in',v)}
 get grouping(){return this._getter('grouping')}
 set grouping(v){this._setter('grouping',v)}
+get surface(){return this._getter('surface')}
+set surface(v){this._setter('surface',v)}
 get area_src(){return this._getter('area_src')}
 set area_src(v){this._setter('area_src',v)}
 get predefined_name(){return this._getter('predefined_name')}
