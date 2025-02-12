@@ -1,4 +1,5 @@
 import paper from 'paper/dist/paper-core';
+import {ProfileNodeParams} from './BuilderParams';
 
 /**
  * @typedef IOPaths
@@ -33,6 +34,7 @@ export class CnnPoint {
       outer: new paper.Path({insert: false}),
       pts: Object.assign({}, clear),
     });
+    this.params = new ProfileNodeParams(this);
   }
   
   reset() {

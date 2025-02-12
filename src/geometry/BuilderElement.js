@@ -37,7 +37,7 @@ export class BuilderElement extends paper.Group {
       inset = this.root.cat.inserts.get(inset);
     }
     this.#raw.inset = inset;
-    this.params = new ElementParams(this)
+    this.params = new ElementParams(this);
   }
 
   /**

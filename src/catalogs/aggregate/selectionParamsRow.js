@@ -74,6 +74,26 @@ export default function selectionParamsRow({classes, md, enm, cat, get, set}) {
       set value(v){this[set]('value',v)}
       get txt_row(){return this[get]('txt_row')}
       set txt_row(v){this[set]('txt_row',v)}
+
+      /**
+       * @summary Проверяет условие в строке отбора
+       * @param {BuilderElement} [elm]
+       * @param {BuilderElement} [elm2]
+       * @param {String} [node]
+       * @param {String} [node2]
+       * @param {Contour} [layer] - для случая, когда не указан элемент
+       * @param {Scheme} [project] - для случая, когда не указан слой
+       * @param {DocCalcOrder} [order] - для случая, когда не указаны элемент, слой и проект
+       */
+      checkCondition({elm, elm2, node, node2, layer, project, order, ...other}) {
+        const {param, origin} = this;
+        let src = origin.is('nearest') ? (node2 || elm2) : (node || elm);
+        if(!src) {
+          src = layer || project || order;
+        }
+        const left = src.params.get(param);
+        return true;
+      }
       
     }
     RowConstructor = SelectionParamsRow;

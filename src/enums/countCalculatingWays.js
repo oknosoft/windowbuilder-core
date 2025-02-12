@@ -18,6 +18,10 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
       specRow.nom = nom;
       return specRow;
     },
+
+    cnn(attr) {
+      return methods.element.call(this, attr);
+    },
     
     coloring() {
       

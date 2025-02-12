@@ -68,7 +68,11 @@ export class ElementParams extends BuilderParams {
  * @summary Параметры узла профиля 
  */
 export class ProfileNodeParams extends BuilderParams {
-
+  context(origin) {
+    const node = this[own];
+    const elm = node.owner;
+    return {elm, layer: elm.layer, node, origin};
+  }
 }
 
 /**

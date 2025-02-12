@@ -31,7 +31,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
 
       paramsRows() {
         const {elm} = this;
-        return this[own][own].selection_params.filter((row) => row.elm === elm);
+        return this[own][own].selection_params.filter((row) => row.elm === elm && !row.origin.is('algorithm'));
       }
 
       checkParams(attr) {
@@ -57,7 +57,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
             }
 
             // выполнение условия рассчитывает объект CchProperties
-            grp_ok = prm_row.param.checkCondition({row_spec: this, prm_row, ...attr});
+            grp_ok = prm_row.checkCondition(attr);
             // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
             if (!grp_ok) {
               break;
