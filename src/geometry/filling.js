@@ -1288,11 +1288,15 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   _thickness(elm) {
-    let res = 0;
-    elm.ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
-      res += inset.thickness(elm);
-    });
-    return res || this.target.thickness(elm);
+    const {_attr} = elm;
+    if(!_attr.thickness) {
+      let res = 0;
+      elm.ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+        res += inset.thickness(elm);
+      });
+      _attr.thickness = res || this.target.thickness(elm);
+    }
+    return _attr.thickness;
   }
 
   /**

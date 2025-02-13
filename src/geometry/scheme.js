@@ -906,7 +906,11 @@ class Scheme extends paper.Project {
    */
   register_change(with_update, deffer) {
 
-    const {_attr, _ch, _deffer} = this;
+    const {_attr, _ch, _deffer, glasses} = this;
+
+    for(const {_attr} of glasses) {
+      _attr.thickness = 0;
+    }
 
     if(!_attr._loading) {
 
