@@ -7261,11 +7261,15 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.set_inset(v);
   }
   _thickness(elm) {
-    let res = 0;
-    elm.ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
-      res += inset.thickness(elm);
-    });
-    return res || this.target.thickness(elm);
+    const {_attr} = elm;
+    if(!_attr.thickness) {
+      let res = 0;
+      elm.ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+        res += inset.thickness(elm);
+      });
+      _attr.thickness = res || this.target.thickness(elm);
+    }
+    return _attr.thickness;
   }
   region(row) {
     const {utils, cch} = $p;
@@ -13778,7 +13782,10 @@ class Scheme extends paper.Project {
     }
   }
   register_change(with_update, deffer) {
-    const {_attr, _ch, _deffer} = this;
+    const {_attr, _ch, _deffer, glasses} = this;
+    for(const {_attr} of glasses) {
+      _attr.thickness = 0;
+    }
     if(!_attr._loading) {
       _attr._bounds = null;
       this.getItems({class: Profile}).forEach((p) => {
@@ -16275,11 +16282,11 @@ class ProductsBuilding {
     if(!row_spec) {
       if(row_base?.is_order_row === kit) {
         specify = ox || spec._owner;
-        row_spec = specify.calc_order.accessories().specification.add();
+        row_spec = specify.calc_order.accessories().specification.add({}, true);
         row_spec._quantity = specify.calc_order_row.quantity;
       }
       else {
-        row_spec = spec.add();
+        row_spec = spec.add({}, true);
       }      
     }
     row_spec.nom = nom || row_base.nom;
@@ -16434,14 +16441,14 @@ class ProductsBuilding {
     }
   }
   static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
-    const {qty, len, nom} = row_spec;
+    const {qty, len, nom, _obj} = row_spec;
     if(!qty) {
-      if(row_spec.dop >= 0) {
-        spec.del(row_spec.row - 1, true);
+      if(_obj.dop >= 0) {
+        spec.del(row_spec, true);
       }
       return;
     }
-    if(row_spec.totqty1 && row_spec.totqty) {
+    if(_obj.totqty1 && _obj.totqty) {
       return;
     }
     if(!angle_calc_method_next) {
@@ -16450,63 +16457,62 @@ class ProductsBuilding {
     if(angle_calc_method_prev && !nom.is_pieces) {
       const {Основной, СварнойШов, СоединениеПополам, Соединение, _90, _4590} = $p.enm.angle_calculating_ways;
       if(angle_calc_method_prev == Основной || angle_calc_method_prev == СварнойШов) {
-        row_spec.alp1 = row_coord.alp1;
+        _obj.alp1 = row_coord.alp1;
       }
       else if(angle_calc_method_prev == _90) {
-        row_spec.alp1 = 90;
+        _obj.alp1 = 90;
       }
       else if(angle_calc_method_prev == _4590) {
-        row_spec.alp1 = 45;
+        _obj.alp1 = 45;
       }
       else if(angle_calc_method_prev == СоединениеПополам) {
-        row_spec.alp1 = (alp1 || row_coord.alp1) / 2;
+        _obj.alp1 = (alp1 || row_coord.alp1) / 2;
       }
       else if(angle_calc_method_prev == Соединение) {
-        row_spec.alp1 = (alp1 || row_coord.alp1);
+        _obj.alp1 = (alp1 || row_coord.alp1);
       }
       if(angle_calc_method_next == Основной || angle_calc_method_next == СварнойШов) {
-        row_spec.alp2 = row_coord.alp2;
+        _obj.alp2 = row_coord.alp2;
       }
       else if(angle_calc_method_next == _90 || angle_calc_method_next == _4590) {
-        row_spec.alp2 = 90;
+        _obj.alp2 = 90;
       }
       else if(angle_calc_method_next == СоединениеПополам) {
-        row_spec.alp2 = (alp2 || row_coord.alp2) / 2;
+        _obj.alp2 = (alp2 || row_coord.alp2) / 2;
       }
       else if(angle_calc_method_next == Соединение) {
-        row_spec.alp2 = (alp2 || row_coord.alp2);
+        _obj.alp2 = (alp2 || row_coord.alp2);
       }
     }
     if(len) {
-      if(row_spec.width && !row_spec.s) {
-        row_spec.s = len * row_spec.width;
+      if(_obj.width && !_obj.s) {
+        _obj.s = len * _obj.width;
       }
     }
     else {
-      row_spec.s = 0;
+      _obj.s = 0;
     }
-    if(row_spec.s) {
-      row_spec.totqty = qty * row_spec.s;
+    if(_obj.s) {
+      _obj.totqty = qty * _obj.s;
     }
     else if(len) {
-      row_spec.totqty = qty * len;
+      _obj.totqty = qty * len;
     }
     else {
-      row_spec.totqty = qty;
+      _obj.totqty = qty;
     }
-    let {totqty, s, width} = row_spec;
+    let {totqty, s, width, _quantity} = row_spec;
     if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
       totqty = qty * len * width;
     }
-    row_spec.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
-    const {_quantity} = row_spec;
+    _obj.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
     if(_quantity) {
-      row_spec.qty *= _quantity;
-      row_spec.totqty *= _quantity;
-      row_spec.totqty1 *= _quantity;
+      _obj.qty *= _quantity;
+      _obj.totqty *= _quantity;
+      _obj.totqty1 *= _quantity;
     }
-    ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => row_spec[fld] = row_spec[fld].round(4));
-    ['totqty', 'totqty1'].forEach((fld) => row_spec[fld] = row_spec[fld].round(6));
+    ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => _obj[fld] = _obj[fld]?.round(4) || 0);
+    ['totqty', 'totqty1'].forEach((fld) => _obj[fld] = _obj[fld]?.round(6) || 0);
   }
 }
 ProductsBuilding.cnn_nodes = ['b', 'e', 't', ''];
