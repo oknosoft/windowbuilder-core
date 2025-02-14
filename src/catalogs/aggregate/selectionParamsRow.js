@@ -91,6 +91,9 @@ export default function selectionParamsRow({classes, md, enm, cat, get, set}) {
         if(!src) {
           src = layer || project || order;
         }
+        if(param.hasOwnProperty('checkCondition')) {
+          return param.checkCondition(src.params.context(origin));
+        }
         const left = src.params.get(param);
         return true;
       }

@@ -5,7 +5,7 @@ export function predefined(root) {
   const {
     enm: {orientations, positions, elmTypes, comparisonTypes: ect, cnnSides},
     cch: {properties},
-    cat: {formulas, clrs, productionParams},
+    cat: {formulas, clrs, productionParams, nom},
     classes, utils, jobPrm} = root;
 
   // стандартная часть создания fake-формулы
@@ -13,9 +13,9 @@ export function predefined(root) {
     const prm = properties.predefined(name);
     if(prm) {
       // fake-формула
-      if(prm.calculated.empty()) {
+      //if(prm.calculated.empty()) {
         prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`});
-      }
+      //}
       const {_data} = prm.calculated;
       if(!_data._formula) {
         switch (name) {
@@ -436,6 +436,12 @@ export function predefined(root) {
               return branch && !branch.empty() ? branch : calc_order.manager.branch;
             };
             break;
+            
+          case 'row_nom':
+            _data._formula = function ({elm}) {
+              return elm?.nom || nom.get();
+            };
+            break;
 
           default:
             _data._formula = function () {};
@@ -475,7 +481,8 @@ export function predefined(root) {
     'rotation_axis',    // у слоя есть ось поворота
     'nearest_gl_thickness',// толщина примыкающего заполнения
     'nearest_gl_var',   // бит отличия толщин примыкающих заполнений
-    'nearest_flap_z',   // z-индекс примыкающей створки 
+    'nearest_flap_z',   // z-индекс примыкающей створки
+    'row_nom',          // номенклатура элемента
   ]) {
     formulate(name);
   }

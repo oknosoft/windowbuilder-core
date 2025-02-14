@@ -41,7 +41,11 @@ class BuilderParams extends OwnerObj {
  * @summary Параметры слоя
  */
 export class LayerParams extends BuilderParams {
-
+  context(origin) {
+    const layer = this[own];
+    const {project, furn, sys, layer: parent} = layer;
+    return {origin, layer, project};
+  }
 }
 
 /**
@@ -51,7 +55,7 @@ export class ElementParams extends BuilderParams {
   
   context(origin) {
     const elm = this[own];
-    return {elm, layer: elm.layer, origin};
+    return {...elm.layer.params.context(origin), elm};
   }
 
   /**
@@ -71,7 +75,7 @@ export class ProfileNodeParams extends BuilderParams {
   context(origin) {
     const node = this[own];
     const elm = node.owner;
-    return {elm, layer: elm.layer, node, origin};
+    return {...elm.params.context(origin), node};
   }
 }
 

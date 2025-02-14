@@ -5,6 +5,7 @@ import {Mover} from './graph/Mover';
 import {GeneratrixElement} from './GeneratrixElement';
 import {contourGroups} from './ContourGroups';
 import {Props3D} from './BuilderPropsThree';
+import {LayerParams} from './BuilderParams';
 
 export class Contour extends paper.Layer {
 
@@ -16,6 +17,7 @@ export class Contour extends paper.Layer {
     this.#raw.mover = new Mover(this);
     this.#raw.three = new Props3D({owner: this});
     contourGroups(this);
+    this.params = new LayerParams(this);
   }
 
   get _manager() {

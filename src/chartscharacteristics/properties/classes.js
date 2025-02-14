@@ -7,11 +7,6 @@ export function classes(root, exclude)  {
   const {cat, enm, classes, symbols, md} = root;
   const {CchProperties: CchObj, CchPropertiesManager: CchManager} = classes;
   const {get, set} = symbols;
-  
-  class CchPropertiesManager extends CchManager {
-
-  }
-  classes.CchPropertiesManager = CchPropertiesManager;
 
   class CchProperties extends CchObj {
 
@@ -31,22 +26,22 @@ export function classes(root, exclude)  {
       return true;
     }
 
-    contextValue({elm, elm2, node, node2, layer, inset, prm_row, ox, cnstr}) {
+    contextValue(obj) {
 
+      //const {elm, elm2, node, node2, layer, inset, prm_row, ox, cnstr} = obj;
       const {inheritance} = this;
       
       // для некоторых параметров, значения живут не в изделии, а в отделе абонента
       if(inheritance === 3) {
-        return this.branchValue({elm, layer, ox});
+        return this.branchValue(obj);
       }
-      else if(inheritance === 5) {
-        return this.templateValue({elm, layer, ox});
+      if(inheritance === 5) {
+        return this.templateValue(obj);
+      }
+      if(this.isCalculated) {
+        return this.calculatedValue(obj);
       }
       
-    }
-
-    calculatedValue() {
-
     }
 
     branchValue({elm, layer, ox}) {
