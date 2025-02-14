@@ -18334,7 +18334,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           angle_calc_method = own_angle_calc_method;
         }
         let row_spec;
-        if(![perim, steps, fillings].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
+        if(![perim, steps, fillings, spacer].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
