@@ -1233,7 +1233,7 @@ class ProductsBuilding {
       else {
         if(!nom.is_pieces) {
           row_spec.qty = row_base.quantity;
-          row_spec.len = (len - row_base.sz) * (row_base.coefficient || 0.001);
+          row_spec.len = (len - (row_base?.count_calc_method?.is('spacer') ? 0 : row_base.sz)) * (row_base.coefficient || 0.001);
           if(nom.rounding_quantity) {
             row_spec.qty = (row_spec.qty * row_spec.len).round(nom.rounding_quantity);
             row_spec.len = 0;

@@ -16414,7 +16414,7 @@ class ProductsBuilding {
       else {
         if(!nom.is_pieces) {
           row_spec.qty = row_base.quantity;
-          row_spec.len = (len - row_base.sz) * (row_base.coefficient || 0.001);
+          row_spec.len = (len - (row_base?.count_calc_method?.is('spacer') ? 0 : row_base.sz)) * (row_base.coefficient || 0.001);
           if(nom.rounding_quantity) {
             row_spec.qty = (row_spec.qty * row_spec.len).round(nom.rounding_quantity);
             row_spec.len = 0;
@@ -18314,6 +18314,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         cnns,
         fillings,
         coloring,
+        spacer,
       } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
       const {Основной, Соединение, СоединениеПополам} = enm.angle_calculating_ways;
@@ -18369,8 +18370,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(count_calc_method === area) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
           }
-          else if(count_calc_method === perim){
-            let {perimeter} = elm;
+          else if(count_calc_method === perim || count_calc_method === spacer){
+            let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_inner(-row_ins_spec.sz);
             if(!perimeter) {
               perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }
