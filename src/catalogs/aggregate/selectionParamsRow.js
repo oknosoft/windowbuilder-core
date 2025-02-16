@@ -1,7 +1,7 @@
 
 let RowConstructor;
 
-export default function selectionParamsRow({classes, md, enm, cat, get, set}) {
+export default function selectionParamsRow({classes, md, utils, enm, cat, get, set}) {
   if(!RowConstructor) {
     const {TabularSectionRow} = classes;
     class SelectionParamsRow extends TabularSectionRow {
@@ -19,7 +19,7 @@ export default function selectionParamsRow({classes, md, enm, cat, get, set}) {
         const {comparison_type, txt_row} = this;
         const value = this[get]('value');
 
-        const {comparison_types: ct} = enm;
+        const {cmpTypes: ct} = enm;
 
         switch (comparison_type) {
 
@@ -36,7 +36,7 @@ export default function selectionParamsRow({classes, md, enm, cat, get, set}) {
             }
             try {
               const arr = JSON.parse(txt_row);
-              const {types, isRef} = this.type;
+              const {types, isRef} = this.param.type;
               if(types && isRef && arr.length) {
                 let mgr;
                 for(const type of types) {
@@ -92,10 +92,10 @@ export default function selectionParamsRow({classes, md, enm, cat, get, set}) {
           src = layer || project || order;
         }
         if(param.hasOwnProperty('checkCondition')) {
-          return param.checkCondition(src.params.context(origin));
+          return param.checkCondition({prm_row: this, ...src.params.context(origin)});
         }
         const left = src.params.get(param);
-        return true;
+        return utils.checkCompare(left, this.value, this.comparison_type, enm.cmpTypes);
       }
       
     }

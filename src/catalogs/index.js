@@ -8,6 +8,7 @@ import {classes as furnsClasses, meta as furns, exclude as furnsExclude} from '.
 import {classes as productionParamsClasses, meta as productionParams, exclude as productionParamsExclude} from './productionParams';
 import {classes as specificationsClasses, meta as specifications} from './specifications';
 import {classes as clrsClasses, meta as clrs, exclude as clrsExclude} from './clrs';
+import {classes as clrGroupsClasses, meta as colorPriceGroups, exclude as clrGroupsExclude} from './colorPriceGroups';
 
 export const meta = {
   currencies: {
@@ -612,6 +613,7 @@ export const meta = {
     id: "uc",
   },
   clrs,
+  colorPriceGroups,
 };
 
 export const exclude = [
@@ -622,7 +624,8 @@ export const exclude = [
   ...cnnsExclude,
   ...furnsExclude,
   ...productionParamsExclude,
-  ...clrsExclude
+  ...clrsExclude,
+  ...clrGroupsExclude,
 ];
 
 export const classes = [
@@ -635,4 +638,5 @@ export const classes = [
   productionParamsClasses,
   specificationsClasses,
   clrsClasses,
+  clrGroupsClasses,
 ];

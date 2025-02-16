@@ -4,7 +4,7 @@ import depositeSpecificationRow from '../aggregate/depositeSpecificationRow';
 // если класс не включён в exclude, заготовки конструкторов система создаст автоматически
 export const exclude = ['cat.cnns'];
 
-export function classes({cat, enm, classes, symbols}, exclude)  {
+export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
 
   const {get, set, own} = symbols;
   const {CatObj, CatManager, TabularSectionRow} = classes;
@@ -222,7 +222,7 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
   }
   classes.CatCnnsPrioritiesRow = CatCnnsPrioritiesRow;
 
-  const SelectionParamsRow = selectionParamsRow({TabularSectionRow, get, set});
+  const SelectionParamsRow = selectionParamsRow({classes, md, utils, enm, cat, get, set});
   class CatCnnsSelectionParamsRow extends SelectionParamsRow {}
   classes.CatCnnsSelectionParamsRow = CatCnnsSelectionParamsRow;
 

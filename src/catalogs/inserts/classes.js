@@ -3,7 +3,7 @@ import depositeSpecificationRow from '../aggregate/depositeSpecificationRow';
 
 export const exclude = ['cat.inserts'];
 
-export function classes({cat, classes, symbols}, exclude)  {
+export function classes({classes, md, utils, symbols, enm, cat}, exclude)  {
 
   const {get, set, own} = symbols;
   const {CatObj, CatManager, TabularSectionRow} = classes;
@@ -178,7 +178,7 @@ return filtered.length ? filtered : [main_rows[0]];
   }
   classes.CatInsertsProductParamsRow = CatInsertsProductParamsRow;
 
-  const SelectionParamsRow = selectionParamsRow({classes, get, set});
+  const SelectionParamsRow = selectionParamsRow({classes, md, utils, enm, cat, get, set});
   class CatInsertsSelectionParamsRow extends SelectionParamsRow {}
   classes.CatInsertsSelectionParamsRow = CatInsertsSelectionParamsRow;
   
