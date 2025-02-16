@@ -1148,7 +1148,7 @@ class Scheme extends paper.Project {
     const other = [];
     const layers = [];
     const profiles = new Set();
-    const selected = new Set();
+    let selected = new Set();
     const nearests = new Map();
     const {auto_align, _dp} = this;
 
@@ -1187,7 +1187,26 @@ class Scheme extends paper.Project {
       }
     }
 
-    const {Импост} = $p.enm.elm_types;
+    const {impost} = $p.enm.elm_types;
+    if(!all_points) {
+      selected = Array.from(selected).sort((a, b) => {
+        const afs = a.segments.every((segm) => segm.selected);
+        const bfs = b.segments.every((segm) => segm.selected);
+        if(afs && !bfs) {
+          return -1;
+        }
+        if(!afs && bfs) {
+          return 1;
+        }
+        if(a.parent.elm_type === impost && b.parent.elm_type !== impost) {
+          return 1;
+        }
+        if(a.parent.elm_type !== impost && b.parent.elm_type === impost) {
+          return -1;
+        }
+        return 0;
+      });
+    }
     for (const item of selected) {
       if(!item) {
         continue;
@@ -1210,7 +1229,7 @@ class Scheme extends paper.Project {
         else if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
 
           // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
-          if(auto_align && parent.elm_type === Импост && !parent.layer.layer && Math.abs(delta.x) > 1) {
+          if(auto_align && parent.elm_type === impost && !parent.layer.layer && Math.abs(delta.x) > 1) {
             continue;
           }
 
