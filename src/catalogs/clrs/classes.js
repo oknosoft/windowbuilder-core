@@ -85,6 +85,55 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
       }
       return clr;
     }
+
+    /**
+     * Признак составного
+     * @returns {boolean}
+     */
+    isComposite() {
+      const {clr_in, clr_out} = this;
+      return clr_in != clr_out && !(clr_in.empty() || clr_out.empty());
+    }
+
+    /**
+     * Возвращает стороны, на которых цвет
+     * @type {Object}
+     */
+    get sides() {
+      const res = {is_in: false, is_out: false};
+      if(!this.empty() && !this.predefined_name){
+        const {clr_in, clr_out} = this;
+        if(clr_in.empty() && clr_out.empty()){
+          res.is_in = res.is_out = true;
+        }
+        else{
+          if(!clr_in.empty() && !clr_in.predefined_name){
+            res.is_in = true;
+          }
+          if(!clr_out.empty() && !clr_out.predefined_name){
+            res.is_out = true;
+          }
+        }
+      }
+      return res;
+    }
+
+    /**
+     * Аналог метода `contains()` цветоценовых групп
+     * @param clr {CatClrs}
+     * @param [fake]
+     * @param [any] {Boolean}
+     * @return {Boolean}
+     */
+    contains(clr, fake, any) {
+      if(clr === this) {
+        return true;
+      }
+      else if (clr.isComposite() && any) {
+        return clr.clr_in === this || clr.clr_out === this;
+      }
+      return  false;
+    }
   }
 
   class CatClrsCompositionRow extends TabularSectionRow {
