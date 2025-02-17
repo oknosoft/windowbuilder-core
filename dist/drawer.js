@@ -19656,9 +19656,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      prm.fetch_value = utils.translit;
+      prm.fetch_value = job_prm.builder.mark_latin ? utils.translit : (v) => v;
     }
-  })('mark_latin');
+  })('builder/mark_latin');
 });
 class FakeLenAngl {
   constructor({len, inset}) {

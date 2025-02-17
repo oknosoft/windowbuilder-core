@@ -812,9 +812,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   // латиница в маркировке
   ((name) => {
     const prm = properties.predefined(name);
-    const {builder} = job_prm.nom;
     if(prm) {
-      prm.fetch_value = builder.mark_latin ? utils.translit : (v) => v;
+      prm.fetch_value = job_prm.builder.mark_latin ? utils.translit : (v) => v;
     }
   })('builder/mark_latin');
   
