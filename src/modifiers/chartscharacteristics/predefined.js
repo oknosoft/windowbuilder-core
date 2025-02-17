@@ -735,7 +735,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               is_rectangular: glrow.is_rectangular,
               is_sandwich: glrow.is_sandwich,
               weight: characteristic.elm_weight(leading_product && !leading_product.empty() && leading_elm ?
-                undefined : glrow.elm),
+                 glrow.elm : undefined),
               ref: characteristic.ref,
               elm: glrow.elm,
               specimen,
