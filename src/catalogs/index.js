@@ -9,6 +9,7 @@ import {classes as productionParamsClasses, meta as productionParams, exclude as
 import {classes as specificationsClasses, meta as specifications} from './specifications';
 import {classes as clrsClasses, meta as clrs, exclude as clrsExclude} from './clrs';
 import {classes as clrGroupsClasses, meta as colorPriceGroups, exclude as clrGroupsExclude} from './colorPriceGroups';
+import {classes as productsClasses, meta as products, exclude as productsExclude} from './products';
 
 export const meta = {
   currencies: {
@@ -614,6 +615,7 @@ export const meta = {
   },
   clrs,
   colorPriceGroups,
+  products,
 };
 
 export const exclude = [
@@ -626,6 +628,7 @@ export const exclude = [
   ...productionParamsExclude,
   ...clrsExclude,
   ...clrGroupsExclude,
+  ...productsExclude,
 ];
 
 export const classes = [
@@ -639,4 +642,5 @@ export const classes = [
   specificationsClasses,
   clrsClasses,
   clrGroupsClasses,
+  productsClasses,
 ];
