@@ -128,6 +128,20 @@ export class Scheme extends paper.Project {
     return this.rootLayer.children.profiles.getItem({selected: true, class: ProfileCut});
   }
   
+  get calcOrder() {
+    const {root} = this;
+    return root.doc.calcOrder.get();
+  }
+
+  get branch() {
+    const {calcOrder, root} = this;
+    return calcOrder.empty() ? root.jobPrm.branch : calcOrder.branch;
+  }
+  
+  get template() {
+    
+  }
+  
   clear() {
     const {contours, dimensions, rootLayer, props} = this;
     for(const contour of contours) {

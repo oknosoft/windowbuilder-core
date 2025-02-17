@@ -95,7 +95,7 @@ export default function selectionParamsRow({classes, md, utils, enm, cat, get, s
           return param.checkCondition({prm_row: this, ...src.params.context(origin)});
         }
         const left = src.params.get(param);
-        return utils.checkCompare(left, this.value, this.comparison_type, enm.cmpTypes);
+        return utils.checkCompare(left, this.value, this.comparison_type);
       }
       
     }

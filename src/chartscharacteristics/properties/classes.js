@@ -4,7 +4,7 @@ export const exclude = [/*'cch.properties'*/];
 
 export function classes(root, exclude)  {
     
-  const {cat, enm, classes, symbols, md} = root;
+  const {cat, enm, classes, symbols, md, jobPrm} = root;
   const {CchProperties: CchObj, CchPropertiesManager: CchManager} = classes;
   const {get, set} = symbols;
 
@@ -26,50 +26,20 @@ export function classes(root, exclude)  {
       return true;
     }
 
-    contextValue(obj) {
-
-      //const {elm, elm2, node, node2, layer, inset, prm_row, ox, cnstr} = obj;
-      const {inheritance} = this;
-      
-      // для некоторых параметров, значения живут не в изделии, а в отделе абонента
-      if(inheritance === 3) {
-        return this.branchValue(obj);
-      }
-      if(inheritance === 5) {
-        return this.templateValue(obj);
-      }
-      if(this.isCalculated) {
-        return this.calculatedValue(obj);
-      }
-      
-    }
-
-    branchValue({elm, layer, ox}) {
-      const project = elm?.project || layer?.project;
+    branchValue({project}) {
       let branch = project?.branch;
-      if(!branch && ox) {
-        branch = ox.calc_order?.organization?._extra?.('branch');
-        if(!branch || branch.empty()) {
-          branch = ox.calc_order?.manager?.branch;
+      if(!branch.empty()) {
+        const value = branch._extra(this);
+        if(value !== undefined) {
+          return value;
         }
+        branch = branch.parent;
       }
-      const value = branch?._extra(this);
-      if(value !== undefined) {
-        return value;
-      }
-      let brow;
-      if(ox?.params) {
-        const {blank} = this._manager.root.utils;
-        brow = ox.params.find({param: this, cnstr: layer?.cnstr, inset: blank.guid});
-        if(!brow && layer?.layer) {
-          return this.branchValue({elm, layer: layer.layer, ox});
-        }
-      }
-      return brow ? brow.value : this.type.fetchType();
+      return jobPrm.abonent.prmDefault(this);
     }
 
-    templateValue({project, ox}) {
-      
+    templateValue({project}) {
+      const {template} = project;
     }
     
   }
