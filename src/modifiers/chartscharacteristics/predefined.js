@@ -812,10 +812,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   // латиница в маркировке
   ((name) => {
     const prm = properties.predefined(name);
+    const {builder} = job_prm.nom;
     if(prm) {
-      prm.fetch_value = utils.translit;
+      prm.fetch_value = builder.mark_latin ? utils.translit : (v) => v;
     }
-  })('mark_latin');
+  })('builder/mark_latin');
   
 
 });

@@ -531,7 +531,7 @@ exports.CatClrs = class CatClrs extends Object {
 
   /**
    * Возвращает стороны, на которых цвет
-   * @return {Object}
+   * @type {Object}
    */
   get sides() {
     const res = {is_in: false, is_out: false};
