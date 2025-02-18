@@ -17,7 +17,6 @@ export const meta= {
   fields: {
     calc_order: {
       synonym: "Расчет",
-      multiline: false,
       tooltip: "",
       choiceGrp: "elm",
       type: {
@@ -28,7 +27,7 @@ export const meta= {
     },
     note: {
       synonym: "Комментарий",
-      multiline: false,
+      multiline: true,
       tooltip: "",
       type: {
         types: [
@@ -39,7 +38,6 @@ export const meta= {
     },
     obj_delivery_state: {
       synonym: "Этап согласования",
-      multiline: false,
       tooltip: "Для целей RLS",
       choiceParams: [
         {
@@ -62,18 +60,17 @@ export const meta= {
     },
     route: {
       synonym: "Отделы-получатели",
-      multiline: false,
+      multiline: true,
       tooltip: "Разделитель при частичной репликации до родителя",
       type: {
         types: [
           "string"
         ],
-        "strLen": 512
+        strLen: 512
       }
     },
     branch: {
       synonym: "Отдел",
-      multiline: false,
       tooltip: "Разделитель репликаций, идентификатор происхождения объекта",
       choiceGrp: "elm",
       type: {
@@ -85,7 +82,6 @@ export const meta= {
     },
     owner: {
       synonym: "",
-      multiline: false,
       tooltip: "",
       mandatory: true,
       type: {
@@ -103,7 +99,6 @@ export const meta= {
       fields: {
         kind: {
           synonym: "Вид",
-          multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
@@ -114,7 +109,6 @@ export const meta= {
         },
         obj: {
           synonym: "Объект",
-          multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
@@ -143,7 +137,6 @@ export const meta= {
       fields: {
         kind: {
           synonym: "Вид слоя",
-          multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
@@ -154,7 +147,6 @@ export const meta= {
         },
         region: {
           synonym: "Ряд",
-          multiline: false,
           tooltip: "Фильтр для дополнительных вставок\n0 - не ряд\n1 - ряд внутри элемента\n>1 - за элементом\n<0 - перед элементом",
           type: {
             types: [
@@ -166,7 +158,6 @@ export const meta= {
         },
         parent: {
           synonym: "Внешний слой",
-          multiline: false,
           tooltip: "Для вложенных - ссылка на родителя",
           type: {
             types: [
@@ -178,7 +169,6 @@ export const meta= {
         },
         address: {
           synonym: "Проем",
-          multiline: false,
           tooltip: "Для вложенных - указатель на проём",
           type: {
             types: [
@@ -189,7 +179,6 @@ export const meta= {
         },
         sys: {
           synonym: "Система",
-          multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
@@ -200,7 +189,6 @@ export const meta= {
         },
         inset: {
           synonym: "Вставка",
-          multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
@@ -211,7 +199,6 @@ export const meta= {
         },
         open_type: {
           synonym: "Тип открывания",
-          multiline: false,
           tooltip: "Свойство слоя, ограничивает фурнитуру",
           choiceGrp: "elm",
           type: {
@@ -222,7 +209,6 @@ export const meta= {
         },
         direction: {
           synonym: "Направл. откр.",
-          multiline: false,
           tooltip: "Направление открывания",
           choiceParams: [
             {
@@ -242,7 +228,6 @@ export const meta= {
         },
         furn: {
           synonym: "Фурнитура",
-          multiline: false,
           tooltip: "",
           choiceParams: [
             {
@@ -263,7 +248,6 @@ export const meta= {
         },
         params: {
           synonym: "Параметры слоя",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -275,7 +259,7 @@ export const meta= {
         },
         svg_path: {
           synonym: "Путь SVG",
-          multiline: false,
+          multiline: true,
           tooltip: "",
           type: {
             types: [
@@ -286,7 +270,6 @@ export const meta= {
         },
         children: {
           synonym: "Дети",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -298,7 +281,6 @@ export const meta= {
         },
         profiles: {
           synonym: "Профили",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -318,7 +300,6 @@ export const meta= {
       fields: {
         param: {
           synonym: "Параметр",
-          multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
@@ -421,125 +402,30 @@ export const meta= {
       synonym: "Профили",
       tooltip: "",
       fields: {
-        bv: {
-          synonym: "bv",
-          multiline: false,
+        b: {
+          synonym: "b",
           tooltip: "Узел в точке b",
           type: {
             types: [
-              "number"
-            ],
-            digits: 6,
-            fraction: 0
-          }
-        },
-        bx: {
-          synonym: "bx",
-          multiline: false,
-          tooltip: "",
-          type: {
-            types: [
-              "number"
-            ],
-            digits: 8,
-            fraction: 2
-          }
-        },
-        by: {
-          synonym: "by",
-          multiline: false,
-          tooltip: "",
-          type: {
-            types: [
-              "number"
-            ],
-            digits: 8,
-            fraction: 2
-          }
-        },
-        bcnn: {
-          synonym: "bcnn",
-          multiline: false,
-          tooltip: "Основное соединение в точке b",
-          choiceGrp: "elm",
-          type: {
-            types: [
-              "cat.cnns"
+              "json",
+              "struct"
             ]
-          }
+          },
+          proto: "cnnpoint"
         },
-        bcnno: {
-          synonym: "bcnno",
-          multiline: false,
-          tooltip: "Соединение с обюратной стороны в точке b (при наличии)",
-          choiceGrp: "elm",
+        e: {
+          synonym: "e",
+          tooltip: "Узел в точке b",
           type: {
             types: [
-              "cat.cnns"
+              "json",
+              "struct"
             ]
-          }
-        },
-        ev: {
-          synonym: "ev",
-          multiline: false,
-          tooltip: "Узел в точке e",
-          type: {
-            types: [
-              "number"
-            ],
-            digits: 6,
-            fraction: 0
-          }
-        },
-        ex: {
-          synonym: "ex",
-          multiline: false,
-          tooltip: "",
-          type: {
-            types: [
-              "number"
-            ],
-            digits: 8,
-            fraction: 2
-          }
-        },
-        ey: {
-          synonym: "ey",
-          multiline: false,
-          tooltip: "",
-          type: {
-            types: [
-              "number"
-            ],
-            digits: 8,
-            fraction: 2
-          }
-        },
-        ecnn: {
-          synonym: "ecnn",
-          multiline: false,
-          tooltip: "Основное соединение в точке e",
-          choiceGrp: "elm",
-          type: {
-            types: [
-              "cat.cnns"
-            ]
-          }
-        },
-        ecnno: {
-          synonym: "ecnno",
-          multiline: false,
-          tooltip: "Соединение с обюратной стороны в точке e (при наличии)",
-          choiceGrp: "elm",
-          type: {
-            types: [
-              "cat.cnns"
-            ]
-          }
+          },
+          proto: "cnnpoint"
         },
         offset: {
           synonym: "Смещение",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -551,7 +437,6 @@ export const meta= {
         },
         svg_path: {
           synonym: "Путь SVG",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -562,7 +447,6 @@ export const meta= {
         },
         params: {
           synonym: "Параметры профиля",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -574,7 +458,6 @@ export const meta= {
         },
         children: {
           synonym: "children",
-          multiline: false,
           tooltip: "",
           type: {
             types: [
@@ -583,6 +466,106 @@ export const meta= {
             ]
           },
           proto: "profiles"
+        }
+      }
+    },
+    vertex: {
+      name: "vertex",
+      virtual: true,
+      synonym: "Узел графа",
+      tooltip: "Описание типа сохраняемых данных узла графа",
+      fields: {
+        key: {
+          synonym: "Key",
+          tooltip: "",
+          type: {
+            types: [
+              "string"
+            ],
+            strLen: 4
+          }
+        },
+        cnnType: {
+          synonym: "cnnType",
+          tooltip: "",
+          choiceGrp: "elm",
+          type: {
+            types: [
+              "enm.cnn_types"
+            ]
+          }
+        },
+        x: {
+          synonym: "x",
+          tooltip: "",
+          type: {
+            types: [
+              "number"
+            ],
+            "digits": 8,
+            "fraction": 2
+          }
+        },
+        y: {
+          synonym: "y",
+          tooltip: "",
+          type: {
+            types: [
+              "number"
+            ],
+            "digits": 8,
+            "fraction": 2
+          }
+        },
+        params: {
+          synonym: "Параметры профиля",
+          tooltip: "",
+          type: {
+            types: [
+              "json",
+              "tabular"
+            ]
+          },
+          proto: "params"
+        }
+      }
+    },
+    cnnpoint: {
+      name: "cnnPoint",
+      virtual: true,
+      synonym: "Cnn point",
+      tooltip: "Описание типа сохраняемых данных cnnPoint",
+      fields: {
+        cnn: {
+          synonym: "cnn",
+          tooltip: "Основное концевое соединение",
+          choiceGrp: "elm",
+          type: {
+            types: [
+              "cat.cnns"
+            ]
+          }
+        },
+        cnno: {
+          synonym: "cnno",
+          tooltip: "Соединение с обюратной стороны (при наличии)",
+          choiceGrp: "elm",
+          type: {
+            types: [
+              "cat.cnns"
+            ]
+          }
+        },
+        vertex: {
+          synonym: "Узел",
+          tooltip: "",
+          type: {
+            types: [
+              "json",
+              "struct"
+            ]
+          },
+          proto: "vertex"
         }
       }
     }

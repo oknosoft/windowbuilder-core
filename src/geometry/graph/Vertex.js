@@ -57,9 +57,9 @@ export class GraphVertex {
   get cnnType() {
     let {_cnnType, root} = this;
     if(!_cnnType) {
-      const {cnnTypes} = this;
-      if(cnnTypes.length === 1) {
-        this._cnnType = _cnnType = cnnTypes[0];
+      const {avalableTypes} = this;
+      if(avalableTypes.length === 1) {
+        this._cnnType = _cnnType = avalableTypes[0];
       }
     }
     return root.enm.cnnTypes.get(_cnnType);
@@ -72,7 +72,7 @@ export class GraphVertex {
    * @summary Доступные типы соединений
    * @type {Array.<EnmCnnTypes>}
    */
-  get cnnTypes() {
+  get avalableTypes() {
     const {cnnPoints, root} = this;
     const {length} = cnnPoints;
     const types = [];
