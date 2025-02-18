@@ -3310,9 +3310,17 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         else {
           const {inset} = elm;
-          if(inset.insert_type.is('composite') && !ox.glass_specification.find({elm: elm.elm})) {
-            for(const row of inset.specification) {
-              row.quantity && ox.glass_specification.add({elm: elm.elm, inset: row.nom});
+          if(inset.insert_type.is('composite')) {
+            const composite_rows = ox.glass_specification.find_rows({elm: elm.elm});
+            if(composite_rows.length) {
+              for(const {_row} of composite_rows) {
+                _row.default_params(elm);
+              }
+            }
+            else {
+              for(const row of inset.specification) {
+                row.quantity && ox.glass_specification.add({elm: elm.elm, inset: row.nom});
+              }
             }
           }
         }

@@ -7062,6 +7062,10 @@ set stage(v){this._setter('stage',v)}
 $p.CatProduction_kindsStagesRow = CatProduction_kindsStagesRow;
 $p.cat.create('production_kinds');
 class CatValues_options extends CatObj{
+get captured(){return this._getter('captured')}
+set captured(v){this._setter('captured',v)}
+get editor(){return this._getter('editor')}
+set editor(v){this._setter('editor',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get values(){return this._getter_ts('values')}
