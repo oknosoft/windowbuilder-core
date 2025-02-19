@@ -16,7 +16,7 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
     a: new Map(),
     ii: new Map(),
     byCnnPoint(cnnPoint, elm2) {
-      const {owner: elm1, isT, isI} = cnnPoint;
+      const {owner: elm1, isT, isI, vertex: {cnnType}} = cnnPoint;
       const kind = isT ? 't' : (isI ? 'i' : 'a');
       const cache = this[kind];
       let nom1 = elm1.nom;
@@ -37,7 +37,11 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
           c1.set(nom2, cat.cnns.byNoms(nom1, nom2, enm.cnnTypes.acn[kind]));
         }
       }
-      return {elm1, kind, cnns: c1?.get(nom2) || []};
+      let cnns = c1?.get(nom2) || [];
+      if(!cnnType.empty()) {
+        cnns = cnns.filter(cnn => cnn.cnn_type === cnnType);
+      }
+      return {elm1, kind, cnns};
     },
     clear() {
       for(const fld of 'i,t,a,ii'.split(',')) {

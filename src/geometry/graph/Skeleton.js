@@ -265,9 +265,15 @@ export class Skeleton extends Graph {
     // }
   }
 
-  addProfiles(profiles) {
+  addProfiles(profiles, cnnTypes) {
     for(const profile of profiles) {
       this.addProfile(profile);
+    }
+    for(const key in cnnTypes) {
+      const vertex = this.getVertexByKey(key);
+      if(vertex) {
+        vertex.cnnType = cnnTypes[key];
+      }
     }
     for(const profile of profiles) {
       profile.defaults();
