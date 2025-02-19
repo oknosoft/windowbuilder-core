@@ -39,7 +39,17 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
       }
       let cnns = c1?.get(nom2) || [];
       if(!cnnType.empty()) {
-        cnns = cnns.filter(cnn => cnn.cnn_type === cnnType);
+        const {av, ah, long, short} = enm.cnnTypes;
+        const {orientation} = elm1;
+        cnns = cnns.filter(cnn => {
+          if(cnnType === av && (orientation.is('hor') && cnn.cnn_type === short || orientation.is('vert') && cnn.cnn_type === long)) {
+            return true;
+          }
+          if(cnnType === ah && (orientation.is('hor') && cnn.cnn_type === long || orientation.is('vert') && cnn.cnn_type === short)) {
+            return true;
+          }
+          return cnn.cnn_type === cnnType;
+        });
       }
       return {elm1, kind, cnns};
     },
