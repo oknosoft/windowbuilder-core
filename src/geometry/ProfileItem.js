@@ -26,10 +26,10 @@ export class Profile extends GeneratrixElement {
   checkErr() {
     const {b, e, rawLength, nom, specification} = this;
     let error = b.checkErr({rawLength, specification});
-    error = e.checkErr({rawLength, specification}) || error;
+    error = error || e.checkErr({rawLength, specification});
     if(nom.empty()) {
       const row = specification.specRow({elm: this});
-      row.nom = owner.project.root.cat.nom.predefined('cnn_node_error');
+      row.nom = this.project.root.cat.nom.predefined('cnn_node_error');
     }
     return {b, e, rawLength, nom, specification, error};
   }
@@ -39,7 +39,7 @@ export class Profile extends GeneratrixElement {
    */
   calculateSpec() {
     // уточняем длину с учётом соединений
-    const {clr, layer, inset, angleHor} = this;
+    const {clr, layer, inset, angleHor, segms, project} = this;
     if(clr.is('ignored')) {
       return;
     }
@@ -47,13 +47,30 @@ export class Profile extends GeneratrixElement {
     if(error) {
       return;
     }
-    // вклад концевых соединений
-    const props = {elm: this, layer, rawLength, angleHor, nom, specification}
-    for(const node of [b, e]) {
-      node.cnn.calculateSpec({...props, elm2: node.profile, node});
+    if(segms?.length) {
+      // если профиль разбит на связки, добавляем их спецификации, вместо спецификации самого профиля
+      for(const segment of segms) {
+        segment.calculateSpec();
+      }
     }
-    // вклад вставки
-    inset.calculateSpec(props);
+    else {
+      // основной материал
+      const other = {elm: this, layer, nom};
+      const rowCnnPrev = b.cnn?.mainRow({...other, node: b});
+      const rowRnnNext = e.cnn?.mainRow({...other, node: e});
+      const specRow = specification.specRow(other);
+      specRow.nom = nom;
+      specRow.clr = clr;
+      specRow.len = this.length;
+
+      // вклад концевых соединений
+      const props = {elm: this, layer, rawLength, angleHor, nom, specification}
+      for(const node of [b, e]) {
+        node.cnn.calculateSpec({...props, elm2: node.profile, node});
+      }
+      // вклад вставки
+      inset.calculateSpec(props); 
+    }
     // вклад допвставок
     //
     // спецификация подчинённых элементов

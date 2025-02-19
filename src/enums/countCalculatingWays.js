@@ -46,7 +46,7 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
 
   class EnmCountCalculatingWays extends EnumObj {
     calculate({specification, basis, stack, ...other}) {
-      (methods[this.latin] || methods.not_found).call(this, {specification, basis, stack, ...other});
+      return (methods[this.latin] || methods.not_found).call(this, {specification, basis, stack, ...other});
     }
   }
   classes.EnmCountCalculatingWays = EnmCountCalculatingWays;

@@ -163,6 +163,32 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
       return 'nom';
     }
 
+    mainRow({elm, nom, node}) {
+      const {art1, art2} = cat.nom.index.predefined;
+      const rows = {
+        art1: [],
+        art2: [],
+        nom: [],
+      };
+      for(const row of this.specification) {
+        const rnom = row.nom;
+        if(rnom === art1) {
+          rows.art1.push(row);
+        }
+        else if(rnom === art2) {
+          rows.art2.push(row);
+        }
+        else if(rnom === nom) {
+          rows.nom.push(row);
+        }
+      }
+      for(const row of rows.art1.concat(rows.nom).concat(rows.art2)) {
+        if(row.checkParams({elm, node})) {
+          return row;
+        }
+      }
+    }
+
     /**
      * Параметрический размер соединения
      * @param {BuilderElement} elm1 - Элемент, через который будем добираться до значений параметров
@@ -293,7 +319,7 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
       }
 
       // только для прямых или только для кривых профилей
-      if((direct_only > 0 && !elm.is_linear()) || (direct_only < 0 && elm.is_linear())) {
+      if((direct_only > 0 && !elm.isLinear()) || (direct_only < 0 && elm.isLinear())) {
         return;
       }
       return true;
