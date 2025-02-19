@@ -6300,7 +6300,8 @@ set demand(v){this._setter_ts('demand',v)}
     return is_nom ? cat.characteristics.get(row && row.value) : row && row.value;
   }
 
-  elm_weight(elmno) {
+  elm_weight(elmno, context = {}) {
+    const {elm, contour} = context;
     const {coordinates, specification} = this;
     const map = new Map();
     const isArray = Array.isArray(elmno);
@@ -6326,10 +6327,9 @@ set demand(v){this._setter_ts('demand',v)}
       weight += nom.density * totqty;
     });
     if(!isArray && elmno < 0) {
-      const contour = {cnstr: -elmno};
-      coordinates.find_rows(contour, ({elm, inset}) => {
-        if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {
-          const cx = this.find_create_cx(elm, $p.utils.blank.guid, false);
+      coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
+        if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
+          const cx = this.find_create_cx({elm: num}, $p.utils.blank.guid, false);
           weight += cx.elm_weight();
         }
       });
