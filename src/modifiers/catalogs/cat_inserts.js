@@ -516,7 +516,7 @@
     }
 
     /**
-     * Выясняет, надо ли вытягивать данную вставку в продукцию
+     * @summary Выясняет, надо ли вытягивать данную вставку в продукцию
      *
      * @example
      * // Пример формулы:
@@ -525,15 +525,15 @@
      *  contour = elm.layer;
      * }
      * const {specification_order_row_types: types} = $p.enm;
-     * return contour ? types.Продукция : types.Нет;
+     * return contour ? types.prod : types.no;
      *
-     * @param ox {CatCharacteristics}
-     * @param elm {BuilderElement}
-     * @param [contour] {Contour}
+     * @param {CatCharacteristics} ox
+     * @param {BuilderElement} [elm]
+     * @param {Contour} [contour]
      * @return {Boolean}
      */
     is_order_row_prod({ox, elm, contour}) {
-      const {Продукция} = enm.specification_order_row_types;
+      const {prod} = enm.specification_order_row_types;
       const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
 
@@ -549,11 +549,11 @@
         const param = cch.properties.predefined('glass_separately');
         param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
-            is_order_row = value ? Продукция : '';
+            is_order_row = value ? prod : '';
             return false;
           }
           if(!cnstr || (contour && cnstr === contour.cnstr)) {
-            is_order_row = value ? Продукция : '';
+            is_order_row = value ? prod : '';
           }
         });
       }
@@ -561,7 +561,7 @@
       if(is_order_row instanceof CatFormulas) {
         is_order_row = is_order_row.execute({ox, elm, contour});
       }
-      return is_order_row === Продукция;
+      return is_order_row === prod;
     }
 
     /**

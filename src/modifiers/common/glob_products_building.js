@@ -249,7 +249,7 @@ class ProductsBuilding {
         angle_calculating_ways,
         cnn_types,
         predefined_formulas: {w2},
-        specification_order_row_types: {Продукция},
+        specification_order_row_types: {prod},
       }, cat, utils: {blank}} = $p;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -266,7 +266,7 @@ class ProductsBuilding {
       // во время расчетов возможна подмена объекта спецификации
       const spec_tmp0 = spec;
       if(inset.is_order_row_prod({ox, elm})) {
-        const prow = inset.specification.find({quantity: 0, is_order_row: Продукция});
+        const prow = inset.specification.find({quantity: 0, is_order_row: prod});
         const nom = prow ? prow.nom : elm.nom;
         const attrs = {
           calc_order: ox.calc_order,

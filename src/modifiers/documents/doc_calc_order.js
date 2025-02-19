@@ -1420,7 +1420,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           elm.project = {ox};
           elm.fake_origin = row_spec.inset;
 
-          ox.owner = row_spec.inset.nom(elm);
+          ox.owner = row_spec.inset.nom(elm, true);
           ox.origin = row_spec.inset;
           ox.x = row_spec.len;
           ox.y = row_spec.height;

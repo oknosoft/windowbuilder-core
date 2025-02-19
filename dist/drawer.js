@@ -993,7 +993,7 @@ class BuilderElement extends paper.Group {
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
       ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
     }
-    return ox.elm_weight(elm);
+    return ox.elm_weight(elm, {elm: this, contour: layer});
   }
   get cnn3(){
     const cnn_ii = this.selected_cnn_ii();
@@ -2081,7 +2081,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   get weight() {
     const {_ox, cnstr} = this;
-    return _ox.elm_weight(-cnstr);
+    return _ox.elm_weight(-cnstr, {contour: this});
   }
   thickness(withChildren) {
     const {contours, profiles} = this;
@@ -15715,7 +15715,7 @@ class ProductsBuilding {
         angle_calculating_ways,
         cnn_types,
         predefined_formulas: {w2},
-        specification_order_row_types: {Продукция},
+        specification_order_row_types: {prod},
       }, cat, utils: {blank}} = $p;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
@@ -15729,7 +15729,7 @@ class ProductsBuilding {
       };
       const spec_tmp0 = spec;
       if(inset.is_order_row_prod({ox, elm})) {
-        const prow = inset.specification.find({quantity: 0, is_order_row: Продукция});
+        const prow = inset.specification.find({quantity: 0, is_order_row: prod});
         const nom = prow ? prow.nom : elm.nom;
         const attrs = {
           calc_order: ox.calc_order,
@@ -17358,13 +17358,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           const contours = contour.layer ? contour.layer.contours : [contour];
           for(const cnt of contours) {
             if(cnt === contour || !cnt.furn.open_type.is('Неподвижное')) {
-              weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+              weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr, {contour})));
             }
           }
           cache.weight = Math.max(...weights);
         }
         else {
-          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
+          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr, {contour}));
         }
       }
       if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {
@@ -17854,7 +17854,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
     }
     is_order_row_prod({ox, elm, contour}) {
-      const {Продукция} = enm.specification_order_row_types;
+      const {prod} = enm.specification_order_row_types;
       const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
       if(_types_filling.includes(insert_type)) {
@@ -17867,18 +17867,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         const param = cch.properties.predefined('glass_separately');
         param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
-            is_order_row = value ? Продукция : '';
+            is_order_row = value ? prod : '';
             return false;
           }
           if(!cnstr || (contour && cnstr === contour.cnstr)) {
-            is_order_row = value ? Продукция : '';
+            is_order_row = value ? prod : '';
           }
         });
       }
       if(is_order_row instanceof CatFormulas) {
         is_order_row = is_order_row.execute({ox, elm, contour});
       }
-      return is_order_row === Продукция;
+      return is_order_row === prod;
     }
     nom(elm, strict) {
       const {_data} = this;
@@ -19048,7 +19048,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             const {elm, prm_row, ox} = obj || {};
             let weight = elm.weight || 0;
             if(!weight && prm_row.origin.is('product') && ox) {
-              weight = ox.elm_weight();
+              weight = ox.elm_weight(undefined, {elm});
             }
             return weight;
           };
@@ -19066,7 +19066,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               const contours = (layer.layer && layer.sys.flap_weight_max) ? layer.layer.contours : [layer]; 
               for(const cnt of contours) {
                 if(cnt === layer || !cnt.furn.open_type.is('Неподвижное')) {
-                  weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));
+                  weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr, {elm, contour: layer})));
                 }
               }
               return Math.max(...weights);
@@ -19081,7 +19081,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(elm?.orientation?.is('hor')) {
               const {top} = elm.nearest_glasses;
               if(top?.length) {
-                weight = (ox || elm.ox).elm_weight(top.map((glass) => glass.elm));
+                weight = (ox || elm.ox).elm_weight(top.map((glass) => glass.elm), {elm});
               }
             }
             return weight;
@@ -19641,7 +19641,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               width: cx.x,
               height: cx.y,
               area: cx.s,
-              weight: cx.elm_weight(),
+              weight: cx.elm_weight(undefined, {elm}),
               specimen: parts[1],
               cnstr: parts[2],
             });
@@ -20809,7 +20809,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           elm.project = {ox};
           elm.fake_origin = row_spec.inset;
-          ox.owner = row_spec.inset.nom(elm);
+          ox.owner = row_spec.inset.nom(elm, true);
           ox.origin = row_spec.inset;
           ox.x = row_spec.len;
           ox.y = row_spec.height;

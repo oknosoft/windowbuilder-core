@@ -934,7 +934,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @param [elmno] {Number|Array|undefined} - номер элемента или массив номеров (с полюсом) или слоя (с минусом)
    * @return {Number}
    */
-  elm_weight(elmno) {
+  elm_weight(elmno, context = {}) {
+    const {elm, contour} = context;
     const {coordinates, specification} = this;
     const map = new Map();
     const isArray = Array.isArray(elmno);
@@ -962,10 +963,9 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     });
     // элементы внутри слоя могут быть вынесены в отдельные строки заказа
     if(!isArray && elmno < 0) {
-      const contour = {cnstr: -elmno};
-      coordinates.find_rows(contour, ({elm, inset}) => {
-        if(inset.is_order_row_prod({ox: this, elm: {elm}, contour})) {
-          const cx = this.find_create_cx(elm, $p.utils.blank.guid, false);
+      coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
+        if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
+          const cx = this.find_create_cx({elm: num}, $p.utils.blank.guid, false);
           weight += cx.elm_weight();
         }
       });

@@ -546,7 +546,7 @@ class BuilderElement extends paper.Group {
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
       ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
     }
-    return ox.elm_weight(elm);
+    return ox.elm_weight(elm, {elm: this, contour: layer});
   }
 
   /**

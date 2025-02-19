@@ -480,13 +480,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           const contours = contour.layer ? contour.layer.contours : [contour];
           for(const cnt of contours) {
             if(cnt === contour || !cnt.furn.open_type.is('Неподвижное')) {
-              weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr)));
+              weights.push(Math.ceil(cache.ox.elm_weight(-cnt.cnstr, {contour})));
             }
           }
           cache.weight = Math.max(...weights);
         }
         else {
-          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr));
+          cache.weight = Math.ceil(cache.ox.elm_weight(-cnstr, {contour}));
         }
       }
       if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {

@@ -117,7 +117,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             const {elm, prm_row, ox} = obj || {};
             let weight = elm.weight || 0;
             if(!weight && prm_row.origin.is('product') && ox) {
-              weight = ox.elm_weight();
+              weight = ox.elm_weight(undefined, {elm});
             }
             return weight;
           };
@@ -136,7 +136,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               const contours = (layer.layer && layer.sys.flap_weight_max) ? layer.layer.contours : [layer]; 
               for(const cnt of contours) {
                 if(cnt === layer || !cnt.furn.open_type.is('Неподвижное')) {
-                  weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));
+                  weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr, {elm, contour: layer})));
                 }
               }
               return Math.max(...weights);
@@ -152,7 +152,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(elm?.orientation?.is('hor')) {
               const {top} = elm.nearest_glasses;
               if(top?.length) {
-                weight = (ox || elm.ox).elm_weight(top.map((glass) => glass.elm));
+                weight = (ox || elm.ox).elm_weight(top.map((glass) => glass.elm), {elm});
               }
             }
             return weight;
@@ -783,7 +783,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               width: cx.x,
               height: cx.y,
               area: cx.s,
-              weight: cx.elm_weight(),
+              weight: cx.elm_weight(undefined, {elm}),
               specimen: parts[1],
               cnstr: parts[2],
             });

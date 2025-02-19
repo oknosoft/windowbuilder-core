@@ -448,7 +448,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get weight() {
     const {_ox, cnstr} = this;
-    return _ox.elm_weight(-cnstr);
+    return _ox.elm_weight(-cnstr, {contour: this});
   }
 
   /**
