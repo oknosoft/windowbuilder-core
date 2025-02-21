@@ -44,4 +44,40 @@ export class Filling extends ContainerBlank {
     this.path.opacity = props.carcass === 'normal' ? 0.9: 0.4;
     text.content = 'Заполнение';
   }
+
+  /**
+   * @summary Дополняет спецификацию информацией об ошибках
+   * @desc Проверяет допустимую длину, изогнутость, применимость концевых соединений
+   */
+  checkErr() {
+    const {container, inset, thickness, specification} = this;
+    let error = false;
+    return {container, inset, thickness, specification, error};
+  }
+
+  /**
+   * @summary Вклад заполнения в спецификацию слоя
+   */
+  calculateSpec() {
+    const {clr, layer, project} = this;
+    if(clr.is('ignored')) {
+      return;
+    }
+    const {container, inset, thickness, specification, error} = this.checkErr();
+    const {perimeter} = container;
+    const other = {elm: this, layer, specification};
+    for (let i = 0; i < perimeter.length; i++) {
+      const curr = perimeter[i];
+      if(curr.profile.clr.is('ignored')) {
+        return;
+      }
+      const prev = (i == 0 ? perimeter[perimeter.length - 1] : perimeter[i - 1]);
+      const next = (i == perimeter.length - 1 ? perimeter[0] : perimeter[i + 1]);
+      const cnns = project.root.cat.cnns.iiCnns(this, curr.profile).filter(v => v.art1glass);
+      if(cnns.length) {
+        //cnns[0].calculateSpec({...other, elm2: curr.profile});
+      }
+    }
+    
+  }
 }

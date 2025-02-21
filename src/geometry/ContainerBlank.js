@@ -19,7 +19,11 @@ export class ContainerBlank extends BuilderElement {
       this.redraw();
     }
   }
-  
+
+  /**
+   * @summary Световой проём текущего элемента
+   * @type {LightSlot}
+   */
   get container() {
     if(this.isInserted()) {
       for(const container of this.layer.containers) {

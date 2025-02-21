@@ -132,8 +132,8 @@ export class BuilderElement extends paper.Group {
   }
 
   /**
-   * @summary Номенклатура элемента
-   * @type CatInsets
+   * @summary Основная вставка элемента
+   * @type CatInserts
    */
   get inset() {
     return this.root.cat.inserts.get(this.#raw.inset);

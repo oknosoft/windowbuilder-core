@@ -1,4 +1,4 @@
-import {Container} from './Container';
+import {LightSlot} from './Container';
 
 export class Containers {
   #raw = {
@@ -52,13 +52,13 @@ export class Containers {
   }
 
   /**
-   * @summary Ищет замкнутые циклы и создаёт-удаляет {{#crossLink "Container"}}Области{{/crossLink}}
+   * @summary Ищет замкнутые циклы и создаёт-удаляет {{#crossLink "LightSlot"}}Области{{/crossLink}}
    */
   sync() {
     const {children, cycles} = this.detectAndPurge();
     // создаём недостающие
     for(const cycle of cycles) {
-      const container = children[cycle.key] || new Container(this, cycle);
+      const container = children[cycle.key] || new LightSlot(this, cycle);
       container.sync();
     }
   }

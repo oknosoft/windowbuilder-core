@@ -9,7 +9,7 @@ import {ContainerBlank} from './ContainerBlank';
  * @summary Область-проём для слоёв и заполнений
  * @desc Возвращает периметр с узлами скелетона. Живёт в координатной системе изделия, отвечает только за 2D
  */
-export class Container  {
+export class LightSlot  {
   
   #raw = {owner: null, cycle: null};
 
