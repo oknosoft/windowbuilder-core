@@ -14,6 +14,7 @@ export class ContainerBlank extends BuilderElement {
       fontSize: props.fontSize(),
       fontFamily: props.fontFamily(),
     });
+    this.afterCreate?.();
     if(pathOuter) {
       this.path = pathOuter;
       this.redraw();

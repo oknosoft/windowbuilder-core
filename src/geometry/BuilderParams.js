@@ -123,6 +123,20 @@ export class ProfileNodeParams extends BuilderParams {
 }
 
 /**
+ * @summary Параметры ребра заполнения
+ */
+export class FillingRibParams extends BuilderParams {
+  context(origin) {
+    const rib = this[own];
+    /*
+     * ищем для узла и если не находим, получаем у элемента 
+     */
+    const elm = rib[own];
+    return {...elm.params.context(origin), elm2: rib.edge.profile, rib};
+  }
+}
+
+/**
  * @summary Параметры вставки в элемент, изделие или слой
  */
 export class InsetParams extends BuilderParams {

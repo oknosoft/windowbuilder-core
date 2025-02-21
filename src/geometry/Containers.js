@@ -1,4 +1,4 @@
-import {LightSlot} from './Container';
+import {LightSlot} from './LightSlot';
 
 export class Containers {
   #raw = {

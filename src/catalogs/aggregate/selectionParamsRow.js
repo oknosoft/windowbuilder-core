@@ -85,9 +85,9 @@ export default function selectionParamsRow({classes, md, utils, enm, cat, get, s
        * @param {Scheme} [project] - для случая, когда не указан слой
        * @param {DocCalcOrder} [order] - для случая, когда не указаны элемент, слой и проект
        */
-      checkCondition({elm, elm2, node, node2, layer, project, order, ...other}) {
+      checkCondition({elm, elm2, node, rib, node2, layer, project, order, ...other}) {
         const {param, origin} = this;
-        let src = origin.is('nearest') ? (node2 || elm2) : (node || elm);
+        let src = origin.is('nearest') ? (node2 || elm2) : (rib || node || elm);
         if(!src) {
           src = layer || project || order;
         }

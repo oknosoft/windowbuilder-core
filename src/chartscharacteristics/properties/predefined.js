@@ -154,13 +154,17 @@ export function predefined(root) {
             break;
 
           case 'nearest_gl_thickness':
-            _data._formula = function ({elm, elm2}) {
-              if(elm instanceof EditorInvisible.ProfileAdjoining) {
+            _data._formula = function ({elm, elm2, project}) {
+              const {GeneratrixElement} = project._scope; 
+              if(elm instanceof GeneratrixElement.Adjoining) {
                 elm = elm.nearest();
                 elm2 = null;
               }
-              let thickness = elm2 ? elm2.thickness : 0;
-              if(!thickness && elm?.joined_glasses) {
+              if(elm2 instanceof GeneratrixElement && !(elm instanceof GeneratrixElement)) {
+                [elm, elm2] = [elm2, elm];
+              }
+              let thickness = elm2?.thickness || 0;
+              if(!thickness && elm?.joinedGlasses) {
                 thickness = Math.max(...elm.joined_glasses().map((gl) => gl.thickness || 0));
               }
               return thickness;

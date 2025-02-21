@@ -1,27 +1,34 @@
 import paper from 'paper/dist/paper-core';
 import {ContainerBlank} from './ContainerBlank';
+import {FillingRib} from './FillingRib';
 
 export class Filling extends ContainerBlank {
+  
+  afterCreate() {
+    Object.defineProperty(this, 'ribs', {value: []});
+  }
     
   get path() {
     return this.children.path;
   }
   set path(outer) {
-    const {path, project: {root}} = this;
-    const ribs = outer.map((src, index) => {
+    const {path, ribs, project: {root}} = this;
+    const paths = outer.map((src, index) => {
       const {edge} = src;
+      const rib = ribs[index] || new FillingRib(this, edge);
+      rib.edge = edge;
       const curr = src.clone();
       const next = (index === outer.length - 1 ? outer[0] : outer[index + 1]).clone();
       const cnns = root.cat.cnns.iiCnns(this, edge.profile).filter(v => v.art1glass);
-      const size = cnns.length ? cnns[0].size(this, edge.profile) : 0;
-      const rib = new paper.Path({insert: false, segments: [curr, next]})
+      const {size} = rib;
+      const ribPath = new paper.Path({insert: false, segments: [curr, next]})
         .equidistant(size, (size + 20) * 2);
-      return rib;
+      return ribPath;
     });
     
     path.removeSegments();
-    path.addSegments(ribs.map((curr, index) => {
-      const prev = (index === 0 ? ribs[outer.length - 1] : ribs[index - 1]).clone();
+    path.addSegments(paths.map((curr, index) => {
+      const prev = (index === 0 ? paths[outer.length - 1] : paths[index - 1]).clone();
       const pt = curr.intersectPoint(prev);
       return pt;
     }));
@@ -50,9 +57,9 @@ export class Filling extends ContainerBlank {
    * @desc Проверяет допустимую длину, изогнутость, применимость концевых соединений
    */
   checkErr() {
-    const {container, inset, thickness, specification} = this;
+    const {inset, thickness, specification} = this;
     let error = false;
-    return {container, inset, thickness, specification, error};
+    return {inset, thickness, specification, error};
   }
 
   /**
@@ -63,21 +70,13 @@ export class Filling extends ContainerBlank {
     if(clr.is('ignored')) {
       return;
     }
-    const {container, inset, thickness, specification, error} = this.checkErr();
-    const {perimeter} = container;
+    const {inset, thickness, specification, error} = this.checkErr();
     const other = {elm: this, layer, specification};
-    for (let i = 0; i < perimeter.length; i++) {
-      const curr = perimeter[i];
-      if(curr.profile.clr.is('ignored')) {
-        return;
-      }
-      const prev = (i == 0 ? perimeter[perimeter.length - 1] : perimeter[i - 1]);
-      const next = (i == perimeter.length - 1 ? perimeter[0] : perimeter[i + 1]);
-      const cnns = project.root.cat.cnns.iiCnns(this, curr.profile).filter(v => v.art1glass);
-      if(cnns.length) {
-        //cnns[0].calculateSpec({...other, elm2: curr.profile});
-      }
+    for (const rib of this.ribs) {
+      rib.cnn?.calculateSpec({...other, rib});
     }
     
   }
 }
+
+Filling.Rib = FillingRib;
