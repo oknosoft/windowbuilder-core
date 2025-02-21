@@ -13689,15 +13689,22 @@ class Scheme extends paper.Project {
     else if(attr.elm < 0) {
       hide();
       const cnstr = -attr.elm;
-      contours.some((l) => {
-        if(l.cnstr == cnstr) {
-          l.hidden = false;
-          l.hide_generatrix();
-          if(l instanceof ContourTearing) {
-            l.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
+      attr.layers?.forEach?.((cnstr) => {
+        const layer = contours.find((l) => l.cnstr === cnstr);
+        if(layer) {
+          layer.hidden = false;
+          layer.hide_generatrix();
+        }
+      });
+      contours.some((layer) => {
+        if(layer.cnstr == cnstr) {
+          layer.hidden = false;
+          layer.hide_generatrix();
+          if(layer instanceof ContourTearing) {
+            layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
           }           
-          l.l_dimensions.redraw(attr.faltz || true);
-          l.zoom_fit();
+          layer.l_dimensions.redraw(attr.faltz || true);
+          layer.zoom_fit();
           return true;
         }
       });
