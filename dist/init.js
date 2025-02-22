@@ -2934,8 +2934,13 @@ set params(v){this._setter_ts('params',v)}
     if(this.empty()) {
       return true;
     }
-    if(!ox && elm) {
-      ox = elm.ox || elm.project.ox;
+    if(!ox) {
+      if(elm) {
+        ox = elm.ox || elm.project?.ox;
+      }
+      else if(calc_order_row) {
+        ox = calc_order_row.characteristic;
+      }
     }
     if(!layer && elm) {
       layer = elm.layer;
@@ -7276,6 +7281,17 @@ class CatMargin_coefficientsManager extends CatManager {
         continue;
       }
       const obj = row.obj || null;
+      if(obj instanceof CatParameters_keys) {
+        if(obj.check_condition({calc_order_row})) {
+          res.clear();
+          const coefficient = row.coefficient || 0;
+          res.coefficient = () => coefficient;
+          break;
+        }
+        else {
+          continue;
+        }        
+      }
       res.set(obj, row);
     }
     return res;

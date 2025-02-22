@@ -13,8 +13,13 @@ exports.CatParameters_keys = class CatParameters_keys extends Object {
     if(this.empty()) {
       return true;
     }
-    if(!ox && elm) {
-      ox = elm.ox || elm.project.ox;
+    if(!ox) {
+      if(elm) {
+        ox = elm.ox || elm.project?.ox;
+      }
+      else if(calc_order_row) {
+        ox = calc_order_row.characteristic;
+      }
     }
     if(!layer && elm) {
       layer = elm.layer;

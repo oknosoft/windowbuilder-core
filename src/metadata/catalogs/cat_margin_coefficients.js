@@ -39,6 +39,19 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
         continue;
       }
       const obj = row.obj || null;
+      // ключи параметров проверяем сразу
+      if(obj instanceof CatParameters_keys) {
+        if(obj.check_condition({calc_order_row})) {
+          // если сработал ключ, будем возвращать коэффициент строки безусловно
+          res.clear();
+          const coefficient = row.coefficient || 0;
+          res.coefficient = () => coefficient;
+          break;
+        }
+        else {
+          continue;
+        }        
+      }
       res.set(obj, row);
     }
     return res;
