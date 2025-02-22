@@ -131,8 +131,9 @@ export class FillingRibParams extends BuilderParams {
     /*
      * ищем для узла и если не находим, получаем у элемента 
      */
-    const elm = rib[own];
-    return {...elm.params.context(origin), elm2: rib.edge.profile, rib};
+    const elm2 = rib[own];
+    const elm = rib.edge.profile;
+    return {...elm.params.context(origin), elm2, rib};
   }
 }
 

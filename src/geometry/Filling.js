@@ -7,6 +7,11 @@ export class Filling extends ContainerBlank {
   afterCreate() {
     Object.defineProperty(this, 'ribs', {value: []});
   }
+
+  get elmType() {
+    const {project: {root}} = this;
+    return root.enm.elmTypes.glass;
+  }
     
   get path() {
     return this.children.path;
@@ -71,9 +76,9 @@ export class Filling extends ContainerBlank {
       return;
     }
     const {inset, thickness, specification, error} = this.checkErr();
-    const other = {elm: this, layer, specification};
+    const other = {elm2: this, layer, specification};
     for (const rib of this.ribs) {
-      rib.cnn?.calculateSpec({...other, rib});
+      rib.cnn?.calculateSpec({...other, elm: rib.edge.profile, rib});
     }
     
   }

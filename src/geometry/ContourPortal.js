@@ -17,7 +17,7 @@ export class ContourPortal extends Contour {
   }
 
   get presentation() {
-    return `Проем №${this.index}`;
+    return `Проем ${this.index}`;
   }
 
   get virtual() {

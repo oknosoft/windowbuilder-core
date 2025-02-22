@@ -114,7 +114,7 @@ export class Scheme extends paper.Project {
 
     this._scope?.tool?.onZoomFit?.();
   }
-
+  
   get contours() {
     const {rootLayer, layers} = this;
     return layers.filter(v => v instanceof Contour && v !== rootLayer);

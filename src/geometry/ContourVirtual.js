@@ -13,7 +13,7 @@ export class ContourVirtual extends Contour {
   }
 
   get presentation() {
-    return `Вирт №${this.index}`;
+    return `Вирт ${this.index}`;
   }
 
   get virtual() {

@@ -24,14 +24,36 @@ export class Contour extends paper.Layer {
     return this.project;
   }
 
+  get isActual() {
+    return this.project.props.stamp === this.#raw.stamp;
+  }
+
+  checkActual() {
+    if(!this.isActual) {
+      this.#raw.index = '';
+      this.#raw.stamp = this.project.props.stamp;
+    }
+  }
+
   /**
    * @summary Индекс слоя
    * @final
    * @type String
    */
   get index() {
-    const {layer, _index} = this;
-    return layer ? `${layer.index}:${_index+1}` : _index.toString();
+    this.checkActual();
+    if(!this.#raw.index) {
+      const contours = [];
+      const recursive = (layer) => {
+        contours.push(layer);
+        for(const child of layer.contours) {
+          recursive(child);
+        }
+      }
+      this.project.contours.forEach(recursive);
+      this.#raw.index = `L${contours.indexOf(this)+1}`;
+    }
+    return this.#raw.index;
   }
 
   get level() {
@@ -41,7 +63,7 @@ export class Contour extends paper.Layer {
   
   get presentation() {
     const {index, level, layer} = this;
-    return `${level ? (layer.virtual ? 'Вложение' : 'Створка') : 'Рама'} №${index}`;
+    return `${level ? (layer.virtual ? 'Вложение' : 'Створка') : 'Рама'} ${index}`;
   }
 
   get skeleton() {

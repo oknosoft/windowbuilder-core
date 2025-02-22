@@ -85,6 +85,7 @@ export class BuilderElement extends paper.Group {
   checkActual() {     
     if(!this.isActual) {
       this.#raw.nom = null;
+      this.#raw.index = '';
       this.#raw.path?.removeSegments?.();
       this.#raw.stamp = this.project.props.stamp;
     }
@@ -170,10 +171,12 @@ export class BuilderElement extends paper.Group {
    * @type Number
    */
   get index() {
-    const {layer, parent, _index} = this;
-    const parentIndex = parent instanceof BuilderElement ?
-      parent.index : (parent?.parent instanceof BuilderElement ? parent.parent.index : layer.index);
-    return `${parentIndex}-${_index + 1}`;
+    if(!this.#raw.index) {
+      const {layer, parent, elmType} = this;
+      const elmnts = parent.children.filter(elm => elm.elmType === elmType);
+      this.#raw.index = `${layer.index}${elmType.latin[0].toUpperCase()}${elmnts.indexOf(this)+1}`;
+    }
+    return this.#raw.index;
   }
 
   /**
@@ -192,7 +195,7 @@ export class BuilderElement extends paper.Group {
    * @type String
    */
   get presentation() {
-    return `${this.elmType} №${this.index}`;
+    return `${this.elmType} ${this.index}`;
   }
 
   /**
