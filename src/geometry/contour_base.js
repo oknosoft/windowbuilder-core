@@ -2460,11 +2460,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       else {
         const {b, e} = elm.rays;
         if(b.is_short && b.profile?.isBelow(elm)) {
-          b.profile.insertAbove(elm);
+          elm.insertBelow(b.profile);
           other.add(b.profile);
         }
         if(e.is_short && e.profile?.isBelow(elm)) {
-          e.profile.insertAbove(elm);
+          elm.insertBelow(e.profile);
           other.add(e.profile);
         }
       }
