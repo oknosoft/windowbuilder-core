@@ -100,5 +100,9 @@ class BuilderPrms {
     }
     return res;
   }
+  
+  add(proto) {
+    return this.params.find(proto) || this.params.add(proto);
+  }
 
 }

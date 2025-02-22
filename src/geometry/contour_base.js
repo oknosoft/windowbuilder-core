@@ -483,7 +483,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     return layer ? profiles.reduce((sum, elm1) =>  {
       const elm2 = elm1.nearest();
       if(elm2 && elm1._attr._nearest_cnn) {
-        const sizeZ = elm1._attr._nearest_cnn.sizeZ(elm1, elm2);
+        const sizeZ = elm1._attr._nearest_cnn?.sizeZ?.(elm1, elm2) || 0;
         return sizeZ > sum ? sizeZ : sum;
       }
       return sum;
