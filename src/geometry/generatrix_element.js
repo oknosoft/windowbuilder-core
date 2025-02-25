@@ -389,6 +389,24 @@ class GeneratrixElement extends BuilderElement {
       generatrix.strokeWidth = 1;
     }
   }
+
+  /**
+   * @summary Существуют элементы с внутренней стороны
+   * @type {boolean}
+   */
+  get hasInner() {
+    const nodes = this.parent.cnnMap?.get(this) || [];
+    return Boolean(nodes.find(v => v.side === -1));
+  }
+
+  /**
+   * @summary Существуют элементы с наружной стороны
+   * @type {boolean}
+   */
+  get hasOuter() {
+    const nodes = this.parent.cnnMap?.get(this) || [];
+    return Boolean(nodes.find(v => v.side === 1));
+  }
 }
 
 EditorInvisible.GeneratrixElement = GeneratrixElement;

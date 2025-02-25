@@ -1676,6 +1676,10 @@ class GroupLayers extends LayerGroup {
 class GroupSectionals extends LayerGroup {
 }
 class GroupProfiles extends LayerGroup {
+  constructor(...attr) {
+    super(...attr);
+    this.cnnMap = new Map();
+  }
   get profiles() {
     return this.children;
   }
@@ -3534,11 +3538,44 @@ class Contour extends AbstractFilling(paper.Layer) {
     })
     return res;
   }
+  actualizeCach() {
+    this._attr._bounds = null;
+    const {cnnMap} = this.children.profiles;
+    if(cnnMap && !cnnMap.size) {
+      for(const elm of this.profiles) {
+        const {generatrix} = elm;
+        for(const node of 'be') {
+          const cpt = elm.cnn_point(node);
+          if(cpt.profile) {
+            if(!cnnMap.has(cpt.profile)) {
+              cnnMap.set(cpt.profile, []);
+            }
+            const curr = cnnMap.get(cpt.profile);
+            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
+              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
+            const loc = cpt.profile.generatrix.getNearestLocation();
+            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
+            curr.push({elm, node, pp: cpt.profile_point, side: line.getSide(ept, true)});
+          }
+        }
+      }
+    }
+  }
+  register_change() {
+    for(const layer of this.contours.concat(this.tearings)) {
+      layer.register_change?.();
+    }
+    for(const glass of this.glasses(false, true)) {
+      glass._attr.thickness = 0;
+    }
+    this._attr._bounds = null;
+    this.children.profiles.cnnMap.clear();
+  }
   redraw() {
     if (!this.visible || this.hidden) {
       return;
     }
-    this._attr._bounds = null;
+    this.actualizeCach();
     const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
     by_insets.removeChildren();
@@ -7799,6 +7836,14 @@ class GeneratrixElement extends BuilderElement {
     else {
       generatrix.strokeWidth = 1;
     }
+  }
+  get hasInner() {
+    const nodes = this.parent.cnnMap?.get(this) || [];
+    return Boolean(nodes.find(v => v.side === -1));
+  }
+  get hasOuter() {
+    const nodes = this.parent.cnnMap?.get(this) || [];
+    return Boolean(nodes.find(v => v.side === 1));
   }
 }
 EditorInvisible.GeneratrixElement = GeneratrixElement;
@@ -13800,9 +13845,9 @@ class Scheme extends paper.Project {
     }
   }
   register_change(with_update, deffer) {
-    const {_attr, _ch, _deffer, glasses} = this;
-    for(const {_attr} of glasses) {
-      _attr.thickness = 0;
+    const {_attr, _ch, _deffer, contours} = this;
+    for(const layer of contours) {
+      layer.register_change();
     }
     if(!_attr._loading) {
       _attr._bounds = null;

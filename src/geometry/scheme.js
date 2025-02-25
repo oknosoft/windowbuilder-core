@@ -913,10 +913,10 @@ class Scheme extends paper.Project {
    */
   register_change(with_update, deffer) {
 
-    const {_attr, _ch, _deffer, glasses} = this;
-
-    for(const {_attr} of glasses) {
-      _attr.thickness = 0;
+    const {_attr, _ch, _deffer, contours} = this;
+    
+    for(const layer of contours) {
+      layer.register_change();
     }
 
     if(!_attr._loading) {

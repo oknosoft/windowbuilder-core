@@ -281,6 +281,12 @@ class GroupSectionals extends LayerGroup {
   
 }
 class GroupProfiles extends LayerGroup {
+  
+  constructor(...attr) {
+    super(...attr);
+    this.cnnMap = new Map();
+  }
+  
   get profiles() {
     return this.children;
   }
