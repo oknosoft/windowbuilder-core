@@ -40,6 +40,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.create_groups();
     new GroupLayers({parent: this, name: 'tearings'});
     new GroupText({parent: this, name: 'text'});
+    this.cnnMap = new Map();
   }
 
   initialize(attr) {
@@ -375,11 +376,26 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
+   * @summary Перед отрисовкой
+   */
+  actualizeCach() {
+    this.recalcCnnMap(this.cnnMap, this.imposts);
+  }
+
+  /**
+   * @summary При изменении проекта
+   */
+  register_change() {
+    // чистим карту соединений
+    this.cnnMap?.clear?.();
+  }
+  
+  /**
    * Перерисовывает раскладки текущего заполнения
    */
   redraw() {
 
-    //this.sendToBack();
+    this.actualizeCach();
 
     const {path, imposts, glbeads, _attr, is_rectangular, elm, project, visible} = this;
     const {bounds: pbounds, ox} = project;

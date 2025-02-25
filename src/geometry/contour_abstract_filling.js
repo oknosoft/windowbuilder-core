@@ -148,6 +148,30 @@ const AbstractFilling = (superclass) => class extends superclass {
     });
     return bounds;
   }
+  
+  recalcCnnMap(map, profiles) {
+    if(map && !map.size) {
+      for(const elm of profiles) {
+        const {generatrix, region} = elm;
+        for(const node of 'be') {
+          const cpt = elm.cnn_point(node);
+          if(cpt.profile) {
+            if(!map.has(cpt.profile)) {
+              map.set(cpt.profile, []);
+            }
+            const curr = map.get(cpt.profile);
+            // точка на образующей текущего элемента
+            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
+              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
+            // точка на образующей профиля, к которому примыкает текущий
+            const loc = cpt.profile.generatrix.getNearestLocation();
+            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
+            curr.push({elm, node: cpt, side: line.getSide(ept, true)});
+          }
+        }
+      }
+    }
+  }
 
 };
 

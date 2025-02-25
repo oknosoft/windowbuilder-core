@@ -239,7 +239,6 @@ class Onlay extends ProfileItem {
 
     // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile?.children?.length){
-
       if(is_filling){
         const np = res.profile.path.getNearestPoint(point);
         if(np.getDistance(point) < consts.sticking_l){
@@ -248,7 +247,8 @@ class Onlay extends ProfileItem {
         }
       }
       else{
-        if(this.check_distance(res.profile, res, point, true) === false || res.distance < consts.epsilon){
+        if(this.region === res.profile.region &&
+            this.check_distance(res.profile, res, point, true) === false || res.distance < consts.epsilon){
           return res;
         }
       }

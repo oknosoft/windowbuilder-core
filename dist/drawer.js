@@ -1784,6 +1784,27 @@ const AbstractFilling = (superclass) => class extends superclass {
     });
     return bounds;
   }
+  recalcCnnMap(map, profiles) {
+    if(map && !map.size) {
+      for(const elm of profiles) {
+        const {generatrix, region} = elm;
+        for(const node of 'be') {
+          const cpt = elm.cnn_point(node);
+          if(cpt.profile) {
+            if(!map.has(cpt.profile)) {
+              map.set(cpt.profile, []);
+            }
+            const curr = map.get(cpt.profile);
+            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
+              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
+            const loc = cpt.profile.generatrix.getNearestLocation();
+            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
+            curr.push({elm, node: cpt, side: line.getSide(ept, true)});
+          }
+        }
+      }
+    }
+  }
 };
 EditorInvisible.AbstractFilling = AbstractFilling;
 class Contour extends AbstractFilling(paper.Layer) {
@@ -3540,32 +3561,14 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   actualizeCach() {
     this._attr._bounds = null;
-    const {cnnMap} = this.children.profiles;
-    if(cnnMap && !cnnMap.size) {
-      for(const elm of this.profiles) {
-        const {generatrix} = elm;
-        for(const node of 'be') {
-          const cpt = elm.cnn_point(node);
-          if(cpt.profile) {
-            if(!cnnMap.has(cpt.profile)) {
-              cnnMap.set(cpt.profile, []);
-            }
-            const curr = cnnMap.get(cpt.profile);
-            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
-              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
-            const loc = cpt.profile.generatrix.getNearestLocation();
-            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
-            curr.push({elm, node, pp: cpt.profile_point, side: line.getSide(ept, true)});
-          }
-        }
-      }
-    }
+    this.recalcCnnMap(this.children.profiles.cnnMap, this.profiles);
   }
   register_change() {
     for(const layer of this.contours.concat(this.tearings)) {
       layer.register_change?.();
     }
     for(const glass of this.glasses(false, true)) {
+      glass.register_change();
       glass._attr.thickness = 0;
     }
     this._attr._bounds = null;
@@ -6356,6 +6359,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.create_groups();
     new GroupLayers({parent: this, name: 'tearings'});
     new GroupText({parent: this, name: 'text'});
+    this.cnnMap = new Map();
   }
   initialize(attr) {
     this._skeleton = new Skeleton(this);
@@ -6608,7 +6612,14 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
   }
+  actualizeCach() {
+    this.recalcCnnMap(this.cnnMap, this.imposts);
+  }
+  register_change() {
+    this.cnnMap?.clear?.();
+  }
   redraw() {
+    this.actualizeCach();
     const {path, imposts, glbeads, _attr, is_rectangular, elm, project, visible} = this;
     const {bounds: pbounds, ox} = project;
     const {elm_font_size, font_family} = consts;
@@ -12013,9 +12024,7 @@ class BaseLine extends ProfileItem {
     return res;
   }
   joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
   save_coordinates() {
     if(!this._attr.generatrix){
@@ -12962,7 +12971,8 @@ class Onlay extends ProfileItem {
         }
       }
       else{
-        if(this.check_distance(res.profile, res, point, true) === false || res.distance < consts.epsilon){
+        if(this.region === res.profile.region &&
+            this.check_distance(res.profile, res, point, true) === false || res.distance < consts.epsilon){
           return res;
         }
       }
@@ -13237,8 +13247,8 @@ class ProfileTearing extends ProfileItem {
   cnn_point(node, point) {
     return Profile.prototype.cnn_point.call(this, node, point);
   }
-  joined_imposts() {
-    return {inner: [], outer: []};
+  joined_imposts(check_only) {
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
   nearest() {
     return null;
