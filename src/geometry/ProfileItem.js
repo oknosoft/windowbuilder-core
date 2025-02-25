@@ -65,9 +65,11 @@ export class Profile extends GeneratrixElement {
       specRow.len = rawLength;
 
       // вклад концевых соединений
-      for(const node of [b, e]) {
-        node.cnn.calculateSpec({...props, elm2: node.profile, node});
+      b.cnn.calculateSpec({...props, elm2: b.profile, node: b});
+      if(e.isT || e.isI) {
+        e.cnn.calculateSpec({...props, elm2: e.profile, node: e});
       }
+      
       // вклад вставки
       inset.calculateSpec(props); 
     }

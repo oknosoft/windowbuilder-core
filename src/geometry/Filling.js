@@ -80,6 +80,8 @@ export class Filling extends ContainerBlank {
     for (const rib of this.ribs) {
       rib.cnn?.calculateSpec({...other, elm: rib.edge.profile, rib});
     }
+
+    inset.calculateSpec({elm: this, layer, specification});
     
   }
 }

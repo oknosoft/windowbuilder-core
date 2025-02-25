@@ -23,15 +23,15 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
       return methods.element.call(this, attr);
     },
     
-    coloring() {
+    coloring(attr) {
       
     },
     
-    area() {
-      
+    area(attr) {
+      return methods.element.call(this, attr);
     },
     
-    len_prm() {
+    len_prm(attr) {
       
     },
 

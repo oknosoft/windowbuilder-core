@@ -427,6 +427,10 @@ export class GeneratrixElement extends BuilderElement {
     return '#fefefe';
   }
 
+  isLinear() {
+    return this.generatrix.isLinear();
+  }
+
   points(mode) {
     const {b, e} = this;
     return {b: b.points(mode), e: e.points(mode)};

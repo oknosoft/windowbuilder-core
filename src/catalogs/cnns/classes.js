@@ -83,6 +83,19 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
       return res;
     }
     
+    byThickness(thickness, nom2) {
+      const {ii} = enm.cnnTypes;
+      const res = [];
+      for(const cnn of this) {
+        if(cnn.cnn_type === ii && cnn.art1glass && thickness >= cnn.tmin && thickness <= cnn.tmax) {
+          if(cnn.cnn_elmnts.find({nom2})) {
+            res.push(cnn);
+          }
+        }
+      }
+      return res.sort(utils.sort('priority', true));
+    }
+    
     nodeCnns(cnnPoint, elm2) {
       const {elm1, cnns, kind} = nomCache.byCnnPoint(cnnPoint, elm2);
       return cnns;
@@ -95,14 +108,14 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
       if(!elm2) {
         return [];
       }
-      const nom1 = elm1.nom;
+      const nom1 = elm1.is('Filling') ? elm1.thickness : elm1.nom;
       const nom2 = elm2.nom;
       if(!nomCache.ii.has(nom1)) {
         nomCache.ii.set(nom1, new Map());
       }
       const cache = nomCache.ii.get(nom1);
       if(!cache.has(nom2)) {
-        cache.set(nom2, this.byNoms(nom1, nom2, enm.cnnTypes.acn.ii));
+        cache.set(nom2, elm1.is('Filling') ? this.byThickness(nom1, nom2) : this.byNoms(nom1, nom2, enm.cnnTypes.acn.ii));
       }
       return cache.get(nom2);
     }
@@ -320,6 +333,12 @@ export function classes({classes, md, utils, symbols, cat, enm}, exclude)  {
 
       // только для прямых или только для кривых профилей
       if((direct_only > 0 && !elm.isLinear()) || (direct_only < 0 && elm.isLinear())) {
+        return;
+      }
+      if(angleHor === undefined) {
+        angleHor = elm.angleHor;
+      }
+      if(amin > angleHor || amax < angleHor) {
         return;
       }
       return true;
