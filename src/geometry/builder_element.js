@@ -515,9 +515,10 @@ class BuilderElement extends paper.Group {
       if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
         return parseFloat(p1);
       }
-      if(this.hasInner && this.hasOuter) {
-        return parseFloat(p1);
-      }
+      // const {inner, outer} = this.joined_imposts(false, _rays);
+      // if(inner.length && outer.length) {
+      //   return parseFloat(p1);
+      // }
       let p2 = parts.substring(3, 6);
       return parseFloat(p2);
     }
