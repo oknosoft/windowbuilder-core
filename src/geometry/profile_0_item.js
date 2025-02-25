@@ -1402,9 +1402,24 @@ class ProfileItem extends GeneratrixElement {
    */
   joined_imposts(check_only) {
 
+    const map = this.parent.cnnMap.get(this) || [];
+    if(check_only) {
+      return map.some(({node}) => !node.profile_point || node.profile_point === 't');
+    }
+    const toJoinedProfiles = ({elm, node}) => ({point: node.point, profile: elm});
+    return {
+      inner: map
+        .filter(({node, side}) => side === -1 && !node.profile_point || node.profile_point === 't')
+        .map(toJoinedProfiles),
+      outer: map
+        .filter(({node, side}) => side === 1 && !node.profile_point || node.profile_point === 't')
+        .map(toJoinedProfiles),
+    };
+    
     const {rays, generatrix, layer} = this;
     const tinner = [];
     const touter = [];
+    
     
     if(this.isInserted()) {
       // точки, в которых сходятся более 2 профилей
