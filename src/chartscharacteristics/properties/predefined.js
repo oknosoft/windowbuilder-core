@@ -39,6 +39,14 @@ export function predefined(root) {
             };
             break;
 
+        case 'clr_elm':
+          _data._formula = function (obj) {
+            return obj?.elm?.clr || clrs.get();
+          };
+          break;
+
+            
+
           case 'inset':
             _data._formula = function ({elm, prm_row, ox, row}) {
 
@@ -96,18 +104,18 @@ export function predefined(root) {
 
           case 'layer_weight':
             _data._formula = function (obj) {
-              let {ox, elm, layer, prm_row} = obj;
+              let {project, elm, layer, prm_row} = obj;
               if(!layer && elm) {
                 layer = elm.layer;
               }
               if(!layer) {
                 return 0;
               }
-              const weights = [];
+              const weights = [0];
               const contours = (layer.layer && layer.sys.flap_weight_max) ? layer.layer.contours : [layer];
               for(const cnt of contours) {
                 if(cnt === layer || !cnt.furn.open_type.is('Неподвижное')) {
-                  weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));
+                  //weights.push(Math.ceil(ox.elm_weight(-cnt.cnstr)));
                 }
               }
               return Math.max(...weights);
@@ -457,7 +465,6 @@ export function predefined(root) {
 
   // создаём те, где нужна только формула со стандартным check_condition
   for(const name of [
-    'clr_product',      // цвет изделия
     'up_glasses_weight',// масса заполнений, опирающихся на профиль
     'has_glasses',      // бит в заказе есть заполнения
     'has_glasses_separately',// бит в заказе есть заполнения отдельно
@@ -476,7 +483,9 @@ export function predefined(root) {
     'branch',           // отдел абонента текущего контекста
     'inset',            // вставка текущего элемента
     'inserts_glass_type',  // тип вставки заполнения
+    'clr_product',      // цвет изделия
     'clr_inset',        // цвет вставки в элемент
+    'clr_elm',          // цвет элемента с поправкой на строку спецификации
     'handle_height',    // высота ручки
     'width',            // ширина из параметра
     'height',           // высота слоя или изделия

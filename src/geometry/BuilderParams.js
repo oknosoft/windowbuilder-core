@@ -135,6 +135,14 @@ export class FillingRibParams extends BuilderParams {
     const elm = rib.edge.profile;
     return {...elm.params.context(origin), elm2, rib};
   }
+
+  eigenvalue(param, origin) {
+    const rib = this[own];
+    /*
+     * ищем для ребра и если не находим, получаем у элемента 
+     */
+    return rib.edge.profile.params.eigenvalue(param, origin);
+  }
 }
 
 /**
