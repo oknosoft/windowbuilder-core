@@ -977,6 +977,9 @@ class BuilderElement extends paper.Group {
       if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
         return parseFloat(p1);
       }
+      if(this.hasInner && this.hasOuter) {
+        return parseFloat(p1);
+      }
       let p2 = parts.substring(3, 6);
       return parseFloat(p2);
     }
@@ -1783,6 +1786,27 @@ const AbstractFilling = (superclass) => class extends superclass {
       bounds = bounds.unite(dl.bounds);
     });
     return bounds;
+  }
+  recalcCnnMap(map, profiles) {
+    if(map && !map.size) {
+      for(const elm of profiles) {
+        const {generatrix, region} = elm;
+        for(const node of 'be') {
+          const cpt = elm.cnn_point(node);
+          if(cpt.profile) {
+            if(!map.has(cpt.profile)) {
+              map.set(cpt.profile, []);
+            }
+            const curr = map.get(cpt.profile);
+            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
+              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
+            const loc = cpt.profile.generatrix.getNearestLocation();
+            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
+            curr.push({elm, node: cpt, side: line.getSide(ept, true)});
+          }
+        }
+      }
+    }
   }
 };
 EditorInvisible.AbstractFilling = AbstractFilling;
@@ -3540,32 +3564,14 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   actualizeCach() {
     this._attr._bounds = null;
-    const {cnnMap} = this.children.profiles;
-    if(cnnMap && !cnnMap.size) {
-      for(const elm of this.profiles) {
-        const {generatrix} = elm;
-        for(const node of 'be') {
-          const cpt = elm.cnn_point(node);
-          if(cpt.profile) {
-            if(!cnnMap.has(cpt.profile)) {
-              cnnMap.set(cpt.profile, []);
-            }
-            const curr = cnnMap.get(cpt.profile);
-            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
-              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
-            const loc = cpt.profile.generatrix.getNearestLocation();
-            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
-            curr.push({elm, node, pp: cpt.profile_point, side: line.getSide(ept, true)});
-          }
-        }
-      }
-    }
+    this.recalcCnnMap(this.children.profiles.cnnMap, this.profiles);
   }
   register_change() {
     for(const layer of this.contours.concat(this.tearings)) {
       layer.register_change?.();
     }
     for(const glass of this.glasses(false, true)) {
+      glass.register_change();
       glass._attr.thickness = 0;
     }
     this._attr._bounds = null;
@@ -6356,6 +6362,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.create_groups();
     new GroupLayers({parent: this, name: 'tearings'});
     new GroupText({parent: this, name: 'text'});
+    this.cnnMap = new Map();
   }
   initialize(attr) {
     this._skeleton = new Skeleton(this);
@@ -6608,7 +6615,14 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
   }
+  actualizeCach() {
+    this.recalcCnnMap(this.cnnMap, this.imposts);
+  }
+  register_change() {
+    this.cnnMap?.clear?.();
+  }
   redraw() {
+    this.actualizeCach();
     const {path, imposts, glbeads, _attr, is_rectangular, elm, project, visible} = this;
     const {bounds: pbounds, ox} = project;
     const {elm_font_size, font_family} = consts;
@@ -9533,6 +9547,19 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
   joined_imposts(check_only) {
+    const map = this.parent.cnnMap.get(this) || [];
+    if(check_only) {
+      return map.some(({node}) => !node.profile_point || node.profile_point === 't');
+    }
+    const toJoinedProfiles = ({elm, node}) => ({point: node.point, profile: elm});
+    return {
+      inner: map
+        .filter(({node, side}) => side === -1 && !node.profile_point || node.profile_point === 't')
+        .map(toJoinedProfiles),
+      outer: map
+        .filter(({node, side}) => side === 1 && !node.profile_point || node.profile_point === 't')
+        .map(toJoinedProfiles),
+    };
     const {rays, generatrix, layer} = this;
     const tinner = [];
     const touter = [];
@@ -11289,7 +11316,7 @@ class Profile extends ProfileItem {
   get elm_type() {
     const {_rays, _nearest} = this._attr;
     const {elm_types} = $p.enm;
-    if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
+    if((this.hasInner && this.hasOuter) || _rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
       return elm_types.impost;
     }
     return this.layer?.level ? elm_types.flap : elm_types.rama;
@@ -12013,9 +12040,7 @@ class BaseLine extends ProfileItem {
     return res;
   }
   joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
   save_coordinates() {
     if(!this._attr.generatrix){
@@ -12835,52 +12860,6 @@ class Onlay extends ProfileItem {
     }
   }
   nearest() {}
-  joined_imposts(check_only) {
-    const {rays, generatrix, parent, region} = this;
-    const tinner = [];
-    const touter = [];
-    const candidates = {b: [], e: []};
-    const add_impost = (ip, curr, point) => {
-      const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.outer) {
-        touter.push(res);
-      }
-      else {
-        tinner.push(res);
-      }
-    };
-    if(parent.imposts.some((curr) => {
-        if(curr != this && curr.region === region) {
-          for(const pn of ['b', 'e']) {
-            const p = curr.cnn_point(pn);
-            if(p.profile == this && p.cnn) {
-              if(p.cnn.cnn_type == $p.enm.cnn_types.t) {
-                if(check_only) {
-                  return true;
-                }
-                add_impost(curr.corns(1), curr, p.point);
-              }
-              else {
-                candidates[pn].push(curr.corns(1));
-              }
-            }
-          }
-        }
-      })) {
-      return true;
-    }
-    ['b', 'e'].forEach((node) => {
-      if(candidates[node].length > 1) {
-        candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.outer) {
-            this.cnn_point(node).is_cut = true;
-            return true;
-          }
-        });
-      }
-    });
-    return check_only ? false : {inner: tinner, outer: touter};
-  }
   save_coordinates() {
     if(!this._attr.generatrix){
       return;
@@ -12962,7 +12941,8 @@ class Onlay extends ProfileItem {
         }
       }
       else{
-        if(this.check_distance(res.profile, res, point, true) === false || res.distance < consts.epsilon){
+        if(this.region === res.profile.region &&
+            this.check_distance(res.profile, res, point, true) === false || res.distance < consts.epsilon){
           return res;
         }
       }
@@ -13237,8 +13217,8 @@ class ProfileTearing extends ProfileItem {
   cnn_point(node, point) {
     return Profile.prototype.cnn_point.call(this, node, point);
   }
-  joined_imposts() {
-    return {inner: [], outer: []};
+  joined_imposts(check_only) {
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
   nearest() {
     return null;

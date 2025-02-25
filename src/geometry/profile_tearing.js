@@ -52,8 +52,8 @@ class ProfileTearing extends ProfileItem {
     return Profile.prototype.cnn_point.call(this, node, point);
   }
 
-  joined_imposts() {
-    return {inner: [], outer: []};
+  joined_imposts(check_only) {
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
 
   /**

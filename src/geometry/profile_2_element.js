@@ -91,7 +91,7 @@ class Profile extends ProfileItem {
     const {elm_types} = $p.enm;
 
     // если начало или конец элемента соединены с соседями по Т, значит это импост
-    if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
+    if((this.hasInner && this.hasOuter) || _rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
       return elm_types.impost;
     }
 

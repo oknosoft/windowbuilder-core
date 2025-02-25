@@ -2420,29 +2420,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   actualizeCach() {
     // сбрасываем кеш габаритов
     this._attr._bounds = null;
-    
-    const {cnnMap} = this.children.profiles;
-    if(cnnMap && !cnnMap.size) {
-      for(const elm of this.profiles) {
-        const {generatrix} = elm;
-        for(const node of 'be') {
-          const cpt = elm.cnn_point(node);
-          if(cpt.profile) {
-            if(!cnnMap.has(cpt.profile)) {
-              cnnMap.set(cpt.profile, []);
-            }
-            const curr = cnnMap.get(cpt.profile);
-            // точка на образующей текущего элемента
-            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
-              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
-            // точка на образующей профиля, к которому примыкает текущий
-            const loc = cpt.profile.generatrix.getNearestLocation();
-            const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
-            curr.push({elm, node, pp: cpt.profile_point, side: line.getSide(ept, true)});
-          }
-        }
-      }
-    }
+    // и освежаем карту соединений
+    this.recalcCnnMap(this.children.profiles.cnnMap, this.profiles);
   }
 
   /**
@@ -2455,7 +2434,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     // сбрасываем толщины заполнений
     for(const glass of this.glasses(false, true)) {
-      //glass.profiles.cnnMap.clear();
+      glass.register_change();
       glass._attr.thickness = 0;
     }
     // сбрасываем кеш габаритов

@@ -90,9 +90,7 @@ class BaseLine extends ProfileItem {
    * К линиям ипосты не крепятся
    */
   joined_imposts(check_only) {
-    const tinner = [];
-    const touter = [];
-    return check_only ? false : {inner: tinner, outer: touter};
+    return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
 
   /**
