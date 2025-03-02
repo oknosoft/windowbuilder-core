@@ -14,7 +14,7 @@ export class BuilderProps  {
     this.#raw.three = new Props3D();
     const base_sys = project.root?.cch.predefinedElmnts.find({synonym: "base_sys"});
     if(base_sys) {
-      this.#raw.sys = base_sys.value;
+      this.#raw.sys = base_sys.elmnts.find({elm: "window"}).value;
     }
     defaults(project, this);
   }

@@ -90,7 +90,7 @@ export class CnnPoint {
       if(cnnsOuter.length && !cnnsOuter.includes(cnnOuter)) {
         this.cnnOuter = cnnsOuter[0];
       }
-      else if(!cnnsOuter.empty()) {
+      else if(!this.cnnOuter.empty()) {
         this.cnnOuter = null;
       }
     }
