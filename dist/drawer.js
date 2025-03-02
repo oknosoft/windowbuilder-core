@@ -4722,10 +4722,11 @@ EditorInvisible.ContourParent = ContourParent;
 class ContourRegion extends Contour {
   constructor(attr) {
     super(attr);
-    this.hidden = !attr.show;
-    if(attr.region) {
-      this.dop = {region: attr.region};
+    const region = attr.region || attr.row?.dop?.region;
+    if(region !== this.dop.region) {
+      this.dop = {region};
     }
+    this.hidden = !(attr.show || region > 1);
   }
   get ProfileConstructor() {
     return ProfileRegion;
