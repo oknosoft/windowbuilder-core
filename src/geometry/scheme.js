@@ -1319,10 +1319,20 @@ class Scheme extends paper.Project {
 
     if(bounds) {
       // устанавливаем размеры в характеристике
-      ox.x = bounds.width.round();
-      ox.y = bounds.height.round();
-      ox.z = this.thickness;
-      ox.s = this.area;
+      const root = this.separate_frame_root();
+      if(root) {
+        const {bounds} = root;
+        ox.x = bounds.width.round();
+        ox.y = bounds.height.round();
+        ox.z = root.thickness(true);
+        ox.s = root.area;
+      }
+      else {
+        ox.x = bounds.width.round();
+        ox.y = bounds.height.round();
+        ox.z = this.thickness;
+        ox.s = this.area;
+      }
 
       // вызываем метод save_coordinates в дочерних слоях
       contours.forEach((contour) => {
@@ -2310,6 +2320,22 @@ class Scheme extends paper.Project {
       }
     }
     return sketch_view;
+  }
+
+  separate_frame_root() {
+    if($p.job_prm.builder.separate_frame_layers) {
+      const {contours} = this;
+      if(contours.length > 1) {
+        let min = Infinity, root;
+        for(const layer of contours) {
+          if(layer.cnstr < min) {
+            min = layer.cnstr;
+            root = layer;
+          }
+        }
+        return root;
+      }
+    }
   }
 
 }

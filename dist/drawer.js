@@ -14148,10 +14148,20 @@ class Scheme extends paper.Project {
       res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
     };
     if(bounds) {
-      ox.x = bounds.width.round();
-      ox.y = bounds.height.round();
-      ox.z = this.thickness;
-      ox.s = this.area;
+      const root = this.separate_frame_root();
+      if(root) {
+        const {bounds} = root;
+        ox.x = bounds.width.round();
+        ox.y = bounds.height.round();
+        ox.z = root.thickness(true);
+        ox.s = root.area;
+      }
+      else {
+        ox.x = bounds.width.round();
+        ox.y = bounds.height.round();
+        ox.z = this.thickness;
+        ox.s = this.area;
+      }
       contours.forEach((contour) => {
         if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
           if(this.activeLayer === contour) {
@@ -14786,6 +14796,21 @@ class Scheme extends paper.Project {
       }
     }
     return sketch_view;
+  }
+  separate_frame_root() {
+    if($p.job_prm.builder.separate_frame_layers) {
+      const {contours} = this;
+      if(contours.length > 1) {
+        let min = Infinity, root;
+        for(const layer of contours) {
+          if(layer.cnstr < min) {
+            min = layer.cnstr;
+            root = layer;
+          }
+        }
+        return root;
+      }
+    }
   }
 }
 EditorInvisible.Scheme = Scheme;
@@ -16209,18 +16234,9 @@ class ProductsBuilding {
       if(attr.save) {
         if(attr.svg !== false) {
           ox.svg = scheme.get_svg();
-          if($p.job_prm.builder.separate_frame_layers) {
-            const {contours} = scheme;
-            if(contours.length > 1) {
-              let min = Infinity, root;
-              for(const layer of contours) {
-                if(layer.cnstr < min) {
-                  min = layer.cnstr;
-                  root = layer;
-                }
-              }
-              root.dop = {svg: root.get_svg()};
-            }
+          const root = scheme.separate_frame_root();
+          if(root) {
+            root.dop = {svg: root.get_svg()};
           }
         }
         return this.saver({ox, scheme, attr, finish})
