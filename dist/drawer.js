@@ -20807,7 +20807,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const sum = {prod: 0, all: 0};
     for(const row of this.production) {
       sum.all += row.s * row.quantity;
-      if(row.characteristic.leading_product.calc_order !== this) {
+      const {leading_product, leading_elm, constructions} = row.characteristic;
+      if(leading_product.calc_order.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
         sum.prod += row.s * row.quantity;
       }
     }
