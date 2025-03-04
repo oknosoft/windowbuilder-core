@@ -1180,7 +1180,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       elm.remove();
     }
     // затем - импосты
-    for(const elm of this.imposts.reverse()) {
+    const {imposts} = this;
+    imposts.sort($p.utils.sort('elm', true));
+    for(const elm of imposts) {
       elm.remove();
     }
     // и остальные профили
