@@ -7,11 +7,6 @@ export class Filling extends ContainerBlank {
   afterCreate() {
     Object.defineProperty(this, 'ribs', {value: []});
   }
-
-  get elmType() {
-    const {project: {root}} = this;
-    return root.enm.elmTypes.glass;
-  }
     
   get path() {
     return this.children.path;

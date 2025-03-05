@@ -21,6 +21,11 @@ export class ContainerBlank extends BuilderElement {
     }
   }
 
+  get elmType() {
+    const {project: {root}} = this;
+    return root.enm.elmTypes.glass;
+  }
+
   /**
    * @summary Световой проём текущего элемента
    * @type {LightSlot}
