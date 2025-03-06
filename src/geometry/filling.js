@@ -708,11 +708,17 @@ class Filling extends AbstractFilling(BuilderElement) {
     const inset = $p.cat.inserts.get(v);
     const {insert_type} = inset;
 
-    const {project, elm, _row, _attr, ox: {glass_specification}} = this;
+    const {project, elm, _row, _attr, ox} = this;
     _row.inset = inset;
     delete _attr.nom;
 
     if(!ign_select){
+
+      const {glass_specification, _data} = ox;
+      const {_loading} = _data;
+      if(!_loading) {
+        _data._loading = true;
+      }
 
       // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
@@ -724,6 +730,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
         }
+        this.default_params();
       }
 
       // транслируем изменения на остальные выделенные заполнения
@@ -734,19 +741,40 @@ class Filling extends AbstractFilling(BuilderElement) {
           // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
           // если тип стеклопакет - заполняем по умолчанию
-          if(insert_type === insert_type._manager.Стеклопакет) {
+          if(insert_type.is('composite')) {
             for(const row of inset.specification) {
               row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});
             }
+            selm.default_params();
           }
           // устанавливаем цвет, как у нас
           selm.clr = this.clr;
         }
       });
+
+      if(!_loading) {
+        _data._loading = false;
+      }
     }
 
     project.register_change();
     project._scope.eve.emit('set_inset', this);
+  }
+
+  default_params() {
+    const {ox: {_owner, _data, glass_specification}, elm} = this;
+    const {_loading} = _data;
+    if(!_loading) {
+      _data._loading = true;
+    }
+    for(const row of glass_specification) {
+      if(row.elm === elm) {
+        row.default_params(this.region(row));
+      }
+    }
+    if(!_loading) {
+      _data._loading = false;
+    }
   }
 
   /**

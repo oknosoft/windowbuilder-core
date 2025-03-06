@@ -900,29 +900,30 @@ class BuilderElement extends paper.Group {
         type: {types: ['boolean']},
       }
     };
-    return {
-      fields: new Proxy(mfields, {
-        get(target, prop) {
-          if(target[prop]) {
-            return target[prop];
-          }
-          const param = cch.properties.get(prop);
-          if(param) {
-            const mf = {
-              type: param.type,
-              synonym: param.name,
-            };
-            if(param.type.types.includes('cat.property_values')) {
-              mf.choice_params = [{
-                name: 'owner',
-                path: param.ref,
-              }];
-            }
-            return mf;
-          }
+    const fieldsProxy = new Proxy(mfields, {
+      get(target, prop) {
+        if(target[prop]) {
+          return target[prop];
         }
-      }),
-    };
+        const param = cch.properties.get(prop);
+        if(param) {
+          const mf = {
+            type: param.type,
+            synonym: param.name,
+          };
+          if(param.type.types.includes('cat.property_values')) {
+            mf.choice_params = [{
+              name: 'owner',
+              path: param.ref,
+            }];
+          }
+          return mf;
+        }
+      }
+    }); 
+    const func = (name) => name ?  fieldsProxy[name] : fieldsProxy;
+    func.fields = fieldsProxy;
+    return func;
   }
   get _manager() {
     return this.project._dp._manager;
@@ -6895,32 +6896,57 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     const inset = $p.cat.inserts.get(v);
     const {insert_type} = inset;
-    const {project, elm, _row, _attr, ox: {glass_specification}} = this;
+    const {project, elm, _row, _attr, ox} = this;
     _row.inset = inset;
     delete _attr.nom;
     if(!ign_select){
+      const {glass_specification, _data} = ox;
+      const {_loading} = _data;
+      if(!_loading) {
+        _data._loading = true;
+      }
       inset.clr_group.default_clr(this);
       glass_specification.clear({elm});
       if(insert_type.is('composite')) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
         }
+        this.default_params();
       }
       project.selected_glasses().forEach((selm) => {
         if(selm !== this){
           selm.set_inset(inset, true, force);
           glass_specification.clear({elm: selm.elm});
-          if(insert_type === insert_type._manager.Стеклопакет) {
+          if(insert_type.is('composite')) {
             for(const row of inset.specification) {
               row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});
             }
+            selm.default_params();
           }
           selm.clr = this.clr;
         }
       });
+      if(!_loading) {
+        _data._loading = false;
+      }
     }
     project.register_change();
     project._scope.eve.emit('set_inset', this);
+  }
+  default_params() {
+    const {ox: {_owner, _data, glass_specification}, elm} = this;
+    const {_loading} = _data;
+    if(!_loading) {
+      _data._loading = true;
+    }
+    for(const row of glass_specification) {
+      if(row.elm === elm) {
+        row.default_params(this.region(row));
+      }
+    }
+    if(!_loading) {
+      _data._loading = false;
+    }
   }
   set_clr(v, ign_select) {
     if(!ign_select && this.project.selectedItems.length > 1){
@@ -16983,13 +17009,6 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
       this.inset.clr_group.default_clr(this);
       _owner.add_inset_params(this.inset, cnstr, null, region);
     }
-  }
-};
-$p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
-  if(field === 'inset' && value != this.inset) {
-    this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    const ox = this._owner._owner;
-    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset, is_glass: true});
   }
 };
 Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {

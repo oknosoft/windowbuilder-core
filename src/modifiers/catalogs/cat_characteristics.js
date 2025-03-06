@@ -92,15 +92,15 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
 };
 
 // при изменении реквизита табчасти состава заполнения
-$p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
-  // для вставок состава, перезаполняем параметры
-  if(field === 'inset' && value != this.inset) {
-    this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
-    // fake-элемент
-    const ox = this._owner._owner;
-    this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset, is_glass: true});
-  }
-};
+// $p.CatCharacteristicsGlass_specificationRow.prototype.value_change = function (field, type, value) {
+//   // для вставок состава, перезаполняем параметры
+//   if(field === 'inset' && value != this.inset) {
+//     this._obj.inset = value ? value.valueOf() : $p.utils.blank.guid;
+//     // fake-элемент
+//     const ox = this._owner._owner;
+//     this.default_params({elm: this.elm, ox, project: {ox}, inset: this.inset, is_glass: true});
+//   }
+// };
 
 // виртуальный Ряд
 Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
