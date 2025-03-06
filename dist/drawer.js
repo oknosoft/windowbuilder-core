@@ -3627,10 +3627,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       if(b.profile?.isBelow(elm)) {
-        b.profile?.insertAbove(elm);
+        elm.insertBelow(b.profile);
       }
       if(e.profile?.isBelow(elm)) {
-        e.profile?.insertAbove(elm);
+        elm.insertBelow(e.profile);
       }
     }
     for (const elm of this.getItems({class: ProfileGlBead})) {
