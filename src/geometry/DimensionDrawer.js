@@ -203,8 +203,13 @@ export class DimensionDrawer extends MapedGroup {
     if(layer) {
       const rm = [];
       for(const elm of this.children) {
-        const [owner, elm1, elm2] = elm.raw(['owner', 'elm1', 'elm2']);
-        if(owner === layer || elm1?.layer === layer || elm2?.layer === layer) {
+        if(elm instanceof DimensionLine) {
+          const [owner, elm1, elm2] = elm.raw(['owner', 'elm1', 'elm2']);
+          if(owner === layer || elm1?.layer === layer || elm2?.layer === layer) {
+            rm.push(elm);
+          }
+        }
+        else {
           rm.push(elm);
         }
       }
