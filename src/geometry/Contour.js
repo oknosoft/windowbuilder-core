@@ -178,6 +178,20 @@ export class Contour extends paper.Layer {
   }
 
   /**
+   * @summary Массив профилей, составляющих внешний контур слоя
+   * @desc С учетом соединителей и соседних слоёв
+   * @type {Array.<Profile>}
+   */
+  get outerProfiles() {
+    const {profiles} = this;
+    const res = [];
+    for(const profile of profiles) {
+      res.push(profile);
+    }
+    return res;
+  }
+
+  /**
    * @summary Тип открывания
    * @type {EnmOpenTypes}
    */

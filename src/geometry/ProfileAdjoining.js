@@ -2,22 +2,29 @@ import paper from 'paper/dist/paper-core';
 import {GeneratrixElement} from './GeneratrixElement';
 
 const strokeColor = new paper.Color(0.5, 0.5);
+const shadowColor = new paper.Color(0, 0, 0, 0.5);
+export function afterCreate() {
+  const {path, generatrix} = this;
+  const callouts = new paper.Group({parent: this, name: 'callouts'});
+  generatrix.set({
+    strokeColor,
+    strokeWidth: 2,
+    shadowColor,
+    shadowBlur: 20,
+  });
+  path.set({
+    strokeWidth: 0,
+    fillColor: strokeColor,
+  });
+}
 
 export class ProfileAdjoining extends GeneratrixElement.Profile {
 
   constructor(...attr) {
     super(...attr);
-    const {path, generatrix} = this;
-    const callouts = new paper.Group({parent: this, name: 'callouts'});
-    generatrix.set({
-      strokeColor,
-      strokeWidth: 4,
-    });
-    path.set({
-      strokeWidth: 0,
-      fillColor: strokeColor,
-    });
+    afterCreate.call(this);
   }
+  
   get elmType() {
     return this.project.root.enm.elmTypes.adjoining;
   }
@@ -32,21 +39,30 @@ export class ProfileAdjoining extends GeneratrixElement.Profile {
 
   redraw() {
     super.redraw();
-    const {generatrix, callouts: parent} = this.children;
+    const {children: {generatrix, callouts: parent}, project: {props}} = this;
     parent.removeChildren();
     const {length} = generatrix;
     
     for(let pos=0; pos <= length; pos+= 50) {
       const loc = generatrix.getLocationAt(pos);
       const firstSegment = loc.point.add(loc.normal.multiply(10));
-      const lastSegment = firstSegment.add(loc.normal.rotate(30).multiply(60)); 
+      const lastSegment = firstSegment.add(loc.normal.rotate(30).multiply(40)); 
       new paper.PathUnselectable({
         parent,
         strokeColor,
         strokeWidth: 1,
         strokeScaling: false,
         segments: [firstSegment, lastSegment],
+        guide: true,
       });
+    }
+    if(props.carcass !== 'normal') {
+      if(generatrix.shadowOffset.length) {
+        generatrix.shadowOffset = [0, 0];
+      }
+    }
+    else {
+      generatrix.shadowOffset = generatrix.getNormalAt(0).normalize(10);
     }
   }
   

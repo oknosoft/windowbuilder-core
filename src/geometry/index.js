@@ -17,6 +17,8 @@ import {GeneratrixElement} from './GeneratrixElement';
 import './ProfileCut';
 import './ProfileLine';
 import './ProfileAdjoining';
+import './ProfileConnective';
+import './ProfilePortal';
 
 const geometry = {
   Scheme,

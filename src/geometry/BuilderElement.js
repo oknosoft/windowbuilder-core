@@ -1,6 +1,7 @@
 
 import paper from 'paper/dist/paper-core';
 import {ElementParams} from './BuilderParams';
+import {GraphEdge} from './graph/Edge';
 
 /**
  * @summary Элемент изделия
@@ -109,6 +110,20 @@ export class BuilderElement extends paper.Group {
    */
   get nearest() {
     return this.#raw.nearest || this.#raw.edge?.profile;
+  }
+  set nearest(v) {
+    if(v instanceof GraphEdge) {
+      this.#raw.edge = v;
+      delete this.#raw.nearest;
+    }
+    else if(v instanceof BuilderElement) {
+      this.#raw.nearest = v;
+      delete this.#raw.edge;
+    }
+    else {
+      delete this.#raw.edge;
+      delete this.#raw.nearest;
+    }
   }
 
   /**

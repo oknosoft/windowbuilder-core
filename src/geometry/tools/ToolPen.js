@@ -2,6 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
 import {DimensionLineCustom} from '../DimensionLineCustom';
+import {ContourPortal} from '../ContourPortal';
 
 export class ToolPen extends ToolSelectable {
 
@@ -203,8 +204,8 @@ export class ToolPen extends ToolSelectable {
         this.mode = 2;
         return;
       }
-      else if(profile.elm_type.is('linking') || profile.elm_type.is('cut') ||
-          profile.elm_type.is('line') || profile.elm_type.is('adjoining')) {
+      else if(!(project.activeLayer instanceof ContourPortal) && (profile.elm_type.is('linking') ||
+          profile.elm_type.is('cut') || profile.elm_type.is('line') || profile.elm_type.is('adjoining'))) {
         project.rootLayer.createProfile({
           b: this.path.firstSegment.point,
           e: this.path.lastSegment.point,

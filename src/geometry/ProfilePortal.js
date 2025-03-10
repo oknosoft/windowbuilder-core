@@ -1,16 +1,12 @@
 import paper from 'paper/dist/paper-core';
 import {GeneratrixElement} from './GeneratrixElement';
+import {afterCreate} from './ProfileAdjoining';
 
 export class ProfilePortal extends GeneratrixElement {
 
   constructor({loading, ...attr}) {
     super(attr);
-    this.path.visible = false;
-    this.generatrix.set({
-      strokeColor: new paper.Color(0.5, 0.5),
-      shadowColor: new paper.Color(0, 0, 0),
-      shadowBlur: 20,
-    });
+    afterCreate.call(this);
     if(!(loading || this.project.props.loading)) {
       this.skeleton.addProfile(this);
     }
@@ -44,17 +40,7 @@ export class ProfilePortal extends GeneratrixElement {
   }
 
   redraw() {
-    this.checkActual();
-    //this.project.props.loading
-    const {project, generatrix} = this;
-    if(project.props.carcass !== 'normal') {
-      if(generatrix.shadowOffset.length) {
-        generatrix.shadowOffset = [0, 0];
-      }
-    }
-    else {
-      generatrix.shadowOffset = generatrix.getNormalAt(0).normalize(10);
-    }
+    return GeneratrixElement.Adjoining.prototype.redraw.call(this);    
   }
 
 }

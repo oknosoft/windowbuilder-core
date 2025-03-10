@@ -123,7 +123,7 @@ export class ToolSelect extends ToolSelectable {
           }
         }
       }
-      else if(hitItem.type === 'segment') {
+      else if(hitItem.type === 'segment' && item?.generatrix) {
         const node = item.generatrix.firstSegment.point.isNearest(hitItem.segment.point, true) ? 'b' : 'e';
         if(shift) {
           if(hitItem.segment.selected) {
