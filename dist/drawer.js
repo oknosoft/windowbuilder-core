@@ -1386,6 +1386,9 @@ class BuilderPrmRow {
   get inset() {
     return this._row.inset;
   }
+  get cnstr() {
+    return this._row.cnstr;
+  }
   get sorting_field() {
     return this.param.sorting_field;
   }
@@ -1409,7 +1412,8 @@ class BuilderPrmRow {
       }
     }
     else {
-      this._row = params.add({cnstr, param, inset, value});
+      this._row = params.add({cnstr, param, inset});
+      this._row.value = value;
     }
   }
 }
@@ -1454,6 +1458,11 @@ class BuilderPrms {
   }
   add(proto) {
     return this.params.find(proto) || this.params.add(proto);
+  }
+  del(row) {
+    const {_obj} = this.params;
+    const _row = row instanceof BuilderPrmRow ? row._row : row;
+    this.params.del(_row);
   }
 }
 class Compound extends BuilderElement {
