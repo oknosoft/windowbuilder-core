@@ -16198,6 +16198,7 @@ class ProductsBuilding {
             cx.x = bounds.width;
             cx.y = bounds.height;
             cx.s = (bounds.area / 1e6).round(4);
+            cx.z = layer.thickness(true);
             cx.calc_order_row.nom = cx.prod_nom;
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
