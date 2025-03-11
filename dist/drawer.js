@@ -7300,6 +7300,26 @@ class Filling extends AbstractFilling(BuilderElement) {
       };
     });
   }
+  perimeter_spacer(size = 0) {
+    const {profiles: res} = this;
+    const ubound = res.length - 1;
+    return res.map((curr, index) => {
+      let sub_path = curr.sub_path.equidistant(size);
+      const prev = !index ? res[ubound] : res[index - 1];
+      const next = (index == ubound) ? res[0] : res[index + 1];
+      const b = sub_path.intersect_point(prev.sub_path.equidistant(size), curr.b, true);
+      const e = sub_path.intersect_point(next.sub_path.equidistant(size), curr.e, true);
+      if (b && e && !b.equals(e)) {
+        sub_path = sub_path.get_subpath(b, e);
+      }
+      return {
+        profile: curr.profile,
+        angle: curr.angle,
+        len: sub_path.length,
+        sub_path,
+      };
+    });
+  }
   bounds_light(size = 0) {
     const path = new paper.Path({project: this.project, insert: false});
     for (const {sub_path} of this.perimeter_inner(size)) {
@@ -18510,7 +18530,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){
-            let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_inner(-row_ins_spec.sz);
+            let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
             if(!perimeter) {
               perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }

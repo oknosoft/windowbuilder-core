@@ -1244,6 +1244,31 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   /**
+   * Массив с рёбрами периметра по кромке стеклопакета
+   * @return {Array}
+   */
+  perimeter_spacer(size = 0) {
+    const {profiles: res} = this;
+    const ubound = res.length - 1;
+    return res.map((curr, index) => {
+      let sub_path = curr.sub_path.equidistant(size);
+      const prev = !index ? res[ubound] : res[index - 1];
+      const next = (index == ubound) ? res[0] : res[index + 1];
+      const b = sub_path.intersect_point(prev.sub_path.equidistant(size), curr.b, true);
+      const e = sub_path.intersect_point(next.sub_path.equidistant(size), curr.e, true);
+      if (b && e && !b.equals(e)) {
+        sub_path = sub_path.get_subpath(b, e);
+      }
+      return {
+        profile: curr.profile,
+        angle: curr.angle,
+        len: sub_path.length,
+        sub_path,
+      };
+    });
+  }
+
+  /**
    * Габариты по световому проему
    * @param size
    * @return {Rectangle}
