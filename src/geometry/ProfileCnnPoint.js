@@ -273,12 +273,25 @@ export class CnnPoint {
   get selected() {
     return this.point.selected;
   }
-  
+
+  /**
+   * 
+   * @type {GraphVertex}
+   */
   get vertex() {
     return this.#raw.vertex;
   }
   set vertex(v) {
     this.#raw.vertex = v;
+  }
+
+  /**
+   * @summary Исходящее из вершины ребро профиля-владельца
+   * @type {GraphEdge}
+   */
+  get edge() {
+    const {owner, vertex} = this;
+    return vertex.getEdges().find((v) => v.profile === owner);
   }
   
   get cnn() {

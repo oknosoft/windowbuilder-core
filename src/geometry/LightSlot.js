@@ -16,7 +16,15 @@ export class LightSlot  {
   constructor(owner, cycle) {
     Object.assign(this.#raw, {owner, cycle});
     owner.children[cycle.key] = this;
-    this.createChild({kind: 'glass'});
+    if(owner.owner instanceof Contour.Portal) {
+      Object.assign(this.#raw, {
+        kind: 'flap',
+        child: owner.owner.findLayer(cycle),
+      });
+    }
+    else {
+      this.createChild({kind: 'glass'});
+    }
   }
   
   get key() {

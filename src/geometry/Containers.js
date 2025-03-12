@@ -22,10 +22,18 @@ export class Containers {
 
   /**
    * @summary Скелетон слоя
-   * @return {Skeleton}
+   * @type {Skeleton}
    */
   get skeleton() {
     return this.#raw.owner.skeleton;
+  }
+
+  /**
+   * @summary Слой-владелец
+   * @type {Contour}
+   */
+  get owner() {
+    return this.#raw.owner;
   }
 
   get children() {

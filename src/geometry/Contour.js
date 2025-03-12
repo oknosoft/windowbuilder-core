@@ -180,13 +180,13 @@ export class Contour extends paper.Layer {
   /**
    * @summary Массив профилей, составляющих внешний контур слоя
    * @desc С учетом соединителей и соседних слоёв
-   * @type {Array.<Profile>}
+   * @type {Array.<GraphEdge>}
    */
-  get outerProfiles() {
+  get outerEdges() {
     const {profiles} = this;
     const res = [];
     for(const profile of profiles) {
-      res.push(profile);
+      res.push(profile.b.edge);
     }
     return res;
   }

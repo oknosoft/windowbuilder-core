@@ -32,11 +32,36 @@ export class ContourPortal extends Contour {
     for(const contour of contours) {
       contour.parent = topLayers;
     }
+    const profiles = [];
     for(const contour of contours) {
-      for(const profile of contour.outerProfiles) {
-
+      for(const edge of contour.outerEdges) {
+        const profile = this.createProfile({
+          b: edge.startVertex.point.clone(),
+          e: edge.endVertex.point.clone(),
+        });
+        edge.profile.raw('edge', profile.b.edge);
+      }
+      for(const elm of this.project.dimensions.byContour(contour)) {
+        const {Constructor, owner, row, elm1, elm2, ...other} = elm.toJSON();
+        elm.remove();
+        new Constructor({
+          owner: this,
+          elm1: elm1.nearest,
+          elm2: elm2.nearest,
+          ...other,
+          // p1,
+          // p2,
+          // offset: -(callout1.length + callout2.length)/2,
+          // pos: nearest?.pos,
+        });
       }
     }
+    //this.skeleton.addProfiles(profiles);
+    this.containers.sync();
+  }
+
+  findLayer(cycle) {
+    return this.contours[0];
   }
 
   /**

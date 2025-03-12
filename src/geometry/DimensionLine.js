@@ -1,7 +1,8 @@
 import paper from 'paper/dist/paper-core';
 import {Profile} from './ProfileItem';
+import {BuilderElement} from './BuilderElement';
 
-export class DimensionLine extends paper.Group {
+export class DimensionLine extends BuilderElement {
 
   #raw = {};
   
@@ -69,6 +70,10 @@ export class DimensionLine extends paper.Group {
       this.#raw[name] = value;
     }
     return Array.isArray(name) ? name.map(n => this.#raw[n]) : this.#raw[name];
+  }
+
+  get elmType() {
+    return this.project.root.enm.elmTypes.size;
   }
 
   // размер
@@ -173,6 +178,31 @@ export class DimensionLine extends paper.Group {
     path.offset = offset;
 
     return path;
+  }
+
+  /**
+   * @summary Все слои, связанные с текущей размерной линией
+   * @return {Array.<Contour>}
+   */
+  get contours() {
+    const {owner, elm1, elm2} = this.#raw;
+    const res = new Set();
+    res.add(owner);
+    res.add(elm1.layer);
+    res.add(elm2.layer);
+    return Array.from(res);
+  }
+
+  /**
+   * @summary Профили всех слоёв, связанных с текущей размерной линией
+   * @return {Array.<GeneratrixElement>}
+   */
+  get allProfiles() {
+    const res = [];
+    for(const contour of this.contours) {
+      res.push(...contour.profiles);
+    }
+    return res;
   }
 
   divByPos() {
@@ -478,7 +508,7 @@ export class DimensionLine extends paper.Group {
         delta = delta.divide(event.divide);
       }
       project.deselectAll();
-      for(let {b, e, generatrix, width} of project.getItems({class: Profile})) {
+      for(let {b, e, generatrix, width} of this.allProfiles) {
         width = width / 2 + 1;
         if(Math.abs(b.point[xy] - _bounds[event.name]) < width && Math.abs(e.point[xy] - _bounds[event.name]) < width){
           generatrix.segments.forEach((segm) => segm.selected = true)
@@ -499,6 +529,21 @@ export class DimensionLine extends paper.Group {
       project.deselectAll(true);
       project.redraw();
     }
+  }
+
+  setSelection(selection) {
+    for(const chld of this.children) {
+      if(chld instanceof paper.Path) {
+        chld.setSelection(0);
+      }
+      else if(chld instanceof paper.PointText) {
+        chld.fontWeight = selection ? 'bold': 'normal';
+      }
+    }
+  }
+  
+  toJSON() {
+    return {...this.#raw, parent: this.parent, Constructor: this.constructor};
   }
   
   redraw() {

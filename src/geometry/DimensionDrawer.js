@@ -196,24 +196,33 @@ export class DimensionDrawer extends MapedGroup {
   }
 
   /**
+   * @summary Массив размерных линий, связанных со слоем
+   * @param {Contour} layer
+   * @return {Array.<DimensionLine>}
+   */
+  byContour(layer) {
+    const res = [];
+    for(const elm of this.children) {
+      if(elm instanceof DimensionLine) {
+        const [owner, elm1, elm2] = elm.raw(['owner', 'elm1', 'elm2']);
+        if(owner === layer || elm1?.layer === layer || elm2?.layer === layer) {
+          res.push(elm);
+        }
+      }
+      else {
+        res.push(elm);
+      }
+    }
+    return res;
+  }
+
+  /**
    * @summary Стирает размерные линии
    */
   clear(layer) {
     
     if(layer) {
-      const rm = [];
-      for(const elm of this.children) {
-        if(elm instanceof DimensionLine) {
-          const [owner, elm1, elm2] = elm.raw(['owner', 'elm1', 'elm2']);
-          if(owner === layer || elm1?.layer === layer || elm2?.layer === layer) {
-            rm.push(elm);
-          }
-        }
-        else {
-          rm.push(elm);
-        }
-      }
-      for(const elm of rm) {
+      for(const elm of this.byContour(layer)) {
         elm.remove();
       }
     }
