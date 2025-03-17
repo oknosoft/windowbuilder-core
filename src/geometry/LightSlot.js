@@ -184,6 +184,10 @@ export class LightSlot  {
     return this.#raw.child;
   }
 
+  unbind() {
+    this.#raw.child = null;
+  }
+
   remove() {
     const {owner, cycle, child} = this.#raw;
     // удалить элементы рисовалки

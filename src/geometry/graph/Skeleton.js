@@ -340,14 +340,15 @@ export class Skeleton extends Graph {
   }
 
   /**
-   * Detect cycle in directed graph using Depth First Search.
-   *
+   * @summary Detect cycle in directed graph using Depth First Search
+   * @return {Array.<Cycle>}
    */
   detectCycles() {
     const cycles = [];
     let cycle = null;
+    const {debug} = $p.jobPrm;
 
-    $p.jobPrm.debug ? console.profile() : console.time();
+    debug ? console.profile() : console.time();
 
     // Will store parents (previous vertices) for all visited nodes.
     // This will be needed in order to specify what path exactly is a cycle.
@@ -410,7 +411,7 @@ export class Skeleton extends Graph {
         // If cycle was detected we must forbid all further traversing since it will
         // cause infinite traversal loop.
         if(cycle) {
-          cycles.push(new Cycle().reorder(cycle, blackSet, graySet));
+          cycles.push(new Cycle().reorder(cycle, blackSet, graySet, this.owner.isOrthogonal));
           cycle = null;
           return false;
         }
@@ -461,8 +462,8 @@ export class Skeleton extends Graph {
       this.depthFirstSearch(Array.from(whiteSet)[0], callbacks);
     }
 
-    $p.jobPrm.debug ? console.profileEnd() : console.timeEnd();
-
+    debug ? console.profileEnd() : console.timeEnd();
+    
     return cycles;
   }
 }

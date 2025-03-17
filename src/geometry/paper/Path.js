@@ -442,6 +442,74 @@ export default function (paper) {
 
         return res.elongation(elong);
       },
+      
+      innerRect(delta, bounds, dir) {
+        const findLR = (test) => {
+          const intersections = this.getIntersections(test);
+          const ll = intersections.reduce((sum, curr) => (!sum || curr.point.x < sum.point.x) ? curr : sum);
+          const lr = intersections.reduce((sum, curr) => (!sum || curr.point.x > sum.point.x) ? curr : sum);
+          return {
+            left: new paper.Path({
+              insert: false,
+              segments: [[ll.point.x, bounds.bottom], [ll.point.x, bounds.top]],
+            }),
+            right: new paper.Path({
+              insert: false,
+              segments: [[lr.point.x, bounds.bottom], [lr.point.x, bounds.top]],
+            }),
+          };
+        };
+        const findTB = (test) => {
+          const intersections = this.getIntersections(test);
+          const lt = intersections.reduce((sum, curr) => (!sum || curr.point.y < sum.point.y) ? curr : sum);
+          const lb = intersections.reduce((sum, curr) => (!sum || curr.point.y > sum.point.y) ? curr : sum);
+          return {
+            top: new paper.Path({
+              insert: false,
+              segments: [[bounds.left, lt.point.y], [bounds.right, lt.point.y]],
+            }),
+            bottom: new paper.Path({
+              insert: false,
+              segments: [[bounds.left, lb.point.y], [bounds.right, lb.point.y]],
+            }),
+          };
+        };
+        
+        switch (dir) {
+          case 'up': {
+            const down = new paper.Path({
+              insert: false,
+              segments: [[bounds.left, bounds.bottom - delta], [bounds.right, bounds.bottom - delta]],
+            });
+            const {left, right} = findLR(down);
+            const {top: lTop, bottom: lBottom} = findTB(left);
+            const {top: rTop, bottom: rBottom} = findTB(right);
+            break;
+          }
+          case 'down': {
+            const up = new paper.Path({
+              insert: false,
+              segments: [[bounds.left, bounds.top + delta], [bounds.right, bounds.top + delta]],
+            });
+            const {left, right} = findLR(up);
+            break;
+          }
+        }
+      },
+      
+      innerBounds() {
+        const {bounds} = this;
+        const max = {area: 0};
+        for(let delta=0; delta<bounds.height/2-100; delta++) {
+          const rect = this.innerRect(delta, bounds, 'up');
+          if(rect.area > max.area) {
+            max.area = rect.area;
+            max.dir = 'up';
+            max.delta = delta;
+            max.rect = rect;
+          }
+        }
+      },
 
     });
   }

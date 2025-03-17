@@ -24,6 +24,28 @@ export class Contour extends paper.Layer {
     return this.project;
   }
 
+  /**
+   * @summary Доступ к сырым данным
+   * @param {String|Array} name
+   * @param {Any} [value]
+   * @return {Any}
+   */
+  raw(name, value) {
+    if(arguments.length > 1) {
+      this.#raw[name] = value;
+    }
+    return Array.isArray(name) ? name.map(n => this.#raw[n]) : this.#raw[name];
+  }
+
+  /**
+   * @summary Является ли элемент экземпляром заданного класса
+   * @param {String} name
+   * @return {Boolean}
+   */
+  is(name) {
+    return GeneratrixElement.prototype.is.call(this, name);
+  }
+
   get isActual() {
     return this.project.props.stamp === this.#raw.stamp;
   }
@@ -31,6 +53,7 @@ export class Contour extends paper.Layer {
   checkActual() {
     if(!this.isActual) {
       this.#raw.index = '';
+      this.#raw.skeleton.cache.clear();
       this.#raw.stamp = this.project.props.stamp;
     }
   }

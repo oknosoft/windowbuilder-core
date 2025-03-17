@@ -44,7 +44,11 @@ export class GraphEdge {
     return `${startVertex.key}_${endVertex.key}`;
   }
   
-
+  get segments() {
+    const {profile: {generatrix}, startVertex, endVertex} = this;
+    const path = generatrix.getSubPath(startVertex.point, endVertex.point);
+    return path.segments;
+  }
 
   /**
    * @return {GraphEdge}

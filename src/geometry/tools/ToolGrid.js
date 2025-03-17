@@ -12,9 +12,9 @@ export class ToolGrid extends ToolElement {
       dp: $p.dp.builderGrid.create({
         split: 'ДелениеГоризонтальных',
         w: 6000,
-        h: 3000,
-        elm_by_x: 6,
-        elm_by_y: 3,
+        h: 6000,
+        align_by_x: 'left',
+        align_by_y: 'bottom',
       }),
     });
     this.on({

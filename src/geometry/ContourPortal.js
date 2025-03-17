@@ -1,4 +1,3 @@
-import paper from 'paper/dist/paper-core';
 import {Contour} from './Contour';
 import {ProfilePortal} from './ProfilePortal';
 
@@ -22,6 +21,14 @@ export class ContourPortal extends Contour {
 
   get virtual() {
     return true;
+  }
+  
+  get isOrthogonal() {
+    return !this.raw('orthFree');
+  }
+  set isOrthogonal(v) {
+    this.raw('orthFree', !v);
+    this.project.props.registerChange();
   }
 
   /**
@@ -78,6 +85,9 @@ export class ContourPortal extends Contour {
       contour._parent = null;
       project.layers.push(contour);
     }
+    for(const container of this.containers) {
+      container.unbind();
+    }    
     const {topLayers, bottomLayers} = this.children;
     topLayers.children.length = 0;
     bottomLayers.children.length = 0;
