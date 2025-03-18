@@ -30,7 +30,7 @@
   "dependencies": {
     "@oknosoft/metadata": "file:../metadata-v3",
     "paper-jsdom-canvas": "0.12.18",
-    "three": "0.173"
+    "three": "0.174"
   },
   "devDependencies": {
     "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",

@@ -31,7 +31,7 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
         elmTypes = [elm.elmType];
       }
       this.elmnts.findRows({elm_type: elmTypes}, row => {
-        if(row.pos.empty() || row.pos.is('any') || pos.empty() || pos.is('any') || row.pos === pos) {
+        if(pos.eq(row.pos)) {
           // TODO: добавить проверку ключа
           if(row.nom instanceof classes.CchPredefinedElmnts) {
             for(const {value} of row.nom.elmnts) {

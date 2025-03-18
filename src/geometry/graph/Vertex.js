@@ -209,6 +209,11 @@ export class GraphVertex {
     }
     return selected;
   }
+  set selected(v) {
+    for(const cnnPoint of this.cnnPoints) {
+      cnnPoint.point.selected = Boolean(v);
+    }
+  }
 
   /**
    * @return {number}

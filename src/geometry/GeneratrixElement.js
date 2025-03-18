@@ -333,7 +333,7 @@ export class GeneratrixElement extends BuilderElement {
   get pos() {
     const {layer, project: {root}} = this;
     const {top, bottom, left, right} = layer.profilesBySide();
-    const {Верх, Низ, Лев, Прав, Центр} = root.enm.positions;
+    const {Верх, Низ, Лев, Прав, center, vert, hor} = root.enm.positions;
     if(top === this) {
       return Верх;
     }
@@ -361,7 +361,8 @@ export class GeneratrixElement extends BuilderElement {
       return Прав;
     }
     // TODO: рассмотреть случай с выносом стоек и разрывами
-    return Центр;
+    const {orientation} = this;
+    return orientation.is('hor') ? hor : (orientation.is('vert') ? vert : center);
   }
 
   /**

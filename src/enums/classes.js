@@ -38,6 +38,12 @@ export function classes({enm, classes, symbols, utils}, exclude)  {
       }
       return this;
     }
+    
+    eq(pos) {
+      if(!pos || pos.empty() || pos.is('any') || this.empty() || this.is('any') || pos === this) {
+        return true;
+      }
+    }
   }
   classes.EnmPositions = EnmPositions;
 

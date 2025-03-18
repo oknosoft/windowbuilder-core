@@ -141,6 +141,9 @@ export class Mover {
         this.#raw.space = true;
       }
     }
+    
+    // подготовим к сдвигам вложенные слои
+    this.prepareMoveLinked();
   }
 
   /**
@@ -153,12 +156,76 @@ export class Mover {
     this.#raw.interactive = false;
   }
 
+  prepareMoveLinked() {
+    const {vertexes: ownVertexes, owner} = this.#raw;
+    if(owner.skeleton.cache.has('linked')) {
+      owner.skeleton.cache.get('linked').clear();
+    }
+    else {
+      owner.skeleton.cache.set('linked', new Map());
+    }
+    const cache = owner.skeleton.cache.get('linked');
+    for(const flap of owner.contours) {
+      const {profiles} = flap;
+      const selected = new Set();
+      cache.set(flap, selected);
+      for(const [vertex, move] of ownVertexes) {
+        if(move.level === 0) {
+          for(const {b, e, edge} of profiles) {
+            if(move.edges.has(edge)) {
+              if(edge.startVertex.selected) {
+                selected.add(b.vertex);
+                b.vertex.selected = true;
+              }
+              if(edge.endVertex.selected) {
+                selected.add(e.vertex);
+                e.vertex.selected = true;
+              }
+            }
+          }
+        }
+      }
+      flap.mover.prepareMovePoints();
+      for(const profile of profiles) {
+        profile.selected = false;
+        profile.b.vertex.selected = false;
+        profile.e.vertex.selected = false;
+      }
+    }
+  }
+  
+  /**
+   * @summary Сдвиг элементов вложенных слоёв и корректировка `delta`
+   * @desc чтобы исключить самопересечения и отрывы
+   * @param {paper.Point} start
+   * @param {paper.Point} delta
+   * @param {Boolean} [shift]
+   * @return {paper.Point}
+   */
+  tryMoveLinked(start, delta, shift) {
+    const {vertexes: ownVertexes, owner} = this.#raw;
+    if(!owner.skeleton.cache.has('linked')) {
+      this.prepareMoveLinked();
+    }
+    let test;
+    for(const [flap, selected] of owner.skeleton.cache.get('linked')) {
+      if(selected.size) {
+        if(!test) {
+          test = new paper.Point();
+        }
+        flap.mover.tryMovePoints(start, delta, shift, test);
+      }
+    }
+    return test || delta;
+  }
+
   /**
    * @summary Корректирует delta допустимой величиной сдвига для каждого узла
    * @param {paper.Point} start
    * @param {paper.Point} delta
+   * @param {Boolean} [shift]
    */
-  tryMovePoints(start, delta, shift) {
+  tryMovePoints(start, delta, shift, test) {
 
     const {vertexes, interactive, owner} = this.#raw;
     const cmax = owner.profiles.length > 100 ? 40000 : lmax;
@@ -173,6 +240,9 @@ export class Mover {
       }
       return;
     }
+    
+    // проверим, не мешают ли сдвигам вложенные слои
+    delta = this.tryMoveLinked(start, delta, shift);
     
     // сначала, для узлов нулевого уровня
     for(const [vertex, move] of vertexes) {
@@ -228,12 +298,19 @@ export class Mover {
     for(const [vertex, move] of vertexes) {
       if(move.reset) {
         reset = true;
+        if(test) {
+          test.length = 0;
+        }
         break;
       }
     }
     if(!reset) {
       for(const [vertex, move] of vertexes) {
         if(move.delta?.length) {
+          if(test && (!test.length || test.length > move.delta.length)) {
+            test.x = move.delta.x;
+            test.y = move.delta.y;
+          }
           move.point = move.startPoint.add(move.delta);
           move.delta = null;
         }
