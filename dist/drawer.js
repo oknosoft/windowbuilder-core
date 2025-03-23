@@ -7434,7 +7434,7 @@ class Filling extends AbstractFilling(BuilderElement) {
                 params[prop] = parseFloat(val || 0);  
               }
               else {
-                params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+                params[prop] = typeof val === 'undefined' ? '' : (val?.valueOf?.() || val);
               }
               row.dop = {params};
             }
@@ -16769,6 +16769,10 @@ $p.spec_building = new SpecBuilding($p);
     }
 		else if(f == 'partner'){
       return $p.cat.partners;
+    }
+    else if(mf.types.length === 2 && mf.types.includes('cat.values_options')) {
+      const type = mf.types.find(v => v!== 'cat.values_options');
+      return $p.md.mgr_by_class_name(type);
     }
 	}
 })($p);

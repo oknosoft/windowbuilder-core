@@ -1420,7 +1420,7 @@ class Filling extends AbstractFilling(BuilderElement) {
                 params[prop] = parseFloat(val || 0);  
               }
               else {
-                params[prop] = typeof val === 'undefined' ? '' : val.valueOf();
+                params[prop] = typeof val === 'undefined' ? '' : (val?.valueOf?.() || val);
               }
               row.dop = {params};
             }
