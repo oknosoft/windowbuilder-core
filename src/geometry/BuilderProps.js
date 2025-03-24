@@ -1,15 +1,17 @@
 import {Props3D} from './BuilderPropsThree';
 import defaults from './BuilderPropsDefaults';
+import {BuilderParams} from './BuilderParams';
+import {own} from '@oknosoft/metadata/core/src/meta/symbols';
 
 /**
  * @summary Runtime свойства проекта
  * @desc Такие как, модифицированность, режим рисовалки, шаг и привязка к сетке и т.д.
  */
-export class BuilderProps  {
+export class BuilderProps extends BuilderParams {
   #raw = {sticking: 4};
   
   constructor(project) {
-    this.#raw.project = project;
+    super(project);
     this.#raw.stamp = Date.now();
     this.#raw.three = new Props3D();
     const base_sys = project.root?.cch.predefinedElmnts.find({synonym: "base_sys"});
@@ -20,7 +22,11 @@ export class BuilderProps  {
   }
   
   get project() {
-    return this.#raw.project;
+    return this[own];
+  }
+  
+  get settings() {
+    return this.project._scope.settings;
   }
   
   get stamp() {
@@ -36,12 +42,12 @@ export class BuilderProps  {
   }
 
   get carcass() {
-    return this.#raw.project._scope.settings.carcass;
+    return this.settings.carcass;
   }
   set carcass(v) {
     const change = this.carcass !== v;
-    const {project} = this;
-    project._scope.settings.carcass = v;
+    const {project, settings} = this;
+    settings.carcass = v;
     if(change) {
       project.root.jobPrm.set('carcass', v);
       project.redraw(true);
@@ -49,38 +55,38 @@ export class BuilderProps  {
   }
   
   get gridStep() {
-    return this.#raw.project._scope.settings.gridStep;
+    return this.settings.gridStep;
   }
   set gridStep(v) {
-    this.#raw.project._scope.settings.gridStep = parseInt(v, 10) || 10;
+    this.settings.gridStep = parseInt(v, 10) || 10;
   }
 
   get snapAngle() {
-    return this.#raw.project._scope.settings.snapAngle;
+    return this.settings.snapAngle;
   }
   set snapAngle(v) {
-    this.#raw.project._scope.settings.snapAngle = parseInt(v, 10) || 45;
+    this.settings.snapAngle = parseInt(v, 10) || 45;
   }
   
   get showGrid() {
-    return Boolean(this.#raw.project._scope.settings.showGrid);
+    return Boolean(this.settings.showGrid);
   }
   set showGrid(v) {
-    this.#raw.project._scope.settings.showGrid = v;
+    this.settings.showGrid = v;
   }
 
   get showVertexes() {
-    return Boolean(this.#raw.project._scope.settings.showVertexes);
+    return Boolean(this.settings.showVertexes);
   }
   set showVertexes(v) {
-    this.#raw.project._scope.settings.showVertexes = v;
+    this.settings.showVertexes = v;
   }
 
   get snap() {
-    return this.#raw.project._scope.settings.snap || 'none';
+    return this.settings.snap || 'none';
   }
   set snap(v) {
-    this.#raw.project._scope.settings.snap = v;
+    this.settings.snap = v;
   }
 
   get loading() {
@@ -105,14 +111,13 @@ export class BuilderProps  {
   }
 
   get sys() {
-    const {project, sys} = this.#raw;
-    return project.root.cat.productionParams.get(sys);
+    return this.project.root.cat.productionParams.get(this.#raw.sys);
   }
   set sys(v) {
-    const sys = this.#raw.project.root.cat.productionParams.get(v);
+    const sys = this.project.root.cat.productionParams.get(v);
     if(this.#raw.sys !== sys) {
       this.#raw.sys = sys;
-      this.#raw.project.resetDefaults();
+      this.project.resetDefaults();
     }
   }
   
@@ -121,7 +126,7 @@ export class BuilderProps  {
   }
   
   fontSize() {
-    return 60;
+    return 62;
   }
   
 }

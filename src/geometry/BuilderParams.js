@@ -1,12 +1,12 @@
 
 import {OwnerObj} from '@oknosoft/metadata/core/src/meta/metaObjs';
-import {own} from '@oknosoft/metadata/core/src/meta/symbols';
+import {own, alias} from '@oknosoft/metadata/core/src/meta/symbols';
 
 /**
  * @summary Базовый класс параметров
  * @desc Прячет от прикладного программиста способ хранения значений параметров
  */
-class BuilderParams extends OwnerObj {
+export class BuilderParams extends OwnerObj {
 
   /**
    * @summary Возвращает контекст для извлечения значения параметра
@@ -17,7 +17,7 @@ class BuilderParams extends OwnerObj {
   }
 
   /**
-   * @summary Список параметров, используемых элементом, изделием или слоем
+   * @summary Список параметров, используемых элементом, изделием, сщединением или слоем
    * @return {Array.<CchProperties>}
    */
   get list() {
@@ -90,6 +90,8 @@ export class ElementParams extends BuilderParams {
    * @return {Array.<CchProperties>}
    */
   get list() {
+    const {inset, layer, project} = this[own];
+    const {sys} = layer;
     return [];
   }
 
@@ -99,6 +101,18 @@ export class ElementParams extends BuilderParams {
      * ищем для элемента и если не находим, получаем у слоя 
      */
     return elm.layer.params.eigenvalue(param, origin);
+  }
+  
+  cnnII(elm2) {
+    const elm = this[own];
+    if(!elm.raw('cnnsII')) {
+      elm.raw('cnnsII', new WeakMap());
+    }
+    const map = elm.raw('cnnsII');
+    if(!map.has(elm2)) {
+      map.set(elm2, new CnnIIParams(elm, elm2));
+    }
+    return map.get(elm2);
   }
 }
 
@@ -142,6 +156,13 @@ export class FillingRibParams extends BuilderParams {
      * ищем для ребра и если не находим, получаем у элемента 
      */
     return rib.edge.profile.params.eigenvalue(param, origin);
+  }
+}
+
+export class CnnIIParams extends BuilderParams {
+  
+  get elm2() {
+    return this[alias];
   }
 }
 

@@ -3,11 +3,11 @@ import depositeSpecificationRow from '../aggregate/depositeSpecificationRow';
 
 export const exclude = ['cat.inserts'];
 
-export function classes({classes, md, utils, symbols, enm, cat}, exclude)  {
+export function classes({classes, md, utils, symbols, enm, cat, cch}, exclude)  {
 
   const {get, set, own} = symbols;
   const {CatObj, CatManager, TabularSectionRow} = classes;
-  const [DepositeSpecificationObj, DepositeSpecificationRow] = depositeSpecificationRow({CatObj, TabularSectionRow, get, set, own});
+  const [DepositeSpecificationObj, DepositeSpecificationRow] = depositeSpecificationRow({CatObj, TabularSectionRow, get, set, own, enm, cch});
   
   class CatInserts extends DepositeSpecificationObj {
     get article(){return this[get]('article')}

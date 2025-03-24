@@ -428,8 +428,22 @@ export class GeneratrixElement extends BuilderElement {
     return '#fefefe';
   }
 
+  /**
+   * @summary Является ли элемент прямым
+   * @type {Boolean}
+   */
   isLinear() {
     return this.generatrix.isLinear();
+  }
+
+  /**
+   * @summary Примыкает ли заданный элемент к текущему
+   * @type {Boolean}
+   */
+  isNearest(other) {
+    const {generatrix} = this;
+    return (generatrix.isNearest(other.b.point) && generatrix.isNearest(other.e.point)) ||
+      (other.generatrix.isNearest(this.b.point) && other.generatrix.isNearest(this.e.point));
   }
 
   points(mode) {

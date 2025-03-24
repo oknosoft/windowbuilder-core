@@ -207,11 +207,11 @@ export class Contour extends paper.Layer {
    */
   get outerEdges() {
     const {profiles} = this;
-    const res = [];
+    const edges = [];
     for(const profile of profiles) {
-      res.push(profile.b.edge);
+      edges.push(profile.b.edge);
     }
-    return res;
+    return edges;
   }
 
   /**

@@ -48,12 +48,15 @@ export class Containers {
    * @summary Ищет замкнутые циклы и прочищает неактуальные
    */
   detectAndPurge() {
-    const {skeleton, children} = this;
-    const cycles = skeleton.project.props.slave ? [] : skeleton.detectCycles();
-    const keys = cycles.map(v => v.key);
-    for(const key in children) {
-      if(!keys.includes(key)) {
-        children[key].remove();
+    const {skeleton, children, owner} = this;
+    let cycles = [];
+    if(owner.project.rootLayer !== owner) {
+      cycles = skeleton.detectCycles();
+      const keys = cycles.map(v => v.key);
+      for(const key in children) {
+        if(!keys.includes(key)) {
+          children[key].remove();
+        }
       }
     }
     return {children, cycles};

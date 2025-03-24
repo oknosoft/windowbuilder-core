@@ -62,8 +62,19 @@ export class ToolSelect extends ToolSelectable {
       if(item && !(item instanceof BuilderElement || item instanceof DimensionLine)) {
         item = item.parent;
       }
-      if(space && item?.nearest) {
-        item = item.nearest;
+      // при зажатом пробеле, ищем внешний элемент
+      if(space) {
+        if(item?.nearest) {
+          item = item.nearest;
+        }
+        else if(item?.elmType?.is('rama')) {
+          for(const profile of project.rootLayer.profiles) {
+            if(profile.generatrix.isNearest(this.mouseStartPos, (gridStep/2)^2)) {
+              item = profile;
+              break;
+            }
+          }
+        }
       }
 
       if(item && ['filling', 'fill', 'stroke'].includes(hitItem.type)) {
