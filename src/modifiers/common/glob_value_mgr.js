@@ -21,5 +21,9 @@
 		else if(f == 'partner'){
       return $p.cat.partners;
     }
+    else if(mf.types.length === 2 && mf.types.includes('cat.values_options')) {
+      const type = mf.types.find(v => v!== 'cat.values_options');
+      return $p.md.mgr_by_class_name(type);
+    }
 	}
 })($p);

@@ -351,6 +351,21 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'in_virt_layer':
+          _data._formula = function ({elm, layer}) {
+            if(!layer) {
+              layer = elm?.layer;
+            }
+            while (layer) {
+              if(layer instanceof EditorInvisible.ContourVirtual) {
+                return true;
+              }
+              layer = layer.layer;
+            }
+            return false;
+          };
+          break;         
+          
         case 'joins_last_elm':
           _data._formula = function ({elm, elm2, prm_row, node}) {
             if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
@@ -516,6 +531,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'node_pos',         // положение узла профиля
     'layer_weight',     // масса слоя с учётом признака 'Фильтр по тяжелой створке'
     'is_node_last',     // крайний по координатам узел в текущем слое
+    'in_virt_layer',    // элемент находится в иерархии виртуального слоя
     'joins_last_elm',   // примыкает крайний элемент
     'flap_overlay',     // есть наложение створок
     'flap_overlay_axis',// есть наложение створок с осями поворота

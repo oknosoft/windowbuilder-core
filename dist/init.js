@@ -6322,7 +6322,7 @@ set demand(v){this._setter_ts('demand',v)}
     if(!isArray && elmno < 0) {
       coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
-          const cx = this.find_create_cx({elm: num}, $p.utils.blank.guid, false);
+          const cx = this.find_create_cx(num, $p.utils.blank.guid, false);
           weight += cx.elm_weight();
         }
       });
@@ -6682,8 +6682,17 @@ class CatAbonentsManager extends CatManager {
   }
 
     get price_types() {
-    const {pricing} = $p.job_prm;
-    return [pricing.price_type_first_cost];
+    const {pricing, server} = $p.job_prm;
+    if(pricing.marginality_in_spec === 1) {
+      return [pricing.price_type_first_cost];
+    }
+    const price_types = new Set();
+    for(const id of server.abonents) {
+      for(const price_type of this.by_id(id)?.price_types) {
+        price_types.add(price_type);
+      }
+    }
+    return Array.from(price_types);
   }
 }
 $p.cat.create('abonents', CatAbonentsManager, false);

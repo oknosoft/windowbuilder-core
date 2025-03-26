@@ -1180,7 +1180,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       elm.remove();
     }
     // затем - импосты
-    for(const elm of this.imposts.reverse()) {
+    const {imposts} = this;
+    imposts.sort($p.utils.sort('elm', true));
+    for(const elm of imposts) {
       elm.remove();
     }
     // и остальные профили
@@ -2502,11 +2504,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     // упорядочиваем по z TODO: оптимизировать
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
-      if(b.profile?.isBelow(elm)) {
-        b.profile?.insertAbove(elm);
+      if(b.profile_point !== 'b' && b.profile_point !== 'e' && b.profile?.isBelow(elm)) {
+        elm.insertBelow(b.profile);
       }
-      if(e.profile?.isBelow(elm)) {
-        e.profile?.insertAbove(elm);
+      if(e.profile_point !== 'b' && e.profile_point !== 'e' && e.profile?.isBelow(elm)) {
+        elm.insertBelow(e.profile);
       }
     }
     // z-index доборов

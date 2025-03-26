@@ -1238,7 +1238,7 @@
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){
-            let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_inner(-row_ins_spec.sz);
+            let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
             if(!perimeter) {
               perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
             }

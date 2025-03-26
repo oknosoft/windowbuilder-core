@@ -396,29 +396,30 @@ class BuilderElement extends paper.Group {
       }
     };
 
-    return {
-      fields: new Proxy(mfields, {
-        get(target, prop) {
-          if(target[prop]) {
-            return target[prop];
-          }
-          const param = cch.properties.get(prop);
-          if(param) {
-            const mf = {
-              type: param.type,
-              synonym: param.name,
-            };
-            if(param.type.types.includes('cat.property_values')) {
-              mf.choice_params = [{
-                name: 'owner',
-                path: param.ref,
-              }];
-            }
-            return mf;
-          }
+    const fieldsProxy = new Proxy(mfields, {
+      get(target, prop) {
+        if(target[prop]) {
+          return target[prop];
         }
-      }),
-    };
+        const param = cch.properties.get(prop);
+        if(param) {
+          const mf = {
+            type: param.type,
+            synonym: param.name,
+          };
+          if(param.type.types.includes('cat.property_values')) {
+            mf.choice_params = [{
+              name: 'owner',
+              path: param.ref,
+            }];
+          }
+          return mf;
+        }
+      }
+    }); 
+    const func = (name) => name ?  fieldsProxy[name] : fieldsProxy;
+    func.fields = fieldsProxy;
+    return func;
   }
 
   

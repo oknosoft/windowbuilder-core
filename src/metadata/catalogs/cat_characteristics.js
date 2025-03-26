@@ -965,7 +965,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     if(!isArray && elmno < 0) {
       coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
-          const cx = this.find_create_cx({elm: num}, $p.utils.blank.guid, false);
+          const cx = this.find_create_cx(num, $p.utils.blank.guid, false);
           weight += cx.elm_weight();
         }
       });
