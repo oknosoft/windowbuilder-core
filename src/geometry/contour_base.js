@@ -1269,12 +1269,12 @@ class Contour extends AbstractFilling(paper.Layer) {
         const path = profile.path && profile.path.segments.length ? profile.path : profile.generatrix;
         if (path) {
           _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
-          if (!parent) {
-            const {d0} = profile;
-            if (d0) {
-              _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);
-            }
-          }
+          // if (!parent) {
+          //   const {d0} = profile;
+          //   if (d0) {
+          //     _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);
+          //   }
+          // }
         }
       });
       this.sectionals.forEach((sectional) => {
@@ -2504,10 +2504,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     // упорядочиваем по z TODO: оптимизировать
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
-      if(b.profile?.isBelow(elm)) {
+      if(b.profile_point !== 'b' && b.profile_point !== 'e' && b.profile?.isBelow(elm)) {
         elm.insertBelow(b.profile);
       }
-      if(e.profile?.isBelow(elm)) {
+      if(e.profile_point !== 'b' && e.profile_point !== 'e' && e.profile?.isBelow(elm)) {
         elm.insertBelow(e.profile);
       }
     }
