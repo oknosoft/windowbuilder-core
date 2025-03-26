@@ -19399,6 +19399,20 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
+        case 'in_virt_layer':
+          _data._formula = function ({elm, layer}) {
+            if(!layer) {
+              layer = elm?.layer;
+            }
+            while (layer) {
+              if(layer instanceof EditorInvisible.ContourVirtual) {
+                return true;
+              }
+              layer = layer.layer;
+            }
+            return false;
+          };
+          break;         
         case 'joins_last_elm':
           _data._formula = function ({elm, elm2, prm_row, node}) {
             if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
@@ -19549,6 +19563,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'node_pos',        
     'layer_weight',    
     'is_node_last',    
+    'in_virt_layer',   
     'joins_last_elm',  
     'flap_overlay',    
     'flap_overlay_axis',
