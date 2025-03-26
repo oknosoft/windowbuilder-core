@@ -30,6 +30,7 @@ export class ToolGrid extends ToolElement {
       },
       
       deactivate() {
+        this.project.props.loading = false;
       },
 
       mouseup: this.mouseup,
