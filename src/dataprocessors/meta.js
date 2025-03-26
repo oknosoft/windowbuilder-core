@@ -238,11 +238,7 @@ export const meta = {
         choiceParams: [
           {
             name: "ref",
-            path: [
-              "Низ",
-              "Верх",
-              "Центр"
-            ]
+            path: ["Низ", "Верх"]
           }
         ],
         choiceGrp: "elm",
@@ -294,11 +290,7 @@ export const meta = {
         choiceParams: [
           {
             name: "ref",
-            path: [
-              "Лев",
-              "Прав",
-              "Центр"
-            ]
+            path: ["Лев", "Прав"]
           }
         ],
         choiceGrp: "elm",
