@@ -56,7 +56,7 @@ export class DimensionDrawer extends MapedGroup {
     this.ivert = new DimensionGroup();
   }
 
-  byContour(ihor, ivert, forse, bySide) {
+  createByContour(ihor, ivert, forse, bySide) {
     const {project, layer} = this;
     const {bounds} = layer;
     const {base_offset, dop_offset} = consts;
@@ -279,7 +279,7 @@ export class DimensionDrawer extends MapedGroup {
     if(props.autoLines && forse) {
 
       // далее - размерные линии контура
-      this.byContour([], [], forse, bySide);
+      this.createByContour([], [], forse, bySide);
     }
     
     for(const dl of children) {

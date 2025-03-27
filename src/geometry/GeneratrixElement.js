@@ -540,8 +540,13 @@ export class GeneratrixElement extends BuilderElement {
    * @desc Проверяем возможность удаления и сначала удаляем из скелетона
    */
   remove() {
-    const {project, skeleton} = this;
+    const {project, skeleton, layer} = this;
     skeleton.removeProfile(this);
+    for(const dl of project.dimensions.byContour(layer)) {
+      if(dl.elm1 === this || dl.elm2 === this) {
+        dl.remove();
+      }
+    }
     super.remove();
   }
 
