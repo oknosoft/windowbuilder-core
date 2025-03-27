@@ -204,6 +204,22 @@ export class DimensionLine extends BuilderElement {
     }
     return res;
   }
+  
+  get elm1() {
+    return this.#raw.elm1;
+  }
+
+  get elm2() {
+    return this.#raw.elm2;
+  }
+
+  get p1() {
+    return this.#raw.elm1.index + this.#raw.p1;
+  }
+  
+  get p2() {
+    return this.#raw.elm2.index + this.#raw.p2;
+  }
 
   divByPos() {
     const {children, size, pos, project: {view}} = this;
