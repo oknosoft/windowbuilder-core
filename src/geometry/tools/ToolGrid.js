@@ -125,6 +125,7 @@ export class ToolGrid extends ToolElement {
 
       // ригели
       const byY = sizes.filter(row => row.elm === 0);
+      const yMap = new Map();
       if(byY.length) {
         const bottom = align_by_y.is('bottom');
         profiles.length = 0;
@@ -152,14 +153,73 @@ export class ToolGrid extends ToolElement {
               }
               prevCy = cy;
             }
-            profiles.push(activeLayer.createProfile({
-              b: [cnns.b.profile.b.point.x, cy],
-              e: [cnns.e.profile.b.point.x, cy],
-              cnns
-            }));
+            let profile;
+            if(bottom && cy > -100) {
+              profile = activeLayer.createProfile({
+                b: [cnns.e.profile.b.point.x, cy],
+                e: [cnns.b.profile.b.point.x, cy],
+                cnns: {b: cnns.e, e: cnns.b}
+              });
+            }
+            else {
+              profile = activeLayer.createProfile({
+                b: [cnns.b.profile.b.point.x, cy],
+                e: [cnns.e.profile.b.point.x, cy],
+                cnns
+              });
+            }
+            
+            profiles.push(profile);
+            if(left && i === byX.length || !left && i === 1) {
+              yMap.set(cy, profile);
+            }
           }
         }
         activeLayer.skeleton.addProfiles(profiles);
+        let prev;
+        const aX = Array.from(xMap);
+        const aY = Array.from(yMap);
+        aY.forEach(([y, profile], index) => {
+          if(bottom) {
+            if(index) {
+              prev = {pt: 'e', profile: aY[index - 1][1]};
+            }
+            else {
+              if(y) {
+                prev = left ? {pt: 'e', profile: aX[aX.length - 1][1]} : {pt: 'b', profile: aX[0][1]};
+              }
+              else {
+                return;
+              }
+            }
+            new DimensionLine({
+              project,
+              owner: activeLayer,
+              parent: project.dimensions,
+              elm1: prev.profile,
+              elm2: profile,
+              p1: prev.pt,
+              p2: left && bottom && profile.b.point.x > -100 ? 'e' : 'b',
+              pos: 'right',
+              offset: -200,
+            });
+          }
+        });
+        if(bottom && aY[aY.length - 1][0] < h) {
+          const prev = left ? {profile: aX[aX.length - 1][1]} : {profile: aX[0][1]};
+          const profile = bottom ? aY[aY.length - 1][1] : aY[0][1];
+          new DimensionLine({
+            project,
+            owner: activeLayer,
+            parent: project.dimensions,
+            elm1: prev.profile,
+            elm2: profile,
+            p1: 'b',
+            p2: left ? 'e' : 'b',
+            pos: 'right',
+            offset: -200,
+          });
+        }
       }
       
       project.redraw();
