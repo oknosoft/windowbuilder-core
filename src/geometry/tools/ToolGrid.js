@@ -108,7 +108,6 @@ export class ToolGrid extends ToolElement {
           });
         }
       }
-      activeLayer.skeleton.addProfiles(profiles);
       if(profiles.length > 2) {
         new DimensionLine({
           project,
@@ -128,7 +127,6 @@ export class ToolGrid extends ToolElement {
       const yMap = new Map();
       if(byY.length) {
         const bottom = align_by_y.is('bottom');
-        profiles.length = 0;
         x = 0;
         for(let i = 1; i <= byX.length; i++) {
           // находим примыкающие стойки и сообщаем их узлам
@@ -175,7 +173,7 @@ export class ToolGrid extends ToolElement {
             }
           }
         }
-        activeLayer.skeleton.addProfiles(profiles);
+        
         let prev;
         const aX = Array.from(xMap);
         const aY = Array.from(yMap);
@@ -221,7 +219,7 @@ export class ToolGrid extends ToolElement {
           });
         }
       }
-      
+      activeLayer.skeleton.addProfiles(profiles);
       project.redraw();
       project.zoomFit();
     }

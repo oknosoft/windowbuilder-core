@@ -60,7 +60,6 @@ export const meta = {
       },
       bind_generatrix: {
         synonym: "Магнит к профилю",
-        multiline: true,
         type: {
           types: [
             "boolean"
@@ -69,7 +68,6 @@ export const meta = {
       },
       bind_node: {
         synonym: "Магнит к узлам",
-        multiline: true,
         type: {
           types: [
             "boolean"
@@ -78,7 +76,6 @@ export const meta = {
       },
       bind_sys: {
         synonym: "Вставки по умолчанию из системы",
-        multiline: true,
         tooltip: "Действует при добавлении типовой формы",
         type: {
           types: [
@@ -117,6 +114,19 @@ export const meta = {
             "enm.lay_regions"
           ]
         }
+      },
+      mode: {
+        synonym: "Режим",
+        tooltip: "Режим рисования",
+        type: {
+          types: [
+            "number"
+          ],
+          digits: 1,
+          fraction: 0
+        },
+        list: ["Перо", "Отрезок с магнетизмом"],
+        exTypes: ["Штапик", "Добор", "Соединитель", "Примыкание"]
       }
     },
     tabulars: {},

@@ -41,21 +41,8 @@ export class ProfileAdjoining extends GeneratrixElement.Profile {
     super.redraw();
     const {children: {generatrix, callouts: parent}, project: {props}} = this;
     parent.removeChildren();
-    const {length} = generatrix;
-    
-    for(let pos=0; pos <= length; pos+= 50) {
-      const loc = generatrix.getLocationAt(pos);
-      const firstSegment = loc.point.add(loc.normal.multiply(10));
-      const lastSegment = firstSegment.add(loc.normal.rotate(30).multiply(40)); 
-      new paper.PathUnselectable({
-        parent,
-        strokeColor,
-        strokeWidth: 1,
-        strokeScaling: false,
-        segments: [firstSegment, lastSegment],
-        guide: true,
-      });
-    }
+
+    ProfileAdjoining.drawHatching({parent, generatrix});
     if(props.carcass !== 'normal') {
       if(generatrix.shadowOffset.length) {
         generatrix.shadowOffset = [0, 0];
@@ -64,6 +51,25 @@ export class ProfileAdjoining extends GeneratrixElement.Profile {
     else {
       generatrix.shadowOffset = generatrix.getNormalAt(0).normalize(10);
     }
+  }
+  
+  static drawHatching({parent, generatrix}) {
+    const {length} = generatrix;
+    const res = [];
+    for(let pos=0; pos <= length; pos+= 50) {
+      const loc = generatrix.getLocationAt(pos);
+      const firstSegment = loc.point.add(loc.normal.multiply(10));
+      const lastSegment = firstSegment.add(loc.normal.rotate(30).multiply(40));
+      res.push(new paper.PathUnselectable({
+        parent,
+        strokeColor,
+        strokeWidth: 1,
+        strokeScaling: false,
+        segments: [firstSegment, lastSegment],
+        guide: true,
+      }));
+    }
+    return res;
   }
   
 }

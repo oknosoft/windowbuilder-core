@@ -3,6 +3,7 @@ import {ToolSelectable} from './ToolSelectable';
 import {GeneratrixElement} from '../GeneratrixElement';
 import {DimensionLineCustom} from '../DimensionLineCustom';
 import {ContourPortal} from '../ContourPortal';
+import {ProfileAdjoining} from '../ProfileAdjoining';
 
 export class ToolPen extends ToolSelectable {
 
@@ -39,9 +40,14 @@ export class ToolPen extends ToolSelectable {
 
   mousemove(ev) {
     this.hitTest(ev);
+    const {mode, profile, path, project} = this;
+    
+    if(profile.mode === 1 && profile.elm_type.is('adjoining')) {
+      return this.drawAdjoining();
+    }
+    
     const {shift, space, control, alt} = ev.modifiers;
     const {hitItem, node, line, text1, text2} = this.get('hitItem,node,line,text1,text2');
-    const {mode, profile, path, project} = this;
     const {gridStep, snap, snapAngle} = project.props;
     if(node && line) {
       this.hideDecor();
@@ -152,12 +158,22 @@ export class ToolPen extends ToolSelectable {
   }
 
   mousedown(ev) {
-    const {hitItem, node} = this.get('hitItem,node,line');
+    const {hitItem, node, line} = this.get('hitItem,node,line');
     const {mode, profile, project} = this;
     const {gridStep} = project.props;
     if(ev.event?.which > 1) {
       project.deselectAll();
       return this.reset(ev);
+    }
+    if(profile.mode === 1 && profile.elm_type.is('adjoining')) {
+      if(line?.length) {
+        project.rootLayer.createProfile({
+          b: line.firstSegment.point,
+          e: line.lastSegment.point,
+          elmType: profile.elm_type,
+        });
+      }
+      return;
     }
     if(!mode) {
       if(profile.elm_type.is('rama') || 
@@ -287,15 +303,115 @@ export class ToolPen extends ToolSelectable {
     ev?.stop?.();
   }
 
+  hitTestAdjoining(ev) {
+    const {hitItem, node, line} = this.get('hitItem,node,line');
+    this.addlHit = null;
+    // для профиля, определяем внешнюю или внутреннюю сторону и ближайшее примыкание
+    if(hitItem?.item?.parent?.is('GeneratrixElement.Profile')){
+      const hit = {
+        point: hitItem.point,
+        profile: hitItem.item.parent
+      };
+
+      // выясним, с какой стороны примыкает профиль
+      const {inner, outer} = hit.profile;
+      if(inner.getNearestPoint(hit.point).getDistance(hit.point, true) < outer.getNearestPoint(hit.point).getDistance(hit.point, true)) {
+        hit.side = 'inner';
+      }
+      else {
+        hit.side = 'outer';
+      }
+
+      // бежим по всем заполнениям и находим ребро
+      hit.profile.layer.fillings.some((glass) => {
+        return glass.ribs.some((rib, index) => {
+          if(rib.edge.profile === hit.profile && 
+              hit.profile.generatrix.getSubPath(rib.edge.startVertex.point, rib.edge.endVertex.point)?.getNearestPoint(hit.point).isNearest(hit.point, true)) {
+            if(hit.side == 'outer' && rib.edge.isOuter() || hit.side == 'inner' && !rib.edge.isOuter()) {
+              hit.glass = glass;
+              return true;
+            }
+          }
+        });
+      });
+
+      if(!hit.glass){
+        const imposts = hit.profile.imposts[hit.side];
+        const {generatrix} = hit.profile;
+        const offset = generatrix.getOffsetOf(generatrix.getNearestPoint(hit.point));
+        const fin = imposts.length - 1;
+        if(fin < 0) {
+          hit.b = {elm: hit.profile, point: hit.side === 'inner' ? 'b' : 'e'};
+          hit.e = {elm: hit.profile, point: hit.side === 'inner' ? 'e' : 'b'};
+        }
+        else if(fin === 0) {
+          const impost = imposts[0];
+          const ioffset = generatrix.getOffsetOf(impost.point);
+          if(hit.side === 'inner' && ioffset > offset) {
+            hit.b = {elm: hit.profile, point: 'b'};
+            hit.e = {elm: impost.profile, point: impost.profile.b.point.isNearest(impost.point) ? 'b' : 'e'};
+          }
+          else if(hit.side === 'outer' && ioffset > offset) {
+            hit.b = {elm: impost.profile, point: impost.profile.b.point.isNearest(impost.point) ? 'b' : 'e'};
+            hit.e = {elm: hit.profile, point: 'b'};
+          }
+          else if(hit.side === 'inner' && ioffset < offset) {
+            hit.b = {elm: impost.profile, point: impost.profile.b.point.isNearest(impost.point) ? 'b' : 'e'};
+            hit.e = {elm: hit.profile, point: 'e'};
+          }
+          else if(hit.side === 'outer' && ioffset < offset) {
+            hit.b = {elm: hit.profile, point: 'e'};
+            hit.e = {elm: impost.profile, point: impost.profile.b.point.isNearest(impost.point) ? 'b' : 'e'};
+          }
+        }
+        else {
+          let i0 = imposts[0];
+          let ifin = imposts[fin];
+          let offset0 = generatrix.getOffsetOf(i0.point);
+          let offsetfin = generatrix.getOffsetOf(ifin.point);
+          if(offset0 > offsetfin) {
+            [i0, ifin] = [ifin, i0];
+            [offset0, offsetfin] = [offset0, offsetfin];
+          }
+          if(hit.side === 'inner' && offset0 > offset) {
+            hit.b = {elm: hit.profile, point: 'b'};
+            hit.e = {elm: i0.profile, point: i0.profile.b.point.isNearest(i0.point) ? 'b' : 'e'};
+          }
+          else if(hit.side === 'outer' && offset0 > offset) {
+            hit.b = {elm: i0.profile, point: i0.profile.b.point.isNearest(i0.point) ? 'b' : 'e'};
+            hit.e = {elm: hit.profile, point: 'b'};
+          }
+          else if(hit.side === 'inner' && offsetfin < offset) {
+            hit.b = {elm: ifin.profile, point: ifin.profile.b.point.isNearest(ifin.point) ? 'b' : 'e'};
+            hit.e = {elm: hit.profile, point: 'e'};
+          }
+          else if(hit.side === 'outer' && offsetfin < offset) {
+            hit.b = {elm: hit.profile, point: 'e'};
+            hit.e = {elm: ifin.profile, point: ifin.profile.b.point.isNearest(ifin.point) ? 'b' : 'e'};
+          }
+        }
+
+        this.addlHit = hit;
+        this.canvasCursor('cursor-pen-adjust');
+      }
+    }
+    else {
+      this.canvasCursor('cursor-autodesk');
+    }
+  }
+  
   hitTest(ev) {
     super.hitTest(ev);
     const {hitItem, node, line} = this.get('hitItem,node,line');
+    if(this.profile.mode === 1 && this.profile.elm_type.is('adjoining')) {
+      return this.hitTestAdjoining(ev);
+    }
     if(!hitItem) {
       const {point} = ev;
       const {mode, path, project: {activeLayer, props}} = this;
       if(mode === 1 && path?.length > props.gridStep * 2) {
         const {bounds} = path;
-        const dir = bounds.width > bounds.height ? 'x' : 'y'; 
+        const dir = bounds.width > bounds.height ? 'x' : 'y';
         for(const vertex of activeLayer.skeleton.getAllVertices()) {
           if(Math.abs(vertex.point[dir] - point[dir]) < props.gridStep * 1.2) {
             const odir = dir === 'x' ? 'y' : 'x';
@@ -305,12 +421,43 @@ export class ToolPen extends ToolSelectable {
                 item: 'virtual',
                 type: 'bind',
                 segments: [
-                  {[dir]: vertex.point[dir], [odir]: vertex.point[odir] - 100}, 
+                  {[dir]: vertex.point[dir], [odir]: vertex.point[odir] - 100},
                   {[dir]: vertex.point[dir], [odir]: vertex.point[odir] + 100}],
                 point: Object.assign(point.clone(), {[dir]: vertex.point[dir], [odir]: other}),
               }});
           }
-        }        
+        }
+      }
+    }
+  }
+
+  drawAdjoining() {
+    let line = this.get('line');
+    this.hideDecor();
+    line?.removeSegments();
+    for(const hatch of line?.hatching || []) {
+      hatch.remove();
+    }
+    if(this.addlHit) {
+      const {b, e, profile, side} = this.addlHit;
+      if(!line) {
+        line = new paper.Path({
+          parent: this.parent,
+          guide: true,
+          strokeColor: 'grey',
+          strokeWidth: 3,
+          strokeScaling: false,
+          strokeCap: 'round',
+        });
+        this.set({line});
+      }
+      // рисуем внутреннюю часть прототипа пути доборного профиля
+      if(b && e) {
+        const generatrix = profile[side].getSubPath(e.elm[e.point].point, b.elm[b.point].point);
+        line.removeSegments();
+        line.addSegments(generatrix.segments);
+        line.visible = true;
+        line.hatching = ProfileAdjoining.drawHatching({parent: line.parent, generatrix});
       }
     }
   }

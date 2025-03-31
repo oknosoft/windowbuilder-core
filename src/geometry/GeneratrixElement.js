@@ -17,6 +17,27 @@ export const selectedAttr = {
   strokeWidth: 2,
 };
 
+/**
+ * @typedef PointAndProfile
+ * @prop {paper.Point} point
+ * @prop {GeneratrixElement} profile
+ * @prop {CnnPoint} node
+ */
+
+/**
+ * @typedef JoinedProfiles
+ * @prop {Array.<PointAndProfile>} outer
+ * @prop {Array.<PointAndProfile>} inner
+ */
+
+/**
+ * @typedef InnerOuter {'inner'|'outer'}
+ */
+
+/**
+ * @typedef NodeBE {'b'|'e'}
+ */
+
 export class GeneratrixElement extends BuilderElement {
 
   /**
@@ -288,42 +309,31 @@ export class GeneratrixElement extends BuilderElement {
     return this.generatrix.length;
   }
 
+  /**
+   * @summary Примыкающие к текущему профилю импосты
+   * @type {JoinedProfiles}
+   */
   get imposts() {
-    const {b, e} = this;
-    const inner = [], outer = [];
-    let vertices = b.vertex.getNeighbors();
-    while (vertices.length) {
-      const tmp = new Set();
-      for(const vertex of vertices) {
-        for(const cnnPoint of vertex.cnnPoints) {
-          if(cnnPoint.isT && cnnPoint.profile === this) {
-            inner.push(cnnPoint);
-            tmp.add(vertex);
-          }          
+    const {b, e, vertexes} = this;
+    const res = {inner: [], outer: []};
+    for(const vertex of vertexes) {
+      if(vertex !== b.vertex && vertex !== e.vertex) {
+        for(const edge of vertex.getAllEdges()) {
+          if(edge.profile !== this) {
+            const side = this.cnnSide(edge.profile);
+            const target = res[side < 0 ? 'inner' : 'outer'];
+            if(!target.find((v) => v.profile === edge.profile && v.point.isNearest(vertex.point))) {
+              target.push({
+                profile: edge.profile, 
+                point: vertex.point,
+                node: edge.profile.b.point.isNearest(vertex.point) ? edge.profile.b : edge.profile.e,
+              });
+            }
+          }
         }
       }
-      vertices.length = 0;
-      for(const vertex of Array.from(tmp)) {
-        vertices.push(...vertex.getAncestors());
-      }      
     }
-    // vertices = e.vertex.getAncestors();
-    // while (vertices.length) {
-    //   const tmp = new Set();
-    //   for(const vertex of vertices) {
-    //     for(const cnnPoint of vertex.cnnPoints) {
-    //       if(cnnPoint.isT && cnnPoint.profile === this) {
-    //         outer.push(cnnPoint);
-    //         tmp.add(vertex);
-    //       }
-    //     }
-    //   }
-    //   vertices.length = 0;
-    //   for(const vertex of Array.from(tmp)) {
-    //     vertices.push(...vertex.getAncestors());
-    //   }
-    // }
-    return {inner, outer};
+    return res;
   }
 
   /**
@@ -390,7 +400,11 @@ export class GeneratrixElement extends BuilderElement {
     }
     return inner;
   }
-  
+
+  /**
+   * @summary 3D сечение профиля
+   * @return {three.Shape}
+   */
   get shape() {
     const {nom, elmType} = this;
     let shape = elmType.is('impost') ? impost : (elmType.is('flap') ? flap : (elmType.is('linking') ? connective : rama));
