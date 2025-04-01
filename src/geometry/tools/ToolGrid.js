@@ -104,7 +104,7 @@ export class ToolGrid extends ToolElement {
             p1: left ? 'e' : (i > 1 ? 'b' : 'e'),
             p2: left ? (i > 1 ? 'e' : 'b') : 'b',
             pos: 'bottom',
-            offset: -280,
+            offset: -260,
           });
         }
       }
@@ -118,7 +118,7 @@ export class ToolGrid extends ToolElement {
           p1: 'e',
           p2: 'b',
           pos: 'bottom',
-          offset: -500,
+          offset: -460,
         });
       }
 
@@ -180,11 +180,12 @@ export class ToolGrid extends ToolElement {
         aY.forEach(([y, profile], index) => {
           if(bottom) {
             if(index) {
-              prev = {pt: 'e', profile: aY[index - 1][1]};
+              prev = {profile: aY[index - 1][1]};
+              prev.pt = prev.profile.b.point.x > prev.profile.e.point.x ? 'b' : 'e';
             }
             else {
               if(y) {
-                prev = left ? {pt: 'e', profile: aX[aX.length - 1][1]} : {pt: 'b', profile: aX[0][1]};
+                prev = left ? {pt: 'e', profile: aX[aX.length - 1][1]} : {pt: 'e', profile: aX[0][1]};
               }
               else {
                 return;
@@ -197,31 +198,74 @@ export class ToolGrid extends ToolElement {
               elm1: prev.profile,
               elm2: profile,
               p1: prev.pt,
-              p2: left && bottom && profile.b.point.x > -100 ? 'e' : 'b',
+              p2: profile.b.point.x > profile.e.point.x ? 'b' : 'e',
               pos: 'right',
-              offset: -200,
+              offset: -220,
+            });
+          }
+          else {
+            if(index) {
+              prev = {profile: aY[index - 1][1]};
+              prev.pt = prev.profile.b.point.x > prev.profile.e.point.x ? 'b' : 'e';
+            }
+            else {
+              if(y) {
+                prev = left ? {pt: 'b', profile: aX[aX.length - 1][1]} : {pt: 'b', profile: aX[0][1]};
+              }
+              else {
+                return;
+              }
+            }
+            new DimensionLine({
+              project,
+              owner: activeLayer,
+              parent: project.dimensions,
+              elm1: prev.profile,
+              elm2: profile,
+              p1: prev.pt,
+              p2: profile.b.point.x > profile.e.point.x ? 'b' : 'e',
+              pos: 'right',
+              offset: -220,
             });
           }
         });
-        if(bottom && aY[aY.length - 1][0] < h) {
-          const prev = left ? {profile: aX[aX.length - 1][1]} : {profile: aX[0][1]};
-          const profile = bottom ? aY[aY.length - 1][1] : aY[0][1];
-          new DimensionLine({
-            project,
-            owner: activeLayer,
-            parent: project.dimensions,
-            elm1: prev.profile,
-            elm2: profile,
-            p1: 'b',
-            p2: left ? 'e' : 'b',
-            pos: 'right',
-            offset: -200,
-          });
+        if(aY[aY.length - 1][0] < h) {
+          if(bottom) {
+            const prev = left ? {profile: aX[aX.length - 1][1]} : {profile: aX[0][1]};
+            const profile = aY[aY.length - 1][1];
+            new DimensionLine({
+              project,
+              owner: activeLayer,
+              parent: project.dimensions,
+              elm1: prev.profile,
+              elm2: profile,
+              p1: 'b',
+              p2: profile.b.point.x > profile.e.point.x ? 'b' : 'e',
+              pos: 'right',
+              offset: -220,
+            });
+          }
+          else {
+            const prev = aY[aY.length - 1][1];
+            const profile = left ? aX[aX.length - 1][1] : aX[0][1];
+            new DimensionLine({
+              project,
+              owner: activeLayer,
+              parent: project.dimensions,
+              elm1: prev,
+              elm2: profile,
+              p1: prev.b.point.x > prev.e.point.x ? 'b' : 'e',
+              p2: 'e',
+              pos: 'right',
+              offset: -220,
+            });
+          }
         }
       }
       activeLayer.skeleton.addProfiles(profiles);
       project.redraw();
       project.zoomFit();
+      project.redraw();
     }
     
   }

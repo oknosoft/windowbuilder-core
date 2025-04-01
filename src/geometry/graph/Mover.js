@@ -2,7 +2,7 @@ import paper from 'paper/dist/paper-core';
 import {epsilon} from '../paper/Point';
 
 // извлекаем разрешенные диапазоны из шаблона
-let li = 220;
+let li = 10; //220;
 let lmin = 360;
 let lmax = 5000;
 

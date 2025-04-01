@@ -173,7 +173,8 @@ export class ToolPen extends ToolSelectable {
           elmType: profile.elm_type,
         });
       }
-      return;
+      project.redraw();
+      return this.reset(ev);
     }
     if(!mode) {
       if(profile.elm_type.is('rama') || 
