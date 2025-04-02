@@ -316,7 +316,7 @@ export class ToolPen extends ToolSelectable {
 
       // выясним, с какой стороны примыкает профиль
       const {inner, outer} = hit.profile;
-      if(inner.getNearestPoint(hit.point).getDistance(hit.point, true) < outer.getNearestPoint(hit.point).getDistance(hit.point, true)) {
+      if(inner.getNearestPoint(ev.point).getDistance(ev.point, true) < outer.getNearestPoint(ev.point).getDistance(ev.point, true)) {
         hit.side = 'inner';
       }
       else {

@@ -15,6 +15,8 @@ export class ToolSelectable extends ToolElement {
     originalHandleOut: null,
     changed: false,
     minDistance: 10,
+    defaultTolerance: 26,
+    tolerance: 26,
   }
 
   get parent() {
@@ -109,7 +111,7 @@ export class ToolSelectable extends ToolElement {
   }
 
   hitTestItem(item, point) {
-    const tolerance = 26;
+    const {tolerance} = this.#raw;
     
     // отдаём предпочтение выделенным ранее элементам
     this.#raw.hitItem = item.hitTest(point, {selected: true, stroke: true, tolerance});
