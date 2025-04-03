@@ -1269,12 +1269,12 @@ class Contour extends AbstractFilling(paper.Layer) {
         const path = profile.path && profile.path.segments.length ? profile.path : profile.generatrix;
         if (path) {
           _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
-          if (!parent) {
-            const {d0} = profile;
-            if (d0) {
-              _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);
-            }
-          }
+          // if (!parent) {
+          //   const {d0} = profile;
+          //   if (d0) {
+          //     _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);
+          //   }
+          // }
         }
       });
       this.sectionals.forEach((sectional) => {

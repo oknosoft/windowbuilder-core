@@ -2700,12 +2700,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         const path = profile.path && profile.path.segments.length ? profile.path : profile.generatrix;
         if (path) {
           _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
-          if (!parent) {
-            const {d0} = profile;
-            if (d0) {
-              _attr._bounds = _attr._bounds.unite(profile.generatrix.bounds);
-            }
-          }
         }
       });
       this.sectionals.forEach((sectional) => {
@@ -7858,15 +7852,13 @@ class GeneratrixElement extends BuilderElement {
     if(changed){
       const {_attr: {_rays}, layer, project} = this;
       _rays.clear();
-      if(isegments.length) {
-        isegments.forEach(({profile, node}) => {
-          profile.do_sub_bind(this, node);
-          profile.rays.clear();
-          other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
-          !noti.profiles.includes(profile) && noti.profiles.push(profile);
-        });
-        _rays.clear();
+      for(const {profile, node} of isegments) {
+        profile.do_sub_bind(this, node);
+        profile._attr._rays.clear();
+        other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
+        !noti.profiles.includes(profile) && noti.profiles.push(profile);
       }
+      this.redraw();
       layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
