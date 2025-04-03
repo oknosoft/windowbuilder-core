@@ -322,15 +322,13 @@ class GeneratrixElement extends BuilderElement {
 
       // ранняя привязка импостов
       _rays.clear();
-      if(isegments.length) {
-        isegments.forEach(({profile, node}) => {
-          profile.do_sub_bind(this, node);
-          profile.rays.clear();
-          other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
-          !noti.profiles.includes(profile) && noti.profiles.push(profile);
-        });
-        _rays.clear();
+      for(const {profile, node} of isegments) {
+        profile.do_sub_bind(this, node);
+        profile._attr._rays.clear();
+        other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
+        !noti.profiles.includes(profile) && noti.profiles.push(profile);
       }
+      this.redraw();
 
       layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});

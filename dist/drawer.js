@@ -978,6 +978,9 @@ class BuilderElement extends paper.Group {
       if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
         return parseFloat(p1);
       }
+      if(this.hasInner && this.hasOuter) {
+        return parseFloat(p1);
+      }
       let p2 = parts.substring(3, 6);
       return parseFloat(p2);
     }
@@ -7849,15 +7852,13 @@ class GeneratrixElement extends BuilderElement {
     if(changed){
       const {_attr: {_rays}, layer, project} = this;
       _rays.clear();
-      if(isegments.length) {
-        isegments.forEach(({profile, node}) => {
-          profile.do_sub_bind(this, node);
-          profile.rays.clear();
-          other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
-          !noti.profiles.includes(profile) && noti.profiles.push(profile);
-        });
-        _rays.clear();
+      for(const {profile, node} of isegments) {
+        profile.do_sub_bind(this, node);
+        profile._attr._rays.clear();
+        other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
+        !noti.profiles.includes(profile) && noti.profiles.push(profile);
       }
+      this.redraw();
       layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
@@ -11352,7 +11353,7 @@ class Profile extends ProfileItem {
   get elm_type() {
     const {_rays, _nearest} = this._attr;
     const {elm_types} = $p.enm;
-    if(_rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
+    if((this.hasInner && this.hasOuter) || _rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
       return elm_types.impost;
     }
     return this.layer?.level ? elm_types.flap : elm_types.rama;
@@ -12896,52 +12897,6 @@ class Onlay extends ProfileItem {
     }
   }
   nearest() {}
-  joined_imposts(check_only) {
-    const {rays, generatrix, parent, region} = this;
-    const tinner = [];
-    const touter = [];
-    const candidates = {b: [], e: []};
-    const add_impost = (ip, curr, point) => {
-      const res = {point: generatrix.getNearestPoint(point), profile: curr};
-      if(this.cnn_side(curr, ip, rays) === $p.enm.cnn_sides.outer) {
-        touter.push(res);
-      }
-      else {
-        tinner.push(res);
-      }
-    };
-    if(parent.imposts.some((curr) => {
-        if(curr != this && curr.region === region) {
-          for(const pn of ['b', 'e']) {
-            const p = curr.cnn_point(pn);
-            if(p.profile == this && p.cnn) {
-              if(p.cnn.cnn_type == $p.enm.cnn_types.t) {
-                if(check_only) {
-                  return true;
-                }
-                add_impost(curr.corns(1), curr, p.point);
-              }
-              else {
-                candidates[pn].push(curr.corns(1));
-              }
-            }
-          }
-        }
-      })) {
-      return true;
-    }
-    ['b', 'e'].forEach((node) => {
-      if(candidates[node].length > 1) {
-        candidates[node].some((ip) => {
-          if(ip && this.cnn_side(null, ip, rays) == $p.enm.cnn_sides.outer) {
-            this.cnn_point(node).is_cut = true;
-            return true;
-          }
-        });
-      }
-    });
-    return check_only ? false : {inner: tinner, outer: touter};
-  }
   save_coordinates() {
     if(!this._attr.generatrix){
       return;
