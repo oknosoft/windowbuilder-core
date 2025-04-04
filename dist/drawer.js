@@ -19117,7 +19117,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'inserts_glass_type':
           _data._formula = function ({elm, prm_row, ox, row}) {
-            if(elm instanceof EditorInvisible.Filling || elm?.is_glass) {
+            if((elm instanceof EditorInvisible.Filling || elm?.is_glass) && 
+                (prm_row?.comparison_type?.is('in') || prm_row?.comparison_type?.is('nin'))) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                 if(!inset.insert_glass_type.empty()) {
@@ -19126,7 +19127,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               });
               return Array.from(res);
             }
-            return elm?.inset;
+            return elm?.inset?.insert_glass_type;
           };
           break;
         case 'elm_weight':
