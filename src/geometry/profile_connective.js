@@ -25,7 +25,8 @@ class ProfileConnective extends ProfileItem {
 
   /** @override */
   get d0() {
-    return this.offset;
+    const d0 = Object.getOwnPropertyDescriptor(Profile.prototype, 'd0');
+    return d0.get.call(this);
   }
 
   /**
@@ -76,8 +77,8 @@ class ProfileConnective extends ProfileItem {
   joined_nearests() {
 
     const res = [];
-
-    this.project.contours.forEach((contour) => {
+    const {contours, l_connective} = this.project; 
+    [l_connective].concat(contours).forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this){
           res.push(profile);
@@ -102,7 +103,9 @@ class ProfileConnective extends ProfileItem {
    * @override
    * @return {void}
    */
-  nearest() {}
+  nearest(ign_cnn) {
+    return Profile.prototype.nearest.call(this, ign_cnn);
+  }
 
   /**
    * Положение соединительного профиля

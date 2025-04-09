@@ -328,7 +328,7 @@ class GeneratrixElement extends BuilderElement {
         other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
         !noti.profiles.includes(profile) && noti.profiles.push(profile);
       }
-      this.redraw();
+      _rays.recalc();
 
       layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});

@@ -700,6 +700,7 @@ class ProfileItem extends GeneratrixElement {
         profile._attr._rays && profile._attr._rays.clear();
       }
       _attr._rays && _attr._rays.clear();
+      delete _attr.d0;
       this.project.register_change(true);
       if(selected) {
         this.selected = true;

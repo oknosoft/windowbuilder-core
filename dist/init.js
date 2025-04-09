@@ -9374,6 +9374,8 @@ get grid(){return this._getter('grid')}
 set grid(v){this._setter('grid',v)}
 get region(){return this._getter('region')}
 set region(v){this._setter('region',v)}
+get mode(){return this._getter('mode')}
+set mode(v){this._setter('mode',v)}
 }
 $p.DpBuilder_pen = DpBuilder_pen;
 $p.dp.create('builder_pen');

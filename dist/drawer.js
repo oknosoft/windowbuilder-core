@@ -7858,7 +7858,7 @@ class GeneratrixElement extends BuilderElement {
         other.push(profile.generatrix[node === 'b' ? 'firstSegment' : 'lastSegment']);
         !noti.profiles.includes(profile) && noti.profiles.push(profile);
       }
-      this.redraw();
+      _rays.recalc();
       layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
@@ -9159,6 +9159,7 @@ class ProfileItem extends GeneratrixElement {
         profile._attr._rays && profile._attr._rays.clear();
       }
       _attr._rays && _attr._rays.clear();
+      delete _attr.d0;
       this.project.register_change(true);
       if(selected) {
         this.selected = true;
@@ -11368,7 +11369,7 @@ class Profile extends ProfileItem {
       ign_cnn = true;
     }
     const check_nearest = (elm) => {
-      if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted()) {
+      if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted() || !b || !e) {
         return;
       }
       if(elm.is_linear() !== this.is_linear()) {
@@ -12207,7 +12208,8 @@ class ProfileConnective extends ProfileItem {
     return $p.enm.elm_types.Соединитель;
   }
   get d0() {
-    return this.offset;
+    const d0 = Object.getOwnPropertyDescriptor(Profile.prototype, 'd0');
+    return d0.get.call(this);
   }
   cnn_point(node) {
     return this.rays[node];
@@ -12231,7 +12233,8 @@ class ProfileConnective extends ProfileItem {
   }
   joined_nearests() {
     const res = [];
-    this.project.contours.forEach((contour) => {
+    const {contours, l_connective} = this.project; 
+    [l_connective].concat(contours).forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this){
           res.push(profile);
@@ -12243,7 +12246,9 @@ class ProfileConnective extends ProfileItem {
   joined_imposts(check_only) {
     return check_only ? false : {inner: [], outer: []};
   }
-  nearest() {}
+  nearest(ign_cnn) {
+    return Profile.prototype.nearest.call(this, ign_cnn);
+  }
   get pos() {
     const nearests = this.joined_nearests();
     if(nearests.length > 1) {
