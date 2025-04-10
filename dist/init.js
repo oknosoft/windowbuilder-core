@@ -3924,7 +3924,8 @@ set coordinates(v){this._setter_ts('coordinates',v)}
             ray = elm2.rays.inner.clone({insert: false, deep: false});
             ray.reverse();
           }
-          const pt = ray.getNearestPoint(elm[len_angl.node]);
+          const ept = (len_angl.node === 'b' ? elm.corns(1).add(elm.corns(4)) : elm.corns(2).add(elm.corns(3))).divide(2); 
+          const pt = ray.getNearestPoint(ept);
           const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
           const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
           const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
@@ -8478,6 +8479,10 @@ get is_supplier(){return this._getter('is_supplier')}
 set is_supplier(v){this._setter('is_supplier',v)}
 get invoice(){return this._getter('invoice')}
 set invoice(v){this._setter('invoice',v)}
+get rate(){return this._getter('rate')}
+set rate(v){this._setter('rate',v)}
+get amount(){return this._getter('amount')}
+set amount(v){this._setter('amount',v)}
 }
 $p.DocCalc_orderOrdersRow = DocCalc_orderOrdersRow;
 class DocCalc_orderManager extends DocManager {
