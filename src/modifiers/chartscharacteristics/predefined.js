@@ -182,7 +182,24 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-
+          
+        case 'has_glasses_outer':
+          _data._formula = function ({elm, elm2}) {
+            if(!(elm instanceof EditorInvisible.Profile) && (elm2 instanceof EditorInvisible.Profile)) {
+              elm = elm2;
+            }
+            if(elm.joined_glasses) {
+              for(const gl of elm.joined_glasses()) {
+                const pos = elm.generatrix.point_pos(gl.interiorPoint());
+                if(pos > 0) {
+                  return true;
+                }
+              }              
+            }
+            return false;
+          };
+          break;
+          
         case 'thickness':
           _data._formula = function ({elm, prm_row}) {
             return elm.thickness;
@@ -526,6 +543,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'up_glasses_weight',// масса заполнений, опирающихся на профиль
     'has_glasses',      // бит в заказе есть заполнения
     'has_glasses_separately',// бит в заказе есть заполнения отдельно
+    'has_glasses_outer',  //  бит к профилю примыкает заполнение с другой стороны
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
