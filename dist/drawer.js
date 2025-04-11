@@ -19208,9 +19208,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             if(elm.joined_glasses) {
               for(const gl of elm.joined_glasses()) {
-                const pos = elm.generatrix.point_pos(gl.interiorPoint());
-                if(pos > 0) {
-                  return true;
+                if(gl instanceof EditorInvisible.Filling) {
+                  if(elm.generatrix.point_pos(gl.interiorPoint()) > 0) {
+                    return true;
+                  }
                 }
               }              
             }
