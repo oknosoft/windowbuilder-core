@@ -5200,7 +5200,7 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'bottom';
-            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2}) || this;
             dl._move_points(event, 'y');
           }
           this._move_points(event, 'y');
@@ -5211,7 +5211,7 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'right';
-            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2}) || this;
             dl._move_points(event, 'x');
           }
           this._move_points(event, 'x');
@@ -5738,28 +5738,29 @@ class DimensionDrawer extends paper.Group {
     }
   }
   push_by_point({ihor, ivert, eb, ee, elm}) {
-    if(eb && ihor.every((v) => v.point != eb.y.round())) {
+    const cond = (v, n) => Math.abs(v.point - n) > 1;
+    if(eb && ihor.every((v) => cond(v, eb.y))) {
       ihor.push({
         point: eb.y.round(),
         elm: elm,
         p: eb._name || 'b'
       });
     }
-    if(ee && ihor.every((v) => v.point != ee.y.round())) {
+    if(ee && ihor.every((v) => cond(v, ee.y))) {
       ihor.push({
         point: ee.y.round(),
         elm: elm,
         p: ee._name || 'e'
       });
     }
-    if(eb && ivert.every((v) => v.point != eb.x.round())) {
+    if(eb && ivert.every((v) => cond(v, eb.x))) {
       ivert.push({
         point: eb.x.round(),
         elm: elm,
         p: eb._name || 'b'
       });
     }
-    if(ee && ivert.every((v) => v.point != ee.x.round())) {
+    if(ee && ivert.every((v) => cond(v, ee.x))) {
       ivert.push({
         point: ee.x.round(),
         elm: elm,

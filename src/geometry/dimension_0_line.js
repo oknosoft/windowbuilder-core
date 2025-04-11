@@ -286,7 +286,7 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'bottom';
-            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2}) || this;
             dl._move_points(event, 'y');
           }
           this._move_points(event, 'y');
@@ -297,7 +297,7 @@ class DimensionLine extends paper.Group {
             delete event.cb;
             delete event.divide;
             event.name = 'right';
-            const dl = parent.find({pos, contour, elm1, elm2, p1, p2});
+            const dl = parent.find({pos, contour, elm1, elm2, p1, p2}) || this;
             dl._move_points(event, 'x');
           }
           this._move_points(event, 'x');
