@@ -23,24 +23,16 @@ export class Scheme extends paper.Project {
       standardForms: {value: new StandardForms(this)},
     });
   }
-
-  get activeLayer() {
-    const {_activeLayer, rootLayer} = this;
-    if(_activeLayer instanceof Contour && _activeLayer !== rootLayer) {
-      return _activeLayer;
-    }
-    for(const layer of this.layers) {
-      if(layer instanceof Contour && layer !== rootLayer) {
-        layer.activate();
-        return layer;
-      }
-    }
-    return null;
-  }
   
   get workLayer() {
-    let {activeLayer} = this;
-    if(!activeLayer) {
+    let {activeLayer, layers, rootLayer} = this;
+    if(!activeLayer || activeLayer === rootLayer) {
+      for(const layer of this.layers) {
+        if(layer instanceof Contour && layer !== rootLayer) {
+          layer.activate();
+          return layer;
+        }
+      }
       activeLayer = this.addLayer();
       activeLayer.activate();
     }

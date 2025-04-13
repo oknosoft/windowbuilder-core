@@ -114,13 +114,13 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
               res.add(prm);
             }
           }
-          else if(!param.is_calculated || param.show_calculated){
+          else if(!param.isCalculated || param.show_calculated){
             res.add(param);
           }
         }
         
         for(const {param} of this.product_params) {
-          if(!param.empty() && (!param.is_calculated || param.show_calculated)){
+          if(!param.empty() && (!param.isCalculated || param.show_calculated)){
             res.add(param);
           }
         }

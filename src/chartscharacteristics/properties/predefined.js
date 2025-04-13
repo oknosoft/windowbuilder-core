@@ -39,13 +39,21 @@ export function predefined(root) {
             };
             break;
 
-        case 'clr_elm':
-          _data._formula = function (obj) {
-            return obj?.elm?.clr || clrs.get();
-          };
-          break;
+          case 'clr_elm':
+            _data._formula = function (obj) {
+              return obj?.elm?.clr || clrs.get();
+            };
+            break;
 
-            
+          case 'direction':
+            _data._formula = function (obj) {
+              let {elm, layer} = obj;
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              return layer?.direction;
+            };
+            break;
 
           case 'inset':
             _data._formula = function ({elm, prm_row, ox, row}) {
@@ -465,6 +473,7 @@ export function predefined(root) {
 
   // создаём те, где нужна только формула со стандартным check_condition
   for(const name of [
+    'direction',        // направление открывания
     'up_glasses_weight',// масса заполнений, опирающихся на профиль
     'has_glasses',      // бит в заказе есть заполнения
     'has_glasses_separately',// бит в заказе есть заполнения отдельно

@@ -128,5 +128,16 @@ export class BuilderProps extends BuilderParams {
   fontSize() {
     return 62;
   }
+
+  get list() {
+    const res = new Map();
+    return this.appendList(res, this.sys.product_params);
+  }
+
+  eigenvalue(param, context, origin) {
+    const {sys} = this;
+    const prow = sys.product_params.find({param}); // sys.params.find({param})
+    return prow ? prow.value : param.type.fetchType();
+  }
   
 }

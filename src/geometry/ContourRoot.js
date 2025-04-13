@@ -83,9 +83,9 @@ export class ContourRoot extends Contour {
     }
     return GeneratrixElement.Connective;
   }
-   
-  activate() {
-    
+
+  get presentation() {
+    return `Соединители`;
   }
 }
 

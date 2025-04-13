@@ -41,6 +41,14 @@ export function classes(root, exclude)  {
     templateValue({project}) {
       const {template} = project;
     }
+
+    paramsLinks(attr) {
+      return [];
+    }
+
+    linkedValues(links, context, values) {
+      
+    }
     
   }
   classes.CchProperties = CchProperties;
