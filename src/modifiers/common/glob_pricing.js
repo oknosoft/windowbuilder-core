@@ -464,10 +464,13 @@ class Pricing {
 
     const {calc_order_row, price_type, first_cost, date} = prm;
     const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
-    const {rounding, manager} = calc_order_row._owner._owner;
+    const calc_order = calc_order_row._owner._owner;
+    const {rounding, manager} = calc_order;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
-    if(calc_order_row.price && (not_update?.includes(calc_order_row.nom) || not_update?.includes(calc_order_row.nom.parent) || (
+    if(calc_order_row.price && !calc_order.is_new() && (
+      not_update?.includes(calc_order_row.nom) || 
+      not_update?.includes(calc_order_row.nom.parent) || (
       marginality_in_spec === 1 && !prm.spec.count()))) {
       ;
     }
