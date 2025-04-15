@@ -142,6 +142,7 @@ export class Scheme extends paper.Project {
     rootLayer.clear();
     dimensions.clear();
     dimensions.removeChildren();
+    return this;
   }
 
   /**

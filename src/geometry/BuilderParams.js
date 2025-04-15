@@ -118,7 +118,7 @@ export class BuilderParams extends OwnerObj {
     }
 
     const upValue = up?.get(param, context, origin);
-    return upValue === undefined ? this.eigenvalue(param, context, origin) : upValue;
+    return upValue === param.type.isFilled(upValue) ? upValue : this.eigenvalue(param, context, origin);
   }
 
   eigenvalue(param, context, origin) {
