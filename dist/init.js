@@ -7589,7 +7589,18 @@ get identifier(){return this._getter('identifier')}
 set identifier(v){this._setter('identifier',v)}
 get goods(){return this._getter_ts('goods')}
 set goods(v){this._setter_ts('goods',v)}
-}
+
+
+  save(...attr) {
+    const basisRow = this.basis.orders.find({invoice: this});
+    if(basisRow) {
+      const {ref, ...raw} = this.toJSON();
+      basisRow.dop = raw;
+      this._modified = false;
+      return Promise.resolve(this);
+    }
+    return super.save(...attr);
+  }}
 $p.DocPurchase_order = DocPurchase_order;
 class DocPurchase_orderGoodsRow extends TabularSectionRow{
 get identifier(){return this._getter('identifier')}
@@ -8483,6 +8494,8 @@ get rate(){return this._getter('rate')}
 set rate(v){this._setter('rate',v)}
 get amount(){return this._getter('amount')}
 set amount(v){this._setter('amount',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.DocCalc_orderOrdersRow = DocCalc_orderOrdersRow;
 class DocCalc_orderManager extends DocManager {
@@ -8536,7 +8549,7 @@ class DocCalc_orderManager extends DocManager {
       await src.load_linked_refs();
     }
     const {clone, refill_props} = src;
-    const {organization, partner, contract, _rev, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, ...others} = (src._obj || src);
     const tmp = {date: new Date(), organization, partner, contract};
     if(clone) {
       utils._mixin(tmp, (src._obj || src));
@@ -8600,7 +8613,7 @@ class DocCalc_orderManager extends DocManager {
     return this.get(ref, 'promise')
       .then((doc) => doc.load_linked_refs())
       .then((doc) => {
-        const res = doc.toJSON();
+        const {orders, ...res} = doc.toJSON();
         for(const row of doc.production) {
           if(row.characteristic.calc_order == doc) {
             res.production[row.row - 1].characteristic = row.characteristic.toJSON();

@@ -61,7 +61,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     }
     // создаём заказ
     const {clone, refill_props} = src;
-    const {organization, partner, contract, _rev, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, ...others} = (src._obj || src);
     const tmp = {date: new Date(), organization, partner, contract};
     if(clone) {
       utils._mixin(tmp, (src._obj || src));
@@ -130,7 +130,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     return this.get(ref, 'promise')
       .then((doc) => doc.load_linked_refs())
       .then((doc) => {
-        const res = doc.toJSON();
+        const {orders, ...res} = doc.toJSON();
         for(const row of doc.production) {
           if(row.characteristic.calc_order == doc) {
             res.production[row.row - 1].characteristic = row.characteristic.toJSON();

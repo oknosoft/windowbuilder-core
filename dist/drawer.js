@@ -20039,6 +20039,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       _obj.state = 'draft';
     }
     this.check_mandatory();
+    const rmi = []
+    for(const row of this.orders) {
+      const {invoice} = row;
+      if(invoice.partner.empty()) {
+        rmi.push(row)
+      }      
+      else {
+        invoice.save();
+      }
+    }
+    for(const row of rmi) {
+      this.orders.del(row);
+    }
     let sobjs = this.product_rows(true, attr);
     if(this._modified || this.is_new()) {
       const hash = this._hash();
@@ -21233,6 +21246,32 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
     return dp;
+  }
+  agent_order() {
+    for(const row of this.orders) {
+      if(row.is_supplier.empty()) {
+        const {invoice, dop} = row;
+        if(!invoice.empty()) {
+          if(invoice.is_new()) {
+            invoice._mixin(dop);
+            invoice._set_loaded(invoice.ref);
+          }
+          return invoice;
+        }
+      }
+    }
+    const invoice = this._manager._owner.purchase_order.create({
+      basis: this.ref,
+      organization: this.organization.ref,
+      department: this.department.ref,
+      warehouse: this.warehouse.ref,
+      settlements_course: 1,
+      settlements_multiplicity: 1,
+    }, false, true);
+    const row = this.orders.add({invoice: invoice.ref});
+    invoice.date = new Date;
+    invoice.responsible = $p.current_user;
+    return invoice;
   }
   static set_department() {
     const {wsql, cat} = $p

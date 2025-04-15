@@ -305,6 +305,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     // проверка заполненности полей теперь вызывает runtime-error
     this.check_mandatory();
+    
+    // сохраним связанные заказы
+    const rmi = []
+    for(const row of this.orders) {
+      const {invoice} = row;
+      if(invoice.partner.empty()) {
+        rmi.push(row)
+      }      
+      else {
+        invoice.save();
+      }
+    }
+    for(const row of rmi) {
+      this.orders.del(row);
+    }
 
     // массив сырых данных изменённых характеристик
     let sobjs = this.product_rows(true, attr);
@@ -1776,6 +1791,34 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     // сворачиваем
     dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
     return dp;
+  }
+  
+  agent_order() {
+    for(const row of this.orders) {
+      if(row.is_supplier.empty()) {
+        const {invoice, dop} = row;
+        if(!invoice.empty()) {
+          if(invoice.is_new()) {
+            invoice._mixin(dop);
+            invoice._set_loaded(invoice.ref);
+          }
+          return invoice;
+        }
+      }
+    }
+    const invoice = this._manager._owner.purchase_order.create({
+      basis: this.ref,
+      organization: this.organization.ref,
+      department: this.department.ref,
+      warehouse: this.warehouse.ref,
+      settlements_course: 1,
+      settlements_multiplicity: 1,
+    }, false, true);
+    const row = this.orders.add({invoice: invoice.ref});
+    invoice.date = new Date;
+    invoice.responsible = $p.current_user;
+
+    return invoice;
   }
 
   /**
