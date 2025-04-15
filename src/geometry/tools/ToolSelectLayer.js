@@ -71,7 +71,7 @@ export class ToolSelectLayer extends ToolElement {
         // рисуем кнопки
         const bySide = layer.profilesBySide();
         for(const pos of ['top', 'bottom', 'left', 'right']) {
-          if(layer.isPos(pos, bounds)) {
+          if(layer.isPos(pos, bounds) && bySide[pos]) {
             this.button({layer, bind: pos, profile: bySide[pos]});
             setMode = true;
           }
