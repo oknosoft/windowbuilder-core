@@ -17022,13 +17022,14 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
       const {product_params} = inset;
       const own_row = _owner.coordinates.find({elm: _obj.elm});
       const own_params = own_row && own_row.inset.product_params;
+      const ignForcibly = $p.wsql.get_user_param('glass_composit_ign_forcibly', 'boolean');
       const params = {};
       inset.used_params().forEach((param) => {
         if((!param.is_calculated || param.show_calculated)) {
           const def = product_params.find({param}) || (own_params && own_params.find({param}));
           if(def) {
             const pkey = param.valueOf();
-            if(dop.params && pkey in dop.params && !def.forcibly) {
+            if(dop.params && (pkey in dop.params) && (ignForcibly || !def.forcibly)) {
               params[pkey] = dop.params[pkey];
               return;
             }
