@@ -228,6 +228,7 @@ export const meta = {
     }
   },
   id: "clg",
-  cachable: "ram"
+  cachable: "ram",
+  aliases: ['color_price_groups'],
 };
 
