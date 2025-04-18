@@ -2737,6 +2737,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       for(const adj of profile.adjoinings) {
         bounds = bounds.unite(adj.bounds);
       }
+      const nearest = profile.nearest();
+      if(nearest) {
+        bounds = bounds.unite(nearest.bounds);
+        bounds = bounds.unite(nearest.generatrix.bounds);
+      }
     }
     return bounds;
   }
@@ -9151,16 +9156,7 @@ class ProfileItem extends GeneratrixElement {
       if(selected) {
         this.selected = false;
       }
-      const nearests = this.joined_nearests ? this.joined_nearests() : [];
-      if(this.joined_imposts) {
-        const imposts = this.joined_imposts();
-        nearests.push.apply(nearests, imposts.inner.map((v) => v.profile).concat(imposts.outer.map((v) => v.profile)));
-      }
-      for(const profile of nearests) {
-        profile._attr._rays && profile._attr._rays.clear();
-      }
-      _attr._rays && _attr._rays.clear();
-      delete _attr.d0;
+      this.clear_joined();
       this.project.register_change(true);
       if(selected) {
         this.selected = true;
@@ -9648,6 +9644,21 @@ class ProfileItem extends GeneratrixElement {
     }
     return check_only ? false : {inner: tinner, outer: touter};
   }
+  clear_joined(with_nearest) {
+    const {inner, outer} = this.joined_imposts();
+    for (const {profile} of inner.concat(outer)) {
+      profile._attr._rays?.clear();
+    }
+    for (const sub of this.joined_nearests()) {
+      if(with_nearest) {
+        delete sub._attr._nearest;
+      }
+      sub.clear_joined();
+    }
+    const {_attr, layer} = this;
+    _attr._rays?.clear();
+    delete _attr.d0;
+  }
   setSelection(selection) {
     const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {
@@ -9996,8 +10007,9 @@ class ProfileItem extends GeneratrixElement {
   }
   do_bind(profile, bcnn, ecnn, moved) {
     const {acn, ad} = $p.enm.cnn_types;
-    let moved_fact;
+    let moved_fact, nearests;
     if(profile instanceof ProfileConnective) {
+      nearests = this.joined_nearests();
       const gen = profile.generatrix.clone({insert: false}).elongation(3000);
       this._attr._rays.clear();
       const b = gen.getNearestPoint(this.b);
@@ -10081,6 +10093,11 @@ class ProfileItem extends GeneratrixElement {
           profile.observer(this);
         }
       });
+    }
+    if(nearests) {
+      for (const nearest of nearests) {
+        nearest.do_bind(profile, bcnn, ecnn, moved);
+      }
     }
   }
   cnn_side(profile, interior, rays) {
@@ -11369,6 +11386,12 @@ class Profile extends ProfileItem {
     if(!ign_cnn && this.inset.empty()) {
       ign_cnn = true;
     }
+    if(_nearest instanceof ProfileConnective) {
+      if(!_nearest_cnn) {
+        _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+      }
+      return _nearest;
+    }
     const check_nearest = (elm) => {
       if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted() || !b || !e) {
         return;
@@ -11440,7 +11463,7 @@ class Profile extends ProfileItem {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
       }
-      else {
+      else if(layer !== project.l_connective) {
         find_nearest(project.l_connective.children);
       }
     }
@@ -12216,15 +12239,16 @@ class ProfileConnective extends ProfileItem {
     return this.rays[node];
   }
   move_points(delta, all_points, start_point) {
+    const nearests = this.joined_nearests();
     super.move_points(delta, all_points, start_point);
-    if(all_points !== false && !paper.Key.isDown('control')) {
+    if(!paper.Key.isDown('control')) {
       const moved = {profiles: []};
-      for (const np of this.joined_nearests()) {
-        np.do_bind(this, null, null, moved);
+      for (const nearest of nearests) {
+        nearest.do_bind(this, null, null, moved);
         for(const node of ['b', 'e']) {
-          const cp = np.cnn_point(node);
+          const cp = nearest.cnn_point(node);
           if(cp.profile) {
-            cp.profile.do_bind(np, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
+            cp.profile.do_bind(nearest, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
           }
         }
       }
@@ -12248,7 +12272,12 @@ class ProfileConnective extends ProfileItem {
     return check_only ? false : {inner: [], outer: []};
   }
   nearest(ign_cnn) {
-    return Profile.prototype.nearest.call(this, ign_cnn);
+    const {_attr, layer, project} = this;
+    let {_nearest, _nearest_cnn} = _attr;
+    if(_nearest && !_nearest_cnn) {
+      _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+    }
+    return _nearest;
   }
   get pos() {
     const nearests = this.joined_nearests();
@@ -12315,24 +12344,7 @@ class ProfileConnective extends ProfileItem {
     }
   }
   remove() {
-    this.joined_nearests().forEach((rama) => {
-      const {inner, outer} = rama.joined_imposts();
-      for (const {profile} of inner.concat(outer)) {
-        profile.rays.clear();
-      }
-      for (const {_attr, elm} of rama.joined_nearests()) {
-        _attr._rays && _attr._rays.clear();
-      }
-      const {_attr, layer} = rama;
-      _attr._rays && _attr._rays.clear();
-      if(_attr._nearest){
-        _attr._nearest = null;
-      }
-      if(_attr._nearest_cnn){
-        _attr._nearest_cnn = null;
-      }
-      layer && layer.notify && layer.notify({profiles: [rama], points: []}, consts.move_points);
-    });
+    this.clear_joined(true);
     super.remove();
   }
 }
@@ -14099,26 +14111,28 @@ class Scheme extends paper.Project {
           parent._hatching.remove();
           parent._hatching = null;
         }
-        if(layer instanceof ConnectiveLayer) {
-          other.push.apply(other, parent.move_points(delta, all_points));
-        }
-        else if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
-          if(auto_align && parent.elm_type === impost && !parent.layer.layer && Math.abs(delta.x) > 1) {
-            continue;
+        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
+          if(layer instanceof ConnectiveLayer) {
+            other.push.apply(other, parent.move_points(delta, all_points));
           }
-          let check_selected;
-          item.segments.forEach((segm) => {
-            if(segm.selected && other.indexOf(segm) != -1) {
-              check_selected = !(segm.selected = false);
+          else {
+            if(auto_align && parent.elm_type === impost && !parent.layer.layer && Math.abs(delta.x) > 1) {
+              continue;
             }
-          });
-          if(check_selected && !item.segments.some((segm) => segm.selected)) {
-            continue;
-          }
-          other.push.apply(other, parent.move_points(delta, all_points));
-          if(!layers.includes(layer)) {
-            layers.push(layer);
-            layer.l_dimensions.clear();
+            let check_selected;
+            item.segments.forEach((segm) => {
+              if(segm.selected && other.indexOf(segm) != -1) {
+                check_selected = !(segm.selected = false);
+              }
+            });
+            if(check_selected && !item.segments.some((segm) => segm.selected)) {
+              continue;
+            }
+            other.push.apply(other, parent.move_points(delta, all_points));
+            if(!layers.includes(layer)) {
+              layers.push(layer);
+              layer.l_dimensions.clear();
+            }
           }
         }
       }

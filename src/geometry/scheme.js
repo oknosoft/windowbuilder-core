@@ -1229,35 +1229,37 @@ class Scheme extends paper.Project {
           parent._hatching = null;
         }
 
-        if(layer instanceof ConnectiveLayer) {
-          // двигаем и накапливаем связанные
-          other.push.apply(other, parent.move_points(delta, all_points));
-        }
-        else if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
+        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
 
-          // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
-          if(auto_align && parent.elm_type === impost && !parent.layer.layer && Math.abs(delta.x) > 1) {
-            continue;
+          if(layer instanceof ConnectiveLayer) {
+            // двигаем и накапливаем связанные
+            other.push.apply(other, parent.move_points(delta, all_points));
           }
-
-          let check_selected;
-          item.segments.forEach((segm) => {
-            if(segm.selected && other.indexOf(segm) != -1) {
-              check_selected = !(segm.selected = false);
+          else {
+            // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
+            if(auto_align && parent.elm_type === impost && !parent.layer.layer && Math.abs(delta.x) > 1) {
+              continue;
             }
-          });
 
-          // если уже двигали и не осталось ни одного выделенного - выходим
-          if(check_selected && !item.segments.some((segm) => segm.selected)) {
-            continue;
-          }
+            let check_selected;
+            item.segments.forEach((segm) => {
+              if(segm.selected && other.indexOf(segm) != -1) {
+                check_selected = !(segm.selected = false);
+              }
+            });
 
-          // двигаем и накапливаем связанные
-          other.push.apply(other, parent.move_points(delta, all_points));
+            // если уже двигали и не осталось ни одного выделенного - выходим
+            if(check_selected && !item.segments.some((segm) => segm.selected)) {
+              continue;
+            }
 
-          if(!layers.includes(layer)) {
-            layers.push(layer);
-            layer.l_dimensions.clear();
+            // двигаем и накапливаем связанные
+            other.push.apply(other, parent.move_points(delta, all_points));
+
+            if(!layers.includes(layer)) {
+              layers.push(layer);
+              layer.l_dimensions.clear();
+            }
           }
         }
       }

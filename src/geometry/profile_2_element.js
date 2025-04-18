@@ -118,6 +118,13 @@ class Profile extends ProfileItem {
     if(!ign_cnn && this.inset.empty()) {
       ign_cnn = true;
     }
+    
+    if(_nearest instanceof ProfileConnective) {
+      if(!_nearest_cnn) {
+        _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+      }
+      return _nearest;
+    }
 
     const check_nearest = (elm) => {
       if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted() || !b || !e) {
@@ -190,11 +197,12 @@ class Profile extends ProfileItem {
         _attr._nearest = null;
       }
     });
+    
     if(layer && (!_attr._nearest || !check_nearest(_attr._nearest))) {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
       }
-      else {
+      else if(layer !== project.l_connective) {
         find_nearest(project.l_connective.children);
       }
     }

@@ -691,16 +691,7 @@ class ProfileItem extends GeneratrixElement {
       if(selected) {
         this.selected = false;
       }
-      const nearests = this.joined_nearests ? this.joined_nearests() : [];
-      if(this.joined_imposts) {
-        const imposts = this.joined_imposts();
-        nearests.push.apply(nearests, imposts.inner.map((v) => v.profile).concat(imposts.outer.map((v) => v.profile)));
-      }
-      for(const profile of nearests) {
-        profile._attr._rays && profile._attr._rays.clear();
-      }
-      _attr._rays && _attr._rays.clear();
-      delete _attr.d0;
+      this.clear_joined();
       this.project.register_change(true);
       if(selected) {
         this.selected = true;
@@ -977,8 +968,7 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-  
-  
+    
   bringUp() {
     const {b, e, rays} = this;
     const node = b.selected ? rays.b : (e.selected ? rays.e : null);
@@ -1476,6 +1466,22 @@ class ProfileItem extends GeneratrixElement {
 
   }
 
+  clear_joined(with_nearest) {
+    const {inner, outer} = this.joined_imposts();
+    for (const {profile} of inner.concat(outer)) {
+      profile._attr._rays?.clear();
+    }
+    for (const sub of this.joined_nearests()) {
+      if(with_nearest) {
+        delete sub._attr._nearest;
+      }
+      sub.clear_joined();
+    }
+    const {_attr, layer} = this;
+    _attr._rays?.clear();
+    delete _attr.d0;
+  }
+
   setSelection(selection) {
     const {_attr: {generatrix, path}, project} = this;
     if(!generatrix || !path) {
@@ -1917,9 +1923,10 @@ class ProfileItem extends GeneratrixElement {
   do_bind(profile, bcnn, ecnn, moved) {
 
     const {acn, ad} = $p.enm.cnn_types;
-    let moved_fact;
+    let moved_fact, nearests;
 
     if(profile instanceof ProfileConnective) {
+      nearests = this.joined_nearests();
       const gen = profile.generatrix.clone({insert: false}).elongation(3000);
       this._attr._rays.clear();
       const b = gen.getNearestPoint(this.b);
@@ -2012,6 +2019,11 @@ class ProfileItem extends GeneratrixElement {
           profile.observer(this);
         }
       });
+    }
+    if(nearests) {
+      for (const nearest of nearests) {
+        nearest.do_bind(profile, bcnn, ecnn, moved);
+      }
     }
   }
 

@@ -50,18 +50,19 @@ class ProfileConnective extends ProfileItem {
    */
   move_points(delta, all_points, start_point) {
 
+    const nearests = this.joined_nearests();
     super.move_points(delta, all_points, start_point);
 
     // двигаем примыкающие
-    if(all_points !== false && !paper.Key.isDown('control')) {
+    if(!paper.Key.isDown('control')) {
       const moved = {profiles: []};
-      for (const np of this.joined_nearests()) {
-        np.do_bind(this, null, null, moved);
+      for (const nearest of nearests) {
+        nearest.do_bind(this, null, null, moved);
         // двигаем связанные с примыкающими
         for(const node of ['b', 'e']) {
-          const cp = np.cnn_point(node);
+          const cp = nearest.cnn_point(node);
           if(cp.profile) {
-            cp.profile.do_bind(np, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
+            cp.profile.do_bind(nearest, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
           }
         }
       }
@@ -104,7 +105,13 @@ class ProfileConnective extends ProfileItem {
    * @return {void}
    */
   nearest(ign_cnn) {
-    return Profile.prototype.nearest.call(this, ign_cnn);
+    const {_attr, layer, project} = this;
+    let {_nearest, _nearest_cnn} = _attr;
+
+    if(_nearest && !_nearest_cnn) {
+      _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+    }
+    return _nearest;
   }
 
   /**
@@ -204,28 +211,7 @@ class ProfileConnective extends ProfileItem {
    * Одновлеменно, инициирует обновление путей примыкающих элементов
    */
   remove() {
-    this.joined_nearests().forEach((rama) => {
-
-      const {inner, outer} = rama.joined_imposts();
-      for (const {profile} of inner.concat(outer)) {
-        profile.rays.clear();
-      }
-      for (const {_attr, elm} of rama.joined_nearests()) {
-        _attr._rays && _attr._rays.clear();
-      }
-
-      const {_attr, layer} = rama;
-      _attr._rays && _attr._rays.clear();
-      if(_attr._nearest){
-        _attr._nearest = null;
-      }
-      if(_attr._nearest_cnn){
-        _attr._nearest_cnn = null;
-      }
-
-      layer && layer.notify && layer.notify({profiles: [rama], points: []}, consts.move_points);
-
-    });
+    this.clear_joined(true);
     super.remove();
   }
 
