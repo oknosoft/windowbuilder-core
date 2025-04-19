@@ -1,7 +1,6 @@
 
 export const meta = {
   name: "ВидыНоменклатуры",
-  splitted: false,
   synonym: "Виды номенклатуры",
   illustration: "",
   objPresentation: "Вид номенклатуры",

@@ -528,7 +528,7 @@ export const meta= {
           synonym: "Вид сравнения",
           choiceGrp: "elm",
           type: {
-            types: ["enm.comparison_types"]
+            types: ["enm.comparisonTypes"]
           }
         },
         value: {
@@ -704,7 +704,7 @@ export const meta= {
           choiceGrp: "elm",
           type: {
             types: [
-              "enm.comparison_types"
+              "enm.comparisonTypes"
             ]
           }
         },

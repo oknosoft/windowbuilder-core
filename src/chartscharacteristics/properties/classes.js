@@ -43,7 +43,57 @@ export function classes(root, exclude)  {
     }
 
     paramsLinks(attr) {
-      return [];
+      // первым делом, выясняем, есть ли ограничитель на текущий параметр
+      if(!this.hasOwnProperty('_links')) {
+        this._links = cat.paramsLinks.findRows({slave: this});
+      }
+
+      return this._links.filter((link) => {
+        //use_master бывает 0 - один ведущий, 1 - несколько ведущих через И, 2 - несколько ведущих через ИЛИ
+        const use_master = link.use_master || 0;
+        let ok = true && use_master < 2;
+        //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущиъ для проверки
+        const arr = !use_master ? [{key: link.master}] : link.leadings;
+
+        arr.forEach((row_key) => {
+          let ok_key = true;
+          // для всех записей ключа параметров сначала строим Map ИЛИ
+          const or = new Map();
+          for(const row of row_key.key.params) {
+            if(!or.has(row.area)) {
+              or.set(row.area, []);
+            }
+            or.get(row.area).push(row);
+          }
+          for(const grp of or.values()) {
+            let grp_ok = true;
+            for(const row of grp) {
+              // выполнение условия рассчитывает объект CchProperties
+              grp_ok = row.property.checkCondition(attr);
+              // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
+              if (!grp_ok) {
+                break;
+              }
+            }
+            ok_key = grp_ok;
+            if(ok_key) {
+              break;
+            }
+          }
+
+          //Для проверки через ИЛИ логика накопительная - надо проверить все ключи до единого
+          if (use_master == 2){
+            ok = ok || ok_key;
+          }
+          //Для проверки через И достаточно найти один неподходящий ключ, чтобы остановиться и признать связь неподходящей
+          else if (!ok_key){
+            ok = false;
+            return false;
+          }
+        });
+        //Конечный возврат в функцию фильтрации массива связей
+        return ok;
+      });
     }
 
     linkedValues(links, context, values) {

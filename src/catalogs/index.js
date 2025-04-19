@@ -10,6 +10,8 @@ import {classes as specificationsClasses, meta as specifications} from './specif
 import {classes as clrsClasses, meta as clrs, exclude as clrsExclude} from './clrs';
 import {classes as clrGroupsClasses, meta as colorPriceGroups, exclude as clrGroupsExclude} from './colorPriceGroups';
 import {classes as productsClasses, meta as products, exclude as productsExclude} from './products';
+import {classes as parametersKeysClasses, meta as parametersKeys, exclude as parametersKeysExclude} from './parametersKeys/meta';
+import {classes as paramsLinksClasses, meta as paramsLinks, exclude as paramsLinksExclude} from './paramsLinks/meta';
 
 export const meta = {
   currencies: {
@@ -162,7 +164,7 @@ export const meta = {
     mainPresentation: "name",
     codeLength: 9,
     fields: {
-      "svg_path": {
+      svg_path: {
         synonym: "Путь svg или текст",
         multiline: true,
         tooltip: "",
@@ -194,7 +196,7 @@ export const meta = {
           ]
         }
       },
-      "rotate": {
+      rotate: {
         synonym: "Поворачивать",
         multiline: false,
         tooltip: "правила поворота эскиза параллельно касательной профиля в точке визуализации\n0 - поворачивать\n1 - ручка",
@@ -202,11 +204,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 1,
-          "fraction": 0
+          digits: 1,
+          fraction: 0
         }
       },
-      "offset": {
+      offset: {
         synonym: "Смещение",
         multiline: false,
         tooltip: "Смещение в мм относительно внещнего ребра элемента",
@@ -214,11 +216,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 6,
-          "fraction": 0
+          digits: 6,
+          fraction: 0
         }
       },
-      "side": {
+      side: {
         synonym: "Сторона соедин.",
         multiline: false,
         tooltip: "имеет смысл только для импостов",
@@ -229,7 +231,7 @@ export const meta = {
           ]
         }
       },
-      "elm_side": {
+      elm_side: {
         synonym: "Сторона элем.",
         multiline: false,
         tooltip: "(0) - изнутри, (1) - снаружи, (-1) - в середине элемента",
@@ -237,11 +239,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 1,
-          "fraction": 0
+          digits: 1,
+          fraction: 0
         }
       },
-      "cx": {
+      cx: {
         synonym: "cx",
         multiline: false,
         tooltip: "Координата точки привязки",
@@ -249,11 +251,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 6,
-          "fraction": 0
+          digits: 6,
+          fraction: 0
         }
       },
-      "cy": {
+      cy: {
         synonym: "cy",
         multiline: false,
         tooltip: "Координата точки привязки",
@@ -261,11 +263,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 6,
-          "fraction": 0
+          digits: 6,
+          fraction: 0
         }
       },
-      "angle_hor": {
+      angle_hor: {
         synonym: "Угол к горизонту",
         multiline: false,
         tooltip: "Угол к к горизонту элемента по умолчанию",
@@ -273,11 +275,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 6,
-          "fraction": 0
+          digits: 6,
+          fraction: 0
         }
       },
-      "priority": {
+      priority: {
         synonym: "Приоритет",
         multiline: false,
         tooltip: "Группа визуализаций",
@@ -285,11 +287,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 6,
-          "fraction": 0
+          digits: 6,
+          fraction: 0
         }
       },
-      "mode": {
+      mode: {
         synonym: "Режим",
         multiline: false,
         tooltip: "",
@@ -297,11 +299,11 @@ export const meta = {
           types: [
             "number"
           ],
-          "digits": 1,
-          "fraction": 0
+          digits: 1,
+          fraction: 0
         }
       },
-      "origin": {
+      origin: {
         synonym: "Навигация",
         multiline: false,
         tooltip: "Навигационная ссылка на изделие или слой",
@@ -323,31 +325,7 @@ export const meta = {
           ]
         }
       },
-      "captured": {
-        synonym: "Захвачен",
-        multiline: false,
-        tooltip: "Реквизит подсистемы MDM. Указывает, что объект в настоящий момент, захвачен для редактирования. Может содержать Тег (строку, комментарий) захвата ",
-        choiceGrp: "elm",
-        type: {
-          types: [
-            "boolean",
-            "string"
-          ],
-          strLen: 50
-        }
-      },
-      "editor": {
-        synonym: "Редактор",
-        multiline: false,
-        tooltip: "Реквизит подсистемы MDM, указывает на {@link CatUsers|Пользователя}, захватившего объект для редактирования",
-        choiceGrp: "elm",
-        type: {
-          types: [
-            "cat.users"
-          ]
-        }
-      },
-      "predefined_name": {
+      predefined_name: {
         synonym: "",
         multiline: false,
         tooltip: "",
@@ -360,12 +338,12 @@ export const meta = {
       }
     },
     tabulars: {
-      "sketch_view": {
+      sketch_view: {
         name: "ВидНаЭскиз",
         synonym: "Доступные виды",
         tooltip: "Доступные виды на эскиз",
         fields: {
-          "kind": {
+          kind: {
             synonym: "Вид",
             multiline: false,
             tooltip: "",
@@ -378,7 +356,7 @@ export const meta = {
           }
         }
       },
-      "params": {
+      params: {
         name: "Параметры",
         synonym: "Параметры",
         tooltip: "Параметры для навигации",
@@ -433,8 +411,8 @@ export const meta = {
         synonym: "Объем",
         type: {
           types: ["number"],
-          "digits": 15,
-          "fraction": 3
+          digits: 15,
+          fraction: 3
         }
       },
       coefficient: {
@@ -616,6 +594,8 @@ export const meta = {
   clrs,
   colorPriceGroups,
   products,
+  parametersKeys,
+  paramsLinks,
 };
 
 export const exclude = [
@@ -643,4 +623,6 @@ export const classes = [
   clrsClasses,
   clrGroupsClasses,
   productsClasses,
+  parametersKeysClasses,
+  paramsLinksClasses,
 ];

@@ -856,7 +856,7 @@ export const meta= {
           choiceGrp: "elm",
           type: {
             types: [
-              "enm.comparison_types"
+              "enm.comparisonTypes"
             ]
           }
         },
