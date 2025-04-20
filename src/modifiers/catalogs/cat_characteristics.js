@@ -118,14 +118,17 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
       inset.used_params().forEach((param) => {
         if((!param.is_calculated || param.show_calculated)) {
           const def = product_params.find({param}) || (own_params && own_params.find({param}));
+          const pkey = param.valueOf();
           if(def) {
-            const pkey = param.valueOf();
             if(dop.params && (pkey in dop.params) && (ignForcibly || !def.forcibly)) {
               params[pkey] = dop.params[pkey];
               return;
             }
             const value = def.option_value({elm});
             params[pkey] = value ? value.valueOf() : value;
+          }
+          else if(dop.params && (pkey in dop.params)) {
+            params[pkey] = dop.params[pkey];
           }
         }
       });
