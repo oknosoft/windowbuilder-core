@@ -26,16 +26,16 @@
   },
   "homepage": "http://www.oknosoft.ru/zd/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.36-beta.1",
-    "metadata-core": "2.0.36-beta.1",
-    "metadata-pouchdb": "2.0.36-beta.1",
+    "metadata-abstract-ui": "2.0.36-beta.2",
+    "metadata-core": "2.0.36-beta.2",
+    "metadata-pouchdb": "2.0.36-beta.2",
     "paper-jsdom-canvas": "0.12.18"
   },
   "devDependencies": {
     "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
     "gulp": "^4.0",
     "gulp-concat": "^2.6",
-    "gulp-replace": "^1.0",
+    "gulp-replace": "^1.1",
     "gulp-umd": "^2.0",
     "md5-file": "^5.0",
     "decomment": "^0.9.5"
