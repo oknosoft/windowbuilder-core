@@ -1727,6 +1727,53 @@ export const meta = {
       aliases: ['specification_order_row_types']
     }
   ],
+  vatRates: [
+    {
+      order: 0,
+      name: "НДС18",
+      synonym: "18%"
+    },
+    {
+      order: 1,
+      name: "НДС18_118",
+      synonym: "18% / 118%"
+    },
+    {
+      order: 2,
+      name: "НДС10",
+      synonym: "10%"
+    },
+    {
+      order: 3,
+      name: "НДС10_110",
+      synonym: "10% / 110%"
+    },
+    {
+      order: 4,
+      name: "НДС0",
+      synonym: "0%"
+    },
+    {
+      order: 5,
+      name: "БезНДС",
+      synonym: "Без НДС"
+    },
+    {
+      order: 6,
+      name: "НДС20",
+      synonym: "20%"
+    },
+    {
+      order: 7,
+      name: "НДС20_120",
+      synonym: "20% / 120%"
+    },
+    {
+      tag: "Ставки НДС",
+      id: 'end',
+      aliases: ['vat_rates']
+    }
+  ],
 };
 
 export {classes, exclude};

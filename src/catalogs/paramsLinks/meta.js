@@ -1,3 +1,4 @@
+import {propValue} from '../../chartscharacteristics/properties/meta';
 
 export const meta = {
   name: "СвязиПараметров",
@@ -104,91 +105,7 @@ export const meta = {
       synonym: "Значения",
       tooltip: "",
       fields: {
-        value: {
-          synonym: "Значение",
-          multiline: false,
-          tooltip: "",
-          choiceLinks: [
-            {
-              name: [
-                "selection",
-                "owner"
-              ],
-              path: [
-                "slave"
-              ]
-            }
-          ],
-          choiceParams: [],
-          choiceType: {
-            path: [
-              "slave"
-            ],
-            elm: 0
-          },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nom_groups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.templates",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parametersKeys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cch.properties",
-              "cat.clrs"
-            ],
-            strLen: 1024,
-            datePart: "date_time",
-            digits: 15,
-            fraction: 3
-          }
-        },
+        value: propValue,
         by_default: {
           synonym: "По умолчанию",
           multiline: false,
@@ -226,23 +143,26 @@ export function classes({cat, classes, symbols}, exclude)  {
   class CatParamsLinks extends CatObj{
     /**
      * @summary Дополеняет массив разрешенными в текущей связи значениями
-     * @param values {Array}
+     * @param {Array} values
+     * @param {Boolean} [rows]
      * @return {Array}
      */
-    appendValues(values = []) {
+    appendValues(values = [], rows = false) {
+      const push = rows ?  //by_default,forcibly
+        (row) => values.push(row) : (row) => values.push(row.value); 
       for(const row of this.values) {
         if(row.value instanceof CatColorPriceGroups) {
           for(const value of row.value.clrs()) {
-            values.push({value});//by_default,forcibly
+            push({value});
           }
         }
         else if(row.value?.isFolder) {
           row.value._children().forEach(value => {
-            !value.isFolder && values.push({value});
+            !value.isFolder && push({value});
           });
         }
         else {
-          values.push(row);
+          push(row);
         }
       }
       return values;

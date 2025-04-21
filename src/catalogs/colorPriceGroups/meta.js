@@ -120,13 +120,13 @@ export const meta = {
       synonym: "Ценовые группы",
       tooltip: "",
       fields: {
-        "price_group": {
+        price_group: {
           synonym: "Ценовая гр. или номенклатура",
           multiline: false,
           tooltip: "Ссылка на ценовую группу или номенклатуру или папку (родитель - первый уровень иерархии) номенклатуры, для которой действует соответствие цветов",
           type: {
             types: [
-              "cat.price_groups",
+              "cat.priceGroups",
               "cat.nom"
             ]
           }

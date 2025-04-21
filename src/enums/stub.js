@@ -686,7 +686,7 @@ const tmp = {
               type: {
                 types: [
                   "enm.sketch_view",
-                  "cat.nom_groups",
+                  "cat.nomGroups",
                   "enm.coloring",
                   "cat.production_params",
                   "enm.opening",
@@ -1681,7 +1681,7 @@ const tmp = {
               type: {
                 types: [
                   "enm.sketch_view",
-                  "cat.nom_groups",
+                  "cat.nomGroups",
                   "enm.coloring",
                   "cat.production_params",
                   "enm.opening",

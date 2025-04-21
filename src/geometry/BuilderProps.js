@@ -134,6 +134,10 @@ export class BuilderProps extends BuilderParams {
     return this.appendList(res, this.sys.product_params);
   }
 
+  context(origin) {
+    return {origin, project: this.project};
+  }
+
   eigenvalue(param, context, origin) {
     const {sys} = this;
     const prow = sys.product_params.find({param}); // sys.params.find({param})

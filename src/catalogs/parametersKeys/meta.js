@@ -143,7 +143,7 @@ export const meta = {
           choiceGrp: "elm",
           type: {
             types: [
-              "enm.comparisonTypes"
+              "enm.cmpTypes"
             ]
           }
         },
@@ -191,13 +191,12 @@ export const meta = {
           type: {
             types: [
               "enm.sketch_view",
-              "cat.nom_groups",
+              "cat.nomGroups",
               "enm.coloring",
               "cat.production_params",
               "enm.opening",
               "cat.inserts",
-              "cat.templates",
-              "cat.price_groups",
+              "cat.priceGroups",
               "cat.currencies",
               "enm.open_directions",
               "cat.characteristics",
@@ -207,6 +206,8 @@ export const meta = {
               "cat.values_options",
               "cat.delivery_areas",
               "cat.color_price_groups",
+              "cch.properties",
+              "cat.clrs",
               "cat.elm_visualization",
               "cat.property_values_hierarchy",
               "cat.formulas",
@@ -242,8 +243,7 @@ export const meta = {
               "enm.cnn_sides",
               "enm.nested_object_editing_mode",
               "cat.stores",
-              "cch.properties",
-              "cat.clrs"
+              "cat.templates",
             ],
             strLen: 1024,
             "datePart": "date_time",
@@ -272,19 +272,17 @@ export const meta = {
 
 export const exclude = [/*'cat.parametersKeys'*/];
 
-export function classes({cat, classes, symbols}, exclude)  {
-  const {CatParametersKeys: CatObj} = classes;
+export function classes({cat, enm, classes, symbols, utils, md}, exclude)  {
+  const {CatParametersKeys: CatObj, CatParametersKeysParamsRow: TabularSectionRow} = classes;
   const {get, set} = symbols;
 
   class CatParametersKeys extends CatObj{
 
-    checkCondition(attr) {
-
-      if(this.empty()) {
-        return true;
-      }
-
-      // по таблице параметров сначала строим Map ИЛИ
+    /**
+     * @summary `Map ИЛИ` таблицы параметров
+     * @return {Map}
+     */
+    get or() {
       let {_or} = this;
       if(!_or) {
         _or = new Map();
@@ -296,13 +294,23 @@ export function classes({cat, classes, symbols}, exclude)  {
         }
         this._or = _or;
       }
+      return _or;
+    }
+
+    checkCondition(attr) {
+
+      if(this.empty()) {
+        return true;
+      }
+
+      // по таблице параметров сначала строим Map ИЛИ
+      const {or} = this;
 
       let res = true;
       for(const grp of _or.values()) {
         let grp_ok = true;
         for(const prm_row of grp) {
-          const {property, origin} = prm_row;
-          grp_ok = property.checkCondition(attr);
+          grp_ok = prm_row.checkCondition(attr);
           if (!grp_ok) {
             break;
           }
@@ -317,5 +325,91 @@ export function classes({cat, classes, symbols}, exclude)  {
     }
   }
   classes.CatParametersKeys = CatParametersKeys;
+
+  class CatParametersKeysParamsRow extends TabularSectionRow {
+
+    get value(){
+      const {comparison_type, txt_row} = this;
+      const value = this[get]('value');
+
+      const {cmpTypes: ct} = enm;
+
+      switch (comparison_type) {
+
+        case ct.in:
+        case ct.nin:
+        case ct.lke:
+        case ct.nlk:
+
+          if(value instanceof classes.CatColorPriceGroups) {
+            return value.clrs();
+          }
+          else if(!txt_row) {
+            return value;
+          }
+          try {
+            const arr = JSON.parse(txt_row);
+            const {types, isRef} = this.property.type;
+            if(types && isRef && arr.length) {
+              let mgr;
+              for(const type of types) {
+                const tmp = md.mgr(type);
+                if(tmp && arr.some(ref => tmp.byRef(ref))) {
+                  mgr = tmp;
+                  break;
+                }
+              }
+              if(!mgr) {
+                return arr;
+              }
+              else if(mgr === cat.colorPriceGroups) {
+                const res = [];
+                for(const ref of arr) {
+                  const cg = mgr.get(ref, false);
+                  if(cg) {
+                    res.push(...cg.clrs());
+                  }
+                }
+                return res;
+              }
+              return arr.map((ref) => mgr.get(ref, false)).filter(v => v && !v.empty());
+            }
+            return arr;
+          }
+          catch (err) {
+            return value;
+          }
+
+        default:
+          return value;
+      }
+    }
+    set value(v){this[set]('value',v)}
+
+    /**
+     * @summary Проверяет условие в строке отбора
+     * @param {BuilderElement} [elm]
+     * @param {BuilderElement} [elm2]
+     * @param {String} [node]
+     * @param {String} [node2]
+     * @param {Contour} [layer] - для случая, когда не указан элемент
+     * @param {Scheme} [project] - для случая, когда не указан слой
+     * @param {DocCalcOrder} [order] - для случая, когда не указаны элемент, слой и проект
+     */
+    checkCondition({elm, elm2, node, rib, node2, layer, project, order, ...other}) {
+      const {property, origin} = this;
+      let src = origin.is('nearest') ? (node2 || elm2) : (rib || node || elm);
+      if(!src) {
+        src = layer || project || order;
+      }
+      if(property.hasOwnProperty('checkCondition')) {
+        return property.checkCondition({prm_row: this, ...src.params.context(origin)});
+      }
+      const left = (src.params || src.props).get(property);
+      return utils.checkCompare(left, this.value, this.comparison_type);
+    }
+
+  }
+  classes.CatParametersKeysParamsRow = CatParametersKeysParamsRow;
 }
 

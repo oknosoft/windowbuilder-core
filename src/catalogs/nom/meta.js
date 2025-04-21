@@ -59,53 +59,50 @@ export const meta= {
         types: ["cat.nomKinds"]
       }
     },
-    /*
-    
+
     nom_group: {
       synonym: "Номенклатурная группа",
-      multiline_mode: false,
-      "tooltip": "Определяет счета учета и выступает разрезом в расчете себестоимости",
-      "choice_groups_elm": "elm",
-      "type": {
-        "types": [
-          "cat.nom_groups"
+      tooltip: "Определяет счета учета и выступает разрезом в расчете себестоимости",
+      choiceGrp: "elm",
+      type: {
+        types: [
+          "cat.nomGroups"
         ],
-        "is_ref": true
       }
     },
-    "price_group": {
-      "synonym": "Ценовая группа",
-      "multiline_mode": false,
-      "tooltip": "Актуально для продукций",
-      "choice_groups_elm": "elm",
-      "type": {
-        "types": [
-          "cat.price_groups"
+    price_group: {
+      synonym: "Ценовая группа",
+      tooltip: "Актуально для продукций",
+      choiceGrp: "elm",
+      type: {
+        types: [
+          "cat.priceGroups"
         ],
-        "is_ref": true
       }
     },
-    "vat_rate": {
-      "synonym": "Ставка НДС",
-      "multiline_mode": false,
-      "tooltip": "Для подстановки в документы",
-      "choice_groups_elm": "elm",
+    vat_rate: {
+      synonym: "Ставка НДС",
+      tooltip: "Для подстановки в документы",
+      choiceGrp: "elm",
       mandatory: true,
-      "type": {
-        "types": [
-          "enm.vat_rates"
+      type: {
+        types: [
+          "enm.vatRates"
         ],
-        "is_ref": true
       }
     },
+    
+    /*
+    
+   
         "alp1": {
-      "synonym": "Угол: Типовой угол реза",
+      synonym: "Угол: Типовой угол реза",
       "multiline_mode": false,
-      "tooltip": "",
+      tooltip: "",
       "max": 360,
       "min": 0,
-      "type": {
-        "types": [
+      type: {
+        types: [
           "number"
         ],
         "digits": 8,
@@ -113,11 +110,11 @@ export const meta= {
       }
     },
     "wsnip_min": {
-      "synonym": "Длина плохого обрезка min",
+      synonym: "Длина плохого обрезка min",
       "multiline_mode": false,
-      "tooltip": "",
-      "type": {
-        "types": [
+      tooltip: "",
+      type: {
+        types: [
           "number"
         ],
         "digits": 8,
@@ -125,11 +122,11 @@ export const meta= {
       }
     },
     "wsnip_max": {
-      "synonym": "Длина плохого обрезка max",
+      synonym: "Длина плохого обрезка max",
       "multiline_mode": false,
-      "tooltip": "",
-      "type": {
-        "types": [
+      tooltip: "",
+      type: {
+        types: [
           "number"
         ],
         "digits": 8,
@@ -310,7 +307,7 @@ export const meta= {
     },
     pricing: {
       synonym: "Расценка",
-      "tooltip": "Дополнительная формула расчета цены на случай, когда не хватает возможностей стандартной подисистемы",
+      tooltip: "Дополнительная формула расчета цены на случай, когда не хватает возможностей стандартной подисистемы",
       choiceGrp: "elm",
       type: {
         types: ["cat.formulas"]
@@ -398,15 +395,14 @@ export const meta= {
             elm: 0
           },
           type: {
-            "types": [
+            types: [
               "enm.sketch_view",
-              "cat.nom_groups",
+              "cat.nomGroups",
               "enm.coloring",
               "cat.production_params",
               "enm.opening",
               "cat.inserts",
-              "cat.templates",
-              "cat.price_groups",
+              "cat.priceGroups",
               "cat.currencies",
               "enm.open_directions",
               "cat.characteristics",
@@ -416,6 +412,8 @@ export const meta= {
               "cat.values_options",
               "cat.delivery_areas",
               "cat.color_price_groups",
+              "cch.properties",
+              "cat.clrs",
               "cat.elm_visualization",
               "cat.property_values_hierarchy",
               "cat.formulas",
@@ -451,8 +449,7 @@ export const meta= {
               "enm.cnn_sides",
               "enm.nested_object_editing_mode",
               "cat.stores",
-              "cch.properties",
-              "cat.clrs"
+              "cat.templates",
             ],
             "is_ref": true,
             "str_len": 1024,

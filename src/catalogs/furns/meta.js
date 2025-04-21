@@ -1,3 +1,4 @@
+import {propValue} from '../../chartscharacteristics/properties/meta';
 
 export const meta= {
   name: "пзФурнитура",
@@ -65,7 +66,7 @@ export const meta= {
       choiceParams: [
         {
           name: "is_set",
-          "path": true
+          path: true
         }
       ],
       choiceGrp: "elm",
@@ -96,7 +97,7 @@ export const meta= {
       choiceParams: [
         {
           name: "color_price_group_destination",
-          "path": "ДляОграниченияДоступности"
+          path: "ДляОграниченияДоступности"
         }
       ],
       choiceGrp: "elm",
@@ -137,7 +138,7 @@ export const meta= {
         types: [
           "string"
         ],
-        "strLen": 3
+        strLen: 3
       }
     },
     applying: {
@@ -159,7 +160,7 @@ export const meta= {
       choiceParams: [
         {
           name: "parent",
-          "path": "33bb8f4e-04e0-11ed-8e44-be0a92ebdb41"
+          path: "33bb8f4e-04e0-11ed-8e44-be0a92ebdb41"
         }
       ],
       choiceGrp: "elm",
@@ -177,7 +178,7 @@ export const meta= {
         types: [
           "string"
         ],
-        "strLen": 0
+        strLen: 0
       }
     },
     parent: {
@@ -197,7 +198,7 @@ export const meta= {
       synonym: "Настройки открывания",
       tooltip: "",
       fields: {
-        "side": {
+        side: {
           synonym: "Сторона",
           multiline: false,
           tooltip: "№ стороны",
@@ -209,7 +210,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "lmin": {
+        lmin: {
           synonym: "X min (длина или ширина)",
           multiline: false,
           tooltip: "",
@@ -221,7 +222,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "lmax": {
+        lmax: {
           synonym: "X max (длина или ширина)",
           multiline: false,
           tooltip: "",
@@ -233,7 +234,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "amin": {
+        amin: {
           synonym: "α min",
           multiline: false,
           tooltip: "Минимальный угол к соседнему элементу",
@@ -247,7 +248,7 @@ export const meta= {
             fraction: 2
           }
         },
-        "amax": {
+        amax: {
           synonym: "α max",
           multiline: false,
           tooltip: "Максимальный угол к соседнему элементу",
@@ -261,7 +262,7 @@ export const meta= {
             fraction: 2
           }
         },
-        "arc_available": {
+        arc_available: {
           synonym: "Дуга",
           multiline: false,
           tooltip: "Разрешено искривление элемента",
@@ -271,7 +272,7 @@ export const meta= {
             ]
           }
         },
-        "shtulp_available": {
+        shtulp_available: {
           synonym: "Штульп",
           multiline: false,
           tooltip: "Примыкает либо крепится штульп",
@@ -281,7 +282,7 @@ export const meta= {
             ]
           }
         },
-        "shtulp_fix_here": {
+        shtulp_fix_here: {
           synonym: "Крепится штульп",
           multiline: false,
           tooltip: "Пассивная штульповая створка",
@@ -291,7 +292,7 @@ export const meta= {
             ]
           }
         },
-        "rotation_axis": {
+        rotation_axis: {
           synonym: "Ось поворота",
           multiline: false,
           tooltip: "",
@@ -301,7 +302,7 @@ export const meta= {
             ]
           }
         },
-        "partial_opening": {
+        partial_opening: {
           synonym: "Неполн. откр.",
           multiline: false,
           tooltip: "",
@@ -311,7 +312,7 @@ export const meta= {
             ]
           }
         },
-        "outline": {
+        outline: {
           synonym: "Эскиз",
           multiline: false,
           tooltip: "",
@@ -330,7 +331,7 @@ export const meta= {
       synonym: "Спецификация",
       tooltip: "",
       fields: {
-        "elm": {
+        elm: {
           synonym: "№",
           multiline: false,
           tooltip: "Идентификатор строки спецификации",
@@ -342,7 +343,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "dop": {
+        dop: {
           synonym: "№ доп",
           multiline: false,
           tooltip: "Элемент дополнительной спецификации",
@@ -354,14 +355,14 @@ export const meta= {
             fraction: 0
           }
         },
-        "nom": {
+        nom: {
           synonym: "Номенклатура/Набор",
           multiline: false,
           tooltip: "",
           choiceParams: [
             {
               name: "is_set",
-              "path": true
+              path: true
             }
           ],
           choiceGrp: "elm",
@@ -373,7 +374,7 @@ export const meta= {
             ]
           }
         },
-        "algorithm": {
+        algorithm: {
           synonym: "Алгоритм",
           multiline: false,
           tooltip: "",
@@ -384,17 +385,17 @@ export const meta= {
             ]
           }
         },
-        "nom_characteristic": {
+        nom_characteristic: {
           synonym: "Характеристика",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
                 "owner"
               ],
-              "path": [
+              path: [
                 "specification",
                 "nom"
               ]
@@ -407,22 +408,22 @@ export const meta= {
             ]
           }
         },
-        "clr": {
+        clr: {
           synonym: "Цвет",
           multiline: false,
           tooltip: "",
           choiceParams: [
             {
               name: "clr_in",
-              "path": "00000000-0000-0000-0000-000000000000"
+              path: "00000000-0000-0000-0000-000000000000"
             },
             {
               name: "clr_out",
-              "path": "00000000-0000-0000-0000-000000000000"
+              path: "00000000-0000-0000-0000-000000000000"
             },
             {
               name: "color_price_group_destination",
-              "path": "ДляХарактеристик"
+              path: "ДляХарактеристик"
             }
           ],
           choiceGrp: "elm",
@@ -435,7 +436,7 @@ export const meta= {
             "default": "cat.clrs"
           }
         },
-        "quantity": {
+        quantity: {
           synonym: "Количество",
           multiline: false,
           tooltip: "",
@@ -447,7 +448,7 @@ export const meta= {
             fraction: 8
           }
         },
-        "handle_height_base": {
+        handle_height_base: {
           synonym: "Выс. ручк.",
           multiline: false,
           tooltip: "Высота ручки по умолчению.\n>0: фиксированная высота\n=0: Высоту задаёт оператор\n<0: Ручка по центру",
@@ -459,7 +460,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "fix_ruch": {
+        fix_ruch: {
           synonym: "Высота ручки фиксирована",
           multiline: false,
           tooltip: "Запрещено изменять высоту ручки",
@@ -469,7 +470,7 @@ export const meta= {
             ]
           }
         },
-        "handle_height_min": {
+        handle_height_min: {
           synonym: "Выс. ручк. min",
           multiline: false,
           tooltip: "Строка будет добавлена только в том случае, если ручка выше этого значеия",
@@ -481,7 +482,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "handle_height_max": {
+        handle_height_max: {
           synonym: "Выс. ручк. max",
           multiline: false,
           tooltip: "Строка будет добавлена только в том случае, если ручка ниже этого значеия.\nЗначение (-1), означает учитывать высоту min с двух сторон (снизу и сверху) створки",
@@ -493,7 +494,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "handle_base_filter": {
+        handle_base_filter: {
           synonym: "Смещение",
           multiline: false,
           tooltip: "Фильтр пр высоте ручки\n0: для любой высоты\n1: только для стандартной\n2: только для нестандартной",
@@ -505,7 +506,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "contraction": {
+        contraction: {
           synonym: "Укороч",
           multiline: false,
           tooltip: "Укорочение - число или формула на javascript",
@@ -515,12 +516,12 @@ export const meta= {
               "string",
               "number"
             ],
-            "strLen": 100,
+            strLen: 100,
             digits: 8,
             fraction: 2
           }
         },
-        "contraction_option": {
+        contraction_optionath: {
           synonym: "Укороч. от",
           multiline: false,
           tooltip: "",
@@ -531,7 +532,7 @@ export const meta= {
             ]
           }
         },
-        "coefficient": {
+        coefficient: {
           synonym: "Коэффициент",
           multiline: false,
           tooltip: "",
@@ -543,7 +544,7 @@ export const meta= {
             fraction: 8
           }
         },
-        "flap_weight_min": {
+        flap_weight_min: {
           synonym: "Масса створки min",
           multiline: false,
           tooltip: "",
@@ -567,7 +568,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "side": {
+        side: {
           synonym: "Сторона",
           multiline: false,
           tooltip: "Сторона фурнитуры, на которую устанавливается элемент или выполняется операция",
@@ -579,7 +580,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "cnn_side": {
+        cnn_side: {
           synonym: "Сторона соед.",
           multiline: false,
           tooltip: "Фильтр: выполнять операцию, если примыкающий элемент примыкает с заданной стороны",
@@ -590,7 +591,7 @@ export const meta= {
             ]
           }
         },
-        "offset_option": {
+        offset_option: {
           synonym: "Смещ. от",
           multiline: false,
           tooltip: "",
@@ -608,7 +609,7 @@ export const meta= {
           choiceParams: [
             {
               name: "parent",
-              "path": [
+              path: [
                 "3220e25a-ffcd-11e5-8303-e67fda7f6b46",
                 "3220e251-ffcd-11e5-8303-e67fda7f6b46",
                 "33bb8f4e-04e0-11ed-8e44-be0a92ebdb41"
@@ -622,7 +623,7 @@ export const meta= {
             ]
           }
         },
-        "transfer_option": {
+        transfer_option: {
           synonym: "Перенос опер.",
           multiline: false,
           tooltip: "",
@@ -633,7 +634,7 @@ export const meta= {
             ]
           }
         },
-        "overmeasure": {
+        overmeasure: {
           synonym: "Припуск",
           multiline: false,
           tooltip: "Учитывать припуск длины элемента (например, на сварку)",
@@ -643,7 +644,7 @@ export const meta= {
             ]
           }
         },
-        "is_set_row": {
+        is_set_row: {
           synonym: "Это строка набора",
           multiline: false,
           tooltip: "Интерфейсное поле (Номенклатура=Фурнитура) для редактирования без кода",
@@ -655,7 +656,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "is_procedure_row": {
+        is_procedure_row: {
           synonym: "Это строка операции",
           multiline: false,
           tooltip: "Интерфейсное поле (Номенклатура=Номенклатура И ТипНоменклатуры = Техоперация) для редактирования без кода",
@@ -667,14 +668,14 @@ export const meta= {
             fraction: 0
           }
         },
-        "is_order_row": {
+        is_order_row: {
           synonym: "Это строка заказа",
           multiline: false,
           tooltip: "Если заполнено, строка будет добавлена в заказ, а не в спецификацию текущей продукции",
           choiceParams: [
             {
               name: "ref",
-              "path": [
+              path: [
                 "Нет",
                 "Материал",
                 "Продукция",
@@ -689,7 +690,7 @@ export const meta= {
             ]
           }
         },
-        "stage": {
+        stage: {
           synonym: "Этап",
           multiline: false,
           tooltip: "Этап производства",
@@ -700,7 +701,7 @@ export const meta= {
             ]
           }
         },
-        "inset": {
+        inset: {
           synonym: "Доп. вставка",
           multiline: false,
           tooltip: "",
@@ -718,7 +719,7 @@ export const meta= {
       synonym: "Параметры отбора",
       tooltip: "",
       fields: {
-        "elm": {
+        elm: {
           synonym: "Элемент",
           multiline: false,
           tooltip: "Идентификатор строки спецификации",
@@ -730,7 +731,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "dop": {
+        dop: {
           synonym: "Доп",
           multiline: false,
           tooltip: "Элемент дополнительной спецификации",
@@ -742,7 +743,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "area": {
+        area: {
           synonym: "Гр. ИЛИ",
           multiline: false,
           tooltip: "Позволяет формировать условия ИЛИ",
@@ -754,7 +755,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "param": {
+        param: {
           synonym: "Параметр",
           multiline: false,
           tooltip: "",
@@ -766,14 +767,14 @@ export const meta= {
             ]
           }
         },
-        "origin": {
+        origin: {
           synonym: "Источник",
           multiline: false,
           tooltip: "",
           choiceParams: [
             {
               name: "ref",
-              "path": [
+              path: [
                 "order",
                 "product",
                 "layer",
@@ -793,122 +794,19 @@ export const meta= {
             ]
           }
         },
-        "comparison_type": {
+        comparison_type: {
           synonym: "Вид сравнения",
           multiline: false,
           tooltip: "",
           choiceGrp: "elm",
           type: {
             types: [
-              "enm.comparisonTypes"
+              "enm.cmpTypes"
             ]
           }
         },
-        "value": {
-          synonym: "Значение",
-          multiline: false,
-          tooltip: "",
-          "choiceLinks": [
-            {
-              name: [
-                "comparison_type"
-              ],
-              "path": [
-                "selection_params",
-                "comparison_type"
-              ]
-            },
-            {
-              name: [
-                "selection",
-                "owner"
-              ],
-              "path": [
-                "selection_params",
-                "param"
-              ]
-            },
-            {
-              name: [
-                "txt_row"
-              ],
-              "path": [
-                "selection_params",
-                "txt_row"
-              ]
-            }
-          ],
-          "choiceType": {
-            "path": [
-              "selection_params",
-              "param"
-            ],
-            "elm": 0
-          },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nom_groups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.templates",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cch.properties",
-              "cat.clrs"
-            ],
-            "strLen": 1024,
-            "datePart": "date_time",
-            digits: 15,
-            fraction: 3
-          }
-        },
-        "txt_row": {
+        value: propValue,
+        txt_row: {
           synonym: "Текстовая строка",
           multiline: false,
           tooltip: "Полный текст строкового реквизита либо сериализация списочного значения",
@@ -916,17 +814,17 @@ export const meta= {
             types: [
               "string"
             ],
-            "strLen": 0
+            strLen: 0
           }
         }
       }
     },
-    "specification_restrictions": {
+    specification_restrictions: {
       name: "ОграниченияСпецификации",
       synonym: "Ограничения спецификации",
       tooltip: "",
       fields: {
-        "elm": {
+        elm: {
           synonym: "№",
           multiline: false,
           tooltip: "Идентификатор строки спецификации",
@@ -938,7 +836,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "dop": {
+        dop: {
           synonym: "Доп",
           multiline: false,
           tooltip: "Элемент дополнительной спецификации",
@@ -950,7 +848,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "side": {
+        side: {
           synonym: "Сторона",
           multiline: false,
           tooltip: "",
@@ -962,7 +860,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "lmin": {
+        lmin: {
           synonym: "X min (длина или ширина)",
           multiline: false,
           tooltip: "",
@@ -974,7 +872,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "lmax": {
+        lmax: {
           synonym: "X max (длина или ширина)",
           multiline: false,
           tooltip: "",
@@ -986,7 +884,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "amin": {
+        amin: {
           synonym: "α мин",
           multiline: false,
           tooltip: "",
@@ -999,7 +897,7 @@ export const meta= {
             fraction: 2
           }
         },
-        "amax": {
+        amax: {
           synonym: "α макс",
           multiline: false,
           tooltip: "",
@@ -1012,7 +910,7 @@ export const meta= {
             fraction: 2
           }
         },
-        "for_direct_profile_only": {
+        for_direct_profile_only: {
           synonym: "Для прямых",
           multiline: false,
           tooltip: "Использовать только для прямых профилей (1), только для кривых (-1) или всегда(0)",
@@ -1028,12 +926,12 @@ export const meta= {
         }
       }
     },
-    "attrs_option": {
+    attrs_option: {
       name: "ВариантАтрибутов",
       synonym: "Варианты наборов и графиков",
       tooltip: "",
       fields: {
-        "mmin": {
+        mmin: {
           synonym: "Масса min",
           multiline: false,
           tooltip: "Масса min",
@@ -1045,7 +943,7 @@ export const meta= {
             fraction: 0
           }
         },
-        "mmax": {
+        mmax: {
           synonym: "Масса max",
           multiline: false,
           tooltip: "Масса max",
@@ -1064,7 +962,7 @@ export const meta= {
           choiceParams: [
             {
               name: "parent",
-              "path": "33bb8f4e-04e0-11ed-8e44-be0a92ebdb41"
+              path: "33bb8f4e-04e0-11ed-8e44-be0a92ebdb41"
             }
           ],
           choiceGrp: "elm",
@@ -1081,7 +979,7 @@ export const meta= {
           choiceParams: [
             {
               name: "is_set",
-              "path": true
+              path: true
             }
           ],
           choiceGrp: "elm",
@@ -1094,6 +992,6 @@ export const meta= {
       }
     }
   },
-  "cachable": "ram",
-  "id": "frn",
+  cachable: "ram",
+  id: "frn",
 }

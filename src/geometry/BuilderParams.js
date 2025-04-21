@@ -77,9 +77,14 @@ export class BuilderParams extends OwnerObj {
   }
 
   appendList(res, tabular) {
+    const context = this.context();
     tabular.findRows({hide: false}, ({grouping, param}) => {
       if((!param.isCalculated || param.show_calculated)) {
         // TODO: сокрытие по связям
+        const links = param.paramsLinks(context);
+        if(links.some((link) => link.hide)){
+          return;
+        }
         if(!res.has(grouping)) {
           res.set(grouping, []);
         }
@@ -118,7 +123,7 @@ export class BuilderParams extends OwnerObj {
     }
 
     const upValue = up?.get(param, context, origin);
-    return upValue === param.type.isFilled(upValue) ? upValue : this.eigenvalue(param, context, origin);
+    return param.type.isFilled(upValue) ? upValue : this.eigenvalue(param, context, origin);
   }
 
   eigenvalue(param, context, origin) {
@@ -164,12 +169,7 @@ export class LayerParams extends BuilderParams {
   get list() {
     const res = new Map();
     const layer = this[own];
-    if(layer.level) {
-      return this.appendList(res, layer.sys.furn_params);
-    }
-    else {
-      return this.appendList(res, layer.sys.product_params);
-    }
+    return this.appendList(res, layer.level ? layer.sys.furn_params : layer.sys.product_params);
   }
 
   eigenvalue(param, context, origin) {

@@ -336,12 +336,11 @@ export const meta= {
           type: {
             types: [
               "enm.sketch_view",
-              "cat.nom_groups",
+              "cat.nomGroups",
               "enm.coloring",
               "cat.production_params",
               "enm.opening",
               "cat.inserts",
-              "cat.templates",
               "cat.price_groups",
               "cat.currencies",
               "enm.open_directions",
@@ -352,6 +351,8 @@ export const meta= {
               "cat.values_options",
               "cat.delivery_areas",
               "cat.color_price_groups",
+              "cch.properties",
+              "cat.clrs",
               "cat.elm_visualization",
               "cat.property_values_hierarchy",
               "cat.formulas",
@@ -386,8 +387,7 @@ export const meta= {
               "enm.cnn_sides",
               "enm.nested_object_editing_mode",
               "cat.stores",
-              "cch.properties",
-              "cat.clrs"
+              "cat.templates",
             ],
             strLen: 1024,
             digits: 15,

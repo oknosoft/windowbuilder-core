@@ -3,7 +3,7 @@ import {EditorInvisible} from '../../geometry/paper/EditorInvisible';
 
 export function predefined(root) {
   const {
-    enm: {orientations, positions, elmTypes, comparisonTypes: ect, cnnSides},
+    enm: {orientations, positions, elmTypes, cmpTypes: ect, cnnSides},
     cch: {properties},
     cat: {formulas, clrs, productionParams, nom},
     classes, utils, jobPrm} = root;
@@ -44,7 +44,17 @@ export function predefined(root) {
               return obj?.elm?.clr || clrs.get();
             };
             break;
-
+            
+          case 'sys':
+            _data._formula = function (obj) {
+              let {elm, layer, project} = obj;
+              if(!layer && elm) {
+                layer = elm.layer;
+              }
+              return layer?.sys || project.props.sys;
+            };
+            break;
+            
           case 'direction':
             _data._formula = function (obj) {
               let {elm, layer} = obj;
@@ -492,6 +502,7 @@ export function predefined(root) {
     'branch',           // отдел абонента текущего контекста
     'inset',            // вставка текущего элемента
     'inserts_glass_type',  // тип вставки заполнения
+    'sys',              // система изделия или слоя
     'clr_product',      // цвет изделия
     'clr_inset',        // цвет вставки в элемент
     'clr_elm',          // цвет элемента с поправкой на строку спецификации

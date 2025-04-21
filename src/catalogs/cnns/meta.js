@@ -1,4 +1,6 @@
 
+import {propValue} from '../../chartscharacteristics/properties/meta';
+
 export const meta= {
   name: "пзСоединения",
   synonym: "Соединения элементов", 
@@ -528,111 +530,10 @@ export const meta= {
           synonym: "Вид сравнения",
           choiceGrp: "elm",
           type: {
-            types: ["enm.comparisonTypes"]
+            types: ["enm.cmpTypes"]
           }
         },
-        value: {
-          synonym: "Значение",
-          choiceLinks: [
-            {
-              name: [
-                "comparison_type"
-              ],
-              path: [
-                "selection_params",
-                "comparison_type"
-              ]
-            },
-            {
-              name: [
-                "selection",
-                "owner"
-              ],
-              path: [
-                "selection_params",
-                "param"
-              ]
-            },
-            {
-              name: [
-                "txt_row"
-              ],
-              path: [
-                "selection_params",
-                "txt_row"
-              ]
-            }
-          ],
-          choiceType: {
-            "path": [
-              "selection_params",
-              "param"
-            ],
-            elm: 0
-          },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nom_groups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.templates",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cch.properties",
-              "cat.clrs"
-            ],
-              strLen: 1024,
-              datePart: "date_time",
-              digits: 15,
-              fraction: 3
-          }
-        },
+        value: propValue,
         txt_row: {
           synonym: "Текстовая строка",
           tooltip: "Полный текст строкового реквизита либо сериализация списочного значения",
@@ -704,7 +605,7 @@ export const meta= {
           choiceGrp: "elm",
           type: {
             types: [
-              "enm.comparisonTypes"
+              "enm.cmpTypes"
             ]
           }
         },
@@ -747,13 +648,12 @@ export const meta= {
           type: {
             types: [
               "enm.sketch_view",
-              "cat.nom_groups",
+              "cat.nomGroups",
               "enm.coloring",
               "cat.production_params",
               "enm.opening",
               "cat.inserts",
-              "cat.templates",
-              "cat.price_groups",
+              "cat.priceGroups",
               "cat.currencies",
               "enm.open_directions",
               "cat.characteristics",
@@ -763,6 +663,8 @@ export const meta= {
               "cat.values_options",
               "cat.delivery_areas",
               "cat.color_price_groups",
+              "cch.properties",
+              "cat.clrs",
               "cat.elm_visualization",
               "cat.property_values_hierarchy",
               "cat.formulas",
@@ -798,8 +700,7 @@ export const meta= {
               "enm.cnn_sides",
               "enm.nested_object_editing_mode",
               "cat.stores",
-              "cch.properties",
-              "cat.clrs"
+              "cat.templates",
             ],
             strLen: 1024,
             datePart: "date_time",

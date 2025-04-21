@@ -43,6 +43,7 @@ export function classes(root, exclude)  {
     }
 
     paramsLinks(attr) {
+      //return [];
       // первым делом, выясняем, есть ли ограничитель на текущий параметр
       if(!this.hasOwnProperty('_links')) {
         this._links = cat.paramsLinks.findRows({slave: this});
@@ -58,18 +59,13 @@ export function classes(root, exclude)  {
         arr.forEach((row_key) => {
           let ok_key = true;
           // для всех записей ключа параметров сначала строим Map ИЛИ
-          const or = new Map();
-          for(const row of row_key.key.params) {
-            if(!or.has(row.area)) {
-              or.set(row.area, []);
-            }
-            or.get(row.area).push(row);
-          }
+          const {or} = row_key.key;
+          
           for(const grp of or.values()) {
             let grp_ok = true;
             for(const row of grp) {
               // выполнение условия рассчитывает объект CchProperties
-              grp_ok = row.property.checkCondition(attr);
+              grp_ok = row.checkCondition(attr);
               // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
               if (!grp_ok) {
                 break;
@@ -97,7 +93,7 @@ export function classes(root, exclude)  {
     }
 
     linkedValues(links, context, values) {
-      
+      throw new Error('linkedValues');
     }
     
   }
