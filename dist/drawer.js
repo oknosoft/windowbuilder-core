@@ -1007,9 +1007,7 @@ class BuilderElement extends paper.Group {
     const cnn_ii = this.selected_cnn_ii();
     if(cnn_ii && cnn_ii.row.cnn != v){
       cnn_ii.row.cnn = v;
-      if(this._attr._nearest_cnn){
-        this._attr._nearest_cnn = cnn_ii.row.cnn;
-      }
+      this._attr._nearest_cnn = cnn_ii.row.cnn;
       if(this.rays){
         this.rays.clear();
       }
@@ -9898,7 +9896,10 @@ class ProfileItem extends GeneratrixElement {
         }
       }
       if(!(this instanceof ProfileSegment)) {
-        _row.dop = {index: layer.profiles.indexOf(this)};
+        _row.dop = {
+          index: layer.profiles.indexOf(this),
+          nearest: _attr._nearest?.elm,
+        };
         if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
           cnn_elmnts.add({
             elm1: _row.elm,
@@ -12274,8 +12275,17 @@ class ProfileConnective extends ProfileItem {
   nearest(ign_cnn) {
     const {_attr, layer, project} = this;
     let {_nearest, _nearest_cnn} = _attr;
-    if(_nearest && !_nearest_cnn) {
-      _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+    if(_nearest) {
+      if(!_nearest_cnn) {
+        _nearest_cnn = project.elm_cnn(this, _nearest);
+      }
+      const {cat, enm} = $p;
+      _attr._nearest_cnn = cat.cnns.elm_cnn(this, _nearest, enm.cnn_types.acn.ii, _nearest_cnn, true);
+      if(_attr._nearest_cnn && _attr._nearest_cnn !== _nearest_cnn) {
+        const proto = {elm1: this.elm, elm2: _nearest.elm}
+        const row = _nearest_cnn ? project.ox.cnn_elmnts.find(proto) : project.ox.cnn_elmnts.add(proto);
+        row.cnn = _attr._nearest_cnn;
+      }
     }
     return _nearest;
   }
@@ -12304,10 +12314,10 @@ class ProfileConnective extends ProfileItem {
     }
   }
   save_coordinates() {
-    if(!this._attr.generatrix){
+    const {_attr, _row, generatrix} = this;
+    if(!generatrix){
       return;
     }
-    const {_row, generatrix} = this;
     _row.x1 = this.x1;
     _row.y1 = this.y1;
     _row.x2 = this.x2;
@@ -12326,6 +12336,15 @@ class ProfileConnective extends ProfileItem {
       _row.alp2 = _row.alp2 + 360;
     }
     _row.elm_type = this.elm_type;
+    _row.dop = {nearest: this._attr._nearest?.elm};
+    if(_attr._nearest) {
+      this.ox.cnn_elmnts.add({
+        elm1: _row.elm,
+        elm2: _attr._nearest.elm,
+        cnn: _attr._nearest_cnn,
+        aperture_len: _row.len,
+      });
+    }
   }
   set_inset(v) {
     const {_row, selected} = this;
@@ -13647,6 +13666,13 @@ class Scheme extends paper.Project {
       }
       o = null;
       _scheme.load_contour(null);
+      const profiles = _scheme.getItems({class: ProfileItem});
+      for(const elm of profiles) {
+        const {nearest} = elm._row.dop;
+        if(nearest) {
+          elm._attr._nearest = profiles.find(({elm}) => elm === nearest);
+        }
+      }
       _scheme.redraw({from_service});
       !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
       _scheme.check_clr();

@@ -1768,7 +1768,10 @@ class ProfileItem extends GeneratrixElement {
 
       if(!(this instanceof ProfileSegment)) {
 
-        _row.dop = {index: layer.profiles.indexOf(this)};
+        _row.dop = {
+          index: layer.profiles.indexOf(this),
+          nearest: _attr._nearest?.elm,
+        };
 
         // в том числе - о соединениях с другой стороны
         if(b._cnno && row_b.elm2 !== b._cnno.elm2) {

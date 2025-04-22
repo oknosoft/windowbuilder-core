@@ -108,9 +108,19 @@ class ProfileConnective extends ProfileItem {
     const {_attr, layer, project} = this;
     let {_nearest, _nearest_cnn} = _attr;
 
-    if(_nearest && !_nearest_cnn) {
-      _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+    if(_nearest) {
+      if(!_nearest_cnn) {
+        _nearest_cnn = project.elm_cnn(this, _nearest);
+      }
+      const {cat, enm} = $p;
+      _attr._nearest_cnn = cat.cnns.elm_cnn(this, _nearest, enm.cnn_types.acn.ii, _nearest_cnn, true);
+      if(_attr._nearest_cnn && _attr._nearest_cnn !== _nearest_cnn) {
+        const proto = {elm1: this.elm, elm2: _nearest.elm}
+        const row = _nearest_cnn ? project.ox.cnn_elmnts.find(proto) : project.ox.cnn_elmnts.add(proto);
+        row.cnn = _attr._nearest_cnn;
+      }
     }
+    
     return _nearest;
   }
 
@@ -150,11 +160,10 @@ class ProfileConnective extends ProfileItem {
    */
   save_coordinates() {
 
-    if(!this._attr.generatrix){
+    const {_attr, _row, generatrix} = this;
+    if(!generatrix){
       return;
     }
-
-    const {_row, generatrix} = this;
 
     _row.x1 = this.x1;
     _row.y1 = this.y1;
@@ -182,6 +191,16 @@ class ProfileConnective extends ProfileItem {
 
     // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
+    _row.dop = {nearest: this._attr._nearest?.elm};
+
+    if(_attr._nearest) {
+      this.ox.cnn_elmnts.add({
+        elm1: _row.elm,
+        elm2: _attr._nearest.elm,
+        cnn: _attr._nearest_cnn,
+        aperture_len: _row.len,
+      });
+    }
 
   }
 

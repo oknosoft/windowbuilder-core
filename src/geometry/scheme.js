@@ -579,6 +579,14 @@ class Scheme extends paper.Project {
 
       // создаём семейство конструкций
       _scheme.load_contour(null);
+      // если сохранено, зададим внешние примыкающие
+      const profiles = _scheme.getItems({class: ProfileItem});
+      for(const elm of profiles) {
+        const {nearest} = elm._row.dop;
+        if(nearest) {
+          elm._attr._nearest = profiles.find(({elm}) => elm === nearest);
+        }
+      }
 
       // перерисовываем каркас
       _scheme.redraw({from_service});
