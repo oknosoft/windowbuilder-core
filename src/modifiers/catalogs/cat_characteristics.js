@@ -112,7 +112,8 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
       const {product_params} = inset;
       const own_row = _owner.coordinates.find({elm: _obj.elm});
       const own_params = own_row && own_row.inset.product_params;
-      const ignForcibly = $p.wsql.get_user_param('glass_composit_ign_forcibly', 'boolean');
+      const {wsql, utils} = $p;
+      const ignForcibly = wsql.get_user_param('glass_composit_ign_forcibly', 'boolean');
 
       const params = {};
       inset.used_params().forEach((param) => {
@@ -120,8 +121,9 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
           const def = product_params.find({param}) || (own_params && own_params.find({param}));
           const pkey = param.valueOf();
           if(def) {
-            if(dop.params && (pkey in dop.params) && dop.params[pkey] !== undefined &&
-                dop.params[pkey] !== null && (ignForcibly || !def.forcibly)) {
+            if(dop.params && (pkey in dop.params) && dop.params[pkey] !== undefined && dop.params[pkey] !== null &&
+                (typeof dop.params[pkey] !== 'string' || !utils.is_guid(dop.params[pkey]) || (utils.is_guid(dop.params[pkey]) && !utils.is_empty_guid(dop.params[pkey]))) &&
+                (ignForcibly || !def.forcibly)) {
               params[pkey] = dop.params[pkey];
               return;
             }
