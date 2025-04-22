@@ -14357,15 +14357,13 @@ class Scheme extends paper.Project {
               row.quantity && ox.glass_specification.add({elm, inset: row.nom});
             }
           }
-          else {
-            ox.glass_specification.find_rows({elm}, (grow) => {
-              grow.default_params({elm, ox, project: {ox}, inset: grow.inset});
-            });
-          }
         }
       }
       return this.load(ox, from_service)
         .then(() => {
+          for(const filling of this.glasses) {
+            filling.default_params();
+          }
           ox._data._modified = true;
           this.notify(this, 'scheme_changed');
         });
@@ -17069,7 +17067,8 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
           const def = product_params.find({param}) || (own_params && own_params.find({param}));
           const pkey = param.valueOf();
           if(def) {
-            if(dop.params && (pkey in dop.params) && (ignForcibly || !def.forcibly)) {
+            if(dop.params && (pkey in dop.params) && dop.params[pkey] !== undefined &&
+                dop.params[pkey] !== null && (ignForcibly || !def.forcibly)) {
               params[pkey] = dop.params[pkey];
               return;
             }

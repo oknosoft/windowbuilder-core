@@ -1535,16 +1535,14 @@ class Scheme extends paper.Project {
               row.quantity && ox.glass_specification.add({elm, inset: row.nom});
             }
           }
-          else {
-            ox.glass_specification.find_rows({elm}, (grow) => {
-              grow.default_params({elm, ox, project: {ox}, inset: grow.inset});
-            });
-          }
         }
       }
 
       return this.load(ox, from_service)
         .then(() => {
+          for(const filling of this.glasses) {
+            filling.default_params();
+          }
           ox._data._modified = true;
           this.notify(this, 'scheme_changed');
         });
