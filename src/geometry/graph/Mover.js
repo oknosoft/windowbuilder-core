@@ -185,6 +185,7 @@ export class Mover {
           }
         }
       }
+      flap.mover.cancelMovePoints();
       flap.mover.prepareMovePoints();
       for(const profile of profiles) {
         profile.selected = false;
@@ -204,9 +205,9 @@ export class Mover {
    */
   tryMoveLinked(start, delta, shift) {
     const {vertexes: ownVertexes, owner} = this.#raw;
-    if(!owner.skeleton.cache.has('linked')) {
+    //if(!owner.skeleton.cache.has('linked')) {
       this.prepareMoveLinked();
-    }
+    //}
     let test;
     for(const [flap, selected] of owner.skeleton.cache.get('linked')) {
       if(selected.size) {
@@ -247,7 +248,7 @@ export class Mover {
     // сначала, для узлов нулевого уровня
     for(const [vertex, move] of vertexes) {
       if(!move.startPoint) {
-        move.startPoint = move.point;
+        move.startPoint = move.point.clone();
       }
       if(move.level === 0) {
         const test = move.startPoint.add(delta);
