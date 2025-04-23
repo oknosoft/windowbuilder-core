@@ -7747,7 +7747,7 @@ class GeneratrixElement extends BuilderElement {
     project.register_change();
   }
   move_points(delta, all_points, start_point) {
-    if(!delta.length){
+    if(!delta.length || (this._attr._nearest && !(this instanceof ProfileConnective))){
       return;
     }
     const	other = [];
@@ -10036,7 +10036,7 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     else {
-      if(bcnn.cnn && bcnn.profile == profile) {
+      if(bcnn?.cnn && bcnn.profile == profile) {
         if(bcnn.profile_point && bcnn.profile_point !== 't' && !bcnn.is_x) {
           const pp = profile[bcnn.profile_point];
           if(!this.b.is_nearest(pp, 0)) {
@@ -10061,7 +10061,7 @@ class ProfileItem extends GeneratrixElement {
           moved_fact = true;
         }
       }
-      if(ecnn.cnn && ecnn.profile == profile) {
+      if(ecnn?.cnn && ecnn.profile == profile) {
         if(ecnn.profile_point && ecnn.profile_point !== 't' && !ecnn.is_x) {
           const pp = profile[ecnn.profile_point];
           if(!this.e.is_nearest(pp, 0)) {
@@ -10097,7 +10097,7 @@ class ProfileItem extends GeneratrixElement {
     }
     if(nearests) {
       for (const nearest of nearests) {
-        nearest.do_bind(profile, bcnn, ecnn, moved);
+        nearest.do_bind(this, bcnn, ecnn, moved);
       }
     }
   }
@@ -10776,6 +10776,22 @@ class ProfileItem extends GeneratrixElement {
   }
   joined_nearests() {
     return [];
+  }
+  select_joined(deselect, point) {
+    for(const elm of this.joined_nearests()) {
+      for(const name of 'be') {
+        const cnn_point = elm.rays[name];
+        if(cnn_point.profile && cnn_point.profile_point) {
+          const segm = cnn_point.profile[cnn_point.profile_point];
+          if(!segm.selected && (!point || segm.is_nearest(point, true))) {
+            segm.selected = true;
+            deselect.push(segm);
+          }
+        }
+      } 
+      const {b, e} = elm.rays;
+      elm.select_joined(deselect, point);
+    }
   }
   is_shtulp() {
     if(this.elm_type.is('impost') && this.orientation.is('vert')) {

@@ -1955,7 +1955,7 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     else {
-      if(bcnn.cnn && bcnn.profile == profile) {
+      if(bcnn?.cnn && bcnn.profile == profile) {
         // обрабатываем угол
         if(bcnn.profile_point && bcnn.profile_point !== 't' && !bcnn.is_x) {
           const pp = profile[bcnn.profile_point];
@@ -1984,7 +1984,7 @@ class ProfileItem extends GeneratrixElement {
         }
       }
 
-      if(ecnn.cnn && ecnn.profile == profile) {
+      if(ecnn?.cnn && ecnn.profile == profile) {
         // обрабатываем угол
         if(ecnn.profile_point && ecnn.profile_point !== 't' && !ecnn.is_x) {
           const pp = profile[ecnn.profile_point];
@@ -2025,7 +2025,7 @@ class ProfileItem extends GeneratrixElement {
     }
     if(nearests) {
       for (const nearest of nearests) {
-        nearest.do_bind(profile, bcnn, ecnn, moved);
+        nearest.do_bind(this, bcnn, ecnn, moved);
       }
     }
   }
@@ -2891,6 +2891,28 @@ class ProfileItem extends GeneratrixElement {
    */
   joined_nearests() {
     return [];
+  }
+
+  /**
+   * Выделяет образующие подчинённых профилей
+   * @param deselect {Array}
+   * @param [point] {paper.Point}
+   */
+  select_joined(deselect, point) {
+    for(const elm of this.joined_nearests()) {
+      for(const name of 'be') {
+        const cnn_point = elm.rays[name];
+        if(cnn_point.profile && cnn_point.profile_point) {
+          const segm = cnn_point.profile[cnn_point.profile_point];
+          if(!segm.selected && (!point || segm.is_nearest(point, true))) {
+            segm.selected = true;
+            deselect.push(segm);
+          }
+        }
+      } 
+      const {b, e} = elm.rays;
+      elm.select_joined(deselect, point);
+    }
   }
 
   /**

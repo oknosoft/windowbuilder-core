@@ -182,7 +182,7 @@ class GeneratrixElement extends BuilderElement {
    */
   move_points(delta, all_points, start_point) {
 
-    if(!delta.length){
+    if(!delta.length || (this._attr._nearest && !(this instanceof ProfileConnective))){
       return;
     }
 
