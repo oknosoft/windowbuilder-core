@@ -112,6 +112,7 @@ class Profile extends ProfileItem {
    */
   nearest(ign_cnn) {
 
+    const {enm, cat} = $p;
     const {b, e, _attr, layer, project} = this;
     let {_nearest, _nearest_cnn} = _attr;
 
@@ -120,8 +121,11 @@ class Profile extends ProfileItem {
     }
     
     if(_nearest instanceof ProfileConnective) {
-      if(!_nearest_cnn) {
-        _attr._nearest_cnn = project.elm_cnn(this, _nearest);
+      if(!ign_cnn) {
+        if(!_nearest_cnn) {
+          _nearest_cnn = project.elm_cnn(this, _nearest);
+        }
+        _attr._nearest_cnn = cat.cnns.elm_cnn(this, _nearest, enm.cnn_types.acn.ii, _nearest_cnn, true, false);
       }
       return _nearest;
     }
@@ -176,7 +180,7 @@ class Profile extends ProfileItem {
             const oe = generatrix.getOffsetOf(generatrix.getNearestPoint(e));
             outer = ob > oe;
           }
-          _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, elm, $p.enm.cnn_types.acn.ii, _nearest_cnn, false, outer);
+          _attr._nearest_cnn = cat.cnns.elm_cnn(this, elm, $p.enm.cnn_types.acn.ii, _nearest_cnn, false, outer);
         }
         _attr._nearest = elm;
         return true;
