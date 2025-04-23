@@ -219,4 +219,174 @@ export default  {
     id: "nu",
     aliases: ['nom_units'],
   },
+  nomPricesTypes: {
+    name: "ТипыЦенНоменклатуры",
+    synonym: "Типы цен номенклатуры",
+    illustration: "Перечень типов отпускных цен предприятия",
+    objPresentation: "Тип цен номенклатуры",
+    listPresentation: "Типы цен номенклатуры",
+    inputBy: [
+      "name",
+      "id"
+    ],
+    hierarchical: false,
+    hasOwners: false,
+    groupHierarchy: true,
+    mainPresentation: "name",
+    codeLength: 9,
+    fields: {
+      price_currency: {
+        synonym: "Валюта цены по умолчанию",
+        multiline: false,
+        tooltip: "",
+        choiceGrp: "elm",
+        type: {
+          types: [
+            "cat.currencies"
+          ]
+        }
+      },
+      discount_percent: {
+        synonym: "Процент скидки или наценки по умолчанию",
+        multiline: false,
+        tooltip: "",
+        type: {
+          types: [
+            "number"
+          ],
+          "digits": 5,
+          "fraction": 2
+        }
+      },
+      vat_price_included: {
+        synonym: "Цена включает НДС",
+        multiline: false,
+        tooltip: "",
+        type: {
+          types: [
+            "boolean"
+          ]
+        }
+      },
+      rounding_order: {
+        synonym: "Порядок округления",
+        multiline: false,
+        tooltip: "",
+        type: {
+          types: [
+            "string"
+          ],
+          strLen: 10
+        }
+      },
+      rounding_in_a_big_way: {
+        synonym: "Округлять в большую сторону",
+        multiline: false,
+        tooltip: "",
+        type: {
+          types: [
+            "boolean"
+          ]
+        }
+      },
+      note: {
+        synonym: "Комментарий",
+        multiline: false,
+        tooltip: "",
+        type: {
+          types: [
+            "string"
+          ],
+          strLen: 0
+        }
+      }
+    },
+    tabulars: {},
+    cachable: "ram",
+    id: "prc",
+    aliases: ['nom_prices_types'],
+  },
+  cashboxes: {
+    name: "Кассы",
+    synonym: "Кассы",
+    illustration: "Список мест фактического хранения и движения наличных денежных средств предприятия. Кассы разделены по организациям и валютам денежных средств. ",
+    objPresentation: "Касса",
+    listPresentation: "Кассы предприятия",
+    inputBy: [
+      "name",
+      "id"
+    ],
+    hierarchical: false,
+    hasOwners: true,
+    groupHierarchy: true,
+    mainPresentation: "name",
+    codeLength: 9,
+    id: "cb",
+    fields: {
+      funds_currency: {
+        synonym: "Валюта денежных средств",
+        multiline: false,
+        tooltip: "Валюта учета денежных средств",
+        choiceGrp: "elm",
+        mandatory: true,
+        type: {
+          types: [
+            "cat.currencies"
+          ]
+        }
+      },
+      department: {
+        synonym: "Подразделение",
+        multiline: false,
+        tooltip: "Подразделение, отвечающее за кассу.",
+        choiceGrp: "elm",
+        type: {
+          types: [
+            "cat.divisions"
+          ]
+        }
+      },
+      current_account: {
+        synonym: "Расчетный счет",
+        multiline: false,
+        tooltip: "",
+        choiceLinks: [
+          {
+            name: [
+              "selection",
+              "owner"
+            ],
+            path: [
+              "owner"
+            ]
+          }
+        ],
+        choiceGrp: "elm",
+        type: {
+          types: [
+            "cat.partner_bank_accounts"
+          ]
+        }
+      },
+      owner: {
+        synonym: "Организация",
+        multiline: false,
+        tooltip: "",
+        choiceParams: [
+          {
+            name: "is_folder",
+            path: false
+          }
+        ],
+        mandatory: true,
+        type: {
+          types: [
+            "cat.organizations"
+          ]
+        }
+      }
+    },
+    tabulars: {},
+    cachable: "ram"
+  },
 };
