@@ -2136,6 +2136,8 @@ get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+get condition(){return this._getter_ts('condition')}
+set condition(v){this._setter_ts('condition',v)}
 
 
   save(attr) {
@@ -2156,6 +2158,13 @@ get txt_row(){return this._getter('txt_row')}
 set txt_row(v){this._setter('txt_row',v)}
 }
 $p.CatContractsExtra_fieldsRow = CatContractsExtra_fieldsRow;
+class CatContractsConditionRow extends TabularSectionRow{
+get nom_group(){return this._getter('nom_group')}
+set nom_group(v){this._setter('nom_group',v)}
+get rate(){return this._getter('rate')}
+set rate(v){this._setter('rate',v)}
+}
+$p.CatContractsConditionRow = CatContractsConditionRow;
 $p.cat.create('contracts');
 class CatNom_units extends CatObj{
 get qualifier_unit(){return this._getter('qualifier_unit')}
