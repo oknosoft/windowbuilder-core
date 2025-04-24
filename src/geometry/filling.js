@@ -172,6 +172,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
     _row.y2 = (h - bounds.topRight.y).round(3);
     _row.s = form_area;
+    _row.len = 0;
     if(layer instanceof ContourNestedContent) {
       const {lbounds} = layer.layer;
       const path = this.path.clone({insert: false});
