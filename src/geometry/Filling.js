@@ -45,6 +45,14 @@ export class Filling extends ContainerBlank {
     return '#def,#d0ddff,#eff';
   }
   
+  rib(elm2) {
+    for(const rib of this.ribs) {
+      if(elm2 === rib.edge.profile) {
+        return rib;
+      }
+    }
+  }
+  
   redraw() {
     super.redraw();
     const {children: {text}, project: {props}} = this;
