@@ -3,7 +3,7 @@ import {countCalculatingWays} from './countCalculatingWays';
 
 export const exclude = ['enm.cnnTypes', 'enm.positions', 'enm.countCalculatingWays'];
 
-export function classes({enm, classes, symbols, utils}, exclude)  {
+export function classes({enm, classes, symbols, utils, md}, exclude)  {
 
   const {EnumManager, EnumObj} = classes;
   class EnmCnnTypesManager extends EnumManager {
@@ -46,6 +46,11 @@ export function classes({enm, classes, symbols, utils}, exclude)  {
     }
   }
   classes.EnmPositions = EnmPositions;
+  
+  // md.on('managersCreateed', () => {
+  //   const {elmTypes} = enm;
+  //   Object.defineProperty(elmTypes, 'glasses', {value: [elmTypes.compound, elmTypes.glass]});
+  // });
 
   countCalculatingWays({enm, classes, symbols, utils});
 }

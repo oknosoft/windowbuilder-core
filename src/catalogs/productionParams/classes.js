@@ -43,9 +43,12 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
               });
             }
           }
-          noms.push(row);
+          else {
+            noms.push(row);
+          }
         }
       });
+      
       noms.sort((a, b) => {
         if(a.by_default && !b.by_default) {
           return -1;
@@ -65,7 +68,46 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
           }
         }
       });
+      this.appendGlasses({elmTypes, elm, noms});
       return noms.map(v => v.nom);
+    }
+
+    thicknesses(rows) {
+      if(!this._thicknesses) {
+        const thin = new Set();
+        for(const {nom} of rows) {
+          const thickness = nom.thickness();
+          thickness && thin.add(thickness);
+        }
+        this._thicknesses = Array.from(thin).sort((a, b) => a - b);
+        Object.defineProperties(this._thicknesses, {
+          min: {value: this._thicknesses[0] || 0},
+          max: {value: this._thicknesses[this._thicknesses.length - 1] || Infinity},
+        });
+      }
+      return this._thicknesses;
+    }
+
+    appendGlasses({elmTypes, elm, noms}){
+      if(elm?.is('Filling') || (Array.isArray(elmTypes) ? elmTypes.some(v => v.is('glass')) : elmTypes.is('glass'))) {
+        // glass_thickness:
+        // 0 - по толщинам из списка
+        // 1 - по списку
+        // 2 - по вилке толщин (min max)
+        // 3 - без ограничений
+        switch (this.glass_thickness) {
+          case 0: {
+            const thicknesses = this.thicknesses(noms);
+            break;
+          }
+          case 2: {
+            break;
+          }
+          case 3: {
+            break;
+          }
+        }
+      }
     }
     
   }

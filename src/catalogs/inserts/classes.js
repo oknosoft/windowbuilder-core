@@ -136,7 +136,7 @@ return filtered.length ? filtered : [main_rows[0]];
     }
 
     thickness(elm) {
-      return elm.nom.thickness || 0;
+      return (elm?.nom || this.nom(elm)).thickness || 0;
     }
 
     /**

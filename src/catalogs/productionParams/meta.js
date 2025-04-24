@@ -1,3 +1,4 @@
+import {propValue} from '../../chartscharacteristics/properties/meta';
 
 export const meta= {
   name: "пзПараметрыПродукции",
@@ -14,7 +15,6 @@ export const meta= {
   groupHierarchy: true,
   mainPresentation: "name",
   codeLength: 9,
-  id: "sys",
   aliases: ['production_params'],
   fields: {
     default_clr: {
@@ -220,7 +220,7 @@ export const meta= {
         ]
       }
     },
-    "sketch_view": {
+    sketch_view: {
       synonym: "Вид на эскиз",
       multiline: false,
       tooltip: "Вид по умолчанию",
@@ -231,7 +231,7 @@ export const meta= {
         ]
       }
     },
-    "production_kind": {
+    production_kind: {
       synonym: "Вид производства",
       multiline: false,
       tooltip: "Для продукции, определяет состав и последовательность этапов",
@@ -242,7 +242,7 @@ export const meta= {
         ]
       }
     },
-    "outline": {
+    outline: {
       synonym: "Эскиз",
       multiline: false,
       tooltip: "Картинка для формы выбора",
@@ -271,31 +271,7 @@ export const meta= {
         strLen: 0
       }
     },
-    "captured": {
-      synonym: "Захвачен",
-      multiline: false,
-      tooltip: "Реквизит подсистемы MDM. Указывает, что объект в настоящий момент, захвачен для редактирования. Может содержать Тег (строку, комментарий) захвата ",
-      choiceGrp: "elm",
-      type: {
-        types: [
-          "boolean",
-          "string"
-        ],
-        strLen: 50
-      }
-    },
-    "editor": {
-      synonym: "Редактор",
-      multiline: false,
-      tooltip: "Реквизит подсистемы MDM, указывает на {@link CatUsers|Пользователя}, захватившего объект для редактирования",
-      choiceGrp: "elm",
-      type: {
-        types: [
-          "cat.users"
-        ]
-      }
-    },
-    "parent": {
+    parent: {
       synonym: "Группа",
       multiline: false,
       tooltip: "Стандартная иерархия",
@@ -307,7 +283,7 @@ export const meta= {
     }
   },
   tabulars: {
-    "elmnts": {
+    elmnts: {
       name: "Элементы",
       synonym: "Элементы",
       tooltip: "Типовые рама, створка, импост и заполнение для данной системы",
@@ -322,7 +298,7 @@ export const meta= {
             ]
           }
         },
-        "elm_type": {
+        elm_type: {
           synonym: "Тип элемента",
           multiline: false,
           tooltip: "",
@@ -356,7 +332,7 @@ export const meta= {
             ]
           }
         },
-        "key": {
+        key: {
           synonym: "Ключ",
           multiline: false,
           tooltip: "Если указано, фильтрует строку",
@@ -376,7 +352,7 @@ export const meta= {
             ]
           }
         },
-        "nom": {
+        nom: {
           synonym: "Вставка",
           multiline: false,
           tooltip: "",
@@ -395,7 +371,7 @@ export const meta= {
             ]
           }
         },
-        "clr": {
+        clr: {
           synonym: "Цвет",
           multiline: false,
           tooltip: "",
@@ -406,7 +382,7 @@ export const meta= {
             ]
           }
         },
-        "pos": {
+        pos: {
           synonym: "Положение",
           multiline: false,
           tooltip: "",
@@ -434,12 +410,12 @@ export const meta= {
         }
       }
     },
-    "production": {
+    production: {
       name: "Продукция",
       synonym: "Продукция",
       tooltip: "",
       fields: {
-        "nom": {
+        nom: {
           synonym: "Номенклатура",
           multiline: false,
           tooltip: "",
@@ -451,7 +427,7 @@ export const meta= {
             ]
           }
         },
-        "param": {
+        param: {
           synonym: "Параметр",
           multiline: false,
           tooltip: "",
@@ -462,11 +438,11 @@ export const meta= {
             ]
           }
         },
-        "value": {
+        value: {
           synonym: "Значение",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -479,84 +455,23 @@ export const meta= {
             }
           ],
           choiceGrp: "elm",
-          "choiceType": {
+          choiceType: {
             path: [
               "production",
               "param"
             ],
-            "elm": 0
+            elm: 0
           },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nomGroups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cch.properties",
-              "cat.clrs",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cat.templates",
-            ],
-            strLen: 1024,
-            "datePart": "date_time",
-            "digits": 15,
-            "fraction": 3
-          }
+          type: propValue.type,
         }
       }
     },
-    "product_params": {
+    product_params: {
       name: "ПараметрыИзделия",
       synonym: "Параметры изделия",
       tooltip: "Значения параметров изделия по умолчанию",
       fields: {
-        "param": {
+        param: {
           synonym: "Параметр",
           multiline: false,
           tooltip: "",
@@ -568,11 +483,11 @@ export const meta= {
             ]
           }
         },
-        "value": {
+        value: {
           synonym: "Значение",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -585,75 +500,14 @@ export const meta= {
             }
           ],
           choiceGrp: "elm",
-          "choiceType": {
+          choiceType: {
             path: [
               "product_params",
               "param"
             ],
-            "elm": 0
+            elm: 0
           },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nomGroups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cch.properties",
-              "cat.clrs",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cat.templates",
-            ],
-            strLen: 1024,
-            "datePart": "date_time",
-            "digits": 15,
-            "fraction": 3
-          }
+          type: propValue.type,
         },
         hide: {
           synonym: "Скрыть",
@@ -665,7 +519,7 @@ export const meta= {
             ]
           }
         },
-        "forcibly": {
+        forcibly: {
           synonym: "Принудительно",
           multiline: false,
           tooltip: "Замещать установленное ранее значение при перевыборе системы",
@@ -675,7 +529,7 @@ export const meta= {
             ]
           }
         },
-        "elm": {
+        elm: {
           synonym: "Для элемента",
           multiline: false,
           tooltip: "Свойство может уточняться для элемента",
@@ -687,12 +541,12 @@ export const meta= {
         }
       }
     },
-    "furn_params": {
+    furn_params: {
       name: "ПараметрыФурнитуры",
       synonym: "Параметры фурнитуры",
       tooltip: "Значения параметров фурнитуры по умолчанию",
       fields: {
-        "param": {
+        param: {
           synonym: "Параметр",
           multiline: false,
           tooltip: "",
@@ -704,11 +558,11 @@ export const meta= {
             ]
           }
         },
-        "value": {
+        value: {
           synonym: "Значение",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -721,75 +575,14 @@ export const meta= {
             }
           ],
           choiceGrp: "elm",
-          "choiceType": {
+          choiceType: {
             path: [
               "furn_params",
               "param"
             ],
-            "elm": 0
+            elm: 0
           },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nomGroups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cch.properties",
-              "cat.clrs",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cat.templates",
-            ],
-            strLen: 1024,
-            "datePart": "date_time",
-            "digits": 15,
-            "fraction": 3
-          }
+          type: propValue.type,
         },
         hide: {
           synonym: "Скрыть",
@@ -801,7 +594,7 @@ export const meta= {
             ]
           }
         },
-        "forcibly": {
+        forcibly: {
           synonym: "Принудительно",
           multiline: false,
           tooltip: "Замещать установленное ранее значение при перевыборе системы",
@@ -813,12 +606,12 @@ export const meta= {
         }
       }
     },
-    "params": {
+    params: {
       name: "Параметры",
       synonym: "Параметры номенклатур",
       tooltip: "Умолчания характеристик материалов",
       fields: {
-        "param": {
+        param: {
           synonym: "Параметр",
           multiline: false,
           tooltip: "",
@@ -830,11 +623,11 @@ export const meta= {
             ]
           }
         },
-        "value": {
+        value: {
           synonym: "Значение",
           multiline: false,
           tooltip: "",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -863,7 +656,7 @@ export const meta= {
             ]
           }
         },
-        "forcibly": {
+        forcibly: {
           synonym: "Принудительно",
           multiline: false,
           tooltip: "Замещать установленное ранее значение при перевыборе системы",
@@ -873,7 +666,7 @@ export const meta= {
             ]
           }
         },
-        "elm": {
+        elm: {
           synonym: "Для элемента",
           multiline: false,
           tooltip: "Свойство может уточняться для элемента",
@@ -885,7 +678,7 @@ export const meta= {
         }
       }
     },
-    "colors": {
+    colors: {
       name: "Цвета",
       synonym: "Цвета не красить",
       tooltip: "Список цветов с учётом цвета основы, для которых не требуется вклад в спецификацию",
@@ -894,7 +687,7 @@ export const meta= {
           synonym: "Цвет основы",
           multiline: false,
           tooltip: "Имеет смысл, если цвет, не требующий отработки, зависит от цвета основы",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -906,76 +699,15 @@ export const meta= {
             }
           ],
           choiceGrp: "elm",
-          "choiceType": {
+          choiceType: {
             path: [
               "base_clr"
             ],
-            "elm": 0
+            elm: 0
           },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nomGroups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cch.properties",
-              "cat.clrs",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cat.templates",
-            ],
-            strLen: 1024,
-            "datePart": "date_time",
-            "digits": 15,
-            "fraction": 3
-          }
+          type: propValue.type,
         },
-        "clr": {
+        clr: {
           synonym: "Цвет",
           multiline: false,
           tooltip: "",
@@ -992,7 +724,7 @@ export const meta= {
         }
       }
     },
-    "extra_fields": {
+    extra_fields: {
       name: "ДополнительныеРеквизиты",
       synonym: "Дополнительные реквизиты",
       tooltip: "Набор реквизитов, состав которого определяется компанией.",
@@ -1008,11 +740,11 @@ export const meta= {
             ]
           }
         },
-        "value": {
+        value: {
           synonym: "Значение",
           multiline: false,
           tooltip: "Значение дополнительного реквизита",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -1025,77 +757,16 @@ export const meta= {
             }
           ],
           choiceGrp: "elm",
-          "choiceType": {
+          choiceType: {
             path: [
               "extra_fields",
               "property"
             ],
-            "elm": 0
+            elm: 0
           },
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nomGroups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cch.properties",
-              "cat.clrs",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cat.templates",
-            ],
-            strLen: 1024,
-            "datePart": "date_time",
-            "digits": 15,
-            "fraction": 3
-          }
+          type: propValue.type,
         },
-        "txt_row": {
+        txt_row: {
           synonym: "Текстовая строка",
           multiline: false,
           tooltip: "Полный текст строкового дополнительного реквизита",
@@ -1108,7 +779,7 @@ export const meta= {
         }
       }
     },
-    "templates": {
+    templates: {
       name: "Шаблоны",
       synonym: "Шаблоны",
       tooltip: "",
@@ -1133,7 +804,7 @@ export const meta= {
         }
       }
     },
-    "color_price_groups": {
+    color_price_groups: {
       name: "ЦветоЦеновыеГруппы",
       synonym: "Доступность цветов",
       tooltip: "",
@@ -1142,7 +813,7 @@ export const meta= {
           synonym: "Цвет основы",
           multiline: false,
           tooltip: "Значение цвета основы",
-          "choiceLinks": [
+          choiceLinks: [
             {
               name: [
                 "selection",
@@ -1154,75 +825,14 @@ export const meta= {
             }
           ],
           choiceGrp: "elm",
-          "choiceType": {
+          choiceType: {
             path: [
               "base_clr"
             ],
-            "elm": 0
+            elm: 0
           },
           mandatory: true,
-          type: {
-            types: [
-              "enm.sketch_view",
-              "cat.nomGroups",
-              "enm.coloring",
-              "cat.production_params",
-              "enm.opening",
-              "cat.inserts",
-              "cat.price_groups",
-              "cat.currencies",
-              "enm.open_directions",
-              "cat.characteristics",
-              "cat.projects",
-              "cat.individuals",
-              "cat.users",
-              "cat.values_options",
-              "cat.delivery_areas",
-              "cat.color_price_groups",
-              "cch.properties",
-              "cat.clrs",
-              "cat.elm_visualization",
-              "cat.property_values_hierarchy",
-              "cat.formulas",
-              "cat.delivery_directions",
-              "cat.property_values",
-              "boolean",
-              "cat.nom_prices_types",
-              "cat.divisions",
-              "enm.elm_types",
-              "enm.align_types",
-              "cat.parameters_keys",
-              "cat.partners",
-              "string",
-              "enm.sz_line_types",
-              "enm.orientations",
-              "cat.organizations",
-              "date",
-              "cat.units",
-              "number",
-              "enm.plan_detailing",
-              "cat.abonents",
-              "cat.work_shifts",
-              "cat.work_center_kinds",
-              "enm.positions",
-              "cat.branches",
-              "cat.cashboxes",
-              "enm.open_types",
-              "cat.nom",
-              "cat.cnns",
-              "cat.furns",
-              "enm.inserts_glass_types",
-              "enm.vat_rates",
-              "enm.cnn_sides",
-              "enm.nested_object_editing_mode",
-              "cat.stores",
-              "cat.templates",
-            ],
-            strLen: 1024,
-            "datePart": "date_time",
-            "digits": 15,
-            "fraction": 3
-          }
+          type: propValue.type,
         },
         clr_group: {
           synonym: "Доступность цветов",
@@ -1245,5 +855,6 @@ export const meta= {
       }
     }
   },
-  cachable: "ram"
+  cachable: "ram",
+  id: "sys",
 }
