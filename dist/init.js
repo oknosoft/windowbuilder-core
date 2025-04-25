@@ -3161,6 +3161,8 @@ get show_flipped(){return this._getter('show_flipped')}
 set show_flipped(v){this._setter('show_flipped',v)}
 get show_ii(){return this._getter('show_ii')}
 set show_ii(v){this._setter('show_ii',v)}
+get show_long_short(){return this._getter('show_long_short')}
+set show_long_short(v){this._setter('show_long_short',v)}
 get glass_thickness(){return this._getter('glass_thickness')}
 set glass_thickness(v){this._setter('glass_thickness',v)}
 get furn_level(){return this._getter('furn_level')}
@@ -8450,6 +8452,8 @@ get ordn(){return this._getter('ordn')}
 set ordn(v){this._setter('ordn',v)}
 get changed(){return this._getter('changed')}
 set changed(v){this._setter('changed',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.DocCalc_orderProductionRow = DocCalc_orderProductionRow;
 class DocCalc_orderContact_informationRow extends TabularSectionRow{
