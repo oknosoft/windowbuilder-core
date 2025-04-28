@@ -373,9 +373,11 @@ class EditorInvisible extends paper.PaperScope {
       const {utils} = $p;
       while (eve._async?.move_points?.timer) {
         await utils.sleep(10);
-      }      
-      while (_ch.length) {
+      }   
+      let try_coint = 0;
+      while (_ch.length && try_coint < 10) {
         this.project.redraw();
+        try_coint++;
       }
       return this.glass_align(name, glasses, geometric);
     }
@@ -7748,7 +7750,7 @@ class GeneratrixElement extends BuilderElement {
     project.register_change();
   }
   move_points(delta, all_points, start_point) {
-    if(!delta.length || (this._attr._nearest && !(this instanceof ProfileConnective))){
+    if(!delta.length || (all_points !== true && this._attr._nearest && !(this instanceof ProfileConnective))){
       return;
     }
     const	other = [];

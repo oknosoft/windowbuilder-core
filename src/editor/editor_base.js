@@ -448,9 +448,11 @@ class EditorInvisible extends paper.PaperScope {
       const {utils} = $p;
       while (eve._async?.move_points?.timer) {
         await utils.sleep(10);
-      }      
-      while (_ch.length) {
+      }   
+      let try_coint = 0;
+      while (_ch.length && try_coint < 10) {
         this.project.redraw();
+        try_coint++;
       }
       return this.glass_align(name, glasses, geometric);
     }
