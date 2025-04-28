@@ -7750,7 +7750,7 @@ class GeneratrixElement extends BuilderElement {
     project.register_change();
   }
   move_points(delta, all_points, start_point) {
-    if(!delta.length || (all_points !== true && this._attr._nearest && !(this instanceof ProfileConnective))){
+    if(!delta.length){
       return;
     }
     const	other = [];
