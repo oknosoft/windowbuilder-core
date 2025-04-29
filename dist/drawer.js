@@ -9645,18 +9645,25 @@ class ProfileItem extends GeneratrixElement {
     }
     return check_only ? false : {inner: tinner, outer: touter};
   }
-  clear_joined(with_nearest) {
+  clear_joined(with_nearest, postprocess) {
     const {inner, outer} = this.joined_imposts();
-    for (const {profile} of inner.concat(outer)) {
+    const imposts = inner.concat(outer);
+    if(postprocess) {
+      postprocess.imposts.set(this, imposts);
+    }
+    for (const {profile, point} of imposts) {
       profile._attr._rays?.clear();
+      const node = profile.b.getDistance(point, true) < profile.e.getDistance(point, true) ? 'b' : 'e'; 
+      profile.do_sub_bind(this, node);
     }
     for (const sub of this.joined_nearests()) {
       if(with_nearest) {
         delete sub._attr._nearest;
+        postprocess.sub.add(sub);
       }
-      sub.clear_joined();
+      sub.clear_joined(false, postprocess);
     }
-    const {_attr, layer} = this;
+    const {_attr} = this;
     _attr._rays?.clear();
     delete _attr.d0;
   }
@@ -10023,7 +10030,7 @@ class ProfileItem extends GeneratrixElement {
       if(db.length || de.length) {
         const selected = this.project.deselect_all_points(true);
         if(db.subtract(de).length < consts.epsilon) {
-          this.move_points(de, true);
+          this.move_gen(de);
         }
         else {
           this.select_node('b');
@@ -10100,7 +10107,8 @@ class ProfileItem extends GeneratrixElement {
     }
     if(nearests) {
       for (const nearest of nearests) {
-        nearest.do_bind(this, bcnn, ecnn, moved);
+        const {b, e} = nearest._attr._rays;
+        nearest.do_bind(this, b, e, moved);
       }
     }
   }
@@ -12268,11 +12276,12 @@ class ProfileConnective extends ProfileItem {
     if(!paper.Key.isDown('control')) {
       const moved = {profiles: []};
       for (const nearest of nearests) {
-        nearest.do_bind(this, null, null, moved);
-        for(const node of ['b', 'e']) {
-          const cp = nearest.cnn_point(node);
+        const {_rays} = nearest._attr;
+        nearest.do_bind(this, _rays.b, _rays.e, moved);
+        for(const cp of [_rays.b, _rays.e]) {
           if(cp.profile) {
-            cp.profile.do_bind(nearest, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
+            const {b, e} = cp.profile._attr._rays;
+            cp.profile.do_bind(nearest, b, e, moved);
           }
         }
       }
@@ -12386,8 +12395,21 @@ class ProfileConnective extends ProfileItem {
     }
   }
   remove() {
-    this.clear_joined(true);
+    const postprocess = {imposts: new Map(), sub: new Set()};
+    this.clear_joined(true, postprocess);
     super.remove();
+    for(const {_attr} of postprocess.sub) {
+      _attr._rays?.clear();
+      delete _attr.d0;
+      delete _attr._nearest;
+    }
+    for(const [upper, imposts] of postprocess.imposts) {
+      for (const {profile, point} of imposts) {
+        profile._attr._rays?.clear();
+        const node = profile.b.getDistance(point, true) < profile.e.getDistance(point, true) ? 'b' : 'e';
+        profile.do_sub_bind(upper, node);
+      }
+    }
   }
 }
 class ConnectiveLayer extends paper.Layer {

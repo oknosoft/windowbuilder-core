@@ -57,12 +57,13 @@ class ProfileConnective extends ProfileItem {
     if(!paper.Key.isDown('control')) {
       const moved = {profiles: []};
       for (const nearest of nearests) {
-        nearest.do_bind(this, null, null, moved);
+        const {_rays} = nearest._attr;
+        nearest.do_bind(this, _rays.b, _rays.e, moved);
         // двигаем связанные с примыкающими
-        for(const node of ['b', 'e']) {
-          const cp = nearest.cnn_point(node);
+        for(const cp of [_rays.b, _rays.e]) {
           if(cp.profile) {
-            cp.profile.do_bind(nearest, cp.profile.cnn_point('b'), cp.profile.cnn_point('e'), moved);
+            const {b, e} = cp.profile._attr._rays;
+            cp.profile.do_bind(nearest, b, e, moved);
           }
         }
       }
@@ -230,8 +231,21 @@ class ProfileConnective extends ProfileItem {
    * Одновлеменно, инициирует обновление путей примыкающих элементов
    */
   remove() {
-    this.clear_joined(true);
+    const postprocess = {imposts: new Map(), sub: new Set()};
+    this.clear_joined(true, postprocess);
     super.remove();
+    for(const {_attr} of postprocess.sub) {
+      _attr._rays?.clear();
+      delete _attr.d0;
+      delete _attr._nearest;
+    }
+    for(const [upper, imposts] of postprocess.imposts) {
+      for (const {profile, point} of imposts) {
+        profile._attr._rays?.clear();
+        const node = profile.b.getDistance(point, true) < profile.e.getDistance(point, true) ? 'b' : 'e';
+        profile.do_sub_bind(upper, node);
+      }
+    }
   }
 
 }

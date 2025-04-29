@@ -1466,18 +1466,30 @@ class ProfileItem extends GeneratrixElement {
 
   }
 
-  clear_joined(with_nearest) {
+  /**
+   * @summary Чистит лучи примыкающих элементов
+   * @param with_nearest
+   * @param postprocess
+   */
+  clear_joined(with_nearest, postprocess) {
     const {inner, outer} = this.joined_imposts();
-    for (const {profile} of inner.concat(outer)) {
+    const imposts = inner.concat(outer);
+    if(postprocess) {
+      postprocess.imposts.set(this, imposts);
+    }
+    for (const {profile, point} of imposts) {
       profile._attr._rays?.clear();
+      const node = profile.b.getDistance(point, true) < profile.e.getDistance(point, true) ? 'b' : 'e'; 
+      profile.do_sub_bind(this, node);
     }
     for (const sub of this.joined_nearests()) {
       if(with_nearest) {
         delete sub._attr._nearest;
+        postprocess.sub.add(sub);
       }
-      sub.clear_joined();
+      sub.clear_joined(false, postprocess);
     }
-    const {_attr, layer} = this;
+    const {_attr} = this;
     _attr._rays?.clear();
     delete _attr.d0;
   }
@@ -1939,7 +1951,7 @@ class ProfileItem extends GeneratrixElement {
       if(db.length || de.length) {
         const selected = this.project.deselect_all_points(true);
         if(db.subtract(de).length < consts.epsilon) {
-          this.move_points(de, true);
+          this.move_gen(de);
         }
         else {
           this.select_node('b');
@@ -2025,7 +2037,8 @@ class ProfileItem extends GeneratrixElement {
     }
     if(nearests) {
       for (const nearest of nearests) {
-        nearest.do_bind(this, bcnn, ecnn, moved);
+        const {b, e} = nearest._attr._rays;
+        nearest.do_bind(this, b, e, moved);
       }
     }
   }
