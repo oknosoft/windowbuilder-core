@@ -515,7 +515,7 @@ set hide(v){this._setter_ts('hide',v)}
         switch (src) {
         case plan_detailing.order:
           const prow = ox.calc_order.extra_fields.find(this.ref, 'property');
-          return prow?.value;
+          return prow ? prow?.value : this.fetch_type();
 
                   case plan_detailing.nearest:
           find_nearest();
