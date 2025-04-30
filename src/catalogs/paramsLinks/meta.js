@@ -105,7 +105,30 @@ export const meta = {
       synonym: "Значения",
       tooltip: "",
       fields: {
-        value: propValue,
+        value: {
+          synonym: "Значение",
+          multiline: false,
+          tooltip: "",
+          choiceLinks: [
+            {
+              name: [
+                "selection",
+                "owner"
+              ],
+              path: [
+                "slave"
+              ]
+            }
+          ],
+          choiceParams: [],
+          choiceType: {
+            path: [
+              "slave"
+            ],
+            elm: 0
+          },
+          type: propValue.type,
+        },
         by_default: {
           synonym: "По умолчанию",
           multiline: false,
