@@ -49,7 +49,6 @@ export function load_ram({adapters: {pouch}, md}, types) {
 
 export async function load_ram_splitted({adapters: {pouch}, md}) {
   const {props} = pouch;
-  const headers = new Headers();
   const zone = sessionStorage.getItem('zone') || props.zone;
   const load_order = md.order();
   const {common, manifest} = md.order;
@@ -57,14 +56,12 @@ export async function load_ram_splitted({adapters: {pouch}, md}) {
   pouch.emit('pouch_load_start', page)
   for(const names of load_order) {
     for(const name of names) {
-      const mgr = md.mgr_by_class_name(name);
-      if(mgr) {
-        if(common.includes(name)) {
-          continue;
+      if(!common.includes(name)) {
+        const meta = md.get(name);
+        if(meta?.cachable === 'ram' && !meta.deferred && !meta.joint) {
+          // выполняем запрос
+          await pouch.fetch(`/couchdb/mdm/${zone}/${props._suffix}?type=${name}`).then(load_part);
         }
-        // выполняем запрос
-        headers.set('types', name);
-        await pouch.fetch(`/couchdb/mdm/${zone}/${props._suffix}`, {headers}).then(load_part);
       }
     }
   }

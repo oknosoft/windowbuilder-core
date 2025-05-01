@@ -16894,7 +16894,22 @@ $p.spec_building = new SpecBuilding($p);
     'cat.stores',
     'cch.predefined_elmnts',
   ];
-  Object.assign(order, {common, by_branch});
+  function ids() {
+    const res = {};
+    const classes = md.classes()
+    for(const area in classes) {
+      for(const name of classes[area]) {
+        const class_name = `${area}.${name}`;
+        const meta = md.get(class_name);
+        if(meta?.id) {
+          res[class_name] = meta.id; 
+          res[meta.id] = class_name; 
+        }
+      }
+    }
+    return res;
+  }
+  Object.assign(order, {common, by_branch, ids});
   md.order = order;
 })($p);
 (function(_mgr){
