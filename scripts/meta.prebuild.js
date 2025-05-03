@@ -19,7 +19,8 @@ debug('Читаем конструктор и плагины');
 const settings_path = path.resolve(__dirname, '../config/app.settings.js');
 const custom_constructors = [
   path.resolve(__dirname, '../src/metadata/common/custom_constructors.js'),
-  path.resolve(__dirname, '../src/metadata/common/ProductFrame.js'),
+  //path.resolve(__dirname, '../src/metadata/common/ProductFrame.js'),
+  path.resolve(__dirname, '../src/metadata/common/load_order.js'),
 ];
 
 // текст модуля начальных настроек приложения для включения в итоговый скрипт
