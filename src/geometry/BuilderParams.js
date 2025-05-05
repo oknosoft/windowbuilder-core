@@ -4,13 +4,16 @@ import {own, alias} from '@oknosoft/metadata/core/src/meta/symbols';
 
 const proxyHandler = {
   get(target, prop, receiver) {
+    const {project} = target;
     switch (prop) {
       case 'owner':
         return target;
       case '_manager':
-        return target.project;
+        return project;
+      case 'equals':
+        return project.root.utils.is.equals;
       default:
-        const param = target.project.root.cch.properties.get(prop);
+        const param = project.root.cch.properties.get(prop);
         return target.get(param);
     }
   },

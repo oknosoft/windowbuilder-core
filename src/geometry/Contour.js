@@ -224,8 +224,9 @@ export class Contour extends paper.Layer {
     return layer ? openTypes.get(this.#raw.openType) : openTypes.get();
   }
   set openType(v) {
+    const {openType} = this.#raw; 
     this.#raw.openType = v;
-    this.project.props.registerChange();
+    this.project.props.registerChange(this, {openType});
     if(this.furn.open_type !== this.openType) {
       //TODO: подобрать фурнитуру
     }
@@ -241,8 +242,9 @@ export class Contour extends paper.Layer {
     return layer ? openDirections.get(this.#raw.direction) : openDirections.get();
   }
   set direction(v) {
+    const {direction} = this.#raw;
     this.#raw.direction = v;
-    this.project.props.registerChange();
+    this.project.props.registerChange(this, {direction});
   }
   
   /**
@@ -496,6 +498,28 @@ export class Contour extends paper.Layer {
   set furn(v) {
     this.#raw.furn = v;
     this.project.props.registerChange();
+  }
+
+  /**
+   * @summary Доступные фурнитуры
+   */
+  furns() {
+    const {project: {root}, params, openType} = this;
+    const propFurn = root.cch.properties.predefined('furn');
+    const list = new Map();
+    if(propFurn) {
+      const context = params.context();
+      const links = propFurn.paramsLinks(context);
+      const {furns} = root.cat;
+      for(const link of links) {
+        for(const {value, by_default, forcibly} of link.values) {
+          if(openType.empty() || value.open_type === openType) {
+            list.set(furns.get(value), {by_default, forcibly});
+          }
+        }
+      }
+    }
+    return list;
   }
   
   ProfileConstructor(attr) {

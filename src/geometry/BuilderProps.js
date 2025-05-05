@@ -32,9 +32,12 @@ export class BuilderProps extends BuilderParams {
   get stamp() {
     return this.#raw.stamp;
   }
-  registerChange() {
+  
+  registerChange(obj, prev) {
     this.#raw.stamp = Date.now();
     this.#raw?.registerChange?.();
+    const {project, loading} = this;
+    !loading && project.emit('update', obj || project, prev);
   }
   
   get three() {
