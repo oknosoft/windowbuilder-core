@@ -1,11 +1,12 @@
 
 import {countCalculatingWays} from './countCalculatingWays';
 
-export const exclude = ['enm.cnnTypes', 'enm.positions', 'enm.countCalculatingWays'];
+export const exclude = ['enm.cnnTypes', 'enm.positions', 'enm.openTypes', 'enm.countCalculatingWays'];
 
 export function classes({enm, classes, symbols, utils, md}, exclude)  {
 
   const {EnumManager, EnumObj} = classes;
+  
   class EnmCnnTypesManager extends EnumManager {
     get acn() {
       const {index} = this;
@@ -22,6 +23,16 @@ export function classes({enm, classes, symbols, utils, md}, exclude)  {
     }
   }
   classes.EnmCnnTypesManager = EnmCnnTypesManager;
+
+  class EnmOpenTypesManager extends EnumManager {
+    isOpening (v) {
+      if(!v || v.empty() || v == this.no || v == this.static) {
+        return false;
+      }
+      return true;
+    }
+  }
+  classes.EnmOpenTypesManager = EnmOpenTypesManager;
 
   class EnmPositions extends EnumObj {
     invert() {

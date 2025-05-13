@@ -38,7 +38,7 @@ class GroupVisualization extends LayerGroup {
   }
 
   drawOpening() {
-    const {outerEdges, furn, layer} = this.layer;
+    const {outerEdges, furn, layer, project} = this.layer;
     const {opening, opening2} = this.children;
     const {openTypes} = project.root.enm;
     // подготавливаем слой для рисования
@@ -59,7 +59,7 @@ class GroupVisualization extends LayerGroup {
   }
 
   drawRotaryFolding(outerEdges, furn) {
-    const {opening, opening2} = this.children;
+    const {layer, children: {opening, opening2}} = this;
     const {project: {sketch_view}} = this;
 
     if(outerEdges.length < furn.side_count) {
@@ -67,26 +67,27 @@ class GroupVisualization extends LayerGroup {
     }
     const cache = {
       profiles: outerEdges,
-      bottom: this.layer.profilesBySide('bottom', outerEdges),
+      bottom: layer.profilesBySide('bottom', outerEdges),
     };
 
     furn.open_tunes.forEach((row) => {
       if (row.rotation_axis) {
-        const axis = this.profileByFurnSide(row.side, cache);
-        const other = this.profileByFurnSide(
+        const axis = layer.profileByFurnSide(row.side, cache);
+        const other = layer.profileByFurnSide(
           row.side + 2 <= outerEdges.length ? row.side + 2 : row.side - 2, cache);
 
-        const center = other.rays.inner.getPointAt(other.rays.inner.length / 2);
-        opening.moveTo(axis.corns(3));
+        const center = other.inner.getPointAt(other.inner.length / 2);
+        const {b, e} = axis.points()
+        opening.moveTo(e.inner);
         opening.lineTo(center);
-        opening.lineTo(axis.corns(4));
+        opening.lineTo(b.inner);
 
         if(furn.open_type.is('pendulum')) {
           const loc = axis.generatrix.getLocationAt(0);
-          opening2.moveTo(axis.corns(3).add(loc.normal.multiply(-30)));
+          opening2.moveTo(e.inner.add(loc.normal.multiply(-30)));
           opening2.lineTo(center.add(loc.tangent.multiply(40)));
           opening2.moveTo(center.add(loc.tangent.multiply(-40)));
-          opening2.lineTo(axis.corns(4).add(loc.normal.multiply(-30)));
+          opening2.lineTo(b.inner.add(loc.normal.multiply(-30)));
         }
       }
     });
@@ -95,12 +96,12 @@ class GroupVisualization extends LayerGroup {
       opening2.visible = true;
     }
     else {
-      if(sketch_view.is('out_hinge') || (opening.is('out') && !sketch_view.is('hinge'))) {
-        opening.dashArray = [70, 50];
-      }
-      else if(opening.dashArray.length) {
-        opening.dashArray = [];
-      }
+      // if(sketch_view.is('out_hinge') || (opening.is('out') && !sketch_view.is('hinge'))) {
+      //   opening.dashArray = [70, 50];
+      // }
+      // else if(opening.dashArray.length) {
+      //   opening.dashArray = [];
+      // }
     }
     opening.visible = true;
   }

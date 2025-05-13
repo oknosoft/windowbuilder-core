@@ -234,11 +234,30 @@ export class Contour extends paper.Layer {
     return layer ? openTypes.get(this.#raw.openType) : openTypes.get();
   }
   set openType(v) {
-    const {openType} = this.#raw; 
+    let {openType} = this.#raw; 
     this.#raw.openType = v;
     this.project.props.registerChange(this, {openType});
-    if(this.furn.open_type !== this.openType) {
-      //TODO: подобрать фурнитуру
+    openType = this.openType;
+    
+    if(this.furn.open_type !== openType) {
+      const furns = this.furns();
+      for(const [furn, {by_default, forcibly}] of furns) {
+        if(by_default || forcibly) {
+          this.#raw.furn = furn;
+          break;
+        }
+      }
+      if(this.furn.open_type !== openType) {
+        if(furns.size) {
+          for(const [furn] of furns) {
+            this.#raw.furn = furn;
+            break;
+          }
+        }
+      }
+      if(this.furn.open_type !== openType && !this.furn.empty()) {
+        this.#raw.furn = null;
+      }
     }
   }
 
