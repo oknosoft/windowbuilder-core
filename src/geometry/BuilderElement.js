@@ -268,6 +268,10 @@ export class BuilderElement extends paper.Group {
   }
   set hidden(v) {
     this.opacity = v ? 0.1 : 1;
+    this.guide = Boolean(v);
+    if(this.guide && this.selected) {
+      this.selected = false;
+    }
   }
 
   /**
