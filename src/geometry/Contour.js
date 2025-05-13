@@ -203,15 +203,25 @@ export class Contour extends paper.Layer {
   /**
    * @summary Массив профилей, составляющих внешний контур слоя
    * @desc С учетом соединителей и соседних слоёв
-   * @type {Array.<GraphEdge>}
+   * @type {Array.<Profile>}
    */
   get outerEdges() {
-    const {profiles} = this;
-    const edges = [];
-    for(const profile of profiles) {
-      edges.push(profile.b.edge);
+    const {profiles, container} = this;
+    const res = [];
+    if(container) {
+      const {perimeter} = container;
+      const map = new Map();
+      for(const profile of profiles) {
+        const {edge} = profile;
+        if(edge) {
+          map.set(edge, profile);
+        }
+      }
+      for(const edge of perimeter) {
+        res.push(map.get(edge));
+      }
     }
-    return edges;
+    return res;
   }
 
   /**
@@ -250,11 +260,14 @@ export class Contour extends paper.Layer {
   /**
    * @summary Возвращает структуру профилей по сторонам
    * @param {String} [side]
+   * @param {Array.<Profile>} [profiles]
    * @return {Object}
    */
-  profilesBySide(side) {
+  profilesBySide(side, profiles) {
     // получаем таблицу расстояний профилей от рёбер габаритов
-    const {profiles} = this;
+    if(!profiles) {
+      profiles = this.profiles;
+    }
     const bounds = {
       left: Infinity,
       top: Infinity,
@@ -306,6 +319,54 @@ export class Contour extends paper.Layer {
     Object.keys(bounds).forEach(bySide);
 
     return res;
+  }
+
+  /**
+   * @summary Возвращает профиль по номеру стороны фурнитуры
+   * @desc учитывает направление открывания, по умолчанию - левое
+   * - первая первая сторона всегда нижняя
+   * - далее, по часовой стрелке 2 - левая, 3 - верхняя и т.д.
+   * - если направление правое, обход против часовой
+   * @param {Number} side
+   * @param {Object} [cache]
+   */
+  profileByFurnSide(side, cache) {
+    if (!cache?.profiles) {
+      const profiles = this.outerEdges; 
+      const raw = {
+        profiles,
+        bottom: this.profilesBySide('bottom', profiles),
+      };
+      if(cache) {
+        Object.assign(cache, raw);
+      }
+      else {
+        cache = raw;
+      }
+    }
+
+    const profileNode = this.direction.is('right') ? 'b' : 'e';
+    const otherNode = profileNode == 'b' ? 'e' : 'b';
+
+    let profile = cache.bottom;
+
+    const next = () => {
+      side--;
+      if (side <= 0) {
+        return profile;
+      }
+
+      cache.profiles.some((curr) => {
+        if (curr[otherNode].point.isNearest(profile[profileNode].point)) {
+          profile = curr;
+          return true;
+        }
+      });
+
+      return next();
+    };
+
+    return next();
   }
 
   /**
@@ -716,13 +777,18 @@ export class Contour extends paper.Layer {
         const loc = profile.generatrix.getLocationAt(profile.generatrix.length / 3);
         new paper.PointText({
           position: loc.point.add(loc.normal.multiply(layer ? -20 : 20)),
-          content: profile._index+1,
+          content: profile.index,
           parent: visualization.children.graph,
           fontSize: props.fontSize(),
           fontFamily: props.fontFamily(),
           justification: 'center'
         });
       }
+    }
+    // линии открывания
+    if(props.carcass !== 'carcass') {
+      // рисуем направление открывания
+      visualization.drawOpening()
     }
   }
 
