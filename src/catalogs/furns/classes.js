@@ -232,7 +232,7 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
     checkRestrictions({elm, layer, rawLength, angleHor, correct=false}) {
       const {nom, quantity, for_direct_profile_only: direct_only} = this;
 
-      if(!quantity || !nom || nom.empty()) {
+      if(!nom || nom.empty() || (!quantity && !nom.is_procedure)) {
         return;
       }
 

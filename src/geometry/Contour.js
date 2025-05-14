@@ -584,22 +584,44 @@ export class Contour extends paper.Layer {
    * @summary Доступные фурнитуры
    */
   furns() {
-    const {project: {root}, params, openType} = this;
-    const propFurn = root.cch.properties.predefined('furn');
+    const {project: {root}, params, openType, outerEdges} = this;
     const list = new Map();
-    if(propFurn) {
-      const context = params.context();
-      const links = propFurn.paramsLinks(context);
-      const {furns} = root.cat;
-      for(const link of links) {
-        for(const {value, by_default, forcibly} of link.values) {
-          if(openType.empty() || value.open_type === openType) {
-            list.set(furns.get(value), {by_default, forcibly});
+    const sideCount =  outerEdges.length;
+    
+    if(sideCount) {
+      const propFurn = root.cch.properties.predefined('furn');
+      const hasShtulp = this.hasShtulp(outerEdges);
+
+      if(propFurn) {
+        const context = params.context();
+        const links = propFurn.paramsLinks(context);
+        const {furns} = root.cat;
+        for(const link of links) {
+          for(const {value, by_default, forcibly} of link.values) {
+            if((sideCount === value.side_count) && (openType.empty() || value.open_type === openType)) {
+              const shtulpKind = value.shtulpKind();
+              if(shtulpKind && hasShtulp || !shtulpKind && !hasShtulp) {
+                list.set(furns.get(value), {by_default, forcibly});
+              }
+            }
           }
         }
       }
     }
     return list;
+  }
+  
+  hasShtulp(profiles) {
+    const {sys, layer} = this;
+    if(layer) {
+      const {shtulp: elmType} = layer.project.root.enm.elmTypes;
+      for(const profile of profiles) {
+        if(profile.orientation.is('vert') && sys.isElmType({elm: profile.nearest, elmType})) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
   
   ProfileConstructor(attr) {

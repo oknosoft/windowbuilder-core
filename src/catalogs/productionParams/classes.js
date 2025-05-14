@@ -9,12 +9,16 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
 
     /**
      * Доступна ли вставка в данной системе в качестве elmType
-     * @param {CatInserts} inset
+     * @param {BuilderElement} [elm]
+     * @param {CatInserts} [inset]
      * @param {EnmElmTypes|Array.<EnmElmTypes>} elmType
      * @return {boolean}
      */
-    isElmType(inset, elmType) {
-      const inserts = this.inserts(elmType);
+    isElmType({elm, inset, elmType}) {
+      const inserts = this.inserts({elm, elmTypes: elmType});
+      if(!inset && elm && inserts.length) {
+        inset = elm.inset;
+      }
       return inserts.includes(inset);
     }
 
