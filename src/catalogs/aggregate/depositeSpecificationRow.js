@@ -74,12 +74,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
     }
     
     class DepositeSpecificationObj extends CatObj {
-      get lmin(){return this[get]('lmin')}
-      set lmin(v){this[set]('lmin',v)}
-      get lmax(){return this[get]('lmax')}
-      set lmax(v){this[set]('lmax',v)}
-      get region(){return this[get]('region')}
-      set region(v){this[set]('region',v)}
+
       get note(){return this[get]('note')}
       set note(v){this[set]('note',v)}
 
@@ -93,49 +88,53 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
        * @return {Array.<CchProperties>}
        */
       usedParams() {
-        const {specification} = this;
-        const use = cch.properties.predefined('use');
-        const {cx_prm} = enm.predefined_formulas;
-        const {order, product, nearest} = enm.planDetailing;
-        const res = new Set();
-        
-        for(const {param, origin, elm} of this.selection_params) {
-          if(param.empty() || origin === product || origin === order || origin === nearest) {
-            continue;
-          }
-          if(param === use) {
-            const {nom} = specification.find({elm}) || {};
-            if(nom) {
-              const prm = cch.properties.get(nom.ref);
-              if(!prm.name) {
-                prm.name = prm.caption = nom.name;
-                prm.type = {types: ['boolean']};
-              }
-              res.add(prm);
-            }
-          }
-          else if(!param.isCalculated || param.show_calculated){
-            res.add(param);
-          }
-        }
-        
-        for(const {param} of this.product_params) {
-          if(!param.empty() && (!param.isCalculated || param.show_calculated)){
-            res.add(param);
-          }
-        }
+        let {_usedParams: res} = this;
+        if(!res) {
+          this._usedParams = res = new Set();
+          const {specification, selection_params, product_params} = this;
+          const use = cch.properties.predefined('use');
+          const {cx_prm} = enm.predefined_formulas;
+          const {order, product, nearest} = enm.planDetailing;
 
-        for(const {nom, algorithm} of this.product_params) {
-          if(nom instanceof DepositeSpecificationObj) {
-            for(const param of nom.usedParams()) {
+          for(const {param, origin, elm} of this.selection_params) {
+            if(param.empty() || origin === product || origin === order || origin === nearest) {
+              continue;
+            }
+            if(param === use) {
+              const {nom} = specification.find({elm}) || {};
+              if(nom) {
+                const prm = cch.properties.get(nom.ref);
+                if(!prm.name) {
+                  prm.name = prm.caption = nom.name;
+                  prm.type = {types: ['boolean']};
+                }
+                res.add(prm);
+              }
+            }
+            else if(!param.isCalculated || param.show_calculated){
               res.add(param);
             }
           }
-          else if(algorithm === cx_prm) {
-            res.add(nom);
-          } 
+
+          for(const {nom, algorithm} of specification) {
+            if(nom instanceof DepositeSpecificationObj) {
+              for(const param of nom.usedParams()) {
+                res.add(param);
+              }
+            }
+            else if(algorithm === cx_prm) {
+              res.add(nom);
+            }
+          }
+
+          if(product_params) {
+            for(const {param} of product_params) {
+              if(!param.empty() && (!param.isCalculated || param.show_calculated)){
+                res.add(param);
+              }
+            }
+          }
         }
-        
         return Array.from(res);
       }
     }

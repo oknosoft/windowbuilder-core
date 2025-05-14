@@ -22,6 +22,10 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
     cnn(attr) {
       return methods.element.call(this, attr);
     },
+
+    furn(attr) {
+      return methods.element.call(this, attr);
+    },
     
     coloring(attr) {
       

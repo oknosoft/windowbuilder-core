@@ -8,8 +8,8 @@ export function classes({cat, enm, classes, symbols}, exclude)  {
   
   class CchPredefinedElmntsManager extends CchManager {
 
-    load(aattr, forse){
-      const objs = super.load(aattr, forse);
+    load(aattr, force){
+      const objs = super.load(aattr, force);
       const {predefined} = cat.nom.index;
       for(const obj of objs) {
         const {parent, synonym} = obj;

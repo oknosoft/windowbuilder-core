@@ -812,6 +812,16 @@ export class Contour extends paper.Layer {
   }
 
   /**
+   * @summary Дополняет спецификацию информацией об ошибках
+   * @desc Проверяет базовую применимость набора фурнитуры
+   */
+  checkErr() {
+    const {specification} = this;
+    
+    return {specification, error: false, weight: 70};
+  }
+
+  /**
    * @summary Рассчитывает спецификацию слоя
    */
   calculateSpec() {
@@ -819,6 +829,15 @@ export class Contour extends paper.Layer {
     for(const elm of profiles.concat(fillings).concat(contours)) {
       elm.calculateSpec();
     }
-    furn?.calculateSpec?.();
+    const {specification, error, weight, cache} = this.checkErr();
+    if(!error && !furn.empty()) {
+      const profiles = this.outerEdges;
+      const cache = {
+        profiles,
+        bottom: this.profilesBySide('bottom', profiles),
+      };
+      const {bounds} = this;
+      furn.calculateSpec({specification, layer: this, weight, cache, w: bounds.width, h: bounds.height});
+    }
   }
 }

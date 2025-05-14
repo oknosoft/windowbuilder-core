@@ -56,12 +56,12 @@ export class DimensionDrawer extends MapedGroup {
     this.ivert = new DimensionGroup();
   }
 
-  createByContour(ihor, ivert, forse, bySide) {
+  createByContour(ihor, ivert, force, bySide) {
     const {project, layer} = this;
     const {bounds} = layer;
     const {base_offset, dop_offset} = consts;
 
-    if(project.contours.length > 1 || forse) {
+    if(project.contours.length > 1 || force) {
 
       if(layer.isPos('left') && !layer.isPos('right') && project.bounds.height !== bounds.height) {
         if(!this.ihor.hasSize(bounds.height)) {
@@ -85,7 +85,7 @@ export class DimensionDrawer extends MapedGroup {
         }
       }
 
-      if(layer.isPos('right') && (project.bounds.height !== bounds.height || forse)) {
+      if(layer.isPos('right') && (project.bounds.height !== bounds.height || force)) {
         if(!this.ihor.hasSize(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -129,7 +129,7 @@ export class DimensionDrawer extends MapedGroup {
         }
       }
 
-      if(layer.isPos('bottom') && (project.bounds.width !== bounds.width || forse)) {
+      if(layer.isPos('bottom') && (project.bounds.width !== bounds.width || force)) {
         if(!this.ivert.hasSize(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -152,7 +152,7 @@ export class DimensionDrawer extends MapedGroup {
       }
     }
 
-    // if(forse === 'faltz') {
+    // if(force === 'faltz') {
     //   this.by_faltz(ihor, ivert, by_side);
     // }
   }
@@ -254,19 +254,19 @@ export class DimensionDrawer extends MapedGroup {
 
   /**
    * @summary Формирует авторазмерные линии
-   * @param {Boolean} [forse]
+   * @param {Boolean} [force]
    */
-  redraw(forse) {
+  redraw(force) {
     const {layer, children, project: {props}} = this;
 
-    if(!forse) {
-      forse = layer.showDimensions;
+    if(!force) {
+      force = layer.showDimensions;
     }
 
-    if(!forse) {
+    if(!force) {
       this.clear(true);
     }
-    else if(forse || !props.autoLines) {
+    else if(force || !props.autoLines) {
       this.clear();
     }
 
@@ -276,10 +276,10 @@ export class DimensionDrawer extends MapedGroup {
     }
 
     // для внешних контуров строим авторазмерные линии
-    if(props.autoLines && forse) {
+    if(props.autoLines && force) {
 
       // далее - размерные линии контура
-      this.createByContour([], [], forse, bySide);
+      this.createByContour([], [], force, bySide);
     }
     
     for(const dl of children) {

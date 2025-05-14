@@ -10,6 +10,12 @@ export function classes({classes, md, utils, symbols, enm, cat, cch}, exclude)  
   const [DepositeSpecificationObj, DepositeSpecificationRow] = depositeSpecificationRow({CatObj, TabularSectionRow, get, set, own, enm, cch});
   
   class CatInserts extends DepositeSpecificationObj {
+    get lmin(){return this[get]('lmin')}
+    set lmin(v){this[set]('lmin',v)}
+    get lmax(){return this[get]('lmax')}
+    set lmax(v){this[set]('lmax',v)}
+    get region(){return this[get]('region')}
+    set region(v){this[set]('region',v)}
     get article(){return this[get]('article')}
     set article(v){this[set]('article',v)}
     get insert_type(){return this[get]('insert_type')}

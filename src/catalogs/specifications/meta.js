@@ -68,10 +68,6 @@ export const meta = {
             "Товар",
             "Работа"
           ]
-        },
-        {
-          name: "is_set",
-          path: false
         }
       ],
       mandatory: true,
@@ -122,10 +118,6 @@ export const meta = {
                 "Товар",
                 "Услуга"
               ]
-            },
-            {
-              name: "is_set",
-              path: false
             }
           ],
           choiceGrp: "elm",

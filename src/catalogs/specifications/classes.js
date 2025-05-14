@@ -15,12 +15,12 @@ export function classes({cat, classes, symbols}, exclude)  {
      * @return {CatSpecificationsCompositionRow}
      */
     specRow({elm, layer}) {
-      const row = this.composition.add({elm: elm?.index || -layer.index});
+      const row = this.composition.add({elm: elm?.index || layer.index});
       return row;
     }
 
     procRow({elm, layer}) {
-      const row = this.procedures.add({elm: elm?.index || -layer.index});
+      const row = this.procedures.add({elm: elm?.index || layer.index});
       return row;
     }
 

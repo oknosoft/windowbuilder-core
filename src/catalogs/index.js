@@ -334,7 +334,7 @@ export const meta = {
   nom,
   inserts,
   cnns,
-  furns,
+  ...furns,
   productionParams,
   specifications,
   workCenterKinds: {

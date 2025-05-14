@@ -234,10 +234,6 @@ export const meta= {
             {
               name: "is_folder",
               "path": false
-            },
-            {
-              name: "is_set",
-              "path": false
             }
           ],
           choiceGrp: "elm",

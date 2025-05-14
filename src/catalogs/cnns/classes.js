@@ -123,6 +123,12 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
   classes.CatCnnsManager = CatCnnsManager;
 
   class CatCnns extends DepositeSpecificationObj {
+    get lmin(){return this[get]('lmin')}
+    set lmin(v){this[set]('lmin',v)}
+    get lmax(){return this[get]('lmax')}
+    set lmax(v){this[set]('lmax',v)}
+    get region(){return this[get]('region')}
+    set region(v){this[set]('region',v)}
     get priority(){return this[get]('priority')}
     set priority(v){this[set]('priority',v)}
     get amin(){return this[get]('amin')}
