@@ -827,6 +827,16 @@ export const meta = {
       synonym: "Плюс ширина2"
     },
     {
+      order: 10,
+      name: "recipe",
+      synonym: "По рецептуре"
+    },
+    {
+      order: 11,
+      name: "compound",
+      synonym: "Из состава"
+    },
+    {
       tag: "Встроенные формулы",
       aliases: ['predefined_formulas'],
       id: 'epf'
@@ -1410,53 +1420,59 @@ export const meta = {
     },
     {
       order: 6,
+      name: "ПоМассе",
+      synonym: "По массе",
+      latin: "weight"
+    },
+    {
+      order: 7,
       name: "ДлинаПоПарам",
       synonym: "Длина по параметру",
       latin: "len_prm"
     },
     {
-      order: 7,
+      order: 8,
       name: "ГабаритыПоПарам",
       synonym: "Габариты по параметрам",
       latin: "dimensions"
     },
     {
-      order: 8,
+      order: 9,
       name: "ПоСоединениям",
       synonym: "По соединениям",
       latin: "cnns",
       "note": "Поправки размеров из концевых соединений"
     },
     {
-      order: 9,
+      order: 10,
       name: "ПоЗаполнениям",
       synonym: "По заполнениям",
       latin: "fillings",
       "note": "Для всех заполнений контура"
     },
     {
-      order: 10,
+      order: 11,
       name: "ПоЦвету",
       synonym: "По цвету",
       latin: "coloring",
       "note": "С учётом группы цвета и площадей изнутри-снаружи"
     },
     {
-      order: 11,
+      order: 12,
       name: "ПоРамке",
       synonym: "По рамке",
       latin: "spacer",
       "note": "С учётом отступов дистанционной рамки"
     },
     {
-      order: 12,
+      order: 13,
       name: "ВСоединении",
       synonym: "В соединении",
       latin: "cnn",
       "note": "Виртуальный метод для строк соединений"
     },
     {
-      order: 13,
+      order: 14,
       name: "ВФурнитуре",
       synonym: "В фурнитуре",
       latin: "furn",
