@@ -494,7 +494,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * указатель на фурнитуру
    */
   get furn() {
-    return this._row.furn;
+    return this._row?.furn || $p.cat.furns.get();
   }
   set furn(v) {
     const {_row, profiles, project, sys, level} = this;
@@ -1099,8 +1099,8 @@ class Contour extends AbstractFilling(paper.Layer) {
    * - первая первая сторона всегда нижняя
    * - далее, по часовой стрелке 2 - левая, 3 - верхняя и т.д.
    * - если направление правое, обход против часовой
-   * @param side {Number}
-   * @param cache {Object}
+   * @param {Number} side
+   * @param {Object} [cache]
    */
   profile_by_furn_side(side, cache) {
 
@@ -1111,7 +1111,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       };
     }
 
-    const profile_node = this.direction == $p.enm.open_directions.Правое ? 'b' : 'e';
+    const profile_node = this.direction.is('right') ? 'b' : 'e';
     const other_node = profile_node == 'b' ? 'e' : 'b';
 
     let profile = cache.bottom;
@@ -1912,7 +1912,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     l_visualization._opening.removeChildren();
     l_visualization._opening2.removeChildren();
 
-    // рисуем раправление открывания
+    // рисуем направление открывания
     return furn.is_sliding ? sliding() : rotary_folding();
 
   }
@@ -3124,7 +3124,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         _row.h_ruch = h_ruch;
       }
 
-      // Высота ручки по умолчению
+      // Высота ручки по умолчанию
       // >0: фиксированная высота
       // =0: Высоту задаёт оператор
       // <1: Ручка по центру, можно ли редактировать, зависит от реквизита fix_ruch

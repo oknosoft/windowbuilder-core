@@ -1077,8 +1077,11 @@
               origin: len_angl && len_angl.origin,
               eclr,
             };
-            if(eclr.is_composite()) {
+            if(eclr.is_composite() || eclr.area_src.is('lam')) {
               let {clr_in, clr_out} = eclr;
+              if(!eclr.is_composite()) {
+                clr_in = clr_out = eclr;
+              }
               if(flipped) {
                 [clr_in, clr_out] = [clr_out, clr_in];
               }

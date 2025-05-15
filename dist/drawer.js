@@ -2151,7 +2151,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }, 0) : 0;
   }
   get furn() {
-    return this._row.furn;
+    return this._row?.furn || $p.cat.furns.get();
   }
   set furn(v) {
     const {_row, profiles, project, sys, level} = this;
@@ -2594,7 +2594,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         bottom: this.profiles_by_side('bottom'),
       };
     }
-    const profile_node = this.direction == $p.enm.open_directions.Правое ? 'b' : 'e';
+    const profile_node = this.direction.is('right') ? 'b' : 'e';
     const other_node = profile_node == 'b' ? 'e' : 'b';
     let profile = cache.bottom;
     const next = () => {
@@ -17010,7 +17010,7 @@ $p.spec_building = new SpecBuilding($p);
 	enm.open_types.__define({
     is_opening: {
       value(v) {
-        if(!v || v.empty() || v == this.Глухое || v == this.Неподвижное) {
+        if(!v || v.empty() || v == this.no || v == this.static) {
           return false;
         }
         return true;
@@ -18453,8 +18453,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               origin: len_angl && len_angl.origin,
               eclr,
             };
-            if(eclr.is_composite()) {
+            if(eclr.is_composite() || eclr.area_src.is('lam')) {
               let {clr_in, clr_out} = eclr;
+              if(!eclr.is_composite()) {
+                clr_in = clr_out = eclr;
+              }
               if(flipped) {
                 [clr_in, clr_out] = [clr_out, clr_in];
               }

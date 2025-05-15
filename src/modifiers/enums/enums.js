@@ -17,7 +17,7 @@
 	enm.open_types.__define({
     is_opening: {
       value(v) {
-        if(!v || v.empty() || v == this.Глухое || v == this.Неподвижное) {
+        if(!v || v.empty() || v == this.no || v == this.static) {
           return false;
         }
         return true;
