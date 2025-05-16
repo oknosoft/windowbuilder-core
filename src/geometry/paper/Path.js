@@ -202,6 +202,30 @@ export default function (paper) {
         return line.getSide(point, true);
       },
 
+      /**
+       * Угол по отношению к соседнему пути _other_ в точке _point_
+       * @memberof paper.Path#
+       * @param {paper.Path} other - соседний путь
+       * @param {paper.Point} point - точка, в окрестности которой ищем угол
+       * @param {paper.Point} [interior]  - точка внутри нашего пути
+       * @param {Number} [round] - округлять до N знаков
+       * @return {Number}
+       */
+      angleTo(other, point, interior, round) {
+        const p1 = this.getNearestPoint(point),
+          p2 = other.getNearestPoint(point),
+          t1 = this.getTangentAt(this.getOffsetOf(p1)),
+          t2 = other.getTangentAt(other.getOffsetOf(p2));
+        let res = t2.angle - t1.angle;
+        if(res < 0){
+          res += 360;
+        }
+        if(interior && res > 180){
+          res = 180 - (res - 180);
+        }
+        return typeof round === 'number' ? res.round(round) : res.round(1);
+      },
+
       intersectPoint(path, point, elongate) {
         const intersections = this.getIntersections(path);
         if (intersections.length === 1) {

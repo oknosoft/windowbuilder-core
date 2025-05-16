@@ -19,6 +19,7 @@ import './ProfileLine';
 import './ProfileAdjoining';
 import './ProfileConnective';
 import './ProfilePortal';
+import './ProfileSegment';
 
 const geometry = {
   Scheme,

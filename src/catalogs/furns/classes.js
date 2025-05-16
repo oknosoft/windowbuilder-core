@@ -164,6 +164,23 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
       }
       return this._mainRows;
     }
+
+    updateHandleHeight(setHandleHeight, attr) {
+      // бежим по спецификации набора в поисках строки про ручку
+      for(const row of this.mainRows()) {
+        // проверяем, проходит ли строка
+        if (!row.quantity || row.checkRestrictions(attr) !== true) {
+          continue;
+        }
+        if (setHandleHeight(row)) {
+          return true;
+        }
+        const {nom} = row;
+        if (nom && row.is_set_row && nom.updateHandleHeight(setHandleHeight, attr)) {
+          return true;
+        }
+      }
+    }
     
     /**
      * @summary Вклад в спецификацию
@@ -229,16 +246,78 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
     get is_procedure_row(){return this[get]('is_procedure_row')}
     set is_procedure_row(v){this[set]('is_procedure_row',v)}
 
-    checkRestrictions({elm, layer, rawLength, angleHor, correct=false}) {
-      const {nom, quantity, for_direct_profile_only: direct_only} = this;
+    checkRestrictions({layer, cache, ...other}) {
+      const {} = this;
+      const {nom, quantity, for_direct_profile_only: direct_only, elm, dop,
+        handle_height_min: hhmin, handle_height_max: hhmax, handle_base_filter, formula,
+        side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
+      const {direction, handleHeight, handleFix, project: {_scope}} = layer;
 
       if(!nom || nom.empty() || (!quantity && !nom.is_procedure)) {
         return;
       }
 
-      // только для прямых или только для кривых профилей
-      if((direct_only > 0 && !elm.isLinear()) || (direct_only < 0 && elm.isLinear())) {
+      // проверка по высоте ручки
+      if((handle_base_filter === 1 && handleFix !== -1) || (handle_base_filter === 2 && handleFix === -1) ||
+        ((hhmin !== -1 && hhmax !== -1) && ((handleHeight < hhmin) || (hhmax > 0 && handleHeight > hhmax)))
+      ){
         return;
+      }
+      if(hhmin === -1 && (handleHeight > hhmax && handleHeight < cache.height - hhmax)) {
+        return;
+      }
+      if(hhmax === -1 &&  (handleHeight < hhmin || handleHeight > cache.height - hhmin)) {
+        return;
+      }
+
+      // по моменту на петлях (в текущей реализации - просто по массе)
+      if(mmin || (mmax && mmax < 1000)) {
+        if(mmin && cache.weight < mmin || mmax && cache.weight > mmax) {
+          return;
+        }
+      }
+
+      // проверка по формуле
+      if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
+        const res = formula.execute({layer, elm: profile, row_furn: this});
+        if(formula.condition_formula && !res) {
+          return;
+        }
+        if(res instanceof _scope.Path || res instanceof _scope.CompoundPath) {
+          const {w, h} = cache;
+          if(!res.contains([w, h])) {
+            return;
+          }
+        }
+      }
+
+      // по таблице ограничений
+      const sideCount = cache.profiles.length;
+      for(const {lmin, lmax, amin, amax, side, for_direct_profile_only: direct_only} of this.restrictionRows()) {
+        const current = layer.profileByFurnSide(side, cache);
+
+        // только для прямых или только для кривых профилей
+        if((direct_only > 0 && !current.isLinear()) || (direct_only < 0 && current.isLinear())) {
+          return;
+        }
+
+        // Проверка длины
+        const prev = layer.profileByFurnSide(side === 1 ? sideCount : side - 1, cache);
+        const next = layer.profileByFurnSide(side === sideCount ? 1 : side + 1, cache);
+        const len = (current.length - prev.nom.sizefurn - next.nom.sizefurn).round();
+        if (len < lmin || len > lmax) {
+          return;
+        }
+
+        // Проверка угла
+        if(amin || (amax && amax < 360)) {
+          const angle = direction.is('right') ?
+            current.generatrix.angleTo(prev.generatrix, current.e.point) :
+            prev.generatrix.angleTo(current.generatrix, current.b.point);
+          if (angle < amin || angle > amax) {
+            return;
+          }
+        }
       }
 
       return true;
@@ -259,6 +338,14 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
         this._dopRows = this[own].filter(({elm, dop}) => elm === elm0 && dop !== 0);
       }
       return this._dopRows;
+    }
+
+    restrictionRows() {
+      if(!this._restrictionRows) {
+        const {elm: elm0, dop: dop0} = this;
+        this._restrictionRows = this[own][own].specification_restrictions.filter(({elm, dop}) => elm === elm0 && dop === dop0);
+      }
+      return this._restrictionRows;
     }
 
     get count_calc_method() {

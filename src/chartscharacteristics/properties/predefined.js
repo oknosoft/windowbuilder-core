@@ -1,6 +1,4 @@
 
-import {EditorInvisible} from '../../geometry/paper/EditorInvisible';
-
 export function predefined(root) {
   const {
     enm: {orientations, positions, elmTypes, cmpTypes: ect, cnnSides},
@@ -70,7 +68,7 @@ export function predefined(root) {
 
               // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
               if(prm_row?.origin?.is('nearest')){
-                if(elm instanceof EditorInvisible.Filling) {
+                if(elm.is('Filling')) {
                   const res = new Set();
                   ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                     if(row && inset !== row._owner?._owner) {
@@ -95,7 +93,7 @@ export function predefined(root) {
             _data._formula = function ({elm, prm_row, ox, row}) {
 
               // если запросили вставку состава заполнения, возвращаем массив
-              if(elm instanceof EditorInvisible.Filling || elm?.is_glass) {
+              if(elm.is('Filling') || elm?.is_glass) {
                 const res = new Set();
                 ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                   if(!inset.insert_glass_type.empty()) {
@@ -143,7 +141,7 @@ export function predefined(root) {
           case 'up_glasses_weight':
             _data._formula = function ({elm, elm2, ox}) {
               let weight = 0;
-              if(elm2 instanceof EditorInvisible.Profile && !(elm instanceof EditorInvisible.Profile)) {
+              if(!elm.is('GeneratrixElement') && elm2.is('GeneratrixElement')) {
                 elm = elm2;
               }
               if(elm?.orientation?.is('hor')) {
@@ -181,12 +179,11 @@ export function predefined(root) {
 
           case 'nearest_gl_thickness':
             _data._formula = function ({elm, elm2, project}) {
-              const {GeneratrixElement} = project._scope; 
-              if(elm instanceof GeneratrixElement.Adjoining) {
+              if(elm.is('GeneratrixElement.Adjoining')) {
                 elm = elm.nearest();
                 elm2 = null;
               }
-              if(elm2 instanceof GeneratrixElement && !(elm instanceof GeneratrixElement)) {
+              if(!elm.is('GeneratrixElement') && elm2.is('GeneratrixElement')) {
                 [elm, elm2] = [elm2, elm];
               }
               let thickness = elm2?.thickness || 0;
@@ -199,7 +196,7 @@ export function predefined(root) {
 
           case 'nearest_gl_var':
             _data._formula = function ({elm}) {
-              if(elm instanceof EditorInvisible.ProfileAdjoining) {
+              if(elm.is('GeneratrixElement.Adjoining')) {
                 elm = elm.nearest();
               }
               const set = new Set();
@@ -282,7 +279,7 @@ export function predefined(root) {
 
           case 'elm_orientation':
             _data._formula = function ({elm, elm2}) {
-              if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+              if(!elm.is('GeneratrixElement') && elm2.is('GeneratrixElement')) {
                 elm = elm2;
               }
               return elm?.orientation || elm2?.orientation || orientations.get();
@@ -291,7 +288,7 @@ export function predefined(root) {
 
           case 'elm_pos':
             _data._formula = function ({elm, elm2}) {
-              if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+              if(!elm.is('GeneratrixElement') && elm2.is('GeneratrixElement')) {
                 elm = elm2;
               }
               return elm?.pos || positions.get();
@@ -301,7 +298,7 @@ export function predefined(root) {
           case 'node_pos':
             _data._formula = function ({elm, node}) {
               if(elm && node) {
-                if(elm instanceof EditorInvisible.ProfileSegment) {
+                if(elm.is('GeneratrixElement.Segment')) {
                   const {parent} = elm;
                   if(!parent[node].is_nearest(elm[node])) {
                     return positions.left.center;
@@ -322,7 +319,7 @@ export function predefined(root) {
           case 'is_node_last':
             _data._formula = function ({elm, node}) {
               if(elm && node) {
-                if(elm instanceof EditorInvisible.ProfileSegment) {
+                if(elm.is('GeneratrixElement.Segment')) {
                   const {parent} = elm;
                   if(!parent[node].is_nearest(elm[node])) {
                     return false;
@@ -340,10 +337,10 @@ export function predefined(root) {
 
           case 'joins_last_elm':
             _data._formula = function ({elm, elm2, prm_row, node}) {
-              if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+              if(!elm.is('GeneratrixElement') && elm2.is('GeneratrixElement')) {
                 elm = elm2;
               }
-              if(elm instanceof EditorInvisible.ProfileSegment) {
+              if(elm.is('GeneratrixElement.Segment')) {
                 elm = elm.parent;
               }
               if(elm) {

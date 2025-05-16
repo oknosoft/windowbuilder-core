@@ -9,7 +9,11 @@ import {LayerParams} from './BuilderParams';
 
 export class Contour extends paper.Layer {
 
-  #raw = {hidden: false};
+  #raw = {
+    hidden: false,
+    handleFix: 0,
+    handleHeight: 0,
+  };
 
   constructor(attr) {
     super(attr);
@@ -276,6 +280,103 @@ export class Contour extends paper.Layer {
     this.project.props.registerChange(this, {direction});
   }
   
+  get handleHeight() {
+    const {layer, furn} = this;
+    if(!layer) {
+      return 0;
+    }
+    if(!furn.handle_side && furn.shtulpKind() === 2) {
+      for(const contour of layer.contours) {
+        if(contour !== this && contour.furn.shtulpKind() === 1) {
+          return contour.handleHeight;
+        }
+      }
+    }
+    return this.#raw.handleHeight;
+  }
+  set handleHeight(v) {
+    const {layer, handleFix, project} = this;
+
+    if (layer) {
+      if (handleFix == -3) {
+        this.#raw.handleFix = -1;
+      }
+      const handleHeight = this.updateHandleHeight(null, true);
+      if(handleHeight && (handleFix != -3 || v == 0)){
+        this.#raw.handleHeight = handleHeight;
+      }
+
+      // Высота ручки по умолчанию
+      // >0: фиксированная высота
+      // =0: Высоту задаёт оператор
+      // <1: Ручка по центру, можно ли редактировать, зависит от реквизита handleFix
+      if (v != 0 && [0, -1, -3].includes(this.handleFix)) {
+        this.#raw.handleHeight = v;
+        if (this.handleFix == -1 && v != handleHeight) {
+          this.#raw.handleFix = -3;
+        }
+      }
+      this.project.props.registerChange();
+    }
+    else {
+      this.#raw.handleHeight = 0;
+    }
+  }
+  
+  get handleFix() {
+    return this.#raw.handleFix;
+  }
+
+  updateHandleHeight(cache, from_setter) {
+
+    const {furn} = this;
+    const {handle_side} = furn;
+    const furnSet = furn.findSet({layer: this, ...cache})
+    if (!handle_side || furnSet.empty()) {
+      return;
+    }
+
+    if (!cache) {
+      cache = this.furnCache;
+      cache.ignoreFormulas = true;
+    }
+
+    // получаем элемент, на котором ручка и длину элемента
+    const elm = this.profileByFurnSide(handle_side, cache);
+    if (!elm) {
+      return;
+    }
+
+    const {length} = elm;
+    let handleHeight;
+
+    const setHandleHeight = (row) => {
+      const {handle_height_base, fix_ruch} = row;
+      if (handle_height_base < 0) {
+        // если fix_ruch - устанавливаем по центру
+        if (fix_ruch || this.handleFix != -3) {
+          this.#raw.handleFix = fix_ruch ? -2 : -1;
+          return handleHeight = (length / 2).round();
+        }
+      }
+      else if (handle_height_base > 0) {
+        // если fix_ruch - устанавливаем по базовой высоте
+        if (fix_ruch || this.handleFix != -3) {
+          this.#raw.handleFix = fix_ruch ? -2 : -1
+          return handleHeight = handle_height_base;
+        }
+      }
+    }
+    
+    furnSet.updateHandleHeight(setHandleHeight, {layer: this, cache});
+
+    if(handleHeight && !from_setter && this.#raw.handleHeight != handleHeight){
+      this.#raw.handleHeight = handleHeight;
+      this.project.props.registerChange();
+    }
+    return handleHeight;
+  }
+  
   /**
    * @summary Возвращает структуру профилей по сторонам
    * @param {String} [side]
@@ -386,6 +487,41 @@ export class Contour extends paper.Layer {
     };
 
     return next();
+  }
+  
+
+  /**
+   * Габариты контура по фальцу
+   * @param {Object} cache
+   * @return {number|number}
+   */
+  faltz(cache) {
+    const {bounds} = this;
+    const res = {w: bounds?.width || 0, h: bounds?.height || 0};
+    if(bounds && this.isRectangular(cache)) {
+      const {left, right, top, bottom} = this.profilesBySide(null, cache.profiles);
+      if(top && bottom) {
+        res.h -= top.nom.sizefurn + bottom.nom.sizefurn;
+      }
+      if(left && right) {
+        res.w -= left.nom.sizefurn + right.nom.sizefurn;
+      }
+    }
+    return res;
+  }
+  
+  isRectangular({profiles}) {
+    return profiles.length === 4 && !profiles.some(profile => !(profile.isLinear() && Math.abs(profile.angle_hor % 90) < 0.2));
+  }
+  
+  get furnCache() {
+    const {outerEdges: profiles, bounds, w, h} = this;
+    const cache = {
+      profiles,
+      bottom: this.profilesBySide('bottom', profiles),
+      bounds,
+    };
+    return Object.assign(cache, this.faltz(cache));
   }
 
   /**
@@ -838,9 +974,14 @@ export class Contour extends paper.Layer {
    * @desc Проверяет базовую применимость набора фурнитуры
    */
   checkErr() {
-    const {specification} = this;
-    
-    return {specification, error: false, weight: 70};
+    const {specification, furnCache, index} = this;
+    let weight = 50;
+    for(const row of specification.composition) {
+      if(row.elm.startsWith(index)) {
+        weight += row.nom.density * row.totqty;
+      }
+    }
+    return {specification, error: false, weight, cache: furnCache};
   }
 
   /**
@@ -853,13 +994,7 @@ export class Contour extends paper.Layer {
     }
     const {specification, error, weight, cache} = this.checkErr();
     if(!error && !furn.empty()) {
-      const profiles = this.outerEdges;
-      const cache = {
-        profiles,
-        bottom: this.profilesBySide('bottom', profiles),
-      };
-      const {bounds} = this;
-      furn.calculateSpec({specification, layer: this, weight, cache, w: bounds.width, h: bounds.height});
+      furn.calculateSpec({specification, layer: this, weight, cache});
     }
   }
 }
