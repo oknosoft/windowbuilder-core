@@ -192,7 +192,7 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
           specification.byBasis({...other, basis});
           for(const dop of basis.dopRows()) {
             if(dop.checkRestrictions(other) && dop.checkParams(other)) {
-              specification.byBasis({...other, basis: dop});
+              specification.byBasis({...other, basis: dop, superior: basis});
             }
           }
         }

@@ -235,6 +235,16 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * @summary Припуск для соединения "сварной шов"
+   * @type {Number}
+   */
+  get dx0() {
+    const {b, nom} = this;
+    const mainRow = b.cnn?.mainRow?.({elm: this, nom, node: b});
+    return mainRow?.angle_calc_method?.is('seam') ? -mainRow.sz : 0;
+  }
+
+  /**
    * @summary Задаваемое пользователем смещение от образующей
    * @desc Особенно актуально для наклонных элементов а так же, в случае,
    * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю

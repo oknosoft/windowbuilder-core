@@ -327,6 +327,10 @@ export class Contour extends paper.Layer {
     return this.#raw.handleFix;
   }
 
+  handleLine(elm) {
+    
+  }
+
   updateHandleHeight(cache, from_setter) {
 
     const {furn} = this;

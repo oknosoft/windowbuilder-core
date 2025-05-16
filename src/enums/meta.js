@@ -683,32 +683,38 @@ export const meta = {
     {
       order: 0,
       name: "ОтНачалаСтороны",
-      synonym: "От начала стороны"
+      synonym: "От начала стороны",
+      latin: "b"
     },
     {
       order: 1,
       name: "ОтКонцаСтороны",
-      synonym: "От конца стороны"
+      synonym: "От конца стороны",
+      latin: "e"
     },
     {
       order: 2,
       name: "ОтСередины",
-      synonym: "От середины"
+      synonym: "От середины",
+      latin: "center"
     },
     {
       order: 3,
       name: "ОтРучки",
-      synonym: "От ручки"
+      synonym: "От ручки",
+      latin: "handle"
     },
     {
       order: 4,
       name: "РазмерПоФальцу",
-      synonym: "Размер по фальцу"
+      synonym: "Размер по фальцу",
+      latin: "faltz"
     },
     {
       order: 5,
       name: "Формула",
-      synonym: "Формула"
+      synonym: "Формула",
+      latin: "formula"
     },
     {
       tag: "Варианты смещений",
@@ -908,22 +914,26 @@ export const meta = {
     {
       order: 0,
       name: "НетПереноса",
-      synonym: "Нет переноса"
+      synonym: "Нет переноса",
+      latin: "no"
     },
     {
       order: 1,
       name: "НаПримыкающий",
-      synonym: "На примыкающий"
+      synonym: "На примыкающий",
+      latin: "nea"
     },
     {
       order: 2,
       name: "НаПримыкающийОтКонца",
-      synonym: "На примыкающий от конца"
+      synonym: "На примыкающий от конца",
+      latin: "inverse"
     },
     {
       order: 3,
       name: "ЧерезПримыкающий",
-      synonym: "Через примыкающий"
+      synonym: "Через примыкающий",
+      latin: "through"
     },
     {
       tag: "Варианты переноса операций",
@@ -1006,27 +1016,32 @@ export const meta = {
     {
       order: 0,
       name: "ОтДлиныСтороны",
-      synonym: "От длины стороны"
+      synonym: "От длины стороны",
+      latin: "length"
     },
     {
       order: 1,
       name: "ОтВысотыРучки",
-      synonym: "От высоты ручки"
+      synonym: "От высоты ручки",
+      latin: "handle"
     },
     {
       order: 2,
       name: "ОтДлиныСтороныМинусВысотыРучки",
-      synonym: "От длины стороны минус высота ручки"
+      synonym: "От длины стороны минус высота ручки",
+      latin: "lenSubHandle"
     },
     {
       order: 3,
       name: "ФиксированнаяДлина",
-      synonym: "Фиксированная длина"
+      synonym: "Фиксированная длина",
+      latin: "fixed"
     },
     {
       order: 4,
       name: "Выражение",
-      synonym: "Выражение"
+      synonym: "Выражение",
+      latin: "expression"
     },
     {
       tag: "Варианты укорочений",
@@ -1488,22 +1503,26 @@ export const meta = {
     {
       order: 0,
       name: "Основной",
-      synonym: "Основной"
+      synonym: "Основной",
+      latin: "main"
     },
     {
       order: 1,
       name: "СварнойШов",
-      synonym: "Сварной шов"
+      synonym: "Сварной шов",
+      latin: "seam"
     },
     {
       order: 2,
       name: "СоединениеПополам",
-      synonym: "Соед./2"
+      synonym: "Соед./2",
+      latin: "half"
     },
     {
       order: 3,
       name: "Соединение",
-      synonym: "Соединение"
+      synonym: "Соединение",
+      latin: "cnn"
     },
     {
       order: 4,
@@ -1512,8 +1531,14 @@ export const meta = {
     },
     {
       order: 5,
+      name: "_4590",
+      synonym: "45/90"
+    },
+    {
+      order: 6,
       name: "НеСчитать",
-      synonym: "Не считать"
+      synonym: "Не считать",
+      latin: "no"
     },
     {
       tag: "Способы расчета угла",
