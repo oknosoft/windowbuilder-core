@@ -58,6 +58,20 @@ class GroupVisualization extends LayerGroup {
     furn.is_sliding ? this.drawSliding(outerEdges, furn) : this.drawRotaryFolding(outerEdges, furn);
   }
 
+  drawSpec() {
+    const {layer, spec} = this;
+    spec.clear();
+    for(const row of layer.specification.procedures) {
+      const {procedure} = row;
+      if(!procedure.visualization.empty()) {
+        const elm = layer.elm(row.elm);
+        if(elm) {
+          row.draw({elm, region: 0, layer, parent: spec});
+        }
+      }
+    }
+  }
+
   drawRotaryFolding(outerEdges, furn) {
     const {layer, children: {opening, opening2}} = this;
     const {project: {sketch_view}} = this;

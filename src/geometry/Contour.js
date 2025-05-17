@@ -327,8 +327,23 @@ export class Contour extends paper.Layer {
     return this.#raw.handleFix;
   }
 
-  handleLine(elm) {
-    
+  /**
+   * @summary Возвращает линию, проходящую через ручку
+   * @param {Profile} elm
+   * @return {paper.Path}
+   */
+  handleLine(elm, profiles) {
+    const {bounds, handleHeight} = this;
+    const bySide = this.profilesBySide(null, profiles);
+    return (elm === bySide.top || elm === bySide.bottom) ?
+      new paper.Path({
+        insert: false,
+        segments: [[bounds.left + handleHeight, bounds.top - 200], [bounds.left + handleHeight, bounds.bottom + 200]],
+      }) :
+      new paper.Path({
+        insert: false,
+        segments: [[bounds.left - 200, bounds.bottom - handleHeight], [bounds.right + 200, bounds.bottom - handleHeight]],
+      });
   }
 
   updateHandleHeight(cache, from_setter) {
@@ -492,10 +507,29 @@ export class Contour extends paper.Layer {
 
     return next();
   }
-  
 
   /**
-   * Габариты контура по фальцу
+   * @summary Ищет элемент по индексу
+   * @param {String} index
+   * @return {BuilderElement}
+   */
+  elm(index) {
+    if(index.startsWith(this.index)) {
+      for(const elm of this.profiles) {
+        if(elm.index === index) {
+          return elm;
+        }
+      }
+      for(const elm of this.fillings) {
+        if(elm.index === index) {
+          return elm;
+        }
+      }
+    }
+  }
+
+  /**
+   * @summary Габариты контура по фальцу
    * @param {Object} cache
    * @return {number|number}
    */
@@ -863,6 +897,9 @@ export class Contour extends paper.Layer {
         item.redraw?.();
       }
     }
+    if(this.layer && this.project.props.carcass !== 'carcass') {
+      this.updateHandleHeight(this.furnCache);
+    }
     this.drawVisualization();
   }
 
@@ -925,7 +962,7 @@ export class Contour extends paper.Layer {
    * @summary Перерисовывает визуализацию
    */
   drawVisualization() {
-    const {project: {props}, children: {visualization}, skeleton, profiles, layer} = this;
+    const {project: {props}, children: {visualization}, skeleton, profiles, layer, specification, index} = this;
     visualization.children.graph.clear();
     // подписи узлов
     if(props.carcass === 'carcass' || props.showVertexes) {
@@ -969,7 +1006,9 @@ export class Contour extends paper.Layer {
     // линии открывания
     if(props.carcass !== 'carcass') {
       // рисуем направление открывания
-      visualization.drawOpening()
+      visualization.drawOpening();
+      // по спецификации
+      visualization.drawSpec();
     }
   }
 
@@ -1000,5 +1039,6 @@ export class Contour extends paper.Layer {
     if(!error && !furn.empty()) {
       furn.calculateSpec({specification, layer: this, weight, cache});
     }
+    this.children.visualization.drawSpec();
   }
 }

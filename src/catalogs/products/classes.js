@@ -1,5 +1,5 @@
 
-export const exclude = [/*'cat.products'*/];
+export const exclude = ['cat.products'];
 
 export function classes({cat, md, classes, symbols}, exclude)  {
   const {CatObj, TabularSectionRow, DataStruct} = classes;

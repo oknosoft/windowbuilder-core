@@ -57,7 +57,7 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
       else if(offset.is('handle')){
         // строим горизонтальную линию от нижней границы контура, находим пересечение и offset
         const {generatrix} = elm;
-        const hor = layer.handleLine(elm);
+        const hor = layer.handleLine(elm, cache.profiles);
         coordin = generatrix.getOffsetOf(generatrix.intersectPoint(hor)) -
           generatrix.getOffsetOf(generatrix.getNearestPoint(b.points().outer)) +
           (invert ? basis.contraction : -basis.contraction);
@@ -85,8 +85,7 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
         }
       }
 
-      const procRow = specification.specRow({elm, layer});
-      procRow.nom = basis.nom;
+      const procRow = specification.procedures.add({elm: elm?.index, procedure: basis.nom});
       
       if(['nea','through','inverse'].some(name => transfer.is(name))) {
         let nearest = elm.nearest();
@@ -122,7 +121,7 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
           procRow.len += elm.dx0;
         }
       }
-      
+      procRow.len = (procRow.len * 5).round() / 5;
     },
     
     coloring(attr) {

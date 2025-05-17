@@ -7,7 +7,7 @@ export const exclude = ['cat.furns', 'cat.furnSpec'];
 export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  {
 
   const {get, set, own} = symbols;
-  const {CatFurns: CatFurnsProto, CatObj, CatManager, TabularSectionRow} = classes;
+  const {CatObj, CatManager, TabularSectionRow} = classes;
   const [DepositeSpecificationObj, DepositeSpecificationRow] = depositeSpecificationRow({CatObj, TabularSectionRow, get, set, own, enm, cch});
   
   class CatFurnsManager extends CatManager {

@@ -171,6 +171,7 @@ export class Scheme extends paper.Project {
   calculateSpec() {
     const {contours, rootLayer, specification} = this;
     specification.composition.clear();
+    specification.procedures.clear();
     for(const elm of [rootLayer].concat(contours)) {
       elm.calculateSpec();
     }

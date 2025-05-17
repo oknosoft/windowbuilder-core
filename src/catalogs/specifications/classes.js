@@ -1,11 +1,28 @@
 
-export const exclude = [/*'cat.specifications'*/];
+export const exclude = ['cat.specifications'];
 
 export function classes({cat, classes, symbols}, exclude)  {
-  const {CatObj} = classes;
+  const {CatObj, CatManager, TabularSectionRow} = classes;
   const {get, set} = symbols;
 
-  class CatSpecifications extends classes.CatSpecifications {
+  class CatSpecificationsManager extends CatManager {
+    
+  }
+  classes.CatSpecificationsManager = CatSpecificationsManager;
+  
+  class CatSpecifications extends CatObj {
+    get calc_order(){return this[get]('calc_order')}
+    set calc_order(v){this[set]('calc_order',v)}
+    get characteristic(){return this[get]('characteristic')}
+    set characteristic(v){this[set]('characteristic',v)}
+    get production_kind(){return this[get]('production_kind')}
+    set production_kind(v){this[set]('production_kind',v)}
+    get owner(){return this[get]('owner')}
+    set owner(v){this[set]('owner',v)}
+    get composition(){return this[get]('composition')}
+    set composition(v){this[get]('composition').load(v)}
+    get procedures(){return this[get]('procedures')}
+    set procedures(v){this[get]('procedures').load(v)}
 
     /**
      * @summary Добавляет строку в табчасть состава
@@ -40,7 +57,96 @@ export function classes({cat, classes, symbols}, exclude)  {
         nom.calculateSpec({specification: this, stack, ...other});
       }
     }
-
   }
   classes.CatSpecifications = CatSpecifications;
+
+  class CatSpecificationsCompositionRow extends TabularSectionRow{
+    get composition_kinds(){return this[get]('composition_kinds')}
+    set composition_kinds(v){this[set]('composition_kinds',v)}
+    get nom(){return this[get]('nom')}
+    set nom(v){this[set]('nom',v)}
+    get characteristic(){return this[get]('characteristic')}
+    set characteristic(v){this[set]('characteristic',v)}
+    get unit(){return this[get]('unit')}
+    set unit(v){this[set]('unit',v)}
+    get specification(){return this[get]('specification')}
+    set specification(v){this[set]('specification',v)}
+    get quantity(){return this[get]('quantity')}
+    set quantity(v){this[set]('quantity',v)}
+    get cost_part(){return this[get]('cost_part')}
+    set cost_part(v){this[set]('cost_part',v)}
+    get stage(){return this[get]('stage')}
+    set stage(v){this[set]('stage',v)}
+    get elm(){return this[get]('elm')}
+    set elm(v){this[set]('elm',v)}
+    get region(){return this[get]('region')}
+    set region(v){this[set]('region',v)}
+    get clr(){return this[get]('clr')}
+    set clr(v){this[set]('clr',v)}
+    get len(){return this[get]('len')}
+    set len(v){this[set]('len',v)}
+    get width(){return this[get]('width')}
+    set width(v){this[set]('width',v)}
+    get depth(){return this[get]('depth')}
+    set depth(v){this[set]('depth',v)}
+    get s(){return this[get]('s')}
+    set s(v){this[set]('s',v)}
+    get alp1(){return this[get]('alp1')}
+    set alp1(v){this[set]('alp1',v)}
+    get alp2(){return this[get]('alp2')}
+    set alp2(v){this[set]('alp2',v)}
+    get qty(){return this[get]('qty')}
+    set qty(v){this[set]('qty',v)}
+    get totqty(){return this[get]('totqty')}
+    set totqty(v){this[set]('totqty',v)}
+    get price(){return this[get]('price')}
+    set price(v){this[set]('price',v)}
+    get amount(){return this[get]('amount')}
+    set amount(v){this[set]('amount',v)}
+    get amount_marged(){return this[get]('amount_marged')}
+    set amount_marged(v){this[set]('amount_marged',v)}
+    get origin(){return this[get]('origin')}
+    set origin(v){this[set]('origin',v)}
+  }
+  classes.CatSpecificationsCompositionRow = CatSpecificationsCompositionRow;
+
+  class CatSpecificationsProceduresRow extends TabularSectionRow{
+    get elm(){return this[get]('elm')}
+    set elm(v){this[set]('elm',v)}
+    get procedure(){return this[get]('procedure')}
+    set procedure(v){this[set]('procedure',v)}
+    get clr(){return this[get]('clr')}
+    set clr(v){this[set]('clr',v)}
+    get len(){return this[get]('len')}
+    set len(v){this[set]('len',v)}
+    get width(){return this[get]('width')}
+    set width(v){this[set]('width',v)}
+    get time_standard(){return this[get]('time_standard')}
+    set time_standard(v){this[set]('time_standard',v)}
+    get quantity(){return this[get]('quantity')}
+    set quantity(v){this[set]('quantity',v)}
+    get stage(){return this[get]('stage')}
+    set stage(v){this[set]('stage',v)}
+    get origin(){return this[get]('origin')}
+    set origin(v){this[set]('origin',v)}
+
+    draw({elm, region, layer, parent}) {
+      if(elm.visible) {
+        const {visualization} = this.procedure;
+        const {attributes} = visualization;
+        if(!attributes?.regions || attributes.regions.includes?.(region)) {
+          visualization.draw({
+            elm,
+            parent,
+            offset: this.len,
+            //offset0: this.width * (this.alp1 || 1),
+            clr: this.clr,
+            reflected: layer.reflected,
+          });
+          return true;
+        }
+      }
+    }
+  }
+  classes.CatSpecificationsProceduresRow = CatSpecificationsProceduresRow;
 }

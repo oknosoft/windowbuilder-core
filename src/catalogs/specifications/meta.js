@@ -262,7 +262,7 @@ export const meta = {
         elm: {
           synonym: "Элемент",
           multiline: false,
-          tooltip: "Номер элемента, если значение > 0, либо номер конструкции, если значение < 0",
+          tooltip: "Идентификатор элемента или слоя",
           type: {
             types: ["string"],
             strLen: 20,
@@ -480,21 +480,62 @@ export const meta = {
       synonym: "Операции",
       tooltip: "Технологические операции процесса изготовления изделия, выполнения работы",
       fields: {
+        elm: {
+          synonym: "Элемент",
+          multiline: false,
+          tooltip: "Идентификатор элемента или слоя",
+          type: {
+            types: ["string"],
+            strLen: 20,
+          }
+        },
         procedure: {
           synonym: "Операция",
           multiline: false,
           tooltip: "Технологическая операция процесса изготовления изделия, выполнения работы",
-          choiceParams: [
-            {
-              name: "nom_type",
-              path: ""
-            }
-          ],
           choiceGrp: "elm",
           type: {
             types: [
               "cat.nom"
             ]
+          }
+        },
+        clr: {
+          synonym: "Цвет",
+          multiline: false,
+          tooltip: "",
+          choiceGrp: "elm",
+          type: {
+            types: [
+              "string",
+              "cat.clrs"
+            ],
+            strLen: 72,
+            strFix: true
+          }
+        },
+        len: {
+          synonym: "Координата, мм",
+          multiline: false,
+          tooltip: "",
+          type: {
+            types: [
+              "number"
+            ],
+            digits: 8,
+            fraction: 2
+          }
+        },
+        width: {
+          synonym: "Ширина, мм",
+          multiline: false,
+          tooltip: "",
+          type: {
+            types: [
+              "number"
+            ],
+            digits: 8,
+            fraction: 2
           }
         },
         time_standard: {
@@ -531,6 +572,53 @@ export const meta = {
               "cat.work_center_kinds"
             ]
           }
+        },
+        origin: {
+          synonym: "Происхождение",
+          multiline: false,
+          tooltip: "Ссылка на настройки построителя, из которых возникла строка спецификации",
+          type: {
+            types: [
+              "json"
+            ]
+          }
+        }
+      },
+      schemas: {
+        main: {
+          ref: '34e059e0-32f5-11f0-b3ed-2f2304a41eba',
+          fields: [
+            {
+              use: true,
+              field: 'elm',
+              width: 90,
+              caption: 'Элемент',
+              tooltip: '',
+              //ctrl_type: '',
+              formatter: 'Text',
+              editor: '',
+            },
+            {
+              use: true,
+              field: 'procedure',
+              caption: 'Операция',
+              formatter: 'Presentation',
+            },
+            {
+              use: false,
+              field: 'clr',
+              width: 120,
+              caption: 'Цвет',
+              formatter: 'Presentation',
+            },
+            {
+              use: true,
+              field: 'len',
+              width: 90,
+              caption: 'Координата',
+              formatter: 'Number',
+            },
+          ]
         }
       }
     }
