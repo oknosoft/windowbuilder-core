@@ -75,262 +75,6 @@ $p.enm.create('elm_types');
 $p.enm.create('planning_phases');
 $p.enm.create('order_sending_stages');
 $p.enm.create('individual_legal');
-class CchPredefined_elmnts extends CatObj{
-
-  get value() {
-    let {_obj, type, parent, synonym, _manager} = this;
-    const {utils, cch} = _manager._owner.$p;
-    let override = cch.properties.predefined(`${parent.synonym}/${synonym}`);
-    if(override) {
-      type = override.type;
-    }
-    const res = _obj ? _obj.value : '';
-
-    if(_obj.is_folder) {
-      return '';
-    }
-    if(typeof res == 'object') {
-      return res;
-    }
-    else if(type.is_ref) {
-      if(type.digits && typeof res === 'number') {
-        return res;
-      }
-      if(type.hasOwnProperty('str_len') && !utils.is_guid(res)) {
-        return res;
-      }
-      const mgr = _manager.value_mgr(_obj, 'value', type);
-      if(mgr) {
-        if(utils.is_data_mgr(mgr)) {
-          return mgr.get(res, false);
-        }
-        else {
-          return utils.fetch_type(res, mgr);
-        }
-      }
-      if(res) {
-        _manager._owner.$p.record_log(['value', type, _obj]);
-        return null;
-      }
-    }
-    else if(type.date_part) {
-      return utils.fix_date(res, true);
-    }
-    else if(type.digits && typeof res === 'number') {
-      return res;
-    }
-    else if(type.types.includes('boolean') && typeof res === 'boolean') {
-      return res;
-    }
-    else if(type.digits) {
-      return utils.fix_number(res, !type.hasOwnProperty('str_len'));
-    }
-    else if(type.types.includes('boolean')) {
-      return utils.fix_boolean(res);
-    }
-    else {
-      return _obj.value || '';
-    }
-
-    return this.characteristic.clr;
-  }
-  set value(v) {
-    const {_obj, _data, _manager} = this;
-    if(_obj.value !== v) {
-      _manager.emit_async('update', this, {value: _obj.value});
-      _obj.value = v.valueOf();
-      _data._modified = true;
-    }
-  }
-  get definition(){return this._getter('definition')}
-  set definition(v){this._setter('definition',v)}
-  get synonym(){return this._getter('synonym')}
-  set synonym(v){this._setter('synonym',v)}
-  get list(){return this._getter('list')}
-  set list(v){this._setter('list',v)}
-  get zone(){return this._getter('zone')}
-  set zone(v){this._setter('zone',v)}
-  get predefined_name(){return this._getter('predefined_name')}
-  set predefined_name(v){this._setter('predefined_name',v)}
-  get parent(){return this._getter('parent')}
-  set parent(v){this._setter('parent',v)}
-  get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
-  set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}
-  get elmnts(){return this._getter_ts('elmnts')}
-  set elmnts(v){this._setter_ts('elmnts',v)}}
-$p.CchPredefined_elmnts = CchPredefined_elmnts;
-class CchPredefined_elmntsElmntsRow extends TabularSectionRow{
-get value(){return this._getter('value')}
-set value(v){this._setter('value',v)}
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
-}
-$p.CchPredefined_elmntsElmntsRow = CchPredefined_elmntsElmntsRow;
-class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
-
-  constructor(owner, class_name) {
-    super(owner, class_name);
-    Object.defineProperty(this, 'parents', {
-      value: {}
-    });
-
-    const {md, doc, adapters} = this._owner.$p;
-
-    adapters.pouch.once('pouch_doc_ram_loaded', () => {
-      this.job_prms();
-      doc.calc_order.load_templates && setTimeout(doc.calc_order.load_templates.bind(doc.calc_order), 1000);
-      setTimeout(() => md.emit('predefined_elmnts_inited'), 100);
-    });
-  }
-
-  job_prms() {
-
-    for(const o of this) {
-      this.job_prm(o);
-    }
-
-    const {job_prm: {properties}} = this._owner.$p;
-    if(properties) {
-      const {calculated, width, length} = properties;
-      if(width && !width.is_calculated) {
-        calculated.push(width);
-        width._calculated_value = {execute: (obj) => obj && obj.calc_order_row && obj.calc_order_row.width || 0};
-      }
-      if(length && !length.is_calculated) {
-        calculated.push(length);
-        length._calculated_value = {execute: (obj) => obj && obj.calc_order_row && obj.calc_order_row.len || 0};
-      }
-    }
-  }
-
-  job_prm(row) {
-    if(row.is_folder || row._obj?.is_folder) {
-      return;
-    }
-    const {parents, _owner} = this;
-    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
-    const parent = job_prm[parents[row.parent.valueOf()]];
-    const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
-
-    if(parent) {
-      if(parent.synonym === 'lists' || !row.synonym) {
-        return;
-      }
-      if(parent.hasOwnProperty(row.synonym)) {
-        delete parent[row.synonym];
-      }
-
-      if(row.list == -1) {
-        parent.__define(row.synonym, {
-          value: (() => {
-            const res = {};
-            (row.elmnts._obj || row.elmnts).forEach(({elm, value}) => {
-              if(elm !== undefined) {
-                res[elm.valueOf()] = _mgr ? _mgr.get(value, false, false) : value;
-              }
-            });
-            return res;
-          })(),
-          configurable: true,
-          enumerable: true,
-          writable: true,
-        });
-      }
-      else if(row.list) {
-        if(row.synonym === 'glass_chains') {
-          const value = [];
-          const tmp = [];
-          let name;
-          for(const elm of row.elmnts) {
-            if(elm.elm) {
-              name = elm.elm;
-            }
-            if(elm.value) {
-              tmp.push(igt.get(elm.value));
-            }
-            else {
-              if(tmp.length) {
-                const chain = tmp.splice(0);
-                if(name) {
-                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name) ? vh.get(name) : name});
-                  name = '';
-                }
-                value.push(chain);
-              }
-            }
-          }
-          parent.__define(row.synonym, {
-            value,
-            configurable: true,
-            enumerable: true,
-          });
-        }
-        else {
-          parent.__define(row.synonym, {
-            value: (row.elmnts._obj || row.elmnts).map((row) => {
-              if(_mgr) {
-                const value = _mgr.get(row.value, false, false);
-                if(!utils.is_empty_guid(row.elm)) {
-                  value._formula = row.elm;
-                }
-                return value;
-              }
-              else {
-                return row.value;
-              }
-            }),
-            configurable: true,
-            enumerable: true,
-            writable: true,
-          });
-        }
-      }
-      else if(row.predefined_name === 'abonent') {
-        const {by_ref} = $p.cch.properties;
-        row.elmnts.forEach((row) => {
-          const property = by_ref[row.property];
-          if(!property || !property.predefined_name) return;
-          const _mgr = property.type.is_ref && md.mgr_by_class_name(property.type.types[0]);
-          parent.__define(property.predefined_name, {
-            value: _mgr ? _mgr.get(row.value, false, false) : row.value,
-            configurable: true,
-            enumerable: true,
-            writable: true,
-          });
-        });
-      }
-      else {
-        parent.__define(row.synonym, {
-          value: _mgr ? _mgr.get(row.value, false, false) : row.value,
-          configurable: true,
-          enumerable: true,
-          writable: true,
-        });
-      }
-    }
-    else {
-      $p.record_log({
-        class: 'error',
-        note: `no parent for ${row.synonym}`,
-      });
-    }
-  }
-
-  load_array(aattr, forse) {
-    const {parents, _owner} = this;
-    const {job_prm} = _owner.$p;
-    const elmnts = [];
-    super.load_array(aattr, forse);
-    for (const row of aattr) {
-      if(row.is_folder && row.synonym) {
-        parents[row.ref] = row.synonym;
-        !job_prm[row.synonym] && job_prm.__define(row.synonym, {value: {}});
-      }
-    }
-  }
-
-}
-$p.cch.create('predefined_elmnts', CchPredefined_elmntsManager, false);
 class CchProperties extends CatObj{
 get shown(){return this._getter('shown')}
 set shown(v){this._setter('shown',v)}
@@ -981,6 +725,262 @@ class CchPropertiesManager extends ChartOfCharacteristicManager {
 
 }
 $p.cch.create('properties', CchPropertiesManager, false);
+class CchPredefined_elmnts extends CatObj{
+
+  get value() {
+    let {_obj, type, parent, synonym, _manager} = this;
+    const {utils, cch} = _manager._owner.$p;
+    let override = cch.properties.predefined(`${parent.synonym}/${synonym}`);
+    if(override) {
+      type = override.type;
+    }
+    const res = _obj ? _obj.value : '';
+
+    if(_obj.is_folder) {
+      return '';
+    }
+    if(typeof res == 'object') {
+      return res;
+    }
+    else if(type.is_ref) {
+      if(type.digits && typeof res === 'number') {
+        return res;
+      }
+      if(type.hasOwnProperty('str_len') && !utils.is_guid(res)) {
+        return res;
+      }
+      const mgr = _manager.value_mgr(_obj, 'value', type);
+      if(mgr) {
+        if(utils.is_data_mgr(mgr)) {
+          return mgr.get(res, false);
+        }
+        else {
+          return utils.fetch_type(res, mgr);
+        }
+      }
+      if(res) {
+        _manager._owner.$p.record_log(['value', type, _obj]);
+        return null;
+      }
+    }
+    else if(type.date_part) {
+      return utils.fix_date(res, true);
+    }
+    else if(type.digits && typeof res === 'number') {
+      return res;
+    }
+    else if(type.types.includes('boolean') && typeof res === 'boolean') {
+      return res;
+    }
+    else if(type.digits) {
+      return utils.fix_number(res, !type.hasOwnProperty('str_len'));
+    }
+    else if(type.types.includes('boolean')) {
+      return utils.fix_boolean(res);
+    }
+    else {
+      return _obj.value || '';
+    }
+
+    return this.characteristic.clr;
+  }
+  set value(v) {
+    const {_obj, _data, _manager} = this;
+    if(_obj.value !== v) {
+      _manager.emit_async('update', this, {value: _obj.value});
+      _obj.value = v.valueOf();
+      _data._modified = true;
+    }
+  }
+  get definition(){return this._getter('definition')}
+  set definition(v){this._setter('definition',v)}
+  get synonym(){return this._getter('synonym')}
+  set synonym(v){this._setter('synonym',v)}
+  get list(){return this._getter('list')}
+  set list(v){this._setter('list',v)}
+  get zone(){return this._getter('zone')}
+  set zone(v){this._setter('zone',v)}
+  get predefined_name(){return this._getter('predefined_name')}
+  set predefined_name(v){this._setter('predefined_name',v)}
+  get parent(){return this._getter('parent')}
+  set parent(v){this._setter('parent',v)}
+  get type(){const {type} = this._obj; return typeof type === 'object' ? type : {types: []}}
+  set type(v){this._obj.type = typeof v === 'object' ? v : {types: []}}
+  get elmnts(){return this._getter_ts('elmnts')}
+  set elmnts(v){this._setter_ts('elmnts',v)}}
+$p.CchPredefined_elmnts = CchPredefined_elmnts;
+class CchPredefined_elmntsElmntsRow extends TabularSectionRow{
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
+}
+$p.CchPredefined_elmntsElmntsRow = CchPredefined_elmntsElmntsRow;
+class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
+
+  constructor(owner, class_name) {
+    super(owner, class_name);
+    Object.defineProperty(this, 'parents', {
+      value: {}
+    });
+
+    const {md, doc, adapters} = this._owner.$p;
+
+    adapters.pouch.once('pouch_doc_ram_loaded', () => {
+      this.job_prms();
+      doc.calc_order.load_templates && setTimeout(doc.calc_order.load_templates.bind(doc.calc_order), 1000);
+      setTimeout(() => md.emit('predefined_elmnts_inited'), 100);
+    });
+  }
+
+  job_prms() {
+
+    for(const o of this) {
+      this.job_prm(o);
+    }
+
+    const {job_prm: {properties}} = this._owner.$p;
+    if(properties) {
+      const {calculated, width, length} = properties;
+      if(width && !width.is_calculated) {
+        calculated.push(width);
+        width._calculated_value = {execute: (obj) => obj && obj.calc_order_row && obj.calc_order_row.width || 0};
+      }
+      if(length && !length.is_calculated) {
+        calculated.push(length);
+        length._calculated_value = {execute: (obj) => obj && obj.calc_order_row && obj.calc_order_row.len || 0};
+      }
+    }
+  }
+
+  job_prm(row) {
+    if(row.is_folder || row._obj?.is_folder) {
+      return;
+    }
+    const {parents, _owner} = this;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
+    const parent = job_prm[parents[row.parent.valueOf()]];
+    const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
+
+    if(parent) {
+      if(parent.synonym === 'lists' || !row.synonym) {
+        return;
+      }
+      if(parent.hasOwnProperty(row.synonym)) {
+        delete parent[row.synonym];
+      }
+
+      if(row.list == -1) {
+        parent.__define(row.synonym, {
+          value: (() => {
+            const res = {};
+            (row.elmnts._obj || row.elmnts).forEach(({elm, value}) => {
+              if(elm !== undefined) {
+                res[elm.valueOf()] = _mgr ? _mgr.get(value, false, false) : value;
+              }
+            });
+            return res;
+          })(),
+          configurable: true,
+          enumerable: true,
+          writable: true,
+        });
+      }
+      else if(row.list) {
+        if(row.synonym === 'glass_chains') {
+          const value = [];
+          const tmp = [];
+          let name;
+          for(const elm of row.elmnts) {
+            if(elm.elm) {
+              name = elm.elm;
+            }
+            if(elm.value) {
+              tmp.push(igt.get(elm.value));
+            }
+            else {
+              if(tmp.length) {
+                const chain = tmp.splice(0);
+                if(name) {
+                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name) ? vh.get(name) : name});
+                  name = '';
+                }
+                value.push(chain);
+              }
+            }
+          }
+          parent.__define(row.synonym, {
+            value,
+            configurable: true,
+            enumerable: true,
+          });
+        }
+        else {
+          parent.__define(row.synonym, {
+            value: (row.elmnts._obj || row.elmnts).map((row) => {
+              if(_mgr) {
+                const value = _mgr.get(row.value, false, false);
+                if(!utils.is_empty_guid(row.elm)) {
+                  value._formula = row.elm;
+                }
+                return value;
+              }
+              else {
+                return row.value;
+              }
+            }),
+            configurable: true,
+            enumerable: true,
+            writable: true,
+          });
+        }
+      }
+      else if(row.predefined_name === 'abonent') {
+        const {by_ref} = $p.cch.properties;
+        row.elmnts.forEach((row) => {
+          const property = by_ref[row.property];
+          if(!property || !property.predefined_name) return;
+          const _mgr = property.type.is_ref && md.mgr_by_class_name(property.type.types[0]);
+          parent.__define(property.predefined_name, {
+            value: _mgr ? _mgr.get(row.value, false, false) : row.value,
+            configurable: true,
+            enumerable: true,
+            writable: true,
+          });
+        });
+      }
+      else {
+        parent.__define(row.synonym, {
+          value: _mgr ? _mgr.get(row.value, false, false) : row.value,
+          configurable: true,
+          enumerable: true,
+          writable: true,
+        });
+      }
+    }
+    else {
+      $p.record_log({
+        class: 'error',
+        note: `no parent for ${row.synonym}`,
+      });
+    }
+  }
+
+  load_array(aattr, forse) {
+    const {parents, _owner} = this;
+    const {job_prm} = _owner.$p;
+    const elmnts = [];
+    super.load_array(aattr, forse);
+    for (const row of aattr) {
+      if(row.is_folder && row.synonym) {
+        parents[row.ref] = row.synonym;
+        !job_prm[row.synonym] && job_prm.__define(row.synonym, {value: {}});
+      }
+    }
+  }
+
+}
+$p.cch.create('predefined_elmnts', CchPredefined_elmntsManager, false);
 class CatParams_links extends CatObj{
 get master(){return this._getter('master')}
 set master(v){this._setter('master',v)}

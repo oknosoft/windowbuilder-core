@@ -1927,6 +1927,18 @@ class Contour extends AbstractFilling(paper.Layer) {
       new Filling({row, parent: this.children.fillings});
     }
   }
+  createProfile({b, e, cnns}) {
+    const attr = {
+      parent: this.children.profiles,
+      generatrix: new paper.Path({insert: false, segments: [b, e]}),
+    };
+    const profile = new this.ProfileConstructor(attr);
+    if(cnns?.b?.profile) {
+    }
+    if(cnns?.e?.profile) {
+    }
+    return profile;
+  }
   static create(attr = {}) {
     let {kind, row, project, parent, layer} = attr;
     if(typeof kind === 'undefined') {
@@ -4180,6 +4192,24 @@ class Contour extends AbstractFilling(paper.Layer) {
   is_clr() {
     const white = $p.cat.clrs.predefined('Белый');
     return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
+  }
+  clear(interactive) {
+    if(interactive) {
+      this._removing = true;
+    }
+    for(const contour of this.contours) {
+      contour.remove();
+    }
+    for(const elm of this.fillings) {
+      elm.remove();
+    }
+    for(const elm of [...this.profiles].reverse()) {
+      elm.remove();
+    }
+    this.project.register_change();
+    if(interactive) {
+      delete this._removing;
+    }
   }
   on_remove_elm(elm) {
     if (this.layer) {
@@ -11529,7 +11559,7 @@ class Profile extends ProfileItem {
   }
   joined_nearests() {
     const res = [];
-    this.layer.contours.forEach((contour) => {
+    this.layer?.contours?.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this) {
           res.push(profile);

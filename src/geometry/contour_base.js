@@ -161,6 +161,21 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
+  createProfile({b, e, cnns}) {
+    const attr = {
+      parent: this.children.profiles,
+      generatrix: new paper.Path({insert: false, segments: [b, e]}),
+    };
+    const profile = new this.ProfileConstructor(attr);
+    if(cnns?.b?.profile) {
+      
+    }
+    if(cnns?.e?.profile) {
+
+    }
+    return profile;
+  }
+
   /**
    *
    * @param attr
@@ -2999,7 +3014,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   /**
    * Возаращает линию, проходящую через ручку
    * @param elm {Profile}
-   * @return {paper.Profile}
+   * @return {paper.Path}
    */
   handle_line(elm) {
 
@@ -3279,6 +3294,30 @@ class Contour extends AbstractFilling(paper.Layer) {
   is_clr() {
     const white = $p.cat.clrs.predefined('Белый');
     return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
+  }
+
+  /**
+   * @summary Удаляет всех детей слоя
+   * @param {Boolean} [interactive]
+   */
+  clear(interactive) {
+    if(interactive) {
+      this._removing = true;
+    }
+    for(const contour of this.contours) {
+      contour.remove();
+    }
+    for(const elm of this.fillings) {
+      elm.remove();
+    }
+    for(const elm of [...this.profiles].reverse()) {
+      elm.remove();
+    }
+    //this.project.l_dimensions.clear(this);
+    this.project.register_change();
+    if(interactive) {
+      delete this._removing;
+    }
   }
 
   /**

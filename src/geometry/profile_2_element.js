@@ -255,7 +255,7 @@ class Profile extends ProfileItem {
   joined_nearests() {
     const res = [];
 
-    this.layer.contours.forEach((contour) => {
+    this.layer?.contours?.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this) {
           res.push(profile);
