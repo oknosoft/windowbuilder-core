@@ -146,11 +146,7 @@ export const meta = {
         choiceParams: [
           {
             name: "ref",
-            path: [
-              "Импост",
-              "Раскладка",
-              "Рама"
-            ]
+            path: ["Импост", "Рама"]
           }
         ],
         choiceGrp: "elm",

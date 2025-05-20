@@ -136,12 +136,21 @@ export class Scheme extends paper.Project {
   
   clear() {
     const {contours, dimensions, rootLayer, props} = this;
-    for(const contour of contours) {
-      contour.remove();
+    const {loading} = props;
+    if(!loading) {
+      props.loading = true;
     }
-    rootLayer.clear();
-    dimensions.clear();
-    dimensions.removeChildren();
+    try{
+      for(const layer of contours) {
+        layer.remove();
+      }
+      rootLayer.clear();
+      dimensions.clear();
+      dimensions.removeChildren();
+    }
+    catch (e) {
+      props.loading = loading;
+    }
     return this;
   }
 

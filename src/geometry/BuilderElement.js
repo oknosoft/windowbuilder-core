@@ -357,7 +357,11 @@ export class BuilderElement extends paper.Group {
    * @summary Удаляет элемент из иерархии проекта
    */
   remove() {
-    const {project, layer} = this;
+    let {project, layer} = this;
+    const owner = this.raw('owner');
+    if(owner?.is?.('Contour')) {
+      layer = owner;
+    }
     super.remove();
     if(layer && !project.props.loading) {
       if(layer.isInserted() && !layer._removing) {

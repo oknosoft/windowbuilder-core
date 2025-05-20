@@ -108,7 +108,8 @@ export class Props3D {
   }
   
   get bindable() {
-    return paper.project.contours.length > 1;
+    //const {project, layer} = this.owner;
+    return this.owner.project.contours.length > 1;
   }
   
   get bind() {

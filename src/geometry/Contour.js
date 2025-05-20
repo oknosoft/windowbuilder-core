@@ -238,29 +238,31 @@ export class Contour extends paper.Layer {
     return layer ? openTypes.get(this.#raw.openType) : openTypes.get();
   }
   set openType(v) {
-    let {openType} = this.#raw; 
-    this.#raw.openType = v;
-    this.project.props.registerChange(this, {openType});
-    openType = this.openType;
-    
-    if(this.furn.open_type !== openType) {
-      const furns = this.furns();
-      for(const [furn, {by_default, forcibly}] of furns) {
-        if(by_default || forcibly) {
-          this.#raw.furn = furn;
-          break;
-        }
-      }
+    let {openType} = this.#raw;
+    if(openType != v) {
+      this.#raw.openType = v;
+      this.project.props.registerChange(this, {openType});
+      openType = this.openType;
+
       if(this.furn.open_type !== openType) {
-        if(furns.size) {
-          for(const [furn] of furns) {
-            this.#raw.furn = furn;
+        const furns = this.furns();
+        for(const [furn, {by_default, forcibly}] of furns) {
+          if(by_default || forcibly) {
+            this.furn = furn;
             break;
           }
         }
-      }
-      if(this.furn.open_type !== openType && !this.furn.empty()) {
-        this.#raw.furn = null;
+        if(this.furn.open_type !== openType) {
+          if(furns.size) {
+            for(const [furn] of furns) {
+              this.furn = furn;
+              break;
+            }
+          }
+        }
+        if(this.furn.open_type !== openType && !this.furn.empty()) {
+          this.furn = null;
+        }
       }
     }
   }
@@ -750,8 +752,12 @@ export class Contour extends paper.Layer {
     return level > 0 ? furns.get(this.#raw.furn) : furns.get();
   }
   set furn(v) {
-    this.#raw.furn = v;
-    this.project.props.registerChange();
+    let {furn} = this.#raw;
+    if(furn != v) {
+      this.#raw.furn = v;
+      this.updateHandleHeight();
+      this.project.props.registerChange(this, {furn});
+    }
   }
 
   /**
@@ -1039,6 +1045,5 @@ export class Contour extends paper.Layer {
     if(!error && !furn.empty()) {
       furn.calculateSpec({specification, layer: this, weight, cache});
     }
-    this.children.visualization.drawSpec();
   }
 }
