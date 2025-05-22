@@ -180,7 +180,12 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
         // добавляем размеры
         if(this.x && this.y) {
-          name += '/' + this.x.toFixed(0) + 'x' + this.y.toFixed(0);
+          if($p.job_prm.builder.flip_yx) {
+            name += '/' + this.y.toFixed(0) + 'x' + this.x.toFixed(0);
+          }
+          else {
+            name += '/' + this.x.toFixed(0) + 'x' + this.y.toFixed(0);
+          }
         }
         else if(this.x) {
           name += '/' + this.x.toFixed(0);
@@ -239,7 +244,12 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
     // добавляем размеры
     if(x && y) {
-      main.push(x.toFixed(0) + 'x' + y.toFixed(0));
+      if($p.job_prm.builder.flip_yx) {
+        main.push(y.toFixed(0) + 'x' + x.toFixed(0));
+      }
+      else {
+        main.push(x.toFixed(0) + 'x' + y.toFixed(0));
+      }
     }
     else if(x) {
       main.push(x.toFixed(0));
