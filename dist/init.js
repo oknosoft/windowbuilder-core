@@ -1999,6 +1999,8 @@ get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
 get css(){return this._getter('css')}
 set css(v){this._setter('css',v)}
+get shortcut(){return this._getter('shortcut')}
+set shortcut(v){this._setter('shortcut',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -2130,12 +2132,16 @@ get vat_consider(){return this._getter('vat_consider')}
 set vat_consider(v){this._setter('vat_consider',v)}
 get days_without_pay(){return this._getter('days_without_pay')}
 set days_without_pay(v){this._setter('days_without_pay',v)}
+get invalid(){return this._getter('invalid')}
+set invalid(v){this._setter('invalid',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+get condition(){return this._getter_ts('condition')}
+set condition(v){this._setter_ts('condition',v)}
 
 
   save(attr) {
@@ -2156,6 +2162,13 @@ get txt_row(){return this._getter('txt_row')}
 set txt_row(v){this._setter('txt_row',v)}
 }
 $p.CatContractsExtra_fieldsRow = CatContractsExtra_fieldsRow;
+class CatContractsConditionRow extends TabularSectionRow{
+get nom_group(){return this._getter('nom_group')}
+set nom_group(v){this._setter('nom_group',v)}
+get rate(){return this._getter('rate')}
+set rate(v){this._setter('rate',v)}
+}
+$p.CatContractsConditionRow = CatContractsConditionRow;
 $p.cat.create('contracts');
 class CatNom_units extends CatObj{
 get qualifier_unit(){return this._getter('qualifier_unit')}
@@ -2354,6 +2367,8 @@ get vat_rate(){return this._getter('vat_rate')}
 set vat_rate(v){this._setter('vat_rate',v)}
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
+get shortcut(){return this._getter('shortcut')}
+set shortcut(v){this._setter('shortcut',v)}
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
 get len(){return this._getter('len')}
@@ -3152,6 +3167,8 @@ get show_flipped(){return this._getter('show_flipped')}
 set show_flipped(v){this._setter('show_flipped',v)}
 get show_ii(){return this._getter('show_ii')}
 set show_ii(v){this._setter('show_ii',v)}
+get show_long_short(){return this._getter('show_long_short')}
+set show_long_short(v){this._setter('show_long_short',v)}
 get glass_thickness(){return this._getter('glass_thickness')}
 set glass_thickness(v){this._setter('glass_thickness',v)}
 get furn_level(){return this._getter('furn_level')}
@@ -8451,6 +8468,8 @@ get ordn(){return this._getter('ordn')}
 set ordn(v){this._setter('ordn',v)}
 get changed(){return this._getter('changed')}
 set changed(v){this._setter('changed',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.DocCalc_orderProductionRow = DocCalc_orderProductionRow;
 class DocCalc_orderContact_informationRow extends TabularSectionRow{
@@ -8500,6 +8519,12 @@ get is_supplier(){return this._getter('is_supplier')}
 set is_supplier(v){this._setter('is_supplier',v)}
 get invoice(){return this._getter('invoice')}
 set invoice(v){this._setter('invoice',v)}
+get rate(){return this._getter('rate')}
+set rate(v){this._setter('rate',v)}
+get amount(){return this._getter('amount')}
+set amount(v){this._setter('amount',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.DocCalc_orderOrdersRow = DocCalc_orderOrdersRow;
 class DocCalc_orderManager extends DocManager {
@@ -9396,6 +9421,8 @@ get grid(){return this._getter('grid')}
 set grid(v){this._setter('grid',v)}
 get region(){return this._getter('region')}
 set region(v){this._setter('region',v)}
+get mode(){return this._getter('mode')}
+set mode(v){this._setter('mode',v)}
 }
 $p.DpBuilder_pen = DpBuilder_pen;
 $p.dp.create('builder_pen');
