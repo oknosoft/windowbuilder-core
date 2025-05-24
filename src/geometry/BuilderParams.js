@@ -82,7 +82,7 @@ export class BuilderParams extends OwnerObj {
   appendList(res, tabular) {
     const context = this.context();
     tabular.findRows({hide: false}, ({grouping, param}) => {
-      if((!param.isCalculated || param.show_calculated)) {
+      if((!param.isCalculated || param.showcalc)) {
         // TODO: сокрытие по связям
         const links = param.paramsLinks(context);
         if(links.some((link) => link.hide)){

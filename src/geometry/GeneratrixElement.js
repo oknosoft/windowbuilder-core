@@ -532,8 +532,8 @@ export class GeneratrixElement extends BuilderElement {
    * @desc Уточняет цвет, вставку и параметры
    */
   defaults() {
-    const {layer: {sys}, elmType, inset} = this;
-    const inserts = sys.inserts({elmTypes: elmType, elm: this});
+    const {layer: {sys}, inset} = this;
+    const inserts = sys.inserts({elm: this});
     if(inserts.length && !inserts.includes(inset)) { // || checkActual
       this.inset = inserts[0];
     }    

@@ -93,7 +93,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
           this._usedParams = res = new Set();
           const {specification, selection_params, product_params} = this;
           const use = cch.properties.predefined('use');
-          const {cx_prm} = enm.predefined_formulas;
+          const {cx_prm} = enm.predefinedFormulas;
           const {order, product, nearest} = enm.planDetailing;
 
           for(const {param, origin, elm} of this.selection_params) {
@@ -111,7 +111,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
                 res.add(prm);
               }
             }
-            else if(!param.isCalculated || param.show_calculated){
+            else if(!param.isCalculated || param.showcalc){
               res.add(param);
             }
           }
@@ -129,7 +129,7 @@ export default function depositeSpecificationRow({CatObj, TabularSectionRow, get
 
           if(product_params) {
             for(const {param} of product_params) {
-              if(!param.empty() && (!param.isCalculated || param.show_calculated)){
+              if(!param.empty() && (!param.isCalculated || param.showcalc)){
                 res.add(param);
               }
             }

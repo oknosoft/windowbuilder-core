@@ -32,7 +32,11 @@ export function classes({enm, cat, classes, symbols}, exclude)  {
       const noms = [];
       const pos = elm?.pos || enm.positions.any;
       if(elm && !elmTypes) {
-        elmTypes = [elm.elmType];
+        const {elmType} = elm;
+        elmTypes = [elmType];
+        if(elmType.is('impost') && elm.orientation.is('vert') && !elm.layer.level) {
+          elmTypes.push(elmType._manager.shtulp)
+        }
       }
       this.elmnts.findRows({elm_type: elmTypes}, row => {
         if(pos.eq(row.pos)) {

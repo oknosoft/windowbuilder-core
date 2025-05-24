@@ -85,8 +85,38 @@ function loadLayer(layer, raw, crow, Path) {
           profile = layer.createProfile({...rib, inset: row.inset, cnns});
         }
       }
+      else {
+        const find = () => {
+          const generatrix = new layer.project._scope.Path({insert: false,  pathData: row.path_data});
+          let b, e, db = Infinity, de = Infinity;
+          for(const curr of profiles) {
+            const pt = generatrix.intersectPoint(curr.generatrix, null, 200);
+            if(pt) {
+              const cb = pt.getDistance(generatrix.firstSegment.point, true);
+              if(db > cb) {
+                b = pt;
+                db = cb;
+              }
+              const ce = pt.getDistance(generatrix.lastSegment.point, true);
+              if(de > ce) {
+                e = pt;
+                de = ce;
+              }
+            }
+          }
+          return generatrix.getSubPath(b, e);
+        }
+        profile = layer.createProfile({
+          b: [row.x1, row.y1],
+          e: [row.x2, row.y2],
+          generatrix: find(),
+          inset: row.inset,
+          cnns,
+          elmType: elmTypes.get(row.elm_type),
+        });
+      }
     }
-    else {
+    if(!profile) {
       profile = layer.createProfile({
         b: [row.x1, row.y1],
         e: [row.x2, row.y2],
