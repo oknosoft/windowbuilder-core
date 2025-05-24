@@ -14,6 +14,7 @@ export function load21(raw) {
   loadLayer(rootLayer, raw, {cnstr: 0}, Path);
   props.loading = false;
   props.registerChange();
+  this.calculateSpec();
   this.redraw();
   this.zoomFit();
 }
@@ -56,7 +57,7 @@ function findContainer(layer, raw, crow, Path) {
 }
 
 function loadLayer(layer, raw, crow, Path) {
-  const {elmTypes} = layer.project.root.enm;
+  const {enm: {elmTypes}, cch: {properties}} = layer.project.root;
   const profiles = [];
   const container = crow.parent ? layer.container : null;
   const pathInner = container ? container.pathInner : null;
@@ -137,6 +138,19 @@ function loadLayer(layer, raw, crow, Path) {
     }
   }
   layer.containers.sync();
+  if(crow.parent) {
+    layer.direction = crow.direction;
+    layer.furn = crow.furn;
+    layer.openType = layer.furn.open_type;
+    const context = layer.params.context();
+    for(const prow of raw.params.filter((row) => row.cnstr === crow.cnstr)) {
+      const param = properties.get(prow.param);
+      const value = layer.params.get(param, context);
+      if(value != prow.value) {
+        layer.params.set(param, prow.value);
+      }
+    }
+  }
   for(const row of raw.constructions.filter((row) => row.parent === crow.cnstr)) {
     const container = findContainer(layer, raw, row, Path);
     if(container) {
