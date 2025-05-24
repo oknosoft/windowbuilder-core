@@ -176,18 +176,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   before_save(attr) {
 
     const {ui, utils, adapters: {pouch}, wsql, md, enm: {
-      obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен},
+      obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен, Архив},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
     const  {blank, moment} = utils;
 
     //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
     //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
-    const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp} = this;
+    const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp, _deleted} = this;
     const must_be_saved = ![Подтвержден, Отправлен].includes(obj_delivery_state);
 
     // если установлен признак проведения, проверим состояние транспорта
-    if(this.posted) {
+    if(_deleted) {
+      this.obj_delivery_state = Архив;
+    }
+    else if(this.posted) {
       if([Отклонен, Отозван, Шаблон].includes(obj_delivery_state)) {
         ui?.dialogs?.alert({
           text: 'Нельзя провести заказ со статусом<br/>"Отклонён", "Отозван" или "Шаблон"',
@@ -271,6 +274,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     // фильтр по статусу
+    if(_deleted || obj_delivery_state == Архив) {
+      _obj.state = 'zarchive';
+    }
     if(obj_delivery_state == Шаблон) {
       _obj.state = 'template';
       // Шаблоны имеют дополнительное свойство, в котором можно задать доступные системы
@@ -295,9 +301,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     else if(obj_delivery_state == Подтвержден) {
       _obj.state = 'confirmed';
-    }
-    else if(obj_delivery_state == 'Архив') {
-      _obj.state = 'zarchive';
     }
     else {
       _obj.state = 'draft';
@@ -796,12 +799,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   product_rows(save, attr) {
     let res = [], weight = 0;
-    const {production, partner, obj_delivery_state, department} = this;
+    const {production, partner, obj_delivery_state, department, _deleted} = this;
     const {utils, wsql} = $p;
     const user = wsql.get_user_param('user_name');    
     this.production.forEach(({row, characteristic, quantity}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
-        if(characteristic.product !== row || characteristic._modified ||
+        if(characteristic.product !== row || 
+          characteristic._modified ||
+          characteristic._deleted !== _deleted ||
           characteristic.partner !== partner ||
           characteristic.obj_delivery_state !== obj_delivery_state ||
           characteristic.department !== department) {
@@ -810,6 +815,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.obj_delivery_state = obj_delivery_state;
           characteristic.partner = partner;
           characteristic.department = department;
+          characteristic._deleted = _deleted;
 
           if(!characteristic.owner.empty()) {
             if(save) {
