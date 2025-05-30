@@ -1740,6 +1740,7 @@ const AbstractFilling = (superclass) => class extends superclass {
     };
     const res = {};
     const ares = [];
+    const mid = profiles.length < 3;
     function by_side(name) {
       ares.some((elm) => {
         if(elm[name] == bounds[name]){
@@ -1747,12 +1748,13 @@ const AbstractFilling = (superclass) => class extends superclass {
           return true;
         }
       })
-    };
+    }
     if (profiles.length) {
       profiles.forEach((profile) => {
         const {b, e} = profile;
-        const x = b.x + e.x;
-        const y = b.y + e.y;
+        const correction = mid ? profile.interiorPoint() : {x: 0, y: 0};
+        const x = b.x + e.x + correction.x;
+        const y = b.y + e.y + correction.y;
         if(x < bounds.left){
           bounds.left = x;
         }
