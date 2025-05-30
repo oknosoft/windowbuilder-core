@@ -1983,7 +1983,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       attr.row.kind = kind;
     }
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
-    project.l_visualization.bringToFront();
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }
@@ -10998,6 +10997,133 @@ class ProfileItem extends GeneratrixElement {
       strokeScaling: false,
     })
   }
+  draw_articles(kind) {
+    let {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
+    if(typeof kind === 'number') {
+      articles = kind;
+    }
+    if(articles && nom.width > 2 && layer.visible && !layer.hidden) {
+      const impost = this.elm_type.is('impost');
+      let {level} = layer;
+      const nearest = this.nearest();
+      if(level === 1 && layer.layer instanceof ContourVirtual && nearest?.nom?.width < 2) {
+        level = 0;
+      }
+      const ray = impost ? generatrix : (level ? inner : outer);
+      const offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4); 
+      const p0 = ray.getPointAt(offset);
+      let font_move = this.elm_type.is('impost') ? consts.font_size / 4 : (nom.width > 30 ? consts.font_size / 5 : -consts.font_size / 1.1);
+      if(nearest?.joined_nearests()?.some(v => v !== this &&
+        (v.b.is_nearest(this.b, 100) && v.e.is_nearest(this.e, 100) || v.e.is_nearest(this.b, 100) && v.b.is_nearest(this.e, 100))
+      )) {
+        font_move -= 26;
+      }
+      const position = p0.add(outer.getNormalAt(offset).multiply(level ? font_move : -font_move));
+      let flip = false;
+      let angle = angle_hor;
+      if(Math.abs(angle - 180) < 1) {
+        angle = 0;
+        flip = true;
+      }
+      else if(Math.abs(angle - 90) < 1) {
+        angle = -90;
+      }
+      else if(Math.abs(angle - 270) < 1) {
+        flip = true;
+      }
+      let content = '→ ', c2 = ' ←';
+      switch (articles) {
+        case 1:
+          if(flip) {
+            content = elm.toFixed();
+            if(kind !== 1) {
+              content += c2;
+            }
+          }
+          else {
+            if(kind === 1) {
+              content = elm.toFixed();
+            }
+            else {
+              content += elm.toFixed();
+            }
+          }
+          break;
+        case 2:
+          if(flip) {
+            content = (inset.article || inset.name) + c2;
+          }
+          else {
+            content += inset.article || inset.name;
+          }
+          break;
+        case 3:
+          if(flip) {
+            content = (nom.article || nom.name) + c2;
+          }
+          else {
+            content += nom.article || nom.name;
+          }
+          break;
+        case 4:
+          if(flip) {
+            content = `${elm.toFixed()} ${inset.article || inset.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${inset.article || inset.name}`;
+          }
+          break;
+        case 5:
+          if(flip) {
+            content = `${elm.toFixed()} ${nom.article || nom.name}${c2}`;
+          }
+          else {
+            content += `${elm.toFixed()} ${nom.article || nom.name}`;
+          }
+          break;
+      }
+      if(!l_dimensions.articles.map.has(this)) {
+        const parent = new paper.Group({parent: l_dimensions.articles});
+        new paper.Path.Rectangle({
+          parent,
+          name: 'back',
+          guide: true,
+          point: position,
+          size: [consts.font_size, consts.font_size],
+          strokeColor: '#ccc',
+          fillColor: 'white',
+          strokeScaling: false,
+          opacity: 0.8,
+        });
+        new TextUnselectable({
+          parent,
+          name: 'article',
+          guide: true,
+          fontFamily: consts.font_family,
+          fontSize: consts.font_size,
+          justification: 'center',
+          fillColor: 'black',
+        });
+        l_dimensions.articles.map.set(this, parent);
+      }
+      const {children} = l_dimensions.articles.map.get(this);
+      children.article.content = content;
+      children.article.position = position;
+      children.article.rotation = angle;
+      const size = children.article.bounds.size.add(20);
+      children.back.segments[0].point = position.add([-size.width/2, size.height/2]);
+      children.back.segments[1].point = position.add([-size.width/2, -size.height/2]);
+      children.back.segments[2].point = position.add([size.width/2, -size.height/2]);
+      children.back.segments[3].point = position.add([size.width/2, size.height/2]);
+    }
+    else {
+      if(l_dimensions?.articles?.map?.has?.(this)) {
+        l_dimensions.articles.map.get(this).remove();
+        l_dimensions.articles.map.delete(this);
+      }
+    }
+    return this;
+  }
   corns(corn) {
     const {_corns} = this._attr;
     if(typeof corn == 'number') {
@@ -11664,133 +11790,6 @@ class Profile extends ProfileItem {
       }
     });
   }
-  draw_articles(kind) {
-    let {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
-    if(typeof kind === 'number') {
-      articles = kind;
-    }
-    if(articles && nom.width > 2 && layer.visible && !layer.hidden) {
-      const impost = this.elm_type.is('impost');
-      let {level} = layer;
-      const nearest = this.nearest();
-      if(level === 1 && layer.layer instanceof ContourVirtual && nearest?.nom?.width < 2) {
-        level = 0;
-      }
-      const ray = impost ? generatrix : (level ? inner : outer);
-      const offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4); 
-      const p0 = ray.getPointAt(offset);
-      let font_move = this.elm_type.is('impost') ? consts.font_size / 4 : (nom.width > 30 ? consts.font_size / 5 : -consts.font_size / 1.1);
-      if(nearest?.joined_nearests()?.some(v => v !== this && 
-        (v.b.is_nearest(this.b, 100) && v.e.is_nearest(this.e, 100) || v.e.is_nearest(this.b, 100) && v.b.is_nearest(this.e, 100))
-      )) {
-        font_move -= 26;
-      }
-      const position = p0.add(outer.getNormalAt(offset).multiply(level ? font_move : -font_move));
-      let flip = false;
-      let angle = angle_hor;
-      if(Math.abs(angle - 180) < 1) {
-        angle = 0;
-        flip = true;
-      }
-      else if(Math.abs(angle - 90) < 1) {
-        angle = -90;
-      }
-      else if(Math.abs(angle - 270) < 1) {
-        flip = true;
-      }
-      let content = '→ ', c2 = ' ←';
-      switch (articles) {
-        case 1:
-          if(flip) {
-            content = elm.toFixed();
-            if(kind !== 1) {
-              content += c2;
-            }
-          }
-          else {
-            if(kind === 1) {
-              content = elm.toFixed();
-            }
-            else {
-              content += elm.toFixed();
-            }
-          }
-          break;
-        case 2:
-          if(flip) {
-            content = (inset.article || inset.name) + c2;
-          }
-          else {
-            content += inset.article || inset.name;
-          }
-          break;
-        case 3:
-          if(flip) {
-            content = (nom.article || nom.name) + c2;
-          }
-          else {
-            content += nom.article || nom.name;
-          }
-          break;
-        case 4:
-          if(flip) {
-            content = `${elm.toFixed()} ${inset.article || inset.name}${c2}`;
-          }
-          else {
-            content += `${elm.toFixed()} ${inset.article || inset.name}`;
-          }
-          break;
-        case 5:
-          if(flip) {
-            content = `${elm.toFixed()} ${nom.article || nom.name}${c2}`;
-          }
-          else {
-            content += `${elm.toFixed()} ${nom.article || nom.name}`;
-          }
-          break;
-      }
-      if(!l_dimensions.articles.map.has(this)) {
-        const parent = new paper.Group({parent: l_dimensions.articles});
-        new paper.Path.Rectangle({
-          parent,
-          name: 'back',
-          guide: true,
-          point: position,
-          size: [consts.font_size, consts.font_size],
-          strokeColor: '#ccc',
-          fillColor: 'white',
-          strokeScaling: false,
-          opacity: 0.8,
-        });
-        new TextUnselectable({
-          parent,
-          name: 'article',
-          guide: true,
-          fontFamily: consts.font_family,
-          fontSize: consts.font_size,
-          justification: 'center',
-          fillColor: 'black',
-        });
-        l_dimensions.articles.map.set(this, parent);
-      }
-      const {children} = l_dimensions.articles.map.get(this);
-      children.article.content = content;
-      children.article.position = position;
-      children.article.rotation = angle;
-      const size = children.article.bounds.size.add(20);
-      children.back.segments[0].point = position.add([-size.width/2, size.height/2]);
-      children.back.segments[1].point = position.add([-size.width/2, -size.height/2]);
-      children.back.segments[2].point = position.add([size.width/2, -size.height/2]);
-      children.back.segments[3].point = position.add([size.width/2, size.height/2]);
-    }
-    else {
-      if(l_dimensions?.articles?.map?.has?.(this)) {
-        l_dimensions.articles.map.get(this).remove();
-        l_dimensions.articles.map.delete(this);
-      }
-    }
-    return this;
-  }
   redraw() {
     super.redraw();
     return this.draw_articles();
@@ -12425,6 +12424,10 @@ class ProfileConnective extends ProfileItem {
       }
       this.setSelection(selected);
     }
+  }
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
   }
   remove() {
     const postprocess = {imposts: new Map(), sub: new Set()};
@@ -13947,10 +13950,14 @@ class Scheme extends paper.Project {
         elm && elm.draw_fragment && elm.draw_fragment(true);
       } 
       else {
-        this.l_connective.redraw();
+        const {l_connective} = this;
+        l_connective.redraw();
         isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
         for (let contour of contours) {
           contour.redraw();
+          if(l_connective.isBelow(contour)) {
+            l_connective.insertAbove(contour);
+          }
           if (_ch.length > length) {
             return;
           }
@@ -13960,11 +13967,11 @@ class Scheme extends paper.Project {
       contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
     }
     this.draw_sizes();
-    if(this.l_connective.isBelow(this.l_dimensions)) {
-      this.l_connective.insertAbove(this.l_dimensions);
-    }
     if(this.l_visualization.isBelow(this.l_connective)) {
       this.l_visualization.insertAbove(this.l_connective);
+    }
+    if(this.l_dimensions.isBelow(this.l_visualization)) {
+      this.l_dimensions.insertAbove(this.l_visualization);
     }
     this.view.update();
     _ch.length = 0;

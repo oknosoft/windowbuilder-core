@@ -225,6 +225,10 @@ class ProfileConnective extends ProfileItem {
     }
   }
 
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
+  }
 
   /**
    * Удаляет элемент из контура и иерархии проекта

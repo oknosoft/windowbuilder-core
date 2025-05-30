@@ -854,7 +854,8 @@ class Scheme extends paper.Project {
       } 
       else {
         // перерисовываем соединительные профили
-        this.l_connective.redraw();
+        const {l_connective} = this;
+        l_connective.redraw();
 
         // TODO: обновляем связи параметров изделия
         isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
@@ -862,6 +863,9 @@ class Scheme extends paper.Project {
         // перерисовываем все контуры
         for (let contour of contours) {
           contour.redraw();
+          if(l_connective.isBelow(contour)) {
+            l_connective.insertAbove(contour);
+          }
           if (_ch.length > length) {
             return;
           }
@@ -875,11 +879,11 @@ class Scheme extends paper.Project {
     
     // перерисовываем габаритные размерные линии изделия
     this.draw_sizes();
-    if(this.l_connective.isBelow(this.l_dimensions)) {
-      this.l_connective.insertAbove(this.l_dimensions);
-    }
     if(this.l_visualization.isBelow(this.l_connective)) {
       this.l_visualization.insertAbove(this.l_connective);
+    }
+    if(this.l_dimensions.isBelow(this.l_visualization)) {
+      this.l_dimensions.insertAbove(this.l_visualization);
     }
 
     // обновляем изображение на экране

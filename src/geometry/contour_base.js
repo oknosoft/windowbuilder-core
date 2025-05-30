@@ -227,7 +227,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     // оповещаем мир о новых слоях
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
-    project.l_visualization.bringToFront();
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }
