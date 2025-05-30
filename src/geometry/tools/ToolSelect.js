@@ -314,7 +314,6 @@ export class ToolSelect extends ToolSelectable {
         }
       }
       if(rm) {
-        project.redraw();
         this.mousemove(ev);
       }
     }
@@ -345,7 +344,6 @@ export class ToolSelect extends ToolSelectable {
         mover.prepareMovePoints();
         mover.tryMovePoints(pt, delta, modifiers.shift);
         mover.applyMovePoints();
-        project.redraw();
       }
     }
   }

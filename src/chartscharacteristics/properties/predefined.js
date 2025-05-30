@@ -44,8 +44,7 @@ export function predefined(root) {
             break;
             
           case 'sys':
-            _data._formula = function (obj) {
-              let {elm, layer, project} = obj;
+            _data._formula = function ({elm, layer, project}) {
               if(!layer && elm) {
                 layer = elm.layer;
               }
@@ -119,8 +118,7 @@ export function predefined(root) {
             break;
 
           case 'layer_weight':
-            _data._formula = function (obj) {
-              let {project, elm, layer, prm_row} = obj;
+            _data._formula = function ({project, elm, layer}) {
               if(!layer && elm) {
                 layer = elm.layer;
               }
@@ -444,23 +442,11 @@ export function predefined(root) {
             break;
 
           case 'branch':
-            _data._formula = function ({elm, layer, ox, calc_order}) {
-              if(!calc_order && ox) {
-                calc_order = ox.calc_order;
+            _data._formula = function ({elm, layer, project}) {
+              if(!project) {
+                project = (elm || layer).project;
               }
-              else if(!calc_order && layer) {
-                calc_order = layer._ox.calc_order;
-              }
-              else if(!calc_order && elm) {
-                calc_order = elm.ox.calc_order;
-              }
-
-              const prow = (ox || layer?._ox || elm?.ox).params.find({param: prm});
-              if(prow && !prow.value.empty()) {
-                return prow.value;
-              }
-              const branch = calc_order.organization._extra(prm);
-              return branch && !branch.empty() ? branch : calc_order.manager.branch;
+              return project.branch;
             };
             break;
             
