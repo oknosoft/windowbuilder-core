@@ -405,7 +405,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const max = Math.max(pbounds.width, pbounds.height);
     let fontSize = elm_font_size * (2 / 3);
     if(max > 3000) {
-      fontSize += fontSize * (max - 3000) / 3000;
+      fontSize *= 1.2;
     }
     const maxTextWidth = 900;
     path.visible = true;

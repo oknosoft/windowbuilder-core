@@ -6675,7 +6675,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const max = Math.max(pbounds.width, pbounds.height);
     let fontSize = elm_font_size * (2 / 3);
     if(max > 3000) {
-      fontSize += fontSize * (max - 3000) / 3000;
+      fontSize *= 1.2;
     }
     const maxTextWidth = 900;
     path.visible = true;
@@ -11675,8 +11675,8 @@ class Profile extends ProfileItem {
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
   }
   beforeRemove() {
-    const {project} = this;
-    if(project?._attr && !project._attr._loading && (this.joined_imposts(true) || this.joined_nearests().length)) {
+    const {project, layer} = this;
+    if(project?._attr && !project._attr._loading && !layer?._removing && (this.joined_imposts(true) || this.joined_nearests().length)) {
       $p.ui?.dialogs?.alert?.({
         title: `Профиль №${this.elm}`,
         text: 'Удаление невозможно, есть примыкающие элементы',

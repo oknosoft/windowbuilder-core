@@ -237,8 +237,8 @@ class Profile extends ProfileItem {
   }
 
   beforeRemove() {
-    const {project} = this;
-    if(project?._attr && !project._attr._loading && (this.joined_imposts(true) || this.joined_nearests().length)) {
+    const {project, layer} = this;
+    if(project?._attr && !project._attr._loading && !layer?._removing && (this.joined_imposts(true) || this.joined_nearests().length)) {
       $p.ui?.dialogs?.alert?.({
         title: `Профиль №${this.elm}`,
         text: 'Удаление невозможно, есть примыкающие элементы',
