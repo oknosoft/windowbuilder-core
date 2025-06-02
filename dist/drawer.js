@@ -19353,6 +19353,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
+        case 'has_addition':
+          _data._formula = function ({elm, layer}) {
+            return Boolean(elm?.addls?.length);
+          };
+          break;
         case 'thickness':
           _data._formula = function ({elm, prm_row}) {
             return elm.thickness;
@@ -19666,6 +19671,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'has_glasses',     
     'has_glasses_separately',
     'has_glasses_outer', 
+    'has_addition',    
     'elm_weight',      
     'elm_orientation', 
     'elm_pos',         

@@ -201,6 +201,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'has_addition':
+          _data._formula = function ({elm, layer}) {
+            return Boolean(elm?.addls?.length);
+          };
+          break;
+          
         case 'thickness':
           _data._formula = function ({elm, prm_row}) {
             return elm.thickness;
@@ -545,6 +551,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'has_glasses',      // бит в заказе есть заполнения
     'has_glasses_separately',// бит в заказе есть заполнения отдельно
     'has_glasses_outer',  //  бит к профилю примыкает заполнение с другой стороны
+    'has_addition',     // бит есть добор у текущего профиля
     'elm_weight',       // масса элемента
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
