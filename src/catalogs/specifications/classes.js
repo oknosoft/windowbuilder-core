@@ -107,6 +107,45 @@ export function classes({cat, classes, symbols}, exclude)  {
     set amount_marged(v){this[set]('amount_marged',v)}
     get origin(){return this[get]('origin')}
     set origin(v){this[set]('origin',v)}
+    
+    postCalc(attr) {
+      const {nom} = this;
+      const {basis, elm, layer, rawLength, ...other} = attr;
+      const len = rawLength || elm?.length || 0;
+
+      if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
+        if(!basis.coefficient || !len) {
+          this.qty = basis.quantity;
+        }
+        else {
+          if(!nom.is_pieces) {
+            this.qty = basis.quantity;
+            this.len = (len - (basis?.count_calc_method?.is('spacer') ? 0 : basis.sz)) * (basis.coefficient || 0.001);
+            if(nom.rounding_quantity) {
+              this.qty = (this.qty * this.len).round(nom.rounding_quantity);
+              this.len = 0;
+            }
+            ;
+          }
+          else if(!nom.rounding_quantity) {
+            this.qty = Math.round((len - basis.sz) * basis.coefficient * basis.quantity - 0.5);
+          }
+          else {
+            this.qty = ((len - basis.sz) * basis.coefficient * basis.quantity).round(nom.rounding_quantity);
+          }
+        }
+      }
+      else if(nom.is_pieces && !basis.coefficient) {
+        this.qty = basis.quantity;
+      }
+      else {
+        this.qty = basis.quantity;
+        this.len = (len - basis.sz) * (basis.coefficient || 0.001);
+        if(basis.offsets && this.len > (basis.offsets * (basis.coefficient || 0.001))) {
+          this.len = basis.offsets * (basis.coefficient || 0.001);
+        }
+      }
+    }
   }
   classes.CatSpecificationsCompositionRow = CatSpecificationsCompositionRow;
 

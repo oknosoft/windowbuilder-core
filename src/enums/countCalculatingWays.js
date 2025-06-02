@@ -9,13 +9,15 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
   classes.EnmCountCalculatingWaysManager = EnmCountCalculatingWaysManager;
   
   const methods = {
-    element({specification, basis, stack, elm, layer, ...other}) {
+    element(attr) {
+      const {specification, basis, stack, elm, layer, ...other} = attr;
       const {quantity, nom} = basis;
       if(!quantity && !nom.is_procedure) {
         return;
       }
       const specRow = specification.specRow({elm, layer});
       specRow.nom = nom;
+      specRow.postCalc(attr);
       return specRow;
     },
 
