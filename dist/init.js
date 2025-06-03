@@ -334,23 +334,22 @@ set hide(v){this._setter_ts('hide',v)}
         return elm[this.valueOf()];
       }
       else {
+        const _in = [0];
+        if(cnstr) {
+          _in.push(cnstr);
+        }
+        if(elm._row) {
+          _in.push(-elm._row.elm);
+        }
+        if([1, 2].includes(this.inheritance) && elm2?.elm) {
+          _in.push(-elm2.elm);
+        }
         params.find_rows({
           param: this,
-          cnstr: (cnstr > 0 || !elm._row) ? (cnstr || 0) : (elm._row ? {in: [0, cnstr || 0, -elm._row.elm]} : 0),
+          cnstr: (cnstr > 0 || !elm._row) ? (cnstr || 0) : (elm._row ? {in: _in} : 0),
           inset,
         }, (row) => {
           if(!prow || (!prow.cnstr && row.cnstr) || (prow.cnstr > 0 && row.cnstr < 0)) {
-            prow = row;
-          }
-        });
-      }
-      if(!prow && elm2?.elm && [1, 2].includes(this.inheritance)) {
-        params.find_rows({
-          param: this,
-          cnstr: -elm2.elm,
-          inset,
-        }, (row) => {
-          if(!prow || row.cnstr) {
             prow = row;
           }
         });
