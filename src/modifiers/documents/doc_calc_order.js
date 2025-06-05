@@ -126,6 +126,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     else {
       current_user = this.manager;
+      if(!this._obj.branch) {
+        this._obj.branch = sessionStorage.branch || cat.abonents.by_id(job_prm.session_zone).ref;
+      }
     }
 
     if(!current_user || current_user.empty()) {
@@ -753,15 +756,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @type {CatBranches}
    */
   get branch() {
-    const {manager, organization} = this;
-    let branch = organization._extra('branch');
-    if(!branch || branch.empty()) {
-      branch = manager.branch;
+    if(!this._obj.branch && typeof sessionStorage === 'object' && sessionStorage.branch) {
+      this._obj.branch = sessionStorage.branch;
     }
-    return branch;
+    return this._getter('branch') || this.manager.branch;
   }
   set branch(v) {
-    
+    this._setter('branch',v);
   }
 
   /**
