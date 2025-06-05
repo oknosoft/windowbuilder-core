@@ -2140,17 +2140,46 @@ class Contour extends AbstractFilling(paper.Layer) {
   thickness(withChildren) {
     const {contours, profiles} = this;
     let thickness = profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
+    let winner = this.layer ? null : this;
     if(withChildren) {
       let add = 0;
       for(const contour of contours) {
         const test = contour.thickness(withChildren) - contour.offsetZ;
         if(test > add) {
           add = test;
+          if(winner) {
+            winner = contour;
+          }
         }
       }
       thickness += add;
     }
-    return thickness;
+    return thickness + (winner ? winner.thickening : 0);
+  }
+  get thickening() {
+    const prop = $p.cch.properties.predefined(`thickening_${this.level ? 'flap' : 'rama'}`);
+    const map = new Map();
+    let res = 0;
+    const {_ox: {specification, coordinates}, cnstr} = this;
+    for(const {elm, nom} of specification) {
+      if(elm > 0) {
+        if(!map.has(elm)) {
+          const crow = coordinates.find({elm});
+          map.set(elm, crow ? crow.cnstr : Infinity);
+        }
+        if(map.get(elm) !== cnstr) {
+          continue;
+        }
+      }
+      else if(elm !== -cnstr) {
+        continue;
+      }
+      const add = nom._extra(prop);
+      if(add && add > res) {
+        res = add;
+      }
+    }
+    return res;
   }
   get offsetZ() {
     const {layer, profiles} = this;
