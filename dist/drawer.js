@@ -4771,7 +4771,6 @@ class ContourRegion extends Contour {
     if(region !== this.dop.region) {
       this.dop = {region};
     }
-    this.hidden = !(attr.show || region > 1);
   }
   get ProfileConstructor() {
     return ProfileRegion;
@@ -4806,13 +4805,6 @@ class ContourRegion extends Contour {
   get show_dimensions() {
     const {visible, hidden} = this.layer;
     return !visible || hidden;
-  }
-  get hidden() {
-    return super.hidden;
-  }
-  set hidden(v) {
-    super.hidden = v;
-    this.redraw();
   }
 }
 EditorInvisible.ContourRegion = ContourRegion;

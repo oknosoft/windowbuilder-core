@@ -12,7 +12,7 @@ class ContourRegion extends Contour {
     if(region !== this.dop.region) {
       this.dop = {region};
     }
-    this.hidden = !(attr.show || region > 1);
+    //this.hidden = !(attr.show || region > 1);
   }
 
   get ProfileConstructor() {
@@ -69,8 +69,8 @@ class ContourRegion extends Contour {
 
   /**
    * Признак сокрытия слоя
-   * @return {boolean}
-   */
+   * @type {boolean}
+   
   get hidden() {
     return super.hidden;
   }
@@ -78,6 +78,7 @@ class ContourRegion extends Contour {
     super.hidden = v;
     this.redraw();
   }
+   */
 
 }
 
