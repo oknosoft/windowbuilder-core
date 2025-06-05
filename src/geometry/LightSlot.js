@@ -11,7 +11,7 @@ import {ContainerBlank} from './ContainerBlank';
  */
 export class LightSlot  {
   
-  #raw = {owner: null, cycle: null};
+  #raw = {owner: null, cycle: null, hash: ''};
 
   constructor(owner, cycle) {
     Object.assign(this.#raw, {owner, cycle});
@@ -29,6 +29,10 @@ export class LightSlot  {
   
   get key() {
     return this.#raw.cycle.key;
+  }
+
+  get hash() {
+    return this.#raw.hash;
   }
   
   get kind() {
@@ -83,11 +87,16 @@ export class LightSlot  {
   }
   
   get pathInner() {
-    const {cycle} = this.#raw;
-    const {interiorPoint} = this;
-    const paths = [];
+    const {cycle, hash, pathInner} = this.#raw;
+    const chash = cycle.hash;
+    if(pathInner && chash === hash) {
+      return [...pathInner];
+    }
+
     const res = [];
     if(cycle.length > 1) {
+      const {interiorPoint} = this;
+      const paths = [];
       for(let i = 0; i < cycle.length; i++) {
         const {startVertex, endVertex, profile} = cycle[i];
         // внутреннее по отношению к контейнеру ребро профиля + фальц
@@ -105,6 +114,8 @@ export class LightSlot  {
           res.push(ipoint);
         }
       }
+      this.#raw.hash = chash;
+      this.#raw.pathInner = [...res];
     }
     return res;
   }
@@ -132,6 +143,7 @@ export class LightSlot  {
       const {pathInner, layer, child} = this;
       const {project} = layer;
       this.#raw.child = null;
+      this.#raw.kind = kind;
       const clayer = child?.layer;
       if(clayer) {
         clayer._removing = true;
@@ -165,18 +177,19 @@ export class LightSlot  {
           project,
           layer,
           parent: layer.children.fillings,
-          pathOuter: pathInner,
         });
+        this.#raw.child.path = pathInner;
+        this.#raw.child.redraw();
       }
       else if(kind === 'blank') {
         this.#raw.child = new ContainerBlank({
           project,
           layer,
           parent: layer.children.fillings,
-          pathOuter: pathInner,
         });
+        this.#raw.child.path = pathInner;
+        this.#raw.child.redraw();
       }
-      this.#raw.kind = kind;
     }
     else {
       this.sync();

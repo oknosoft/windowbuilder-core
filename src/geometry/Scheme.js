@@ -197,11 +197,17 @@ export class Scheme extends paper.Project {
    * @summary Перерисовывает все слои изделия
    */
   redraw(silent) {
+    if(silent === 'profile') {
+      console.profile('redraw');
+    }
     this.rootLayer.redraw();
     for(const item of this.contours) {
       item.redraw?.();
     }
     this.dimensions.redraw();
+    if(silent === 'profile') {
+      console.profileEnd('redraw');
+    }
     this.dots.redraw();
     if(!silent) {
       this.root.md.emit_promise('redraw', this);

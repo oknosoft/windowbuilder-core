@@ -996,7 +996,7 @@ export class Contour extends paper.Layer {
       }
     }
     // подписи профилей
-    if(props.carcass === 'carcass') {
+    if(props.carcass === 'carcass' && profiles.length < 100) {
       for(const profile of profiles) {
         const loc = profile.generatrix.getLocationAt(profile.generatrix.length / 3);
         new paper.PointText({

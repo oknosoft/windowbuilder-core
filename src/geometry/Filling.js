@@ -12,33 +12,43 @@ export class Filling extends ContainerBlank {
     return this.children.path;
   }
   set path(outer) {
-    const {path, ribs, project: {root}} = this;
-    const paths = outer.map((src, index) => {
-      const {edge} = src;
-      const rib = ribs[index] || new FillingRib(this, edge);
-      rib.edge = edge;
-      const curr = src.clone();
-      const next = (index === outer.length - 1 ? outer[0] : outer[index + 1]).clone();
-      const cnns = root.cat.cnns.iiCnns(this, edge.profile).filter(v => v.art1glass);
-      const {size} = rib;
-      const ribPath = new paper.Path({insert: false, segments: [curr, next]})
-        .equidistant(size, (size + 20) * 2);
-      return ribPath;
-    });
-    
-    path.removeSegments();
-    path.addSegments(paths.map((curr, index) => {
-      const prev = (index === 0 ? paths[outer.length - 1] : paths[index - 1]).clone();
-      const pt = curr.intersectPoint(prev);
-      return pt;
-    }));
-    path.closePath();
-    const {bounds} = path;
-    path.fillColor = new paper.Color({
-      stops: ['#def', '#d0ddff', '#eff'],
-      origin: bounds.bottomLeft,
-      destination: bounds.topRight,
-    });
+    const {path, ribs, project: {root}, container, hash} = this;
+    if(!hash || container.hash !== hash) {
+      const paths = outer.map((src, index) => {
+        const {edge} = src;
+        const rib = ribs[index] || new FillingRib(this, edge);
+        rib.edge = edge;
+        const curr = src.clone();
+        const next = (index === outer.length - 1 ? outer[0] : outer[index + 1]).clone();
+        const cnns = root.cat.cnns.iiCnns(this, edge.profile).filter(v => v.art1glass);
+        const {size} = rib;
+        const ribPath = new paper.Path({insert: false, segments: [curr, next]})
+          .equidistant(size, (size + 20) * 2);
+        return ribPath;
+      });
+
+      path.removeSegments();
+      path.addSegments(paths.map((curr, index) => {
+        const prev = (index === 0 ? paths[outer.length - 1] : paths[index - 1]).clone();
+        const pt = curr.intersectPoint(prev);
+        return pt;
+      }));
+      path.closePath();
+      const {bounds} = path;
+      path.fillColor = new paper.Color({
+        stops: ['#def', '#d0ddff', '#eff'],
+        origin: bounds.bottomLeft,
+        destination: bounds.topRight,
+      });
+      this.hash = container.hash;
+    }
+  }
+
+  get hash() {
+    return this.raw('hash') || '';
+  }
+  set hash(v) {
+    return this.raw('hash', v);
   }
 
   get defaultClrStr() {

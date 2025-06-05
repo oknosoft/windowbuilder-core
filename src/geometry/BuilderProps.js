@@ -48,10 +48,9 @@ export class BuilderProps extends BuilderParams {
     return this.settings.carcass;
   }
   set carcass(v) {
-    const change = this.carcass !== v;
-    const {project, settings} = this;
-    settings.carcass = v;
-    if(change) {
+    if(this.carcass !== v) {
+      const {project, settings} = this;
+      settings.carcass = v;
       project.root.jobPrm.set('carcass', v);
       project.redraw(true);
     }

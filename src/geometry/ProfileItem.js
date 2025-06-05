@@ -11,12 +11,22 @@ export class Profile extends GeneratrixElement {
   }
 
   get elmType() {
+    if(this.hashActual()) {
+      const elmType = this.raw('elmType');
+      if(elmType) {
+        return elmType;
+      }
+    }
     const {project: {root}, layer, b, e, edges} = this;
     const {elmTypes} = root.enm;
+    let elmType;
     if(b.isT || e.isT || (!layer.layer && Array.from(edges).some(edge => edge.isOuter()))) {
-      return elmTypes.impost;
+      elmType =  elmTypes.impost;
     }
-    return layer.layer?.virtual ? elmTypes.rama : elmTypes[layer.layer ? 'flap' : 'rama'];
+    elmType = layer.layer?.virtual ? elmTypes.rama : elmTypes[layer.layer ? 'flap' : 'rama'];
+    this.raw('elmType', elmType);
+    this.hashActual(this.hash);
+    return elmType;
   }
 
   /**

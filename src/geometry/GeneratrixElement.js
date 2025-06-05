@@ -70,9 +70,37 @@ export class GeneratrixElement extends BuilderElement {
     this.raw('path', new paper.Path({parent: this, name: 'path', fillColor: 'white', ...pathAttr}));
     this.edges = new Set();
   }
-  
+
+  /**
+   * @summary Граф текущего слоя
+   * @type {Skeleton}
+   */
   get skeleton() {
     return this.layer.skeleton;
+  }
+
+  /**
+   * @summary Хеш элемента
+   * @desc Включает в себя ref вставки, координаты вершин и концевые соединения
+   * @type {String}
+   */
+  get hash() {
+    const {inset, b, e} = this;
+    return `${inset.valueOf()}${b.point.x}${b.point.y}${e.point.x}${e.point.y}`;
+  }
+
+  /**
+   * @summary Проверка или запоминание хеша
+   * @param {String} [hash]
+   * @return {Boolean}
+   */
+  hashActual(hash) {
+    if(hash) {
+      this.raw('hash', hash);
+    }
+    else {
+      return this.hash === this.raw('hash');
+    }
   }
 
   /**
@@ -507,8 +535,15 @@ export class GeneratrixElement extends BuilderElement {
 
   checkActual() {
     if(!this.isActual) {
-      this.raw('inner').removeSegments();
-      this.raw('outer').removeSegments();
+      const [inner, outer] = this.raw(['inner', 'outer']);
+      if(inner.segments.length) {
+        inner.remove();
+        this.raw('inner', new paper.Path({insert: false}));
+      }
+      if(outer.segments.length) {
+        outer.remove();
+        this.raw('outer', new paper.Path({insert: false}));
+      }      
     }
     return super.checkActual();
   }

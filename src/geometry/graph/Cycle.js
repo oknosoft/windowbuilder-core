@@ -83,4 +83,12 @@ export class Cycle extends Array {
       return prev + curr.startVertex.key;
     }, '');
   }
+  
+  get hash() {
+    let res = '';
+    for(const {profile, startVertex, endVertex} of this) {
+      res += `${profile.inset.valueOf()}${startVertex.point.x}${startVertex.point.y}${endVertex.point.x}${endVertex.point.y}`;
+    }
+    return res;
+  }
 }

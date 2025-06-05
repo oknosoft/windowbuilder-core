@@ -87,7 +87,10 @@ export class BuilderElement extends paper.Group {
     if(!this.isActual) {
       this.#raw.nom = null;
       this.#raw.index = '';
-      this.#raw.path?.removeSegments?.();
+      const {path} = this.#raw;
+      if(path?.segments?.length) {
+        path?.removeSegments?.();
+      }      
       this.#raw.stamp = this.project.props.stamp;
     }
   }
