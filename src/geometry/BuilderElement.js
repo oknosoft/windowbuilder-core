@@ -87,10 +87,6 @@ export class BuilderElement extends paper.Group {
     if(!this.isActual) {
       this.#raw.nom = null;
       this.#raw.index = '';
-      const {path} = this.#raw;
-      if(path?.segments?.length) {
-        path?.removeSegments?.();
-      }      
       this.#raw.stamp = this.project.props.stamp;
     }
   }
@@ -181,6 +177,18 @@ export class BuilderElement extends paper.Group {
       this.#raw.nom = this.inset.nom(this);
     }
     return this.#raw.nom;
+  }
+
+  /**
+   * @summary Умолчания при изменении окружения
+   * @desc Уточняет цвет, вставку и параметры
+   */
+  defaults() {
+    const {layer: {sys}, inset} = this;
+    const inserts = sys.inserts({elm: this});
+    if(inserts.length && !inserts.includes(inset)) { // || checkActual
+      this.inset = inserts[0];
+    }
   }
 
   /**

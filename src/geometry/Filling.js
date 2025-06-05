@@ -12,8 +12,9 @@ export class Filling extends ContainerBlank {
     return this.children.path;
   }
   set path(outer) {
-    const {path, ribs, project: {root}, container, hash} = this;
-    if(!hash || container.hash !== hash) {
+    const {path, ribs, project: {root}, container, hash, thickness} = this;
+    const currentHash = `${thickness}${container.hash}`;
+    if(!hash || currentHash !== hash) {
       const paths = outer.map((src, index) => {
         const {edge} = src;
         const rib = ribs[index] || new FillingRib(this, edge);
@@ -40,7 +41,7 @@ export class Filling extends ContainerBlank {
         origin: bounds.bottomLeft,
         destination: bounds.topRight,
       });
-      this.hash = container.hash;
+      this.hash = currentHash;
     }
   }
 

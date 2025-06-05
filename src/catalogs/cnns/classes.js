@@ -326,6 +326,10 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
     set contour_number(v){this[set]('contour_number',v)}
 
     get count_calc_method(){return enm.countCalculatingWays.cnn}
+    
+    get owner() {
+      return this[own][own];
+    }
 
     checkRestrictions({elm, layer, rawLength, angleHor, correct=false}) {
       const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, alp2, set_specification} = this;

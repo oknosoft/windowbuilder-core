@@ -108,10 +108,10 @@ export function classes({cat, classes, symbols}, exclude)  {
     get origin(){return this[get]('origin')}
     set origin(v){this[set]('origin',v)}
     
-    postCalc(attr) {
+    qtyLen(attr) {
       const {nom} = this;
-      const {basis, elm, layer, rawLength, ...other} = attr;
-      const len = rawLength || elm?.length || 0;
+      const {basis, elm, rib, layer, rawLength, ...other} = attr;
+      const len = rib?.length || rawLength || elm?.length || 0;
 
       if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
         if(!basis.coefficient || !len) {
@@ -145,6 +145,12 @@ export function classes({cat, classes, symbols}, exclude)  {
           this.len = basis.offsets * (basis.coefficient || 0.001);
         }
       }
+      return this;
+    }
+    
+    angleAreaMass(attr) {
+
+      return this;
     }
   }
   classes.CatSpecificationsCompositionRow = CatSpecificationsCompositionRow;

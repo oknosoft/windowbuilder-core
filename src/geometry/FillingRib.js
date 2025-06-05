@@ -25,11 +25,15 @@ export class FillingRib extends OwnerObj {
   }
   
   get next() {
+    const {index} = this;
     const {ribs} = this[own];
+    return index < ribs.length - 1 ? ribs[index + 1] : ribs[0];  
   }
 
   get prev() {
+    const {index} = this;
     const {ribs} = this[own];
+    return index === 0 ? ribs[ribs.length - 1] : ribs[index - 1];
   }
   
   get cnn() {
@@ -38,6 +42,12 @@ export class FillingRib extends OwnerObj {
   }
   
   get size() {
-    return this.cnn?.size?.(this[own], this.edge.profile) || 0;
+    const {cnn, edge: {profile}} = this;
+    return (cnn?.size?.(this[own], profile) || 0) - profile.szc;
+  }
+  
+  get length() {
+    const {path} = this[own];
+    return path.curves[this.index].length;
   }
 }

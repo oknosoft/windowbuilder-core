@@ -173,13 +173,15 @@ export class LightSlot  {
         project.props.loading = loading;
       }
       else if(kind === 'glass') {
-        this.#raw.child = new Filling({
+        const child = new Filling({
           project,
           layer,
           parent: layer.children.fillings,
         });
-        this.#raw.child.path = pathInner;
-        this.#raw.child.redraw();
+        this.#raw.child = child;
+        child.defaults();
+        child.path = pathInner;
+        child.redraw();
       }
       else if(kind === 'blank') {
         this.#raw.child = new ContainerBlank({

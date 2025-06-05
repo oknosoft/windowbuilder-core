@@ -375,6 +375,15 @@ export class GeneratrixElement extends BuilderElement {
   }
 
   /**
+   * @summary Примыкающие к текущему профилю импосты
+   * @desc Для совместимости с v2
+   * @return {JoinedProfiles}
+   */
+  joined_imposts() {
+    return this.imposts;
+  }
+
+  /**
    * @summary Положение элемента в контуре
    * @type {EnmElmPositions}
    */
@@ -535,15 +544,9 @@ export class GeneratrixElement extends BuilderElement {
 
   checkActual() {
     if(!this.isActual) {
-      const [inner, outer] = this.raw(['inner', 'outer']);
-      if(inner.segments.length) {
-        inner.remove();
-        this.raw('inner', new paper.Path({insert: false}));
+      for(const path of this.raw(['path', 'inner', 'outer'])) {
+        path.removeSegments();
       }
-      if(outer.segments.length) {
-        outer.remove();
-        this.raw('outer', new paper.Path({insert: false}));
-      }      
     }
     return super.checkActual();
   }
@@ -561,19 +564,7 @@ export class GeneratrixElement extends BuilderElement {
     }
     return this;
   }
-
-  /**
-   * @summary Умолчания при изменении окружения
-   * @desc Уточняет цвет, вставку и параметры
-   */
-  defaults() {
-    const {layer: {sys}, inset} = this;
-    const inserts = sys.inserts({elm: this});
-    if(inserts.length && !inserts.includes(inset)) { // || checkActual
-      this.inset = inserts[0];
-    }    
-  }
-
+  
   cnnSide(profile, interior) {
     if(!interior) {
       interior = profile.generatrix.interiorPoint;

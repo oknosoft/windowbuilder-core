@@ -658,7 +658,7 @@ export class Contour extends paper.Layer {
       e.defaults();
     }
     for(const filling of fillings) {
-      //filling.defaults();
+      filling.defaults();
     }
     if(withChildren) {
       for(const contour of contours) {
@@ -680,7 +680,7 @@ export class Contour extends paper.Layer {
       e.defaults();
     }
     for(const filling of fillings) {
-      //filling.defaults();
+      filling.defaults();
     }
     if(withChildren) {
       for(const contour of contours) {

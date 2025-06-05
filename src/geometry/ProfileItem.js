@@ -72,7 +72,7 @@ export class Profile extends GeneratrixElement {
       const specRow = specification.specRow(other);
       specRow.nom = nom;
       specRow.clr = clr;
-      specRow.len = rawLength;
+      specRow.len = rawLength / 1000;
 
       // вклад концевых соединений
       b.cnn.calculateSpec({...props, elm2: b.profile, node: b});

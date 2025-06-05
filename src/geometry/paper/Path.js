@@ -430,6 +430,12 @@ export default function (paper) {
         // const nearest = dir ? test.lastSegment.point : test.firstSegment.point;
       },
 
+      /**
+       * @summary Удлиняет путь касательными в начальной и конечной точках
+       * @memberof paper.Path#
+       * @param {number} delta - расстояние, на которое будет смещен новый путь
+       * @return {paper.Path}
+       */
       elongation(delta) {
         if(delta){
           if(this.isLinear()) {
@@ -448,6 +454,13 @@ export default function (paper) {
         return this;
       },
 
+      /**
+       * @summary Возвращает путь, равноотстоящий от текущего пути
+       * @memberof paper.Path#
+       * @param {number} delta - расстояние, на которое будет смещен новый путь
+       * @param {number} [elong] - удлинение нового пути с каждого конца
+       * @return {paper.Path}
+       */
       equidistant(delta, elong) {
         const {firstSegment, lastSegment} = this;
         const normal = this.getNormalAt(0);

@@ -17,12 +17,105 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
       }
       const specRow = specification.specRow({elm, layer});
       specRow.nom = nom;
-      specRow.postCalc(attr);
-      return specRow;
+      return specRow
+        .qtyLen(attr)
+        .angleAreaMass(attr);
     },
 
     cnn(attr) {
-      return methods.element.call(this, attr);
+      const {specification, basis, stack, elm, elm2, rib, node, rawLength, layer, cnnOther, art1, curr, ...other} = attr;
+      const {quantity, nom, owner: {coordinates, cnn_type}, algorithm} = basis;
+      const sign = cnn_type.is('ii') ? -1 : 1;
+      const len = rib?.length || rawLength || elm?.length || elm2?.length || 0;
+      
+      const specRow = specification.specRow({elm, layer});
+      specRow.nom = nom;
+
+      // рассчитаем количество
+      const procedure = nom.is_procedure && coordinates.find({elm: basis.elm}) && cnn_type.is('t');
+      if(procedure) {
+        const {Path} = elm.project._scope;
+        specRow.elm = elm2.elm;
+        let ray;
+        if(elm2.cnn_side(elm).is('outer')) {
+          ray = elm2.outer;
+        }
+        else {
+          ray = elm2.inner.clone({insert: false, deep: false});
+          ray.reverse();
+        }
+        const ept = (node?.name === 'b' ? elm.corns(1).add(elm.corns(4)) : elm.corns(2).add(elm.corns(3))).divide(2);
+        const pt = ray.getNearestPoint(ept);
+        const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
+        const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
+        const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
+        let offset = offset1 < offset4 ? offset1 : offset4;
+        if(offset7 && offset7 < offset) {
+          offset = offset7;
+        }
+        const pt0 = ray.getPointAt(offset);
+        const path = ray.get_subpath(pt0, pt);
+        specRow.len = path.length * (basis.coefficient || 0.001);
+      }
+      else if(nom.is_pieces) {
+        if(!basis.coefficient) {
+          specRow.qty = basis.quantity;
+        }
+        else {
+          specRow.qty = ((len - sign * 2 * basis.sz) * basis.coefficient * basis.quantity - 0.5)
+            .round(nom.rounding_quantity);
+        }
+      }
+      else {
+        specRow.qty = basis.quantity;
+
+        // если указано cnnOther, берём не размер соединения, а размеры предыдущего и последующего
+        if(!algorithm.is('gb_short') && !algorithm.is('gb_long') && (basis.sz || basis.coefficient)) {
+          let sz = basis.sz, finded, qty;
+          if(cnnOther) {
+            cnnOther.specification.findRows({nom}, (row) => {
+              sz += row.sz;
+              qty = row.quantity;
+              return !(finded = true);
+            });
+          }
+          if(!finded) {
+            if(algorithm.is('w2') && elm2) {
+              ;
+            }
+            else {
+              sz *= 2;
+            }
+          }
+          if(!specRow.qty && finded && art1) {
+            specRow.qty = qty;
+          }
+          specRow.len = (((len - sign * sz) * 2).round() / 2) * (basis.coefficient || 0.001);
+        }
+      }
+
+      // если указана формула - выполняем
+      if(!basis.formula.empty()) {
+        const qty = basis.formula.execute(attr);
+        // если формула является формулой условия, используем результат, как фильтр
+        if(basis.formula.condition_formula && !qty){
+          specRow.qty = 0;
+        }
+      }
+
+      // визуализация svg-dx
+      if(specRow.dop === -1 && nom.visualization.mode === 3 && curr) {
+        const {sub_path, outer, profile: {generatrix}} = curr;
+        const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
+        specRow.width = generatrix.getOffsetOf(pt) / 1000;
+        if(outer) {
+          specRow.alp1 = -1;
+        }
+      }
+      else {
+        specRow.angleAreaMass(attr);
+      }
+      return specRow.angleAreaMass(attr);
     },
 
     furn(attr) {
@@ -139,7 +232,15 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
     },
 
     formulas(attr) {
-      const specRow = methods.element.call(this, attr);
+      const {specification, basis, stack, elm, layer, ...other} = attr;
+      const {formula} = basis;
+      if(!formula.empty()) {
+        const specRow = methods.element.call(this, attr);
+        const qty = formula.execute({...attr, row_ins: basis, row_spec: specRow, specRow});
+        if(formula.condition_formula && !specRow.qty) {
+          specRow.del();
+        }
+      }
     },
     
     not_found() {
