@@ -16545,10 +16545,15 @@ class ProductsBuilding {
       },
       cch: {properties},
       CatCharacteristics,
-      CatProperty_values
+      CatProperty_values,
+      CatValues_options,
     } = $p;
     if(!row_spec) {
-      if(row_base?.is_order_row === kit) {
+      let {is_order_row} = row_base || {};
+      if(is_order_row instanceof CatValues_options) {
+        is_order_row = is_order_row.option_value({elm, ox, len_angl});
+      }
+      if(is_order_row === kit) {
         specify = ox || spec._owner;
         row_spec = specify.calc_order.accessories().specification.add({}, true);
         row_spec._quantity = specify.calc_order_row.quantity;
@@ -20059,7 +20064,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else {
       current_user = this.manager;
       if(!this._obj.branch) {
-        this._obj.branch = sessionStorage.branch || cat.abonents.by_id(job_prm.session_zone).ref;
+        this._obj.branch = sessionStorage.branch || cat.abonents.current.ref;
       }
     }
     if(!current_user || current_user.empty()) {
@@ -20410,6 +20415,43 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.amount_operation = this.doc_currency.to_currency(doc_amount, date).round(rounding);
     return errors;
   }
+  set_route() {
+    let {branch, route, obj_delivery_state} = this;
+    const {enm, cat} = $p;
+    const append = (ref) => {
+      if(!route.includes(ref)) {
+        if(route.length) {
+          route += ',';
+        }
+        route += ref;
+      }
+    };
+    const append2 = (branch) => {
+      let {parent} = branch;
+      while (parent && !parent.empty()) {
+        const {part, ref} = parent;
+        append(ref);
+        if(part && (obj_delivery_state.is('Черновик') || obj_delivery_state.is('Отозван'))) {
+          this.obj_delivery_state = enm.obj_delivery_states.Проверяется;
+        }
+        parent = part ? null : parent.parent;
+        if(parent?.empty()) {
+          parent = cat.abonents.current;
+        }
+      }
+    }
+    append(branch.ref);
+    append2(branch);
+    const current = sessionStorage.branch ? cat.branches.get(sessionStorage.branch) : cat.abonents.current;
+    append(current.ref);
+    append2(current);
+    if(this.route !== route) {
+      this.route = route;
+    }
+    if(obj_delivery_state.is('Черновик') || obj_delivery_state.is('Отозван')) {
+      this.obj_delivery_state = enm.obj_delivery_states.Отправлен;
+    }
+  }
   load(attr = {}) {
     if(this.obj_delivery_state == 'Шаблон') {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
@@ -20580,10 +20622,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return pricing.rounding;
   }
   get branch() {
-    if(!this._obj.branch && typeof sessionStorage === 'object' && sessionStorage.branch) {
-      this._obj.branch = sessionStorage.branch;
+    if(!this._obj.branch) {
+      const {current_user, cat: {branches, abonents}} = $p;
+      const sessionBranch = (typeof sessionStorage === 'object' && sessionStorage.branch) ?
+        branches.get(sessionStorage.branch) : abonents.current;
+      this._obj.branch = this.manager.branch._hierarchy(sessionBranch) ? this.manager.branch.ref : sessionBranch?.ref;
     }
-    return this._getter('branch') || this.manager.branch;
+    return this._getter('branch');
   }
   set branch(v) {
     this._setter('branch',v);
@@ -20607,7 +20652,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   product_rows(save, attr) {
     let res = [], weight = 0;
-    const {production, partner, obj_delivery_state, department, _deleted} = this;
+    const {production, partner, obj_delivery_state, route, department, _deleted} = this;
     const {utils, wsql} = $p;
     const user = wsql.get_user_param('user_name');    
     this.production.forEach(({row, characteristic, quantity}) => {
@@ -20617,9 +20662,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic._deleted !== _deleted ||
           characteristic.partner !== partner ||
           characteristic.obj_delivery_state !== obj_delivery_state ||
+          characteristic.route !== route ||
           characteristic.department !== department) {
           characteristic.product = row;
           characteristic.obj_delivery_state = obj_delivery_state;
+          characteristic.route = route;
           characteristic.partner = partner;
           characteristic.department = department;
           characteristic._deleted = _deleted;

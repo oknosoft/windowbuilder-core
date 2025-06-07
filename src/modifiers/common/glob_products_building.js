@@ -1065,11 +1065,16 @@ class ProductsBuilding {
       },
       cch: {properties},
       CatCharacteristics,
-      CatProperty_values
+      CatProperty_values,
+      CatValues_options,
     } = $p;
     
     if(!row_spec) {
-      if(row_base?.is_order_row === kit) {
+      let {is_order_row} = row_base || {};
+      if(is_order_row instanceof CatValues_options) {
+        is_order_row = is_order_row.option_value({elm, ox, len_angl});
+      }
+      if(is_order_row === kit) {
         specify = ox || spec._owner;
         row_spec = specify.calc_order.accessories().specification.add({}, true);
         row_spec._quantity = specify.calc_order_row.quantity;
