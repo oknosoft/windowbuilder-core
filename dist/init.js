@@ -3928,7 +3928,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
       }
       else {
 
-        const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, nom, spec, ox, len_angl});
+        const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, elm2, nom, spec, ox, len_angl});
 
         const procedure = nom.is_procedure && this.coordinates.find({elm: row_base.elm}) && this.cnn_type.is('t'); 
         if(procedure) {
@@ -6666,16 +6666,15 @@ get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
 
 
-
-      option_value({elm, ...other}) {
-    const {values} = this;
+    option_value({elm, ...other}) {
+    const {values, owner} = this;
     for(const {key, value} of values) {
       if(key.check_condition({elm, ...other})) {
-        return value;
+        return owner.fetch_type(value);
       }
     }
     if(values.length) {
-      return values[values.length-1];
+      return owner.fetch_type(values[values.length-1]);
     }
   }}
 $p.CatValues_options = CatValues_options;

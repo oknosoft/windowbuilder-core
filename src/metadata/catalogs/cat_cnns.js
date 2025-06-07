@@ -648,7 +648,7 @@ exports.CatCnns = class CatCnns extends Object {
       }
       else {
 
-        const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, nom, spec, ox, len_angl});
+        const row_spec = new_spec_row({row_base, origin: len_angl.origin || this, elm, elm2, nom, spec, ox, len_angl});
 
         // рассчитаем количество
         const procedure = nom.is_procedure && this.coordinates.find({elm: row_base.elm}) && this.cnn_type.is('t'); 

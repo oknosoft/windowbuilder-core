@@ -69,7 +69,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
 
         case 'inset':
-          _data._formula = function ({elm, prm_row, ox, row}) {
+          _data._formula = function ({elm, elm2, prm_row, ox, row}) {
 
             // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
             if(prm_row?.origin?.is('nearest')){
@@ -81,6 +81,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                   }
                 });
                 return Array.from(res);
+              }
+              else if(elm2 instanceof EditorInvisible.Filling) {
+                return elm2.inset.target;
               }
               else {
                 const nearest = elm?.nearest?.();

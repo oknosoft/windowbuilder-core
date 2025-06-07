@@ -16532,7 +16532,7 @@ class ProductsBuilding {
     }
     return ok;
   }
-  static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl}) {
+  static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl, ...other}) {
     const {
       utils: {blank},
       cat: {clrs, characteristics},
@@ -16551,7 +16551,7 @@ class ProductsBuilding {
     if(!row_spec) {
       let {is_order_row} = row_base || {};
       if(is_order_row instanceof CatValues_options) {
-        is_order_row = is_order_row.option_value({elm, ox, len_angl});
+        is_order_row = is_order_row.option_value({elm, ox, len_angl, ...other});
       }
       if(is_order_row === kit) {
         specify = ox || spec._owner;
@@ -19261,7 +19261,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
         case 'inset':
-          _data._formula = function ({elm, prm_row, ox, row}) {
+          _data._formula = function ({elm, elm2, prm_row, ox, row}) {
             if(prm_row?.origin?.is('nearest')){
               if(elm instanceof EditorInvisible.Filling) {
                 const res = new Set();
@@ -19271,6 +19271,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                   }
                 });
                 return Array.from(res);
+              }
+              else if(elm2 instanceof EditorInvisible.Filling) {
+                return elm2.inset.target;
               }
               else {
                 const nearest = elm?.nearest?.();
