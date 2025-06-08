@@ -20431,15 +20431,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     };
     const append2 = (branch) => {
       let {parent} = branch;
-      while (parent && !parent.empty()) {
-        const {part, ref} = parent;
-        append(ref);
-        if(part && (obj_delivery_state.is('Черновик') || obj_delivery_state.is('Отозван'))) {
-          this.obj_delivery_state = enm.obj_delivery_states.Проверяется;
+      while (parent) {
+        if(parent.empty()) {
+          append(cat.abonents.current.ref);
+          break;
         }
-        parent = part ? null : parent.parent;
-        if(parent?.empty()) {
-          parent = cat.abonents.current;
+        else {
+          const {part, ref} = parent;
+          append(ref);
+          if(part && (obj_delivery_state.is('Черновик') || obj_delivery_state.is('Отозван'))) {
+            this.obj_delivery_state = enm.obj_delivery_states.Проверяется;
+          }
+          parent = part ? null : parent.parent;
         }
       }
     }
