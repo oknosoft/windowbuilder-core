@@ -216,7 +216,19 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
      * @return Number
      */
     size(elm1, elm2, region=0) {
-      return this.sz;
+      let {sz, sizes} = this;
+      const {layer, project} = elm1;
+      const attr = {elm: elm1, elm2, region, layer, project};
+      for(const prmRow of sizes) {
+        if(prmRow.coordinate) {
+          continue;
+        }
+        if(prmRow.checkCondition(attr) && prmRow.key.checkCondition(attr)) {
+          sz = prmRow.elm;
+          break;
+        }
+      }
+      return sz;
     }
 
     /**
@@ -227,7 +239,19 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
      * @return Number
      */
     sizeZ(elm1, elm2, region=0) {
-      return this.szz;
+      let {szz, sizes} = this;
+      const {layer, project} = elm1;
+      const attr = {elm: elm1, elm2, region, layer, project};
+      for(const prmRow of sizes) {
+        if(!prmRow.coordinate) {
+          continue;
+        }
+        if(prmRow.checkCondition(attr) && prmRow.key.checkCondition(attr)) {
+          szz = prmRow.elm;
+          break;
+        }
+      }
+      return szz;
     }
 
     /**
@@ -285,23 +309,13 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
   class CatCnnsSelectionParamsRow extends SelectionParamsRow {}
   classes.CatCnnsSelectionParamsRow = CatCnnsSelectionParamsRow;
 
-  class CatCnnsSizesRow extends TabularSectionRow{
+  class CatCnnsSizesRow extends SelectionParamsRow{
     get coordinate(){return this[get]('coordinate')}
     set coordinate(v){this[set]('coordinate',v)}
-    get elm(){return this[get]('elm')}
-    set elm(v){this[set]('elm',v)}
-    get param(){return this[get]('param')}
-    set param(v){this[set]('param',v)}
-    get origin(){return this[get]('origin')}
-    set origin(v){this[set]('origin',v)}
-    get comparison_type(){return this[get]('comparison_type')}
-    set comparison_type(v){this[set]('comparison_type',v)}
-    get value(){return this[get]('value')}
-    set value(v){this[set]('value',v)}
-    get txt_row(){return this[get]('txt_row')}
-    set txt_row(v){this[set]('txt_row',v)}
     get key(){return this[get]('key')}
     set key(v){this[set]('key',v)}
+    get area(){return 0}
+    set area(v){}
   }
   classes.CatCnnsSizesRow = CatCnnsSizesRow;
 

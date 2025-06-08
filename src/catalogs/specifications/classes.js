@@ -48,13 +48,14 @@ export function classes({cat, classes, symbols}, exclude)  {
      * @param {Array} [stack] - Предыдущие строки вызова
      */
     byBasis({basis, stack = [], ...other}) {
-      const {nom} = basis;
+      const {nom, algorithm} = basis;
+      const attr = algorithm.patch({specification: this, basis, stack, ...other});
       if(nom instanceof classes.CatNom) {
-        basis.count_calc_method.calculate({specification: this, basis, stack, ...other});
+        basis.count_calc_method.calculate(attr);
       }
       else {
         stack.push(basis);
-        nom.calculateSpec({specification: this, stack, ...other});
+        nom.calculateSpec(attr);
       }
     }
   }
@@ -110,8 +111,8 @@ export function classes({cat, classes, symbols}, exclude)  {
     
     qtyLen(attr) {
       const {nom} = this;
-      const {basis, elm, rib, layer, rawLength, ...other} = attr;
-      const len = rib?.length || rawLength || elm?.length || 0;
+      const {basis, elm, rib, layer, rawLength, currentLength, ...other} = attr;
+      const len = currentLength || rib?.length || rawLength || elm?.length || 0;
 
       if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
         if(!basis.coefficient || !len) {

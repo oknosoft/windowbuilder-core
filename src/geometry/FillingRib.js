@@ -1,5 +1,6 @@
 import {OwnerObj} from '@oknosoft/metadata/core/src/meta/metaObjs';
 import {own} from '@oknosoft/metadata/core/src/meta/symbols';
+import paper from 'paper/dist/paper-core';
 import {FillingRibParams} from './BuilderParams';
 
 export class FillingRib extends OwnerObj {
@@ -46,8 +47,20 @@ export class FillingRib extends OwnerObj {
     return (cnn?.size?.(this[own], profile) || 0) - profile.szc;
   }
   
-  get length() {
+  get curve() {
     const {path} = this[own];
-    return path.curves[this.index].length;
+    return path.curves[this.index];
+  }
+
+  get b() {
+    return this.curve.point1;
+  }
+
+  get e() {
+    return this.curve.point2;
+  }
+  
+  get length() {
+    return this.curve.length;
   }
 }

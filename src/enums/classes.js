@@ -1,7 +1,8 @@
 
 import {countCalculatingWays} from './countCalculatingWays';
+import {predefinedFormulas} from './predefinedFormulas';
 
-export const exclude = ['enm.cnnTypes', 'enm.positions', 'enm.openTypes', 'enm.countCalculatingWays'];
+export const exclude = ['enm.cnnTypes', 'enm.positions', 'enm.openTypes', 'enm.countCalculatingWays', 'enm.predefinedFormulas'];
 
 export function classes({enm, classes, symbols, utils, md}, exclude)  {
 
@@ -64,4 +65,5 @@ export function classes({enm, classes, symbols, utils, md}, exclude)  {
   // });
 
   countCalculatingWays({enm, classes, symbols, utils});
+  predefinedFormulas({enm, classes, symbols, utils});
 }

@@ -23,10 +23,10 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
     },
 
     cnn(attr) {
-      const {specification, basis, stack, elm, elm2, rib, node, rawLength, layer, cnnOther, art1, curr, ...other} = attr;
+      const {specification, basis, stack, elm, elm2, rib, node, rawLength, currentLength, layer, cnnOther, art1, curr, ...other} = attr;
       const {quantity, nom, owner: {coordinates, cnn_type}, algorithm} = basis;
       const sign = cnn_type.is('ii') ? -1 : 1;
-      const len = rib?.length || rawLength || elm?.length || elm2?.length || 0;
+      const len = currentLength || rib?.length || rawLength || elm?.length || elm2?.length || 0;
       
       const specRow = specification.specRow({elm, layer});
       specRow.nom = nom;

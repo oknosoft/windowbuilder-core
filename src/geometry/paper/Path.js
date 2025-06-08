@@ -548,6 +548,12 @@ export default function (paper) {
         }
       },
 
+      lmax(pts) {
+        const locs = pts.map(pt => this.getLocationOf(pt) || this.getNearestLocation(pt));
+        locs.sort($p.utils.sort('offset'));
+        return locs[locs.length-1].offset - locs[0].offset;
+      },
+
     });
   }
   

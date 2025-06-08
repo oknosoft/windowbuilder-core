@@ -200,8 +200,8 @@ export class GeneratrixElement extends BuilderElement {
    * @final
    */
   get d0() {
-    const {cnnII, offset} = this;
-    return offset - cnnII.size(this);
+    const {cnnII, offset, nearest} = this;
+    return offset - cnnII.size(this) + (nearest?.szc || 0);
   }
 
   /**
@@ -344,7 +344,18 @@ export class GeneratrixElement extends BuilderElement {
    * @type Number
    */
   get rawLength() {
-    return this.generatrix.length;
+    let length = this.raw('length');
+    if(!length) {
+      const path= this.outer;
+      const {b, e} = this.points();
+      const o1 = path.getOffsetOf(path.getNearestPoint(b.inner));
+      const o2 = path.getOffsetOf(path.getNearestPoint(b.outer));
+      const o3 = path.getOffsetOf(path.getNearestPoint(e.inner));
+      const o4 = path.getOffsetOf(path.getNearestPoint(e.outer));
+      length = Math.max(o3, o4) - Math.min(o1, o2);
+      this.raw('length', length);
+    }
+    return length;
   }
 
   /**
@@ -561,6 +572,8 @@ export class GeneratrixElement extends BuilderElement {
       inner.add(b.point.add(nb.multiply(d2)));
       outer.add(e.point.add(ne.multiply(d1)));
       inner.add(e.point.add(ne.multiply(d2)));
+      outer.elongation(300);
+      inner.elongation(300);
     }
     return this;
   }

@@ -53,4 +53,9 @@ export class EditorInvisible extends paper.PaperScope {
   cmd(name, attr) {
     this.history[name](attr);
   }
+  
+  elm(index) {
+    const {project} = this;
+    return index ? project.getItem({index}) : project.selectedElements[0];
+  }
 }

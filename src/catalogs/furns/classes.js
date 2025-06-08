@@ -246,6 +246,9 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
     get is_procedure_row(){return this[get]('is_procedure_row')}
     set is_procedure_row(v){this[set]('is_procedure_row',v)}
 
+    get sz(){return 0}
+    set sz(v){}
+
     checkRestrictions({layer, cache, ...other}) {
       const {} = this;
       const {nom, quantity, for_direct_profile_only: direct_only, elm, dop,

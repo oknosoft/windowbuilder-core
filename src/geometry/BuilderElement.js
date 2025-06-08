@@ -86,6 +86,7 @@ export class BuilderElement extends paper.Group {
   checkActual() {     
     if(!this.isActual) {
       this.#raw.nom = null;
+      this.#raw.length = 0;
       this.#raw.index = '';
       this.#raw.stamp = this.project.props.stamp;
     }

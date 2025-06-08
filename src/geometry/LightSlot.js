@@ -168,7 +168,7 @@ export class LightSlot  {
             const e = pathInner[i === pathInner.length - 1 ? 0 : i + 1];
             profiles.push(child.createProfile({b, e, edge: b.edge, loading: true}));
           }
-          child.skeleton.addProfiles(profiles, {'1': 'ad', '2': 'ad', '3': 'ad', '4': 'ad'});
+          child.skeleton.addProfiles(profiles, profiles.reduce((sum, curr, i) => Object.assign(sum, {[i+1]: 'ad'}), {}));
         }
         project.props.loading = loading;
       }

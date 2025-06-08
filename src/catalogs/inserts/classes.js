@@ -151,7 +151,7 @@ return filtered.length ? filtered : [main_rows[0]];
     calculateSpec({specification, ...other}) {
       for(const basis of this.specification) {
         if(basis.checkRestrictions(other) && basis.checkParams(other)) {
-          specification.byBasis({basis, ...other});
+          specification.byBasis({...other, basis});
         }
       }
     }
