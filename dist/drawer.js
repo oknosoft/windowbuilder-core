@@ -20140,6 +20140,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         return false || must_be_saved;
       }
+      if(this.contract.empty()) {
+        ui?.dialogs?.alert({
+          text: 'Не указан договор с покупателем (возможно, выбрана не та организация)',
+          title: this.presentation
+        });
+        return false || must_be_saved;
+      }
       const err_prices = this.check_prices();
       if(err_prices) {
         ui?.dialogs?.alert({
