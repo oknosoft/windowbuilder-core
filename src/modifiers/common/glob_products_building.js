@@ -305,8 +305,8 @@ class ProductsBuilding {
 
         const prev = b.profile;
         const next = e.profile;
-        const row_cnn_prev = b.cnn && b.cnn.main_row(elm);
-        const row_cnn_next = e.cnn && e.cnn.main_row(elm);
+        const row_cnn_prev = b.cnn?.main_row(elm);
+        const row_cnn_next = e.cnn?.main_row(elm);
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
 
         // добавляем строку спецификации
@@ -316,7 +316,7 @@ class ProductsBuilding {
           elm,
           row_base: row_cnn,
           nom: _row.nom,
-          origin: cnn_row(_row.elm, prev ? prev.elm : 0, b.cnn || e.cnn),
+          origin: row_cnn ? [`cnn|${(b.cnn || e.cnn).ref}|${row_cnn.row}`] : null,
           spec,
           ox,
         });
@@ -1111,7 +1111,10 @@ class ProductsBuilding {
 
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(origin && debug) {
+    if(debug) {
+      if(!Array.isArray(origin) && Array.isArray(row_base._origin)) {
+        origin = row_base._origin;
+      }
       row_spec.origin = Array.isArray(origin) ? JSON.stringify(origin) : origin;
     }
     if(specify) {

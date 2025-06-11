@@ -16013,8 +16013,8 @@ class ProductsBuilding {
         e.check_err();
         const prev = b.profile;
         const next = e.profile;
-        const row_cnn_prev = b.cnn && b.cnn.main_row(elm);
-        const row_cnn_next = e.cnn && e.cnn.main_row(elm);
+        const row_cnn_prev = b.cnn?.main_row(elm);
+        const row_cnn_next = e.cnn?.main_row(elm);
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
         const row_cnn = row_cnn_prev || row_cnn_next;
         _attr.row_spec = null;
@@ -16022,7 +16022,7 @@ class ProductsBuilding {
           elm,
           row_base: row_cnn,
           nom: _row.nom,
-          origin: cnn_row(_row.elm, prev ? prev.elm : 0, b.cnn || e.cnn),
+          origin: row_cnn ? [`cnn|${(b.cnn || e.cnn).ref}|${row_cnn.row}`] : null,
           spec,
           ox,
         });
@@ -16588,7 +16588,10 @@ class ProductsBuilding {
     }
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(origin && debug) {
+    if(debug) {
+      if(!Array.isArray(origin) && Array.isArray(row_base._origin)) {
+        origin = row_base._origin;
+      }
       row_spec.origin = Array.isArray(origin) ? JSON.stringify(origin) : origin;
     }
     if(specify) {
@@ -18425,8 +18428,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(row?._origin) {
           fakerow._origin.push(...row?._origin);
         }
-        else if(row) {
-          fakerow._origin.push(`ins|${row._owner._owner.ref}|${row.row}`);
+        else {
+          if(own_row?._owner) {
+            const origin = `${own_row instanceof CatCnnsSpecificationRow ? 'cnn' : 'ins'}|${own_row._owner._owner.ref}|${own_row.row}`;
+            if(!fakerow._origin.includes(origin)) {
+              fakerow._origin.push(origin);
+            }
+          }
+          if(row) {
+            fakerow._origin.push(`ins|${row._owner._owner.ref}|${row.row}`);
+          }
         }
         const origin = `ins|${sub_row._owner._owner.ref}|${sub_row.row}`;
         if(!fakerow._origin.includes(origin)) {

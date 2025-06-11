@@ -946,12 +946,20 @@
         }
         fakerow._owner = sub_row._owner;
         fakerow.row = sub_row.row;
-
+        
         if(row?._origin) {
           fakerow._origin.push(...row?._origin);
         }
-        else if(row) {
-          fakerow._origin.push(`ins|${row._owner._owner.ref}|${row.row}`);
+        else {
+          if(own_row?._owner) {
+            const origin = `${own_row instanceof CatCnnsSpecificationRow ? 'cnn' : 'ins'}|${own_row._owner._owner.ref}|${own_row.row}`;
+            if(!fakerow._origin.includes(origin)) {
+              fakerow._origin.push(origin);
+            }
+          }
+          if(row) {
+            fakerow._origin.push(`ins|${row._owner._owner.ref}|${row.row}`);
+          }
         }
         const origin = `ins|${sub_row._owner._owner.ref}|${sub_row.row}`;
         if(!fakerow._origin.includes(origin)) {
