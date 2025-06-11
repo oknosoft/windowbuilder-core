@@ -705,15 +705,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
         // запрет удаления подчиненной продукции
         const {leading_elm, leading_product, origin} = characteristic;
-        if(!leading_product.empty() && leading_product.calc_order_row && (
-          // если в изделии присутствует порождающая вставка
-          leading_product.inserts.find({cnstr: -leading_elm, inset: origin}) ||
-          // если это виртуальное изделие слоя
-          [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
-        )) {
+        if(!leading_product.empty() && leading_product.calc_order_row && leading_elm) {
           ui?.dialogs?.alert({
-            html: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
-              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
+            html: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в 
+<a href="#" onClick="const {dialogs}=$p.ui;dialogs.close_confirm('alert');dialogs.handleNavigate('/builder/${leading_product.ref}?order=${characteristic.calc_order.ref}')">${leading_product.prod_name(true)}</a> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
           return false;

@@ -69,7 +69,12 @@ class SpecBuilding {
           }
         }
       });
+      const {_loading} = calc_order._data;
+      if(!_loading) {
+        calc_order._data._loading = true;
+      }
       adel.forEach((row) => calc_order.production.del(row.row-1));
+      calc_order._data._loading = _loading;
     }
 
     const ax = [];

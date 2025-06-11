@@ -16833,7 +16833,12 @@ class SpecBuilding {
           }
         }
       });
+      const {_loading} = calc_order._data;
+      if(!_loading) {
+        calc_order._data._loading = true;
+      }
       adel.forEach((row) => calc_order.production.del(row.row-1));
+      calc_order._data._loading = _loading;
     }
     const ax = [];
     ox._order_rows?.forEach?.((cx) => {
@@ -20585,13 +20590,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(!characteristic.empty() && !characteristic.calc_order.empty()) {
         const {production, orders, presentation, _data} = this;
         const {leading_elm, leading_product, origin} = characteristic;
-        if(!leading_product.empty() && leading_product.calc_order_row && (
-          leading_product.inserts.find({cnstr: -leading_elm, inset: origin}) ||
-          [10, 11].includes(leading_product.constructions.find({cnstr: -leading_elm})?.kind)
-        )) {
+        if(!leading_product.empty() && leading_product.calc_order_row && leading_elm) {
           ui?.dialogs?.alert({
-            html: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в <i>${
-              leading_product.prod_name(true)}</i> и отредактируйте доп. вставки и свойства слоёв`,
+            html: `Изделие <i>${characteristic.prod_name(true)}</i> не может быть удалено<br/><br/>Для удаления, пройдите в 
+<a href="#" onClick="const {dialogs}=$p.ui;dialogs.close_confirm('alert');dialogs.handleNavigate('/builder/${leading_product.ref}?order=${characteristic.calc_order.ref}')">${leading_product.prod_name(true)}</a> и отредактируйте доп. вставки и свойства слоёв`,
             title: presentation
           });
           return false;
