@@ -368,6 +368,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
 
     // пометим на удаление неиспользуемые характеристики
+    /*
     // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
     const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
       .then(({rows}) => {
@@ -405,6 +406,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return null;
       })
       .catch((err) => null);
+    */
+
+    const unused = () => utils.sleep(20).then(() => _manager.emit_async('svgs', this));
 
     const save_error = (reason, obj) => {
       const note = `Ошибка при записи ${this.presentation}, ${reason}`

@@ -20290,41 +20290,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     sobjs = utils._clone(sobjs, true);
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
-    const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
-      .then(({rows}) => {
-        if(!rows.length) {
-          return 0;
-        }
-        const keys = [];
-        for (const {id} of rows) {
-          const ref = id.substring(20);
-          if(this.production.find({characteristic: ref})) {
-            continue;
-          }
-          keys.push(id);
-        }
-        const  timestamp = {
-          moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'), 
-          user: wsql.get_user_param('user_name')
-        };
-        return db.allDocs({keys, limit: keys.length})
-          .then(({rows}) => {
-            keys.length = 0;
-            for(const {doc, key, error, value} of rows) {
-              if(error || value.deleted) {
-                continue;
-              }
-              keys.push({_id: key, _rev: value.rev, _deleted: true, timestamp});
-            }
-            return db.bulkDocs(keys)
-              .then(() => keys.length);
-          })
-      })
-      .then((res) => {
-        res && _manager.emit_async('svgs', this);
-        return null;
-      })
-      .catch((err) => null);
+    const unused = () => utils.sleep(20).then(() => _manager.emit_async('svgs', this));
     const save_error = (reason, obj) => {
       const note = `Ошибка при записи ${this.presentation}, ${reason}`
       $p.record_log({
