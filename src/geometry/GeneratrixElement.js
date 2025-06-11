@@ -143,6 +143,20 @@ export class GeneratrixElement extends BuilderElement {
   get y2(){
     return this.e.point.y;
   }
+  
+  get alp1() {
+    const {generatrix} = this;
+    const {inner, outer} = this.points().b;
+    const alp = Math.round((inner.subtract(outer).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
+    return alp < 0 ? alp + 360 : alp;
+  }
+
+  get alp2() {
+    const {generatrix} = this;
+    const {inner, outer} = this.points().e;
+    const alp = Math.round((generatrix.getTangentAt(generatrix.length).angle - outer.subtract(inner).angle) * 10) / 10;
+    return alp < 0 ? alp + 360 : alp;
+  }
 
   /**
    * @summary Путь фактического реза элемента

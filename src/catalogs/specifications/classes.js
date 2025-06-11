@@ -61,6 +61,14 @@ export function classes({cat, classes, symbols}, exclude)  {
   }
   classes.CatSpecifications = CatSpecifications;
 
+  const flds = {
+    a4: ['len', 'width', 's', 'qty', 'alp1', 'alp2'],
+    a6: ['totqty', 'quantity'],
+    round(row) {
+      this.a4.forEach((fld) => row[fld] = row[fld]?.round(4) || 0);
+      this.a6.forEach((fld) => row[fld] = row[fld]?.round(6) || 0);
+    }
+  }; 
   class CatSpecificationsCompositionRow extends TabularSectionRow{
     get composition_kinds(){return this[get]('composition_kinds')}
     set composition_kinds(v){this[set]('composition_kinds',v)}
@@ -149,8 +157,57 @@ export function classes({cat, classes, symbols}, exclude)  {
       return this;
     }
     
-    angleAreaMass(attr) {
+    angleAreaVolume(attr) {
+      const {qty, len, width, s, nom, totqty, quantity, _quantity} = this;
+      if(!qty) {
+        // dop=-1 - визуализация, dop=-2 - техоперация,
+        this.del();
+        return;
+      }
+      // если свойства уже рассчитаны в формуле, пересчет не выполняем
+      if(totqty && quantity) {
+        return this;
+      }
+      
+      const {angle, elm, totqty0} = attr;
+      if(angle) {
+        const {alp1, alp2, method: {prev, next}} = attr.angle;
+      }
 
+      if(len) {
+        if(width && !s) {
+          this.s = len * width;
+        }
+      }
+      else {
+        this.s = 0;
+      }
+
+      if(this.s) {
+        this.totqty = qty * this.s;
+      }
+      else if(len) {
+        this.totqty = qty * len;
+      }
+      else {
+        this.totqty = qty;
+      }
+
+      // при расчёте по площади, в totqty1 пишем площадь bounds вместо площади фигуры
+      if(this.s && elm?.is('Filling') && s < len * width) {
+        this.totqty = qty * len * width;
+      }
+
+      this.quantity = totqty0 ? 0 : Math.max(nom.minVolume, this.totqty * nom.loss_factor);
+
+      if(_quantity) {
+        this.qty *= _quantity;
+        this.totqty *= _quantity;
+        this.quantity *= _quantity;
+      }
+
+      flds.round(this);
+       
       return this;
     }
   }

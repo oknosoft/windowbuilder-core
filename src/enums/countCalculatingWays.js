@@ -19,7 +19,7 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
       specRow.nom = nom;
       return specRow
         .qtyLen(attr)
-        .angleAreaMass(attr);
+        .angleAreaVolume(attr);
     },
 
     cnn(attr) {
@@ -113,9 +113,9 @@ export function countCalculatingWays({enm, classes, symbols, utils}) {
         }
       }
       else {
-        specRow.angleAreaMass(attr);
+        specRow.angleAreaVolume(attr);
       }
-      return specRow.angleAreaMass(attr);
+      return specRow.angleAreaVolume(attr);
     },
 
     furn(attr) {

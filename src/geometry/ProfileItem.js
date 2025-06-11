@@ -58,7 +58,11 @@ export class Profile extends GeneratrixElement {
       return;
     }
     const other = {elm: this, layer, nom};
-    const props = {...other, rawLength, angleHor, specification};
+    const props = {...other, rawLength, angleHor, specification, angle: {
+        alp1: this.alp1,
+        alp2: this.alp2,
+        method: {}
+      }};
     if(segms?.length) {
       // если профиль разбит на связки, добавляем их спецификации, вместо спецификации самого профиля
       for(const segment of segms) {
@@ -69,10 +73,16 @@ export class Profile extends GeneratrixElement {
       // основной материал
       const rowCnnPrev = b.cnn?.mainRow({...other, node: b});
       const rowRnnNext = e.cnn?.mainRow({...other, node: e});
+      props.angle.method.prev = rowCnnPrev?.angle_calc_method;
+      props.angle.method.next = rowRnnNext?.angle_calc_method;
       const specRow = specification.specRow(other);
       specRow.nom = nom;
       specRow.clr = clr;
+      specRow.qty = 1;
+      // TODO: укорочения соединений
       specRow.len = rawLength / 1000;
+      // TODO: поправки углов
+      specRow.angleAreaVolume(props);
 
       // вклад концевых соединений
       b.cnn.calculateSpec({...props, elm2: b.profile, node: b});
