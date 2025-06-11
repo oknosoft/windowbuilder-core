@@ -8250,6 +8250,8 @@ set dop(v){this._setter('dop',v)}
 }
 $p.DocWork_centers_taskCutsRow = DocWork_centers_taskCutsRow;
 class DocWork_centers_taskCuttingRow extends TabularSectionRow{
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
 get production(){return this._getter('production')}
 set production(v){this._setter('production',v)}
 get specimen(){return this._getter('specimen')}
@@ -8888,26 +8890,14 @@ set price(v){this._setter('price',v)}
 $p.DocNom_prices_setupGoodsRow = DocNom_prices_setupGoodsRow;
 $p.doc.create('nom_prices_setup');
 class DocPlanning_event extends DocObj{
-get phase(){return this._getter('phase')}
-set phase(v){this._setter('phase',v)}
-get key(){return this._getter('key')}
-set key(v){this._setter('key',v)}
-get recipient(){return this._getter('recipient')}
-set recipient(v){this._setter('recipient',v)}
-get trans(){return this._getter('trans')}
-set trans(v){this._setter('trans',v)}
-get partner(){return this._getter('partner')}
-set partner(v){this._setter('partner',v)}
-get project(){return this._getter('project')}
-set project(v){this._setter('project',v)}
-get origin(){return this._getter('origin')}
-set origin(v){this._setter('origin',v)}
+get basis(){return this._getter('basis')}
+set basis(v){this._setter('basis',v)}
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
 get executors(){return this._getter_ts('executors')}
 set executors(v){this._setter_ts('executors',v)}
-get planning(){return this._getter_ts('planning')}
-set planning(v){this._setter_ts('planning',v)}
+get set(){return this._getter_ts('set')}
+set set(v){this._setter_ts('set',v)}
 }
 $p.DocPlanning_event = DocPlanning_event;
 class DocPlanning_eventExecutorsRow extends TabularSectionRow{
@@ -8917,23 +8907,27 @@ get coefficient(){return this._getter('coefficient')}
 set coefficient(v){this._setter('coefficient',v)}
 }
 $p.DocPlanning_eventExecutorsRow = DocPlanning_eventExecutorsRow;
-class DocPlanning_eventPlanningRow extends TabularSectionRow{
+class DocPlanning_eventSetRow extends TabularSectionRow{
+get record_kind(){return this._getter('record_kind')}
+set record_kind(v){this._setter('record_kind',v)}
+get phase(){return this._getter('phase')}
+set phase(v){this._setter('phase',v)}
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
 get obj(){return this._getter('obj')}
 set obj(v){this._setter('obj',v)}
-get specimen(){return this._getter('specimen')}
-set specimen(v){this._setter('specimen',v)}
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
 get power(){return this._getter('power')}
 set power(v){this._setter('power',v)}
-get nom(){return this._getter('nom')}
-set nom(v){this._setter('nom',v)}
-get begin_time(){return this._getter('begin_time')}
-set begin_time(v){this._setter('begin_time',v)}
-get end_time(){return this._getter('end_time')}
-set end_time(v){this._setter('end_time',v)}
 }
-$p.DocPlanning_eventPlanningRow = DocPlanning_eventPlanningRow;
+$p.DocPlanning_eventSetRow = DocPlanning_eventSetRow;
 $p.doc.create('planning_event');
 class DocInventory_cuts extends DocObj{
 get transactions_kind(){return this._getter('transactions_kind')}
