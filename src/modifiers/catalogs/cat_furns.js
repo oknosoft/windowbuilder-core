@@ -152,7 +152,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
    * @param cache {Object}
    * @param [exclude_dop] {Boolean}
    */
-  get_spec(contour, cache, exclude_dop) {
+  get_spec(contour, cache, exclude_dop, stack = []) {
 
     // тихий режим для спецификации
     const res = $p.dp.buyers_order.create({specification: []}, true).specification;
@@ -245,9 +245,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
             }
 
-            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache);
-            proc_row.origin = this;
-            proc_row.specify = row_furn.nom;
+            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
             proc_row.handle_height_max = contour.cnstr;
             if([nea, through, inverse].includes(dop_row.transfer_option)){
               let nearest = elm.nearest();
@@ -295,19 +293,19 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           // в зависимости от типа строки, добавляем саму строку или её подчиненную спецификацию
           if(dop_row.is_set_row){
             const {nom} = dop_row;
-            nom && nom.get_spec(contour, cache).forEach((sub_row) => {
+            nom && nom.get_spec(contour, cache, false, [...stack, `frn|${dop_row._owner._owner.ref}|${dop_row.row}`]).forEach((sub_row) => {
               if(sub_row.is_procedure_row){
-                res.add(sub_row);
+                const rrow = res.add(sub_row);
+                rrow._origin = sub_row._origin;
               }
               else if(sub_row.quantity) {
-                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache, stack);
                 row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache);
-            row_spec.specify = row_furn.nom;
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
           }
         });
       }
@@ -315,19 +313,20 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       // в зависимости от типа строки, добавляем саму строку или её подчиненную спецификацию
       if(row_furn.is_set_row){
         const {nom} = row_furn;
-        nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {
+        nom && nom.get_spec(contour, cache, exclude_dop, [...stack, `frn|${row_furn._owner._owner.ref}|${row_furn.row}`]).forEach((sub_row) => {
           if(sub_row.is_procedure_row) {
-            res.add(sub_row);
+            const rrow = res.add(sub_row);
+            rrow._origin = sub_row._origin;
           }
           else if(sub_row.quantity) {
-            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache, stack);
             row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
         if(row_furn.quantity) {
-          this.add_with_algorithm(res, ox, contour, row_furn, cache);
+          this.add_with_algorithm(res, ox, contour, row_furn, cache, stack);
         }
       }
     });
@@ -337,15 +336,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
   /**
    * Добавляет строку в спецификацию с учетом алгоритма
-   * @param {TabularSection} res
-   * @param {CatCharacteristics} ox
-   * @param {Contour} contour
-   * @param {CatFurnsSpecificationRow} row_furn
-   * @param {Object} cache
+   * @param {TabularSection} res - временная табчасть спецификации
+   * @param {CatCharacteristics} ox - продукция
+   * @param {Contour} contour - слой
+   * @param {CatFurnsSpecificationRow} row_furn - строка спецификации фурнитуры
+   * @param {Object} cache - кеш размеров и профилей слоя
+   * @param {Array} stack - стек вызовов
    * @return {DpBuyers_orderSpecificationRow}
    */
-  add_with_algorithm(res, ox, contour, row_furn, cache) {
-    const {algorithm, formula, elm, dop, offset_option} = row_furn;
+  add_with_algorithm(res, ox, contour, row_furn, cache, stack) {
+    const {algorithm, formula, elm, dop, offset_option, _owner, _origin} = row_furn;
     const {CatNom, enm: {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}}} = $p;
     let cx;
     if(algorithm === cx_prm) {
@@ -355,7 +355,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
     }
     const row_spec = res.add(row_furn);
-    row_spec.origin = this;
+    if(Array.isArray(_origin)) {
+      row_spec._origin = _origin;  
+    }
+    else {
+      const origin = `frn|${_owner._owner.ref}|${row_furn.row}`;
+      row_spec._origin = [...stack];
+      if(!row_spec._origin.includes(origin)) {
+        row_spec._origin.push(origin);
+      }
+    }
     if(algorithm === cx_prm) {
       row_spec.nom_characteristic = cx;
     }

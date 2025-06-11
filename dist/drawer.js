@@ -15861,7 +15861,13 @@ class ProductsBuilding {
       const {cnstr, furn_set, weight} = contour;
       furn_set.get_spec(contour, furn_cache).forEach((row) => {
         const elm = {elm: -cnstr, clr: blank_clr};
-        const row_spec = new_spec_row({elm, row_base: row, origin: row.origin, specify: row.specify, spec, ox});
+        const row_spec = new_spec_row({
+          elm,
+          row_base: row,
+          origin: row._origin,
+          spec,
+          ox
+        });
         if(row.is_procedure_row) {
           if(row_spec.nom.elm_type.error && row.side) {
             row_spec.elm = contour.profile_by_furn_side(row.side, furn_cache)?.elm;
@@ -17352,7 +17358,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     });
     return _data.used_params = sprms;
   }
-  get_spec(contour, cache, exclude_dop) {
+  get_spec(contour, cache, exclude_dop, stack = []) {
     const res = $p.dp.buyers_order.create({specification: []}, true).specification;
     const {_ox: ox} = contour;
     const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},
@@ -17418,9 +17424,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 }
               }
             }
-            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache);
-            proc_row.origin = this;
-            proc_row.specify = row_furn.nom;
+            const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
             proc_row.handle_height_max = contour.cnstr;
             if([nea, through, inverse].includes(dop_row.transfer_option)){
               let nearest = elm.nearest();
@@ -17463,44 +17467,45 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           }
           if(dop_row.is_set_row){
             const {nom} = dop_row;
-            nom && nom.get_spec(contour, cache).forEach((sub_row) => {
+            nom && nom.get_spec(contour, cache, false, [...stack, `frn|${dop_row._owner._owner.ref}|${dop_row.row}`]).forEach((sub_row) => {
               if(sub_row.is_procedure_row){
-                res.add(sub_row);
+                const rrow = res.add(sub_row);
+                rrow._origin = sub_row._origin;
               }
               else if(sub_row.quantity) {
-                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
+                const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache, stack);
                 row_spec.quantity = (row_furn.quantity || 1) * (dop_row.quantity || 1) * sub_row.quantity;
               }
             });
           }
           else{
-            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache);
-            row_spec.specify = row_furn.nom;
+            const row_spec = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
           }
         });
       }
       if(row_furn.is_set_row){
         const {nom} = row_furn;
-        nom && nom.get_spec(contour, cache, exclude_dop).forEach((sub_row) => {
+        nom && nom.get_spec(contour, cache, exclude_dop, [...stack, `frn|${row_furn._owner._owner.ref}|${row_furn.row}`]).forEach((sub_row) => {
           if(sub_row.is_procedure_row) {
-            res.add(sub_row);
+            const rrow = res.add(sub_row);
+            rrow._origin = sub_row._origin;
           }
           else if(sub_row.quantity) {
-            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache);
+            const row_spec = this.add_with_algorithm(res, ox, contour, sub_row, cache, stack);
             row_spec.quantity = (row_furn.quantity || 1) * sub_row.quantity;
           }
         });
       }
       else{
         if(row_furn.quantity) {
-          this.add_with_algorithm(res, ox, contour, row_furn, cache);
+          this.add_with_algorithm(res, ox, contour, row_furn, cache, stack);
         }
       }
     });
     return res;
   }
-  add_with_algorithm(res, ox, contour, row_furn, cache) {
-    const {algorithm, formula, elm, dop, offset_option} = row_furn;
+  add_with_algorithm(res, ox, contour, row_furn, cache, stack) {
+    const {algorithm, formula, elm, dop, offset_option, _owner, _origin} = row_furn;
     const {CatNom, enm: {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}}} = $p;
     let cx;
     if(algorithm === cx_prm) {
@@ -17510,7 +17515,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
     }
     const row_spec = res.add(row_furn);
-    row_spec.origin = this;
+    if(Array.isArray(_origin)) {
+      row_spec._origin = _origin;  
+    }
+    else {
+      const origin = `frn|${_owner._owner.ref}|${row_furn.row}`;
+      row_spec._origin = [...stack];
+      if(!row_spec._origin.includes(origin)) {
+        row_spec._origin.push(origin);
+      }
+    }
     if(algorithm === cx_prm) {
       row_spec.nom_characteristic = cx;
     }

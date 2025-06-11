@@ -117,7 +117,13 @@ class ProductsBuilding {
       const {cnstr, furn_set, weight} = contour;
       furn_set.get_spec(contour, furn_cache).forEach((row) => {
         const elm = {elm: -cnstr, clr: blank_clr};
-        const row_spec = new_spec_row({elm, row_base: row, origin: row.origin, specify: row.specify, spec, ox});
+        const row_spec = new_spec_row({
+          elm,
+          row_base: row,
+          origin: row._origin,
+          spec,
+          ox
+        });
 
         if(row.is_procedure_row) {
           if(row_spec.nom.elm_type.error && row.side) {
