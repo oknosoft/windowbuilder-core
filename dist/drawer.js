@@ -20109,20 +20109,26 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     const {acl_objs} = current_user;
     this.manager = current_user;
-    acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
-      this.organization = row.acl_obj;
-      return false;
-    });
+    if(this.organization.empty()) {
+      acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
+        this.organization = row.acl_obj;
+        return false;
+      });
+    }
     DocCalc_order.set_department.call(this);
-    acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
-      this.partner = row.acl_obj;
-      return false;
-    });
+    if(this.partner.empty()) {
+      acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
+        this.partner = row.acl_obj;
+        return false;
+      });
+    }
     acl_objs.find_rows({by_default: true, type: cat.stores.class_name}, (row) => {
       this.warehouse = row.acl_obj;
       return false;
     });
-    this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
+    if(this.contract.empty() || this.contract.owner !== this.partner || this.contract.organization !== this.organization) {
+      this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
+    }
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;
     return this.number_doc ? Promise.resolve(this) : this.new_number_doc();
   }

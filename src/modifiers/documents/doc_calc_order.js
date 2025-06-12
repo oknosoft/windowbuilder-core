@@ -144,19 +144,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.manager = current_user;
 
     //Организация
-    acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
-      this.organization = row.acl_obj;
-      return false;
-    });
+    if(this.organization.empty()) {
+      acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
+        this.organization = row.acl_obj;
+        return false;
+      });
+    }
 
     //Подразделение
     DocCalc_order.set_department.call(this);
 
     //Контрагент
-    acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
-      this.partner = row.acl_obj;
-      return false;
-    });
+    if(this.partner.empty()) {
+      acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
+        this.partner = row.acl_obj;
+        return false;
+      });
+    }
 
     //Склад
     acl_objs.find_rows({by_default: true, type: cat.stores.class_name}, (row) => {
@@ -165,7 +169,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     });
 
     //Договор
-    this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
+    if(this.contract.empty() || this.contract.owner !== this.partner || this.contract.organization !== this.organization) {
+      this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
+    }
 
     //СостояниеТранспорта
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;

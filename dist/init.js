@@ -8580,7 +8580,7 @@ class DocCalc_orderManager extends DocManager {
       await src.load_linked_refs();
     }
     const {clone, refill_props} = src;
-    const {organization, partner, contract, orders, _rev, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, posted, ...others} = (src._obj || src);
     const tmp = {date: new Date(), organization, partner, contract};
     if(clone) {
       utils._mixin(tmp, (src._obj || src));
