@@ -1,5 +1,13 @@
 
+import {epsilon} from './Point';
+
 export default function ({Line, Point, Rectangle}) {
+
+  Point.angleHor = (b, e) => {
+    const res = (new Point(e.x - b.x, b.y - e.y)).angle.round(2);
+    return res < 0 ? (res < -epsilon ? res + 360 : 0) : res;
+  };
+  
   Object.assign(Rectangle.prototype, {
 
     nearestRib(point) {

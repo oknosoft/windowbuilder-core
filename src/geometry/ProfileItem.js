@@ -58,9 +58,10 @@ export class Profile extends GeneratrixElement {
       return;
     }
     const other = {elm: this, layer, nom};
-    const props = {...other, rawLength, angleHor, specification, angle: {
-        alp1: this.alp1,
-        alp2: this.alp2,
+    const props = {...other, rawLength, specification, angle: {
+        cut: {b: this.alp('b'), e: this.alp('e')},
+        elm: {b: this.alp('b', 'elm'), e: this.alp('e', 'elm')},
+        hor: angleHor,
         method: {}
       }};
     if(segms?.length) {

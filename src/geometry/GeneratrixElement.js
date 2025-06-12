@@ -144,18 +144,18 @@ export class GeneratrixElement extends BuilderElement {
     return this.e.point.y;
   }
   
-  get alp1() {
+  alp(node, mode) {
     const {generatrix} = this;
-    const {inner, outer} = this.points().b;
-    const alp = Math.round((inner.subtract(outer).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
-    return alp < 0 ? alp + 360 : alp;
-  }
-
-  get alp2() {
-    const {generatrix} = this;
-    const {inner, outer} = this.points().e;
-    const alp = Math.round((generatrix.getTangentAt(generatrix.length).angle - outer.subtract(inner).angle) * 10) / 10;
-    return alp < 0 ? alp + 360 : alp;
+    if(mode !== 'elm') {
+      const {inner, outer} = this.points()[node];
+      const alp = node === 'b' ?
+        Math.round((inner.subtract(outer).angle - generatrix.getTangentAt(0).angle) * 10) / 10 :
+        Math.round((generatrix.getTangentAt(generatrix.length).angle - outer.subtract(inner).angle) * 10) / 10;
+      return alp < 0 ? alp + 360 : alp;
+    }
+    else {
+      
+    }
   }
 
   /**
@@ -313,8 +313,7 @@ export class GeneratrixElement extends BuilderElement {
    */
   get angleHor() {
     const {b: {point: b}, e: {point: e}} = this;
-    const res = (new paper.Point(e.x - b.x, b.y - e.y)).angle.round(2);
-    return res < 0 ? (res < -epsilon ? res + 360 : 0) : res;
+    return paper.Point.angleHor(b, e);
   }
 
   /**

@@ -170,8 +170,37 @@ export function classes({cat, classes, symbols}, exclude)  {
       }
       
       const {angle, elm, totqty0} = attr;
-      if(angle) {
-        const {alp1, alp2, method: {prev, next}} = attr.angle;
+      if(angle && !nom.is_pieces) {
+        const {cut, elm, method: {prev, next}} = angle;
+        
+        if(prev.is('main') || prev.is('seam')) {
+          this.alp1 = cut.b;
+        }
+        else if(prev.is('_90')) {
+          this.alp1 = 90;
+        }
+        else if(prev.is('_4590')) {
+          this.alp1 = 45;
+        }
+        else if(prev.is('half')) {
+          this.alp1 = elm.b / 2;
+        }
+        else if(prev.is('cnn')) {
+          this.alp1 = elm.b;
+        }
+
+        if(next.is('main') || next.is('seam')) {
+          this.alp2 = cut.e;
+        }
+        else if(next.is('_90') || next.is('_4590')) {
+          this.alp2 = 90;
+        }
+        else if(next.is('half')) {
+          this.alp2 = elm.e / 2;
+        }
+        else if(next.is('cnn')) {
+          this.alp2 = elm.e;
+        }
       }
 
       if(len) {

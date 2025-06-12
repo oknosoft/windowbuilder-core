@@ -11,7 +11,7 @@ export function predefinedFormulas({enm, classes, symbols, utils}) {
 
   const methods = {
     gb_long(attr, short) {
-      const {rib, basis} = attr;
+      const {rib, basis, angle} = attr;
       if(rib) {
         const {edge, prev, next, b, e} = rib;
         const {sz, coefficient, nom} = basis;

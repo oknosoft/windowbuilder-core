@@ -92,7 +92,8 @@ export class Filling extends ContainerBlank {
     const {inset, thickness, specification, error} = this.checkErr();
     const other = {elm2: this, layer, specification};
     for (const rib of this.ribs) {
-      rib.cnn?.calculateSpec({...other, elm: rib.edge.profile, rib});
+      const {angle, edge, cnn} = rib;
+      cnn?.calculateSpec({...other, elm: edge.profile, rib, angle});
     }
 
     inset.calculateSpec({elm: this, layer, specification});

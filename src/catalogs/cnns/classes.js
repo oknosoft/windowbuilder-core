@@ -260,7 +260,12 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
     calculateSpec({specification, ...other}) {
       for(const basis of this.specification) {
         if(basis.checkRestrictions(other) && basis.checkParams(other)) {
-          specification.byBasis({...other, basis});
+          const angle = Object.assign({}, other.angle);
+          if(!angle.method || this.cnn_type.is('ii')) {
+            const prev = basis.angle_calc_method;
+            angle.method = {prev, next: prev};
+          }
+          specification.byBasis({...other, angle, basis});
         }
       }
     }
@@ -345,7 +350,7 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
       return this[own][own];
     }
 
-    checkRestrictions({elm, layer, rawLength, angleHor, correct=false}) {
+    checkRestrictions({elm, elm2, layer, rawLength, angle, correct=false}) {
       const {nom, quantity, for_direct_profile_only: direct_only, amin, amax, alp2, set_specification} = this;
       // при формировании спецификации, отбрасываем корректировочные строки и наоборот, при корректировке - обычные
       if(!quantity && !correct || quantity && correct) {
@@ -359,10 +364,16 @@ export function classes({classes, md, utils, symbols, cat, enm, cch}, exclude)  
       if((direct_only > 0 && !elm.isLinear()) || (direct_only < 0 && elm.isLinear())) {
         return;
       }
-      if(angleHor === undefined) {
-        angleHor = elm.angleHor;
+      if(!angle) {
+        angle = {};
+        if(elm.is('GeneratrixElement')) {
+          angle.hor = elm.angleHor; 
+        }
+        else if(elm2?.is('GeneratrixElement')) {
+          angle.hor = elm2.angleHor;
+        }
       }
-      if(amin > angleHor || amax < angleHor) {
+      if(amin > angle.hor || amax < angle.hor) {
         return;
       }
       return true;

@@ -63,4 +63,24 @@ export class FillingRib extends OwnerObj {
   get length() {
     return this.curve.length;
   }
+  
+  get angle() {
+    const {curve, prev: {curve: prev}, next: {curve: next}} = this;
+    const hor = paper.Point.angleHor(curve.point1, curve.point2);
+    const anglePrev = paper.Point.angleHor(prev.point1, prev.point2);
+    const angleNext = paper.Point.angleHor(next.point1, next.point2);
+    let b = anglePrev - hor;
+    if(b < 0) {
+      b += 360;
+    }
+    let e = hor - angleNext;
+    if(e < 0) {
+      e += 360;
+    }
+    return {
+      hor,
+      cut: {b, e},
+      elm: {b, e},
+    };    
+  }
 }

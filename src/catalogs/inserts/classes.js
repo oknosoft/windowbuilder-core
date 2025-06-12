@@ -224,7 +224,7 @@ return filtered.length ? filtered : [main_rows[0]];
     get is_main_elm(){return this[get]('is_main_elm')}
     set is_main_elm(v){this[set]('is_main_elm',v)}
 
-    checkRestrictions({elm, rawLength, angleHor}) {
+    checkRestrictions({elm, rawLength, angle}) {
       // главный элемент с нулевым количеством не включаем
       if(this.is_main_elm && !this.quantity) {
         return false;
@@ -238,7 +238,7 @@ return filtered.length ? filtered : [main_rows[0]];
       if(elm?.is?.('GeneratrixElement')) {
         const {ahmin, ahmax, lmin, lmax} = this;
         if(ahmin > 0 || (ahmax && ahmax < 360)) {
-          if (ahmin > angleHor || (ahmax && ahmax < angleHor)) {
+          if (ahmin > angle.hor || (ahmax && ahmax < angle.hor)) {
             return false;
           }
         }
