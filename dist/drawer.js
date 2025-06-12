@@ -14533,7 +14533,8 @@ class Scheme extends paper.Project {
   }
   get area() {
     const {l_connective, contours} = this;
-    return [l_connective].concat(contours).reduce((sum, {area}) => sum + area, 0).round(4);
+    const layers = $p.job_prm.builder.exclude_connective_area ? [] : [l_connective];
+    return layers.concat(contours).reduce((sum, {area}) => sum + area, 0).round(4);
   }
   get form_area() {
     return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(4);
