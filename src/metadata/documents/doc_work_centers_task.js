@@ -114,7 +114,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
             return;
           }
           if(!ct.empty() && !ct.is('no')) {
-            const last = this.cutting_row({obj, specimen, row, opts});
+            const last = this.cutting_row({obj, specimen, row, opts, srow});
             if(last && !noms.find(({nom, characteristic}) => {nom === last.nom && characteristic === last.characteristic})) {
               noms.push({nom: last.nom, characteristic: last.characteristic});
             }
@@ -136,7 +136,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     }
   }
 
-  cutting_row({obj, specimen, elm, row, opts}) {
+  cutting_row({obj, specimen, elm, row, opts, srow}) {
     // если планирование до элемента...
     if(elm && row.elm !== elm) {
       return;
@@ -159,6 +159,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     let last;
     for(let qty = 1;  qty <= row.qty; qty++) {
       last = this.cutting.add({
+        obj: srow?.obj?.valueOf(),
         production: obj,
         specimen,
         elm: row.elm,

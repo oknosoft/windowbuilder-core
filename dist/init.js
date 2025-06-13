@@ -7753,7 +7753,7 @@ set set(v){this._setter_ts('set',v)}
             return;
           }
           if(!ct.empty() && !ct.is('no')) {
-            const last = this.cutting_row({obj, specimen, row, opts});
+            const last = this.cutting_row({obj, specimen, row, opts, srow});
             if(last && !noms.find(({nom, characteristic}) => {nom === last.nom && characteristic === last.characteristic})) {
               noms.push({nom: last.nom, characteristic: last.characteristic});
             }
@@ -7775,7 +7775,7 @@ set set(v){this._setter_ts('set',v)}
     }
   }
 
-  cutting_row({obj, specimen, elm, row, opts}) {
+  cutting_row({obj, specimen, elm, row, opts, srow}) {
     if(elm && row.elm !== elm) {
       return;
     }
@@ -7794,6 +7794,7 @@ set set(v){this._setter_ts('set',v)}
     let last;
     for(let qty = 1;  qty <= row.qty; qty++) {
       last = this.cutting.add({
+        obj: srow?.obj?.valueOf(),
         production: obj,
         specimen,
         elm: row.elm,
@@ -8898,7 +8899,11 @@ get executors(){return this._getter_ts('executors')}
 set executors(v){this._setter_ts('executors',v)}
 get set(){return this._getter_ts('set')}
 set set(v){this._setter_ts('set',v)}
-}
+
+
+  load_keys() {
+    return $p.DocWork_centers_task.prototype.load_keys.call(this);
+  }}
 $p.DocPlanning_event = DocPlanning_event;
 class DocPlanning_eventExecutorsRow extends TabularSectionRow{
 get executor(){return this._getter('executor')}
