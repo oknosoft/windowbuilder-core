@@ -765,7 +765,7 @@ class BuilderElement extends paper.Group {
           if(!iface || utils.is_data_obj(o)) {
             const insert = inserts.get(o);
             const {insert_type, insert_glass_type} = insert;
-            if(_types_filling.includes(insert_type) && (glass_thickness === 1 || insert_glass_type.empty() || insert_glass_type.is('Заполнение'))) {
+            if(_types_filling.includes(insert_type) && (glass_thickness === 1 || insert_glass_type.empty() || insert_glass_type.is('glass') || insert_glass_type.is('blank'))) {
               if(glass_thickness === 0) {
                 return thicknesses.includes(insert.thickness(this));
               }
@@ -785,7 +785,7 @@ class BuilderElement extends paper.Group {
           else {
             let refs = '';
             inserts.by_thickness(sys).forEach((o) => {
-              if(o.insert_glass_type.empty() || o.insert_glass_type.is('Заполнение')) {
+              if(o.insert_glass_type.empty() || o.insert_glass_type.is('glass') || o.insert_glass_type.is('blank')) {
                 if(refs) {
                   refs += ', ';
                 }
