@@ -472,7 +472,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {Number}
    */
   thickness(withChildren) {
-    const {contours, profiles} = this;
+    const {contours, profiles, level} = this;
     let thickness = profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
     let winner = this.layer ? null : this;
     if(withChildren) {
@@ -488,18 +488,23 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       thickness += add;
     }
-    return thickness + (winner ? winner.thickening : 0);
+    const [wt, wtn] = winner?.thickening() || [0, 0];
+    if(!level && winner !== this) {
+      const [th, thn] = this.thickening();
+      return thickness + wt + thn;
+    }
+    return thickness + wt + wtn;
   }
 
   /**
    * @summary Утолщение слоя
    * @desc Вклад в толщину петель, ручек и прочих материалов из спецификации
-   * @type {Number}
+   * @return {Number}
    */
-  get thickening() {
+  thickening() {
     const prop = $p.cch.properties.predefined(`thickening_${this.level ? 'flap' : 'rama'}`);
     const map = new Map();
-    let res = 0;
+    let plus = 0, minus = 0;
     const {_ox: {specification, coordinates}, cnstr} = this;
     for(const {elm, nom} of specification) {
       if(elm > 0) {
@@ -515,11 +520,14 @@ class Contour extends AbstractFilling(paper.Layer) {
         continue;
       }
       const add = nom._extra(prop);
-      if(add && add > res) {
-        res = add;
+      if(add > 0 && add > plus) {
+        plus = add;
+      }
+      else if(add < 0 && minus < -add) {
+        minus += -add;
       }
     }
-    return res;
+    return [plus, minus];
   }
 
   /**
