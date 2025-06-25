@@ -20305,7 +20305,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     sobjs = utils._clone(sobjs, true);
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
-    const unused = () => utils.sleep(20).then(() => _manager.emit_async('svgs', this));
+    const unused = () => utils.sleep(20).then(() => {
+      _manager.emit_async('svgs', this);
+      return null;
+    });
     const save_error = (reason, obj) => {
       const note = `Ошибка при записи ${this.presentation}, ${reason}`
       $p.record_log({

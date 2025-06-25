@@ -414,7 +414,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       .catch((err) => null);
     */
 
-    const unused = () => utils.sleep(20).then(() => _manager.emit_async('svgs', this));
+    const unused = () => utils.sleep(20).then(() => {
+      _manager.emit_async('svgs', this);
+      return null;
+    });
 
     const save_error = (reason, obj) => {
       const note = `Ошибка при записи ${this.presentation}, ${reason}`
