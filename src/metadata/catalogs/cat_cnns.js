@@ -632,7 +632,9 @@ exports.CatCnns = class CatCnns extends Object {
     for(const row_base of this.filtered_spec({elm, elm2, len_angl, ox})) {
       const {nom} = row_base;
 
-      // TODO: nom может быть вставкой - в этом случае надо разузловать
+      //row_base.is_order_row.is('prod')
+
+      // nom может быть вставкой - в этом случае, разузловываем
       if(nom instanceof CatInserts) {
         if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
           const tmp_len_angl = Object.assign({}, len_angl);
@@ -718,11 +720,13 @@ exports.CatCnns = class CatCnns extends Object {
           const qty = row_base.formula.execute({
             ox,
             elm,
+            elm2,
             len_angl,
             cnstr: 0,
             inset: utils.blank.guid,
+            row_base,
             row_cnn: row_base,
-            row_spec: row_spec
+            row_spec,
           });
           // если формула является формулой условия, используем результат, как фильтр
           if(row_base.formula.condition_formula && !qty){

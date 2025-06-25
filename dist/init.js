@@ -3995,11 +3995,13 @@ set coordinates(v){this._setter_ts('coordinates',v)}
           const qty = row_base.formula.execute({
             ox,
             elm,
+            elm2,
             len_angl,
             cnstr: 0,
             inset: utils.blank.guid,
+            row_base,
             row_cnn: row_base,
-            row_spec: row_spec
+            row_spec,
           });
           if(row_base.formula.condition_formula && !qty){
             row_spec.qty = 0;
