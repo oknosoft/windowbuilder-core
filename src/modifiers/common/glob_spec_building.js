@@ -113,10 +113,10 @@ class SpecBuilding {
     cat.insert_bind.deposit({ox, order: true});
 
     if(with_price){
-      // рассчитываем плановую себестоимость
+      // подклеим плановую себестоимость
       pricing.calc_first_cost(attr);
 
-      // рассчитываем стоимость продажи
+      // подклеим стоимость продажи
       pricing.calc_amount(attr);
     }
 

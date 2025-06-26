@@ -8422,6 +8422,8 @@ get planning(){return this._getter_ts('planning')}
 set planning(v){this._setter_ts('planning',v)}
 get orders(){return this._getter_ts('orders')}
 set orders(v){this._setter_ts('orders',v)}
+get composition(){return this._getter_ts('composition')}
+set composition(v){this._setter_ts('composition',v)}
 }
 $p.DocCalc_order = DocCalc_order;
 class DocCalc_orderProductionRow extends TabularSectionRow{
@@ -8532,6 +8534,13 @@ get dop(){return this._getter('dop')}
 set dop(v){this._setter('dop',v)}
 }
 $p.DocCalc_orderOrdersRow = DocCalc_orderOrdersRow;
+class DocCalc_orderCompositionRow extends TabularSectionRow{
+get insert_type(){return this._getter('insert_type')}
+set insert_type(v){this._setter('insert_type',v)}
+get value(){return this._getter('value')}
+set value(v){this._setter('value',v)}
+}
+$p.DocCalc_orderCompositionRow = DocCalc_orderCompositionRow;
 class DocCalc_orderManager extends DocManager {
 
   constructor(owner, class_name) {
