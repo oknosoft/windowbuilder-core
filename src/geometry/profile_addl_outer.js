@@ -1,31 +1,25 @@
 
 /*
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 16.05.2016
- *
- * @module geometry
- * @submodule profile_addl
+ * Created 29.06.2025
  */
 
 
 /**
- * @summary Дополнительный профиль
- * @desc Класс описывает поведение доборного и расширительного профилей
+ * @summary Дополнительный профиль снаружи
+ * @desc Класс описывает поведение расширительного профиля
  *
- * - похож в поведении на сегмент створки, но расположен в том же слое, что и ведущий элемент
- * - у дополнительного профиля есть координаты конца и начала, такие же, как у Profile
- * - в случае внутреннего добора, могут быть Т - соединения, как у импоста
- * - в случае внешнего, концы соединяются с пустотой
+ * - похож в поведении на соединитель, но расположен в том же слое, что и ведущий элемент
+ * - у внешнего добора есть координаты конца и начала, такие же, как у Profile
+ * - могут быть Т - соединения, как у импоста
+ * - концы соединяются с пустотой или другими внешними доборами
  * - имеет одно ii примыкающее соединение
- * - есть путь образующей - прямая или кривая линия, такая же, как у створки
+ * - есть путь образующей - прямая или кривая линия, такая же, как у ведущей рамы или створки
  * - длина дополнительного профиля может отличаться от длины ведущего элемента
  *
  * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
  * @extends ProfileItem
  */
-class ProfileAddl extends ProfileItem {
+class ProfileAddlOuter extends ProfileItem {
 
   constructor(attr) {
 
@@ -53,7 +47,7 @@ class ProfileAddl extends ProfileItem {
     // ищем и добавляем доборы к доборам
     if(fromCoordinates){
       const {cnstr, elm} = attr.row;
-      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition}, (row) => new ProfileAddl({row, parent: this}));
+      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition_outer}, (row) => new ProfileAddlOuter({row, parent: this}));
     }
 
   }
@@ -61,7 +55,8 @@ class ProfileAddl extends ProfileItem {
   /** @override */
   get d0() {
     const nearest = this.nearest();
-    return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
+    const {_nearest_cnn} = this._attr;
+    return _nearest_cnn ? _nearest_cnn.size(this, nearest) : 0;
   }
 
   /**
@@ -75,7 +70,7 @@ class ProfileAddl extends ProfileItem {
    * Возвращает тип элемента (Добор)
    */
   get elm_type() {
-    return $p.enm.elm_types.addition;
+    return $p.enm.elm_types.addition_outer;
   }
 
   /**
@@ -116,7 +111,7 @@ class ProfileAddl extends ProfileItem {
         }
 
         if(with_addl){
-          elm.getItems({class: ProfileAddl, parent: elm}).forEach((addl) => {
+          elm.getItems({class: ProfileAddlOuter, parent: elm}).forEach((addl) => {
             check_distance(addl, with_addl);
           });
         }
@@ -128,18 +123,18 @@ class ProfileAddl extends ProfileItem {
     }
 
     // Если привязка не нарушена, возвращаем предыдущее значение
-    if(res.profile?.children?.length){
-      check_distance(res.profile);
-      if(res.distance < consts.sticking){
-        return res;
-      }
-    }
+    // if(res.profile?.children?.length){
+    //   check_distance(res.profile);
+    //   if(res.distance < consts.sticking){
+    //     return res;
+    //   }
+    // }
 
     // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     res.clear();
-    res.cnn_types = $p.enm.cnn_types.acn.t;
+    //res.cnn_types = $p.enm.cnn_types.acn.i;
 
-    this.layer.profiles.forEach((addl) => check_distance(addl, true));
+    //this.layer.profiles.forEach((addl) => check_distance(addl, true));
 
     return res;
   }
@@ -151,14 +146,11 @@ class ProfileAddl extends ProfileItem {
 
     let imposts, moved_fact;
 
+    const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
+
     const bind_node = (node, cnn) => {
-
-      if(!cnn.profile) {
-        return;
-      }
-
-      const gen = this.outer ? this.parent.rays.outer : this.parent.rays.inner;
-      const mpoint = cnn.profile.generatrix.intersect_point(gen, cnn.point, 'nearest');
+      
+      const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') || gen.getNearestPoint(this[node]);
       if(!mpoint.is_nearest(this[node], 0)) {
         this[node] = mpoint;
         moved_fact = true;
@@ -171,7 +163,6 @@ class ProfileAddl extends ProfileItem {
       bind_node('b', bcnn);
       bind_node('e', ecnn);
     }
-
     if(bcnn.cnn && bcnn.profile == p) {
       bind_node('b', bcnn);
     }
@@ -181,10 +172,26 @@ class ProfileAddl extends ProfileItem {
 
   }
 
-  glass_segment() {
-
+  observer(an) {
+    const {profiles} = an;
+    if(profiles) {
+      let binded;
+      if(!profiles.includes(this)) {
+        for(const profile of profiles) {
+          if(profile instanceof Onlay) {
+            continue;
+          }
+          binded = true;
+          this.do_bind(profile, this.cnn_point('b'), this.cnn_point('e'), an);
+        }
+        binded && profiles.push(this);
+      }
+    }
+    else if(an instanceof Profile || an instanceof ProfileAddlOuter) {
+      this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
+    }
   }
 
 }
 
-EditorInvisible.ProfileAddl = ProfileAddl;
+EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;

@@ -51,6 +51,9 @@ class Profile extends ProfileItem {
           if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
+          if(row.elm_type.is('addition_outer')) {
+            new ProfileAddlOuter({row, parent: this});
+          }
           // примыкание
           else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});

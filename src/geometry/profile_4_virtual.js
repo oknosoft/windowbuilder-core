@@ -231,12 +231,6 @@ class ProfileVirtual extends Profile {
     path.closePath();
     path.reduce();
 
-    this.children.forEach((elm) => {
-      if(elm instanceof ProfileAddl) {
-        elm.redraw();
-      }
-    });
-
     return this;
   }
 }

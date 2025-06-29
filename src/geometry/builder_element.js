@@ -28,6 +28,7 @@ class BuilderElement extends paper.Group {
       delete attr.proto;
     }
     super(attr);
+    this._selectChildren = false;
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }

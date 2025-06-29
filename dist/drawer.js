@@ -617,6 +617,7 @@ class BuilderElement extends paper.Group {
       delete attr.proto;
     }
     super(attr);
+    this._selectChildren = false;
     if(attr.parent && attr.parent !== this.parent){
       this.parent = attr.parent;
     }
@@ -9585,7 +9586,7 @@ class ProfileItem extends GeneratrixElement {
     return _rays;
   }
   get addls() {
-    return this.children.filter((elm) => elm instanceof ProfileAddl);
+    return this.children.filter((elm) => elm instanceof ProfileAddl || elm instanceof ProfileAddlOuter);
   }
   get glbeads() {
     return this.layer.getItems({class: ProfileGlBead, profile: this});
@@ -9749,9 +9750,6 @@ class ProfileItem extends GeneratrixElement {
         });
       }
       path.setSelection(0);
-      for(const item of this.segms.concat(this.addls)) {
-        item.setSelection(0);
-      }
       if([0, 1].includes(project.builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
@@ -11559,6 +11557,9 @@ class Profile extends ProfileItem {
           if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
+          if(row.elm_type.is('addition_outer')) {
+            new ProfileAddlOuter({row, parent: this});
+          }
           else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});
           }
@@ -12137,11 +12138,6 @@ class ProfileVirtual extends Profile {
     path.add(this.corns(4));
     path.closePath();
     path.reduce();
-    this.children.forEach((elm) => {
-      if(elm instanceof ProfileAddl) {
-        elm.redraw();
-      }
-    });
     return this;
   }
 }
@@ -12319,6 +12315,113 @@ class ProfileAddl extends ProfileItem {
   }
 }
 EditorInvisible.ProfileAddl = ProfileAddl;
+class ProfileAddlOuter extends ProfileItem {
+  constructor(attr) {
+    const fromCoordinates = !!attr.row;
+    super(attr);
+    const {project, _attr, _row} = this;
+    _attr.generatrix.strokeWidth = 0;
+    if(!attr.side && _row.parent < 0) {
+      attr.side = 'outer';
+    }
+    _attr.side = attr.side || 'inner';
+    if(!_row.parent){
+      _row.parent = this.parent.elm;
+      if(this.outer){
+        _row.parent = -_row.parent;
+      }
+    }
+    if(fromCoordinates){
+      const {cnstr, elm} = attr.row;
+      project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition_outer}, (row) => new ProfileAddlOuter({row, parent: this}));
+    }
+  }
+  get d0() {
+    const nearest = this.nearest();
+    const {_nearest_cnn} = this._attr;
+    return _nearest_cnn ? _nearest_cnn.size(this, nearest) : 0;
+  }
+  get outer() {
+    return this._attr.side == 'outer';
+  }
+  get elm_type() {
+    return $p.enm.elm_types.addition_outer;
+  }
+  nearest() {
+    const {_attr, parent, project} = this;
+    const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    return parent;
+  }
+  cnn_point(node, point) {
+    const res = this.rays[node];
+    const check_distance = (elm, with_addl) => {
+        if(elm == this || elm == this.parent){
+          return;
+        }
+        const gp = elm.generatrix.getNearestPoint(point);
+        let distance;
+        if(gp && (distance = gp.getDistance(point)) < consts.sticking){
+          if(distance <= res.distance){
+            res.point = gp;
+            res.distance = distance;
+            res.profile = elm;
+          }
+        }
+        if(with_addl){
+          elm.getItems({class: ProfileAddlOuter, parent: elm}).forEach((addl) => {
+            check_distance(addl, with_addl);
+          });
+        }
+      };
+    if(!point){
+      point = this[node];
+    }
+    res.clear();
+    return res;
+  }
+  do_bind(p, bcnn, ecnn, moved) {
+    let imposts, moved_fact;
+    const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
+    const bind_node = (node, cnn) => {
+      const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') || gen.getNearestPoint(this[node]);
+      if(!mpoint.is_nearest(this[node], 0)) {
+        this[node] = mpoint;
+        moved_fact = true;
+      }
+    };
+    if(this.parent == p) {
+      bind_node('b', bcnn);
+      bind_node('e', ecnn);
+    }
+    if(bcnn.cnn && bcnn.profile == p) {
+      bind_node('b', bcnn);
+    }
+    if(ecnn.cnn && ecnn.profile == p) {
+      bind_node('e', ecnn);
+    }
+  }
+  observer(an) {
+    const {profiles} = an;
+    if(profiles) {
+      let binded;
+      if(!profiles.includes(this)) {
+        for(const profile of profiles) {
+          if(profile instanceof Onlay) {
+            continue;
+          }
+          binded = true;
+          this.do_bind(profile, this.cnn_point('b'), this.cnn_point('e'), an);
+        }
+        binded && profiles.push(this);
+      }
+    }
+    else if(an instanceof Profile || an instanceof ProfileAddlOuter) {
+      this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
+    }
+  }
+}
+EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;
 class ProfileConnective extends ProfileItem {
   get elm_type() {
     return $p.enm.elm_types.Соединитель;

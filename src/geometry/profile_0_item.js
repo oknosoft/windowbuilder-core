@@ -1275,7 +1275,7 @@ class ProfileItem extends GeneratrixElement {
    * @final
    */
   get addls() {
-    return this.children.filter((elm) => elm instanceof ProfileAddl);
+    return this.children.filter((elm) => elm instanceof ProfileAddl || elm instanceof ProfileAddlOuter);
   }
 
   /**
@@ -1499,6 +1499,7 @@ class ProfileItem extends GeneratrixElement {
     if(!generatrix || !path) {
       return;
     }
+
     super.setSelection(selection);
     
     generatrix.setSelection(selection);
@@ -1521,9 +1522,6 @@ class ProfileItem extends GeneratrixElement {
       }
 
       path.setSelection(0);
-      for(const item of this.segms.concat(this.addls)) {
-        item.setSelection(0);
-      }
 
       if([0, 1].includes(project.builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
