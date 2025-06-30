@@ -1167,8 +1167,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         bottom: this.profiles_by_side('bottom'),
       };
     }
-
-    const profile_node = this.direction.is('right') ? 'b' : 'e';
+    
+    const profile_node = (this.direction.is('right') ^ this.flipped) ? 'b' : 'e';
     const other_node = profile_node == 'b' ? 'e' : 'b';
 
     let profile = cache.bottom;
@@ -1865,7 +1865,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   draw_opening() {
 
     const {l_visualization, furn, opening} = this;
-    const {open_types, opening: {out}, sketch_view: {hinge, out_hinge}} = $p.enm;
+    const {open_types} = $p.enm;
 
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization?._opening?.visible) {
@@ -1887,7 +1887,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     const rotary_folding = () => {
 
       const {_opening, _opening2} = l_visualization;
-      const {side_count, project: {sketch_view}} = this;
+      const {side_count, flipped, project: {sketch_view}} = this;
       
       if(side_count < furn.side_count) {
         return;
@@ -1918,7 +1918,8 @@ class Contour extends AbstractFilling(paper.Layer) {
         _opening2.visible = true;
       }
       else {
-        if(sketch_view === out_hinge || (opening === out && sketch_view !== hinge)) {
+        if(!flipped && (sketch_view.is('out_hinge') || (opening.is('out') && !sketch_view.is('hinge')))
+          || flipped && (sketch_view.is('hinge') || (opening.is('in') && !sketch_view.is('out_hinge')))) {
           _opening.dashArray = [70, 50];
         }
         else if(_opening.dashArray.length) {
@@ -3255,9 +3256,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     return flipped > 0;
   }
   set flipped(v) {
-    this._row.flipped = typeof v !== 'number' && v ? 1 : v;
+    const {_row, layer, project} = this;
+    _row.flipped = typeof v !== 'number' && v ? 1 : v;
+    if(layer) {
+      this.parent = _row.flipped > 0 ? layer.children.bottomLayers : layer.children.topLayers;
+    }
     this.redraw();
-    //this.project.register_change(true);
+    project.register_change(true);
   }
 
   /**
