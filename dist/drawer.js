@@ -2747,12 +2747,17 @@ class Contour extends AbstractFilling(paper.Layer) {
   get bounds() {
     const {_attr, parent} = this;
     if (!_attr._bounds || !_attr._bounds.width || !_attr._bounds.height) {
-      this.profiles.forEach((profile) => {
-        const path = profile.path && profile.path.segments.length ? profile.path : profile.generatrix;
+      const deposite = (profile) => {
+        let {path, addls} = profile;
+        if(!path?.segments?.length) {
+          path = profile.generatrix;
+        }
         if (path) {
           _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
+          addls.forEach(deposite);
         }
-      });
+      }; 
+      this.profiles.forEach(deposite);
       this.sectionals.forEach((sectional) => {
         _attr._bounds = _attr._bounds ? _attr._bounds.unite(sectional.bounds) : sectional.bounds;
       });
@@ -12420,6 +12425,15 @@ class ProfileAddlOuter extends ProfileItem {
       this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
     }
   }
+  move_points(delta, all_points, start_point) {
+    if(delta?.length && !delta._dimln) {
+      const gen = this.e.subtract(this.b);
+      const projection = delta.project(gen);
+      if(projection.length > 0.01) {
+        return super.move_points(projection, all_points, start_point);
+      }
+    }
+  }
 }
 EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;
 class ProfileConnective extends ProfileItem {
@@ -14353,7 +14367,7 @@ class Scheme extends paper.Project {
           parent._hatching.remove();
           parent._hatching = null;
         }
-        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
+        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter) {
           if(layer instanceof ConnectiveLayer) {
             other.push.apply(other, parent.move_points(delta, all_points));
           }

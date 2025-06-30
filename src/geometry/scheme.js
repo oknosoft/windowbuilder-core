@@ -1241,7 +1241,7 @@ class Scheme extends paper.Project {
           parent._hatching = null;
         }
 
-        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment) {
+        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter) {
 
           if(layer instanceof ConnectiveLayer) {
             // двигаем и накапливаем связанные

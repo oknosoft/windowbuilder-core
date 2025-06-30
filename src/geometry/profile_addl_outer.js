@@ -192,6 +192,16 @@ class ProfileAddlOuter extends ProfileItem {
     }
   }
 
+  move_points(delta, all_points, start_point) {
+    if(delta?.length && !delta._dimln) {
+      const gen = this.e.subtract(this.b);
+      const projection = delta.project(gen);
+      if(projection.length > 0.01) {
+        return super.move_points(projection, all_points, start_point);
+      }
+    }
+  }
+
 }
 
 EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;
