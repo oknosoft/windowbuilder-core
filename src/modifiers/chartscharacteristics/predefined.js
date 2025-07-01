@@ -98,7 +98,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
 
         case 'inserts_glass_type':
-          _data._formula = function ({elm, prm_row, ox, row}) {
+          _data._formula = function ({elm, elm2, prm_row, ox, row}) {
+            
+            if(prm_row.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
+              elm = elm2;
+            }
 
             // если запросили згачение вставки состава заполнения, возвращаем массив
             if((elm instanceof EditorInvisible.Filling || elm?.is_glass) && 
