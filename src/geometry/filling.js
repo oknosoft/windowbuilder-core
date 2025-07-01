@@ -366,14 +366,7 @@ class Filling extends AbstractFilling(BuilderElement) {
 
   setSelection(selection) {
     super.setSelection(selection);
-    if(selection){
-      const {path} = this;
-      for(let elm of this.children){
-        if(elm != path){
-          elm.selected = false;
-        }
-      }
-    }
+    this.path.setSelection(selection);
   }
 
   /**

@@ -6692,14 +6692,7 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   setSelection(selection) {
     super.setSelection(selection);
-    if(selection){
-      const {path} = this;
-      for(let elm of this.children){
-        if(elm != path){
-          elm.selected = false;
-        }
-      }
-    }
+    this.path.setSelection(selection);
   }
   actualizeCach() {
     this.recalcCnnMap(this.cnnMap, this.imposts);
@@ -19449,7 +19442,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'inserts_glass_type':
           _data._formula = function ({elm, elm2, prm_row, ox, row}) {
-            if(prm_row.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
+            if(prm_row?.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
               elm = elm2;
             }
             if((elm instanceof EditorInvisible.Filling || elm?.is_glass) && 

@@ -100,7 +100,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'inserts_glass_type':
           _data._formula = function ({elm, elm2, prm_row, ox, row}) {
             
-            if(prm_row.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
+            if(prm_row?.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
               elm = elm2;
             }
 
