@@ -3983,8 +3983,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       cache = this.furn_cache;
     }
     let err = [];
-    const {side_count, direction, sys} = this;
-    const {open_types, open_directions, elm_types} = $p.enm;
+    const {side_count, sys} = this;
+    const {open_types, elm_types} = $p.enm;
     if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
       if(bool) {
         return true;
@@ -3998,7 +3998,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           const prev = this.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
           const next = this.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
           const len = elm.length - prev.nom.sizefurn - next.nom.sizefurn;
-          const angle = direction == open_directions.Правое ?
+          const angle = (this.direction.is('right') ^ this.flipped) ?
             elm.generatrix.angle_between(prev.generatrix, elm.e) :
             prev.generatrix.angle_between(elm.generatrix, elm.b);
           const {lmin, lmax, amin, amax} = row;
@@ -19448,7 +19448,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
         case 'inserts_glass_type':
-          _data._formula = function ({elm, prm_row, ox, row}) {
+          _data._formula = function ({elm, elm2, prm_row, ox, row}) {
+            if(prm_row.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
+              elm = elm2;
+            }
             if((elm instanceof EditorInvisible.Filling || elm?.is_glass) && 
                 (prm_row?.comparison_type?.is('in') || prm_row?.comparison_type?.is('nin'))) {
               const res = new Set();
