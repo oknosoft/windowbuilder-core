@@ -468,10 +468,8 @@ class Pricing {
     const {rounding, manager} = calc_order;
 
     // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
-    if(calc_order_row.price && !calc_order.is_new() && (
-      not_update?.includes(calc_order_row.nom) || 
-      not_update?.includes(calc_order_row.nom.parent) || (
-      marginality_in_spec === 1 && !prm.spec.count()))) {
+    if(calc_order_row.price && (marginality_in_spec === 1 && !prm.spec.count() ||
+      !calc_order.is_new() && (not_update?.includes(calc_order_row.nom) || not_update?.includes(calc_order_row.nom.parent)))) {
       ;
     }
     else {

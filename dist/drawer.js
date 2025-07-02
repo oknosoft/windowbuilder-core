@@ -15862,10 +15862,8 @@ class Pricing {
     const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
     const calc_order = calc_order_row._owner._owner;
     const {rounding, manager} = calc_order;
-    if(calc_order_row.price && !calc_order.is_new() && (
-      not_update?.includes(calc_order_row.nom) || 
-      not_update?.includes(calc_order_row.nom.parent) || (
-      marginality_in_spec === 1 && !prm.spec.count()))) {
+    if(calc_order_row.price && (marginality_in_spec === 1 && !prm.spec.count() ||
+      !calc_order.is_new() && (not_update?.includes(calc_order_row.nom) || not_update?.includes(calc_order_row.nom.parent)))) {
       ;
     }
     else {
