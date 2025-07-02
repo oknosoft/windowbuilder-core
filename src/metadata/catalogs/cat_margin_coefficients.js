@@ -11,10 +11,9 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
    */
   slice({date, kind = 0, calc_order_row}) {
     const {CoefficientsMap} = this.constructor;
-    const {branch, partner} = calc_order_row._owner._owner;
     const res = new CoefficientsMap();
-    const {job_prm} = $p;
-    res.price_groups = job_prm.pricing.displacing_price_group || [];
+    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
+    const {branch, partner} = calc_order_row._owner._owner;
     let source;
     this.find_rows({kind, is_buyer: partner.abc}, obj => {
       if(obj.owner instanceof CatAbonents && obj.extra_charge.count()) {
@@ -22,7 +21,7 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
         return false;
       }
     });
-    if(!branch.empty()) {
+    if(branch && !branch.empty()) {
       this.find_rows({kind, is_buyer: partner.abc}, obj => {
         if(branch._hierarchy(obj.owner) && obj.extra_charge.count()){
           if(source.owner instanceof CatAbonents || obj.owner._hierarchy(source.owner)) {

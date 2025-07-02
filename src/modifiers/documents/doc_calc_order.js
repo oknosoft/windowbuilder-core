@@ -219,6 +219,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(obj_delivery_state == Шаблон) {
       this.department = blank.guid;
       this.partner = blank.guid;
+      this.contract = blank.guid;
     }
     else {
       if(this.department.empty()) {
@@ -566,6 +567,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   
   set_route() {
     let {branch, route, obj_delivery_state} = this;
+    if(obj_delivery_state.is('Шаблон')) {
+      if(this.route) {
+        this.route = '';
+      }
+      return;
+    }
+    
     const {enm, cat} = $p;
     const append = (ref) => {
       if(!route.includes(ref)) {
@@ -610,7 +618,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
   // шаблоны читаем из ram
   load(attr = {}) {
-    if(this.obj_delivery_state == 'Шаблон') {
+    if(this.obj_delivery_state.is('Шаблон')) {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
     }
     return super.load(attr);
