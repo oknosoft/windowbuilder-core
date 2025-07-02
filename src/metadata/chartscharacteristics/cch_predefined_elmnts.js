@@ -62,7 +62,7 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     const {parents, _owner} = this;
     const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
     const parent = job_prm[parents[row.parent.valueOf()]];
-    const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
+    const _mgr = row.type.is_ref && row.type.types.length === 1 && md.mgr_by_class_name(row.type.types[0]);
 
     if(parent) {
       if(parent.synonym === 'lists' || !row.synonym) {
@@ -76,9 +76,9 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
         parent.__define(row.synonym, {
           value: (() => {
             const res = {};
-            (row.elmnts._obj || row.elmnts).forEach(({elm, value}) => {
+            row.elmnts.forEach?.(({elm, value}) => {
               if(elm !== undefined) {
-                res[elm.valueOf()] = _mgr ? _mgr.get(value, false, false) : value;
+                res[elm ? elm.valueOf() : utils.blank.guid] = value;
               }
             });
             return res;
