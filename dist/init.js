@@ -859,7 +859,7 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
     const {parents, _owner} = this;
     const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
     const parent = job_prm[parents[row.parent.valueOf()]];
-    const _mgr = row.type.is_ref && md.mgr_by_class_name(row.type.types[0]);
+    const _mgr = row.type.is_ref && row.type.types.length === 1 && md.mgr_by_class_name(row.type.types[0]);
 
     if(parent) {
       if(parent.synonym === 'lists' || !row.synonym) {
@@ -873,9 +873,9 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
         parent.__define(row.synonym, {
           value: (() => {
             const res = {};
-            (row.elmnts._obj || row.elmnts).forEach(({elm, value}) => {
+            row.elmnts.forEach?.(({elm, value}) => {
               if(elm !== undefined) {
-                res[elm.valueOf()] = _mgr ? _mgr.get(value, false, false) : value;
+                res[elm ? elm.valueOf() : utils.blank.guid] = value;
               }
             });
             return res;
@@ -7303,7 +7303,6 @@ class CatMargin_coefficientsManager extends CatManager {
   slice({date, kind = 0, calc_order_row}) {
     const {CoefficientsMap} = this.constructor;
     const res = new CoefficientsMap();
-    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
     const {branch, partner} = calc_order_row._owner._owner;
     let source;
     this.find_rows({kind, is_buyer: partner.abc}, obj => {
@@ -7347,6 +7346,13 @@ class CatMargin_coefficientsManager extends CatManager {
 
     static CoefficientsMap = class CoefficientsMap extends Map {
 
+        constructor() {
+      super();
+      const {pricing} = $p.job_prm;
+      this.price_groups = pricing.displacing_price_group || [];
+      this.nom_groups = pricing.displacing_nom_group || {};
+    }
+
     replenish(obj, ox) {
       for(const [key, value] of this) {
         if(key && obj._hierarchy(key)) {
@@ -7385,8 +7391,15 @@ class CatMargin_coefficientsManager extends CatManager {
             obj = origin;
           }
           else {
-            obj = leading_product.sys;
-            _owner = leading_product;
+            const {nom} = _owner.calc_order_row;
+            const map = this.nom_groups[nom.ref] || this.nom_groups[nom.nom_group.ref];
+            if(map) {
+              obj = map;
+            }
+            else {
+              obj = leading_product.sys;
+              _owner = leading_product;
+            }
           }
         }  
       }

@@ -12,7 +12,6 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
   slice({date, kind = 0, calc_order_row}) {
     const {CoefficientsMap} = this.constructor;
     const res = new CoefficientsMap();
-    res.price_groups = $p.job_prm.pricing.displacing_price_group || [];
     const {branch, partner} = calc_order_row._owner._owner;
     let source;
     this.find_rows({kind, is_buyer: partner.abc}, obj => {
@@ -57,6 +56,13 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
   }
   
   static CoefficientsMap = class CoefficientsMap extends Map {
+    
+    constructor() {
+      super();
+      const {pricing} = $p.job_prm;
+      this.price_groups = pricing.displacing_price_group || [];
+      this.nom_groups = pricing.displacing_nom_group || {};
+    }
 
     replenish(obj, ox) {
       for(const [key, value] of this) {
@@ -106,8 +112,15 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
             obj = origin;
           }
           else {
-            obj = leading_product.sys;
-            _owner = leading_product;
+            const {nom} = _owner.calc_order_row;
+            const map = this.nom_groups[nom.ref] || this.nom_groups[nom.nom_group.ref];
+            if(map) {
+              obj = map;
+            }
+            else {
+              obj = leading_product.sys;
+              _owner = leading_product;
+            }
           }
         }  
       }
