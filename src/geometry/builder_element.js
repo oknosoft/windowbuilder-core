@@ -881,7 +881,7 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
-            const cnn = (item instanceof Filling || (item.layer.level > this.layer.level)) ?
+            const cnn = (item instanceof Filling || this instanceof ProfileAddlOuter || (item.layer.level > this.layer.level)) ?
               cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             if(cnn !== row.cnn) {
               row.cnn = cnn;

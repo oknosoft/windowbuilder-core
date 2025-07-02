@@ -81,7 +81,7 @@ class ProfileAddlOuter extends ProfileItem {
   nearest() {
     const {_attr, parent, project} = this;
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
-    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(parent, this, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return parent;
   }
 

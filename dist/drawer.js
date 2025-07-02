@@ -1257,7 +1257,7 @@ class BuilderElement extends paper.Group {
             continue;
           }
           if((row.elm1 == elm && row.elm2 == item.elm) || (row.elm1 == item.elm && row.elm2 == elm)) {
-            const cnn = (item instanceof Filling || (item.layer.level > this.layer.level)) ?
+            const cnn = (item instanceof Filling || this instanceof ProfileAddlOuter || (item.layer.level > this.layer.level)) ?
               cnns.elm_cnn(item, this, cnn_types.acn.ii, row.cnn, false) : cnns.elm_cnn(this, item, cnn_types.acn.ii, row.cnn, false);
             if(cnn !== row.cnn) {
               row.cnn = cnn;
@@ -12354,7 +12354,7 @@ class ProfileAddlOuter extends ProfileItem {
   nearest() {
     const {_attr, parent, project} = this;
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
-    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
+    _attr._nearest_cnn = $p.cat.cnns.elm_cnn(parent, this, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return parent;
   }
   cnn_point(node, point) {

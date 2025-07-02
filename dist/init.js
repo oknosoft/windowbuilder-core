@@ -7391,8 +7391,8 @@ class CatMargin_coefficientsManager extends CatManager {
             obj = origin;
           }
           else {
-            const {nom} = _owner.calc_order_row;
-            const map = this.nom_groups[nom.ref] || this.nom_groups[nom.nom_group.ref];
+            const {owner} = _owner;
+            const map = this.nom_groups[owner.ref] || this.nom_groups[owner.nom_group.ref];
             if(map) {
               obj = map;
             }
