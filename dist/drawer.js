@@ -15811,7 +15811,8 @@ class Pricing {
           _obj.amount_marged = _obj.amount * marginality;
         }
         else {
-          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj, null, prm.price_type.formula, date);
+          const pclr = characteristic.empty() && !clr.empty() ? clr : null;
+          this.nom_price(nom, characteristic, prm.price_type.price_type_first_cost, prm, _obj, pclr, prm.price_type.formula, date);
           _obj.amount = _obj.price * _obj.totqty1;
           if(marginality_in_spec){
             if(marginality_in_spec === 1) {
@@ -15820,7 +15821,7 @@ class Pricing {
             else {
               fake_row.nom = nom;
               const tmp_price = this.nom_price(
-                nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, null, prm.price_type.sale_formula, date);
+                nom, characteristic, prm.price_type.price_type_sale, prm, fake_row, pclr, prm.price_type.sale_formula, date);
               _obj.amount_marged = tmp_price * _obj.totqty1;
             }
           }
