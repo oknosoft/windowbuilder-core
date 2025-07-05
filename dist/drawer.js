@@ -1813,7 +1813,7 @@ const AbstractFilling = (superclass) => class extends superclass {
             const curr = map.get(cpt.profile);
             const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
               (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
-            const loc = cpt.profile.generatrix.getNearestLocation();
+            const loc = cpt.profile.generatrix.getNearestLocation(ept);
             const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
             curr.push({elm, node: cpt, side: line.getSide(ept, true)});
           }
