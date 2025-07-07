@@ -57,9 +57,14 @@ class EditableText extends paper.PointText {
     case 'Tab':
       return this.edit_remove();
     case 'Enter':
-    case 'NumpadEnter':
-      this.apply(parseFloat(this._edit.value));
+    case 'NumpadEnter': {
+      const parts = this._edit.value.split('-')
+        .map(parseFloat)
+        .filter(v => typeof v === 'number' && !isNaN(v))
+        .map(v => v.round());
+      this.apply(...parts);
       return this.edit_remove();
+    }
     case 'Digit0':
     case 'Digit1':
     case 'Digit2':
@@ -83,14 +88,27 @@ class EditableText extends paper.PointText {
     case '.':
     case 'Period':
     case 'NumpadDecimal':
-    case 'ArrowRight':
-    case 'ArrowLeft':
+    case 'NumpadSubtract':
+    case 'Minus':
     case 'Delete':
     case 'Backspace':
       break;
     case 'Comma':
     case ',':
       event.code = '.';
+      break;
+    case 'ArrowRight':
+      if(event.target.selectionStart < event.target.selectionEnd) {
+        event.target.selectionStart = event.target.selectionEnd;
+        event.stopPropagation();
+        return false;
+      }
+    case 'ArrowLeft':
+      if(event.target.selectionStart < event.target.selectionEnd) {
+        event.target.selectionEnd = 0;
+        event.stopPropagation();
+        return false;
+      }
       break;
     default:
       event.preventDefault();
@@ -164,11 +182,11 @@ class LenText extends EditableText {
     super(props);
   }
 
-  apply(value) {
+  apply(v0, v1) {
     const {path, segment1, segment2, length} = this._owner;
     const {parent: {_attr, project}, segments} = path;
     const {zoom} = _attr;
-    const delta = segment1.curve.getTangentAtTime(1).multiply(value * zoom - length);
+    const delta = segment1.curve.getTangentAtTime(1).multiply(v0 * zoom - length);
     let start;
     for(const segment of segments) {
       if(segment === segment2) {
@@ -177,6 +195,12 @@ class LenText extends EditableText {
       if(start) {
         segment.point = segment.point.add(delta);
       }
+    }
+    if(v1 && Math.abs(v0 - v1) > 1) {
+      this._owner.lengths = [v0, v1];
+    }
+    else if(this._owner.lengths) {
+      delete this._owner.lengths;
     }
     project.register_change(true);
   }
@@ -239,6 +263,18 @@ class Sectional extends GeneratrixElement {
 
     this.addChild(_attr.generatrix);
 
+    const {lengths} = _row.dop;
+    if(Array.isArray(lengths)) {
+      lengths.forEach((part, index) => {
+        if(Array.isArray(part)) {
+          const curve = _attr.generatrix.curves[index];
+          if(curve) {
+            curve.lengths = part;
+          }
+        }
+      });
+    }
+
   }
 
   /**
@@ -247,7 +283,7 @@ class Sectional extends GeneratrixElement {
    * @return {Sectional}
    */
   redraw() {
-    const {layer, generatrix, _attr, radius} = this;
+    const {layer, generatrix, _attr, radius, visible} = this;
     const {children, zoom} = _attr;
     const {segments, curves} = generatrix;
 
@@ -257,22 +293,26 @@ class Sectional extends GeneratrixElement {
     }
     children.length = 0;
 
-    // рисуем углы
-    for(let i = 1; i < segments.length - 1; i++){
-      this.draw_angle(i);
-    }
+    if(visible) {
+      // рисуем углы
+      for(let i = 1; i < segments.length - 1; i++){
+        this.draw_angle(i);
+      }
 
-    // рисуем длины
-    for(let curve of curves){
-      const loc = curve.getLocationAtTime(0.5);
-      const normal = loc.normal.normalize(radius);
-      children.push(new LenText({
-        point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
-        content: (curve.length / zoom).toFixed(0),
-        fontSize: radius * 1.4,
-        parent: layer.children.text,
-        _owner: curve
-      }));
+      // рисуем длины
+      for(let curve of curves){
+        const {lengths, length} = curve;
+        const content = lengths ? lengths.join('-') : (length / zoom).toFixed(0);
+        const loc = curve.getLocationAtTime(0.5);
+        const normal = loc.normal.normalize(radius);
+        children.push(new LenText({
+          point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
+          content,
+          fontSize: radius * 1.4,
+          parent: layer.children.text,
+          _owner: curve
+        }));
+      }
     }
 
 
@@ -362,6 +402,9 @@ class Sectional extends GeneratrixElement {
 
     // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
+    
+    // длины с обратной стороны
+    _row.dop = {lengths: generatrix.curves.map(curve => curve.lengths || 0)};
 
   }
 
@@ -380,6 +423,12 @@ class Sectional extends GeneratrixElement {
   get length() {
     const {generatrix, zoom} = this._attr;
     return (2 * generatrix.length / zoom).round() / 2;
+  }
+  
+  get width() {
+    const {length} = $p.job_prm.properties;
+    const {project, layer} = this
+    return length.extract_pvalue({ox: project.ox, cnstr: 0, layer, elm: this});
   }
 
   /**
@@ -408,6 +457,38 @@ class Sectional extends GeneratrixElement {
       radius += size / 60;
     }
     return radius;
+  }
+
+  /**
+   * @summary Рисует развёртку в слое визуализации
+   */
+  draw_unfolding() {
+    const {layer, generatrix: {curves}, width, _attr: {zoom}} = this;
+    const {l_visualization} = layer;
+    layer.hidden = true;
+    l_visualization.visible = true;
+    l_visualization.clear();
+    const curr = {
+      bottom: new paper.Point(),
+      top: new paper.Point([0, -width]),
+    };
+    for(const curve of curves) {
+      const {lengths} = curve;
+      const dx0 = lengths?.[0] ? lengths?.[0] * zoom : curve.length;
+      const dx1 = lengths?.[1] ? lengths?.[1] * zoom : dx0;
+      const vector = curr.top.subtract(curr.bottom).normalize().rotate(90);
+      const top = curr.top.add(vector.multiply(dx1));
+      const bottom = curr.bottom.add(vector.multiply(dx0));
+      const path = new paper.Path({
+        parent: l_visualization.by_spec,
+        segments: [curr.bottom, curr.top, top, bottom],
+        strokeColor: 'black',
+        strokeScaling: false,
+      });
+      path.closePath();
+      curr.top = top;
+      curr.bottom = bottom;
+    }
   }
 }
 

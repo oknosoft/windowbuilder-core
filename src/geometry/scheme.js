@@ -774,13 +774,18 @@ class Scheme extends paper.Project {
       });
       contours.some((layer) => {
         if(layer.cnstr == cnstr) {
-          layer.hidden = false;
-          layer.hide_generatrix();
-          if(layer instanceof ContourTearing) {
-            layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
-          }           
-          layer.l_dimensions.redraw(attr.faltz || true);
-          layer.zoom_fit();
+          if(layer.sectionals.length === 1 && !layer.profiles.length) {
+            layer.sectionals[0].draw_unfolding();
+          }
+          else {
+            layer.hidden = false;
+            layer.hide_generatrix();
+            if(layer instanceof ContourTearing) {
+              layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
+            }
+            layer.l_dimensions.redraw(attr.faltz || true);
+            layer.zoom_fit();
+          }
           return true;
         }
       });
@@ -818,7 +823,12 @@ class Scheme extends paper.Project {
 
     // показываем серытые слои
     const contours = this.getItems({class: Contour});
-    contours.forEach((l) => l.hidden = false);
+    contours.forEach((l) => {
+      if(l.hidden) {
+        l.hidden = false;
+        l.redraw();
+      }
+    });
     l_dimensions.visible = true;
     l_connective.visible = true;
     view.update();

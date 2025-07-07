@@ -2118,9 +2118,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (this.hidden != v) {
       this._hidden = v;
       const visible = !this._hidden;
-      for(const elm of this.children.profiles.children.concat(this.children.fillings.children)) {
+      for(const elm of this.children.profiles.children
+        .concat(this.children.fillings.children)
+        .concat(this.children.sectionals.children)
+        .concat(this.children.text.children)) {
         elm.visible = visible;
-        elm.redraw();
+        elm.redraw?.();
       }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;

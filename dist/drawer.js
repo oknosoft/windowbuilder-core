@@ -3373,9 +3373,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     if (this.hidden != v) {
       this._hidden = v;
       const visible = !this._hidden;
-      for(const elm of this.children.profiles.children.concat(this.children.fillings.children)) {
+      for(const elm of this.children.profiles.children
+        .concat(this.children.fillings.children)
+        .concat(this.children.sectionals.children)
+        .concat(this.children.text.children)) {
         elm.visible = visible;
-        elm.redraw();
+        elm.redraw?.();
       }
       this.l_visualization.visible = visible;
       this.l_dimensions.visible = visible;
@@ -14032,13 +14035,18 @@ class Scheme extends paper.Project {
       });
       contours.some((layer) => {
         if(layer.cnstr == cnstr) {
-          layer.hidden = false;
-          layer.hide_generatrix();
-          if(layer instanceof ContourTearing) {
-            layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
-          }           
-          layer.l_dimensions.redraw(attr.faltz || true);
-          layer.zoom_fit();
+          if(layer.sectionals.length === 1 && !layer.profiles.length) {
+            layer.sectionals[0].draw_unfolding();
+          }
+          else {
+            layer.hidden = false;
+            layer.hide_generatrix();
+            if(layer instanceof ContourTearing) {
+              layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
+            }
+            layer.l_dimensions.redraw(attr.faltz || true);
+            layer.zoom_fit();
+          }
           return true;
         }
       });
@@ -14072,7 +14080,12 @@ class Scheme extends paper.Project {
     }
     _attr.elm_fragment = 0;
     const contours = this.getItems({class: Contour});
-    contours.forEach((l) => l.hidden = false);
+    contours.forEach((l) => {
+      if(l.hidden) {
+        l.hidden = false;
+        l.redraw();
+      }
+    });
     l_dimensions.visible = true;
     l_connective.visible = true;
     view.update();
@@ -15271,9 +15284,14 @@ class EditableText extends paper.PointText {
     case 'Tab':
       return this.edit_remove();
     case 'Enter':
-    case 'NumpadEnter':
-      this.apply(parseFloat(this._edit.value));
+    case 'NumpadEnter': {
+      const parts = this._edit.value.split('-')
+        .map(parseFloat)
+        .filter(v => typeof v === 'number' && !isNaN(v))
+        .map(v => v.round());
+      this.apply(...parts);
       return this.edit_remove();
+    }
     case 'Digit0':
     case 'Digit1':
     case 'Digit2':
@@ -15297,14 +15315,27 @@ class EditableText extends paper.PointText {
     case '.':
     case 'Period':
     case 'NumpadDecimal':
-    case 'ArrowRight':
-    case 'ArrowLeft':
+    case 'NumpadSubtract':
+    case 'Minus':
     case 'Delete':
     case 'Backspace':
       break;
     case 'Comma':
     case ',':
       event.code = '.';
+      break;
+    case 'ArrowRight':
+      if(event.target.selectionStart < event.target.selectionEnd) {
+        event.target.selectionStart = event.target.selectionEnd;
+        event.stopPropagation();
+        return false;
+      }
+    case 'ArrowLeft':
+      if(event.target.selectionStart < event.target.selectionEnd) {
+        event.target.selectionEnd = 0;
+        event.stopPropagation();
+        return false;
+      }
       break;
     default:
       event.preventDefault();
@@ -15367,11 +15398,11 @@ class LenText extends EditableText {
     props.fillColor = 'black';
     super(props);
   }
-  apply(value) {
+  apply(v0, v1) {
     const {path, segment1, segment2, length} = this._owner;
     const {parent: {_attr, project}, segments} = path;
     const {zoom} = _attr;
-    const delta = segment1.curve.getTangentAtTime(1).multiply(value * zoom - length);
+    const delta = segment1.curve.getTangentAtTime(1).multiply(v0 * zoom - length);
     let start;
     for(const segment of segments) {
       if(segment === segment2) {
@@ -15380,6 +15411,12 @@ class LenText extends EditableText {
       if(start) {
         segment.point = segment.point.add(delta);
       }
+    }
+    if(v1 && Math.abs(v0 - v1) > 1) {
+      this._owner.lengths = [v0, v1];
+    }
+    else if(this._owner.lengths) {
+      delete this._owner.lengths;
     }
     project.register_change(true);
   }
@@ -15424,28 +15461,43 @@ class Sectional extends GeneratrixElement {
     _attr.generatrix.strokeScaling = false;
     this.clr = _row.clr.empty() ? $p.job_prm.builder.base_clr : _row.clr;
     this.addChild(_attr.generatrix);
+    const {lengths} = _row.dop;
+    if(Array.isArray(lengths)) {
+      lengths.forEach((part, index) => {
+        if(Array.isArray(part)) {
+          const curve = _attr.generatrix.curves[index];
+          if(curve) {
+            curve.lengths = part;
+          }
+        }
+      });
+    }
   }
   redraw() {
-    const {layer, generatrix, _attr, radius} = this;
+    const {layer, generatrix, _attr, radius, visible} = this;
     const {children, zoom} = _attr;
     const {segments, curves} = generatrix;
     for(let child of children){
       child.remove();
     }
     children.length = 0;
-    for(let i = 1; i < segments.length - 1; i++){
-      this.draw_angle(i);
-    }
-    for(let curve of curves){
-      const loc = curve.getLocationAtTime(0.5);
-      const normal = loc.normal.normalize(radius);
-      children.push(new LenText({
-        point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
-        content: (curve.length / zoom).toFixed(0),
-        fontSize: radius * 1.4,
-        parent: layer.children.text,
-        _owner: curve
-      }));
+    if(visible) {
+      for(let i = 1; i < segments.length - 1; i++){
+        this.draw_angle(i);
+      }
+      for(let curve of curves){
+        const {lengths, length} = curve;
+        const content = lengths ? lengths.join('-') : (length / zoom).toFixed(0);
+        const loc = curve.getLocationAtTime(0.5);
+        const normal = loc.normal.normalize(radius);
+        children.push(new LenText({
+          point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
+          content,
+          fontSize: radius * 1.4,
+          parent: layer.children.text,
+          _owner: curve
+        }));
+      }
     }
     return this;
   }
@@ -15507,12 +15559,18 @@ class Sectional extends GeneratrixElement {
     _row.nom = this.nom;
     _row.len = this.length.round(1);
     _row.elm_type = this.elm_type;
+    _row.dop = {lengths: generatrix.curves.map(curve => curve.lengths || 0)};
   }
   cnn_point() {
   }
   get length() {
     const {generatrix, zoom} = this._attr;
     return (2 * generatrix.length / zoom).round() / 2;
+  }
+  get width() {
+    const {length} = $p.job_prm.properties;
+    const {project, layer} = this
+    return length.extract_pvalue({ox: project.ox, cnstr: 0, layer, elm: this});
   }
   get rays() {
     return this._attr._rays;
@@ -15528,6 +15586,34 @@ class Sectional extends GeneratrixElement {
       radius += size / 60;
     }
     return radius;
+  }
+  draw_unfolding() {
+    const {layer, generatrix: {curves}, width, _attr: {zoom}} = this;
+    const {l_visualization} = layer;
+    layer.hidden = true;
+    l_visualization.visible = true;
+    l_visualization.clear();
+    const curr = {
+      bottom: new paper.Point(),
+      top: new paper.Point([0, -width]),
+    };
+    for(const curve of curves) {
+      const {lengths} = curve;
+      const dx0 = lengths?.[0] ? lengths?.[0] * zoom : curve.length;
+      const dx1 = lengths?.[1] ? lengths?.[1] * zoom : dx0;
+      const vector = curr.top.subtract(curr.bottom).normalize().rotate(90);
+      const top = curr.top.add(vector.multiply(dx1));
+      const bottom = curr.bottom.add(vector.multiply(dx0));
+      const path = new paper.Path({
+        parent: l_visualization.by_spec,
+        segments: [curr.bottom, curr.top, top, bottom],
+        strokeColor: 'black',
+        strokeScaling: false,
+      });
+      path.closePath();
+      curr.top = top;
+      curr.bottom = bottom;
+    }
   }
 }
 EditorInvisible.Sectional = Sectional;
