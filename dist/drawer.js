@@ -15524,7 +15524,7 @@ class Sectional extends GeneratrixElement {
     for(const curve of curves) {
       const {lengths} = curve;
       const length = Array.isArray(lengths) ? Math.max(lengths[0], lengths[1]) * zoom : curve.length;
-      if(length > first.length) {
+      if(length - first.length > 1) {
         first.length = length;
         first.curve = curve;
       }
@@ -20845,7 +20845,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   del_row(row) {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {nom, characteristic} = row;
-      const {ui, job_prm} = $p;
+      const {ui, job_prm, cat: {insert_bind, characteristics}} = $p;
       if(nom === job_prm.nom.accessories && characteristic.specification.count()) {
         ui?.dialogs?.alert({
           html: `Нельзя удалять пакет комплектации <i>${characteristic.prod_name(true)}</i>`,
@@ -20890,6 +20890,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
+        insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
         _data._loading = _loading;
       }
     }
