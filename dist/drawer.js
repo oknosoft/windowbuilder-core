@@ -15422,17 +15422,21 @@ class LenText extends EditableText {
   }
 }
 class Sectional extends GeneratrixElement {
+  static FakeRays = class FakeRays {
+    constructor() {
+      this.b = {};
+      this.e = {};
+    }
+    clear() {}
+    recalc() {}
+  };
   initialize(attr) {
     const {project, layer, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
     if(this.parent === layer) {
       this.parent = layer.children.sectionals;
     }
-    _attr._rays = {
-      b: {},
-      e: {},
-      clear() {},
-    };
+    _attr._rays = new Sectional.FakeRays();
     _attr.children = [];
     _attr.zoom = 5;
     _attr.radius = 50;

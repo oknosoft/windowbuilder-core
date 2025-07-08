@@ -211,6 +211,15 @@ class LenText extends EditableText {
  * @extends GeneratrixElement
  */
 class Sectional extends GeneratrixElement {
+  
+  static FakeRays = class FakeRays {
+    constructor() {
+      this.b = {};
+      this.e = {};
+    }
+    clear() {}
+    recalc() {}
+  };
 
   /**
    * Вызывается из конструктора - создаёт пути и лучи
@@ -224,11 +233,7 @@ class Sectional extends GeneratrixElement {
       this.parent = layer.children.sectionals;
     }
 
-    _attr._rays = {
-      b: {},
-      e: {},
-      clear() {},
-    };
+    _attr._rays = new Sectional.FakeRays();
 
     _attr.children = [];
 
