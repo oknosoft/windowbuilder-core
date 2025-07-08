@@ -21770,7 +21770,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   agent_order() {
     for(const row of this.orders) {
-      if(row.is_supplier.empty()) {
+      if(row.is_supplier && row.is_supplier.empty?.()) {
         const {invoice, dop} = row;
         if(!invoice.empty()) {
           if(invoice.is_new()) {
