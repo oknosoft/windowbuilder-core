@@ -1729,8 +1729,6 @@ get keys(){return this._getter_ts('keys')}
 set keys(v){this._setter_ts('keys',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
-get inserts(){return this._getter_ts('inserts')}
-set inserts(v){this._setter_ts('inserts',v)}
 }
 $p.CatBranches = CatBranches;
 class CatBranchesOrganizationsRow extends TabularSectionRow{
@@ -1764,29 +1762,6 @@ get acl_obj(){return this._getter('acl_obj')}
 set acl_obj(v){this._setter('acl_obj',v)}
 }
 $p.CatBranchesKeysRow = CatBranchesKeysRow;
-class CatBranchesInsertsRow extends TabularSectionRow{
-get available(){return this._getter('available')}
-set available(v){this._setter('available',v)}
-get elm_type(){return this._getter('elm_type')}
-set elm_type(v){this._setter('elm_type',v)}
-get name(){return this._getter('name')}
-set name(v){this._setter('name',v)}
-get article(){return this._getter('article')}
-set article(v){this._setter('article',v)}
-get id(){return this._getter('id')}
-set id(v){this._setter('id',v)}
-get thickness(){return this._getter('thickness')}
-set thickness(v){this._setter('thickness',v)}
-get density(){return this._getter('density')}
-set density(v){this._setter('density',v)}
-get price(){return this._getter('price')}
-set price(v){this._setter('price',v)}
-get uid(){return this._getter('uid')}
-set uid(v){this._setter('uid',v)}
-get nom(){return this._getter('nom')}
-set nom(v){this._setter('nom',v)}
-}
-$p.CatBranchesInsertsRow = CatBranchesInsertsRow;
 class CatBranchesManager extends CatManager {
 
   constructor (owner, class_name) {

@@ -348,7 +348,7 @@ class Sectional extends GeneratrixElement {
     for(const curve of curves) {
       const {lengths} = curve;
       const length = Array.isArray(lengths) ? Math.max(lengths[0], lengths[1]) * zoom : curve.length;
-      if(length > first.length) {
+      if(length - first.length > 1) {
         first.length = length;
         first.curve = curve;
       }
