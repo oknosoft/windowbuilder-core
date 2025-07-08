@@ -2767,6 +2767,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return _attr._bounds;
   }
+  get strokeBounds() {
+    return super.strokeBounds.unite(this.l_visualization.strokeBounds);
+  }
   get lbounds() {
     const parent = new paper.Group({insert: false});
     for (const {generatrix} of this.profiles) {
@@ -3269,7 +3272,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_visualization(rows, region = 0) {
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
+    const {profiles, sectionals, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
     const glass_separately = cch.properties.predefined('glass_separately');
@@ -3317,6 +3320,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.draw_mosquito();
     this.draw_sill();
     glasses.forEach(this.draw_jalousie.bind(this));
+    sectionals.forEach(s => s.draw_unfolding());
     if(!hide_by_spec) {
       for (const row of rows) {
         if(!profiles.some(draw.bind(row))) {
@@ -13943,6 +13947,7 @@ class Scheme extends paper.Project {
                   }
                   else {
                     _scheme.draw_visualization();
+                    _scheme.zoom_fit();
                   }
                 }
                 else {
@@ -14035,18 +14040,13 @@ class Scheme extends paper.Project {
       });
       contours.some((layer) => {
         if(layer.cnstr == cnstr) {
-          if(layer.sectionals.length === 1 && !layer.profiles.length) {
-            layer.sectionals[0].draw_unfolding();
+          layer.hidden = false;
+          layer.hide_generatrix();
+          if(layer instanceof ContourTearing) {
+            layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
           }
-          else {
-            layer.hidden = false;
-            layer.hide_generatrix();
-            if(layer instanceof ContourTearing) {
-              layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
-            }
-            layer.l_dimensions.redraw(attr.faltz || true);
-            layer.zoom_fit();
-          }
+          layer.l_dimensions.redraw(attr.faltz || true);
+          layer.zoom_fit();
           return true;
         }
       });
@@ -15356,7 +15356,7 @@ class EditableText extends paper.PointText {
 }
 class AngleText extends EditableText {
   constructor(props) {
-    props.fillColor = 'blue';
+    props.fillColor = new paper.Color(0, 0, 0.9, 0.9);
     super(props);
     this._ind = props._ind;
   }
@@ -15395,7 +15395,7 @@ class AngleText extends EditableText {
 }
 class LenText extends EditableText {
   constructor(props) {
-    props.fillColor = 'black';
+    props.fillColor = new paper.Color(0.1, 0.9);
     super(props);
   }
   apply(v0, v1) {
@@ -15493,7 +15493,7 @@ class Sectional extends GeneratrixElement {
         children.push(new LenText({
           point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
           content,
-          fontSize: radius * 1.4,
+          fontSize: radius * 1.2,
           parent: layer.children.text,
           _owner: curve
         }));
@@ -15506,6 +15506,101 @@ class Sectional extends GeneratrixElement {
       elm.remove?.();
     }    
     return true;
+  }
+  draw_unfolding() {
+    const {layer, generatrix: {curves}, width, radius, _attr: {zoom}} = this;
+    const {l_visualization, children: {text}} = layer;
+    const curr = {
+      bottom: text.bounds.bottomRight.add([80 * zoom, 0]),
+    };
+    const first = {
+      curve: null,
+      length: 0,
+    }
+    for(const curve of curves) {
+      const {lengths} = curve;
+      const length = Array.isArray(lengths) ? Math.max(lengths[0], lengths[1]) * zoom : curve.length;
+      if(length > first.length) {
+        first.length = length;
+        first.curve = curve;
+      }
+    }
+    const left = [], right = [];
+    for(const curve of curves) {
+      if(curve === first.curve || right.length) {
+        right.push(curve);
+      }
+      else {
+        left.unshift(curve);
+      }      
+    }
+    function step(curve, angle) {
+      const {lengths} = curve;
+      const arr = angle > 0 ? right : left;
+      const last = arr.indexOf(curve) === arr.length - 1;
+      const dx0 = lengths?.[0] ? lengths?.[0] * zoom : curve.length;
+      const dx1 = lengths?.[1] ? lengths?.[1] * zoom : dx0;
+      let vector;
+      if(!curr.top) {
+        curr.top =  curr.bottom.add([(angle < 0 ? dx1 - dx0 : dx0 - dx1) / 2, -width / 2]);
+        curr.initial = {
+          bottom: curr.bottom.clone(),
+          top: curr.top.clone(),
+        };
+        vector = new paper.Point([0, -1]).rotate(angle);
+      }
+      else {
+        vector = curr.top.subtract(curr.bottom).normalize().rotate(angle);
+      }
+      const top = curr.top.add(vector.multiply(dx1));
+      const bottom = curr.bottom.add(vector.multiply(dx0));
+      const path = new paper.Path({
+        parent: l_visualization.by_insets,
+        segments: [curr.bottom, curr.top, top, bottom],
+        strokeColor: 'black',
+        strokeScaling: false,
+      });
+      path.closePath();
+      if(!curr.widthDrawed) {
+        curr.widthDrawed = true;
+        new paper.PointText({
+          parent: l_visualization.by_insets,
+          point: bottom.add(top).divide(2).add([-radius * 2, 0]),
+          content: width.toFixed(),
+          fontSize: radius,
+          rotation: -90,
+          justification: 'center',
+        });
+      }
+      new paper.PointText({
+        parent: l_visualization.by_insets,
+        point: ((last && dx0 < 150) ? bottom : bottom.add(curr.bottom).divide(2)).add([0, radius * 1.2]),
+        content: (dx0 / zoom).toFixed(),
+        fontSize: radius,
+        justification: 'center',
+      });
+      if(Math.abs(dx0 - dx1) > 1) {
+        new paper.PointText({
+          parent: l_visualization.by_insets,
+          point: ((last && dx1 < 150) ? top : top.add(curr.top).divide(2)).add([0, -radius * 0.4]),
+          content: (dx1 / zoom).toFixed(),
+          fontSize: radius,
+          justification: 'center',
+        });
+      }
+      curr.top = top;
+      curr.bottom = bottom;
+    }
+    for(const curve of right) {
+      step(curve, 90);
+    }
+    if(curr.initial) {
+      curr.bottom = curr.initial.bottom;
+      curr.top = curr.initial.top; 
+    }
+    for(const curve of left) {
+      step(curve, -90);
+    }
   }
   draw_angle(ind) {
     const {layer, generatrix, _attr, radius} = this;
@@ -15540,7 +15635,7 @@ class Sectional extends GeneratrixElement {
     children.push(new AngleText({
       point: center.add(end.multiply(-2.2)),
       content: angle.toFixed(0) + '°',
-      fontSize: radius * 1.4,
+      fontSize: radius * 1.2,
       parent: layer.children.text,
       _owner: this,
       _ind: ind,
@@ -15586,34 +15681,6 @@ class Sectional extends GeneratrixElement {
       radius += size / 60;
     }
     return radius;
-  }
-  draw_unfolding() {
-    const {layer, generatrix: {curves}, width, _attr: {zoom}} = this;
-    const {l_visualization} = layer;
-    layer.hidden = true;
-    l_visualization.visible = true;
-    l_visualization.clear();
-    const curr = {
-      bottom: new paper.Point(),
-      top: new paper.Point([0, -width]),
-    };
-    for(const curve of curves) {
-      const {lengths} = curve;
-      const dx0 = lengths?.[0] ? lengths?.[0] * zoom : curve.length;
-      const dx1 = lengths?.[1] ? lengths?.[1] * zoom : dx0;
-      const vector = curr.top.subtract(curr.bottom).normalize().rotate(90);
-      const top = curr.top.add(vector.multiply(dx1));
-      const bottom = curr.bottom.add(vector.multiply(dx0));
-      const path = new paper.Path({
-        parent: l_visualization.by_spec,
-        segments: [curr.bottom, curr.top, top, bottom],
-        strokeColor: 'black',
-        strokeScaling: false,
-      });
-      path.closePath();
-      curr.top = top;
-      curr.bottom = bottom;
-    }
   }
 }
 EditorInvisible.Sectional = Sectional;

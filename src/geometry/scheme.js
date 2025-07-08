@@ -650,6 +650,7 @@ class Scheme extends paper.Project {
                   }
                   else {
                     _scheme.draw_visualization();
+                    _scheme.zoom_fit();
                   }
                 }
                 else {
@@ -774,18 +775,13 @@ class Scheme extends paper.Project {
       });
       contours.some((layer) => {
         if(layer.cnstr == cnstr) {
-          if(layer.sectionals.length === 1 && !layer.profiles.length) {
-            layer.sectionals[0].draw_unfolding();
+          layer.hidden = false;
+          layer.hide_generatrix();
+          if(layer instanceof ContourTearing) {
+            layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
           }
-          else {
-            layer.hidden = false;
-            layer.hide_generatrix();
-            if(layer instanceof ContourTearing) {
-              layer.getItems({class: DimensionLineCustom}).forEach(dl => dl.remove());
-            }
-            layer.l_dimensions.redraw(attr.faltz || true);
-            layer.zoom_fit();
-          }
+          layer.l_dimensions.redraw(attr.faltz || true);
+          layer.zoom_fit();
           return true;
         }
       });

@@ -1316,7 +1316,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Габариты по внешним краям профилей контура
+   * @summary Габариты по внешним краям профилей контура
    */
   get bounds() {
     const {_attr, parent} = this;
@@ -1341,6 +1341,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     return _attr._bounds;
+  }
+
+  /**
+   * @summary Габариты вместе с визуализацией
+   */
+  get strokeBounds() {
+    return super.strokeBounds.unite(this.l_visualization.strokeBounds);
   }
 
   /**
@@ -1978,7 +1985,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   draw_visualization(rows, region = 0) {
 
-    const {profiles, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
+    const {profiles, sectionals, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
     const glass_separately = cch.properties.predefined('glass_separately');
@@ -2037,6 +2044,9 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // рисуем жалюзи
     glasses.forEach(this.draw_jalousie.bind(this));
+    
+    // развёртки разрезов
+    sectionals.forEach(s => s.draw_unfolding());
 
     // бежим по строкам спецификации с визуализацией
     if(!hide_by_spec) {
