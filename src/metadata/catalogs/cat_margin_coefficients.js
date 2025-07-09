@@ -20,9 +20,9 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
         return false;
       }
     });
-    if(branch && !branch.empty()) {
+    if(branch instanceof CatBranches && !branch.empty()) {
       this.find_rows({kind, is_buyer: partner.abc}, obj => {
-        if(branch._hierarchy(obj.owner) && obj.extra_charge.count()){
+        if(obj.owner && branch._hierarchy(obj.owner) && obj.extra_charge.count()){
           if(source.owner instanceof CatAbonents || obj.owner._hierarchy(source.owner)) {
             source = obj;
           }
