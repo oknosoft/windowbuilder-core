@@ -566,7 +566,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   
   set_route() {
+    const {enm, cat, CatBranches, CatAbonents} = $p;
+    const current = sessionStorage.branch ? cat.branches.get(sessionStorage.branch) : cat.abonents.current;
     let {branch, route, obj_delivery_state} = this;
+    
     if(obj_delivery_state.is('Шаблон')) {
       if(this.route) {
         this.route = '';
@@ -574,7 +577,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       return;
     }
     
-    const {enm, cat} = $p;
+    if(branch instanceof CatAbonents && current instanceof CatBranches) {
+      this.branch = branch = current;
+    }
+    
     const append = (ref) => {
       if(!route.includes(ref)) {
         if(route.length) {
@@ -604,7 +610,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     append(branch.ref);
     append2(branch);
     
-    const current = sessionStorage.branch ? cat.branches.get(sessionStorage.branch) : cat.abonents.current;
+    
     append(current.ref);
     append2(current);
     
