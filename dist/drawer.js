@@ -20724,7 +20724,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
       return;
     }
-    if(branch instanceof CatAbonents && current instanceof CatBranches) {
+    if((!branch || branch instanceof CatAbonents) && current instanceof CatBranches) {
       this.branch = branch = current;
     }
     const append = (ref) => {
