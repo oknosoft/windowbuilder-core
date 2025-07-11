@@ -8297,6 +8297,8 @@ get obj(){return this._getter('obj')}
 set obj(v){this._setter('obj',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get part(){return this._getter('part')}
+set part(v){this._setter('part',v)}
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
 get power(){return this._getter('power')}
@@ -8925,6 +8927,8 @@ get obj(){return this._getter('obj')}
 set obj(v){this._setter('obj',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get part(){return this._getter('part')}
+set part(v){this._setter('part',v)}
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
 get power(){return this._getter('power')}
@@ -9625,6 +9629,8 @@ get obj(){return this._getter('obj')}
 set obj(v){this._setter('obj',v)}
 get stage(){return this._getter('stage')}
 set stage(v){this._setter('stage',v)}
+get part(){return this._getter('part')}
+set part(v){this._setter('part',v)}
 get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
 get power(){return this._getter('power')}
@@ -10054,6 +10060,7 @@ Object.assign($p, {
 
   Object.assign(order, {common, by_branch, ids});
   md.order = order;
+  md._ids = ids();
 
   })($p);
 })();
