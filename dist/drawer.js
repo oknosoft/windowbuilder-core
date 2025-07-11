@@ -20445,7 +20445,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.partner = blank.guid;
       this.contract = blank.guid;
     }
-    else {
+    else if(!_deleted) {
       if(this.department.empty()) {
         ui?.dialogs?.alert({
           text: 'Не заполнен реквизит "офис продаж" (подразделение)',
@@ -20481,7 +20481,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    const errors = this.before_save_errors();
+    const errors = _deleted ? new Map() : this.before_save_errors();
     if (errors.size) {
       let critical, text = '';
       errors.forEach((errors, characteristic) => {
@@ -20649,7 +20649,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           else {
             const err = new Error(row.error === 'conflict' ?
-              'вероятно, объект изменён другим пользователем, перечитайте заказ и продукции с сервера' :
+              '\nвероятно, объект изменён другим процессом или пользователем\nперечитайте заказ и продукции с сервера' :
               `${row.reason} ${o && o !== this ? o.presentation : ''} повторите попытку записи через минуту`);
             err.obj = {
               docs: sobjs.map(v => ({id: v._id, rev: v._rev, timestamp: v.timestamp})),

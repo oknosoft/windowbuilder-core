@@ -103,5 +103,6 @@
 
   Object.assign(order, {common, by_branch, ids});
   md.order = order;
+  md._ids = ids();
   
 })($p);
