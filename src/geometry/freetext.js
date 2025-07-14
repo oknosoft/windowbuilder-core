@@ -60,13 +60,18 @@ class FreeText extends paper.PointText {
       this.angle = _row.angle_hor;
 
       if(_row.path_data){
-        const path_data = JSON.parse(_row.path_data);
-        this.x = _row.x1 + path_data.bounds_x || 0;
-        this.y = _row.y1 - path_data.bounds_y || 0;
-        this._mixin(path_data, null, ["bounds_x","bounds_y"]);
-      }else{
-        this.x = _row.x1;
-        this.y = _row.y1;
+        const {point, bounds_x, bounds_y, ...path_data} = JSON.parse(_row.path_data);
+        if(point) {
+          this.point = point;
+        }
+        else {
+          this.x = _row.x1 + (path_data.bounds_x || 0);
+          this.y = _row.y1 - (path_data.bounds_y || 0);
+        }
+        this._mixin(path_data);
+      }
+      else{
+        this.point = [_row.x1, _row.y1];
       }
     }
     
@@ -92,10 +97,10 @@ class FreeText extends paper.PointText {
    * Вычисляемые поля в таблице координат
    */
   save_coordinates() {
-    const {_row} = this;
+    const {_row, point} = this;
 
-    _row.x1 = this.x;
-    _row.y1 = this.y;
+    _row.x1 = point.x;
+    _row.y1 = point.y;
     _row.angle_hor = this.angle;
 
     // устанавливаем тип элемента
@@ -108,8 +113,7 @@ class FreeText extends paper.PointText {
       font_size: this.font_size,
       bold: this.bold,
       align: this.align.ref,
-      bounds_x: this.project.bounds.x,
-      bounds_y: this.project.bounds.y
+      point: [point.x, point.y],
     });
   }
 
