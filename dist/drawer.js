@@ -3320,6 +3320,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.draw_mosquito();
     this.draw_sill();
     glasses.forEach(this.draw_jalousie.bind(this));
+    sectionals.forEach(s => s.draw_unfolding());
     if(!hide_by_spec) {
       for (const row of rows) {
         if(!profiles.some(draw.bind(row))) {
@@ -7589,13 +7590,18 @@ class FreeText extends paper.PointText {
       this.clr = _row.clr;
       this.angle = _row.angle_hor;
       if(_row.path_data){
-        const path_data = JSON.parse(_row.path_data);
-        this.x = _row.x1 + path_data.bounds_x || 0;
-        this.y = _row.y1 - path_data.bounds_y || 0;
-        this._mixin(path_data, null, ["bounds_x","bounds_y"]);
-      }else{
-        this.x = _row.x1;
-        this.y = _row.y1;
+        const {point, bounds_x, bounds_y, ...path_data} = JSON.parse(_row.path_data);
+        if(point) {
+          this.point = point;
+        }
+        else {
+          this.x = _row.x1 + (path_data.bounds_x || 0);
+          this.y = _row.y1 - (path_data.bounds_y || 0);
+        }
+        this._mixin(path_data);
+      }
+      else{
+        this.point = [_row.x1, _row.y1];
       }
     }
     if(project.builder_props.txts === false) {
@@ -7610,9 +7616,9 @@ class FreeText extends paper.PointText {
     super.remove();
   }
   save_coordinates() {
-    const {_row} = this;
-    _row.x1 = this.x;
-    _row.y1 = this.y;
+    const {_row, point} = this;
+    _row.x1 = point.x;
+    _row.y1 = point.y;
     _row.angle_hor = this.angle;
     _row.elm_type = this.elm_type;
     _row.path_data = JSON.stringify({
@@ -7621,8 +7627,7 @@ class FreeText extends paper.PointText {
       font_size: this.font_size,
       bold: this.bold,
       align: this.align.ref,
-      bounds_x: this.project.bounds.x,
-      bounds_y: this.project.bounds.y
+      point: [point.x, point.y],
     });
   }
   move_points(point) {
@@ -15252,14 +15257,31 @@ class EditableText extends paper.PointText {
     !this.project._attr._from_service && this.on({
       mouseenter: this.mouseenter,
       mouseleave: this.mouseleave,
+      mousedrag: this.mousedrag,
+      mouseup: this.mouseup,
       click: this.click,
-    })
+    });
   }
   mouseenter(event) {
     this.project._scope.canvas_cursor('cursor-arrow-ruler-light');
   }
   mouseleave(event) {
     this.project._scope.canvas_cursor('cursor-arrow-white');
+  }
+  mousedrag(event) {
+    const {point, curve, prefix} = this;
+    this.point = point.add(event.delta);
+    if(!curve.positions) {
+      curve.positions = {};
+    }
+    curve.positions[prefix] = this.point.clone();
+    this._dragged = true;
+  }
+  mouseup(event) {
+    if(this._dragged) {
+      event.stop();
+      delete this._dragged;
+    }
   }
   click(event) {
     if(!this._edit) {
@@ -15352,6 +15374,12 @@ class EditableText extends paper.PointText {
     this.edit_remove();
     super.remove();
   }
+  get curve() {
+    return this._owner;
+  }
+  get prefix() {
+    return 'l';
+  }
 }
 class AngleText extends EditableText {
   constructor(props) {
@@ -15389,7 +15417,18 @@ class AngleText extends EditableText {
         segment.point = segment.point.add(delta);
       }
     }
+    for(const curve of generatrix.curves) {
+      delete curve.positions;
+    }
     project.register_change(true);
+  }
+  get curve() {
+    const {_owner: {generatrix}, _ind} = this;
+    const {curves} = generatrix;
+    return curves[_ind];
+  }
+  get prefix() {
+    return 'a';
   }
 }
 class LenText extends EditableText {
@@ -15399,7 +15438,7 @@ class LenText extends EditableText {
   }
   apply(v0, v1) {
     const {path, segment1, segment2, length} = this._owner;
-    const {parent: {_attr, project}, segments} = path;
+    const {parent: {_attr, project, generatrix}, segments} = path;
     const {zoom} = _attr;
     const delta = segment1.curve.getTangentAtTime(1).multiply(v0 * zoom - length);
     let start;
@@ -15416,6 +15455,9 @@ class LenText extends EditableText {
     }
     else if(this._owner.lengths) {
       delete this._owner.lengths;
+    }
+    for(const curve of generatrix.curves) {
+      delete curve.positions;
     }
     project.register_change(true);
   }
@@ -15464,13 +15506,26 @@ class Sectional extends GeneratrixElement {
     _attr.generatrix.strokeScaling = false;
     this.clr = _row.clr.empty() ? $p.job_prm.builder.base_clr : _row.clr;
     this.addChild(_attr.generatrix);
-    const {lengths} = _row.dop;
+    const {lengths, positions} = _row.dop;
     if(Array.isArray(lengths)) {
       lengths.forEach((part, index) => {
         if(Array.isArray(part)) {
           const curve = _attr.generatrix.curves[index];
           if(curve) {
             curve.lengths = part;
+          }
+        }
+      });
+    }
+    if(Array.isArray(positions)) {
+      positions.forEach((pos, index) => {
+        if(pos && typeof pos === 'object') {
+          const curve = _attr.generatrix.curves[index];
+          if(curve) {
+            curve.positions = {};
+            for(const key in pos) {
+              curve.positions[key] = new paper.Point(pos[key]);
+            }            
           }
         }
       });
@@ -15488,19 +15543,20 @@ class Sectional extends GeneratrixElement {
       for(let i = 1; i < segments.length - 1; i++){
         this.draw_angle(i);
       }
-      for(let curve of curves){
+      curves.forEach((curve, ind) => {
         const {lengths, length} = curve;
         const content = lengths ? lengths.join('-') : (length / zoom).toFixed(0);
         const loc = curve.getLocationAtTime(0.5);
         const normal = loc.normal.normalize(radius);
+        const point = curve.positions?.l || loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]);
         children.push(new LenText({
-          point: loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]),
+          point,
           content,
           fontSize: radius * 1.2,
           parent: layer.children.text,
           _owner: curve
         }));
-      }
+      });
     }
     return this;
   }
@@ -15635,8 +15691,9 @@ class Sectional extends GeneratrixElement {
       guide: true,
       parent: layer.children.text,
     }));
+    const point = c2.positions?.a || center.add(end.multiply(-2.2));
     children.push(new AngleText({
-      point: center.add(end.multiply(-2.2)),
+      point,
       content: angle.toFixed(0) + '°',
       fontSize: radius * 1.2,
       parent: layer.children.text,
@@ -15657,7 +15714,19 @@ class Sectional extends GeneratrixElement {
     _row.nom = this.nom;
     _row.len = this.length.round(1);
     _row.elm_type = this.elm_type;
-    _row.dop = {lengths: generatrix.curves.map(curve => curve.lengths || 0)};
+    _row.dop = {
+      lengths: generatrix.curves.map(curve => curve.lengths || 0),
+      positions: generatrix.curves.map(({positions}) => {
+        if(positions) {
+          const res = {};
+          for(const key in positions) {
+            res[key] = [positions[key].x, positions[key].y];
+          }
+          return res;
+        }
+        return 0;
+      })
+    };
   }
   cnn_point() {
   }

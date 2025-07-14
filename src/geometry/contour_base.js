@@ -2046,7 +2046,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     glasses.forEach(this.draw_jalousie.bind(this));
     
     // развёртки разрезов
-    //sectionals.forEach(s => s.draw_unfolding());
+    sectionals.forEach(s => s.draw_unfolding());
 
     // бежим по строкам спецификации с визуализацией
     if(!hide_by_spec) {
