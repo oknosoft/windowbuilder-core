@@ -17153,6 +17153,7 @@ class SpecBuilding {
       pricing.calc_amount(attr);
     }
     ax.push(ox);
+    ox._manager.emit('specification_adjustment', ox);    
     return ax;
   }
 }

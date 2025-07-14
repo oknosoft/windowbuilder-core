@@ -10044,7 +10044,7 @@ Object.assign($p, {
 
   function ids() {
     const res = {};
-    const classes = md.classes()
+    const classes = md.classes();
     for(const area in classes) {
       for(const name of classes[area]) {
         const class_name = `${area}.${name}`;

@@ -121,7 +121,7 @@ class SpecBuilding {
     }
 
     ax.push(ox);
-
+    ox._manager.emit('specification_adjustment', ox);    
     return ax;
   }
 
