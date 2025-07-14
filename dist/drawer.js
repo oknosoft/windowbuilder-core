@@ -20791,24 +20791,26 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return err;
   }
   value_change(field, type, value) {
+    const ads = [];
     if(field === 'organization') {
       this.organization = value;
       if(this.contract.organization != value) {
         this.contract = $p.cat.contracts.by_partner_and_org(this.partner, value);
         !this.constructor.prototype.hasOwnProperty('new_number_doc') && this.new_number_doc();
+        ads.push('contract');
       }
     }
     else if(field === 'partner' && this.contract.owner != value) {
       this.contract = $p.cat.contracts.by_partner_and_org(value, this.organization);
+      ads.push('contract');
     }
-    const ads = ['contract'];
     if(field === 'obj_delivery_state' && this.clear_templates_props) {
       ads.push('extra_fields');
       if(value != 'Шаблон') {
         this.clear_templates_props();
       }
     }
-    this._manager.emit_add_fields(this, ads);
+    ads.length && this._manager.emit_add_fields(this, ads);
   }
   accessories(mode='create', ox) {
     const {cat: {characteristics}, job_prm: {nom}} = $p;
