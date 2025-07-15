@@ -393,7 +393,7 @@ class Sectional extends GeneratrixElement {
    * @summary Рисует развёртку в слое визуализации
    */
   draw_unfolding() {
-    const {layer, generatrix: {curves}, width, radius, _attr: {zoom}} = this;
+    const {layer, generatrix: {curves, bounds}, width, radius, _attr: {zoom}} = this;
     const {l_visualization, children: {text}} = layer;
     const curr = {
       bottom: text.bounds.bottomRight.add([80 * zoom, 0]),
@@ -492,6 +492,10 @@ class Sectional extends GeneratrixElement {
     for(const curve of left) {
       step(curve, -90);
     }
+    
+    // сдвинем при необходимости
+    const dx = bounds.unite(text.bounds).bottomRight.x - l_visualization.by_insets.bounds.bottomLeft.x + 100;
+    l_visualization.by_insets.translate([dx, 0]);
   }
 
   /**
