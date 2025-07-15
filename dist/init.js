@@ -9375,6 +9375,8 @@ get elm(){return this._getter('elm')}
 set elm(v){this._setter('elm',v)}
 get sz(){return this._getter('sz')}
 set sz(v){this._setter('sz',v)}
+get quantity(){return this._getter('quantity')}
+set quantity(v){this._setter('quantity',v)}
 get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
 get changed(){return this._getter('changed')}
