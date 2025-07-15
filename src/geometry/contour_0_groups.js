@@ -199,6 +199,11 @@ class GlassSegment {
       },
     };
   }
+
+  interiorPoint() {
+    const {sub_path} = this;
+    return sub_path.getPointAt(sub_path.length / 2);
+  }
 }
 
 class PointMap extends Map {
