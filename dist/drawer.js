@@ -4854,7 +4854,8 @@ class ContourRegion extends Contour {
       bounds = this.bounds;
     }
     const {cnstr, layer, region, weight} = this;
-    return `Ряд (${cnstr}) №${region} к ${layer.cnstr}`  +
+    const suffix = layer.level ? 'створки' : 'рамы';
+    return `Накладки ${suffix} ${region}-${cnstr}:${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
