@@ -12187,9 +12187,6 @@ class BaseLine extends ProfileItem {
   }
   set path(v) {
   }
-  setSelection(selection) {
-    paper.Item.prototype.setSelection.call(this, selection);
-  }
   get elm_type() {
     return $p.enm.elm_types.Линия;
   }
@@ -15735,6 +15732,14 @@ class Sectional extends GeneratrixElement {
     };
   }
   cnn_point() {
+  }
+  setSelection(selection) {
+    const {generatrix} = this._attr;
+    if (!generatrix) {
+      return;
+    }
+    super.setSelection(selection);
+    generatrix.setSelection(selection);
   }
   get length() {
     const {generatrix, zoom} = this._attr;

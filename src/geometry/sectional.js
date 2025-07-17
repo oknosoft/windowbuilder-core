@@ -601,6 +601,15 @@ class Sectional extends GeneratrixElement {
 
   }
 
+  setSelection(selection) {
+    const {generatrix} = this._attr;
+    if (!generatrix) {
+      return;
+    }
+    super.setSelection(selection);
+    generatrix.setSelection(selection);
+  }
+
   /**
    * Длина разреза
    * @return {number}

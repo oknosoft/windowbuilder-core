@@ -45,10 +45,6 @@ class BaseLine extends ProfileItem {
   set path(v) {
   }
 
-  setSelection(selection) {
-    paper.Item.prototype.setSelection.call(this, selection);
-  }
-
   /**
    * Возвращает тип элемента (линия)
    */
