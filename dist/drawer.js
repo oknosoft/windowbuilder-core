@@ -2957,7 +2957,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     _ox.inserts.find_rows({cnstr}, (row) => {
-      const {inset: origin} = row;
+      const {inset: origin, clr} = row;
       if (origin.insert_type.is('mosquito')) {
         const props = {
           parent: new paper.Group({parent: l_visualization.by_insets}),
@@ -2966,7 +2966,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           dashArray: [6, 4],
           strokeScaling: false,
         };
-        let {sz, nom, imposts} = origin.mosquito_props();
+        let {sz, nom, imposts} = origin.mosquito_props(this, clr, _ox);
         if(!nom) {
           return false;
         }
@@ -2991,11 +2991,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           point: bounds.bottomLeft.add([elm_font_size * 1.2, -elm_font_size * 0.4]),
         });
         if (imposts) {
-          const add_impost = (y) => {
-            const impost = Object.assign(new paper.Path({
-              insert: false,
-              segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
-            }), props);
+          const by_x = imposts.step_angle && imposts.step_angle !== 180;
+          const add_impost = (coord) => {
+            const segments = by_x ? 
+              [[coord, bounds.bottom + 100], [coord, bounds.top - 100]] : 
+              [[bounds.left - 100, coord], [bounds.right + 100, coord]]
+            const impost = Object.assign(new paper.Path({insert: false, segments}), props);
             const {length} = impost;
             for(const {point} of ppath.getIntersections(impost)) {
               const l1 = impost.firstSegment.point.getDistance(point);
@@ -3015,6 +3016,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             ox: _ox,
             cnstr,
             origin,
+            by_x,
           });
         }
         return false;
@@ -18391,35 +18393,35 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
     },
     traverse_steps: {
-      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+      value({imposts, bounds, add_impost, ox, cnstr, origin, by_x}) {
         const {offsets, do_center, step} = imposts;
         if(step) {
-          const {height, bottom} = bounds;
+          let {height, bottom, width, left} = bounds;
+          if(by_x) {
+            height = width;
+            bottom = left;
+          }
           const prop = $p.cch.properties.predefined('traverse_heights');
           const aprop = prop ? prop.avalue(
-            prop.extract_pvalue({
-              ox,
-              cnstr,
-              origin,
-              prm_row: {},
-            })) : [];
+            prop.extract_pvalue({ox, cnstr, origin, prm_row: {}})) : [];
+          const sign = by_x ? 1 : -1;
           let count = Math.floor(height / step);
           if(aprop.length === 1 && aprop[0] === 0) {
             count = 0;
           }
           else if(aprop.length) {
             for (const y of aprop) {
-              add_impost(bottom - y);
+              add_impost(bottom + sign * y);
             }
           }
           else if(count === 1) {
-            add_impost(bottom - height / 2);
+            add_impost(bottom + sign * height / 2);
           }
           else if(count > 1) {
             count += 1;
             const step0 = height / (count);
             for (let y = 1; y < count; y++) {
-              add_impost(bottom - y * step0);
+              add_impost(bottom + sign * y * step0);
             }
           }
         }
@@ -19134,8 +19136,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             else {
               bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
             }
-            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
-            const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
+            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180) ? bounds.height : bounds.width;
+            const w = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180) ? bounds.width : bounds.height;
             if(row_ins_spec.step){
               const prop = cch.properties.predefined('traverse_heights');
               const aprop = prop ? prop.avalue(
@@ -19431,15 +19433,57 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return split_type;
     }
     set split_type(v){this._setter('split_type',v)}
-    mosquito_props() {
+    mosquito_props(layer, clr, ox) {
       let sz, nom, imposts;
+      const elm = {
+        _row: {},
+        elm: 0,
+        clr,
+        layer,
+      };
+      const len_angl = {
+        angle: 0,
+        alp1: 0,
+        alp2: 0,
+        len: 0,
+        origin: this,
+        cnstr: layer?.cnstr
+      };
+      const {check_params} = ProductsBuilding;
+      const bounds = layer.bounds_inner();
+      let aprop;
       this.specification.forEach((rspec) => {
+        if(this.check_restrictions(rspec, elm, false, len_angl) !== true || !check_params({
+          params: this.selection_params,
+          ox,
+          elm,
+          row_spec: rspec,
+          cnstr: layer?.cnstr,
+          origin: this,
+        })){
+          return;
+        }
         if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
           sz = rspec.sz;
           nom = rspec.nom;
         }
-        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
-          imposts = rspec;
+        if (!imposts && rspec.step && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          const h = (!rspec.step_angle || rspec.step_angle == 180) ? bounds.height : bounds.width;
+          if(!aprop) {
+            const prop = $p.cch.properties.predefined('traverse_heights');
+            aprop = prop ? prop.avalue(
+              prop.extract_pvalue({ox, cnstr: layer?.cnstr, elm, origin: this, prm_row: {}})) : [];
+          }
+          let qty = Math.floor(h / rspec.step);
+          if (aprop.length === 1 && aprop[0] === 0) {
+            qty = 0;
+          }
+          else if (aprop.length) {
+            qty = aprop.length;
+          }
+          if(qty) {
+            imposts = rspec;
+          }
         }
         if(nom && imposts) {
           return false;

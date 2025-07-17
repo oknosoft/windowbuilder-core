@@ -1600,7 +1600,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       return;
     }
     _ox.inserts.find_rows({cnstr}, (row) => {
-      const {inset: origin} = row;
+      const {inset: origin, clr} = row;
       if (origin.insert_type.is('mosquito')) {
         const props = {
           parent: new paper.Group({parent: l_visualization.by_insets}),
@@ -1609,7 +1609,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           dashArray: [6, 4],
           strokeScaling: false,
         };
-        let {sz, nom, imposts} = origin.mosquito_props();
+        let {sz, nom, imposts} = origin.mosquito_props(this, clr, _ox);
 
         if(!nom) {
           return false;
@@ -1642,12 +1642,13 @@ class Contour extends AbstractFilling(paper.Layer) {
 
         // рисуем поперечину
         if (imposts) {
+          const by_x = imposts.step_angle && imposts.step_angle !== 180;
           
-          const add_impost = (y) => {
-            const impost = Object.assign(new paper.Path({
-              insert: false,
-              segments: [[bounds.left - 100, y], [bounds.right + 100, y]],
-            }), props);
+          const add_impost = (coord) => {
+            const segments = by_x ? 
+              [[coord, bounds.bottom + 100], [coord, bounds.top - 100]] : 
+              [[bounds.left - 100, coord], [bounds.right + 100, coord]]
+            const impost = Object.assign(new paper.Path({insert: false, segments}), props);
             const {length} = impost;
             for(const {point} of ppath.getIntersections(impost)) {
               const l1 = impost.firstSegment.point.getDistance(point);
@@ -1668,6 +1669,7 @@ class Contour extends AbstractFilling(paper.Layer) {
             ox: _ox,
             cnstr,
             origin,
+            by_x,
           });
 
         }

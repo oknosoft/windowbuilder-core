@@ -394,38 +394,37 @@
     },
 
     traverse_steps: {
-      value({imposts, bounds, add_impost, ox, cnstr, origin}) {
+      value({imposts, bounds, add_impost, ox, cnstr, origin, by_x}) {
         const {offsets, do_center, step} = imposts;
 
         if(step) {
-          const {height, bottom} = bounds;
+          let {height, bottom, width, left} = bounds;
+          if(by_x) {
+            height = width;
+            bottom = left;
+          }
           // высоты поперечин могли задать в интерфейсе
           const prop = $p.cch.properties.predefined('traverse_heights');
           const aprop = prop ? prop.avalue(
-            prop.extract_pvalue({
-              ox,
-              cnstr,
-              origin,
-              prm_row: {},
-              //layer,
-            })) : [];
+            prop.extract_pvalue({ox, cnstr, origin, prm_row: {}})) : [];
+          const sign = by_x ? 1 : -1;
           let count = Math.floor(height / step);
           if(aprop.length === 1 && aprop[0] === 0) {
             count = 0;
           }
           else if(aprop.length) {
             for (const y of aprop) {
-              add_impost(bottom - y);
+              add_impost(bottom + sign * y);
             }
           }
           else if(count === 1) {
-            add_impost(bottom - height / 2);
+            add_impost(bottom + sign * height / 2);
           }
           else if(count > 1) {
             count += 1;
             const step0 = height / (count);
             for (let y = 1; y < count; y++) {
-              add_impost(bottom - y * step0);
+              add_impost(bottom + sign * y * step0);
             }
           }
         }
@@ -1349,8 +1348,8 @@
               bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
             }
 
-            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.height : bounds.width);
-            const w = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180 ? bounds.width : bounds.height;
+            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180) ? bounds.height : bounds.width;
+            const w = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180) ? bounds.width : bounds.height;
             if(row_ins_spec.step){
               // высоты поперечин могли задать в интерфейсе
               const prop = cch.properties.predefined('traverse_heights');
@@ -1689,15 +1688,60 @@
      * Возвращает свойства для рисования москитки
      * @return {Object}
      */
-    mosquito_props() {
+    mosquito_props(layer, clr, ox) {
       let sz, nom, imposts;
+      const elm = {
+        _row: {},
+        elm: 0,
+        clr,
+        layer,
+      };
+      const len_angl = {
+        angle: 0,
+        alp1: 0,
+        alp2: 0,
+        len: 0,
+        origin: this,
+        cnstr: layer?.cnstr
+      };
+      const {check_params} = ProductsBuilding;
+      const bounds = layer.bounds_inner();
+      let aprop;
+      
       this.specification.forEach((rspec) => {
+        if(this.check_restrictions(rspec, elm, false, len_angl) !== true || !check_params({
+          params: this.selection_params,
+          ox,
+          elm,
+          row_spec: rspec,
+          cnstr: layer?.cnstr,
+          origin: this,
+        })){
+          return;
+        }
         if (!nom && rspec.count_calc_method.is('perim') && rspec.nom.elm_type.is('rama')) {
           sz = rspec.sz;
           nom = rspec.nom;
         }
-        if (!imposts && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
-          imposts = rspec;
+        if (!imposts && rspec.step && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
+          const h = (!rspec.step_angle || rspec.step_angle == 180) ? bounds.height : bounds.width;
+
+          // высоты поперечин могли задать в интерфейсе
+          if(!aprop) {
+            const prop = $p.cch.properties.predefined('traverse_heights');
+            aprop = prop ? prop.avalue(
+              prop.extract_pvalue({ox, cnstr: layer?.cnstr, elm, origin: this, prm_row: {}})) : [];
+          }
+          let qty = Math.floor(h / rspec.step);
+          if (aprop.length === 1 && aprop[0] === 0) {
+            qty = 0;
+          }
+          else if (aprop.length) {
+            qty = aprop.length;
+          }
+          if(qty) {
+            imposts = rspec;
+          }
         }
         if(nom && imposts) {
           return false;
