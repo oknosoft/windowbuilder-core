@@ -6419,6 +6419,7 @@ set demand(v){this._setter_ts('demand',v)}
     bw: false,
     mode: 0,
     onlay_regions: '',
+    unfolding: true,
   };}
 $p.CatCharacteristics = CatCharacteristics;
 class CatCharacteristicsConstructionsRow extends TabularSectionRow{

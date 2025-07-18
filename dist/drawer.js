@@ -3326,7 +3326,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.draw_mosquito();
     this.draw_sill();
     glasses.forEach(this.draw_jalousie.bind(this));
-    sectionals.forEach(s => s.draw_unfolding());
+    if(builder_props.unfolding !== false) {
+      sectionals.forEach(s => s.draw_unfolding());
+    }
     if(!hide_by_spec) {
       for (const row of rows) {
         if(!profiles.some(draw.bind(row))) {
@@ -12482,8 +12484,7 @@ class ProfileConnective extends ProfileItem {
   }
   joined_nearests() {
     const res = [];
-    const {contours, l_connective} = this.project; 
-    [l_connective].concat(contours).forEach((contour) => {
+    this.project.contours.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this){
           res.push(profile);

@@ -1088,5 +1088,6 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     bw: false,
     mode: 0,
     onlay_regions: '',
+    unfolding: true,
   };
 }

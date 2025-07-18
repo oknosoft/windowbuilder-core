@@ -77,19 +77,15 @@ class ProfileConnective extends ProfileItem {
    * Возвращает массив примыкающих рам
    */
   joined_nearests() {
-
     const res = [];
-    const {contours, l_connective} = this.project; 
-    [l_connective].concat(contours).forEach((contour) => {
+    this.project.contours.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this){
           res.push(profile);
         }
       });
     });
-
     return res;
-
   }
 
   /**
