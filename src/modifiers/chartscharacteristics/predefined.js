@@ -326,7 +326,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
 
         case 'elm_orientation':
-          _data._formula = function ({elm, elm2}) {
+          _data._formula = function ({elm, elm2, prm_row, layer}) {
+            if(prm_row?.origin?.is('parent')) {
+              if(!layer) {
+                layer = elm?.layer;
+              }
+              if(layer) {
+                const {bounds} = layer;
+                return bounds.width > bounds.height ? orientations.hor : orientations.vert; 
+              }
+            }
             if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
               elm = elm2;
             }
