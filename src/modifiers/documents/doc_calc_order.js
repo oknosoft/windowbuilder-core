@@ -780,7 +780,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   
   // при удалении строки
-  after_del_row(name) {
+  after_del_row(name, rows) {
     if(name === 'production'){
       this.product_rows();
       !this._slave_recalc && this.reset_specify();
@@ -2010,7 +2010,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         pricing.calc_first_cost(fake_prm);
       }
       pricing.calc_amount(fake_prm);
-      if(price && !_obj.price) {
+      if(price && !_obj.price && (!origin || origin.empty() || !origin.slave)) {
         _obj.price = price;
         _obj.price_internal = price_internal;
         recalc = true;
