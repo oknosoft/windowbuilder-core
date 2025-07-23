@@ -6808,6 +6808,14 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts, project: {builder_props}} = this;
+    if(layer instanceof ContourTearing) {
+      layer.hidden = false;
+      layer.l_dimensions.clear();
+      layer.layer.l_dimensions.clear();
+      layer.parent.parent.l_dimensions.clear();
+      layer.parent.parent.path.visible = false;
+      layer.profiles.forEach(p => p.visible = false);
+    }
     this.visible = true;
     path.set({
       strokeColor: 'black',
