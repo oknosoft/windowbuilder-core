@@ -12334,6 +12334,10 @@ class ProfileAddl extends ProfileItem {
   }
   glass_segment() {
   }
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
+  }
 }
 EditorInvisible.ProfileAddl = ProfileAddl;
 class ProfileAddlOuter extends ProfileItem {
@@ -12449,6 +12453,10 @@ class ProfileAddlOuter extends ProfileItem {
         return super.move_points(projection, all_points, start_point);
       }
     }
+  }
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
   }
 }
 EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;

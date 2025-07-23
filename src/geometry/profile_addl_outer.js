@@ -202,6 +202,11 @@ class ProfileAddlOuter extends ProfileItem {
     }
   }
 
+  redraw() {
+    super.redraw();
+    return this.draw_articles();
+  }
+
 }
 
 EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;
