@@ -55,22 +55,29 @@ class ProfileConnective extends ProfileItem {
 
     // двигаем примыкающие
     if(!paper.Key.isDown('control')) {
-      const moved = {profiles: []};
-      for (const nearest of nearests) {
-        const {_rays} = nearest._attr;
-        nearest.do_bind(this, _rays.b, _rays.e, moved);
-        // двигаем связанные с примыкающими
-        for(const cp of [_rays.b, _rays.e]) {
-          if(cp.profile) {
-            const {b, e} = cp.profile._attr._rays;
-            cp.profile.do_bind(nearest, b, e, moved);
-          }
-        }
-      }
+      this.bind_nearests(nearests);
     }
 
     this._attr._corns.length = 0;
     this.project.register_change();
+  }
+  
+  bind_nearests(nearests) {
+    if(!nearests) {
+      nearests = this.joined_nearests();
+    }
+    const moved = {profiles: []};
+    for (const nearest of nearests) {
+      const {_rays} = nearest._attr;
+      nearest.do_bind(this, _rays.b, _rays.e, moved);
+      // двигаем связанные с примыкающими
+      for(const cp of [_rays.b, _rays.e]) {
+        if(cp.profile) {
+          const {b, e} = cp.profile._attr._rays;
+          cp.profile.do_bind(nearest, b, e, moved);
+        }
+      }
+    }
   }
 
   /**

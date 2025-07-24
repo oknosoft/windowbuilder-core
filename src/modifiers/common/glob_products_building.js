@@ -316,7 +316,7 @@ class ProductsBuilding {
           elm,
           row_base: row_cnn,
           nom: _row.nom,
-          origin: row_cnn ? [`cnn|${(b.cnn || e.cnn).ref}|${row_cnn.row}`] : null,
+          origin: [`cnn|${(b.cnn || e.cnn).ref}|${row_cnn?.row || 0}`],
           spec,
           ox,
         });

@@ -161,7 +161,7 @@ class DimensionLine extends paper.Group {
 
     let _bounds, delta;
 
-    const {_attr, pos, project} = this;
+    const {_attr, pos, project, size} = this;
     const {Point} = project._scope;
 
     // получаем дельту - на сколько смещать
@@ -175,7 +175,7 @@ class DimensionLine extends paper.Group {
       this.correct_move_name({event, p1, p2, _attr});
 
       if(pos == 'top' || pos == 'bottom') {
-        const size = Math.abs(p1.x - p2.x);
+        //const size = Math.abs(p1.x - p2.x);
         if(event.name == 'right') {
           delta = new Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
@@ -186,7 +186,7 @@ class DimensionLine extends paper.Group {
         }
       }
       else{
-        const size = Math.abs(p1.y - p2.y);
+        //const size = Math.abs(p1.y - p2.y);
         if(event.name == 'bottom') {
           delta = new Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
@@ -224,16 +224,19 @@ class DimensionLine extends paper.Group {
       const {project} = this;
       project.deselect_all_points();
       project.getItems({class: ProfileItem})
-        .forEach(({b, e, generatrix, width}) => {
-          width = width / 2 + 1;
-          if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.segments.forEach((segm) => segm.selected = true)
-          }
-          else if(Math.abs(b[xy] - _bounds[event.name]) < width){
-            generatrix.firstSegment.selected = true;
-          }
-          else if(Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.lastSegment.selected = true;
+        .forEach((profile) => {
+          if(!profile.nearest(true)) {
+            let {b, e, generatrix, width, rays} = profile;
+            width = width / 2 + 1;
+            if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
+              generatrix.segments.forEach((segm) => segm.selected = true)
+            }
+            else if(Math.abs(b[xy] - _bounds[event.name]) < width && !rays.b.profile?.nearest(true)){
+              generatrix.firstSegment.selected = true;
+            }
+            else if(Math.abs(e[xy] - _bounds[event.name]) < width && !rays.e.profile?.nearest(true)){
+              generatrix.lastSegment.selected = true;
+            }
           }
       });
       delta._dimln = true;

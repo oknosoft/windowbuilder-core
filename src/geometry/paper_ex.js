@@ -831,7 +831,7 @@ Object.defineProperties(paper.Point.prototype, {
    */
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
-      return activeLayer && activeLayer.nodes.some((point) => {
+      return activeLayer?.nodes?.some((point) => {
         if(point.is_nearest(this, sticking)){
           this.x = point.x;
           this.y = point.y;

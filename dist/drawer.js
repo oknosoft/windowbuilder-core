@@ -3973,7 +3973,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!cnstr && (param.inheritance === 1 || param.inheritance === 2)) {
         return param.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm, elm2, node, node2, origin, layer: this, prm_row});
       }
-      console.info(`Не задано значение параметра ${param.toString()}`);
+      if($p.job_prm.debug && prm_row) {
+        const origin = prm_row._owner?._owner;
+        if(origin) {
+          console.info(`Не задано значение параметра '${param.toString()}' ${origin._metadata().obj_presentation} '${origin.presentation}'`);
+        }
+      }       
       return param.fetch_type();
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
@@ -5186,7 +5191,7 @@ class DimensionLine extends paper.Group {
   }
   _move_points(event, xy) {
     let _bounds, delta;
-    const {_attr, pos, project} = this;
+    const {_attr, pos, project, size} = this;
     const {Point} = project._scope;
     if(_attr.elm1){
       _bounds = {};
@@ -5194,7 +5199,6 @@ class DimensionLine extends paper.Group {
       const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2];
       this.correct_move_name({event, p1, p2, _attr});
       if(pos == 'top' || pos == 'bottom') {
-        const size = Math.abs(p1.x - p2.x);
         if(event.name == 'right') {
           delta = new Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
@@ -5205,7 +5209,6 @@ class DimensionLine extends paper.Group {
         }
       }
       else{
-        const size = Math.abs(p1.y - p2.y);
         if(event.name == 'bottom') {
           delta = new Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
@@ -5242,16 +5245,19 @@ class DimensionLine extends paper.Group {
       const {project} = this;
       project.deselect_all_points();
       project.getItems({class: ProfileItem})
-        .forEach(({b, e, generatrix, width}) => {
-          width = width / 2 + 1;
-          if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.segments.forEach((segm) => segm.selected = true)
-          }
-          else if(Math.abs(b[xy] - _bounds[event.name]) < width){
-            generatrix.firstSegment.selected = true;
-          }
-          else if(Math.abs(e[xy] - _bounds[event.name]) < width){
-            generatrix.lastSegment.selected = true;
+        .forEach((profile) => {
+          if(!profile.nearest(true)) {
+            let {b, e, generatrix, width, rays} = profile;
+            width = width / 2 + 1;
+            if(Math.abs(b[xy] - _bounds[event.name]) < width && Math.abs(e[xy] - _bounds[event.name]) < width){
+              generatrix.segments.forEach((segm) => segm.selected = true)
+            }
+            else if(Math.abs(b[xy] - _bounds[event.name]) < width && !rays.b.profile?.nearest(true)){
+              generatrix.firstSegment.selected = true;
+            }
+            else if(Math.abs(e[xy] - _bounds[event.name]) < width && !rays.e.profile?.nearest(true)){
+              generatrix.lastSegment.selected = true;
+            }
           }
       });
       delta._dimln = true;
@@ -8721,7 +8727,7 @@ Object.defineProperties(paper.Point.prototype, {
   },
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
-      return activeLayer && activeLayer.nodes.some((point) => {
+      return activeLayer?.nodes?.some((point) => {
         if(point.is_nearest(this, sticking)){
           this.x = point.x;
           this.y = point.y;
@@ -11612,7 +11618,9 @@ class Profile extends ProfileItem {
       _attr.d0 = this.offset;
       const nearest = this.nearest();
       if(nearest) {
-        _attr.d0 = this.offset - nearest.d2 - (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
+        _attr.d0 = this.offset +
+          (this.is_collinear(nearest) ? -nearest.d2 : nearest.d1) -
+          (_attr._nearest_cnn ? _attr._nearest_cnn.size(this, nearest) : 0);
       }
     }
     return _attr.d0;
@@ -12483,20 +12491,26 @@ class ProfileConnective extends ProfileItem {
     const nearests = this.joined_nearests();
     super.move_points(delta, all_points, start_point);
     if(!paper.Key.isDown('control')) {
-      const moved = {profiles: []};
-      for (const nearest of nearests) {
-        const {_rays} = nearest._attr;
-        nearest.do_bind(this, _rays.b, _rays.e, moved);
-        for(const cp of [_rays.b, _rays.e]) {
-          if(cp.profile) {
-            const {b, e} = cp.profile._attr._rays;
-            cp.profile.do_bind(nearest, b, e, moved);
-          }
-        }
-      }
+      this.bind_nearests(nearests);
     }
     this._attr._corns.length = 0;
     this.project.register_change();
+  }
+  bind_nearests(nearests) {
+    if(!nearests) {
+      nearests = this.joined_nearests();
+    }
+    const moved = {profiles: []};
+    for (const nearest of nearests) {
+      const {_rays} = nearest._attr;
+      nearest.do_bind(this, _rays.b, _rays.e, moved);
+      for(const cp of [_rays.b, _rays.e]) {
+        if(cp.profile) {
+          const {b, e} = cp.profile._attr._rays;
+          cp.profile.do_bind(nearest, b, e, moved);
+        }
+      }
+    }
   }
   joined_nearests() {
     const res = [];
@@ -16402,7 +16416,7 @@ class ProductsBuilding {
           elm,
           row_base: row_cnn,
           nom: _row.nom,
-          origin: row_cnn ? [`cnn|${(b.cnn || e.cnn).ref}|${row_cnn.row}`] : null,
+          origin: [`cnn|${(b.cnn || e.cnn).ref}|${row_cnn?.row || 0}`],
           spec,
           ox,
         });
