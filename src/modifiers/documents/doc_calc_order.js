@@ -463,7 +463,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       })
         .catch(() => null);
 
-      return rev.then(() => db.bulkDocs(sobjs));
+      return rev.then(() => {
+        sobjs.sort((a, b) => utils.sort('_id'));
+        return db.bulkDocs(sobjs);
+      });
     };
     let fin = Promise.resolve();
 
