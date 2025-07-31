@@ -22,9 +22,23 @@
         }
         return true;
       }
-    }
-
+    },
   });
+
+  /**
+   * Инверсное направление открывания
+   */
+  for(const v of enm.open_directions) {
+    if(v.is('right')) {
+      v.inverse = enm.open_directions.left;
+    }
+    else if(v.is('left')) {
+      v.inverse = enm.open_directions.right;
+    }
+    else {
+      v.inverse = v;
+    }
+  }
 
   enm.plan_detailing.__define({
     eq_product: {
