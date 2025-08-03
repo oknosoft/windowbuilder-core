@@ -801,6 +801,26 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return super.unload();
   }
 
+  get presentation() {
+    if(this.empty()) {
+      return '';
+    }
+    const {number_doc, obj_delivery_state, date, posted, _modified} = this;
+    const meta = this._metadata();
+    if(this.is_new()) {
+      return `${meta.obj_presentation || meta.synonym} ${number_doc ? `№${number_doc}` : '(новый)'} (не записан) *`;
+    }
+    const pre = number_doc ?
+      `${meta.obj_presentation || meta.synonym}  №${number_doc} от ${moment(date).format(moment._masks.date_time)}` :
+      `${meta.obj_presentation || meta.synonym} ${moment(date).format(moment._masks.date_time)}`;
+    return pre + ` (${posted ? 'проведен' : obj_delivery_state.toString()})${_modified ? ' *' : ''}`;
+  }
+  set presentation(v) {
+    if(v) {
+      this._presentation = String(v);
+    }
+  }
+
 
   /**
    * Возвращает валюту документа
