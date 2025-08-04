@@ -7,7 +7,7 @@
     "url": "https://github.com/oknosoft/windowbuilder-core.git"
   },
   "engines": {
-    "node": ">=20.11",
+    "node": ">=20.19",
     "yarn": "^1.22"
   },
   "keywords": [
@@ -26,9 +26,9 @@
   },
   "homepage": "http://www.oknosoft.ru/zd/",
   "dependencies": {
-    "metadata-abstract-ui": "2.0.37-beta.1",
-    "metadata-core": "2.0.37-beta.1",
-    "metadata-pouchdb": "2.0.37-beta.1",
+    "metadata-abstract-ui": "2.0.37-beta.2",
+    "metadata-core": "2.0.37-beta.2",
+    "metadata-pouchdb": "2.0.37-beta.2",
     "paper-jsdom-canvas": "0.12.18"
   },
   "devDependencies": {
