@@ -505,7 +505,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       layer.layer.l_dimensions.clear();
       layer.parent.parent.l_dimensions.clear();
       layer.parent.parent.path.visible = false;
-      layer.profiles.forEach(p => p.visible = false);
+      layer.parent.parent.imposts.concat(layer.profiles).forEach(p => p.visible = false);
     }
     this.visible = true;
     path.set({
