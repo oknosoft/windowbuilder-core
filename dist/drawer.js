@@ -8501,7 +8501,7 @@ Object.defineProperties(paper.Path.prototype, {
             p1last = p1f > p1l,
             p2last = p2f > p2l,
             p4 = 4, tg;
-          if(p1.getDistance(p2) < 0.8) {
+          if(p1.getDistance(p2) < 0.4) {
             if((p1f < p4 || p1l < p4) && (p2f < p4 || p2l < p4)) {
               return p1.add(p2).divide(2);
             }
