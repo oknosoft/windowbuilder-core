@@ -342,8 +342,107 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     // массив сырых данных изменённых характеристик
-    let sobjs = this.product_rows(true, attr);
+    const sobjs = this.product_rows(true, attr);
+    const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
+    
+    return ($p.job_prm.builder.cx_in_order && obj_delivery_state !== Шаблон) ?
+      this.save_with_cx(sobjs, db) : this.save_normal(sobjs, db);
+    
+  }
+  
+  save_with_cx(sobjs, db) {
+    const {utils, wsql, job_prm} = $p;
+    const  {moment} = utils;
+    const {obj_delivery_state, _obj, _manager, class_name, timestamp, production} = this;
+    const objs = [this];
+    const redundantFields = ['ref', 'calc_order', 'captured'];
+    for(const row of production) {
+      const {characteristic} = row;
+      if(!characteristic.empty() && characteristic.calc_order === this) {
+        const cx = characteristic.toJSON();
+        for(const rf of redundantFields) {
+          delete cx[rf];
+        }
+        row.dop = {cx};
+        objs.unshift(characteristic);
+      }
+    }
+    const _id = `${class_name}|${_obj.ref}`;
+    const tmp = Object.assign({_id, class_name}, _obj);
+    delete tmp.ref;
+    tmp.timestamp = {
+      moment: moment().format('YYYY-MM-DDTHH:mm:ss ZZ'),
+      user: wsql.get_user_param('user_name'),
+    };
+    if (this._attachments) {
+      tmp._attachments = this._attachments;
+    }
+    if(_manager.build_search) {
+      _manager.build_search(tmp, this);
+    }
+    else {
+      tmp.search = ((_obj.number_doc || '') + (_obj.note ? ' ' + _obj.note : '')).toLowerCase();
+    }
+    
+    return Promise.resolve()
+      .then(() => {
+        if(!this.is_new() && !tmp._rev) {
+          return db.get(_id)
+            .then(({_rev}) => sobjs.some((o) => {
+              this._rev = _rev;
+              tmp._rev = _rev;
+            }));
+        }
+      })
+      .then(() => {
+        if(job_prm.builder.compress_production) {
+          return utils.deflate.compress(JSON.stringify(tmp.production))
+            .then((base64) => {
+              tmp.production = base64;
+            });          
+        }
+      })
+      .then(() => db.put(tmp))
+      .then((res) => {
+        if(res) {
+          let fin = Promise.resolve();
+          for(const o of objs) {
+            const {_data, _obj} = o;
+            if(o === this) {
+              _obj._rev = res.rev;
+              this.is_new() && this._set_loaded(this.ref);
+              if(tmp._attachments) {
+                if(!this._attachments) {
+                  this._attachments = {};
+                }
+                for (let att in tmp._attachments) {
+                  if(!this._attachments[att] || !tmp._attachments[att].stub) {
+                    this._attachments[att] = tmp._attachments[att];
+                  }
+                }
+              }
+            }
+            o.after_save();
+            _data._modified = false;
+            _data._is_new = false;
+            _data._saving = 0;
+            _data._saving_trans = false;
+            fin = fin.then(() => o._manager.emit_promise('after_save', o));
+          }
+          return fin;
+        }
+      })
+      .then(() => {
+        _manager.emit_async('svgs', this);
+        return null;
+      });
 
+  }
+
+  save_normal(sobjs, db) {
+    const {ui, utils, wsql, md, enm: {obj_delivery_states: {Шаблон}}} = $p;
+    const  {blank, moment} = utils;
+    const {obj_delivery_state, _obj, _manager, class_name, timestamp, _deleted} = this;
     // если изменился hash заказа, добавим его в sobjs
     if(this._modified || this.is_new()) {
       const hash = this._hash();
@@ -371,8 +470,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     sobjs = utils._clone(sobjs, true);
-
-    const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
 
     // пометим на удаление неиспользуемые характеристики
     /*
@@ -422,11 +519,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     const save_error = (reason, obj) => {
       const note = `Ошибка при записи ${this.presentation}, ${reason}`
-      $p.record_log({
-        class: 'save_error',
-        obj,
-        note,
-      });
+      $p.record_log({class: 'save_error', obj, note});
       throw new Error(note);
     };
 
@@ -567,7 +660,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.amount_operation = this.doc_currency.to_currency(doc_amount, date).round(rounding);
     return errors;
   }
-  
+
+  /**
+   * @summary Рассчитывает маршрут репликации
+   */
   set_route() {
     const {enm, cat, CatBranches, CatAbonents} = $p;
     const current = sessionStorage.branch ? cat.branches.get(sessionStorage.branch) : cat.abonents.current;
@@ -625,12 +721,40 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
   }
 
-  // шаблоны читаем из ram
+  /**
+   * @summary Чтение объекта
+   * @desc шаблоны читаем из ram, если в данных есть характеристики - создаём
+   * @param attr
+   * @return {*}
+   */
   load(attr = {}) {
     if(this.obj_delivery_state.is('Шаблон')) {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
     }
-    return super.load(attr);
+    return super.load(attr)
+      .then(() => this.load_cx());
+  }
+
+  load_cx() {
+    if($p.job_prm.builder.cx_in_order) {
+      const calc_order = this.ref;
+      for(const {characteristic, dop} of this.production) {
+        if(!characteristic.empty()) {
+          const {cx} = dop;
+          if(cx) {
+            const {_data, _obj} = characteristic;
+            _data._loading = true;
+            cx.calc_order = calc_order;
+            characteristic._mixin(cx);
+            _obj._rev = cx._rev;
+            _data._loading = false;
+            _data._modified = false;
+            characteristic.after_load();
+          }
+        }
+      }
+    }
+    return this;
   }
 
   // шаблоны сохраняем в базу ram
