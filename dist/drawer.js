@@ -21253,7 +21253,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
-        insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
         _data._loading = _loading;
       }
     }
@@ -22201,9 +22200,10 @@ $p.DocCalc_order.FakeLenAngl = FakeLenAngl;
 $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocCalc_orderProductionRow {
   value_change(field, type, value, no_extra_charge) {
     let {_obj, _owner, nom, characteristic, unit} = this;
+    const calc_order = _owner._owner;
     let recalc;
     const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
-    const {DocCalc_orderProductionRow, DocPurchase_order, utils, wsql, pricing, job_prm, enm} = $p;
+    const {DocCalc_orderProductionRow, DocPurchase_order, CatInserts, CatInsert_bind, utils, wsql, pricing, job_prm, enm, cat} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
     let reset_specify;
     if(field === 'quantity' && !_slave_recalc) {
@@ -22230,15 +22230,20 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.quantity = 1;
       }
       const {origin} = characteristic;
-      if(origin && !origin.empty() && origin.slave) {
-        characteristic.specification.clear();
-        characteristic.x = this.len;
-        characteristic.y = this.width;
-        characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
-        const len_angl = new FakeLenAngl({len: this.len, inset: origin});
-        const elm = new FakeElm(this);
-        origin.calculate_spec({elm, len_angl, ox: characteristic});
-        recalc = true;
+      if(origin && !origin.empty()) {
+        if(origin instanceof CatInserts && origin.slave) {
+          characteristic.specification.clear();
+          characteristic.x = this.len;
+          characteristic.y = this.width;
+          characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
+          const len_angl = new FakeLenAngl({len: this.len, inset: origin});
+          const elm = new FakeElm(this);
+          origin.calculate_spec({elm, len_angl, ox: characteristic});
+          recalc = true;
+        }
+        else if(origin instanceof CatInsert_bind && origin.calc_order) {
+          cat.insert_bind.deposit({ox: {calc_order, _manager: cat.characteristics}, order: true});
+        }
       }
       const fake_prm = {
         calc_order_row: this,
@@ -22288,8 +22293,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         }
       }
       _obj.amount_internal = (_obj.price_internal * ((100 - _obj.discount_percent_internal) / 100) * _obj.quantity).round(rounding);
-      const doc = _owner._owner;
-      if(doc.vat_consider) {
+      if(calc_order.vat_consider) {
         const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = enm.vat_rates;
         _obj.vat_rate = (nom.vat_rate.empty() ? НДС20 : nom.vat_rate).ref;
         switch (this.vat_rate) {
@@ -22312,7 +22316,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           _obj.vat_amount = 0;
           break;
         }
-        if(!doc.vat_included) {
+        if(!calc_order.vat_included) {
           _obj.amount = (_obj.amount + _obj.vat_amount).round(2);
         }
       }
@@ -22343,8 +22347,8 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       amount.doc_amount = amount.amount.round(rounding);
       amount.amount_internal = amount.amount_internal.round(rounding);
       delete amount.amount;
-      Object.assign(doc, amount);
-      doc._manager.emit_async('update', doc, amount);
+      Object.assign(calc_order, amount);
+      calc_order._manager.emit_async('update', calc_order, amount);
       return false;
     }
   }
