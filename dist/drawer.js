@@ -20753,9 +20753,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
       }
     }
-    if(_deleted || obj_delivery_state == Архив) {
-      _obj.state = 'zarchive';
-    }
     if(obj_delivery_state == Шаблон) {
       _obj.state = 'template';
       const permitted_sys = $p.cch.properties.predefined('permitted_sys');
@@ -20764,6 +20761,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           this.extra_fields.add({property: permitted_sys});
         }
       }
+    }
+    else if(_deleted || obj_delivery_state == Архив) {
+      _obj.state = 'zarchive';
     }
     else if(category == 'service') {
       _obj.state = 'service';

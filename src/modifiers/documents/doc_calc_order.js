@@ -291,9 +291,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     // фильтр по статусу
-    if(_deleted || obj_delivery_state == Архив) {
-      _obj.state = 'zarchive';
-    }
     if(obj_delivery_state == Шаблон) {
       _obj.state = 'template';
       // Шаблоны имеют дополнительное свойство, в котором можно задать доступные системы
@@ -303,6 +300,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           this.extra_fields.add({property: permitted_sys});
         }
       }
+    }
+    else if(_deleted || obj_delivery_state == Архив) {
+      _obj.state = 'zarchive';
     }
     else if(category == 'service') {
       _obj.state = 'service';
