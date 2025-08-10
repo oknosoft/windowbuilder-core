@@ -20809,13 +20809,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const objs = [this];
     const redundantFields = ['ref', 'calc_order', 'captured'];
     for(const row of production) {
-      const {characteristic} = row;
+      const {characteristic, _obj} = row;
       if(!characteristic.empty() && characteristic.calc_order === this) {
         const cx = characteristic.toJSON();
         for(const rf of redundantFields) {
           delete cx[rf];
         }
-        row.dop = {cx};
+        if(_obj.dop) {
+          _obj.dop.cx = cx;
+        }
+        else {
+          _obj.dop = {cx};
+        }
         objs.unshift(characteristic);
       }
     }
