@@ -239,20 +239,25 @@ class Onlay extends ProfileItem {
       
       for(const {sub_path} of glass.profiles) {
         const np = sub_path.intersect_point(line, point);
-        const angle = np && Math.abs(np.subtract(other).angle - point.subtract(other).angle);
-        if(np && (angle < consts.epsilon || Math.abs(angle - 360) < consts.epsilon)) {
-          let distance = np.getDistance(point);
+        if(np) {
+          const dother = np.subtract(other);
+          if(dother.length > consts.sticking_l) {
+            const angle = Math.abs(dother.angle - point.subtract(other).angle);
+            if(angle < consts.epsilon || Math.abs(angle - 360) < consts.epsilon) {
+              let distance = np.getDistance(point);
 
-          if(distance < res.distance){
-            res.distance = distance;
-            res.point = np;
-            res.profile = glass;
-            res.cnn_types = $p.enm.cnn_types.acn.t;
-          }
+              if(distance < res.distance){
+                res.distance = distance;
+                res.point = np;
+                res.profile = glass;
+                res.cnn_types = $p.enm.cnn_types.acn.t;
+              }
 
-          if((is_filling && res.point) || distance < consts.sticking_l){
-            res.binded = true;
-            return res;
+              if((is_filling && res.point) || distance < consts.sticking_l){
+                res.binded = true;
+                return res;
+              }
+            }
           }
         }
       }
