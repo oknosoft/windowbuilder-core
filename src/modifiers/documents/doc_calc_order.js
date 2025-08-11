@@ -740,6 +740,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       .then(() => this.load_cx());
   }
 
+  _mixin(attr, include, exclude, silent) {
+    super._mixin(attr, include, exclude, silent);
+    this.load_cx();
+  }
+
   load_cx() {
     if($p.job_prm.builder.cx_in_order) {
       const calc_order = this.ref;
