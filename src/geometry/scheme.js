@@ -1919,11 +1919,13 @@ class Scheme extends paper.Project {
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
       bind_generatrix = typeof check_only == 'string' ? check_only.indexOf('generatrix') != -1 : check_only,
       node_distance;
+    
+    const {sticking, sticking_l} = profile.sticking();
 
     // Проверяет дистанцию в окрестности начала или конца соседнего элемента
     function check_node_distance(node) {
       distance = element[node].getDistance(point)
-      if(distance < parseFloat(consts.sticking_l)) {
+      if(distance < sticking_l) {
 
         if(typeof res.distance == 'number' && res.distance < distance) {
           res.profile = element;
@@ -2019,7 +2021,7 @@ class Scheme extends paper.Project {
     // 		res.cnn_types = acn.t;
     // 	}
     // });
-    // if(res.distance < ((res.is_t || !res.is_l)  ? consts.sticking : consts.sticking_l)){
+    // if(res.distance < ((res.is_t || !res.is_l)  ? sticking : sticking_l)){
     // 	return false;
     // }
 
@@ -2030,7 +2032,7 @@ class Scheme extends paper.Project {
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
 
-    if(distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l)) {
+    if(distance < ((res.is_t || !res.is_l) ? sticking : sticking_l)) {
 
       if(distance < res.distance || bind_generatrix) {
         if(element.d0 != 0 && element.rays.outer) {

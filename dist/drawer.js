@@ -8015,6 +8015,10 @@ class GeneratrixElement extends BuilderElement {
     const nodes = this.parent.cnnMap?.get(this) || [];
     return Boolean(nodes.find(v => v.side === 1));
   }
+  sticking() {
+    let {sticking_l} = this.layer.sys;
+    return sticking_l ? {sticking: sticking_l * 10, sticking_l} : consts;
+  } 
 }
 EditorInvisible.GeneratrixElement = GeneratrixElement;
 class GridCoordinates extends paper.Group {
@@ -11781,6 +11785,7 @@ class Profile extends ProfileItem {
   }
   cnn_point(node, point) {
     const {project, parent, rays} = this;
+    const {sticking, sticking_l} = this.sticking();
     const res = rays[node];
     const {cnn, profile, profile_point} = res;
     if(!point) {
@@ -11800,7 +11805,7 @@ class Profile extends ProfileItem {
       if(parent) {
         const ares = [];
         for(const profile of parent.profiles) {
-          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
+          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? sticking : sticking_l))) {
             ares.push({
               profile_point: res.profile_point,
               profile: profile,
@@ -14932,9 +14937,10 @@ class Scheme extends paper.Project {
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
       bind_generatrix = typeof check_only == 'string' ? check_only.indexOf('generatrix') != -1 : check_only,
       node_distance;
+    const {sticking, sticking_l} = profile.sticking();
     function check_node_distance(node) {
       distance = element[node].getDistance(point)
-      if(distance < parseFloat(consts.sticking_l)) {
+      if(distance < sticking_l) {
         if(typeof res.distance == 'number' && res.distance < distance) {
           res.profile = element;
           res.profile_point = node;
@@ -14990,7 +14996,7 @@ class Scheme extends paper.Project {
       (element.rays.outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
-    if(distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l)) {
+    if(distance < ((res.is_t || !res.is_l) ? sticking : sticking_l)) {
       if(distance < res.distance || bind_generatrix) {
         if(element.d0 != 0 && element.rays.outer) {
           res.point = element.rays.outer.getNearestPoint(point);

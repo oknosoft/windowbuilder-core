@@ -3161,6 +3161,8 @@ get outline(){return this._getter('outline')}
 set outline(v){this._setter('outline',v)}
 get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
+get sticking_l(){return this._getter('sticking_l')}
+set sticking_l(v){this._setter('sticking_l',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}

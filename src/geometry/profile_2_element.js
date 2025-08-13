@@ -305,6 +305,7 @@ class Profile extends ProfileItem {
    */
   cnn_point(node, point) {
     const {project, parent, rays} = this;
+    const {sticking, sticking_l} = this.sticking();
     const res = rays[node];
     const {cnn, profile, profile_point} = res;
 
@@ -330,7 +331,7 @@ class Profile extends ProfileItem {
         const ares = [];
 
         for(const profile of parent.profiles) {
-          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? consts.sticking : consts.sticking_l))) {
+          if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? sticking : sticking_l))) {
             ares.push({
               profile_point: res.profile_point,
               profile: profile,

@@ -405,6 +405,12 @@ class GeneratrixElement extends BuilderElement {
     const nodes = this.parent.cnnMap?.get(this) || [];
     return Boolean(nodes.find(v => v.side === 1));
   }
+
+  sticking() {
+    let {sticking_l} = this.layer.sys;
+    return sticking_l ? {sticking: sticking_l * 10, sticking_l} : consts;
+  } 
+  
 }
 
 EditorInvisible.GeneratrixElement = GeneratrixElement;
