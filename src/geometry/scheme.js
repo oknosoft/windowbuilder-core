@@ -929,12 +929,14 @@ class Scheme extends paper.Project {
   /**
    * Регистрирует факты изменения элемнтов
    */
-  register_change(with_update, deffer) {
+  register_change(with_update, deffer, local) {
 
     const {_attr, _ch, _deffer, contours} = this;
     
-    for(const layer of contours) {
-      layer.register_change();
+    if(!local) {
+      for(const layer of contours) {
+        layer.register_change();
+      }
     }
 
     if(!_attr._loading) {

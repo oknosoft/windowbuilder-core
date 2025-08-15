@@ -467,6 +467,26 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return typeof region === 'number' ? region : 0;
             };
             break;
+            
+        case 'furn':
+          _data._formula = function ({elm, layer, ox, cnstr, prm_row}) {
+            if(!layer) {
+              layer = elm?.layer;
+            }
+            if(!layer) {
+              return ox && cnstr && ox.constructions.find({cnstr})?.furn || $p.cat.furns.get();
+            }
+            if(prm_row?.origin?.is('nearest') && layer.layer) {
+              for(const other of layer.layer.contours) {
+                // TODO: добавить проверку наличия примыкания слоя к текущему
+                if(other !== layer) {
+                  return other.furn;
+                }
+              }
+            }
+            return layer.furn;        
+          };
+          break;
           
         case 'handle_height':
           _data._formula = function ({elm, layer}) {

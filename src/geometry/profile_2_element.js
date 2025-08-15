@@ -263,7 +263,12 @@ class Profile extends ProfileItem {
     this.layer?.contours?.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this) {
-          res.push(profile);
+          if(profile instanceof ProfileVirtual) {
+            res.push(...profile.joined_nearests());
+          }
+          else {
+            res.push(profile);
+          }
         }
       });
     });

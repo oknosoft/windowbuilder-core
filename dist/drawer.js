@@ -2595,7 +2595,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       type = obj.type;
     }
     this.project._scope.eve.emit_async(type, obj);
-    type === consts.move_points && this.project.register_change();
+    if(type === consts.move_points) {
+      this.register_change();
+      this.project.register_change(false, null, true);
+    }
   }
   get outer_nodes() {
     return this.outer_profiles.map((v) => v.elm);
@@ -11764,7 +11767,12 @@ class Profile extends ProfileItem {
     this.layer?.contours?.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this) {
-          res.push(profile);
+          if(profile instanceof ProfileVirtual) {
+            res.push(...profile.joined_nearests());
+          }
+          else {
+            res.push(profile);
+          }
         }
       });
     });
@@ -14264,10 +14272,12 @@ class Scheme extends paper.Project {
       clearTimeout(_attr._update_timer);
     }
   }
-  register_change(with_update, deffer) {
+  register_change(with_update, deffer, local) {
     const {_attr, _ch, _deffer, contours} = this;
-    for(const layer of contours) {
-      layer.register_change();
+    if(!local) {
+      for(const layer of contours) {
+        layer.register_change();
+      }
     }
     if(!_attr._loading) {
       _attr._bounds = null;
@@ -20179,6 +20189,24 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return typeof region === 'number' ? region : 0;
             };
             break;
+        case 'furn':
+          _data._formula = function ({elm, layer, ox, cnstr, prm_row}) {
+            if(!layer) {
+              layer = elm?.layer;
+            }
+            if(!layer) {
+              return ox && cnstr && ox.constructions.find({cnstr})?.furn || $p.cat.furns.get();
+            }
+            if(prm_row?.origin?.is('nearest') && layer.layer) {
+              for(const other of layer.layer.contours) {
+                if(other !== layer) {
+                  return other.furn;
+                }
+              }
+            }
+            return layer.furn;        
+          };
+          break;
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {

@@ -839,7 +839,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * Получает замкнутые контуры, ищет подходящие створки или заполнения, при необходимости создаёт новые
    */
   glass_recalc() {
-    const {glass_contours} = this;      // массиы новых рёбер
+    const {glass_contours} = this;      // массивы новых рёбер
     const glasses = this.glasses(true); // массив старых заполнений
     const binded = new Set();
 
@@ -1090,7 +1090,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       type = obj.type;
     }
     this.project._scope.eve.emit_async(type, obj);
-    type === consts.move_points && this.project.register_change();
+    if(type === consts.move_points) {
+      this.register_change();
+      this.project.register_change(false, null, true);
+    }
   }
 
   /**
