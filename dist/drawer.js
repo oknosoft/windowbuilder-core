@@ -7942,7 +7942,21 @@ class GeneratrixElement extends BuilderElement {
                     }
                   });
                 }
+                const addls = [];
+                for(const addl of profile.addls) {
+                  if(addl instanceof ProfileAddlOuter) {
+                    const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) : 
+                      addl.generatrix.getNormalAt(addl.generatrix.length);
+                    const pt = addl[profile_point].add(nl.multiply(addl.width).negate());
+                    if(pt.is_nearest(profile[profile_point], true)) {
+                      addls.push({addl, delta: free_point.subtract(profile[profile_point])});
+                    }
+                  }
+                }
                 profile[profile_point] = free_point;
+                for(const {addl, delta} of addls) {
+                  addl[profile_point] = addl[profile_point].add(delta);
+                }
               }
             }
           }
@@ -8019,7 +8033,7 @@ class GeneratrixElement extends BuilderElement {
     return Boolean(nodes.find(v => v.side === 1));
   }
   sticking() {
-    let {sticking_l} = this.layer.sys;
+    const sticking_l = this.layer?.sys?.sticking_l;
     return sticking_l ? {sticking: sticking_l * 10, sticking_l} : consts;
   } 
 }
@@ -14947,7 +14961,7 @@ class Scheme extends paper.Project {
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
       bind_generatrix = typeof check_only == 'string' ? check_only.indexOf('generatrix') != -1 : check_only,
       node_distance;
-    const {sticking, sticking_l} = profile.sticking();
+    const {sticking, sticking_l} = (profile || element).sticking();
     function check_node_distance(node) {
       distance = element[node].getDistance(point)
       if(distance < sticking_l) {

@@ -1922,7 +1922,7 @@ class Scheme extends paper.Project {
       bind_generatrix = typeof check_only == 'string' ? check_only.indexOf('generatrix') != -1 : check_only,
       node_distance;
     
-    const {sticking, sticking_l} = profile.sticking();
+    const {sticking, sticking_l} = (profile || element).sticking();
 
     // Проверяет дистанцию в окрестности начала или конца соседнего элемента
     function check_node_distance(node) {

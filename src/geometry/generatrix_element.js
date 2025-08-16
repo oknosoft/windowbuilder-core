@@ -293,7 +293,21 @@ class GeneratrixElement extends BuilderElement {
                     }
                   });
                 }
+                const addls = [];
+                for(const addl of profile.addls) {
+                  if(addl instanceof ProfileAddlOuter) {
+                    const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) : 
+                      addl.generatrix.getNormalAt(addl.generatrix.length);
+                    const pt = addl[profile_point].add(nl.multiply(addl.width).negate());
+                    if(pt.is_nearest(profile[profile_point], true)) {
+                      addls.push({addl, delta: free_point.subtract(profile[profile_point])});
+                    }
+                  }
+                }
                 profile[profile_point] = free_point;
+                for(const {addl, delta} of addls) {
+                  addl[profile_point] = addl[profile_point].add(delta);
+                }
               }
             }
           }
@@ -407,7 +421,7 @@ class GeneratrixElement extends BuilderElement {
   }
 
   sticking() {
-    let {sticking_l} = this.layer.sys;
+    const sticking_l = this.layer?.sys?.sticking_l;
     return sticking_l ? {sticking: sticking_l * 10, sticking_l} : consts;
   } 
   
