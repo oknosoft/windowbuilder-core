@@ -20648,6 +20648,10 @@ class FakeElm {
     const {project, row_spec} = this;
     return project ? project.ox : row_spec._owner._owner;
   }
+  get orientation() {
+    const {orientations} = $p.enm;
+    return this.len > this.height ? orientations.hor : orientations.vert;
+  }
 }
 $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   after_create(user) {

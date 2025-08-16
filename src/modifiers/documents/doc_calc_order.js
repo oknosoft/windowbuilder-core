@@ -103,6 +103,11 @@ class FakeElm {
     const {project, row_spec} = this;
     return project ? project.ox : row_spec._owner._owner;
   }
+  
+  get orientation() {
+    const {orientations} = $p.enm;
+    return this.len > this.height ? orientations.hor : orientations.vert;
+  }
 
 }
 
