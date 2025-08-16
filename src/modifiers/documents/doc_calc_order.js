@@ -1334,7 +1334,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // https://github.com/soldair/node-qrcode
         return Promise.resolve().then(() => {
           if(typeof QRCode === 'object') {
-            const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета}|BIC=${res.ОрганизацияБанкБИК}|PayeeINN=${res.ОрганизацияИНН}|Purpose=Заказ №${res.ЗаказНомер} от ${res.ДатаЗаказаФорматD} ${res.ТекстНДС}|KPP=${res.ОрганизацияКПП}|Sum=${res.СуммаДокумента}${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
+            const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета
+            }|${res.ОрганизацияБанкНаименование}|BIC=${res.ОрганизацияБанкБИК
+            }|CorrespAcc=${res.ОрганизацияБанкКоррСчет}|PayeeINN=${res.ОрганизацияИНН
+            }|Sum=${(parseFloat(res.СуммаДокумента) * 100).round()}|Purpose=Заказ №${res.ЗаказНомер
+            } от ${res.ДатаЗаказаФорматD} Сумма ${res.СуммаДокумента.replace('.', '-')} ${res.ТекстНДС
+            } ${this.vat_consider ? ' ' + res.СуммаНДС.replace('.', '-') : ''
+            }${res.ОрганизацияКПП ? `|KPP=${res.ОрганизацияКПП}` : ''
+            }${res.АдресДоставки ? `|payerAddress=${res.АдресДоставки}` : ''}`;
             return QRCode.toString(text, {type: 'svg'});
           }
         });
