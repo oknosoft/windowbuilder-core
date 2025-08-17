@@ -56,14 +56,15 @@ class EditableText extends paper.PointText {
 
   click(event) {
     if(!this._edit) {
-      const {view, bounds} = this;
+      const {view, bounds, content} = this;
       const point = view.projectToView(bounds.topLeft);
       const edit = this._edit = document.createElement('INPUT');
       view.element.parentNode.appendChild(edit);
-      edit.style = `left: ${(point.x - 4).toFixed()}px; top: ${(point.y).toFixed()}px; width: 60px; border: none; position: absolute;`;
+      edit.style = `left: ${(point.x - 4).toFixed()}px; top: ${(point.y).toFixed()
+      }px; width: ${60 + (content.length > 6 ? content.length - 6 : 0) * 6}px; border: none; position: absolute;`;
       edit.onblur = () => setTimeout(() => this.edit_remove());
       edit.onkeydown = this.edit_keydown.bind(this);
-      edit.value = this.content.replace(/\D$/, '');
+      edit.value = content.replace(/\D$/, '');
       setTimeout(() => {
         edit.focus();
         edit.select();
@@ -223,11 +224,11 @@ class LenText extends EditableText {
     super(props);
   }
 
-  apply(v0, v1) {
+  apply(l0, l1, a0, a1) {
     const {path, segment1, segment2, length} = this._owner;
     const {parent: {_attr, project, generatrix}, segments} = path;
     const {zoom} = _attr;
-    const delta = segment1.curve.getTangentAtTime(1).multiply(v0 * zoom - length);
+    const delta = segment1.curve.getTangentAtTime(1).multiply(l0 * zoom - length);
     let start;
     for(const segment of segments) {
       if(segment === segment2) {
@@ -237,14 +238,20 @@ class LenText extends EditableText {
         segment.point = segment.point.add(delta);
       }
     }
-    if(v1 && Math.abs(v0 - v1) > 1) {
-      this._owner.lengths = [v0, v1];
+    if(l1 && Math.abs(l0 - l1) > 1) {
+      this._owner.lengths = [l0, l1];
     }
     else if(this._owner.lengths) {
       delete this._owner.lengths;
     }
     for(const curve of generatrix.curves) {
       delete curve.positions;
+    }
+    if(a0) {
+      this._owner.angles = (a1 && Math.abs(a0 - a1) > 1) ? [a0, a1] : [a0];
+    }
+    else {
+      delete this._owner.angles;
     }
     project.register_change(true);
   }
@@ -312,13 +319,23 @@ class Sectional extends GeneratrixElement {
 
     this.addChild(_attr.generatrix);
 
-    const {lengths, positions} = _row.dop;
+    const {lengths, positions, angles} = _row.dop;
     if(Array.isArray(lengths)) {
       lengths.forEach((part, index) => {
         if(Array.isArray(part)) {
           const curve = _attr.generatrix.curves[index];
           if(curve) {
             curve.lengths = part;
+          }
+        }
+      });
+    }
+    if(Array.isArray(angles)) {
+      angles.forEach((part, index) => {
+        if(Array.isArray(part)) {
+          const curve = _attr.generatrix.curves[index];
+          if(curve) {
+            curve.angles = part;
           }
         }
       });
@@ -363,8 +380,14 @@ class Sectional extends GeneratrixElement {
 
       // рисуем длины
       curves.forEach((curve, ind) => {
-        const {lengths, length} = curve;
-        const content = lengths ? lengths.join('-') : (length / zoom).toFixed(0);
+        const {lengths, length, angles} = curve;
+        let content = lengths ? lengths.join('-') : (length / zoom).toFixed(0);
+        if(angles?.length) {
+          if(!content.includes('-')) {
+            content += `-${content}`;
+          }
+          angles?.forEach(angle => content += `-${angle}`);
+        }
         const loc = curve.getLocationAtTime(0.5);
         const normal = loc.normal.normalize(radius);
         const point = curve.positions?.l || loc.point.add(normal).add([0, normal.y < 0 ? 0 : normal.y / 2]);
@@ -398,50 +421,32 @@ class Sectional extends GeneratrixElement {
     const curr = {
       bottom: text.bounds.bottomRight.add([80 * zoom, 0]),
     };
-    // находим самую широкую
-    const first = {
-      curve: null,
-      length: 0,
-    }
-    for(const curve of curves) {
-      const {lengths} = curve;
-      const length = Array.isArray(lengths) ? Math.max(lengths[0], lengths[1]) * zoom : curve.length;
-      if(length - first.length > 1) {
-        first.length = length;
-        first.curve = curve;
-      }
-    }
-    // массивы слева и справа
-    const left = [], right = [];
-    for(const curve of curves) {
-      if(curve === first.curve || right.length) {
-        right.push(curve);
-      }
-      else {
-        left.unshift(curve);
-      }      
+    curr.top =  curr.bottom.add([0, -width / 2]);
+    curr.initial = {
+      bottom: curr.bottom.clone(),
+      top: curr.top.clone(),
+    };
+    // del--находим самую широкую--
+    // тупо слева направо
+    if(curves.length) {
+      const curve = curves[0];
+      const {length, lengths, angles} = curve;
+      const first = {curve, length, lengths, angles};
+      curves.forEach(step);
     }
     
-    function step(curve, angle) {
-      const {lengths} = curve;
-      const arr = angle > 0 ? right : left;
-      const last = arr.indexOf(curve) === arr.length - 1;
+    function step(curve) {
+      const angle = 90;
+      const {lengths, angles} = curve;
+      const last = curves.indexOf(curve) === curves.length - 1;
       const dx0 = lengths?.[0] ? lengths?.[0] * zoom : curve.length;
       const dx1 = lengths?.[1] ? lengths?.[1] * zoom : dx0;
-      let vector;
-      if(!curr.top) {
-        curr.top =  curr.bottom.add([(angle < 0 ? dx1 - dx0 : dx0 - dx1) / 2, -width / 2]);
-        curr.initial = {
-          bottom: curr.bottom.clone(),
-          top: curr.top.clone(),
-        };
-        vector = new paper.Point([0, -1]).rotate(angle);
-      }
-      else {
-        vector = curr.top.subtract(curr.bottom).normalize().rotate(angle);
-      }
-      const top = curr.top.add(vector.multiply(dx1));
-      const bottom = curr.bottom.add(vector.multiply(dx0));
+      const vector = curr.top.subtract(curr.bottom).normalize();
+      const vect0 = vector.rotate(angles?.[0] || angle);
+      const vect1 = angles?.[0] ? vector.rotate(180 - (angles?.[1] || angles?.[0])) : vect0;
+
+      const top = curr.top.add(vect1.multiply(dx1));
+      const bottom = curr.bottom.add(vect0.multiply(dx0));
       const path = new paper.Path({
         parent: l_visualization.by_insets,
         segments: [curr.bottom, curr.top, top, bottom],
@@ -453,7 +458,7 @@ class Sectional extends GeneratrixElement {
         curr.widthDrawed = true;
         new paper.PointText({
           parent: l_visualization.by_insets,
-          point: bottom.add(top).divide(2).add([-radius * 2, 0]),
+          point: curr.bottom.add(curr.top).divide(2).add([-radius * 2, 0]),
           content: width.toFixed(),
           fontSize: radius,
           rotation: -90,
@@ -479,18 +484,6 @@ class Sectional extends GeneratrixElement {
 
       curr.top = top;
       curr.bottom = bottom;
-    }
-    
-    for(const curve of right) {
-      step(curve, 90);
-    }
-    
-    if(curr.initial) {
-      curr.bottom = curr.initial.bottom;
-      curr.top = curr.initial.top; 
-    }
-    for(const curve of left) {
-      step(curve, -90);
     }
     
     // сдвинем при необходимости
@@ -576,9 +569,10 @@ class Sectional extends GeneratrixElement {
     // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
     
-    // длины с обратной стороны
+    // длины с обратной стороны, углы и положения надписей
     _row.dop = {
       lengths: generatrix.curves.map(curve => curve.lengths || 0),
+      angles: generatrix.curves.map(curve => curve.angles || 0),      
       positions: generatrix.curves.map(({positions}) => {
         if(positions) {
           const res = {};
