@@ -12550,17 +12550,21 @@ class ProfileConnective extends ProfileItem {
     }
   }
   move_linked(deleting) {
+    if(!this.generatrix) {
+      return;
+    }
     const nearests = this.joined_nearests();
     const layers = new Set();
     const profiles = new Set();
-    const connectives = new Set();
+    const connectives = new Set([this]);
+    const {orientation} = this;
     function move_layer(profile, delta) {
       if(profiles.has(profile)) {
         return;
       }
       profiles.add(profile);
       const {d0, generatrix, layer} = profile;
-      if(d0 || delta) {
+      if((d0 || delta) && !layers.has(layer)) {
         layers.add(layer);
         if(!delta) {
           delta = generatrix.getNormalAt(generatrix.length).multiply(deleting ? d0 : -d0);
@@ -12592,6 +12596,9 @@ class ProfileConnective extends ProfileItem {
           for (const candidate of profile.project.contours) {
             if(!layers.has(candidate) && candidate.bounds.intersects(bounds)) {
               const intersected = candidate.bounds.intersect(bounds);
+              if(orientation.is('vert') && intersected.height < 100 || orientation.is('hor') && intersected.width < 100) {
+                continue;
+              }
               const profile = candidate.profiles.find(({generatrix}) => {
                 const center = generatrix.getPointAt(generatrix.length / 2);
                 return bounds.contains(center);
