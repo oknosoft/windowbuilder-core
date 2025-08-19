@@ -10892,10 +10892,13 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-  is_collinear(profile, delta = 0) {
+  is_collinear(profile, delta, reverce = 0) {
     let angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
     if(angl < -180) {
       angl += 180;
+    }
+    if(reverce && angl > 170) {
+      angl -= 180;
     }
     return Math.abs(angl) < (delta || consts.orientation_delta);
   }
@@ -11695,15 +11698,22 @@ class Profile extends ProfileItem {
       if(generatrix.is_nearest(e)) {
         is_nearest.push(e);
       }
-      if(is_nearest.length < 2 && elm instanceof ProfileConnective) {
-        if(this.generatrix.is_nearest(elm.b)) {
-          if(is_nearest.every((point) => !point.is_nearest(elm.b))) {
-            is_nearest.push(elm.b);
-          }
+      if(is_nearest.length < 2 && elm instanceof ProfileConnective && this.is_collinear(elm, 0, true)) {
+        const {inner, outer} = elm.rays;
+        if(!is_nearest.includes(b) && (inner.is_nearest(b) || outer.is_nearest(b))) {
+          is_nearest.push(b);
         }
-        if(this.generatrix.is_nearest(elm.e)) {
-          if(is_nearest.every((point) => !point.is_nearest(elm.e))) {
-            is_nearest.push(elm.e);
+        if(!is_nearest.includes(e) && (inner.is_nearest(e) || outer.is_nearest(e))) {
+          is_nearest.push(e);
+        }
+        if(is_nearest.length < 2) {
+          const corns = [elm.b, elm.e, ...elm._attr._corns.filter(v => v)];
+          for(const pt of corns) {
+            if(this.generatrix.is_nearest(pt)) {
+              if(is_nearest.every((point) => !point.is_nearest(pt))) {
+                is_nearest.push(pt);
+              }
+            }
           }
         }
       }

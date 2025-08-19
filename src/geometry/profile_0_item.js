@@ -2879,10 +2879,13 @@ class ProfileItem extends GeneratrixElement {
    * @param profile {ProfileItem}
    * @return Boolean
    */
-  is_collinear(profile, delta = 0) {
+  is_collinear(profile, delta, reverce = 0) {
     let angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
     if(angl < -180) {
       angl += 180;
+    }
+    if(reverce && angl > 170) {
+      angl -= 180;
     }
     return Math.abs(angl) < (delta || consts.orientation_delta);
   }
