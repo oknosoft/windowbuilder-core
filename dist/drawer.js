@@ -7915,6 +7915,25 @@ class GeneratrixElement extends BuilderElement {
           }
         }
         else{
+          const addls = [];
+          for(const addl of this.addls) {
+            if(addl instanceof ProfileAddlOuter) {
+              if(!noti_points.addls) {
+                noti_points.addls = new Set();
+              }
+              if(noti_points.addls.has(addl)) {
+                continue;
+              }
+              noti_points.addls.add(addl);
+              const profile_point = segm.point == this.b ? 'b' : 'e';
+              const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) :
+                addl.generatrix.getNormalAt(addl.generatrix.length);
+              const {width} = addl;
+              const pt = addl[profile_point].add(nl.multiply(width).negate());
+              if(pt.is_nearest(segm.point, width * width)) {
+              }
+            }
+          }
           segm.point = free_point;
           if(cnn_point && !paper.Key.isDown('control')){
             if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point, 0)){
@@ -7942,22 +7961,29 @@ class GeneratrixElement extends BuilderElement {
                     }
                   });
                 }
-                const addls = [];
                 for(const addl of profile.addls) {
                   if(addl instanceof ProfileAddlOuter) {
+                    if(!noti_points.addls) {
+                      noti_points.addls = new Set();
+                    }
+                    if(noti_points.addls.has(addl)) {
+                      continue;
+                    }
+                    noti_points.addls.add(addl);
                     const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) : 
                       addl.generatrix.getNormalAt(addl.generatrix.length);
-                    const pt = addl[profile_point].add(nl.multiply(addl.width).negate());
-                    if(pt.is_nearest(profile[profile_point], true)) {
-                      addls.push({addl, delta: free_point.subtract(profile[profile_point])});
+                    const {width} = addl;
+                    const pt = addl[profile_point].add(nl.multiply(width).negate());
+                    if(pt.is_nearest(profile[profile_point], width * width)) {
+                      addls.push({addl, profile_point, delta: free_point.subtract(profile[profile_point])});
                     }
                   }
                 }
                 profile[profile_point] = free_point;
-                for(const {addl, delta} of addls) {
-                  addl[profile_point] = addl[profile_point].add(delta);
-                }
               }
+            }
+            for(const {addl, profile_point, delta} of addls) {
+              addl[profile_point] = addl[profile_point].add(delta);
             }
           }
         }

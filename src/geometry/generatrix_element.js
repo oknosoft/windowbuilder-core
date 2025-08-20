@@ -298,8 +298,10 @@ class GeneratrixElement extends BuilderElement {
                   if(addl instanceof ProfileAddlOuter) {
                     const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) : 
                       addl.generatrix.getNormalAt(addl.generatrix.length);
-                    const pt = addl[profile_point].add(nl.multiply(addl.width).negate());
-                    if(pt.is_nearest(profile[profile_point], true)) {
+                    let {width} = addls;
+                    const pt = addl[profile_point].add(nl.multiply(width).negate());
+                    width += 100;
+                    if(pt.is_nearest(profile[profile_point], width * width)) {
                       addls.push({addl, delta: free_point.subtract(profile[profile_point])});
                     }
                   }
