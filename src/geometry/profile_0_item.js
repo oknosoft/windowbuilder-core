@@ -3169,7 +3169,10 @@ class ProfileItem extends GeneratrixElement {
         level = 0;
       }
       const ray = impost ? generatrix : (level ? inner : outer);
-      const offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4);  // вдоль профиля
+      let offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4);  // вдоль профиля
+      if(offset > ray.length * 0.8) {
+        offset = ray.length * 0.8;
+      }
       const p0 = ray.getPointAt(offset);
       let font_move = this.elm_type.is('impost') ? consts.font_size / 4 : (nom.width > 30 ? consts.font_size / 5 : -consts.font_size / 1.1); // поперёк
       // если к образующей родителя привязаны другие элементы - увеличиваем сдвиг
