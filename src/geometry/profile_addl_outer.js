@@ -36,6 +36,7 @@ class ProfileAddlOuter extends ProfileItem {
     }
 
     _attr.side = attr.side || 'inner';
+    _attr.old = {};
 
     if(!_row.parent){
       _row.parent = this.parent.elm;
@@ -149,12 +150,17 @@ class ProfileAddlOuter extends ProfileItem {
     const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
 
     const bind_node = (node, cnn) => {
-      
-      const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') || gen.getNearestPoint(this[node]);
+      const old = this._attr.old[node];
+
+      const parent = this.parent.corns(this.outer ? (node === 'b' ? 1 : 2) : (node === 'b' ? 4 : 3)).clone();
+      const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') ||
+        gen.getNearestPoint(old ? parent.add(old.delta) : this[node]);
       if(!mpoint.is_nearest(this[node], 0)) {
         this[node] = mpoint;
         moved_fact = true;
       }
+      this._attr.old[node] = {point: mpoint, parent, delta: mpoint.subtract(parent)};
+      
 
     };
 
@@ -197,6 +203,8 @@ class ProfileAddlOuter extends ProfileItem {
       const gen = this.e.subtract(this.b);
       const projection = delta.project(gen);
       if(projection.length > 0.01) {
+        this._attr.old.b = null;
+        this._attr.old.e = null;
         return super.move_points(projection, all_points, start_point);
       }
     }

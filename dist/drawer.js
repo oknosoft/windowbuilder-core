@@ -7915,25 +7915,6 @@ class GeneratrixElement extends BuilderElement {
           }
         }
         else{
-          const addls = [];
-          for(const addl of this.addls) {
-            if(addl instanceof ProfileAddlOuter) {
-              if(!noti_points.addls) {
-                noti_points.addls = new Set();
-              }
-              if(noti_points.addls.has(addl)) {
-                continue;
-              }
-              noti_points.addls.add(addl);
-              const profile_point = segm.point == this.b ? 'b' : 'e';
-              const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) :
-                addl.generatrix.getNormalAt(addl.generatrix.length);
-              const {width} = addl;
-              const pt = addl[profile_point].add(nl.multiply(width).negate());
-              if(pt.is_nearest(segm.point, width * width)) {
-              }
-            }
-          }
           segm.point = free_point;
           if(cnn_point && !paper.Key.isDown('control')){
             if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point, 0)){
@@ -7961,29 +7942,8 @@ class GeneratrixElement extends BuilderElement {
                     }
                   });
                 }
-                for(const addl of profile.addls) {
-                  if(addl instanceof ProfileAddlOuter) {
-                    if(!noti_points.addls) {
-                      noti_points.addls = new Set();
-                    }
-                    if(noti_points.addls.has(addl)) {
-                      continue;
-                    }
-                    noti_points.addls.add(addl);
-                    const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) : 
-                      addl.generatrix.getNormalAt(addl.generatrix.length);
-                    const {width} = addl;
-                    const pt = addl[profile_point].add(nl.multiply(width).negate());
-                    if(pt.is_nearest(profile[profile_point], width * width)) {
-                      addls.push({addl, profile_point, delta: free_point.subtract(profile[profile_point])});
-                    }
-                  }
-                }
                 profile[profile_point] = free_point;
               }
-            }
-            for(const {addl, profile_point, delta} of addls) {
-              addl[profile_point] = addl[profile_point].add(delta);
             }
           }
         }
@@ -12432,6 +12392,7 @@ class ProfileAddlOuter extends ProfileItem {
       attr.side = 'outer';
     }
     _attr.side = attr.side || 'inner';
+    _attr.old = {};
     if(!_row.parent){
       _row.parent = this.parent.elm;
       if(this.outer){
@@ -12491,11 +12452,15 @@ class ProfileAddlOuter extends ProfileItem {
     let imposts, moved_fact;
     const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
     const bind_node = (node, cnn) => {
-      const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') || gen.getNearestPoint(this[node]);
+      const old = this._attr.old[node];
+      const parent = this.parent.corns(this.outer ? (node === 'b' ? 1 : 2) : (node === 'b' ? 4 : 3)).clone();
+      const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') ||
+        gen.getNearestPoint(old ? parent.add(old.delta) : this[node]);
       if(!mpoint.is_nearest(this[node], 0)) {
         this[node] = mpoint;
         moved_fact = true;
       }
+      this._attr.old[node] = {point: mpoint, parent, delta: mpoint.subtract(parent)};
     };
     if(this.parent == p) {
       bind_node('b', bcnn);
@@ -12532,6 +12497,8 @@ class ProfileAddlOuter extends ProfileItem {
       const gen = this.e.subtract(this.b);
       const projection = delta.project(gen);
       if(projection.length > 0.01) {
+        this._attr.old.b = null;
+        this._attr.old.e = null;
         return super.move_points(projection, all_points, start_point);
       }
     }

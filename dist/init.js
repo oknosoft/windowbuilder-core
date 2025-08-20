@@ -7497,6 +7497,25 @@ set stage(v){this._setter('stage',v)}
 }
 $p.CatSpecificationsProceduresRow = CatSpecificationsProceduresRow;
 $p.cat.create('specifications');
+class CatSupplier_restrictions extends CatObj{
+get recipient(){return this._getter('recipient')}
+set recipient(v){this._setter('recipient',v)}
+get composition(){return this._getter_ts('composition')}
+set composition(v){this._setter_ts('composition',v)}
+}
+$p.CatSupplier_restrictions = CatSupplier_restrictions;
+class CatSupplier_restrictionsCompositionRow extends TabularSectionRow{
+get period(){return this._getter('period')}
+set period(v){this._setter('period',v)}
+get nom(){return this._getter('nom')}
+set nom(v){this._setter('nom',v)}
+get characteristic(){return this._getter('characteristic')}
+set characteristic(v){this._setter('characteristic',v)}
+get procedure(){return this._getter('procedure')}
+set procedure(v){this._setter('procedure',v)}
+}
+$p.CatSupplier_restrictionsCompositionRow = CatSupplier_restrictionsCompositionRow;
+$p.cat.create('supplier_restrictions');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}

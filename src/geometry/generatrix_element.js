@@ -293,23 +293,7 @@ class GeneratrixElement extends BuilderElement {
                     }
                   });
                 }
-                const addls = [];
-                for(const addl of profile.addls) {
-                  if(addl instanceof ProfileAddlOuter) {
-                    const nl = profile_point === 'b' ? addl.generatrix.getNormalAt(0) : 
-                      addl.generatrix.getNormalAt(addl.generatrix.length);
-                    let {width} = addls;
-                    const pt = addl[profile_point].add(nl.multiply(width).negate());
-                    width += 100;
-                    if(pt.is_nearest(profile[profile_point], width * width)) {
-                      addls.push({addl, delta: free_point.subtract(profile[profile_point])});
-                    }
-                  }
-                }
                 profile[profile_point] = free_point;
-                for(const {addl, delta} of addls) {
-                  addl[profile_point] = addl[profile_point].add(delta);
-                }
               }
             }
           }
