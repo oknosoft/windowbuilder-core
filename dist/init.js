@@ -8523,18 +8523,12 @@ set value(v){this._setter('value',v)}
 }
 $p.DocCalc_orderContact_informationRow = DocCalc_orderContact_informationRow;
 class DocCalc_orderPlanningRow extends TabularSectionRow{
-get phase(){return this._getter('phase')}
-set phase(v){this._setter('phase',v)}
-get date(){return this._getter('date')}
-set date(v){this._setter('date',v)}
-get key(){return this._getter('key')}
-set key(v){this._setter('key',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
 get obj(){return this._getter('obj')}
 set obj(v){this._setter('obj',v)}
-get specimen(){return this._getter('specimen')}
-set specimen(v){this._setter('specimen',v)}
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
+get date(){return this._getter('date')}
+set date(v){this._setter('date',v)}
 get power(){return this._getter('power')}
 set power(v){this._setter('power',v)}
 }
