@@ -2090,14 +2090,24 @@ class Scheme extends paper.Project {
     const {selectedItems} = this;
     const {length} = selectedItems;
     for(const item of selectedItems) {
-      const {parent} = item;
-      if(parent instanceof ProfileItem) {
-        if(all || !item.layer.layer || !parent.nearest || !parent.nearest(true)) {
-          if(res.includes(parent)) {
-            continue;
-          }
-          if(length < 2 || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
-            res.push(parent);
+      if(item instanceof ProfileAddlOuter) {
+        if(res.includes(item)) {
+          continue;
+        }
+        if(length < 2 || all || !(item.b.selected ^ item.e.selected)) {
+          res.push(item);
+        }
+      }
+      else {
+        const {parent} = item;
+        if(parent instanceof ProfileItem) {
+          if(all || !item.layer.layer || !parent.nearest || !parent.nearest(true)) {
+            if(res.includes(parent)) {
+              continue;
+            }
+            if(length < 2 || all || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
+              res.push(parent);
+            }
           }
         }
       }
