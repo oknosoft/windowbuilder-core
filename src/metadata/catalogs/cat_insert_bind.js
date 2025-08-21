@@ -142,14 +142,20 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
 
         default:
           if(by_order) {
-            const {production} = ox.calc_order;
+            const {production, _data, _manager} = ox.calc_order;
+            const {_loading} = _data;
+            if(!_loading) {
+              _data._loading = true;
+            }
+            
             const cx = ox._manager.find({calc_order: ox.calc_order, leading_elm: 0, origin: bind}) ||
               ox._manager.create({calc_order: ox.calc_order, leading_elm: 0,origin: bind}, false, true)._set_loaded();
             const prow = inset.specification.find({quantity: 0, is_main_elm: true});
             if(prow) {
               cx.owner = prow.nom;
             }
-            const row = production.find({characteristic: cx}) || production.add({nom: cx.owner, characteristic: cx});
+            const row = production.find({characteristic: cx}) || 
+              production.add({nom: cx.owner, characteristic: cx, qty: 1, quantity: 1}, true, null, true);
             new_rows.push(row);
             cx.specification.clear();
             inset.calculate_spec({elm, len_angl, ox: cx});
@@ -164,11 +170,12 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
               pricing.price_type(attr);
               pricing.calc_first_cost(attr);
               pricing.calc_amount(attr);
-              ox.calc_order._manager.emit_async('rows', ox.calc_order, {production: true});
             }
             else {
               production.del(row);
             }
+            _manager.emit_async('rows', ox.calc_order, {production: true});
+            _data._loading = _loading;
           }
           else {
             inset.calculate_spec({elm, len_angl, ox, spec});
