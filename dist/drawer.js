@@ -19809,7 +19809,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params, property_values}, 
-    EditorInvisible, utils, job_prm} = $p;
+    EditorInvisible, CatInserts, DocCalc_order, DpBuyers_orderProductionRow, utils, job_prm} = $p;
   function specifyNearest(elm, prm_row) {
     if(prm_row?.origin?.is('parent') || prm_row?.origin?.is('nearest')) {
       const nearest = elm.nearest();
@@ -19836,7 +19836,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'clr_inset':
           _data._formula = function ({elm, cnstr, ox}) {
             let clr;
-            if(elm instanceof $p.DpBuyers_orderProductionRow || elm instanceof $p.DocCalc_order.FakeElm) {
+            if(elm instanceof DpBuyers_orderProductionRow || elm instanceof DocCalc_order.FakeElm) {
               clr = elm.clr;
             }
             else {
@@ -20508,6 +20508,39 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('direction');
+  ((name) => {
+    const prm = properties.predefined(name);
+    if(prm) {
+      prm.check_condition = function ({prm_row, elm, layer, origin, ox}) {
+        if(!ox) {
+          ox = (elm || layer)?.project.ox;
+        }
+        if(!ox || !prm_row) {
+          return false;
+        }
+        const {comparison_type, _owner: {_owner}} = prm_row;
+        if(_owner instanceof CatInserts) {
+          origin = _owner;
+        }
+        const compoundRow = ox.calc_order.composition.find({insert_type: origin.parent});
+        if(!compoundRow) {
+          return comparison_type.is('nfilled');
+        }
+        const ref = ox.valueOf();
+        const value = (ref in compoundRow.value) ? compoundRow.value[ref] : compoundRow.value.all;
+        if(comparison_type.is('eq') || comparison_type.empty()) {
+          return value == origin;
+        }
+        if(comparison_type.is('nfilled')) {
+          return value == undefined;
+        }
+        if(comparison_type.is('filled')) {
+          return typeof value !== 'boolean'; 
+        }
+        return false;
+      };
+    }
+  })('prod_compound');
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {

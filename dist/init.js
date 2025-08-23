@@ -6711,6 +6711,8 @@ get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
 get slave(){return this._getter('slave')}
 set slave(v){this._setter('slave',v)}
+get composition(){return this._getter('composition')}
+set composition(v){this._setter('composition',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -6731,6 +6733,8 @@ get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
 get elm_type(){return this._getter('elm_type')}
 set elm_type(v){this._setter('elm_type',v)}
+get by_default(){return this._getter('by_default')}
+set by_default(v){this._setter('by_default',v)}
 }
 $p.CatInsert_bindInsertsRow = CatInsert_bindInsertsRow;
 class CatInsert_bindManager extends CatManager {
