@@ -96,7 +96,7 @@ class ProfileConnective extends ProfileItem {
       }
       profiles.add(profile);
       const {d0, generatrix, layer} = profile;
-      if((d0 || delta) && !layers.has(layer)) {
+      if((d0 || delta) && !layers.has(layer) && !(layer instanceof ConnectiveLayer)) {
         layers.add(layer);
         if(!delta) {
           delta = generatrix.getNormalAt(generatrix.length).multiply(deleting ? d0 : -d0);
@@ -174,9 +174,10 @@ class ProfileConnective extends ProfileItem {
    */
   joined_nearests() {
     const res = [];
-    this.project.contours.forEach((contour) => {
+    const {project: {contours}, layer} = this;
+    [layer].concat(contours).forEach((contour) => {
       contour.profiles.forEach((profile) => {
-        if(profile.nearest(true) === this){
+        if(profile !== this && profile.nearest(true) === this){
           res.push(profile);
         }
       });
