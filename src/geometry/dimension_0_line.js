@@ -741,6 +741,11 @@ class DimensionLineCustom extends DimensionLine {
       return super.path;
     }
   }
+
+  redraw() {
+    super.redraw();
+    this.visible = this.project.builder_props.custom_lines;
+  }
 }
 
 EditorInvisible.DimensionLine = DimensionLine;
