@@ -110,7 +110,7 @@ class SpecBuilding {
     }
 
     // находим привязанные к заказу вставки и выполняем
-    cat.insert_bind.deposit({ox, order: true});
+    //cat.insert_bind.deposit({ox, order: true});
 
     if(with_price){
       // подклеим плановую себестоимость

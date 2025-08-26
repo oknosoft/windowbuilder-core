@@ -17387,7 +17387,6 @@ class SpecBuilding {
     if(order_rows.size){
       attr.order_rows = order_rows;
     }
-    cat.insert_bind.deposit({ox, order: true});
     if(with_price){
       pricing.calc_first_cost(attr);
       pricing.calc_amount(attr);
