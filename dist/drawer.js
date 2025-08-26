@@ -12734,13 +12734,21 @@ class ProfileConnective extends ProfileItem {
     return this.draw_articles();
   }
   remove() {
+    const {d2} = this;
     const postprocess = {imposts: new Map(), sub: new Set()};
+    const connectives = new Map();
     this.clear_joined(true, postprocess);
     super.remove();
-    for(const {_attr} of postprocess.sub) {
+    for(const elm of postprocess.sub) {
+      const {_attr, generatrix} = elm; 
       _attr._rays?.clear();
       delete _attr.d0;
       delete _attr._nearest;
+      if(elm instanceof ProfileConnective) {
+        connectives.set(elm, elm.joined_nearests());
+        const normal = generatrix.getNormalAt(generatrix.length / 2).normalize(d2);
+        generatrix.translate(normal);
+      }
     }
     for(const [upper, imposts] of postprocess.imposts) {
       for (const {profile, point} of imposts) {
@@ -12748,6 +12756,9 @@ class ProfileConnective extends ProfileItem {
         const node = profile.b.getDistance(point, true) < profile.e.getDistance(point, true) ? 'b' : 'e';
         profile.do_sub_bind(upper, node);
       }
+    }
+    for(const [elm, nearests] of connectives) {
+      elm.bind_nearests(nearests);
     }
   }
 }
