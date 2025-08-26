@@ -1979,6 +1979,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rm) {
       this.production.del(row);
     }
+    let deposited;
+    const {CatInsert_bind, cat: {insert_bind, characteristics}} = $p;
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
@@ -1992,7 +1994,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.specification.clear({dop: -3, s: 0});
         }
         row.value_change('quantity', 'update', row.quantity);
+        const {origin} = characteristic;
+        if(origin instanceof CatInsert_bind && origin.calc_order) {
+          deposited = true;
+        }
       }
+    }
+    if(!deposited) {
+      insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
     }
     this._slave_recalc = false;
   }
