@@ -3750,6 +3750,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     for(const elm of this.sectionals) {
       elm.redraw();
     }
+    const rm = [];
+    const {Group} = paper;
+    for(const item of this.children) {
+      if(item instanceof Group) {
+        continue;
+      }
+      rm.push(item);
+    }
+    for(const item of rm) {
+      item.remove?.();
+    }
     this.notify(this, 'contour_redrawed', this._attr._bounds);
   }
   params_links(attr, sys, cnstr) {
