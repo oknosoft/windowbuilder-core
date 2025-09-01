@@ -2644,6 +2644,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     for(const elm of this.sectionals) {
       elm.redraw();
     }
+    
+    // сюда добавляли прочистку паразитов, но убрали
 
     // информируем мир о новых размерах нашего контура
     this.notify(this, 'contour_redrawed', this._attr._bounds);
