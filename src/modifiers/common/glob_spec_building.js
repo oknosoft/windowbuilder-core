@@ -90,8 +90,8 @@ class SpecBuilding {
       row.s = cx.s;
       row.qty = calc_order_row.qty;
       row.quantity = calc_order_row.quantity;
-
-      ax.push(cx);
+      
+      ax.push(cx.before_save({force: true}));
       order_rows.set(cx, row);
     });
     // если существует строка аксессуаров, добавляем её в order_rows

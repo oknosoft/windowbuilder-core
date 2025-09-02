@@ -1979,8 +1979,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rm) {
       this.production.del(row);
     }
-    let deposited;
-    const {CatInsert_bind, cat: {insert_bind, characteristics}} = $p;
+
+    const {CatInsert_bind, CatInserts, cat: {insert_bind, characteristics}} = $p;
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
@@ -1993,16 +1993,27 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         else {
           characteristic.specification.clear({dop: -3, s: 0});
         }
-        row.value_change('quantity', 'update', row.quantity);
+        
         const {origin} = characteristic;
         if(origin instanceof CatInsert_bind && origin.calc_order) {
-          deposited = true;
+          continue;
+        }
+        // если это следящая вставка, рассчитаем спецификацию
+        if(origin && !origin.empty()) {
+          if(origin instanceof CatInserts && origin.slave) {
+            characteristic.specification.clear();
+            characteristic.x = row.len;
+            characteristic.y = row.width;
+            characteristic.s = (row.s || row.len * row.width / 1e6).round(4);
+            const len_angl = new FakeLenAngl({len: row.len, inset: origin});
+            const elm = new FakeElm(row);
+            origin.calculate_spec({elm, len_angl, ox: characteristic});
+          }
+          row.value_change('quantity', 'update', row.quantity);
         }
       }
     }
-    if(!deposited) {
-      insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
-    }
+    insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
     this._slave_recalc = false;
   }
 
@@ -2157,25 +2168,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       // количество по умолчанию
       if(field === 'nom' && !this.quantity) {
         _obj.quantity = 1;
-      }
-
-      // если это следящая вставка, рассчитаем спецификацию
-      const {origin} = characteristic;
-      if(origin && !origin.empty()) {
-        if(origin instanceof CatInserts && origin.slave) {
-          characteristic.specification.clear();
-          characteristic.x = this.len;
-          characteristic.y = this.width;
-          characteristic.s = (this.s || this.len * this.width / 1e6).round(4);
-          const len_angl = new FakeLenAngl({len: this.len, inset: origin});
-          const elm = new FakeElm(this);
-          origin.calculate_spec({elm, len_angl, ox: characteristic});
-          recalc = true;
-        }
-        else if(origin instanceof CatInsert_bind && origin.calc_order) {
-          // пересчёт привязок вставок к заказу
-          cat.insert_bind.deposit({ox: {calc_order, _manager: cat.characteristics}, order: true});
-        }
       }
 
       // рассчитаем цены

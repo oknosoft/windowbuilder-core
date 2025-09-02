@@ -39,6 +39,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     this.partner = calc_order.partner;
     
     // сохраним значения сохраняемых параметров
+    const {_loading} = _data; 
     _data._loading = true;
     for(const prow of params) {
       const { param, cnstr, inset, region } = prow;
@@ -46,7 +47,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         prow.value = param.calculated_value({ ox: this, cnstr, inset, region });
       }
     }
-    _data._loading = false;
+    _data._loading = _loading;
 
     return this;
 

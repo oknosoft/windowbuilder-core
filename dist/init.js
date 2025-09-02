@@ -5507,6 +5507,7 @@ set demand(v){this._setter_ts('demand',v)}
 
     this.partner = calc_order.partner;
 
+    const {_loading} = _data; 
     _data._loading = true;
     for(const prow of params) {
       const { param, cnstr, inset, region } = prow;
@@ -5514,7 +5515,7 @@ set demand(v){this._setter_ts('demand',v)}
         prow.value = param.calculated_value({ ox: this, cnstr, inset, region });
       }
     }
-    _data._loading = false;
+    _data._loading = _loading;
 
     return this;
 
