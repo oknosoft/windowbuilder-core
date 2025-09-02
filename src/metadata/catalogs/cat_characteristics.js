@@ -677,9 +677,11 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
     // если это москитка, полный проект можно не грузить
     if(this.origin?.insert_type?.is?.('mosquito')) {
-      const {calc_order, leading_product, leading_elm, origin, x, y} = this;
+      const {calc_order, leading_product, leading_elm, origin, x, y, clr} = this;
       // находим импосты и рамки
-      let {sz, nom, imposts} = origin.mosquito_props();
+      const bounds = new editor.Rectangle(0 ,0, x, y);
+      let {sz, nom, imposts} = origin.mosquito_props(
+        {bounds_inner() {return bounds}}, clr, this);
       if(!nom) {
         return Promise
           .resolve(keep_editor ? null : (remove ? editor.unload() : project.unload()))
