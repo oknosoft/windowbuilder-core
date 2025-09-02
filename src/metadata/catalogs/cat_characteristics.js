@@ -681,7 +681,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       // находим импосты и рамки
       const bounds = new editor.Rectangle(0 ,0, x, y);
       let {sz, nom, imposts} = origin.mosquito_props(
-        {bounds_inner() {return bounds}}, clr, this);
+        {bounds_inner() {return bounds}, bounds}, clr, this);
       if(!nom) {
         return Promise
           .resolve(keep_editor ? null : (remove ? editor.unload() : project.unload()))

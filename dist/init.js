@@ -6059,7 +6059,7 @@ set demand(v){this._setter_ts('demand',v)}
       const {calc_order, leading_product, leading_elm, origin, x, y, clr} = this;
       const bounds = new editor.Rectangle(0 ,0, x, y);
       let {sz, nom, imposts} = origin.mosquito_props(
-        {bounds_inner() {return bounds}}, clr, this);
+        {bounds_inner() {return bounds}, bounds}, clr, this);
       if(!nom) {
         return Promise
           .resolve(keep_editor ? null : (remove ? editor.unload() : project.unload()))
