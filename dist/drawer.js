@@ -22390,6 +22390,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       if(field === 'nom' && !this.quantity) {
         _obj.quantity = 1;
       }
+      const {origin} = characteristic;
       const fake_prm = {
         calc_order_row: this,
         spec: characteristic.specification,

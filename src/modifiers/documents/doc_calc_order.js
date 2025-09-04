@@ -2176,6 +2176,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       }
 
       // рассчитаем цены
+      const {origin} = characteristic;
       const fake_prm = {
         calc_order_row: this,
         spec: characteristic.specification,
