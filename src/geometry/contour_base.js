@@ -1350,7 +1350,9 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @summary Габариты вместе с визуализацией
    */
   get strokeBounds() {
-    return super.strokeBounds.unite(this.l_visualization.strokeBounds);
+    const visualizationBounds = this.l_visualization.strokeBounds;
+    const bounds = super.strokeBounds;
+    return visualizationBounds.area ?  bounds.unite(visualizationBounds) : bounds;
   }
 
   /**
