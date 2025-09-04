@@ -16969,6 +16969,7 @@ class ProductsBuilding {
   saver({ox, scheme, attr, finish}) {
     const {calc_order, _order_rows} = ox;
     let res = Promise.resolve();
+    ox.note = scheme._dp.note;
     ox.before_save({force: true});
     for (const cx of (_order_rows || [])) {
       if(cx.origin?.insert_type?.is?.('mosquito')) {
