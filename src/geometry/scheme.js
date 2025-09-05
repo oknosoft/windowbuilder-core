@@ -1011,12 +1011,15 @@ class Scheme extends paper.Project {
    *
    */
   get strokeBounds() {
-    let bounds = this.l_dimensions.strokeBounds;
-    const {strokeBounds} = this.l_connective;
-    if(strokeBounds.width && strokeBounds.height) {
-      bounds = bounds.unite(strokeBounds)
+    const {l_connective: {strokeBounds: connectiveBounds}, l_dimensions: {strokeBounds: dimensionsBounds}} = this;
+    let bounds = this.contours.reduce((sum, curr) => 
+      sum ? sum.unite(curr.strokeBounds) : curr.strokeBounds, null);
+    if(connectiveBounds.area) {
+      bounds = bounds.unite(connectiveBounds)
     }
-    this.contours.forEach((l) => bounds = bounds.unite(l.strokeBounds));
+    if(dimensionsBounds.area) {
+      bounds = bounds.unite(dimensionsBounds)
+    }
     return bounds;
   }
 
@@ -1477,12 +1480,12 @@ class Scheme extends paper.Project {
       }
     }
     const svg = this.exportSVG(options);
-    const bounds = this.strokeBounds.unite(this.l_dimensions.strokeBounds);
+    const {x, y, width, height} = this.strokeBounds;
 
-    svg.setAttribute('x', bounds.x);
-    svg.setAttribute('y', bounds.y);
-    svg.setAttribute('width', bounds.width + 40);
-    svg.setAttribute('height', bounds.height);
+    svg.setAttribute('x', x);
+    svg.setAttribute('y', y);
+    svg.setAttribute('width', width + 40);
+    svg.setAttribute('height', height);
     svg.querySelector('g').removeAttribute('transform');
 
     options.onExport = null;

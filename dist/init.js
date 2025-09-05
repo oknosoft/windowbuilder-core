@@ -6150,10 +6150,11 @@ set demand(v){this._setter_ts('demand',v)}
           parent.redraw();
           if(project.builder_props.auto_lines) {
             parent.l_dimensions.redraw(true);
+            const dimensionsBounds = parent.l_dimensions.bounds;
             const gg = new editor.Group({
               parent: parent.l_dimensions,
               owner_bounds: parent.bounds,
-              dimension_bounds: parent.bounds.unite(parent.l_dimensions.bounds),
+              dimension_bounds: dimensionsBounds.area ? parent.bounds.unite(dimensionsBounds) : parent.bounds,
             });
             const l_right = new EditorInvisible.DimensionLine({
               pos: 'right',
@@ -6196,7 +6197,7 @@ set demand(v){this._setter_ts('demand',v)}
                     project.zoom_fit();
           if(Array.isArray(format) ? format.includes('png') : format === 'png') {
             project.view.update();
-            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substr(22);
+            link.imgs[`l0`] = project.view.element.toDataURL('image/png').substring(22);
           }
           if(Array.isArray(format) ? format.includes('svg') : (format === 'svg' || !format)) {
             link.imgs[`s0`] = parent.get_svg(attr);
