@@ -1020,7 +1020,7 @@ class Scheme extends paper.Project {
     if(dimensionsBounds.area) {
       bounds = bounds.unite(dimensionsBounds)
     }
-    return bounds;
+    return bounds || new paper.Rectangle();
   }
 
   /**

@@ -14383,7 +14383,7 @@ class Scheme extends paper.Project {
     if(dimensionsBounds.area) {
       bounds = bounds.unite(dimensionsBounds)
     }
-    return bounds;
+    return bounds || new paper.Rectangle();
   }
   get thickness() {
     return this.contours.reduce((sum, layer) => {
