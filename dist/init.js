@@ -6833,6 +6833,7 @@ class CatInsert_bindManager extends CatManager {
             for (const contour of scheme.contours) {
               elm.layer = contour;
               len_angl.cnstr = contour.cnstr;
+              const spec = contour.prod_ox.specification; 
               inset.calculate_spec({elm, len_angl, ox, spec});
             }
           }
@@ -6842,6 +6843,7 @@ class CatInsert_bindManager extends CatManager {
           if(scheme) {
             for (const elm of scheme.glasses) {
               if(!ox.leading_elm || ox.leading_elm === elm.elm) {
+                const spec = elm.layer.prod_ox.specification;
                 ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
                   if(row.inset.insert_glass_type === inset.insert_glass_type) {
                     inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
@@ -6855,7 +6857,10 @@ class CatInsert_bindManager extends CatManager {
         case elm_types.sandwich:
           if(scheme) {
             for (const elm of scheme.glasses) {
-              (!ox.leading_elm || ox.leading_elm === elm.elm) && inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+              if(!ox.leading_elm || ox.leading_elm === elm.elm) {
+                const spec = elm.layer.prod_ox.specification;
+                inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+              }
             }
           }
           break;
