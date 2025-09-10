@@ -89,7 +89,8 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
         if(!(layer instanceof ContourVirtual)) {
           elm.layer = layer;
           len_angl.cnstr = layer.cnstr;
-          inset.calculate_spec({elm, len_angl, ox, spec});
+          const spec = layer.prod_ox.specification;
+          inset.calculate_spec({elm, len_angl, ox, spec, bind});
         }
         for (const contour of layer.contours) {
           deposit_flap(contour);
@@ -112,7 +113,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
               elm.layer = contour;
               len_angl.cnstr = contour.cnstr;
               const spec = contour.prod_ox.specification; 
-              inset.calculate_spec({elm, len_angl, ox, spec});
+              inset.calculate_spec({elm, len_angl, ox, spec, bind});
             }
           }
           break;
@@ -125,7 +126,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
                 const spec = elm.layer.prod_ox.specification;
                 ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
                   if(row.inset.insert_glass_type === inset.insert_glass_type) {
-                    inset.calculate_spec({elm, row, layer: elm.layer, ox, spec});
+                    inset.calculate_spec({elm, row, layer: elm.layer, ox, spec, bind});
                   }
                 });
               }
@@ -139,7 +140,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
             for (const elm of scheme.glasses) {
               if(!ox.leading_elm || ox.leading_elm === elm.elm) {
                 const spec = elm.layer.prod_ox.specification;
-                inset.calculate_spec({elm, layer: elm.layer, ox, spec});
+                inset.calculate_spec({elm, layer: elm.layer, ox, spec, bind});
               }
             }
           }
@@ -163,7 +164,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
               production.add({nom: cx.owner, characteristic: cx, qty: 1, quantity: 1}, true, null, true);
             new_rows.push(row);
             cx.specification.clear();
-            inset.calculate_spec({elm, len_angl, ox: cx});
+            inset.calculate_spec({elm, len_angl, ox: cx, bind});
             if(cx.specification.count()) {
               cx.product = row.row;
               cx.name = cx.prod_name();
@@ -183,7 +184,7 @@ exports.CatInsert_bindManager = class CatInsert_bindManager extends Object {
             _data._loading = _loading;
           }
           else {
-            inset.calculate_spec({elm, len_angl, ox, spec});
+            inset.calculate_spec({elm, len_angl, ox, spec, bind});
           }
       }
     }

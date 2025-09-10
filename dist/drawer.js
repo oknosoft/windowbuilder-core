@@ -18958,7 +18958,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return true;
     }
-    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox}) {
+    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox, bind}) {
       const res = [];
       if(this.empty()){
         return res;
@@ -18985,6 +18985,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         else {
           if(own_row?._owner) {
             const origin = `${own_row instanceof CatCnnsSpecificationRow ? 'cnn' : 'ins'}|${own_row._owner._owner.ref}|${own_row.row}`;
+            if(!fakerow._origin.includes(origin)) {
+              fakerow._origin.push(origin);
+            }
+          }
+          else if(bind) {
+            const origin = `isl|${bind.ref}|1`;
             if(!fakerow._origin.includes(origin)) {
               fakerow._origin.push(origin);
             }
@@ -19159,7 +19165,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return res;
     }
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind}) {
       const {_row} = elm;
       const {
         perim,
@@ -19183,7 +19189,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         spec = ox.specification;
       }
       let alp1, alp2;
-      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr, bind}).forEach((row_ins_spec) => {
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = row_ins_spec;
         if(!coefficient) {
