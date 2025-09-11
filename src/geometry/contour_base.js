@@ -588,7 +588,7 @@ class Contour extends AbstractFilling(paper.Layer) {
 
     // пересчитываем вставки и соединения, если они зависят от параметров фурнитуры
     for(const {_attr} of profiles) {
-      _attr._rays && _attr._rays.clear('with_neighbor');
+      _attr._rays?.clear('with_neighbor');
     }
 
     project.register_change(true);

@@ -2159,7 +2159,7 @@ class ProfileItem extends GeneratrixElement {
     }
 
     for(const {_attr} of profiles) {
-      _attr && _attr._rays && _attr._rays.clear('with_neighbor');
+      _attr._rays?.clear('with_neighbor');
     }
   }
 
@@ -2797,10 +2797,39 @@ class ProfileItem extends GeneratrixElement {
    * @type paper.Point
    */
   interiorPoint() {
-    const {generatrix, d1, d2} = this;
+    const {generatrix, layer: {children}} = this;
+    let d1 = 0, d2 = 0;
+    if(children.profiles.cnnMap.size) {
+      d1 = this.d1;
+      d2 = this.d2;
+    }
     const igen = generatrix.getPointAt(generatrix.length / 2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply((d1 + d2) / 2));
+  }
+
+  /**
+   * @summary Существуют элементы с внутренней стороны
+   * @type {boolean}
+   */
+  get hasInner() {
+    const {layer} = this;
+    if(!layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
+      layer.actualizeCach();
+    }
+    return super.hasInner;
+  }
+
+  /**
+   * @summary Существуют элементы с наружной стороны
+   * @type {boolean}
+   */
+  get hasOuter() {
+    const {layer} = this;
+    if(!layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
+      layer.actualizeCach();
+    }
+    return super.hasOuter;
   }
 
   /**

@@ -1806,6 +1806,7 @@ const AbstractFilling = (superclass) => class extends superclass {
   }
   recalcCnnMap(map, profiles) {
     if(map && !map.size) {
+      this._attr.recalcCnnMap = true;
       for(const elm of profiles) {
         const {generatrix, region} = elm;
         for(const node of 'be') {
@@ -1823,6 +1824,7 @@ const AbstractFilling = (superclass) => class extends superclass {
           }
         }
       }
+      this._attr.recalcCnnMap = false;
     }
   }
 };
@@ -2232,7 +2234,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.bring('up');
     }
     for(const {_attr} of profiles) {
-      _attr._rays && _attr._rays.clear('with_neighbor');
+      _attr._rays?.clear('with_neighbor');
     }
     project.register_change(true);
     this.notify(this, 'furn_changed');
@@ -10309,7 +10311,7 @@ class ProfileItem extends GeneratrixElement {
       project._scope.eve.emit('set_inset', this);
     }
     for(const {_attr} of profiles) {
-      _attr && _attr._rays && _attr._rays.clear('with_neighbor');
+      _attr._rays?.clear('with_neighbor');
     }
   }
   set_clr(v, ignore_select) {
@@ -10838,10 +10840,29 @@ class ProfileItem extends GeneratrixElement {
     return cnn_point;
   }
   interiorPoint() {
-    const {generatrix, d1, d2} = this;
+    const {generatrix, layer: {children}} = this;
+    let d1 = 0, d2 = 0;
+    if(children.profiles.cnnMap.size) {
+      d1 = this.d1;
+      d2 = this.d2;
+    }
     const igen = generatrix.getPointAt(generatrix.length / 2);
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply((d1 + d2) / 2));
+  }
+  get hasInner() {
+    const {layer} = this;
+    if(!layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
+      layer.actualizeCach();
+    }
+    return super.hasInner;
+  }
+  get hasOuter() {
+    const {layer} = this;
+    if(!layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
+      layer.actualizeCach();
+    }
+    return super.hasOuter;
   }
   select_corn(point) {
     const res = this.corns(point);

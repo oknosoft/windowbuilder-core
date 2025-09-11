@@ -153,6 +153,7 @@ const AbstractFilling = (superclass) => class extends superclass {
   
   recalcCnnMap(map, profiles) {
     if(map && !map.size) {
+      this._attr.recalcCnnMap = true;
       for(const elm of profiles) {
         const {generatrix, region} = elm;
         for(const node of 'be') {
@@ -172,6 +173,7 @@ const AbstractFilling = (superclass) => class extends superclass {
           }
         }
       }
+      this._attr.recalcCnnMap = false;
     }
   }
 
