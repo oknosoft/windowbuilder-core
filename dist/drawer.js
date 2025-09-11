@@ -14607,23 +14607,30 @@ class Scheme extends paper.Project {
       const items = this.getItems({class: BuilderElement, elm});
       for(let i = 1; i < items.length; i++) {
         const curr = items[i];
-        const row = ox.coordinates.add({
-          elm: ox.coordinates.aggregate([], ['elm'], 'max') + 1,
-          clr: curr.clr,
-          inset: curr.inset,
-          cnstr: curr.layer.cnstr,
-        });
+        if(curr._row === items[0]._row) {
+          const row = ox.coordinates.add({
+            elm: ox.coordinates.aggregate([], ['elm'], 'max') + 1,
+            clr: curr.clr.valueOf(),
+            inset: curr.inset.valueOf(),
+            cnstr: curr.layer.cnstr,
+            elm_type: curr.elm_type.valueOf(),
+          });
+          curr._row = row;
+        }
+        else {
+          curr._row.elm = ox.coordinates.aggregate([], ['elm'], 'max') + 1;
+        }
         if(curr instanceof Filling) {
-          ox.glass_specification.find_rows({elm: curr.elm}, (prow) => {
+          ox.glass_specification.clear({elm: curr.elm});
+          ox.glass_specification.find_rows({elm}, (prow) => {
             const crow = ox.glass_specification.add(prow);
-            crow.elm = row.elm;
+            crow.elm = curr.elm;
           });
         }
-        ox.params.find_rows({cnstr: -curr.elm}, (prow) => {
+        ox.params.find_rows({cnstr: -elm}, (prow) => {
           const srow = ox.params.add(prow);
-          srow.cnstr = -row.elm;
+          srow.cnstr = -curr.elm;
         });
-        curr._row = row;
       }
     }
     if(attr.save) {
