@@ -14601,6 +14601,31 @@ class Scheme extends paper.Project {
       return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
+    const {wsql: {alasql}, job_prm} = $p;
+    for(const elm of alasql('select elm from ? group by elm having count(*) > 1',
+      [ox.coordinates._obj]).map(v => v.elm)) {
+      const items = this.getItems({class: BuilderElement, elm});
+      for(let i = 1; i < items.length; i++) {
+        const curr = items[i];
+        const row = ox.coordinates.add({
+          elm: ox.coordinates.aggregate([], ['elm'], 'max') + 1,
+          clr: curr.clr,
+          inset: curr.inset,
+          cnstr: curr.layer.cnstr,
+        });
+        if(curr instanceof Filling) {
+          ox.glass_specification.find_rows({elm: curr.elm}, (prow) => {
+            const crow = ox.glass_specification.add(prow);
+            crow.elm = row.elm;
+          });
+        }
+        ox.params.find_rows({cnstr: -curr.elm}, (prow) => {
+          const srow = ox.params.add(prow);
+          srow.cnstr = -row.elm;
+        });
+        curr._row = row;
+      }
+    }
     if(attr.save) {
       const rm = [];
       for(const row of ox.glass_specification) {
