@@ -10840,9 +10840,9 @@ class ProfileItem extends GeneratrixElement {
     return cnn_point;
   }
   interiorPoint() {
-    const {generatrix, layer: {children}} = this;
+    const {generatrix, layer: {children, _attr}} = this;
     let d1 = 0, d2 = 0;
-    if(children.profiles.cnnMap.size) {
+    if(!_attr.recalcCnnMap && children.profiles.cnnMap.size) {
       d1 = this.d1;
       d2 = this.d2;
     }
