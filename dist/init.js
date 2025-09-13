@@ -1094,6 +1094,8 @@ get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
 get full_name(){return this._getter('full_name')}
 set full_name(v){this._setter('full_name',v)}
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
 get owner(){return this._getter('owner')}
 set owner(v){this._setter('owner',v)}
 get parent(){return this._getter('parent')}
@@ -1971,10 +1973,14 @@ $p.cat.create('users', CatUsersManager, false);
 class CatProperty_values extends CatObj{
 get heft(){return this._getter('heft')}
 set heft(v){this._setter('heft',v)}
+get full_name(){return this._getter('full_name')}
+set full_name(v){this._setter('full_name',v)}
 get css(){return this._getter('css')}
 set css(v){this._setter('css',v)}
 get shortcut(){return this._getter('shortcut')}
 set shortcut(v){this._setter('shortcut',v)}
+get sorting_field(){return this._getter('sorting_field')}
+set sorting_field(v){this._setter('sorting_field',v)}
 get captured(){return this._getter('captured')}
 set captured(v){this._setter('captured',v)}
 get editor(){return this._getter('editor')}
@@ -5684,7 +5690,7 @@ set demand(v){this._setter_ts('demand',v)}
       if(param.is_calculated || param.predefined_name === 'auto_align') {
         return;
       }
-      main.push(value.toString());
+      main.push(value?.full_name || value.toString());
     });
 
     if(x && y) {
@@ -5714,7 +5720,7 @@ set demand(v){this._setter_ts('demand',v)}
         }
       }
       else if(value && !value.empty() && value.toString() !== 'Нет') {
-        other.push(value.toString());
+        other.push(value.full_name || value.toString());
       }
     });
 
@@ -5725,7 +5731,7 @@ set demand(v){this._setter_ts('demand',v)}
     const rprops = new Set();
     params.find_rows({cnstr: {in: rrows.map((v) => -v.elm)}, region: 0}, ({value}) => {
       if(!value.empty() && value.toString() !== 'Нет') {
-        rprops.add(value.toString());
+        rprops.add(value.full_name || value.toString());
       }
     });
     for(const rp of rprops) {

@@ -240,7 +240,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       if(param.is_calculated || param.predefined_name === 'auto_align') {
         return;
       }
-      main.push(value.toString());
+      main.push(value?.full_name || value.toString());
     });
 
     // добавляем размеры
@@ -272,7 +272,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         }
       }
       else if(value && !value.empty() && value.toString() !== 'Нет') {
-        other.push(value.toString());
+        other.push(value.full_name || value.toString());
       }
     });
 
@@ -284,7 +284,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     const rprops = new Set();
     params.find_rows({cnstr: {in: rrows.map((v) => -v.elm)}, region: 0}, ({value}) => {
       if(!value.empty() && value.toString() !== 'Нет') {
-        rprops.add(value.toString());
+        rprops.add(value.full_name || value.toString());
       }
     });
     for(const rp of rprops) {
