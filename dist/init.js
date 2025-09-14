@@ -6887,7 +6887,7 @@ class CatInsert_bindManager extends CatManager {
               cx.owner = prow.nom;
             }
             const row = production.find({characteristic: cx}) || 
-              production.add({nom: cx.owner, characteristic: cx, qty: 1, quantity: 1}, true, null, true);
+              production.add({nom: cx.owner.ref, characteristic: cx.ref, qty: 1, quantity: 1}, true, null, true);
             new_rows.push(row);
             cx.specification.clear();
             inset.calculate_spec({elm, len_angl, ox: cx, bind});
