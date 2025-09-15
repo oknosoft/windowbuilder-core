@@ -9877,9 +9877,7 @@ class DocCalc_orderExtra_fieldsRow extends Extra_fieldsRow{
         const {iface, cat: {insert_bind, characteristics}} = $p;
         if(iface) {
           Promise.resolve()
-            .then(() => {
-              return insert_bind.deposit({ox: {calc_order, _manager: characteristics}, order: true});
-            })
+            .then(() => calc_order.reset_specify())
             .then(() => {
               const amount = {
                 doc_amount: calc_order.doc_amount,
