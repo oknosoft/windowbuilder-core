@@ -10864,8 +10864,11 @@ class ProfileItem extends GeneratrixElement {
     }
     return super.hasOuter;
   }
-  select_corn(point) {
-    const res = this.corns(point);
+  select_corn(point, presaveSelected) {
+    let res = this.corns(point);
+    if(res instanceof paper.Point) {
+      res = {point: res, point_name: point, dist: 0};
+    }
     this.path.segments.forEach((segm) => {
       if(segm.point.is_nearest(res.point)) {
         res.segm = segm;
@@ -10878,7 +10881,7 @@ class ProfileItem extends GeneratrixElement {
       res.segm = this.generatrix.lastSegment;
     }
     if(res.segm && res.dist < consts.sticking0) {
-      this.project.deselectAll();
+      !presaveSelected && this.project.deselectAll();
       res.segm.selected = true;
     }
     return res;
@@ -11280,6 +11283,9 @@ class ProfileItem extends GeneratrixElement {
       return res;
     }
     else {
+      if(corn === 'b' || corn === 'e') {
+        return this[corn];
+      }
       const index = corn.substring(corn.length - 1, 1);
       const axis = corn.substring(corn.length - 2, 1);
       return _corns[index][axis];

@@ -2833,13 +2833,17 @@ class ProfileItem extends GeneratrixElement {
   }
 
   /**
-   * Выделяет сегмент пути профиля, ближайший к точке
+   * @summary Выделяет сегмент пути профиля, ближайший к точке
    *
-   * @param point {paper.Point}
+   * @param {paper.Point|NodeBE|Number} point
+   * @param {Boolean} [presaveSelected]
    */
-  select_corn(point) {
+  select_corn(point, presaveSelected) {
 
-    const res = this.corns(point);
+    let res = this.corns(point);
+    if(res instanceof paper.Point) {
+      res = {point: res, point_name: point, dist: 0};
+    }
 
     this.path.segments.forEach((segm) => {
       if(segm.point.is_nearest(res.point)) {
@@ -2856,7 +2860,7 @@ class ProfileItem extends GeneratrixElement {
     }
 
     if(res.segm && res.dist < consts.sticking0) {
-      this.project.deselectAll();
+      !presaveSelected && this.project.deselectAll();
       res.segm.selected = true;
     }
 
@@ -3382,6 +3386,9 @@ class ProfileItem extends GeneratrixElement {
       return res;
     }
     else {
+      if(corn === 'b' || corn === 'e') {
+        return this[corn];
+      }
       const index = corn.substring(corn.length - 1, 1);
       const axis = corn.substring(corn.length - 2, 1);
       return _corns[index][axis];
