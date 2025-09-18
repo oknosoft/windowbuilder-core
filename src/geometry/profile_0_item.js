@@ -2799,7 +2799,7 @@ class ProfileItem extends GeneratrixElement {
   interiorPoint() {
     const {generatrix, layer: {children, _attr}} = this;
     let d1 = 0, d2 = 0;
-    if(!_attr.recalcCnnMap && children.profiles.cnnMap.size) {
+    if(!_attr?.recalcCnnMap && (!children.profiles || children.profiles.cnnMap.size)) {
       d1 = this.d1;
       d2 = this.d2;
     }
@@ -2842,7 +2842,7 @@ class ProfileItem extends GeneratrixElement {
 
     let res = this.corns(point);
     if(res instanceof paper.Point) {
-      res = {point: res, point_name: point, dist: 0};
+      res = {point: res, dist: 0};
     }
 
     this.path.segments.forEach((segm) => {
