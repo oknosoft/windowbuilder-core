@@ -886,6 +886,128 @@ class PathUnselectable extends paper.Path {
   }
 }
 
+class Generatrix extends paper.Path {
+  _drawSelected(ctx, matrix, items) {
+    if(this.parent.path._segments.find(({selected}) => selected)) {
+      return;
+    }
+    return super._drawSelected(ctx, matrix, items);
+  }
+}
+
+class ProfilePath extends paper.Path {
+  _drawSelected(ctx, matrix, items) {
+    const selectedSegments = this._segments.filter(({selected}) => selected);
+    if(selectedSegments.length !== 1) {
+      return;
+    }
+
+    let size = this.project._scope.settings.handleSize,
+      half = size / 2,
+      miniSize = size - 2,
+      miniHalf = half - 1,
+      coords = new Array(6),
+      pX, pY;
+
+    function drawHandle(index) {
+      var hX = coords[index],
+        hY = coords[index + 1];
+      if (pX != hX || pY != hY) {
+        ctx.beginPath();
+        ctx.moveTo(pX, pY);
+        ctx.lineTo(hX, hY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(hX, hY, half, 0, Math.PI * 2, true);
+        ctx.fill();
+      }
+    }
+
+    const segment = selectedSegments[0],
+      selection = segment._selection;
+    segment._transformCoordinates(matrix, coords);
+    pX = coords[0];
+    pY = coords[1];
+    if (selection & 2)
+      drawHandle(2);
+    if (selection & 4)
+      drawHandle(4);
+    ctx.fillRect(pX - half, pY - half, size, size);
+    if (miniSize > 0 && !(selection & 1)) {
+      var fillStyle = ctx.fillStyle;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(pX - miniHalf, pY - miniHalf, miniSize, miniSize);
+      ctx.fillStyle = fillStyle;
+    }
+    
+  }
+}
+
+class FillingPath extends paper.Path {
+  _drawSelected(ctx, matrix, items) {
+
+    let segments = this._segments,
+      length = segments.length,
+      coords = new Array(6),
+      first = true,
+      curX, curY,
+      prevX, prevY,
+      inX, inY,
+      outX, outY;
+
+    function drawSegment(segment) {
+      if (matrix) {
+        segment._transformCoordinates(matrix, coords);
+        curX = coords[0];
+        curY = coords[1];
+      } else {
+        var point = segment._point;
+        curX = point._x;
+        curY = point._y;
+      }
+      if (first) {
+        ctx.moveTo(curX, curY);
+        first = false;
+      } else {
+        if (matrix) {
+          inX = coords[2];
+          inY = coords[3];
+        } else {
+          var handle = segment._handleIn;
+          inX = curX + handle._x;
+          inY = curY + handle._y;
+        }
+        if (inX === curX && inY === curY
+          && outX === prevX && outY === prevY) {
+          ctx.lineTo(curX, curY);
+        } else {
+          ctx.bezierCurveTo(outX, outY, inX, inY, curX, curY);
+        }
+      }
+      prevX = curX;
+      prevY = curY;
+      if (matrix) {
+        outX = coords[4];
+        outY = coords[5];
+      } else {
+        var handle = segment._handleOut;
+        outX = prevX + handle._x;
+        outY = prevY + handle._y;
+      }
+    }
+    
+    ctx.beginPath();
+    for (var i = 0; i < length; i++)
+      drawSegment(segments[i]);
+    if (this._closed && length > 0)
+      drawSegment(segments[0]);
+    ctx.stroke();
+    
+  }
+}
+
+
+
 class TextUnselectable extends paper.PointText {
 
   setSelection(selection) {
@@ -897,6 +1019,9 @@ class TextUnselectable extends paper.PointText {
 }
 
 EditorInvisible.PathUnselectable = PathUnselectable;
+EditorInvisible.ProfilePath = ProfilePath;
+EditorInvisible.FillingPath = FillingPath;
+EditorInvisible.Generatrix = Generatrix;
 EditorInvisible.TextUnselectable = TextUnselectable;
 
 

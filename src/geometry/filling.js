@@ -53,24 +53,16 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {bounds: pbounds} = project;
 
     if(_row.path_data){
-      if(layer instanceof ContourNestedContent) {
-        const {bounds: lbounds} = layer;
-        const x = lbounds.x + pbounds.x;
-        const y = lbounds.y + pbounds.y;
-        const path = new paper.Path({project, pathData: _row.path_data, insert: false});
-        path.translate([x, y]);
-        _row.path_data = path.pathData;
-      }
-      _attr.path = new paper.Path({project, pathData: _row.path_data});
+      _attr.path = new FillingPath({project, pathData: _row.path_data});
     }
 
     else if(attr.path){
-      _attr.path = new paper.Path({project});
+      _attr.path = new FillingPath({project});
       this.path = attr.path;
     }
     else{
       const h = pbounds.height + pbounds.y;
-      _attr.path = new paper.Path({
+      _attr.path = new FillingPath({
         project, 
         segments: [
           [_row.x1, h - _row.y1],
@@ -546,7 +538,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
             const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
-            paths.set(row.region, new paper.Path({project, parent, strokeColor: 'gray', opacity: 0.88}));
+            paths.set(row.region, new FillingPath({project, parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
@@ -626,7 +618,7 @@ class Filling extends AbstractFilling(BuilderElement) {
             }
           }
           // формируем пути внешнего заполнения и полосы
-          let strip_path = new paper.Path({project, insert: false});
+          let strip_path = new FillingPath({project, insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -1013,7 +1005,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       path.removeSegments();
     }
     else{
-      path = _attr.path = new paper.Path({project, parent: this});
+      path = _attr.path = new FillingPath({project, parent: this});
     }
     if(children.tearings.isBelow(path)) {
       path.insertBelow(children.tearings);

@@ -1856,6 +1856,10 @@ class ProfileItem extends GeneratrixElement {
     }
 
     if(attr.generatrix) {
+      if(!(attr.generatrix instanceof Generatrix)) {
+        _attr.generatrix = new Generatrix(attr.generatrix.segments);
+        attr.generatrix.remove();
+      }
       _attr.generatrix = attr.generatrix;
       if(_attr.generatrix._reversed) {
         delete _attr.generatrix._reversed;
@@ -1863,11 +1867,11 @@ class ProfileItem extends GeneratrixElement {
     }
     else {
       if(_row.path_data) {
-        _attr.generatrix = new paper.Path(_row.path_data);
+        _attr.generatrix = new Generatrix(_row.path_data);
       }
       else {
         const first_point = new paper.Point([_row.x1, h - _row.y1]);
-        _attr.generatrix = new paper.Path(first_point);
+        _attr.generatrix = new Generatrix(first_point);
         if(_row.r) {
           _attr.generatrix.arcTo(
             first_point.arc_point(_row.x1, h - _row.y1, _row.x2, h - _row.y2, _row.r + 0.001, _row.arc_ccw, false), [_row.x2, h - _row.y2]);
@@ -1886,7 +1890,7 @@ class ProfileItem extends GeneratrixElement {
 
     _attr.generatrix.strokeColor = 'gray';
 
-    _attr.path = new paper.Path();
+    _attr.path = new ProfilePath();
     Object.assign(_attr.path, ProfileItem.path_attr);
     this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
 
@@ -2841,27 +2845,30 @@ class ProfileItem extends GeneratrixElement {
   select_corn(point, presaveSelected) {
 
     let res = this.corns(point);
-    if(res instanceof paper.Point) {
-      res = {point: res, dist: 0};
-    }
-
-    this.path.segments.forEach((segm) => {
-      if(segm.point.is_nearest(res.point)) {
-        res.segm = segm;
+    if(res) {
+      if(res instanceof paper.Point) {
+        res = {point: res, dist: 0};
       }
-    });
+      
+      if(res.point.is_nearest(this.b, 0)) {
+        res.segm = this.generatrix.firstSegment;
+      }
+      else if(res.point.is_nearest(this.e, 0)) {
+        res.segm = this.generatrix.lastSegment;
+      }
+      else {
+        this.path.segments.some((segm) => {
+          if(segm.point.is_nearest(res.point, 0)) {
+            res.segm = segm;
+            return true;
+          }
+        });  
+      }
 
-    if(!res.segm && res.point == this.b) {
-      res.segm = this.generatrix.firstSegment;
-    }
-
-    if(!res.segm && res.point == this.e) {
-      res.segm = this.generatrix.lastSegment;
-    }
-
-    if(res.segm && res.dist < consts.sticking0) {
-      !presaveSelected && this.project.deselectAll();
-      res.segm.selected = true;
+      if(res.segm && res.dist < consts.sticking0) {
+        !presaveSelected && this.project.deselectAll();
+        res.segm.selected = true;
+      }
     }
 
     return res;

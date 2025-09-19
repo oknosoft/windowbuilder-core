@@ -1939,7 +1939,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   createProfile({b, e, cnns}) {
     const attr = {
       parent: this.children.profiles,
-      generatrix: new paper.Path({insert: false, segments: [b, e]}),
+      generatrix: new Generatrix({insert: false, segments: [b, e]}),
     };
     const profile = new this.ProfileConstructor(attr);
     if(cnns?.b?.profile) {
@@ -4934,7 +4934,7 @@ class ContourTearing extends Contour {
     const proto = {elm_type: $p.enm.elm_types.tearing, inset, clr};
     for(const curr of path.curves) {
       const profile = new ProfileTearing({
-        generatrix: new paper.Path({segments: [curr.segment1, curr.segment2]}),
+        generatrix: new Generatrix({segments: [curr.segment1, curr.segment2]}),
         proto,
         layer: this,
         parent: this.children.profiles,
@@ -6488,23 +6488,15 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {_attr, project, layer} = this;
     const {bounds: pbounds} = project;
     if(_row.path_data){
-      if(layer instanceof ContourNestedContent) {
-        const {bounds: lbounds} = layer;
-        const x = lbounds.x + pbounds.x;
-        const y = lbounds.y + pbounds.y;
-        const path = new paper.Path({project, pathData: _row.path_data, insert: false});
-        path.translate([x, y]);
-        _row.path_data = path.pathData;
-      }
-      _attr.path = new paper.Path({project, pathData: _row.path_data});
+      _attr.path = new FillingPath({project, pathData: _row.path_data});
     }
     else if(attr.path){
-      _attr.path = new paper.Path({project});
+      _attr.path = new FillingPath({project});
       this.path = attr.path;
     }
     else{
       const h = pbounds.height + pbounds.y;
-      _attr.path = new paper.Path({
+      _attr.path = new FillingPath({
         project, 
         segments: [
           [_row.x1, h - _row.y1],
@@ -6864,7 +6856,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           const interior = this.interiorPoint();
           if(!paths.has(row.region)) {
             const parent = row.region === 1 ? this : (row.region < 0 ? layer.children.topLayers : layer.children.bottomLayers)
-            paths.set(row.region, new paper.Path({project, parent, strokeColor: 'gray', opacity: 0.88}));
+            paths.set(row.region, new FillingPath({project, parent, strokeColor: 'gray', opacity: 0.88}));
           }
           const rpath = paths.get(row.region);
           rpath.fillColor = path.fillColor;
@@ -6942,7 +6934,7 @@ class Filling extends AbstractFilling(BuilderElement) {
               curr.strip_path = curr.strip_path.get_subpath(curr.sb, curr.se, true);
             }
           }
-          let strip_path = new paper.Path({project, insert: false});
+          let strip_path = new FillingPath({project, insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
             rpath.addSegments(curr.sub_path.segments.filter((v, index) => {
@@ -7214,7 +7206,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       path.removeSegments();
     }
     else{
-      path = _attr.path = new paper.Path({project, parent: this});
+      path = _attr.path = new FillingPath({project, parent: this});
     }
     if(children.tearings.isBelow(path)) {
       path.insertBelow(children.tearings);
@@ -8787,6 +8779,115 @@ class PathUnselectable extends paper.Path {
     }
   }
 }
+class Generatrix extends paper.Path {
+  _drawSelected(ctx, matrix, items) {
+    if(this.parent.path._segments.find(({selected}) => selected)) {
+      return;
+    }
+    return super._drawSelected(ctx, matrix, items);
+  }
+}
+class ProfilePath extends paper.Path {
+  _drawSelected(ctx, matrix, items) {
+    const selectedSegments = this._segments.filter(({selected}) => selected);
+    if(selectedSegments.length !== 1) {
+      return;
+    }
+    let size = this.project._scope.settings.handleSize,
+      half = size / 2,
+      miniSize = size - 2,
+      miniHalf = half - 1,
+      coords = new Array(6),
+      pX, pY;
+    function drawHandle(index) {
+      var hX = coords[index],
+        hY = coords[index + 1];
+      if (pX != hX || pY != hY) {
+        ctx.beginPath();
+        ctx.moveTo(pX, pY);
+        ctx.lineTo(hX, hY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(hX, hY, half, 0, Math.PI * 2, true);
+        ctx.fill();
+      }
+    }
+    const segment = selectedSegments[0],
+      selection = segment._selection;
+    segment._transformCoordinates(matrix, coords);
+    pX = coords[0];
+    pY = coords[1];
+    if (selection & 2)
+      drawHandle(2);
+    if (selection & 4)
+      drawHandle(4);
+    ctx.fillRect(pX - half, pY - half, size, size);
+    if (miniSize > 0 && !(selection & 1)) {
+      var fillStyle = ctx.fillStyle;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(pX - miniHalf, pY - miniHalf, miniSize, miniSize);
+      ctx.fillStyle = fillStyle;
+    }
+  }
+}
+class FillingPath extends paper.Path {
+  _drawSelected(ctx, matrix, items) {
+    let segments = this._segments,
+      length = segments.length,
+      coords = new Array(6),
+      first = true,
+      curX, curY,
+      prevX, prevY,
+      inX, inY,
+      outX, outY;
+    function drawSegment(segment) {
+      if (matrix) {
+        segment._transformCoordinates(matrix, coords);
+        curX = coords[0];
+        curY = coords[1];
+      } else {
+        var point = segment._point;
+        curX = point._x;
+        curY = point._y;
+      }
+      if (first) {
+        ctx.moveTo(curX, curY);
+        first = false;
+      } else {
+        if (matrix) {
+          inX = coords[2];
+          inY = coords[3];
+        } else {
+          var handle = segment._handleIn;
+          inX = curX + handle._x;
+          inY = curY + handle._y;
+        }
+        if (inX === curX && inY === curY
+          && outX === prevX && outY === prevY) {
+          ctx.lineTo(curX, curY);
+        } else {
+          ctx.bezierCurveTo(outX, outY, inX, inY, curX, curY);
+        }
+      }
+      prevX = curX;
+      prevY = curY;
+      if (matrix) {
+        outX = coords[4];
+        outY = coords[5];
+      } else {
+        var handle = segment._handleOut;
+        outX = prevX + handle._x;
+        outY = prevY + handle._y;
+      }
+    }
+    ctx.beginPath();
+    for (var i = 0; i < length; i++)
+      drawSegment(segments[i]);
+    if (this._closed && length > 0)
+      drawSegment(segments[0]);
+    ctx.stroke();
+  }
+}
 class TextUnselectable extends paper.PointText {
   setSelection(selection) {
     const {parent, project: {_scope}} = this;
@@ -8796,6 +8897,9 @@ class TextUnselectable extends paper.PointText {
   }
 }
 EditorInvisible.PathUnselectable = PathUnselectable;
+EditorInvisible.ProfilePath = ProfilePath;
+EditorInvisible.FillingPath = FillingPath;
+EditorInvisible.Generatrix = Generatrix;
 EditorInvisible.TextUnselectable = TextUnselectable;
 class CnnPoint {
   constructor(parent, node) {
@@ -10075,6 +10179,10 @@ class ProfileItem extends GeneratrixElement {
       _row.r = attr.r;
     }
     if(attr.generatrix) {
+      if(!(attr.generatrix instanceof Generatrix)) {
+        _attr.generatrix = new Generatrix(attr.generatrix.segments);
+        attr.generatrix.remove();
+      }
       _attr.generatrix = attr.generatrix;
       if(_attr.generatrix._reversed) {
         delete _attr.generatrix._reversed;
@@ -10082,11 +10190,11 @@ class ProfileItem extends GeneratrixElement {
     }
     else {
       if(_row.path_data) {
-        _attr.generatrix = new paper.Path(_row.path_data);
+        _attr.generatrix = new Generatrix(_row.path_data);
       }
       else {
         const first_point = new paper.Point([_row.x1, h - _row.y1]);
-        _attr.generatrix = new paper.Path(first_point);
+        _attr.generatrix = new Generatrix(first_point);
         if(_row.r) {
           _attr.generatrix.arcTo(
             first_point.arc_point(_row.x1, h - _row.y1, _row.x2, h - _row.y2, _row.r + 0.001, _row.arc_ccw, false), [_row.x2, h - _row.y2]);
@@ -10099,7 +10207,7 @@ class ProfileItem extends GeneratrixElement {
     _attr._corns = [];
     _attr._rays = new ProfileRays(this);
     _attr.generatrix.strokeColor = 'gray';
-    _attr.path = new paper.Path();
+    _attr.path = new ProfilePath();
     Object.assign(_attr.path, ProfileItem.path_attr);
     this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
     this.addChild(_attr.path);
@@ -10866,23 +10974,28 @@ class ProfileItem extends GeneratrixElement {
   }
   select_corn(point, presaveSelected) {
     let res = this.corns(point);
-    if(res instanceof paper.Point) {
-      res = {point: res, dist: 0};
-    }
-    this.path.segments.forEach((segm) => {
-      if(segm.point.is_nearest(res.point)) {
-        res.segm = segm;
+    if(res) {
+      if(res instanceof paper.Point) {
+        res = {point: res, dist: 0};
       }
-    });
-    if(!res.segm && res.point == this.b) {
-      res.segm = this.generatrix.firstSegment;
-    }
-    if(!res.segm && res.point == this.e) {
-      res.segm = this.generatrix.lastSegment;
-    }
-    if(res.segm && res.dist < consts.sticking0) {
-      !presaveSelected && this.project.deselectAll();
-      res.segm.selected = true;
+      if(res.point.is_nearest(this.b, 0)) {
+        res.segm = this.generatrix.firstSegment;
+      }
+      else if(res.point.is_nearest(this.e, 0)) {
+        res.segm = this.generatrix.lastSegment;
+      }
+      else {
+        this.path.segments.some((segm) => {
+          if(segm.point.is_nearest(res.point, 0)) {
+            res.segm = segm;
+            return true;
+          }
+        });  
+      }
+      if(res.segm && res.dist < consts.sticking0) {
+        !presaveSelected && this.project.deselectAll();
+        res.segm.selected = true;
+      }
     }
     return res;
   }
