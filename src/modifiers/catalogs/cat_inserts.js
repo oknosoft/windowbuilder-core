@@ -1181,8 +1181,6 @@
         formulas,
         element,
         parameters,
-        area,
-        len_prm,
         dimensions,
         cnns,
         fillings,
@@ -1252,8 +1250,8 @@
         }
         else{
 
-          if(count_calc_method === area) {
-            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
+          if(count_calc_method.is('len_prm') || count_calc_method.is('arm') || count_calc_method.is('area')) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){
             let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
@@ -1401,9 +1399,6 @@
               }
               row_spec = null;
             }
-          }
-          else if(count_calc_method === len_prm) {
-            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === dimensions){
             let len = 0, width = 0;

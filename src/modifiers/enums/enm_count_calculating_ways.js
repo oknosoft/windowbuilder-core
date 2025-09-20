@@ -8,7 +8,7 @@
 
 (function({enm, cat: {clrs}, cch}){
 
-  const {coloring, len_prm, area} = enm.count_calculating_ways;
+  const {coloring, len_prm, area, arm} = enm.count_calculating_ways;
   const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
 
   const is_side = (side) => ['_in', '_out'].includes(side);
@@ -136,5 +136,13 @@
     row_spec.s = 0;
     return row_spec;
   };
+
+  arm.calculate = function ({elm, row_spec, row_ins_spec}) {
+    const {nom, length, rays: {b, e}} = elm;
+    const {quantity, sz, coefficient} = row_ins_spec;
+    row_spec.qty = quantity;
+    row_spec.len = (length - sz) * coefficient;
+    return row_spec;
+  }
 
 })($p);
