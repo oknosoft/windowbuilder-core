@@ -3913,30 +3913,40 @@ set coordinates(v){this._setter_ts('coordinates',v)}
 
         const row_spec = new_spec_row({row_base, origin: [`cnn|${this.ref}|${row_base.row}`], elm, elm2, nom, spec, ox, len_angl});
 
-        const procedure = nom.is_procedure && this.coordinates.find({elm: row_base.elm}) && this.cnn_type.is('t'); 
-        if(procedure) {
-          const {Path} = elm.project._scope;
-          row_spec.elm = elm2.elm;
-          let ray;
-          if(elm2.cnn_side(elm).is('outer')) {
-            ray = elm2.rays.outer;
+        const proc_row = nom.is_procedure && this.coordinates.find({elm: row_base.elm});
+        if(proc_row) {
+          if(this.cnn_type.is('t')) {
+            const {Path} = elm.project._scope;
+            row_spec.elm = elm2.elm;
+            let ray;
+            if(elm2.cnn_side(elm).is('outer')) {
+              ray = elm2.rays.outer;
+            }
+            else {
+              ray = elm2.rays.inner.clone({insert: false, deep: false});
+              ray.reverse();
+            }
+            const ept = (len_angl.node === 'b' ? elm.corns(1).add(elm.corns(4)) : elm.corns(2).add(elm.corns(3))).divide(2);
+            const pt = ray.getNearestPoint(ept);
+            const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
+            const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
+            const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
+            let offset = offset1 < offset4 ? offset1 : offset4;
+            if(offset7 && offset7 < offset) {
+              offset = offset7;
+            }
+            const pt0 = ray.getPointAt(offset);
+            const path = ray.get_subpath(pt0, pt);
+            row_spec.len = path.length * (row_base.coefficient || 0.001);
           }
           else {
-            ray = elm2.rays.inner.clone({insert: false, deep: false});
-            ray.reverse();
+            if(proc_row.offset_option.is('e')) {
+              row_spec.len = (len_angl.len - row_base.sz) * (row_base.coefficient || 0.001);
+            }
+            else {
+              row_spec.len = row_base.sz * (row_base.coefficient || 0.001);
+            }
           }
-          const ept = (len_angl.node === 'b' ? elm.corns(1).add(elm.corns(4)) : elm.corns(2).add(elm.corns(3))).divide(2); 
-          const pt = ray.getNearestPoint(ept);
-          const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
-          const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
-          const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
-          let offset = offset1 < offset4 ? offset1 : offset4;
-          if(offset7 && offset7 < offset) {
-            offset = offset7;
-          }
-          const pt0 = ray.getPointAt(offset);
-          const path = ray.get_subpath(pt0, pt);
-          row_spec.len = path.length * (row_base.coefficient || 0.001);
         }
         else if(nom.is_pieces) {
           if(!row_base.coefficient) {
