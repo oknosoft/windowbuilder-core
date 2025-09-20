@@ -10781,7 +10781,7 @@ class ProfileItem extends GeneratrixElement {
           }
           else {
             if(is_b) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[1];
                 delete _corns[4];
               }
@@ -10791,7 +10791,7 @@ class ProfileItem extends GeneratrixElement {
               }
             }
             else if(is_e) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[2];
                 delete _corns[3];
               }
@@ -10844,7 +10844,7 @@ class ProfileItem extends GeneratrixElement {
           else {
             const {frame_indent} = this;
             if(is_b) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[1];
                 delete _corns[4];
               }
@@ -10862,7 +10862,7 @@ class ProfileItem extends GeneratrixElement {
               }
             }
             else if(is_e) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[2];
                 delete _corns[3];
               }
@@ -11021,8 +11021,29 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-  is_collinear(profile, delta, reverce = 0) {
-    let angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
+  is_collinear(profile, delta, reverce, point) {
+    const gen = this.generatrix;
+    const pg = profile.generatrix;
+    let angl;
+    if(gen.is_linear() && pg.is_linear()) {
+      angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
+    }
+    else {
+      let pt1, pt2;
+      if(point) {
+        pt1 = gen.getNearestPoint(point);
+        pt2 = pg.getNearestPoint(point);
+      }
+      else if(pg.length >= gen.length) {
+        pt1 = gen.getPointAt(gen.length / 2);
+        pt2 = pg.getNearestPoint(pt1);
+      }
+      else {
+        pt2 = pg.getPointAt(pg.length / 2);
+        pt1 = gen.getNearestPoint(pt2);
+      }
+      angl = gen.getLocationOf(pt1).tangent.getDirectedAngle(pg.getLocationOf(pt2).tangent);
+    }
     if(angl < -180) {
       angl += 180;
     }
@@ -17621,7 +17642,7 @@ $p.spec_building = new SpecBuilding($p);
   });
 })($p.enm.cnn_types);
 (function({enm, cat: {clrs}, cch}){
-  const {coloring, len_prm, area} = enm.count_calculating_ways;
+  const {coloring, len_prm, area, arm} = enm.count_calculating_ways;
   const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
   const is_side = (side) => ['_in', '_out'].includes(side);
   coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {
@@ -17741,6 +17762,13 @@ $p.spec_building = new SpecBuilding($p);
     row_spec.s = 0;
     return row_spec;
   };
+  arm.calculate = function ({elm, row_spec, row_ins_spec}) {
+    const {nom, length, rays: {b, e}} = elm;
+    const {quantity, sz, coefficient} = row_ins_spec;
+    row_spec.qty = quantity;
+    row_spec.len = (length - sz) * coefficient;
+    return row_spec;
+  }
 })($p);
 (function(mgr){
 	const cache = {};
@@ -19345,8 +19373,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         formulas,
         element,
         parameters,
-        area,
-        len_prm,
         dimensions,
         cnns,
         fillings,
@@ -19404,8 +19430,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
         }
         else{
-          if(count_calc_method === area) {
-            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec});
+          if(count_calc_method.is('len_prm') || count_calc_method.is('arm') || count_calc_method.is('area')) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){
             let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
@@ -19539,9 +19565,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
               row_spec = null;
             }
-          }
-          else if(count_calc_method === len_prm) {
-            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === dimensions){
             let len = 0, width = 0;
