@@ -1227,9 +1227,14 @@
         }
         // для вставок в профиль способ расчета количества не учитывается
         else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
-          calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
+          if(count_calc_method.is('arm')) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, len_angl});
+          }
+          else {
+            calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
+          }
           // размер может уточняться по соединениям
-          if(count_calc_method == cnns){
+          if(count_calc_method.is('cnns')){
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
               const {cnn, profile} = node;
@@ -1250,7 +1255,7 @@
         }
         else{
 
-          if(count_calc_method.is('len_prm') || count_calc_method.is('arm') || count_calc_method.is('area')) {
+          if(count_calc_method.is('len_prm') || count_calc_method.is('area')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){

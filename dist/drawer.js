@@ -17762,11 +17762,37 @@ $p.spec_building = new SpecBuilding($p);
     row_spec.s = 0;
     return row_spec;
   };
-  arm.calculate = function ({elm, row_spec, row_ins_spec}) {
-    const {nom, length, rays: {b, e}} = elm;
+  arm.calculate = function ({elm, row_spec, row_ins_spec, len_angl}) {
+    const {nom, rays: {b, e, inner, outer}} = elm;
     const {quantity, sz, coefficient} = row_ins_spec;
     row_spec.qty = quantity;
-    row_spec.len = (length - sz) * coefficient;
+    if(b.profile && e.profile) {
+      const prop = cch.properties.predefined('arm_coffer'),
+        delta = 5.5,
+        bNom = b.profile.nom,
+        eNom = b.profile.nom,
+        coffer = nom._extra(prop) || (nom.sizefaltz + delta),
+        bCoffer = bNom._extra(prop) || (bNom.sizefaltz + delta),
+        eCoffer = eNom._extra(prop) || (eNom.sizefaltz + delta),
+        ray = inner.equidistant(-coffer),
+        bInner = elm.cnn_side(b.profile).is('inner'),
+        eInner = elm.cnn_side(e.profile).is('inner'),
+        bRay = bInner ? b.profile.rays.inner : b.profile.rays.outer,
+        eRay = eInner ? e.profile.rays.inner : e.profile.rays.outer;
+      if(!bInner) {
+        bRay.reverse();
+      }
+      if(!eInner) {
+        eRay.reverse();
+      }
+      const bPoint = ray.intersect_point(bRay.equidistant(-bCoffer)),
+        ePoint = ray.intersect_point(eRay.equidistant(-eCoffer)),
+        sub = ray.get_subpath(bPoint, ePoint);
+      row_spec.len = (sub.length - 2 * sz) * coefficient;
+    }
+    else {
+      row_spec.len = (elm.length - sz) * coefficient;
+    }
     return row_spec;
   }
 })($p);
@@ -19410,8 +19436,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
         }
         else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
-          calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
-          if(count_calc_method == cnns){
+          if(count_calc_method.is('arm')) {
+            count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, len_angl});
+          }
+          else {
+            calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
+          }
+          if(count_calc_method.is('cnns')){
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
               const {cnn, profile} = node;
@@ -19430,7 +19461,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
         }
         else{
-          if(count_calc_method.is('len_prm') || count_calc_method.is('arm') || count_calc_method.is('area')) {
+          if(count_calc_method.is('len_prm') || count_calc_method.is('area')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){
