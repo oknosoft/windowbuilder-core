@@ -10673,7 +10673,7 @@ class ProfileItem extends GeneratrixElement {
           }
           else {
             if(is_b) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[1];
                 delete _corns[4];
               }
@@ -10683,7 +10683,7 @@ class ProfileItem extends GeneratrixElement {
               }
             }
             else if(is_e) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[2];
                 delete _corns[3];
               }
@@ -10736,7 +10736,7 @@ class ProfileItem extends GeneratrixElement {
           else {
             const {frame_indent} = this;
             if(is_b) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[1];
                 delete _corns[4];
               }
@@ -10754,7 +10754,7 @@ class ProfileItem extends GeneratrixElement {
               }
             }
             else if(is_e) {
-              if(this.is_collinear(other, 1)) {
+              if(this.is_collinear(other, 1, false, cnn_point.point)) {
                 delete _corns[2];
                 delete _corns[3];
               }
@@ -10908,8 +10908,29 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-  is_collinear(profile, delta, reverce = 0) {
-    let angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
+  is_collinear(profile, delta, reverce, point) {
+    const gen = this.generatrix;
+    const pg = profile.generatrix;
+    let angl;
+    if(gen.is_linear() && pg.is_linear()) {
+      angl = profile.e.subtract(profile.b).getDirectedAngle(this.e.subtract(this.b));
+    }
+    else {
+      let pt1, pt2;
+      if(point) {
+        pt1 = gen.getNearestPoint(point);
+        pt2 = pg.getNearestPoint(point);
+      }
+      else if(pg.length >= gen.length) {
+        pt1 = gen.getPointAt(gen.length / 2);
+        pt2 = pg.getNearestPoint(pt1);
+      }
+      else {
+        pt2 = pg.getPointAt(pg.length / 2);
+        pt1 = gen.getNearestPoint(pt2);
+      }
+      angl = gen.getLocationOf(pt1).tangent.getDirectedAngle(pg.getLocationOf(pt2).tangent);
+    }
     if(angl < -180) {
       angl += 180;
     }
