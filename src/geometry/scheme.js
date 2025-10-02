@@ -1015,10 +1015,10 @@ class Scheme extends paper.Project {
     let bounds = this.contours.reduce((sum, curr) => 
       sum ? sum.unite(curr.strokeBounds) : curr.strokeBounds, null);
     if(connectiveBounds.area) {
-      bounds = bounds.unite(connectiveBounds)
+      bounds = bounds ? bounds.unite(connectiveBounds) : connectiveBounds;
     }
     if(dimensionsBounds.area) {
-      bounds = bounds.unite(dimensionsBounds)
+      bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds; 
     }
     return bounds || new paper.Rectangle();
   }
