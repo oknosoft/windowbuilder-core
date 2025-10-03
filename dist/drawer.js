@@ -1939,7 +1939,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   createProfile({b, e, cnns}) {
     const attr = {
       parent: this.children.profiles,
-      generatrix: new Generatrix({insert: false, segments: [b, e]}),
+      generatrix: new paper.Path({insert: false, segments: [b, e]}),
     };
     const profile = new this.ProfileConstructor(attr);
     if(cnns?.b?.profile) {
@@ -4934,7 +4934,7 @@ class ContourTearing extends Contour {
     const proto = {elm_type: $p.enm.elm_types.tearing, inset, clr};
     for(const curr of path.curves) {
       const profile = new ProfileTearing({
-        generatrix: new Generatrix({segments: [curr.segment1, curr.segment2]}),
+        generatrix: new paper.Path({insert: false, segments: [curr.segment1, curr.segment2]}),
         proto,
         layer: this,
         parent: this.children.profiles,
@@ -8779,14 +8779,6 @@ class PathUnselectable extends paper.Path {
     }
   }
 }
-class Generatrix extends paper.Path {
-  _drawSelected(ctx, matrix, items) {
-    if(this.parent.path._segments.find(({selected}) => selected)) {
-      return;
-    }
-    return super._drawSelected(ctx, matrix, items);
-  }
-}
 class ProfilePath extends paper.Path {
   _drawSelected(ctx, matrix, items) {
     const selectedSegments = this._segments.filter(({selected}) => selected);
@@ -8899,7 +8891,6 @@ class TextUnselectable extends paper.PointText {
 EditorInvisible.PathUnselectable = PathUnselectable;
 EditorInvisible.ProfilePath = ProfilePath;
 EditorInvisible.FillingPath = FillingPath;
-EditorInvisible.Generatrix = Generatrix;
 EditorInvisible.TextUnselectable = TextUnselectable;
 class CnnPoint {
   constructor(parent, node) {
@@ -10179,10 +10170,6 @@ class ProfileItem extends GeneratrixElement {
       _row.r = attr.r;
     }
     if(attr.generatrix) {
-      if(!(attr.generatrix instanceof Generatrix)) {
-        _attr.generatrix = new Generatrix(attr.generatrix.segments);
-        attr.generatrix.remove();
-      }
       _attr.generatrix = attr.generatrix;
       if(_attr.generatrix._reversed) {
         delete _attr.generatrix._reversed;
@@ -10190,11 +10177,11 @@ class ProfileItem extends GeneratrixElement {
     }
     else {
       if(_row.path_data) {
-        _attr.generatrix = new Generatrix(_row.path_data);
+        _attr.generatrix = new paper.Path(_row.path_data);
       }
       else {
         const first_point = new paper.Point([_row.x1, h - _row.y1]);
-        _attr.generatrix = new Generatrix(first_point);
+        _attr.generatrix = new paper.Path(first_point);
         if(_row.r) {
           _attr.generatrix.arcTo(
             first_point.arc_point(_row.x1, h - _row.y1, _row.x2, h - _row.y2, _row.r + 0.001, _row.arc_ccw, false), [_row.x2, h - _row.y2]);
@@ -10207,6 +10194,7 @@ class ProfileItem extends GeneratrixElement {
     _attr._corns = [];
     _attr._rays = new ProfileRays(this);
     _attr.generatrix.strokeColor = 'gray';
+    _attr.generatrix._drawSelected = ProfileItem._drawSelected;
     _attr.path = new ProfilePath();
     Object.assign(_attr.path, ProfileItem.path_attr);
     this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
@@ -11516,6 +11504,12 @@ ProfileItem.path_attr = {
       delete _attr.fillColor;
     }
   }
+};
+ProfileItem._drawSelected = function _drawSelected(ctx, matrix, items) {
+  if(this.parent.path._segments.find(({selected}) => selected)) {
+    return;
+  }
+  return paper.Path.prototype._drawSelected.call(this, ctx, matrix, items);
 };
 EditorInvisible.ProfileItem = ProfileItem;
 EditorInvisible.ProfileRays = ProfileRays;
@@ -14539,10 +14533,10 @@ class Scheme extends paper.Project {
     let bounds = this.contours.reduce((sum, curr) => 
       sum ? sum.unite(curr.strokeBounds) : curr.strokeBounds, null);
     if(connectiveBounds.area) {
-      bounds = bounds.unite(connectiveBounds)
+      bounds = bounds ? bounds.unite(connectiveBounds) : connectiveBounds;
     }
     if(dimensionsBounds.area) {
-      bounds = bounds.unite(dimensionsBounds)
+      bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds; 
     }
     return bounds || new paper.Rectangle();
   }

@@ -66,7 +66,7 @@ class ContourTearing extends Contour {
     const proto = {elm_type: $p.enm.elm_types.tearing, inset, clr};
     for(const curr of path.curves) {
       const profile = new ProfileTearing({
-        generatrix: new Generatrix({segments: [curr.segment1, curr.segment2]}),
+        generatrix: new paper.Path({insert: false, segments: [curr.segment1, curr.segment2]}),
         proto,
         layer: this,
         parent: this.children.profiles,

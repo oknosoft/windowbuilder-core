@@ -1856,10 +1856,6 @@ class ProfileItem extends GeneratrixElement {
     }
 
     if(attr.generatrix) {
-      if(!(attr.generatrix instanceof Generatrix)) {
-        _attr.generatrix = new Generatrix(attr.generatrix.segments);
-        attr.generatrix.remove();
-      }
       _attr.generatrix = attr.generatrix;
       if(_attr.generatrix._reversed) {
         delete _attr.generatrix._reversed;
@@ -1867,11 +1863,11 @@ class ProfileItem extends GeneratrixElement {
     }
     else {
       if(_row.path_data) {
-        _attr.generatrix = new Generatrix(_row.path_data);
+        _attr.generatrix = new paper.Path(_row.path_data);
       }
       else {
         const first_point = new paper.Point([_row.x1, h - _row.y1]);
-        _attr.generatrix = new Generatrix(first_point);
+        _attr.generatrix = new paper.Path(first_point);
         if(_row.r) {
           _attr.generatrix.arcTo(
             first_point.arc_point(_row.x1, h - _row.y1, _row.x2, h - _row.y2, _row.r + 0.001, _row.arc_ccw, false), [_row.x2, h - _row.y2]);
@@ -1889,6 +1885,7 @@ class ProfileItem extends GeneratrixElement {
     _attr._rays = new ProfileRays(this);
 
     _attr.generatrix.strokeColor = 'gray';
+    _attr.generatrix._drawSelected = ProfileItem._drawSelected;
 
     _attr.path = new ProfilePath();
     Object.assign(_attr.path, ProfileItem.path_attr);
@@ -3541,6 +3538,12 @@ ProfileItem.path_attr = {
       delete _attr.fillColor;
     }
   }
+};
+ProfileItem._drawSelected = function _drawSelected(ctx, matrix, items) {
+  if(this.parent.path._segments.find(({selected}) => selected)) {
+    return;
+  }
+  return paper.Path.prototype._drawSelected.call(this, ctx, matrix, items);
 };
 
 EditorInvisible.ProfileItem = ProfileItem;

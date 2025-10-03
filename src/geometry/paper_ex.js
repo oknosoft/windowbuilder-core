@@ -886,15 +886,6 @@ class PathUnselectable extends paper.Path {
   }
 }
 
-class Generatrix extends paper.Path {
-  _drawSelected(ctx, matrix, items) {
-    if(this.parent.path._segments.find(({selected}) => selected)) {
-      return;
-    }
-    return super._drawSelected(ctx, matrix, items);
-  }
-}
-
 class ProfilePath extends paper.Path {
   _drawSelected(ctx, matrix, items) {
     const selectedSegments = this._segments.filter(({selected}) => selected);
@@ -1021,7 +1012,6 @@ class TextUnselectable extends paper.PointText {
 EditorInvisible.PathUnselectable = PathUnselectable;
 EditorInvisible.ProfilePath = ProfilePath;
 EditorInvisible.FillingPath = FillingPath;
-EditorInvisible.Generatrix = Generatrix;
 EditorInvisible.TextUnselectable = TextUnselectable;
 
 

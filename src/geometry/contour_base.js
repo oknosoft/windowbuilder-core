@@ -164,7 +164,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   createProfile({b, e, cnns}) {
     const attr = {
       parent: this.children.profiles,
-      generatrix: new Generatrix({insert: false, segments: [b, e]}),
+      generatrix: new paper.Path({insert: false, segments: [b, e]}),
     };
     const profile = new this.ProfileConstructor(attr);
     if(cnns?.b?.profile) {
