@@ -32,10 +32,10 @@
   },
   "peerDependencies": {
     "paper-jsdom-canvas": "0.12.18",
-    "three": "0.176"
+    "three": "0.180"
   },
   "devDependencies": {
-    "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
+    "foodoc": "github:oknosoft/foodoc#4702d7d0871452fec7563f329732e5e620f1f03b",
     "md5-file": "^5.0"
   },
   "files": [
