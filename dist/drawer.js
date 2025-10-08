@@ -1302,7 +1302,7 @@ class BuilderElement extends paper.Group {
     if(!layer) {
       layer = this.project.activeLayer;
     }
-    if(_attr._reflected && !layer?.flipped || !_attr._reflected && layer?.flipped){
+    if(_attr._reflected){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
@@ -1990,6 +1990,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       attr.row.kind = kind;
     }
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
+    if(layer) {
+      if(contour.flipped && parent === layer.children.topLayers) {
+        contour.parent = layer.children.bottomLayers;
+      }
+      else if(parent === layer.children.bottomLayers && !contour.flipped) {
+        contour.parent = layer.children.topLayers;
+      }
+    }
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }

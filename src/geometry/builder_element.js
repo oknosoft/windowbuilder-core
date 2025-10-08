@@ -937,7 +937,7 @@ class BuilderElement extends paper.Group {
       layer = this.project.activeLayer;
     }
 
-    if(_attr._reflected && !layer?.flipped || !_attr._reflected && layer?.flipped){
+    if(_attr._reflected){ //&& !layer?.flipped || !_attr._reflected && layer?.flipped
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
