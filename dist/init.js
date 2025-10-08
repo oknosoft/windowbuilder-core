@@ -2972,6 +2972,8 @@ get product_params(){return this._getter_ts('product_params')}
 set product_params(v){this._setter_ts('product_params',v)}
 get inserts(){return this._getter_ts('inserts')}
 set inserts(v){this._setter_ts('inserts',v)}
+get links(){return this._getter_ts('links')}
+set links(v){this._setter_ts('links',v)}
 }
 $p.CatInserts = CatInserts;
 class CatInsertsSpecificationRow extends TabularSectionRow{
@@ -3044,6 +3046,11 @@ get by_default(){return this._getter('by_default')}
 set by_default(v){this._setter('by_default',v)}
 }
 $p.CatInsertsInsertsRow = CatInsertsInsertsRow;
+class CatInsertsLinksRow extends TabularSectionRow{
+get inset(){return this._getter('inset')}
+set inset(v){this._setter('inset',v)}
+}
+$p.CatInsertsLinksRow = CatInsertsLinksRow;
 $p.cat.create('inserts');
 class CatParameters_keys extends CatObj{
 get priority(){return this._getter('priority')}
