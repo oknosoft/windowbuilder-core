@@ -18138,8 +18138,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
   get_spec(contour, cache, exclude_dop, stack = []) {
     const res = $p.dp.buyers_order.create({specification: []}, true).specification;
     const {_ox: ox} = contour;
-    const {transfer_operations_options: {НаПримыкающий: nea, ЧерезПримыкающий: through, НаПримыкающийОтКонца: inverse},
-      open_directions, offset_options} = $p.enm;
+    const {transfer_operations_options: {nea, through, inverse}, open_directions, offset_options} = $p.enm;
     this.specification.find_rows({dop: 0}, (row_furn) => {
       if(!row_furn.nom && row_furn._obj.nom) {
         throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
@@ -18204,7 +18203,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
             proc_row.handle_height_max = contour.cnstr;
             if([nea, through, inverse].includes(dop_row.transfer_option)){
-              let nearest = elm.nearest();
+              let nearest = elm.nearest(true);
               if(dop_row.transfer_option == through){
                 const joined = nearest.joined_nearests().reduce((acc, cur) => {
                   if(cur !== elm){
@@ -18214,6 +18213,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 }, []);
                 if(joined.length){
                   nearest = joined[0];
+                }
+                else if(nearest.nearest(true)) {
+                  nearest = nearest.nearest(true);
                 }
               }
               const {outer} = elm.rays;
