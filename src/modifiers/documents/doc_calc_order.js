@@ -1634,12 +1634,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
 
-    const row = row_spec instanceof $p.DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
+    const {DpBuyers_orderProductionRow, enm, cat, wsql, utils} = $p;
+    const row = row_spec instanceof DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
       row_spec.characteristic.calc_order_row :
       this.production.add({
         qty: 1,
         quantity: 1,
-        discount_percent_internal: $p.wsql.get_user_param('discount_percent_internal', 'number')
+        discount_percent_internal: wsql.get_user_param('discount_percent_internal', 'number')
       });
 
     if(grid) {
@@ -1652,7 +1653,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     // ищем объект продукции в RAM или берём из строки заказа
-    const mgr = $p.cat.characteristics;
+    const mgr = cat.characteristics;
     function fill_cx(ox) {
       if(ox._deleted){
         return;
@@ -1671,13 +1672,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     // если не нашли в RAM, создаём объект продукции, но из базы не читаем и пока не записываем
     return (cx || mgr.create({
-      ref: $p.utils.generate_guid(),
+      ref: utils.generate_guid(),
       calc_order: this,
       product: row.row
     }, true))
       .then((ox) => {
         // если указана строка-генератор, заполняем реквизиты
-        if(row_spec instanceof $p.DpBuyers_orderProductionRow) {
+        if(row_spec instanceof DpBuyers_orderProductionRow) {
 
           if(params) {
 
@@ -1695,7 +1696,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           elm.project = {ox};
           elm.fake_origin = row_spec.inset;
 
-          ox.owner = row_spec.inset.nom(elm, true);
+          const prow = row_spec.inset.specification.find({quantity: 0, is_order_row: enm.specification_order_row_types.prod});
+          ox.owner = prow ? prow.nom : row_spec.inset.nom(elm, true);
           ox.origin = row_spec.inset;
           ox.x = row_spec.len;
           ox.y = row_spec.height;
@@ -1722,7 +1724,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         ox.name = ox.prod_name();
 
         // записываем расчет, если не сделали этого ранее, чтобы не погибла ссылка на расчет в характеристике
-        return this.is_new() && !$p.wsql.alasql.utils.isNode ? this.save().then(() => row) : row;
+        return this.is_new() && !wsql.alasql.utils.isNode ? this.save().then(() => row) : row;
       });
 
   }
