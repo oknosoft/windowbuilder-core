@@ -17778,14 +17778,32 @@ $p.spec_building = new SpecBuilding($p);
         eCoffer = eNom._extra(prop) || (eNom.sizefaltz + delta),
         ray = inner.equidistant(-coffer),
         bInner = elm.cnn_side(b.profile).is('inner'),
-        eInner = elm.cnn_side(e.profile).is('inner'),
-        bRay = bInner ? b.profile.rays.inner : b.profile.rays.outer,
+        eInner = elm.cnn_side(e.profile).is('inner');
+      let bRay = bInner ? b.profile.rays.inner : b.profile.rays.outer,
         eRay = eInner ? e.profile.rays.inner : e.profile.rays.outer;
       if(!bInner) {
         bRay.reverse();
       }
       if(!eInner) {
         eRay.reverse();
+      }
+      if(!b.profile.is_linear()) {
+        const offset = bRay.getOffsetOf(bRay.getNearestPoint(elm.b));
+        const loc = bRay.getLocationAt(offset + 20);
+        const tg = loc.tangent.multiply(600);
+        bRay = new paper.Path({
+          insert: false,
+          segments: [loc.point.subtract(tg), loc.point.add(tg)],
+        });
+      }
+      if(!e.profile.is_linear()) {
+        const offset = eRay.getOffsetOf(eRay.getNearestPoint(elm.e));
+        const loc = eRay.getLocationAt(offset - 20);
+        const tg = loc.tangent.multiply(600);
+        eRay = new paper.Path({
+          insert: false,
+          segments: [loc.point.subtract(tg), loc.point.add(tg)],
+        });
       }
       const bPoint = ray.intersect_point(bRay.equidistant(-bCoffer)),
         ePoint = ray.intersect_point(eRay.equidistant(-eCoffer)),
