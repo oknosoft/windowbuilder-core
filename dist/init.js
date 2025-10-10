@@ -2944,6 +2944,8 @@ get available(){return this._getter('available')}
 set available(v){this._setter('available',v)}
 get slave(){return this._getter('slave')}
 set slave(v){this._setter('slave',v)}
+get links(){return this._getter('links')}
+set links(v){this._setter('links',v)}
 get is_supplier(){return this._getter('is_supplier')}
 set is_supplier(v){this._setter('is_supplier',v)}
 get region(){return this._getter('region')}
@@ -2972,8 +2974,6 @@ get product_params(){return this._getter_ts('product_params')}
 set product_params(v){this._setter_ts('product_params',v)}
 get inserts(){return this._getter_ts('inserts')}
 set inserts(v){this._setter_ts('inserts',v)}
-get links(){return this._getter_ts('links')}
-set links(v){this._setter_ts('links',v)}
 }
 $p.CatInserts = CatInserts;
 class CatInsertsSpecificationRow extends TabularSectionRow{
@@ -3046,11 +3046,6 @@ get by_default(){return this._getter('by_default')}
 set by_default(v){this._setter('by_default',v)}
 }
 $p.CatInsertsInsertsRow = CatInsertsInsertsRow;
-class CatInsertsLinksRow extends TabularSectionRow{
-get inset(){return this._getter('inset')}
-set inset(v){this._setter('inset',v)}
-}
-$p.CatInsertsLinksRow = CatInsertsLinksRow;
 $p.cat.create('inserts');
 class CatParameters_keys extends CatObj{
 get priority(){return this._getter('priority')}
@@ -3922,8 +3917,8 @@ set coordinates(v){this._setter_ts('coordinates',v)}
 
         const proc_row = nom.is_procedure && this.coordinates.find({elm: row_base.elm});
         if(proc_row) {
-          if(this.cnn_type.is('t')) {
-            const {Path} = elm.project._scope;
+          const sz = row_base.sz * (row_base.coefficient || 0.001);
+          if(proc_row.transfer_option.is('nea')) {
             row_spec.elm = elm2.elm;
             let ray;
             if(elm2.cnn_side(elm).is('outer')) {
@@ -3933,27 +3928,45 @@ set coordinates(v){this._setter_ts('coordinates',v)}
               ray = elm2.rays.inner.clone({insert: false, deep: false});
               ray.reverse();
             }
-            const ept = (len_angl.node === 'b' ? elm.corns(1).add(elm.corns(4)) : elm.corns(2).add(elm.corns(3))).divide(2);
-            const pt = ray.getNearestPoint(ept);
-            const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
-            const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
-            const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
-            let offset = offset1 < offset4 ? offset1 : offset4;
-            if(offset7 && offset7 < offset) {
-              offset = offset7;
-            }
-            const pt0 = ray.getPointAt(offset);
-            const path = ray.get_subpath(pt0, pt);
-            row_spec.len = path.length * (row_base.coefficient || 0.001);
+            const offsetB = ray.getOffsetOf(ray.getNearestPoint(elm2.b));
+            const offsetE = ray.getOffsetOf(ray.getNearestPoint(elm2.e));
+            const offsetPt = ray.getOffsetOf(ray.getNearestPoint(elm[len_angl.node]));
+            const neaB = Math.abs(offsetB - offsetPt) < elm.width * 2;
+            row_spec.len = neaB ? sz : (offsetPt - offsetB - row_base.sz) * (row_base.coefficient || 0.001);
           }
           else {
-            if(proc_row.offset_option.is('e')) {
-              row_spec.len = (len_angl.len - row_base.sz) * (row_base.coefficient || 0.001);
+            if(this.cnn_type.is('t')) {
+              row_spec.elm = elm2.elm;
+              let ray;
+              if(elm2.cnn_side(elm).is('outer')) {
+                ray = elm2.rays.outer;
+              }
+              else {
+                ray = elm2.rays.inner.clone({insert: false, deep: false});
+                ray.reverse();
+              }
+              const pt = ray.getNearestPoint(elm[len_angl.node]);
+              const offset1 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(1)));
+              const offset4 = ray.getOffsetOf(ray.getNearestPoint(elm2.corns(4)));
+              const offset7 = elm2.corns(7) && ray.getOffsetOf(ray.getNearestPoint(elm2.corns(7)));
+              let offset = offset1 < offset4 ? offset1 : offset4;
+              if(offset7 && offset7 < offset) {
+                offset = offset7;
+              }
+              const pt0 = ray.getPointAt(offset);
+              const path = ray.get_subpath(pt0, pt);
+              row_spec.len = (path.length * (row_base.coefficient || 0.001));
             }
             else {
-              row_spec.len = row_base.sz * (row_base.coefficient || 0.001);
+              if(proc_row.offset_option.is('e')) {
+                row_spec.len = (len_angl.len - row_base.sz) * (row_base.coefficient || 0.001);
+              }
+              else {
+                row_spec.len = sz;
+              }
             }
           }
+          row_spec.len = row_spec.len.round(4);
         }
         else if(nom.is_pieces) {
           if(!row_base.coefficient) {
