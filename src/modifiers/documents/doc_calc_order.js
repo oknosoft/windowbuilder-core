@@ -1765,11 +1765,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
-            this.accessories('clear', row_prod.characteristic);
-            // рассчитываем спецификацию
-            row_dp.inset.calculate_spec({elm, len_angl, ox: row_prod.characteristic});
-            // сворачиваем
-            row_prod.characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+            row_prod.recalc_inset_spec();
             // помещаем характеристику в текущую строку обработки dp
             row_dp.characteristic = row_prod.characteristic;
             return row_prod;
@@ -1785,7 +1781,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     });
 
-    return res;
+    return res.then((ax) => {
+      this.reset_specify();
+      return ax;
+    });
   }
 
   /**
@@ -1988,6 +1987,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
 
     const {CatInsert_bind, CatInserts, cat: {insert_bind, characteristics}} = $p;
+    const links = [];
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
@@ -2008,19 +2008,20 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // если это следящая вставка, рассчитаем спецификацию
         if(origin && !origin.empty()) {
           if(origin instanceof CatInserts && origin.slave) {
-            characteristic.specification.clear();
-            characteristic.x = row.len;
-            characteristic.y = row.width;
-            characteristic.s = (row.s || row.len * row.width / 1e6).round(4);
-            const len_angl = new FakeLenAngl({len: row.len, inset: origin});
-            const elm = new FakeElm(row);
-            origin.calculate_spec({elm, len_angl, ox: characteristic});
+            if(origin.links) {
+              links.push(row);
+            }
+            row.recalc_inset_spec();
           }
           row.value_change('quantity', 'update', row.quantity);
         }
       }
     }
     insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
+    for(const row of links) {
+      row.recalc_inset_spec();
+      row.value_change('quantity', 'update', row.quantity);
+    }
     this._slave_recalc = false;
   }
 
@@ -2306,6 +2307,23 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
       return false;
     }
+  }
+
+  /**
+   * @summary Пересчитывает параметрическую спецификацию по текущей вставке
+   */
+  recalc_inset_spec() {
+    const {characteristic, len, width, s} = this;
+    const {origin, calc_order, specification} = characteristic;
+    calc_order.accessories('clear', characteristic);
+    specification.clear();
+    characteristic.x = len;
+    characteristic.y = width;
+    characteristic.s = (s || len * width / 1e6).round(4);
+    const len_angl = new FakeLenAngl({len, inset: origin});
+    const elm = new FakeElm(this);
+    origin.calculate_spec({elm, len_angl, ox: characteristic});
+    characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
   }
 
 };
