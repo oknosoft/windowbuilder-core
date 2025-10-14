@@ -103,7 +103,7 @@
     }
     else {
       let {x1, x2, y1, y2, s} = _row;
-      if(elm instanceof EditorInvisible.Filling && relm?.irow?.region) {
+      if(elm instanceof Filling && relm?.irow?.region) {
         const path = elm._attr.paths?.get(relm.irow.region);
         if(path) {
           x1 = y1 = 0;

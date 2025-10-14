@@ -117,7 +117,7 @@ class ContourNested extends Contour {
    */
   load_stamp() {
 
-    const {cat: {templates, characteristics}, enm: {elm_types}, job_prm, EditorInvisible} = $p;
+    const {cat: {templates, characteristics}, enm: {elm_types}, job_prm} = $p;
 
     return Promise.resolve().then(() => {
       const {base_block} = templates._select_template;

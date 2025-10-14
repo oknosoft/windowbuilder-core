@@ -1479,7 +1479,7 @@
           }
           
           if(alp1 === undefined && alp2 === undefined && (angle_calc_method == Соединение || angle_calc_method == СоединениеПополам)) {
-            if(elm2 instanceof EditorInvisible.Filling && len_angl?.curr) {
+            if(elm2 instanceof Filling && len_angl?.curr) {
               const {curr, next, prev} = len_angl;
               alp1 = prev.sub_path.angle_between(curr.sub_path, curr.b);
               alp2 = curr.sub_path.angle_between(next.sub_path, curr.e);

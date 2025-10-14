@@ -3277,6 +3277,21 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
+   * @summary Признак нахождения текущего слоя внутри виртуального
+   * @type {Boolean}
+   */
+  get in_virt_layer() {
+    let layer = this;
+    while (layer) {
+      if(layer instanceof ContourVirtual) {
+        return true;
+      }
+      layer = layer.layer;
+    }
+    return false;
+  }
+
+  /**
    * Перевёрнутость слоя (штапик наружу)
    * (0) - авто, (1) - перевёрнут, (-1) - не перевёрнут
    * @returns {boolean}
@@ -3290,7 +3305,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(!auto_flipped && layer) {
         return layer.flipped;
       }
-      return Boolean(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level));
+      if(auto_flipped?.split?.(',').map((v) => parseInt(v, 10)).includes(level) || (this.in_virt_layer && auto_flipped?.includes('-1'))) {
+        return true;
+      }
+      return false;
     }
     return flipped > 0;
   }

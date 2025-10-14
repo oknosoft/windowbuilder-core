@@ -1308,7 +1308,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           // если запросили эскиз без размерных линий или с иными параметрами...
           if(builder_props) {
             if(!editor) {
-              editor = new $p.EditorInvisible();
+              editor = new EditorInvisible();
             }
             imgs = imgs.then(() => {
               return row.characteristic.draw(attr, editor)
@@ -1796,13 +1796,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   recalc(attr = {}, editor, restore) {
 
     // при необходимости, создаём редактор
-    const {EditorInvisible, CatInserts} = $p;
+    const {CatInserts} = $p;
     const remove = !editor;
     if(remove) {
       editor = new EditorInvisible();
     }
     let {project} = editor;
-    if(!(project instanceof EditorInvisible.Scheme)) {
+    if(!(project instanceof Scheme)) {
       project = editor.create_scheme();
     }
     let tmp = Promise.resolve();
@@ -1879,13 +1879,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   draw(attr = {}, editor) {
 
     // при необходимости, создаём редактор
-    const {EditorInvisible} = $p;
     const remove = !editor;
     if(remove) {
       editor = new EditorInvisible();
     }
     let {project} = editor;
-    if(!(project instanceof EditorInvisible.Scheme)) {
+    if(!(project instanceof Scheme)) {
       project = editor.create_scheme();
     }
 

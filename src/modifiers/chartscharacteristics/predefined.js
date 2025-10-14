@@ -10,7 +10,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params, property_values}, 
-    EditorInvisible, CatInserts, DocCalc_order, DpBuyers_orderProductionRow, utils, job_prm} = $p;
+    CatInserts, DocCalc_order, DpBuyers_orderProductionRow, utils, job_prm} = $p;
   
   function specifyNearest(elm, prm_row) {
     if(prm_row?.origin?.is('parent') || prm_row?.origin?.is('nearest')) {
@@ -73,7 +73,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
             // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
             if(prm_row?.origin?.is('nearest')){
-              if(elm instanceof EditorInvisible.Filling) {
+              if(elm instanceof Filling) {
                 const res = new Set();
                 ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                   if(row && inset !== row._owner?._owner) {
@@ -82,7 +82,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 });
                 return Array.from(res);
               }
-              else if(elm2 instanceof EditorInvisible.Filling) {
+              else if(elm2 instanceof Filling) {
                 return elm2.inset.target;
               }
               else {
@@ -100,12 +100,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'inserts_glass_type':
           _data._formula = function ({elm, elm2, prm_row, ox, row}) {
             
-            if(prm_row?.origin?.is('nearest') && (elm2 instanceof EditorInvisible.Filling || elm2?.is_glass)) {
+            if(prm_row?.origin?.is('nearest') && (elm2 instanceof Filling || elm2?.is_glass)) {
               elm = elm2;
             }
 
             // если запросили згачение вставки состава заполнения, возвращаем массив
-            if((elm instanceof EditorInvisible.Filling || elm?.is_glass) && 
+            if((elm instanceof Filling || elm?.is_glass) && 
                 (prm_row?.comparison_type?.is('in') || prm_row?.comparison_type?.is('nin'))) {
               const res = new Set();
               ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
@@ -154,7 +154,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'up_glasses_weight':
           _data._formula = function ({elm, elm2, ox}) {
             let weight = 0;
-            if(elm2 instanceof EditorInvisible.Profile && !(elm instanceof EditorInvisible.Profile)) {
+            if(elm2 instanceof Profile && !(elm instanceof Profile)) {
               elm = elm2;
             }
             if(elm?.orientation?.is('hor')) {
@@ -192,12 +192,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           
         case 'has_glasses_outer':
           _data._formula = function ({elm, elm2}) {
-            if(!(elm instanceof EditorInvisible.Profile) && (elm2 instanceof EditorInvisible.Profile)) {
+            if(!(elm instanceof Profile) && (elm2 instanceof Profile)) {
               elm = elm2;
             }
             if(elm.joined_glasses) {
               for(const gl of elm.joined_glasses()) {
-                if(gl instanceof EditorInvisible.Filling) {
+                if(gl instanceof Filling) {
                   if(elm.generatrix.point_pos(gl.interiorPoint()) > 0) {
                     return true;
                   }
@@ -228,7 +228,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
-            if(elm instanceof EditorInvisible.ProfileAdjoining) {
+            if(elm instanceof ProfileAdjoining) {
               elm = elm.nearest();
               elm2 = null;
             }
@@ -242,7 +242,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
         case 'nearest_gl_var':
           _data._formula = function ({elm}) {
-            if(elm instanceof EditorInvisible.ProfileAdjoining) {
+            if(elm instanceof ProfileAdjoining) {
               elm = elm.nearest();
             }
             const set = new Set();
@@ -336,7 +336,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 return bounds.width > bounds.height ? orientations.hor : orientations.vert; 
               }
             }
-            if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+            if(!(elm instanceof ProfileItem) && elm2 instanceof ProfileItem) {
               elm = elm2;
             }
             return elm?.orientation || elm2?.orientation || orientations.get();
@@ -345,7 +345,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
         case 'elm_pos':
           _data._formula = function ({elm, elm2}) {
-            if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+            if(!(elm instanceof ProfileItem) && elm2 instanceof ProfileItem) {
               elm = elm2;
             }
             return elm?.pos || positions.get();
@@ -355,7 +355,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'node_pos':
           _data._formula = function ({elm, node}) {
             if(elm && node) {
-              if(elm instanceof EditorInvisible.ProfileSegment) {
+              if(elm instanceof ProfileSegment) {
                 const {parent} = elm;
                 if(!parent[node].is_nearest(elm[node])) {
                   return positions.left.center;
@@ -376,7 +376,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         case 'is_node_last':
           _data._formula = function ({elm, node}) {
             if(elm && node) {
-              if(elm instanceof EditorInvisible.ProfileSegment) {
+              if(elm instanceof ProfileSegment) {
                 const {parent} = elm;
                 if(!parent[node].is_nearest(elm[node])) {
                   return false;
@@ -397,22 +397,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(!layer) {
               layer = elm?.layer;
             }
-            while (layer) {
-              if(layer instanceof EditorInvisible.ContourVirtual) {
-                return true;
-              }
-              layer = layer.layer;
-            }
-            return false;
+            return layer?.in_virt_layer || false;
           };
           break;         
           
         case 'joins_last_elm':
           _data._formula = function ({elm, elm2, prm_row, node}) {
-            if(!(elm instanceof EditorInvisible.ProfileItem) && elm2 instanceof EditorInvisible.ProfileItem) {
+            if(!(elm instanceof ProfileItem) && elm2 instanceof ProfileItem) {
               elm = elm2;
             }
-            if(elm instanceof EditorInvisible.ProfileSegment) {
+            if(elm instanceof ProfileSegment) {
               elm = elm.parent;
             }
             if(elm) {
