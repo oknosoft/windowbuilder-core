@@ -3495,7 +3495,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   apply_mirror() {
     
-    const {l_visualization, contours, project: {_attr}, flipped, children} = this;
+    const {l_visualization, contours, project: {_attr}, children} = this;
     
     // обновляем визуализацию
     this.draw_visualization();
@@ -3510,10 +3510,16 @@ class Contour extends AbstractFilling(paper.Layer) {
 
      // обновляем отображение составных цветов заполнений
     for (const fill of this.fillings) {
-      fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);
+      const {clr} = fill;
+      if(clr.is_composite()) {
+        fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);
+      }
       // обновляем отображение составных цветов раскладок
-      for (const onlay of fill.imposts) {
-        onlay.path.fillColor = BuilderElement.clr_by_clr.call(onlay, onlay.clr);
+      for (const profile of fill.imposts) {
+        const {clr} = profile;
+        if(clr.is_composite()) {
+          profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
+        }
       }
     }
 
@@ -3521,8 +3527,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       layer.apply_mirror();
     }
 
-    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children;
-    const order = (_attr._reflected && !flipped || !_attr._reflected && flipped) ?
+    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children; //(_attr._reflected && !flipped || !_attr._reflected && flipped)
+    const order = _attr._reflected ?
       [topLayers, fillings, profiles, sectionals, bottomLayers] :
       [bottomLayers, fillings, profiles, sectionals, topLayers];
     if(order.some((v, i) => children.indexOf(v) !== i)) {
