@@ -3929,10 +3929,8 @@ set coordinates(v){this._setter_ts('coordinates',v)}
               ray.reverse();
             }
             const offsetB = ray.getOffsetOf(ray.getNearestPoint(elm2.b));
-            const offsetE = ray.getOffsetOf(ray.getNearestPoint(elm2.e));
             const offsetPt = ray.getOffsetOf(ray.getNearestPoint(elm[len_angl.node]));
-            const neaB = Math.abs(offsetB - offsetPt) < elm.width * 2;
-            row_spec.len = neaB ? sz : (offsetPt - offsetB - row_base.sz) * (row_base.coefficient || 0.001);
+            row_spec.len = (offsetPt - offsetB) * (row_base.coefficient || 0.001) + elm.generatrix.point_pos(ray.firstSegment.point) * sz;
           }
           else {
             if(this.cnn_type.is('t')) {
