@@ -164,10 +164,19 @@ const AbstractFilling = (superclass) => class extends superclass {
             }
             const curr = map.get(cpt.profile);
             // точка на образующей текущего элемента
-            const ept = generatrix.length < 400 ? (generatrix.getPointAt(generatrix.length / 2)) :
-              (node === 'b' ? generatrix.getPointAt(200) :  generatrix.getPointAt(generatrix.length - 200));
+            const ept = generatrix.length < 320 ? (generatrix.getPointAt(generatrix.length / 2)) :
+              (node === 'b' ? generatrix.getPointAt(160) :  generatrix.getPointAt(generatrix.length - 160));
             // точка на образующей профиля, к которому примыкает текущий
-            const loc = cpt.profile.generatrix.getNearestLocation(ept);
+            const pg = cpt.profile.generatrix;
+            let loc = pg.getNearestLocation(ept);
+            if(!pg.is_linear()) {
+              if(loc.time < 0.07) {
+                loc = pg.getLocationAt(pg.length * 0.08);
+              }
+              else if(loc.time > 0.93) {
+                loc = pg.getLocationAt(pg.length * 0.92);
+              }
+            }
             const line = new paper.Line(loc.point, loc.point.add(loc.tangent));
             curr.push({elm, node: cpt, side: line.getSide(ept, true)});
           }
