@@ -1765,7 +1765,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
-            row_prod.recalc_inset_spec();
+            row_prod.inset_spec();
             // помещаем характеристику в текущую строку обработки dp
             row_dp.characteristic = row_prod.characteristic;
             return row_prod;
@@ -2010,7 +2010,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             if(origin.links) {
               links.push(row);
             }
-            row.recalc_inset_spec();
+            row.inset_spec();
           }
           row.value_change('quantity', 'update', row.quantity);
         }
@@ -2018,7 +2018,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
     for(const row of links) {
-      row.recalc_inset_spec();
+      row.inset_spec();
       row.value_change('quantity', 'update', row.quantity);
     }
     this._slave_recalc = false;
@@ -2311,7 +2311,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
   /**
    * @summary Пересчитывает параметрическую спецификацию по текущей вставке
    */
-  recalc_inset_spec() {
+  inset_spec() {
     const {characteristic, len, width, s} = this;
     const {origin, calc_order, specification} = characteristic;
     calc_order.accessories('clear', characteristic);
