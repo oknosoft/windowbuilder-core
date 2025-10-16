@@ -1079,7 +1079,7 @@
           if(row.nom.insert_type === coloring) {
             // добавляем одну или две строки
             if(!eclr) {
-              eclr = elm.clr;
+              eclr = $p.cat.clrs.by_predefined(row.clr, elm.clr, ox.clr, elm);
             }
             const selector = {
               params: this.selection_params,

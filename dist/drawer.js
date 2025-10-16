@@ -19371,7 +19371,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(row.nom instanceof CatInserts){
           if(row.nom.insert_type === coloring) {
             if(!eclr) {
-              eclr = elm.clr;
+              eclr = $p.cat.clrs.by_predefined(row.clr, elm.clr, ox.clr, elm);
             }
             const selector = {
               params: this.selection_params,
