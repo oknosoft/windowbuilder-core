@@ -2066,17 +2066,19 @@ class Scheme extends paper.Project {
 
     // если к доборам не привязались - проверяем профиль
     //const gp = element.generatrix.getNearestPoint(point);
-    const gp = element._attr._nearest && (!profile || !profile._attr._nearest) ?
-      (element.rays.outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
+    const {_nearest} = element._attr;
+    const outer = _nearest && element.rays.outer.get_subpath(element.b, element.e);
+    const gp = _nearest && (!profile || !profile._attr._nearest) ?
+      (outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
 
     if(distance < ((res.is_t || !res.is_l) ? sticking : sticking_l)) {
 
       if(distance < res.distance || bind_generatrix) {
-        if(element.d0 != 0 && element.rays.outer) {
+        if(element.d0 != 0 && outer) {
           // для вложенных створок и смещенных рам учтём смещение
-          res.point = element.rays.outer.getNearestPoint(point);
+          res.point = outer.getNearestPoint(point);
           res.distance = 0;
         }
         else {

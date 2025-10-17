@@ -15274,14 +15274,16 @@ class Scheme extends paper.Project {
       return node_distance == 2 ? false : void(0);
     }
     res.profile_point = '';
-    const gp = element._attr._nearest && (!profile || !profile._attr._nearest) ?
-      (element.rays.outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
+    const {_nearest} = element._attr;
+    const outer = _nearest && element.rays.outer.get_subpath(element.b, element.e);
+    const gp = _nearest && (!profile || !profile._attr._nearest) ?
+      (outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
     if(distance < ((res.is_t || !res.is_l) ? sticking : sticking_l)) {
       if(distance < res.distance || bind_generatrix) {
-        if(element.d0 != 0 && element.rays.outer) {
-          res.point = element.rays.outer.getNearestPoint(point);
+        if(element.d0 != 0 && outer) {
+          res.point = outer.getNearestPoint(point);
           res.distance = 0;
         }
         else {
