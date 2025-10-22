@@ -18961,13 +18961,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
       if(_types_filling.includes(insert_type)) {
-        const param = cch.properties.predefined('without_glasses');
+        if(this.insert_glass_type.is('blank')) {
+          return false;
+        }
+        let param = cch.properties.predefined('without_glasses');
         if(param && params?.find({cnstr: 0, param})?.value) {
           return false;
         }
-      }
-      if(_types_filling.includes(insert_type)) {
-        const param = cch.properties.predefined('glass_separately');
+        param = cch.properties.predefined('glass_separately');
         param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
             const prow = (contour || elm.layer)?.sys?.product_params?.find?.({param});

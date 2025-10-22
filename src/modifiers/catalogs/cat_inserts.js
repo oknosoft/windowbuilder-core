@@ -536,16 +536,19 @@
       const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
 
-      // заполнения в продукцию не выносим, если бит "без заполнений"
+      
       if(_types_filling.includes(insert_type)) {
-        const param = cch.properties.predefined('without_glasses');
+        // пустоту в продукцию не выносим
+        if(this.insert_glass_type.is('blank')) {
+          return false;
+        }
+        // заполнения в продукцию не выносим, если бит "без заполнений"
+        let param = cch.properties.predefined('without_glasses');
         if(param && params?.find({cnstr: 0, param})?.value) {
           return false;
         }
-      }
-
-      if(_types_filling.includes(insert_type)) {
-        const param = cch.properties.predefined('glass_separately');
+        // анализируем значение параметра "заполнения отдельно"
+        param = cch.properties.predefined('glass_separately');
         param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
             const prow = (contour || elm.layer)?.sys?.product_params?.find?.({param});
