@@ -8961,6 +8961,28 @@ set price(v){this._setter('price',v)}
 }
 $p.DocNom_prices_setupGoodsRow = DocNom_prices_setupGoodsRow;
 $p.doc.create('nom_prices_setup');
+class DocScaning extends DocObj{
+get record_kind(){return this._getter('record_kind')}
+set record_kind(v){this._setter('record_kind',v)}
+get phase(){return this._getter('phase')}
+set phase(v){this._setter('phase',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
+get work_center(){return this._getter('work_center')}
+set work_center(v){this._setter('work_center',v)}
+get obj(){return this._getter('obj')}
+set obj(v){this._setter('obj',v)}
+get stage(){return this._getter('stage')}
+set stage(v){this._setter('stage',v)}
+get part(){return this._getter('part')}
+set part(v){this._setter('part',v)}
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+get power(){return this._getter('power')}
+set power(v){this._setter('power',v)}
+}
+$p.DocScaning = DocScaning;
+$p.doc.create('scaning');
 class DocPlanning_event extends DocObj{
 get basis(){return this._getter('basis')}
 set basis(v){this._setter('basis',v)}
