@@ -548,6 +548,10 @@
         const param = cch.properties.predefined('glass_separately');
         param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
+            const prow = (contour || elm.layer)?.sys?.product_params?.find?.({param});
+            if(prow?.hide) {
+              return;
+            }
             is_order_row = value ? prod : '';
             return false;
           }
