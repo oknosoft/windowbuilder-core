@@ -2233,6 +2233,22 @@ get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
 
 
+  _mixin(raw, include, exclude) {
+    if(raw && typeof raw == 'object') {
+      let {accounts, contracts, ...other} = raw;
+      if(Array.isArray(accounts)) {
+        accounts.forEach((v) => v.owner = this.ref);
+        this._manager._owner.partner_bank_accounts.load_array(accounts);
+      }
+      if(Array.isArray(contracts)) {
+        contracts.forEach((v) => v.owner = this.ref);
+        this._manager._owner.contracts.load_array(contracts);
+      }
+      return super._mixin(other, include, exclude);
+    }
+    return this;
+  }
+
   toJSON() {
     const {classes: {TabularSectionRow, CatObj}, CatPartners} = $p;
 

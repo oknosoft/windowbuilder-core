@@ -1569,13 +1569,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    */
   load_production(forse, db) {
     const prod = [];
-    const {characteristics} = $p.cat;
-    this.production.forEach(({characteristic}) => {
+    const {cat: {characteristics}, adapters: {pouch}} = $p;
+    const {partner, production} = this;
+    const pre = (partner.empty() || !partner.is_new()) ? Promise.resolve() : partner.load();
+    
+    production.forEach(({characteristic}) => {
       if(!characteristic.empty() && (forse || characteristic.is_new())) {
         prod.push(characteristic.ref);
       }
     });
-    return characteristics.adapter.load_array(characteristics, prod, false, db)
+    return pre
+      .then(() => pouch.load_array(characteristics, prod, false, db))
       .then(() => {
         prod.length = 0;
         this.production.forEach(({nom, characteristic}) => {
@@ -1925,7 +1929,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(this._data._templates_loading) {
       return this._data._templates_loading;
     }
-    else if(this.obj_delivery_state == 'Шаблон') {
+    else if(this.obj_delivery_state.is('Шаблон')) {
       const {adapters, job_prm, cat} = $p;
       this._data._templates_loading = adapters.pouch.fetch(`/couchdb/mdm/${job_prm.session_zone}/templates/${this.ref}`)
         .then((res) => res.json())

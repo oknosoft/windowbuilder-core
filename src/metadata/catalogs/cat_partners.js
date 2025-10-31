@@ -33,6 +33,22 @@ exports.CatPartnersManager = class CatPartnersManager extends Object {
 
 exports.CatPartners = class CatPartners extends Object {
 
+  _mixin(raw, include, exclude) {
+    if(raw && typeof raw == 'object') {
+      let {accounts, contracts, ...other} = raw;
+      if(Array.isArray(accounts)) {
+        accounts.forEach((v) => v.owner = this.ref);
+        this._manager._owner.partner_bank_accounts.load_array(accounts);
+      }
+      if(Array.isArray(contracts)) {
+        contracts.forEach((v) => v.owner = this.ref);
+        this._manager._owner.contracts.load_array(contracts);
+      }
+      return super._mixin(other, include, exclude);
+    }
+    return this;
+  }
+
   toJSON() {
     const {classes: {TabularSectionRow, CatObj}, CatPartners} = $p;
     
