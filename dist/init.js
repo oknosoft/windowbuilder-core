@@ -5345,7 +5345,24 @@ get predefined_name(){return this._getter('predefined_name')}
 set predefined_name(v){this._setter('predefined_name',v)}
 get work_shift_periodes(){return this._getter_ts('work_shift_periodes')}
 set work_shift_periodes(v){this._setter_ts('work_shift_periodes',v)}
-}
+
+
+  get timeOrder() {
+    const row = this.work_shift_periodes.get(0);
+    if(row) {
+      const {begin_time} = row;
+      return begin_time.getHours() * 3600 + begin_time.getMinutes() * 60 + begin_time.getSeconds();
+    }
+    return 0;
+  }
+
+  get duration() {
+    let res = 0;
+    for(const row of this.work_shift_periodes) {
+      res += (row.end_time - row.begin_time) / 1000;
+    }
+    return res.round();
+  }}
 $p.CatWork_shifts = CatWork_shifts;
 class CatWork_shiftsWork_shift_periodesRow extends TabularSectionRow{
 get begin_time(){return this._getter('begin_time')}
@@ -6647,7 +6664,22 @@ get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
 get stages(){return this._getter_ts('stages')}
 set stages(v){this._setter_ts('stages',v)}
-}
+
+
+    get allStages() {
+    let res = new Set();
+    for(const {stage} of this.stages) {
+      if(stage instanceof this.constructor) {
+        for(const sub of stage.allStages) {
+          res.add(sub);
+        }
+      }
+      else if(stage) {
+        res.add(stage);
+      }
+    }
+    return Array.from(res);
+  }}
 $p.CatProduction_kinds = CatProduction_kinds;
 class CatProduction_kindsStagesRow extends TabularSectionRow{
 get parent(){return this._getter('parent')}
