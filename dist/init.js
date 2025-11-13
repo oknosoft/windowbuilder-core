@@ -6664,22 +6664,7 @@ get note(){return this._getter('note')}
 set note(v){this._setter('note',v)}
 get stages(){return this._getter_ts('stages')}
 set stages(v){this._setter_ts('stages',v)}
-
-
-    get allStages() {
-    let res = new Set();
-    for(const {stage} of this.stages) {
-      if(stage instanceof this.constructor) {
-        for(const sub of stage.allStages) {
-          res.add(sub);
-        }
-      }
-      else if(stage) {
-        res.add(stage);
-      }
-    }
-    return Array.from(res);
-  }}
+}
 $p.CatProduction_kinds = CatProduction_kinds;
 class CatProduction_kindsStagesRow extends TabularSectionRow{
 get parent(){return this._getter('parent')}
