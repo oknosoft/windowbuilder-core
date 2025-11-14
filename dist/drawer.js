@@ -16153,7 +16153,8 @@ class Sectional extends GeneratrixElement {
   }
   get length() {
     const {generatrix, zoom} = this._attr;
-    return (2 * generatrix.length / zoom).round() / 2;
+    const len = generatrix.curves.reduce((sum, curve) => sum + (curve.lengths ? Math.max(...curve.lengths) :  curve.length / zoom), 0);
+    return (2 * len).round() / 2;
   }
   get width() {
     const {length} = $p.job_prm.properties;
