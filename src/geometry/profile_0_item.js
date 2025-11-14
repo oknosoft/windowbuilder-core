@@ -921,6 +921,11 @@ class ProfileItem extends GeneratrixElement {
     }
     return pt;
   }
+  
+  get flipped() {
+    const {flipped} = this.inset;
+    return flipped === 2 || flipped === 3;
+  }
 
   /**
    * Отрывает точку от соседнего профиля

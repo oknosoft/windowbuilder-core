@@ -272,18 +272,18 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               else {
                 proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(point)) - nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(1)));
               }
-              // если сказано учесть припуск - добавляем dx0
-              if(dop_row.overmeasure){
-                proc_row.coefficient +=  nearest.dx0;
-              }
             }
             else{
               proc_row.handle_height_min = elm.elm;
               proc_row.coefficient = coordin;
-              // если сказано учесть припуск - добавляем dx0
-              if(dop_row.overmeasure){
-                proc_row.coefficient +=  elm.dx0;
-              }
+            }
+
+            if(elm.flipped) {
+              proc_row.coefficient =  len - proc_row.coefficient;
+            }
+            // если сказано учесть припуск - добавляем dx0
+            else if(dop_row.overmeasure){
+              proc_row.coefficient +=  elm.dx0;
             }
 
             return;

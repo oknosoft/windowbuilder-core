@@ -3336,10 +3336,14 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {visualization} = this.nom;
         const {attributes} = visualization;
         if(!attributes?.regions || attributes.regions.includes?.(region)) {
+          let offset = this.len * 1000;
+          if(elm.flipped) {
+            offset = elm.length - offset;
+          }
           visualization.draw({
             elm,
             layer: l_visualization,
-            offset: this.len * 1000,
+            offset,
             offset0: this.width * 1000 * (this.alp1 || 1),
             clr: this.clr,
             reflected,
@@ -9527,6 +9531,10 @@ class ProfileItem extends GeneratrixElement {
       pt._name = 'c2';
     }
     return pt;
+  }
+  get flipped() {
+    const {flipped} = this.inset;
+    return flipped === 2 || flipped === 3;
   }
   unlink() {
     const {generatrix, b, e, rays} = this;
@@ -18288,16 +18296,16 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               else {
                 proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(point)) - nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(1)));
               }
-              if(dop_row.overmeasure){
-                proc_row.coefficient +=  nearest.dx0;
-              }
             }
             else{
               proc_row.handle_height_min = elm.elm;
               proc_row.coefficient = coordin;
-              if(dop_row.overmeasure){
-                proc_row.coefficient +=  elm.dx0;
-              }
+            }
+            if(elm.flipped) {
+              proc_row.coefficient =  len - proc_row.coefficient;
+            }
+            else if(dop_row.overmeasure){
+              proc_row.coefficient +=  elm.dx0;
             }
             return;
           }
