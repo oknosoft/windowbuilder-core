@@ -68,18 +68,17 @@ class ContourRegion extends Contour {
     return !visible || hidden;
   }
 
-  /**
-   * Признак сокрытия слоя
-   * @type {boolean}
-   
-  get hidden() {
-    return super.hidden;
+  redraw() {
+    if (!this.visible || this.hidden) {
+      return;
+    }
+    super.redraw();
+    for(const chld of this.parent.children) {
+      if(chld !== this && chld.isBelow(this)) {
+        chld.insertAbove(this);
+      }
+    }
   }
-  set hidden(v) {
-    super.hidden = v;
-    this.redraw();
-  }
-   */
 
 }
 

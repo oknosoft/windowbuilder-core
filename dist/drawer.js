@@ -4924,6 +4924,17 @@ class ContourRegion extends Contour {
     const {visible, hidden} = this.layer;
     return !visible || hidden;
   }
+  redraw() {
+    if (!this.visible || this.hidden) {
+      return;
+    }
+    super.redraw();
+    for(const chld of this.parent.children) {
+      if(chld !== this && chld.isBelow(this)) {
+        chld.insertAbove(this);
+      }
+    }
+  }
 }
 EditorInvisible.ContourRegion = ContourRegion;
 class ContourTearing extends Contour {
