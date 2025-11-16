@@ -5094,13 +5094,23 @@ class ContourVirtual extends Contour {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');
   }
-  get sys_available() {
+  get permitted_sys() {
     const res = new Set();
-    const attachments = this.project._dp.sys._extra('attachments_map');
-    if(attachments instanceof Map) {
+    const prow = this.project._dp.sys.extra_fields.find({property: $p.cch.properties.predefined('permitted_sys')});
+    if(prow) {
       const {production_params} = $p.cat;
-      for(const [k, ref] of attachments) {
-        res.add(production_params.get(ref));
+      for(const ref of JSON.parse(prow.txt_row)) {
+        const sys = production_params.get(ref);
+        if(sys.is_folder) {
+          for(const child of sys._children()) {
+            if(!child.is_folder) {
+              res.add(child);
+            }
+          }          
+        }
+        else {
+          res.add(sys);
+        }
       }
     }
     return res;
