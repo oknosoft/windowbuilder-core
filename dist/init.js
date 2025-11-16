@@ -4316,6 +4316,8 @@ set coordinates(v){this._setter_ts('coordinates',v)}
           calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
         }
       }
+
+      row_base.inset.dop_spec({row_ins_spec: row_base, elm, ox, spec, len_angl});
     }
   }}
 $p.CatCnns = CatCnns;

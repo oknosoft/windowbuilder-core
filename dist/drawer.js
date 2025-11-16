@@ -19784,10 +19784,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       if(!this.empty()) {
         const {nom, count_calc_method} = row_ins_spec;
         if(nom instanceof CatNom) {
+          const {cat: {clrs}, enm: {inserts_types}} = $p;
           if(!clr) {
-            clr = $p.cat.clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec, null, row_ins_spec);
+            clr = clrs.by_predefined(row_ins_spec.clr, elm.clr, ox.clr, elm, spec, null, row_ins_spec);
           }
-          const tmp_inset = this._manager.create({insert_type: row_ins_spec._owner._owner.insert_type}, false, true);
+          if(!_row) {
+            _row = elm._row;
+          }
+          const tmp_inset = this._manager.create({insert_type: row_ins_spec._owner._owner.insert_type || inserts_types.profile}, false, true);
           const row_prm = {
             clr,
             elm: elm.elm,
@@ -19798,7 +19802,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               return true;
             },
             _row: {
-              len: count_calc_method.is('element') ? 1 : (len_angl?.len || _row.len),
+              len: count_calc_method?.is('element') ? 1 : (len_angl?.len || _row.len),
               angle_hor: 0,
               s: _row.s || 0,
             }

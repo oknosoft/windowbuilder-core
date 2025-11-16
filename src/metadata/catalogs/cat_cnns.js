@@ -774,6 +774,9 @@ exports.CatCnns = class CatCnns extends Object {
           calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
         }
       }
+
+      // доп вставка
+      row_base.inset.dop_spec({row_ins_spec: row_base, elm, ox, spec, len_angl});
     }
   }
 }
