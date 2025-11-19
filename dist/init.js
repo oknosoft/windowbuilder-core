@@ -4758,6 +4758,8 @@ get name_short(){return this._getter('name_short')}
 set name_short(v){this._setter('name_short',v)}
 get applying(){return this._getter('applying')}
 set applying(v){this._setter('applying',v)}
+get direction(){return this._getter('direction')}
+set direction(v){this._setter('direction',v)}
 get formula(){return this._getter('formula')}
 set formula(v){this._setter('formula',v)}
 get note(){return this._getter('note')}
