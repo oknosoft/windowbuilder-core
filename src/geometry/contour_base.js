@@ -3123,26 +3123,28 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // в створках без импоста штульповые не используем и наоборот
-    for(const row of furn.open_tunes) {
-      const elm = this.profile_by_furn_side(row.side, cache);
-      const nearest = elm && elm.nearest();
-      if(nearest) {
-        if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {
-          if(row.shtulp_available) {
-            if(bool) {
-              return true;
+    if(!furn.direction) {
+      for(const row of furn.open_tunes) {
+        const elm = this.profile_by_furn_side(row.side, cache);
+        const nearest = elm && elm.nearest();
+        if(nearest) {
+          if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {
+            if(row.shtulp_available) {
+              if(bool) {
+                return true;
+              }
+              !err.includes(elm) && err.push(elm);
             }
-            !err.includes(elm) && err.push(elm);
           }
-        }
-        else {
-          const {elm_type, inset} = nearest;
-          if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
-            (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
-            if(bool) {
-              return true;
+          else {
+            const {elm_type, inset} = nearest;
+            if((row.shtulp_available && (elm_type !== elm_types.impost || !sys.is_elm_type(inset, elm_types.shtulp))) ||
+              (!row.shtulp_available && !sys.is_elm_type(inset, [elm_types.rama, elm_types.flap, elm_types.impost]))) {
+              if(bool) {
+                return true;
+              }
+              !err.includes(elm) && err.push(elm);
             }
-            !err.includes(elm) && err.push(elm);
           }
         }
       }
