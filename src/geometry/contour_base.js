@@ -228,10 +228,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     // оповещаем мир о новых слоях
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
     if(layer) {
-      if(contour.flipped && parent === layer.children.topLayers) {
+      let {flipped} = contour;
+      if(kind === 5 && row?.dop?.region > 1) {
+        flipped = !flipped;
+      }
+      if(flipped && parent === layer.children.topLayers) {
         contour.parent = layer.children.bottomLayers;
       }
-      else if(parent === layer.children.bottomLayers && !contour.flipped) {
+      else if(parent === layer.children.bottomLayers && !flipped) {
         contour.parent = layer.children.topLayers;
       }
     }
@@ -1997,6 +2001,43 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   }
 
+  draw_selection() {
+    const {layer, project: {_scope}, l_visualization} = this;
+    if(!layer) {
+      let {hatching} = l_visualization.children;
+      if(_scope.consts.tab === 'stv') {
+        const {fillings} = this;
+        const all = this.getItems({class: ProfileItem}).concat(fillings);
+        if(all.some(item => item.selected)) {
+          if(!hatching) {
+            hatching = new new paper.Group({parent: l_visualization, name: 'hatching'});
+          }
+          let hPath = new paper.Path({insert: false});
+          for(const {path} of all) {
+            hPath = hPath.unite(path);
+          }
+          const {bounds} = hPath;
+          const delta = 80;
+          const left = bounds.left - bounds.height * 0.75;
+          const right = bounds.right + bounds.height * 0.75;
+          const top = bounds.top - delta;
+          const hypotenuse = Math.max(bounds.height, bounds.width) * Math.sqrt(2) + delta * 4;
+          for(const x = bounds.left; x < right; x += delta) {
+            const line = new paper.Path({insert: false, segments: [[x, top], [x + hypotenuse, top + hypotenuse]]});
+            const intersections = hPath.getIntersections(line);
+            if(intersections.length === 2) {
+              
+            }
+          }
+          hatching = null;
+        }
+      }
+      if(hatching) {
+        hatching.remove();
+      }      
+    }
+  }
+
   /**
    * Рисует дополнительную визуализацию. Данные берёт из спецификации и проблемных соединений
    */
@@ -2108,6 +2149,8 @@ class Contour extends AbstractFilling(paper.Layer) {
     for(const contour of contours){
       contour.draw_visualization(contour.prod_ox === prod_ox ? rows : null, region);
     }
+    
+    this.draw_selection();
 
   }
 

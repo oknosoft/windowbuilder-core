@@ -1510,7 +1510,7 @@ class ProfileItem extends GeneratrixElement {
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
 
-    if(selection) {
+    if(selection && project._scope.consts.tab !== 'stv') {
 
       const {inner, outer} = this.rays;
 
@@ -1566,11 +1566,9 @@ class ProfileItem extends GeneratrixElement {
       }
 
     }
-    else {
-      if(this._hatching) {
-        this._hatching.remove();
-        this._hatching = null;
-      }
+    else if(this._hatching) {
+      this._hatching.remove();
+      this._hatching = null;
     }
   }
 

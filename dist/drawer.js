@@ -2000,10 +2000,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
     if(layer) {
-      if(contour.flipped && parent === layer.children.topLayers) {
+      let {flipped} = contour;
+      if(kind === 5 && row?.dop?.region > 1) {
+        flipped = !flipped;
+      }
+      if(flipped && parent === layer.children.topLayers) {
         contour.parent = layer.children.bottomLayers;
       }
-      else if(parent === layer.children.bottomLayers && !contour.flipped) {
+      else if(parent === layer.children.bottomLayers && !flipped) {
         contour.parent = layer.children.topLayers;
       }
     }
@@ -3302,6 +3306,41 @@ class Contour extends AbstractFilling(paper.Layer) {
     l_visualization._opening2.removeChildren();
     return furn.is_sliding ? sliding() : rotary_folding();
   }
+  draw_selection() {
+    const {layer, project: {_scope}, l_visualization} = this;
+    if(!layer) {
+      let {hatching} = l_visualization.children;
+      if(_scope.consts.tab === 'stv') {
+        const {fillings} = this;
+        const all = this.getItems({class: ProfileItem}).concat(fillings);
+        if(all.some(item => item.selected)) {
+          if(!hatching) {
+            hatching = new new paper.Group({parent: l_visualization, name: 'hatching'});
+          }
+          let hPath = new paper.Path({insert: false});
+          for(const {path} of all) {
+            hPath = hPath.unite(path);
+          }
+          const {bounds} = hPath;
+          const delta = 80;
+          const left = bounds.left - bounds.height * 0.75;
+          const right = bounds.right + bounds.height * 0.75;
+          const top = bounds.top - delta;
+          const hypotenuse = Math.max(bounds.height, bounds.width) * Math.sqrt(2) + delta * 4;
+          for(const x = bounds.left; x < right; x += delta) {
+            const line = new paper.Path({insert: false, segments: [[x, top], [x + hypotenuse, top + hypotenuse]]});
+            const intersections = hPath.getIntersections(line);
+            if(intersections.length === 2) {
+            }
+          }
+          hatching = null;
+        }
+      }
+      if(hatching) {
+        hatching.remove();
+      }      
+    }
+  }
   draw_visualization(rows, region = 0) {
     const {profiles, sectionals, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
@@ -3387,6 +3426,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     for(const contour of contours){
       contour.draw_visualization(contour.prod_ox === prod_ox ? rows : null, region);
     }
+    this.draw_selection();
   }
   draw_glass_numbers() {
     const {l_visualization} = this;
@@ -9950,7 +9990,7 @@ class ProfileItem extends GeneratrixElement {
     super.setSelection(selection);
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
-    if(selection) {
+    if(selection && project._scope.consts.tab !== 'stv') {
       const {inner, outer} = this.rays;
       if(this._hatching) {
         this._hatching.removeChildren();
@@ -10000,11 +10040,9 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
-    else {
-      if(this._hatching) {
-        this._hatching.remove();
-        this._hatching = null;
-      }
+    else if(this._hatching) {
+      this._hatching.remove();
+      this._hatching = null;
     }
   }
   ruler_line_select(mode) {
