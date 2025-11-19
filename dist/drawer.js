@@ -3307,34 +3307,48 @@ class Contour extends AbstractFilling(paper.Layer) {
     return furn.is_sliding ? sliding() : rotary_folding();
   }
   draw_selection() {
-    const {layer, project: {_scope}, l_visualization} = this;
+    const {layer, project: {_scope: {consts}}, l_visualization} = this;
     if(!layer) {
       let {hatching} = l_visualization.children;
-      if(_scope.consts.tab === 'stv') {
+      if(consts.tab === 'stv' && consts.mode === 'select') {
+        l_visualization.opacity = 0.4;
         const {fillings} = this;
         const all = this.getItems({class: ProfileItem}).concat(fillings);
         if(all.some(item => item.selected)) {
+          l_visualization.opacity = 0.6;
           if(!hatching) {
-            hatching = new new paper.Group({parent: l_visualization, name: 'hatching'});
+            hatching = new paper.CompoundPath({
+              parent: l_visualization,
+              guide: true,
+              strokeColor: 'grey',
+              strokeScaling: false,
+              opacity: 0.8,
+              name: 'hatching'
+            });
           }
           let hPath = new paper.Path({insert: false});
           for(const {path} of all) {
             hPath = hPath.unite(path);
           }
           const {bounds} = hPath;
-          const delta = 80;
-          const left = bounds.left - bounds.height * 0.75;
+          const delta = 90;
+          const left = bounds.left - bounds.height;
           const right = bounds.right + bounds.height * 0.75;
           const top = bounds.top - delta;
           const hypotenuse = Math.max(bounds.height, bounds.width) * Math.sqrt(2) + delta * 4;
-          for(const x = bounds.left; x < right; x += delta) {
+          for(let x = left; x < right; x += delta) {
             const line = new paper.Path({insert: false, segments: [[x, top], [x + hypotenuse, top + hypotenuse]]});
             const intersections = hPath.getIntersections(line);
             if(intersections.length === 2) {
+              hatching.moveTo(intersections[0].point);
+              hatching.lineTo(intersections[1].point);
             }
           }
           hatching = null;
         }
+      }
+      else {
+        l_visualization.opacity = 1;
       }
       if(hatching) {
         hatching.remove();
