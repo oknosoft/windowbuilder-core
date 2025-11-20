@@ -1995,13 +1995,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
         if(!cond) {
-          characteristic.specification.clear({dop: -3});
+          characteristic.specification.clear({dop: {in: [-3, -7]}});
         }
         else if(cond === '2D') {
-          characteristic.specification.clear({dop: -3, s: {ne: 0}});
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: {ne: 0}});
         }
         else {
-          characteristic.specification.clear({dop: -3, s: 0});
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
         }
         
         const {origin} = characteristic;

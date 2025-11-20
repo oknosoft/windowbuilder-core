@@ -3374,12 +3374,12 @@ class Contour extends AbstractFilling(paper.Layer) {
         rows.push(row);
       };
       rows = [];
-      prod_ox.specification.find_rows({dop: -1}, push);
+      prod_ox.specification.find_rows({dop: {in: [-1, -5]}}, push);
       if(glass_separately) {
         for(const elm of glasses) {
           if(glass_separately?.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm})) {
             const ox = cat.characteristics.find({leading_product: _ox, leading_elm: elm.elm});
-            ox?.specification?.find_rows({dop: -1}, push);
+            ox?.specification?.find_rows({dop: {in: [-1, -5]}}, push);
           }
         }
       }
@@ -17447,6 +17447,9 @@ class ProductsBuilding {
     }
     if(row_base?.stage && !row_base.stage.empty()) {
       row_spec.stage = row_base.stage;
+      if(row_base.demand && row_spec.dop <= 0) {
+        row_spec.dop -=4;
+      }
     }
     if(row_base?.region) {
       row_spec.region = row_base.region;
@@ -22626,13 +22629,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
         if(!cond) {
-          characteristic.specification.clear({dop: -3});
+          characteristic.specification.clear({dop: {in: [-3, -7]}});
         }
         else if(cond === '2D') {
-          characteristic.specification.clear({dop: -3, s: {ne: 0}});
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: {ne: 0}});
         }
         else {
-          characteristic.specification.clear({dop: -3, s: 0});
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
         }
         const {origin} = characteristic;
         if(origin instanceof CatInsert_bind && origin.calc_order) {

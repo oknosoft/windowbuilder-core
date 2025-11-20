@@ -1124,6 +1124,9 @@ class ProductsBuilding {
     }
     if(row_base?.stage && !row_base.stage.empty()) {
       row_spec.stage = row_base.stage;
+      if(row_base.demand && row_spec.dop <= 0) {
+        row_spec.dop -=4;
+      }
     }
     if(row_base?.region) {
       row_spec.region = row_base.region;
@@ -1284,7 +1287,10 @@ class ProductsBuilding {
 
     const {qty, len, nom, _obj} = row_spec;
     if(!qty) {
-      // dop=-1 - визуализация, dop=-2 - техоперация,
+      // dop=-1 - визуализация
+      // dop=-2 - техоперация
+      // dop=-3 - обрезь
+      // dop<=-4 - учитывать в потребности
       if(_obj.dop >= 0) {
         spec.del(row_spec, true);
       }

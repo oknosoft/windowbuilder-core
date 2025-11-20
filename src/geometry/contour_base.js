@@ -2077,13 +2077,13 @@ class Contour extends AbstractFilling(paper.Layer) {
         rows.push(row);
       };
       rows = [];
-      prod_ox.specification.find_rows({dop: -1}, push);
+      prod_ox.specification.find_rows({dop: {in: [-1, -5]}}, push);
       // для заполнений отдельно, дополняем строки визуализации
       if(glass_separately) {
         for(const elm of glasses) {
           if(glass_separately?.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm})) {
             const ox = cat.characteristics.find({leading_product: _ox, leading_elm: elm.elm});
-            ox?.specification?.find_rows({dop: -1}, push);
+            ox?.specification?.find_rows({dop: {in: [-1, -5]}}, push);
           }
         }
       }

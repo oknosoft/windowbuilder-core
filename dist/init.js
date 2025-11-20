@@ -4304,7 +4304,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
           }
         }
 
-        if(row_spec.dop === -1 && len_angl.curr && nom.visualization.mode === 3) {
+        if((row_spec.dop === -1 || row_spec.dop === -5) && len_angl.curr && nom.visualization.mode === 3) {
           const {sub_path, outer, profile: {generatrix}} = len_angl.curr;
           const pt = generatrix.getNearestPoint(sub_path[outer ? 'lastSegment' : 'firstSegment'].point);
           row_spec.width = generatrix.getOffsetOf(pt) / 1000;
