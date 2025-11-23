@@ -3308,13 +3308,22 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   draw_selection() {
     const {layer, project: {_scope: {consts}}, l_visualization} = this;
+    let stamp = 0;
     if(!layer) {
-      let {hatching} = l_visualization.children;
+      let {hatching, hatchingOrder} = l_visualization.children;
+      if(hatchingOrder) {
+        hatchingOrder.remove();
+      }
       if(consts.tab === 'stv' && consts.mode === 'select') {
         l_visualization.opacity = 0.4;
         const {fillings} = this;
         const all = this.getItems({class: ProfileItem}).concat(fillings);
-        if(all.some(item => item.selected)) {
+        if(all.some(item => {
+          if(item.selected) {
+            stamp = item._attr.selectionStamp;
+            return true;
+          }
+        })) {
           l_visualization.opacity = 0.6;
           if(!hatching) {
             hatching = new paper.CompoundPath({
@@ -3352,7 +3361,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       if(hatching) {
         hatching.remove();
-      }      
+      }
+      return stamp;
     }
   }
   draw_visualization(rows, region = 0) {
@@ -6834,6 +6844,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
   }
   setSelection(selection) {
+    if(selection && !this.getSelection()) {
+      this._attr.selectionStamp = Date.now();
+    }
     super.setSelection(selection);
     this.path.setSelection(selection);
   }
@@ -9999,14 +10012,17 @@ class ProfileItem extends GeneratrixElement {
     delete _attr.d0;
   }
   setSelection(selection) {
-    const {_attr: {generatrix, path}, project} = this;
+    const {_attr: {generatrix, path}, project: {builder_props, _scope: {consts}}} = this;
     if(!generatrix || !path) {
       return;
+    }
+    if(selection && !this.getSelection()) {
+      this._attr.selectionStamp = Date.now();
     }
     super.setSelection(selection);
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
-    if(selection && project._scope.consts.tab !== 'stv') {
+    if(selection && (consts.tab !== 'stv' || consts.mode !== 'select')) {
       const {inner, outer} = this.rays;
       if(this._hatching) {
         this._hatching.removeChildren();
@@ -10020,7 +10036,7 @@ class ProfileItem extends GeneratrixElement {
         });
       }
       path.setSelection(0);
-      if([0, 1].includes(project.builder_props.mode) && path.length) {
+      if([0, 1].includes(builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
           const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
@@ -15394,6 +15410,36 @@ class Scheme extends paper.Project {
   }
   default_clr(attr) {
     return this.ox.clr;
+  }
+  draw_selection() {
+    for(const profile of this.selected_profiles(true)) {
+      profile.setSelection(1);
+    }
+    const smap = new Map();
+    for(const layer of this.layers) {
+      const stamp = layer.draw_selection?.();
+      if(stamp) {
+        smap.set(stamp, layer);
+      }
+    }
+    if(smap.size > 1) {
+      const order = Array.from(smap.keys()).sort((a, b) => a - b);
+      order.forEach((stamp, index) => {
+        const {l_visualization, bounds} = smap.get(stamp);
+        const {elm_font_size, font_family} = this._scope.consts;
+        new paper.PointText({
+          parent: l_visualization,
+          name: 'hatchingOrder',
+          justification: 'center',
+          fillColor: 'black',
+          fontFamily: font_family,
+          fontSize: elm_font_size * 3,
+          guide: true,
+          content: (index + 1).toFixed(),
+          point: bounds.center,
+        });
+      })
+    }
   }
   selected_profiles(all) {
     const res = [];

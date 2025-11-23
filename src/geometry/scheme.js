@@ -2117,6 +2117,37 @@ class Scheme extends paper.Project {
     return this.ox.clr;
   }
 
+  draw_selection() {
+    for(const profile of this.selected_profiles(true)) {
+      profile.setSelection(1);
+    }
+    const smap = new Map();
+    for(const layer of this.layers) {
+      const stamp = layer.draw_selection?.();
+      if(stamp) {
+        smap.set(stamp, layer);
+      }
+    }
+    if(smap.size > 1) {
+      const order = Array.from(smap.keys()).sort((a, b) => a - b);
+      order.forEach((stamp, index) => {
+        const {l_visualization, bounds} = smap.get(stamp);
+        const {elm_font_size, font_family} = this._scope.consts;
+        new paper.PointText({
+          parent: l_visualization,
+          name: 'hatchingOrder',
+          justification: 'center',
+          fillColor: 'black',
+          fontFamily: font_family,
+          fontSize: elm_font_size * 3,
+          guide: true,
+          content: (index + 1).toFixed(),
+          point: bounds.center,
+        });
+      })
+    }
+  }
+
   /**
    * @summary Выделенные профили
    * @desc Возвращает массив выделенных профилей. Выделенным считаем профиль, у которого выделены `b` и `e` или выделен сам профиль при невыделенных узлах

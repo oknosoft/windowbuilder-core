@@ -357,6 +357,9 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   setSelection(selection) {
+    if(selection && !this.getSelection()) {
+      this._attr.selectionStamp = Date.now();
+    }
     super.setSelection(selection);
     this.path.setSelection(selection);
   }

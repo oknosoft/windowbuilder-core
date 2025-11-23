@@ -2003,13 +2003,22 @@ class Contour extends AbstractFilling(paper.Layer) {
 
   draw_selection() {
     const {layer, project: {_scope: {consts}}, l_visualization} = this;
+    let stamp = 0;
     if(!layer) {
-      let {hatching} = l_visualization.children;
+      let {hatching, hatchingOrder} = l_visualization.children;
+      if(hatchingOrder) {
+        hatchingOrder.remove();
+      }
       if(consts.tab === 'stv' && consts.mode === 'select') {
         l_visualization.opacity = 0.4;
         const {fillings} = this;
         const all = this.getItems({class: ProfileItem}).concat(fillings);
-        if(all.some(item => item.selected)) {
+        if(all.some(item => {
+          if(item.selected) {
+            stamp = item._attr.selectionStamp;
+            return true;
+          }
+        })) {
           l_visualization.opacity = 0.6;
           if(!hatching) {
             hatching = new paper.CompoundPath({
@@ -2047,7 +2056,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       if(hatching) {
         hatching.remove();
-      }      
+      }
+      return stamp;
     }
   }
 

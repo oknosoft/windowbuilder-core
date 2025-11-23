@@ -1500,9 +1500,12 @@ class ProfileItem extends GeneratrixElement {
   }
 
   setSelection(selection) {
-    const {_attr: {generatrix, path}, project} = this;
+    const {_attr: {generatrix, path}, project: {builder_props, _scope: {consts}}} = this;
     if(!generatrix || !path) {
       return;
+    }
+    if(selection && !this.getSelection()) {
+      this._attr.selectionStamp = Date.now();
     }
 
     super.setSelection(selection);
@@ -1510,7 +1513,7 @@ class ProfileItem extends GeneratrixElement {
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
 
-    if(selection && project._scope.consts.tab !== 'stv') {
+    if(selection && (consts.tab !== 'stv' || consts.mode !== 'select')) {
 
       const {inner, outer} = this.rays;
 
@@ -1528,7 +1531,7 @@ class ProfileItem extends GeneratrixElement {
 
       path.setSelection(0);
 
-      if([0, 1].includes(project.builder_props.mode) && path.length) {
+      if([0, 1].includes(builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
           const np = inner.getNormalAt(t).multiply(400).rotate(-35).negate();
