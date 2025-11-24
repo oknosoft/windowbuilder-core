@@ -2073,8 +2073,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     return [1, 10, 11].includes(kind) ? layer : null;
   }
   get_svg(attr = {}) {
-    for(const item of this.children) {
-      item.selected = false;
+    const selected = [];
+    for(const item of this.fillings.concat(this.profiles)) {
+      if(item.selected) {
+        item.selected = false;
+        selected.push(item)
+      }
     }
     const options = attr.export_options || {};
     if(!options.precision) {
@@ -2087,6 +2091,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     svg.setAttribute('width', bounds.width + 40);
     svg.setAttribute('height', bounds.height);
     svg.querySelector('g').removeAttribute('transform');
+    for(const item of selected) {
+      item.selected = true;
+    }
     return svg.outerHTML;
   }
   bring(direction = 'up', lock) {
@@ -9565,32 +9572,33 @@ class ProfileItem extends GeneratrixElement {
   cnn_point(node, point) {
   }
   get pos() {
-    const {top, bottom, left, right} = this.layer.profiles_by_side();
+    const {layer, orientation} = this;
+    const {top, bottom, left, right} = layer.profiles_by_side();
     const {Верх, Низ, Лев, Прав, Центр} = $p.enm.positions;
-    if(top === this) {
+    if(top === this && !orientation.is('vert')) {
       return Верх;
     }
-    if(bottom === this) {
+    if(bottom === this && !orientation.is('vert')) {
       return Низ;
     }
-    if(left === this) {
+    if(left === this && !orientation.is('hor')) {
       return Лев;
     }
-    if(right === this) {
+    if(right === this && !orientation.is('hor')) {
       return Прав;
     }
     const {x1, x2, y1, y2} = this;
     const delta = 60;
-    if(Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
+    if(!orientation.is('vert') && Math.abs(top.y1 + top.y2 - y1 - y2) < delta) {
       return Верх;
     }
-    if(Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
+    if(!orientation.is('vert') && Math.abs(bottom.y1 + bottom.y2 - y1 - y2) < delta) {
       return Низ;
     }
-    if(Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
+    if(!orientation.is('hor') && Math.abs(left.x1 + left.x2 - x1 - x2) < delta) {
       return Лев;
     }
-    if(Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
+    if(!orientation.is('hor') && Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
       return Прав;
     }
     return Центр;
@@ -15415,7 +15423,11 @@ class Scheme extends paper.Project {
     for(const profile of this.selected_profiles(true)) {
       profile.setSelection(1);
     }
-    const smap = new Map();
+    if(!this._attr.smap) {
+      this._attr.smap = new Map();
+    }
+    const {smap} = this._attr;
+    smap.clear();
     for(const layer of this.layers) {
       const stamp = layer.draw_selection?.();
       if(stamp) {
@@ -15423,8 +15435,8 @@ class Scheme extends paper.Project {
       }
     }
     if(smap.size > 1) {
-      const order = Array.from(smap.keys()).sort((a, b) => a - b);
-      order.forEach((stamp, index) => {
+      smap.order = Array.from(smap.keys()).sort((a, b) => a - b);
+      smap.order.forEach((stamp, index) => {
         const {l_visualization, bounds} = smap.get(stamp);
         const {elm_font_size, font_family} = this._scope.consts;
         new paper.PointText({

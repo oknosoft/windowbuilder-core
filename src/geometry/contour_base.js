@@ -340,8 +340,12 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @param [attr] {Object}
    */
   get_svg(attr = {}) {
-    for(const item of this.children) {
-      item.selected = false;
+    const selected = [];
+    for(const item of this.fillings.concat(this.profiles)) {
+      if(item.selected) {
+        item.selected = false;
+        selected.push(item)
+      }
     }
     const options = attr.export_options || {};
     if(!options.precision) {
@@ -356,6 +360,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     svg.setAttribute('width', bounds.width + 40);
     svg.setAttribute('height', bounds.height);
     svg.querySelector('g').removeAttribute('transform');
+
+    for(const item of selected) {
+      item.selected = true;
+    }
 
     return svg.outerHTML;
   }

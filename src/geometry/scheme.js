@@ -2121,7 +2121,11 @@ class Scheme extends paper.Project {
     for(const profile of this.selected_profiles(true)) {
       profile.setSelection(1);
     }
-    const smap = new Map();
+    if(!this._attr.smap) {
+      this._attr.smap = new Map();
+    }
+    const {smap} = this._attr;
+    smap.clear();
     for(const layer of this.layers) {
       const stamp = layer.draw_selection?.();
       if(stamp) {
@@ -2129,8 +2133,8 @@ class Scheme extends paper.Project {
       }
     }
     if(smap.size > 1) {
-      const order = Array.from(smap.keys()).sort((a, b) => a - b);
-      order.forEach((stamp, index) => {
+      smap.order = Array.from(smap.keys()).sort((a, b) => a - b);
+      smap.order.forEach((stamp, index) => {
         const {l_visualization, bounds} = smap.get(stamp);
         const {elm_font_size, font_family} = this._scope.consts;
         new paper.PointText({
