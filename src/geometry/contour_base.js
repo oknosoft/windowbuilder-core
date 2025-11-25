@@ -2028,7 +2028,10 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
         })) {
           l_visualization.opacity = 0.6;
-          if(!hatching) {
+          if(hatching) {
+            hatching.removeChildren();
+          }
+          else {
             hatching = new paper.CompoundPath({
               parent: l_visualization,
               guide: true,
