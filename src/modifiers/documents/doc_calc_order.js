@@ -350,7 +350,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const sobjs = this.product_rows(true, attr);
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
     
-    return ($p.job_prm.builder.cx_in_order && obj_delivery_state !== Шаблон) ?
+    return ($p.job_prm.builder?.cx_in_order && obj_delivery_state !== Шаблон) ?
       this.save_with_cx(sobjs, db) : this.save_normal(sobjs, db);
     
   }
@@ -756,7 +756,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   load_cx() {
-    if($p.job_prm.builder.cx_in_order) {
+    if($p.job_prm.builder?.cx_in_order) {
       const calc_order = this.ref;
       for(const {characteristic, dop} of this.production) {
         if(!characteristic.empty()) {

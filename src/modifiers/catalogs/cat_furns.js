@@ -246,31 +246,32 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
 
             const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
             proc_row.handle_height_max = contour.cnstr;
+            let elmFlipped = elm;
             if([nea, through, inverse].includes(dop_row.transfer_option)){
-              let nearest = elm.nearest(true);
+              elmFlipped = elm.nearest(true);
               if(dop_row.transfer_option == through){
-                const joined = nearest.joined_nearests().reduce((acc, cur) => {
+                const joined = elmFlipped.joined_nearests().reduce((acc, cur) => {
                   if(cur !== elm){
                     acc.push(cur);
                   }
                   return acc;
                 }, []);
                 if(joined.length){
-                  nearest = joined[0];
+                  elmFlipped = joined[0];
                 }
-                else if(nearest.nearest(true)) {
-                  nearest = nearest.nearest(true);
+                else if(elmFlipped.nearest(true)) {
+                  elmFlipped = elmFlipped.nearest(true);
                 }
               }
               const {outer} = elm.rays;
-              const nouter = nearest.rays.outer;
+              const nouter = elmFlipped.rays.outer;
               const point = outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
-              proc_row.handle_height_min = nearest.elm;
+              proc_row.handle_height_min = elmFlipped.elm;
               if(dop_row.transfer_option == inverse){
-                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(2))) - nouter.getOffsetOf(nouter.getNearestPoint(point));
+                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(elmFlipped.corns(2))) - nouter.getOffsetOf(nouter.getNearestPoint(point));
               }
               else {
-                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(point)) - nouter.getOffsetOf(nouter.getNearestPoint(nearest.corns(1)));
+                proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(point)) - nouter.getOffsetOf(nouter.getNearestPoint(elmFlipped.corns(1)));
               }
             }
             else{
@@ -278,7 +279,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               proc_row.coefficient = coordin;
             }
 
-            if(elm.flipped) {
+            if(elmFlipped.flipped) {
               proc_row.coefficient =  len - proc_row.coefficient;
             }
             // если сказано учесть припуск - добавляем dx0
