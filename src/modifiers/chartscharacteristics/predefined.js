@@ -493,7 +493,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
         case 'width':
           _data._formula = function (obj) {
-            return obj?.ox?.y || 0;
+            return (obj?.elm instanceof Sectional) ? obj.elm.length : obj?.ox?.y || 0;
           };
           break;
           

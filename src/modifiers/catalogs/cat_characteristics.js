@@ -162,18 +162,27 @@ $p.cat.characteristics.metadata('glass_specification').fields.region = {
  * @param h {Number}
  * @param layer {paper.Layer}
  */
-$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer, parent}) {
-  this.x = bounds ? bounds.width.round(4) : 0;
-  this.y = bounds ? bounds.height.round(4) : 0;
+$p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer, parent, sectionals}) {
   this.is_rectangular = is_rectangular;
-  if (layer) {
-    this.w = w.round(4);
-    this.h = h.round(4);
-    this.dop = {grp: parent === layer.children.bottomLayers ? 'bottom' : 'top'}
-  }
-  else {
+  if(sectionals.length) {
+    const {length, width} = sectionals[0];
+    this.x = width;
+    this.y = length;
     this.w = 0;
     this.h = 0;
+  }
+  else {
+    this.x = bounds ? bounds.width.round(4) : 0;
+    this.y = bounds ? bounds.height.round(4) : 0;
+    if (layer) {
+      this.w = w.round(4);
+      this.h = h.round(4);
+      this.dop = {grp: parent === layer.children.bottomLayers ? 'bottom' : 'top'}
+    }
+    else {
+      this.w = 0;
+      this.h = 0;
+    }
   }
 };
 

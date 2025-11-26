@@ -549,7 +549,7 @@ class Sectional extends GeneratrixElement {
    */
   save_coordinates() {
 
-    const {_row, generatrix} = this;
+    const {_row, generatrix, layer} = this;
 
     if(!generatrix){
       return;
