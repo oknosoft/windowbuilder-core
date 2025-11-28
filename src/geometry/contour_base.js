@@ -308,7 +308,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   prod_layer() {
     let {kind, _owner} = this._row;
     let layer = this;
-    const {separate_frame_layers} = $p.job_prm.builder;
+    let {separate_frame_layers} = $p.job_prm.builder;
+    if(separate_frame_layers && this.project.ox.calc_order.obj_delivery_state.is('Шаблон')) {
+      separate_frame_layers = false;
+    }
     while (kind === 0 && layer) {
       
       if(!layer.layer) {

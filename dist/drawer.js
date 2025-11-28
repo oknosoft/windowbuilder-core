@@ -2049,7 +2049,10 @@ class Contour extends AbstractFilling(paper.Layer) {
   prod_layer() {
     let {kind, _owner} = this._row;
     let layer = this;
-    const {separate_frame_layers} = $p.job_prm.builder;
+    let {separate_frame_layers} = $p.job_prm.builder;
+    if(separate_frame_layers && this.project.ox.calc_order.obj_delivery_state.is('Шаблон')) {
+      separate_frame_layers = false;
+    }
     while (kind === 0 && layer) {
       if(!layer.layer) {
         if(separate_frame_layers) {
@@ -15647,7 +15650,7 @@ class Scheme extends paper.Project {
     return sketch_view;
   }
   separate_frame_root() {
-    if($p.job_prm.builder.separate_frame_layers) {
+    if($p.job_prm.builder.separate_frame_layers && !this.ox.calc_order.obj_delivery_state.is('Шаблон')) {
       const {contours} = this;
       if(contours.length > 1) {
         let min = Infinity, root;

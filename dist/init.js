@@ -9766,7 +9766,7 @@ class ParamsRow extends TabularSectionRow{
     const {properties} = $p.cch;
     if(typeof param === 'string' && param.length === 36) {
       const test = properties.by_ref[param];
-      if(!test.is_new()) {
+      if(test && !test.is_new()) {
         return test;
       }
     }

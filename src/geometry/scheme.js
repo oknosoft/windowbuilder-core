@@ -2430,7 +2430,7 @@ class Scheme extends paper.Project {
   }
 
   separate_frame_root() {
-    if($p.job_prm.builder.separate_frame_layers) {
+    if($p.job_prm.builder.separate_frame_layers && !this.ox.calc_order.obj_delivery_state.is('Шаблон')) {
       const {contours} = this;
       if(contours.length > 1) {
         let min = Infinity, root;
