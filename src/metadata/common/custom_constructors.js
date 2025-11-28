@@ -10,7 +10,15 @@
  */
 class ParamsRow extends TabularSectionRow{
   get param(){
-    return this._getter('param') || $p.cch.properties.get();
+    const {param} = this._obj;
+    const {properties} = $p.cch;
+    if(typeof param === 'string' && param.length === 36) {
+      const test = properties.by_ref[param];
+      if(!test.is_new()) {
+        return test;
+      }
+    }
+    return this._getter('param') || properties.get();
   }
   set param(v){this._setter('param',v)}
   get value(){
