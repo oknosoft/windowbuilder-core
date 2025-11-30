@@ -161,7 +161,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
   }
 
-  createProfile({b, e, cnns}) {
+  createProfile({b, e, cnns, clr}) {
     const attr = {
       parent: this.children.profiles,
       generatrix: new paper.Path({insert: false, segments: [b, e]}),
@@ -173,6 +173,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(cnns?.e?.profile) {
 
     }
+    profile.clr = clr || this.prod_ox.clr;
     return profile;
   }
 
