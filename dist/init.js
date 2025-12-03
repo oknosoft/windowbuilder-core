@@ -1688,12 +1688,16 @@ get department(){return this._getter('department')}
 set department(v){this._setter('department',v)}
 get plan_multiplicity(){return this._getter('plan_multiplicity')}
 set plan_multiplicity(v){this._setter('plan_multiplicity',v)}
+get available(){return this._getter('available')}
+set available(v){this._setter('available',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get work_center_kinds(){return this._getter_ts('work_center_kinds')}
 set work_center_kinds(v){this._setter_ts('work_center_kinds',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+get time_standard(){return this._getter_ts('time_standard')}
+set time_standard(v){this._setter_ts('time_standard',v)}
 }
 $p.CatWork_centers = CatWork_centers;
 class CatWork_centersWork_center_kindsRow extends TabularSectionRow{
@@ -1701,6 +1705,13 @@ get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
 }
 $p.CatWork_centersWork_center_kindsRow = CatWork_centersWork_center_kindsRow;
+class CatWork_centersTime_standardRow extends TabularSectionRow{
+get recipient(){return this._getter('recipient')}
+set recipient(v){this._setter('recipient',v)}
+get event_time(){return this._getter('event_time')}
+set event_time(v){this._setter('event_time',v)}
+}
+$p.CatWork_centersTime_standardRow = CatWork_centersTime_standardRow;
 $p.cat.create('work_centers');
 class CatSpecifications extends CatObj{
 get calc_order(){return this._getter('calc_order')}
