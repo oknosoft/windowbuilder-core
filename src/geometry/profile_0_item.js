@@ -2878,6 +2878,20 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
 
+  selected_corn() {
+    const {generatrix, path} = this;
+    if(generatrix.firstSegment.selected && !generatrix.lastSegment.selected) {
+      return generatrix.firstSegment;
+    }
+    else if(!generatrix.firstSegment.selected && generatrix.lastSegment.selected) {
+      return generatrix.lastSegment;
+    }
+    const tmp = path.segments.filter(v => v.selected);
+    if(tmp.length === 1) {
+      return tmp[0];
+    }
+  }
+
   /**
    * Признак прямолинейности
    * Вычисляется, как `is_linear()` {{#crossLink "BuilderElement/generatrix:property"}}образующей{{/crossLink}}

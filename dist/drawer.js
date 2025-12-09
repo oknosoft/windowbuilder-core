@@ -7996,14 +7996,14 @@ class GeneratrixElement extends BuilderElement {
     rays.clear();
     project.register_change();
   }
-  move_points(delta, all_points, start_point) {
+  move_points(delta, all_points, start_point, direct) {
     if(!delta.length){
       return;
     }
     const	other = [];
     const noti = {type: consts.move_points, profiles: [this], points: []};
     let changed;
-    if(!all_points){
+    if(!all_points && !direct){
       all_points = !this.generatrix.segments.some((segm) => {
         if (segm.selected)
           return true;
@@ -8012,7 +8012,7 @@ class GeneratrixElement extends BuilderElement {
     const {isegments} = this;
     this.generatrix.segments.forEach((segm) => {
       let cnn_point;
-      if (segm.selected || all_points){
+      if (direct ? direct.includes(segm) : (segm.selected || all_points)){
         const noti_points = {old: segm.point.clone(), delta: delta};
         const free_point = segm.point.add(delta);
         if(segm.point == this.b){
@@ -11137,6 +11137,19 @@ class ProfileItem extends GeneratrixElement {
       }
     }
     return res;
+  }
+  selected_corn() {
+    const {generatrix, path} = this;
+    if(generatrix.firstSegment.selected && !generatrix.lastSegment.selected) {
+      return generatrix.firstSegment;
+    }
+    else if(!generatrix.firstSegment.selected && generatrix.lastSegment.selected) {
+      return generatrix.lastSegment;
+    }
+    const tmp = path.segments.filter(v => v.selected);
+    if(tmp.length === 1) {
+      return tmp[0];
+    }
   }
   is_linear() {
     const {generatrix} = this;
@@ -15465,25 +15478,28 @@ class Scheme extends paper.Project {
     const {selectedItems} = this;
     const {length} = selectedItems;
     for(const item of selectedItems) {
-      if(item instanceof ProfileAddlOuter) {
-        if(res.includes(item)) {
+      const {parent, layer} = item;
+      if(parent instanceof ProfileItem) {
+        if(res.includes(parent)) {
           continue;
         }
-        if(length < 2 || all || !(item.b.selected ^ item.e.selected)) {
-          res.push(item);
+        if(all || !layer.layer || !parent.nearest || !parent.nearest(true) || parent instanceof ProfileAddlOuter || parent instanceof ProfileConnective) {
+          res.push(parent);
         }
       }
-      else {
-        const {parent} = item;
-        if(parent instanceof ProfileItem) {
-          if(all || !item.layer.layer || !parent.nearest || !parent.nearest(true)) {
-            if(res.includes(parent)) {
-              continue;
-            }
-            if(length < 2 || all || !(parent._attr.generatrix.firstSegment.selected ^ parent._attr.generatrix.lastSegment.selected)) {
-              res.push(parent);
-            }
-          }
+    }
+    return res;
+  }
+  selected_nodes() {
+    const res = [];
+    const {selectedItems} = this;
+    const {length} = selectedItems;
+    for(const item of selectedItems) {
+      const {parent} = item;
+      if(parent instanceof ProfileItem && !parent.selected) {
+        const corn = parent.selected_corn();
+        if(corn) {
+          res.push(corn);
         }
       }
     }

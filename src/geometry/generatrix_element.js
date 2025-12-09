@@ -179,8 +179,9 @@ class GeneratrixElement extends BuilderElement {
    * @param delta {paper.Point} - куда и насколько смещать
    * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
    * @param [start_point] {paper.Point} - откуда началось движение
+   * @param [direct] {Array.<paper.Segment>} - конкретные сегменты к сдвигу
    */
-  move_points(delta, all_points, start_point) {
+  move_points(delta, all_points, start_point, direct) {
 
     if(!delta.length){
       return;
@@ -192,7 +193,7 @@ class GeneratrixElement extends BuilderElement {
     let changed;
 
     // если не выделено ни одного сегмента, двигаем все сегменты
-    if(!all_points){
+    if(!all_points && !direct){
       all_points = !this.generatrix.segments.some((segm) => {
         if (segm.selected)
           return true;
@@ -206,7 +207,7 @@ class GeneratrixElement extends BuilderElement {
 
       let cnn_point;
 
-      if (segm.selected || all_points){
+      if (direct ? direct.includes(segm) : (segm.selected || all_points)){
 
         const noti_points = {old: segm.point.clone(), delta: delta};
 
