@@ -17866,7 +17866,7 @@ $p.spec_building = new SpecBuilding($p);
       }
       if(row_spec.width) {
         row_spec.qty = quantity;
-        row_spec.len = (elm.length / 1000).round(3);
+        row_spec.len = ((elm.length || _row.len) / 1000).round(3);
         row_spec.s = (row_spec.len * row_spec.width * (coefficient || 1)).round(4);
         if(algorithm.is('recipe') && clr.composition.count()) {
           for(const crow of clr.composition) {
@@ -19754,20 +19754,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
               }
               row_spec = null;
-              if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
-                row_prm.nom = row_ins_spec.nom;
-                row_prm.inset = row_ins_spec.inset;
-                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
-                row_ins_spec.inset.calculate_spec({
-                  elm: row_prm,
-                  len_angl: tmp_len_angl,
-                  ox,
-                  spec,
-                  clr: clr || elm.clr,
-                  own_row: row_ins_spec});
-                row_prm.nom = null;
-                row_prm.inset = null;
-              }
+              row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: rib.len, angle: rib.angle}), _row});
               if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
                 elm.is_linear = () => rib.profile.is_linear();
                 elm.angle_hor = rib.angle;
@@ -19960,7 +19947,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(!_row) {
             _row = elm._row;
           }
-          const tmp_inset = this._manager.create({insert_type: row_ins_spec._owner._owner.insert_type || inserts_types.profile}, false, true);
+          let {insert_type} = row_ins_spec._owner?._owner || {};
+          if(!insert_type || insert_type.is('mosquito')) {
+            insert_type = inserts_types.profile;
+          }          
+          const tmp_inset = this._manager.create({insert_type}, false, true);
           const row_prm = {
             clr,
             elm: elm.elm,

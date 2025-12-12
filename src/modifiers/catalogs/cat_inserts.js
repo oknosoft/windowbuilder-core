@@ -1320,20 +1320,8 @@
               }
               // спецификация по допвставке
               row_spec = null;
-              if(!row_ins_spec.inset.empty() && row_ins_spec.nom instanceof CatNom) {
-                row_prm.nom = row_ins_spec.nom;
-                row_prm.inset = row_ins_spec.inset;
-                const tmp_len_angl = Object.assign({}, len_angl, {len: rib.len})
-                row_ins_spec.inset.calculate_spec({
-                  elm: row_prm,
-                  len_angl: tmp_len_angl,
-                  ox,
-                  spec,
-                  clr: clr || elm.clr,
-                  own_row: row_ins_spec});
-                row_prm.nom = null;
-                row_prm.inset = null;
-              }
+              row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: rib.len, angle: rib.angle}), _row});
+
               // спецификация по соединениям москитки
               if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
                 elm.is_linear = () => rib.profile.is_linear();
@@ -1546,7 +1534,11 @@
           if(!_row) {
             _row = elm._row;
           }
-          const tmp_inset = this._manager.create({insert_type: row_ins_spec._owner._owner.insert_type || inserts_types.profile}, false, true);
+          let {insert_type} = row_ins_spec._owner?._owner || {};
+          if(!insert_type || insert_type.is('mosquito')) {
+            insert_type = inserts_types.profile;
+          }          
+          const tmp_inset = this._manager.create({insert_type}, false, true);
           const row_prm = {
             clr,
             elm: elm.elm,
