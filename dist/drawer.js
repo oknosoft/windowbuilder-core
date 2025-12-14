@@ -12774,7 +12774,6 @@ class ProfileAddlOuter extends ProfileItem {
     return res;
   }
   do_bind(p, bcnn, ecnn, moved) {
-    let imposts, moved_fact;
     const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
     const bind_node = (node, cnn) => {
       const old = this._attr.old[node];
@@ -12783,7 +12782,6 @@ class ProfileAddlOuter extends ProfileItem {
         gen.getNearestPoint(old ? parent.add(old.delta) : this[node]);
       if(!mpoint.is_nearest(this[node], 0)) {
         this[node] = mpoint;
-        moved_fact = true;
       }
       this._attr.old[node] = {point: mpoint, parent, delta: mpoint.subtract(parent)};
     };
@@ -15478,6 +15476,9 @@ class Scheme extends paper.Project {
     const {selectedItems} = this;
     const {length} = selectedItems;
     for(const item of selectedItems) {
+      if(item instanceof ProfileItem) {
+        continue;
+      }
       const {parent, layer} = item;
       if(parent instanceof ProfileItem) {
         if(res.includes(parent)) {

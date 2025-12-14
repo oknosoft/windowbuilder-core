@@ -145,8 +145,6 @@ class ProfileAddlOuter extends ProfileItem {
    */
   do_bind(p, bcnn, ecnn, moved) {
 
-    let imposts, moved_fact;
-
     const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
 
     const bind_node = (node, cnn) => {
@@ -157,11 +155,8 @@ class ProfileAddlOuter extends ProfileItem {
         gen.getNearestPoint(old ? parent.add(old.delta) : this[node]);
       if(!mpoint.is_nearest(this[node], 0)) {
         this[node] = mpoint;
-        moved_fact = true;
       }
       this._attr.old[node] = {point: mpoint, parent, delta: mpoint.subtract(parent)};
-      
-
     };
 
     // при смещениях родителя, даигаем образующую
@@ -209,7 +204,7 @@ class ProfileAddlOuter extends ProfileItem {
       }
     }
   }
-
+  
   redraw() {
     super.redraw();
     return this.draw_articles();

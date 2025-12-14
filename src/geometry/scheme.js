@@ -2164,6 +2164,9 @@ class Scheme extends paper.Project {
     const {selectedItems} = this;
     const {length} = selectedItems;
     for(const item of selectedItems) {
+      if(item instanceof ProfileItem) {
+        continue;
+      }
       const {parent, layer} = item;
       if(parent instanceof ProfileItem) {
         if(res.includes(parent)) {
