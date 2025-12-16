@@ -280,7 +280,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             }
 
             if(elmFlipped.flipped) {
-              proc_row.coefficient =  len - proc_row.coefficient;
+              proc_row.coefficient =  elmFlipped._row.len - proc_row.coefficient;
             }
             // если сказано учесть припуск - добавляем dx0
             else if(dop_row.overmeasure){

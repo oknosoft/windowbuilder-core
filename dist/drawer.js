@@ -18473,7 +18473,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               proc_row.coefficient = coordin;
             }
             if(elmFlipped.flipped) {
-              proc_row.coefficient =  len - proc_row.coefficient;
+              proc_row.coefficient =  elmFlipped._row.len - proc_row.coefficient;
             }
             else if(dop_row.overmeasure){
               proc_row.coefficient +=  elm.dx0;
