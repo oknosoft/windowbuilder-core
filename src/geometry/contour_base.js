@@ -1417,7 +1417,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       );
     }
     for(const profile of this.profiles) {
-      for(const adj of profile.adjoinings) {
+      for(const adj of profile.adjoinings.concat(profile.addls)) {
         bounds = bounds.unite(adj.bounds);
       }
       const nearest = profile.nearest();

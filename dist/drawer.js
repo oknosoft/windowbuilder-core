@@ -2837,7 +2837,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       );
     }
     for(const profile of this.profiles) {
-      for(const adj of profile.adjoinings) {
+      for(const adj of profile.adjoinings.concat(profile.addls)) {
         bounds = bounds.unite(adj.bounds);
       }
       const nearest = profile.nearest();
@@ -15460,8 +15460,8 @@ class Scheme extends paper.Project {
     }
     if(smap.size > 1) {
       smap.order = Array.from(smap.keys()).sort((a, b) => a - b);
-      smap.order.forEach((stamp, index) => {
-        const {l_visualization, bounds} = smap.get(stamp);
+      for(const index of [0, 1]) {
+        const {l_visualization, bounds} = smap.get(smap.order[index]);
         const {elm_font_size, font_family} = this._scope.consts;
         new paper.PointText({
           parent: l_visualization,
@@ -15469,12 +15469,12 @@ class Scheme extends paper.Project {
           justification: 'center',
           fillColor: 'black',
           fontFamily: font_family,
-          fontSize: elm_font_size * 3,
+          fontSize: elm_font_size * 2.2,
           guide: true,
-          content: (index + 1).toFixed(),
+          content: index ? 'К этому' : 'Двигаем\nэтот',
           point: bounds.center,
         });
-      })
+      }
     }
   }
   selected_profiles(all) {
