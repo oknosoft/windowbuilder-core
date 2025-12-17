@@ -167,6 +167,12 @@ class ProfileConnective extends ProfileItem {
     for (const layer of layers) {
       clear_joined(layer);
     }
+    for(const profile of this.layer.profiles) {
+      profile.rays.recalc();
+    }
+    for(const profile of this.project.getItems({class: ProfileAddlOuter})) {
+      profile.rays.recalc();
+    }
   }
 
   /**
