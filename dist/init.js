@@ -7166,6 +7166,8 @@ set value(v){this._setter('value',v)}
 $p.CatValues_optionsValuesRow = CatValues_optionsValuesRow;
 $p.cat.create('values_options');
 class CatAbonents extends CatObj{
+get area(){return this._getter('area')}
+set area(v){this._setter('area',v)}
 get no_mdm(){return this._getter('no_mdm')}
 set no_mdm(v){this._setter('no_mdm',v)}
 get servers(){return this._getter_ts('servers')}
@@ -8689,7 +8691,10 @@ class DocCalc_orderManager extends DocManager {
       await src.load_linked_refs();
     }
     const {clone, refill_props} = src;
-    const {organization, partner, contract, orders, _rev, posted, branch, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, posted, branch, department, ...others} = (src._obj || src);
+    if(cat.partners.get(partner).is_new()) {
+      await cat.partners.get(partner).load();
+    }
     const tmp = {date: new Date(), organization, partner, contract};
     if(clone) {
       utils._mixin(tmp, (src._obj || src));

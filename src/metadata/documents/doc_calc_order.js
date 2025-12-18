@@ -46,7 +46,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
   }
 
   /**
-   * Копирует заказ, возвращает промис с новым заказом
+   * Копирует заказ, возвращает promise с новым заказом
    * @param src {Object}
    * @param src.clone {Boolean} - если указано, создаётся копия объекта, иначе - новый объект с аналогичными свойствами
    * @return {Promise<DocCalc_order>}
@@ -61,7 +61,10 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     }
     // создаём заказ
     const {clone, refill_props} = src;
-    const {organization, partner, contract, orders, _rev, posted, branch, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, posted, branch, department, ...others} = (src._obj || src);
+    if(cat.partners.get(partner).is_new()) {
+      await cat.partners.get(partner).load();
+    }
     const tmp = {date: new Date(), organization, partner, contract};
     if(clone) {
       utils._mixin(tmp, (src._obj || src));
