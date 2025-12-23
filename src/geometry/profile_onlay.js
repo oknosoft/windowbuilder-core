@@ -315,6 +315,10 @@ class Onlay extends ProfileItem {
     }
   }
 
+  /** @inheritdoc */
+  check_err() {
+    
+  }
 }
 
 EditorInvisible.Onlay = Onlay;

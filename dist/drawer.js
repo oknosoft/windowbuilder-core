@@ -10130,11 +10130,12 @@ class ProfileItem extends GeneratrixElement {
     }
   }
   check_err(style) {
-    const {layer, parent, project, generatrix} = this;
-    if(layer !== parent || layer.level || !layer.sys.show_ii || this.nearest(true)) {
+    const {layer, project, generatrix} = this;
+    if(layer.layer || !layer.sys.show_ii || this.nearest(true) || this.elm_type.is('impost')) {
       return;
     }
     const {contours} = project;
+    const delta = 4;
     if(contours.length > 1) {
       let i = 0;
       for(const contour of contours) {
@@ -10143,16 +10144,16 @@ class ProfileItem extends GeneratrixElement {
         }
         for(const profile of contour.profiles) {
           i = 0;
-          if(generatrix.is_nearest(profile.b, 1)) {
+          if(generatrix.is_nearest(profile.b, delta)) {
             i++;
           }
-          if(generatrix.is_nearest(profile.e, 1)) {
+          if(generatrix.is_nearest(profile.e, delta)) {
             i++;
           }
-          if(!this.b.is_nearest(profile.b, 1) && !this.b.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.b, 1)) {
+          if(!this.b.is_nearest(profile.b, delta) && !this.b.is_nearest(profile.e, delta) && profile.generatrix.is_nearest(this.b, delta)) {
             i++;
           }
-          if(!this.e.is_nearest(profile.b, 1) && !this.e.is_nearest(profile.e, 1) && profile.generatrix.is_nearest(this.e, 1)) {
+          if(!this.e.is_nearest(profile.b, delta) && !this.e.is_nearest(profile.e, delta) && profile.generatrix.is_nearest(this.e, delta)) {
             i++;
           }
           if(i > 1) {
@@ -13833,6 +13834,8 @@ class Onlay extends ProfileItem {
         elm.e = to;
       }
     }
+  }
+  check_err() {
   }
 }
 EditorInvisible.Onlay = Onlay;
