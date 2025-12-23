@@ -122,16 +122,18 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         });
       }
     }
-    for(const {nom, characteristic} of noms) {
-      if(!nom._hierarchy(profile) && !cuts.find({nom, characteristic})) {
-        cuts.add({
-          record_kind: debit_credit_kinds.debit,
-          nom,
-          characteristic,
-          len: nom.len,
-          width: nom.width,
-          quantity: nom.width ? 100 : nom.len / 1000,
-        });
+    if(!opts.c2d) {
+      for(const {nom, characteristic} of noms) {
+        if(!nom._hierarchy(profile) && !cuts.find({nom, characteristic})) {
+          cuts.add({
+            record_kind: debit_credit_kinds.debit,
+            nom,
+            characteristic,
+            len: nom.len,
+            width: nom.width,
+            quantity: nom.width ? 100 : nom.len / 1000,
+          });
+        }
       }
     }
   }

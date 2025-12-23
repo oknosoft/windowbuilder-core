@@ -19759,9 +19759,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 }
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
+                row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: row_spec.len * 1000 || rib.len, angle: rib.angle}), _row});
               }
               row_spec = null;
-              row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: rib.len, angle: rib.angle}), _row});
               if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
                 elm.is_linear = () => rib.profile.is_linear();
                 elm.angle_hor = rib.angle;
@@ -19790,8 +19790,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             else {
               bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
             }
-            const h = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180) ? bounds.height : bounds.width;
-            const w = (!row_ins_spec.step_angle || row_ins_spec.step_angle == 180) ? bounds.width : bounds.height;
+            const noRotate = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180;
+            const h = noRotate ? bounds.height : bounds.width;
+            const w = noRotate ? bounds.width : bounds.height;
             if(row_ins_spec.step){
               const prop = cch.properties.predefined('traverse_heights');
               const aprop = prop ? prop.avalue(
@@ -19819,13 +19820,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   elm2,
                   cnstr: len_angl && len_angl.cnstr || 0,
                   row_ins: row_ins_spec,
-                  len: len_angl ? len_angl.len : _row.len
+                  len: len_angl?.len || _row.len || w
                 });
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
-                row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
+                row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, 
+                  len_angl: Object.assign({}, len_angl, {len: row_spec.len * 1000 || w, angle: noRotate ? 90 : 0}), _row});
               }
               row_spec = null;
             }
@@ -19979,6 +19981,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           fake_row.inset = null;
           fake_row.clr = null;
           fake_row.nom = this;
+          fake_row.coefficient = 1;
           tmp_inset.calculate_spec({
             elm: row_prm,
             len_angl: tmp_len_angl,
