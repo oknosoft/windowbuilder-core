@@ -10143,6 +10143,9 @@ class ProfileItem extends GeneratrixElement {
           continue;
         }
         for(const profile of contour.profiles) {
+          if(profile.nearest(true)) {
+            continue;
+          }
           i = 0;
           if(generatrix.is_nearest(profile.b, delta)) {
             i++;
