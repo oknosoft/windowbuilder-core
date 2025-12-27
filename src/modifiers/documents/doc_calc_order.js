@@ -675,7 +675,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @summary Рассчитывает маршрут репликации
    */
   set_route() {
-    const {enm, cat, CatBranches, CatAbonents} = $p;
+    const {enm, cat, CatBranches, CatAbonents, job_prm: {planning}} = $p;
     const current = sessionStorage.branch ? cat.branches.get(sessionStorage.branch) : cat.abonents.current;
     let {branch, route, obj_delivery_state} = this;
     
@@ -728,6 +728,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     if(obj_delivery_state.is('Черновик') || obj_delivery_state.is('Отозван')) {
       this.obj_delivery_state = enm.obj_delivery_states.Отправлен;
+      if(planning?.date_when_send && obj_delivery_state.is('Черновик')) {
+        this.date = new Date();
+      }
     }
   }
 
