@@ -20737,6 +20737,36 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer.furn;        
           };
           break;
+        case 'sys':
+          _data._formula = function ({elm, layer, ox, cnstr, prm_row}) {
+            if(!layer) {
+              layer = elm?.layer;
+            }
+            if(layer) {
+              if(prm_row?.origin?.is('nearest') && layer.layer) {
+                for(const other of layer.layer.contours) {
+                  if(other !== layer) {
+                    return other.sys;
+                  }
+                }
+              }
+              if(prm_row?.origin?.is('parent') && layer.layer) {
+                return layer.layer.sys;
+              }
+              return layer.sys;
+            }
+            if(cnstr) {
+              const lrow = ox.constructions.find({cnstr});
+              if(lrow) {
+                const {sys} = lrow.dop;
+                if(sys && sys !== utils.blank.guild) {
+                  return production_params.get(sys);
+                }
+              }
+            }
+            return ox.sys;
+          };
+          break;
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {
@@ -20842,6 +20872,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'elm_type',        
     'elm_rectangular', 
     'branch',          
+    'furn',            
+    'sys',             
     'inset',           
     'inserts_glass_type', 
     'clr_product',     
