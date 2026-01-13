@@ -719,7 +719,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     append(branch.ref);
     append2(branch);
     
-    
     append(current.ref);
     append2(current);
     
@@ -2248,20 +2247,26 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
 
       // ставка и сумма НДС
       if(calc_order.vat_consider) {
-        const {НДС18, НДС18_118, НДС10, НДС10_110, НДС20, НДС20_120, НДС0, БезНДС} = enm.vat_rates;
-        _obj.vat_rate = (nom.vat_rate.empty() ? НДС20 : nom.vat_rate).ref;
+        const {НДС5, НДС7, НДС10, НДС18, НДС20, НДС22, НДС0, БезНДС} = enm.vat_rates;
+        _obj.vat_rate = (nom.vat_rate.empty() ? НДС22 : nom.vat_rate).ref;
         switch (this.vat_rate) {
-        case НДС18:
-        case НДС18_118:
-          _obj.vat_amount = (_obj.amount * 18 / 118).round(2);
+        case НДС5:
+          _obj.vat_amount = (_obj.amount * 5 / 105).round(2);
+          break;
+        case НДС7:
+          _obj.vat_amount = (_obj.amount * 7 / 107).round(2);
           break;
         case НДС10:
-        case НДС10_110:
           _obj.vat_amount = (_obj.amount * 10 / 110).round(2);
           break;
+        case НДС18:
+          _obj.vat_amount = (_obj.amount * 18 / 118).round(2);
+          break;
         case НДС20:
-        case НДС20_120:
           _obj.vat_amount = (_obj.amount * 20 / 120).round(2);
+          break;
+        case НДС22:
+          _obj.vat_amount = (_obj.amount * 22 / 122).round(2);
           break;
         case НДС0:
         case БезНДС:
