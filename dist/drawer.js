@@ -17530,7 +17530,7 @@ class ProductsBuilding {
     }
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(debug) {
+    if(debug || (Array.isArray(origin) && origin.some(v => v?.startsWith?.('isl')))) {
       if(!Array.isArray(origin) && Array.isArray(row_base._origin)) {
         origin = row_base._origin;
       }
@@ -19919,6 +19919,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
             angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
+          if(row_ins_spec.is_order_row?.is?.('compound')) {
+            throw new Error(`compound`);
+          }
         }
       });
       if(spec !== ox.specification) {
@@ -20845,6 +20848,26 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return calc_order.category;
             };
             break;
+        case 'has_delivery':
+          _data._formula = function ({ox, calc_order, calc_order_row}) {
+            if(!calc_order) {
+              if(calc_order_row) {
+                calc_order = calc_order_row._owner._owner;
+              }
+              else if(ox) {
+                calc_order = ox.calc_order;
+              }
+            }
+            if(calc_order) {
+              for(const row of calc_order.production) {
+                if(row.characteristic.origin?.insert_type?.is('Доставка')) {
+                  return true;
+                }
+              }
+            }
+            return false;
+          };
+          break;
         default:
           _data._formula = function () {};
         }
@@ -20891,6 +20914,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'nearest_gl_var',  
     'nearest_flap_z',  
     'order_category',  
+    'has_delivery',    
   ]) {
     formulate(name);
   }

@@ -1239,23 +1239,18 @@ set params(v){this._setter_ts('params',v)}
         });
       }
 
-      ireg.log?.timeStart?.(ref);
       return _formula(obj, $p, attr)
 
         .then((doc) => {
-          ireg.log?.timeEnd?.(ref);
           $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print();
         })
         .catch(err => {
-          ireg.log?.timeEnd?.(ref, err);
           throw err;
         });
 
     }
     else {
-      ireg.log?.timeStart?.(ref);
       const res = _formula && _formula(obj, $p, attr);
-      ireg.log?.timeEnd?.(ref);
       return res;
     }
   }
@@ -1710,6 +1705,8 @@ get recipient(){return this._getter('recipient')}
 set recipient(v){this._setter('recipient',v)}
 get event_time(){return this._getter('event_time')}
 set event_time(v){this._setter('event_time',v)}
+get work_shift(){return this._getter('work_shift')}
+set work_shift(v){this._setter('work_shift',v)}
 }
 $p.CatWork_centersTime_standardRow = CatWork_centersTime_standardRow;
 $p.cat.create('work_centers');
@@ -7243,18 +7240,23 @@ class CatInsert_bindManager extends CatManager {
   insets(ox, order = false) {
     const {sys, owner} = ox;
     const res = [];
-    const {enm, cat} = $p;
+    const {enm, cat, utils: {blank}} = $p;
     const {inserts_types: {Заказ, Монтаж, Доставка, Упаковка}, elm_types: {flap}} = enm;
     for (const bind of this) {
       const {production, inserts, key, calc_order, slave} = bind;
       if(!key.check_condition({ox})) {
         continue;
       }
-      for (const {nom} of production) {
-        if(!nom || nom.empty() || (!slave && (sys?._hierarchy(nom) || owner?._hierarchy(nom)) || (
+      for (const {nom, _obj} of production) {
+        if((!nom && (!_obj.nom || _obj.nom === blank.guid)) || (!slave && (sys?._hierarchy(nom) || owner?._hierarchy(nom)) || (
           slave && ox._order_rows?.some?.(({sys, owner}) => sys?._hierarchy(nom) || owner?._hierarchy(nom))
+        ) || (
+          order && ox.calc_order.production.find({nom})
         ))) {
           for (const {inset, elm_type} of inserts) {
+            if(inset.is_new()) {
+              continue;
+            }
             if(!res.some((irow) => irow.inset == inset && irow.elm_type == elm_type)) {
               if((!order && !calc_order && inset.insert_type !== Заказ) || 
                   (order && (calc_order || [Заказ, Монтаж, Доставка, Упаковка].includes(inset.insert_type)))) {

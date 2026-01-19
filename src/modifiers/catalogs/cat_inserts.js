@@ -1491,6 +1491,10 @@
             
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
             angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
+          
+          if(row_ins_spec.is_order_row?.is?.('compound')) {
+            throw new Error(`compound`);
+          }
         }
       });
 

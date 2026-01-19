@@ -135,24 +135,24 @@ exports.CatFormulas = class CatFormulas extends Object {
       }
 
       // получаем HTMLDivElement с отчетом
-      ireg.log?.timeStart?.(ref);
+      //ireg.log?.timeStart?.(ref);
       return _formula(obj, $p, attr)
 
       // показываем отчет в отдельном окне
         .then((doc) => {
-          ireg.log?.timeEnd?.(ref);
+          //ireg.log?.timeEnd?.(ref);
           $p.SpreadsheetDocument && doc instanceof $p.SpreadsheetDocument && doc.print();
         })
         .catch(err => {
-          ireg.log?.timeEnd?.(ref, err);
+          //ireg.log?.timeEnd?.(ref, err);
           throw err;
         });
 
     }
     else {
-      ireg.log?.timeStart?.(ref);
+      //ireg.log?.timeStart?.(ref);
       const res = _formula && _formula(obj, $p, attr);
-      ireg.log?.timeEnd?.(ref);
+      //ireg.log?.timeEnd?.(ref);
       return res;
     }
   }

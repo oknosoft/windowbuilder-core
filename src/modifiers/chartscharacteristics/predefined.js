@@ -598,6 +598,27 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return calc_order.category;
             };
             break;
+            
+        case 'has_delivery':
+          _data._formula = function ({ox, calc_order, calc_order_row}) {
+            if(!calc_order) {
+              if(calc_order_row) {
+                calc_order = calc_order_row._owner._owner;
+              }
+              else if(ox) {
+                calc_order = ox.calc_order;
+              }
+            }
+            if(calc_order) {
+              for(const row of calc_order.production) {
+                if(row.characteristic.origin?.insert_type?.is('Доставка')) {
+                  return true;
+                }
+              }
+            }
+            return false;
+          };
+          break;
 
         default:
           _data._formula = function () {};
@@ -647,6 +668,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'nearest_gl_var',   // бит отличия толщин примыкающих заполнений
     'nearest_flap_z',   // z-индекс примыкающей створки 
     'order_category',   // категория заказа
+    'has_delivery',     // есть доставка
   ]) {
     formulate(name);
   }
