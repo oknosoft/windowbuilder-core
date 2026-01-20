@@ -22251,11 +22251,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       let editor, imgs = Promise.resolve();
       const builder_props = attr.builder_props && Object.assign({}, $p.CatCharacteristics.builder_props_defaults, attr.builder_props);
       this.production.forEach((row) => {
-        if(!row.characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
+        const {characteristic} = row;
+        if(!characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
           const description = this.row_description(row);
           res.Продукция.push(description);
           res.ВсегоИзделий += row.quantity;
-          res.ВсегоПлощадьИзделий += row.quantity * row.characteristic.s;
+          res.ВсегоПлощадьИзделий += row.quantity * characteristic.s;
           res.ВсегоМасса += row.quantity * description.Масса;
           res.ВсегоМассаЗаполнений += row.quantity * description.МассаЗаполнений;
           if(builder_props) {
@@ -22263,15 +22264,38 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               editor = new EditorInvisible();
             }
             imgs = imgs.then(() => {
-              return row.characteristic.draw(attr, editor)
+              return (characteristic.leading_elm >=0 || (characteristic.origin && !characteristic.origin.empty())) ? characteristic.draw(attr, editor)
                 .then((img) => {
-                  res.ПродукцияЭскизы[row.characteristic.ref] = img[snake_ref(row.characteristic.ref)].imgs.l0;
-                });
+                  const {imgs} = img[snake_ref(characteristic.ref)];
+                  res.ПродукцияЭскизы[characteristic.ref] = imgs.l0;
+                  if(imgs.p) {
+                    if(!res.ПродукцияЭскизыЧастей) {
+                      res.ПродукцияЭскизыЧастей = imgs.p;
+                    }
+                    else {
+                      Object.assign(res.ПродукцияЭскизыЧастей, imgs.p);
+                    }                     
+                    for(const ref in imgs.p) {
+                      if(ref !== characteristic.ref) {
+                        res.ПродукцияЭскизы[ref] = imgs.p[ref];
+                      }
+                    }
+                  }
+                }) : null;
             });
           }
           else {
-            if(row.characteristic.svg) {
-              res.ПродукцияЭскизы[row.characteristic.ref] = row.characteristic.svg;
+            if(characteristic.svg) {
+              res.ПродукцияЭскизы[characteristic.ref] = characteristic.svg;
+              for(const {dop} of characteristic.constructions) {
+                if(dop?.svg) {
+                  if(!res.ПродукцияЭскизыЧастей) {
+                    res.ПродукцияЭскизыЧастей = {};
+                  }
+                  res.ПродукцияЭскизыЧастей[characteristic.ref] = dop.svg;
+                  break;
+                }
+              }
             }
           }
         }

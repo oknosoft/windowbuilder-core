@@ -869,7 +869,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             const item = project.draw_fragment({elm});
             const num = elm > 0 ? `g${elm}` : `l${elm}`;
             if(format === 'png') {
-              link.imgs[num] = project.view.element.toDataURL('image/png').substr(22);
+              link.imgs[num] = project.view.element.toDataURL('image/png').substring(22);
             }
             else {
               link.imgs[num] = project.get_svg(attr);
@@ -885,7 +885,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             const glass = project.draw_fragment({elm: row.elm});
             // подтянем формулу стеклопакета
             if(format === 'png') {
-              link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substr(22);
+              link.imgs[`g${row.elm}`] = project.view.element.toDataURL('image/png').substring(22);
             }
             else {
               link.imgs[`g${row.elm}`] = project.get_svg(attr);
@@ -902,6 +902,18 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           }
           else {
             link.imgs[`l0`] = project.get_svg(attr);
+          }
+          // если это составное изделие, подмешиваем в `imgs.p`, эскизы частей
+          const root = project.separate_frame_root();
+          if(root) {
+            const contours = [];
+            link.imgs.p = {[this.ref]: root.get_svg()};
+            for(const contour of project.contours) {
+              const layer = contour.prod_layer();
+              if(layer) {
+                link.imgs.p[layer.prod_ox.ref] = layer.get_svg();
+              }
+            }
           }
           if(attr.glasses !== false) {
             constructions.forEach(({cnstr}) => {
