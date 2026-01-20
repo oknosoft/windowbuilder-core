@@ -12832,6 +12832,10 @@ class ProfileAddlOuter extends ProfileItem {
   }
   redraw() {
     super.redraw();
+    const visible = this.project.builder_props.cnns !== false;
+    for(const path of this.children) {
+      path.visible = visible;
+    }    
     return this.draw_articles();
   }
 }
