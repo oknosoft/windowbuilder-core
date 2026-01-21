@@ -19924,7 +19924,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
             angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
           if(row_ins_spec.is_order_row?.is?.('compound')) {
-            throw new Error(`compound`);
+            for(const {characteristic} of ox.calc_order.production) {
+              if(characteristic !== ox && characteristic.coordinates.count()) {
+                const crow = characteristic.specification.add(row_spec);
+                crow.dop -= 8;
+              }
+            }
+            row_spec._owner.del(row_spec);
           }
         }
       });
@@ -22807,6 +22813,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           rm.push(row);
         }
       }
+      const {characteristic} = row;
+      if (characteristic.calc_order === this) {
+        if(!cond) {
+          characteristic.specification.clear({dop: {in: [-3, -7, -8, -10, -14]}});
+        }
+        else if(cond === '2D') {
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: {ne: 0}});
+        }
+        else {
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
+        }
+      }
     }
     for(const row of rm) {
       this.production.del(row);
@@ -22816,15 +22834,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
-        if(!cond) {
-          characteristic.specification.clear({dop: {in: [-3, -7]}});
-        }
-        else if(cond === '2D') {
-          characteristic.specification.clear({dop: {in: [-3, -7]}, s: {ne: 0}});
-        }
-        else {
-          characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
-        }
         const {origin} = characteristic;
         if(origin instanceof CatInsert_bind && origin.calc_order) {
           continue;

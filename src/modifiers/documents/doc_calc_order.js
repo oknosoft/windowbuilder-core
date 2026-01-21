@@ -1999,7 +1999,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * Удаляет распределение обрези из спецификаций всех изделий заказа
+   * @summary Удаляет распределение обрези и вклад состава 
+   * @desc Из спецификаций всех изделий заказа
    */
   reset_specify(cond) {
     this._slave_recalc = true;
@@ -2009,6 +2010,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         if(!cond || (cond === '2D' && row.s) || (cond === '1D' && !row.s)) {
           rm.push(row);
         }
+      }
+      const {characteristic} = row;
+      if (characteristic.calc_order === this) {
+        if(!cond) {
+          characteristic.specification.clear({dop: {in: [-3, -7, -8, -10, -14]}});
+        }
+        else if(cond === '2D') {
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: {ne: 0}});
+        }
+        else {
+          characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
+        }
+        
       }
     }
     for(const row of rm) {
@@ -2020,15 +2034,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
-        if(!cond) {
-          characteristic.specification.clear({dop: {in: [-3, -7]}});
-        }
-        else if(cond === '2D') {
-          characteristic.specification.clear({dop: {in: [-3, -7]}, s: {ne: 0}});
-        }
-        else {
-          characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
-        }
+        
         
         const {origin} = characteristic;
         if(origin instanceof CatInsert_bind && origin.calc_order) {

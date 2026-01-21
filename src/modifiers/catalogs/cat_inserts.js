@@ -1493,7 +1493,13 @@
             angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
           
           if(row_ins_spec.is_order_row?.is?.('compound')) {
-            throw new Error(`compound`);
+            for(const {characteristic} of ox.calc_order.production) {
+              if(characteristic !== ox && characteristic.coordinates.count()) {
+                const crow = characteristic.specification.add(row_spec);
+                crow.dop -= 8;
+              }
+            }
+            row_spec._owner.del(row_spec);
           }
         }
       });
