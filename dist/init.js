@@ -4191,6 +4191,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
     for(const row_base of this.filtered_spec({elm, elm2, len_angl, ox})) {
       const {nom} = row_base;
 
+      let spec_len = 0;
       if(nom instanceof CatInserts) {
         if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
           const tmp_len_angl = Object.assign({}, len_angl);
@@ -4323,9 +4324,13 @@ set coordinates(v){this._setter_ts('coordinates',v)}
         else {
           calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
         }
+        spec_len = row_spec.len;
       }
 
-      row_base.inset.dop_spec({row_ins_spec: row_base, elm, ox, spec, len_angl});
+      const {inset} = row_base;
+      if(!inset.empty()) {
+        inset.dop_spec({row_ins_spec: row_base, elm, ox, spec, len_angl: spec_len ? {...len_angl, len: spec_len * 1000} : len_angl});
+      }
     }
   }}
 $p.CatCnns = CatCnns;

@@ -635,6 +635,7 @@ exports.CatCnns = class CatCnns extends Object {
       //row_base.is_order_row.is('prod')
 
       // nom может быть вставкой - в этом случае, разузловываем
+      let spec_len = 0;
       if(nom instanceof CatInserts) {
         if(![gb_short, gb_long].includes(row_base.algorithm) && len_angl && (row_base.sz || row_base.coefficient)) {
           const tmp_len_angl = Object.assign({}, len_angl);
@@ -773,10 +774,14 @@ exports.CatCnns = class CatCnns extends Object {
         else {
           calc_count_area_mass(row_spec, spec, len_angl, row_base.angle_calc_method);
         }
+        spec_len = row_spec.len;
       }
 
       // доп вставка
-      row_base.inset.dop_spec({row_ins_spec: row_base, elm, ox, spec, len_angl});
+      const {inset} = row_base;
+      if(!inset.empty()) {
+        inset.dop_spec({row_ins_spec: row_base, elm, ox, spec, len_angl: spec_len ? {...len_angl, len: spec_len * 1000} : len_angl});
+      }
     }
   }
 }

@@ -1561,7 +1561,10 @@
               s: _row.s || 0,
             }
           };
-          const tmp_len_angl = Object.assign({}, len_angl, {len: row_prm._row.len});
+          if(row_prm._row.len !== 1 && row_prm._row.len < 10) {
+            row_prm._row.len *= 1000;
+          }
+          const tmp_len_angl = {...len_angl, len: row_prm._row.len};
           const fake_row = tmp_inset.specification.add(row_ins_spec);
           fake_row.inset = null;
           fake_row.clr = null;
