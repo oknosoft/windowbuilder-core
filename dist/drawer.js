@@ -19714,7 +19714,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             }
           }
-          row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
+          row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl: row_spec.len ? {...len_angl, len: row_spec.len * 1000} : len_angl, _row});
         }
         else{
           if(count_calc_method.is('len_prm') || count_calc_method.is('area')) {

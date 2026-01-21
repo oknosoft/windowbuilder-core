@@ -1258,7 +1258,7 @@
             }
           }
           // доп вставка
-          row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row});
+          row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl: row_spec.len ? {...len_angl, len: row_spec.len * 1000} : len_angl, _row});
         }
         else{
 
