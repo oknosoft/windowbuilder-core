@@ -445,7 +445,7 @@ set hide(v){this._setter_ts('hide',v)}
     if(type.is_ref) {
 
       if((type.digits && typeof v === 'number') || 
-          (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
+          (type.hasOwnProperty('str_len') && !utils.is_guid(v, true)) || utils.is_data_obj(v)) {
         return v;
       }
       if(type.digits && !v && type.types.includes('cat.values_options')) {
@@ -455,7 +455,7 @@ set hide(v){this._setter_ts('hide',v)}
       const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
-          const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';
+          const ref = ((v && (utils.is_guid(v, true) || utils.is_guid(v.ref, true))) || utils.is_enm_mgr(mgr)) ? v : '';
           return mgr.get(ref, false, false);
         }
         else {
@@ -745,7 +745,7 @@ class CchPredefined_elmnts extends CatObj{
       if(type.digits && typeof res === 'number') {
         return res;
       }
-      if(type.hasOwnProperty('str_len') && !utils.is_guid(res)) {
+      if(type.hasOwnProperty('str_len') && !utils.is_guid(res, true)) {
         return res;
       }
       const mgr = _manager.value_mgr(_obj, 'value', type);
@@ -901,7 +901,7 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
               if(tmp.length) {
                 const chain = tmp.splice(0);
                 if(name) {
-                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name) ? vh.get(name) : name});
+                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name, true) ? vh.get(name) : name});
                   name = '';
                 }
                 value.push(chain);
@@ -8704,7 +8704,7 @@ class DocCalc_orderManager extends DocManager {
 
   async clone(src) {
     const {utils, cat} = $p;
-    if(utils.is_guid(src)) {
+    if(utils.is_guid(src, true)) {
       src = await this.get(src, 'promise');
     }
     if(src.load_linked_refs) {

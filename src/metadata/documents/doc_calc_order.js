@@ -53,7 +53,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
    */
   async clone(src) {
     const {utils, cat} = $p;
-    if(utils.is_guid(src)) {
+    if(utils.is_guid(src, true)) {
       src = await this.get(src, 'promise');
     }
     if(src.load_linked_refs) {

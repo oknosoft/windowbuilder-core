@@ -270,7 +270,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     const {utils, enm: {elm_types}} = $p;
     if(kind === 0) {
-      if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn) && furn !== utils.blank.guid)) {
+      if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn, true) && furn !== utils.blank.guid)) {
         cattr.furn = furn;
       }
       else {
@@ -1388,7 +1388,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           return _metadata;
         default:
           let pvalue;
-          if(utils.is_guid(prop)) {
+          if(utils.is_guid(prop, true)) {
             const param = cch.properties.get(prop);
             if(!param.empty()) {
               const {params} = row.dop;
@@ -1405,7 +1405,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           row.clr = val;
           break;
         default:
-          if(utils.is_guid(prop)) {
+          if(utils.is_guid(prop, true)) {
             const param = cch.properties.get(prop);
             if(!param.empty()) {
               let {params} = row.dop;

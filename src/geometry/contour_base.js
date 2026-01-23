@@ -3035,7 +3035,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _ox.params.find_rows({
         param,
         cnstr: {in: [0, this.cnstr]},
-        inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
+        inset: (origin instanceof CatInserts || utils.is_guid(origin, true)) ? origin : utils.blank.guid,
       }, (row) => {
         if(!prow || row.cnstr === this.cnstr) {
           prow = row;

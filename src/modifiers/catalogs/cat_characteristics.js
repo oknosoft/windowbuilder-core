@@ -122,7 +122,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
           const pkey = param.valueOf();
           if(def) {
             if(dop.params && (pkey in dop.params) && dop.params[pkey] !== undefined && dop.params[pkey] !== null &&
-                (typeof dop.params[pkey] !== 'string' || !utils.is_guid(dop.params[pkey]) || (utils.is_guid(dop.params[pkey]) && !utils.is_empty_guid(dop.params[pkey]))) &&
+                (typeof dop.params[pkey] !== 'string' || !utils.is_guid(dop.params[pkey], true) || (utils.is_guid(dop.params[pkey], true) && !utils.is_empty_guid(dop.params[pkey]))) &&
                 (ignForcibly || !def.forcibly)) {
               params[pkey] = dop.params[pkey];
               return;

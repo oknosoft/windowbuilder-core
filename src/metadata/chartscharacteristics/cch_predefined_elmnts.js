@@ -104,7 +104,7 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
               if(tmp.length) {
                 const chain = tmp.splice(0);
                 if(name) {
-                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name) ? vh.get(name) : name});
+                  Object.defineProperty(chain, 'name', {value: utils.is_guid(name, true) ? vh.get(name) : name});
                   name = '';
                 }
                 value.push(chain);
@@ -211,7 +211,7 @@ exports.CchPredefined_elmnts = class CchPredefined_elmnts extends Object {
       if(type.digits && typeof res === 'number') {
         return res;
       }
-      if(type.hasOwnProperty('str_len') && !utils.is_guid(res)) {
+      if(type.hasOwnProperty('str_len') && !utils.is_guid(res, true)) {
         return res;
       }
       const mgr = _manager.value_mgr(_obj, 'value', type);

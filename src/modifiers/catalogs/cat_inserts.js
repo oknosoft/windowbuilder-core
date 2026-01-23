@@ -207,7 +207,7 @@
           // прибиваем лишние параметры прежней вставки
           if(!with_scheme) {
             for(const fld in prototype) {
-              if(utils.is_guid(fld) && !Array.from(params).some(({ref}) => ref === fld)) {
+              if(utils.is_guid(fld, true) && !Array.from(params).some(({ref}) => ref === fld)) {
                 delete prototype[fld];
                 delete meta.fields[fld];
                 if(prototype._owner && prototype._owner._owner) {

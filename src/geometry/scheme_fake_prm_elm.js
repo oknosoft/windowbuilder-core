@@ -107,7 +107,7 @@ FakePrmElm.region = function region(row, target) {
         return row.clr;
       default:
         let prow;
-        if(utils.is_guid(prop)) {
+        if(utils.is_guid(prop, true)) {
           const param = properties.get(prop);
           if(!param.empty()) {
             return param.extract_pvalue({
@@ -130,7 +130,7 @@ FakePrmElm.region = function region(row, target) {
         row.clr = val;
         break;
       default:
-        if(utils.is_guid(prop)) {
+        if(utils.is_guid(prop, true)) {
           const param = properties.get(prop);
           if(!param.empty() && param.set_pvalue) {
             param.set_pvalue({

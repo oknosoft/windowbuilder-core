@@ -445,7 +445,7 @@ exports.CchProperties = class CchProperties extends Object {
     if(type.is_ref) {
 
       if((type.digits && typeof v === 'number') || 
-          (type.hasOwnProperty('str_len') && !utils.is_guid(v)) || utils.is_data_obj(v)) {
+          (type.hasOwnProperty('str_len') && !utils.is_guid(v, true)) || utils.is_data_obj(v)) {
         return v;
       }
       if(type.digits && !v && type.types.includes('cat.values_options')) {
@@ -455,7 +455,7 @@ exports.CchProperties = class CchProperties extends Object {
       const mgr = _manager.value_mgr({v}, 'v', type, false, v);
       if(mgr) {
         if(utils.is_data_mgr(mgr)) {
-          const ref = ((v && (utils.is_guid(v) || utils.is_guid(v.ref))) || utils.is_enm_mgr(mgr)) ? v : '';
+          const ref = ((v && (utils.is_guid(v, true) || utils.is_guid(v.ref, true))) || utils.is_enm_mgr(mgr)) ? v : '';
           return mgr.get(ref, false, false);
         }
         else {

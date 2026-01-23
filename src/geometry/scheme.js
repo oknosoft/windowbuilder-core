@@ -693,10 +693,10 @@ class Scheme extends paper.Project {
     if(utils.is_data_obj(id) && id.calc_order && (order === id.calc_order || !id.calc_order.is_new())) {
       return load_object(id);
     }
-    else if(utils.is_guid(id) || utils.is_data_obj(id)) {
+    else if(utils.is_guid(id, true) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
         .then((ox) => {
-          return doc.calc_order.get((utils.is_guid(order) || utils.is_data_obj(order)) ? order : ox.calc_order, true, true)
+          return doc.calc_order.get((utils.is_guid(order, true) || utils.is_data_obj(order)) ? order : ox.calc_order, true, true)
             .then((calc_order) => {
               if(ox.is_new() || (order && ox.calc_order != order)) {
                 ox.calc_order = order;

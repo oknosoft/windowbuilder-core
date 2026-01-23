@@ -184,7 +184,7 @@ class Pricing {
     currency = currencies.get(currency);
     for(const row of goods) {
       // если не задан тип цен - уходим
-      if (!row.price_type || !utils.is_guid(row.nom) || utils.is_empty_guid(row.nom)){
+      if (!row.price_type || !utils.is_guid(row.nom, true) || utils.is_empty_guid(row.nom)){
         continue;
       }
       const onom = nom.create({ref: row.nom}, false, true);

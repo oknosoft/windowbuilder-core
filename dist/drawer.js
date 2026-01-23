@@ -4059,7 +4059,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       _ox.params.find_rows({
         param,
         cnstr: {in: [0, this.cnstr]},
-        inset: (origin instanceof CatInserts || utils.is_guid(origin)) ? origin : utils.blank.guid,
+        inset: (origin instanceof CatInserts || utils.is_guid(origin, true)) ? origin : utils.blank.guid,
       }, (row) => {
         if(!prow || row.cnstr === this.cnstr) {
           prow = row;
@@ -6795,7 +6795,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     const {utils, enm: {elm_types}} = $p;
     if(kind === 0) {
-      if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn) && furn !== utils.blank.guid)) {
+      if((utils.is_data_obj(furn) && !furn.empty()) || (utils.is_guid(furn, true) && furn !== utils.blank.guid)) {
         cattr.furn = furn;
       }
       else {
@@ -7653,7 +7653,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           return _metadata;
         default:
           let pvalue;
-          if(utils.is_guid(prop)) {
+          if(utils.is_guid(prop, true)) {
             const param = cch.properties.get(prop);
             if(!param.empty()) {
               const {params} = row.dop;
@@ -7669,7 +7669,7 @@ class Filling extends AbstractFilling(BuilderElement) {
           row.clr = val;
           break;
         default:
-          if(utils.is_guid(prop)) {
+          if(utils.is_guid(prop, true)) {
             const param = cch.properties.get(prop);
             if(!param.empty()) {
               let {params} = row.dop;
@@ -14486,10 +14486,10 @@ class Scheme extends paper.Project {
     if(utils.is_data_obj(id) && id.calc_order && (order === id.calc_order || !id.calc_order.is_new())) {
       return load_object(id);
     }
-    else if(utils.is_guid(id) || utils.is_data_obj(id)) {
+    else if(utils.is_guid(id, true) || utils.is_data_obj(id)) {
       return characteristics.get(id, true, true)
         .then((ox) => {
-          return doc.calc_order.get((utils.is_guid(order) || utils.is_data_obj(order)) ? order : ox.calc_order, true, true)
+          return doc.calc_order.get((utils.is_guid(order, true) || utils.is_data_obj(order)) ? order : ox.calc_order, true, true)
             .then((calc_order) => {
               if(ox.is_new() || (order && ox.calc_order != order)) {
                 ox.calc_order = order;
@@ -15787,7 +15787,7 @@ FakePrmElm.region = function region(row, target) {
         return row.clr;
       default:
         let prow;
-        if(utils.is_guid(prop)) {
+        if(utils.is_guid(prop, true)) {
           const param = properties.get(prop);
           if(!param.empty()) {
             return param.extract_pvalue({
@@ -15808,7 +15808,7 @@ FakePrmElm.region = function region(row, target) {
         row.clr = val;
         break;
       default:
-        if(utils.is_guid(prop)) {
+        if(utils.is_guid(prop, true)) {
           const param = properties.get(prop);
           if(!param.empty() && param.set_pvalue) {
             param.set_pvalue({
@@ -16476,7 +16476,7 @@ class Pricing {
     date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
-      if (!row.price_type || !utils.is_guid(row.nom) || utils.is_empty_guid(row.nom)){
+      if (!row.price_type || !utils.is_guid(row.nom, true) || utils.is_empty_guid(row.nom)){
         continue;
       }
       const onom = nom.create({ref: row.nom}, false, true);
@@ -18207,7 +18207,7 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
           const pkey = param.valueOf();
           if(def) {
             if(dop.params && (pkey in dop.params) && dop.params[pkey] !== undefined && dop.params[pkey] !== null &&
-                (typeof dop.params[pkey] !== 'string' || !utils.is_guid(dop.params[pkey]) || (utils.is_guid(dop.params[pkey]) && !utils.is_empty_guid(dop.params[pkey]))) &&
+                (typeof dop.params[pkey] !== 'string' || !utils.is_guid(dop.params[pkey], true) || (utils.is_guid(dop.params[pkey], true) && !utils.is_empty_guid(dop.params[pkey]))) &&
                 (ignForcibly || !def.forcibly)) {
               params[pkey] = dop.params[pkey];
               return;
@@ -18903,7 +18903,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
           if(!with_scheme) {
             for(const fld in prototype) {
-              if(utils.is_guid(fld) && !Array.from(params).some(({ref}) => ref === fld)) {
+              if(utils.is_guid(fld, true) && !Array.from(params).some(({ref}) => ref === fld)) {
                 delete prototype[fld];
                 delete meta.fields[fld];
                 if(prototype._owner && prototype._owner._owner) {
