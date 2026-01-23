@@ -1576,6 +1576,12 @@
           fake_row.clr = null;
           fake_row.nom = this;
           fake_row.coefficient = 1;
+          if(!fake_row.ahmax) {
+            fake_row.ahmax = 360;
+          }
+          if(!fake_row.lmax) {
+            fake_row.lmax = 10000;
+          }
           tmp_inset.calculate_spec({
             elm: row_prm,
             len_angl: tmp_len_angl,
