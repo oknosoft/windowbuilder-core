@@ -28,9 +28,15 @@
 
       if(is_side(_clr_side)) {
         row_spec.width = nom._extra(prefix + _clr_side);
+        if(!row_spec.width && prefix !== 'coloring' && prefix !== 'lam') {
+          row_spec.width = nom._extra('coloring' + _clr_side);
+        }        
       }
       else {
-        const areas = [nom._extra(prefix) || 0, nom._extra(prefix + '_in') || 0, nom._extra(prefix + '_out') || 0];
+        const areas = [
+          nom._extra(prefix) || nom._extra('coloring') || 0,
+          nom._extra(prefix + '_in') || nom._extra('coloring_in') || 0, 
+          nom._extra(prefix + '_out') || nom._extra('coloring_out') || 0];
         row_spec.width = areas[0] || (areas[1] + areas[2]);
       }
       if(row_spec.width) {
