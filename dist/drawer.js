@@ -11119,7 +11119,7 @@ class ProfileItem extends GeneratrixElement {
     const {layer} = this;
     const {sys: {base_clr}, _ox} = layer;
     if(base_clr.empty()) {
-      return this.clr;
+      return $p.cat.clrs.get();
     }
     return base_clr.extract_pvalue({ox: _ox, elm: this, layer, prm_row: {origin: $p.enm.plan_detailing.elm}});
   }
@@ -19661,10 +19661,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return res;
     }
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake}) {
       const {_row} = elm;
       const {
         perim,
+        len,
         steps,
         formulas,
         element,
@@ -19705,7 +19706,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
         }
-        else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
+        else if(profile_items.includes(_row.elm_type) || [element, len, parameters].includes(count_calc_method)){
           if(count_calc_method.is('arm')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, len_angl});
           }
@@ -19948,7 +19949,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         }
       });
-      if(spec !== ox.specification) {
+      if(!fake && spec !== ox.specification) {
         const {_owner} = spec;
         switch (this.insert_type) {
           case enm.inserts_types.mosquito:             
@@ -20030,7 +20031,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             ox,
             spec,
             clr,
-            own_row: row_ins_spec});
+            own_row: row_ins_spec,
+            fake: true,
+          });
           tmp_inset.unload();
         }
       }

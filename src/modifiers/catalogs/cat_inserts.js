@@ -1179,11 +1179,12 @@
      * @param {CatInsert_bind} [bind] - заполнено, если вызов из привязки вставок
      * $return {void}
      */
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake}) {
 
       const {_row} = elm;
       const {
         perim,
+        len,
         steps,
         formulas,
         element,
@@ -1233,7 +1234,7 @@
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
         }
         // для вставок в профиль способ расчета количества не учитывается
-        else if(profile_items.includes(_row.elm_type) || [element, parameters].includes(count_calc_method)){
+        else if(profile_items.includes(_row.elm_type) || [element, len, parameters].includes(count_calc_method)){
           if(count_calc_method.is('arm')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, len_angl});
           }
@@ -1505,7 +1506,7 @@
       });
 
       // скорректируем габариты вытягиваемой конструкции
-      if(spec !== ox.specification) {
+      if(!fake && spec !== ox.specification) {
         const {_owner} = spec;
         switch (this.insert_type) {
           case enm.inserts_types.mosquito:             
@@ -1588,7 +1589,9 @@
             ox,
             spec,
             clr,
-            own_row: row_ins_spec});
+            own_row: row_ins_spec,
+            fake: true,
+          });
           tmp_inset.unload();
         }
       }
