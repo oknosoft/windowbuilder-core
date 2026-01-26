@@ -5170,12 +5170,23 @@ class CatClrsManager extends CatManager {
       case 'КакИзделиеИнверсный':
         return this.inverted(clr_sch);
 
-      case 'БезЦвета':
+              case 'КакОснова':
+        if(elm) {
+          const {base_clr} = elm;
+          if(base_clr && !base_clr.empty()) {
+            return base_clr;
+          }
+        }
+        return clr_sch || clr_elm;
+
+                       case 'БезЦвета':
         return this.get();
-      case 'Белый':
+
+              case 'Белый':
       case 'Прозрачный':
         return clr;
-      case 'КакВоВставке':
+
+              case 'КакВоВставке':
         if(!elm){
           return clr_elm;
         }
@@ -5188,10 +5199,12 @@ class CatClrsManager extends CatManager {
           return row_spec.clr;
         }
         return clr_elm;
-      case 'КакНом':
+
+              case 'КакНом':
         const nom = row ? row.nom : (elm && elm.nom);
         return nom ? nom.clr : (clr.empty() ? clr_elm : clr);
-      case 'КакВедущий':
+
+              case 'КакВедущий':
       case 'КакВедущийИзнутри':
       case 'КакВедущийСнаружи':
       case 'КакВедущийИнверсный':

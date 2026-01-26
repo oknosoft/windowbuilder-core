@@ -11115,6 +11115,14 @@ class ProfileItem extends GeneratrixElement {
     }
     return super.hasOuter;
   }
+  get base_clr() {
+    const {layer} = this;
+    const {sys: {base_clr}, _ox} = layer;
+    if(base_clr.empty()) {
+      return this.clr;
+    }
+    return base_clr.extract_pvalue({ox: _ox, elm: this, layer, prm_row: {origin: $p.enm.plan_detailing.elm}});
+  }
   select_corn(point, presaveSelected) {
     let res = this.corns(point);
     if(res) {
