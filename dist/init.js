@@ -5172,9 +5172,15 @@ class CatClrsManager extends CatManager {
 
               case 'КакОснова':
         if(elm) {
-          const {base_clr} = elm;
+          const {base_clr, layer} = elm;
           if(base_clr && !base_clr.empty()) {
             return base_clr;
+          }
+          if(layer) {
+            const {sys: {base_clr}, _ox} = layer;
+            if(!base_clr.empty()) {
+              return base_clr.extract_pvalue({ox: _ox, elm, layer, prm_row: {origin: $p.enm.plan_detailing.elm}});
+            }
           }
         }
         return clr_sch || clr_elm;
