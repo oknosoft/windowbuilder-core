@@ -172,18 +172,18 @@ class DimensionDrawer extends paper.Group {
   /**
    * формирует авторазмерные линии
    */
-  redraw(forse) {
+  redraw(force) {
 
     const {parent, project: {builder_props}} = this;
     
-    if(!forse) {
-      forse = parent.show_dimensions;
+    if(!force) {
+      force = parent.show_dimensions;
     }
 
-    if(!forse) {
+    if(!force) {
       this.clear(true);
     }
-    else if(forse || !builder_props.auto_lines) {
+    else if(force || !builder_props.auto_lines) {
       this.clear();
     }
 
@@ -196,7 +196,7 @@ class DimensionDrawer extends paper.Group {
     }
 
     // для внешних контуров строим авторазмерные линии
-    if(builder_props.auto_lines && forse) {
+    if(builder_props.auto_lines && force) {
 
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
@@ -226,7 +226,7 @@ class DimensionDrawer extends paper.Group {
       // для ihor добавляем по вертикали
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+        if(parent.is_pos('right') || (force && !parent.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
         else if(parent.is_pos('left')) {
@@ -240,7 +240,7 @@ class DimensionDrawer extends paper.Group {
       // для ivert добавляем по горизонтали
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+        if(parent.is_pos('bottom') || (force && !parent.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
         else if(parent.is_pos('top')) {
@@ -252,7 +252,7 @@ class DimensionDrawer extends paper.Group {
       }
 
       // далее - размерные линии контура
-      this.by_contour(ihor, ivert, forse, by_side);
+      this.by_contour(ihor, ivert, force, by_side);
 
     }
 

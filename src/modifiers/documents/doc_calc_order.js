@@ -1328,6 +1328,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
                     for(const ref in imgs.p) {
                       if(ref !== characteristic.ref) {
                         res.ПродукцияЭскизы[ref] = imgs.p[ref];
+                        delete imgs.p[ref];
                       }
                     }
                   }
