@@ -1011,14 +1011,20 @@ class Scheme extends paper.Project {
    *
    */
   get strokeBounds() {
-    const {l_connective: {strokeBounds: connectiveBounds}, l_dimensions: {strokeBounds: dimensionsBounds}} = this;
-    let bounds = this.contours.reduce((sum, curr) => 
+    const {l_connective, l_dimensions} = this;
+    let bounds = this.contours.filter(v => v.visible).reduce((sum, curr) => 
       sum ? sum.unite(curr.strokeBounds) : curr.strokeBounds, null);
-    if(connectiveBounds.area) {
-      bounds = bounds ? bounds.unite(connectiveBounds) : connectiveBounds;
+    if(l_connective.visible) {
+      const connectiveBounds = l_connective.strokeBounds; 
+      if(connectiveBounds.area) {
+        bounds = bounds ? bounds.unite(connectiveBounds) : connectiveBounds;
+      }
     }
-    if(dimensionsBounds.area) {
-      bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds; 
+    if(l_dimensions.visible) {
+      const dimensionsBounds = l_dimensions.strokeBounds;
+      if(dimensionsBounds.area) {
+        bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds;
+      }
     }
     return bounds || new paper.Rectangle();
   }

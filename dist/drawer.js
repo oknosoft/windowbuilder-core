@@ -5925,15 +5925,15 @@ class DimensionDrawer extends paper.Group {
       this.layer?.layer?.l_dimensions?.clear();
     }
   }
-  redraw(forse) {
+  redraw(force) {
     const {parent, project: {builder_props}} = this;
-    if(!forse) {
-      forse = parent.show_dimensions;
+    if(!force) {
+      force = parent.show_dimensions;
     }
-    if(!forse) {
+    if(!force) {
       this.clear(true);
     }
-    else if(forse || !builder_props.auto_lines) {
+    else if(force || !builder_props.auto_lines) {
       this.clear();
     }
     const {contours} = parent;
@@ -5942,7 +5942,7 @@ class DimensionDrawer extends paper.Group {
         chld.l_dimensions.redraw();
       }
     }
-    if(builder_props.auto_lines && forse) {
+    if(builder_props.auto_lines && force) {
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
         return this.clear();
@@ -5961,7 +5961,7 @@ class DimensionDrawer extends paper.Group {
       }
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
-        if(parent.is_pos('right') || (forse && !parent.is_pos('left'))) {
+        if(parent.is_pos('right') || (force && !parent.is_pos('left'))) {
           this.by_imposts(ihor, this.ihor, 'right');
         }
         else if(parent.is_pos('left')) {
@@ -5973,7 +5973,7 @@ class DimensionDrawer extends paper.Group {
       }
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
-        if(parent.is_pos('bottom') || (forse && !parent.is_pos('top'))) {
+        if(parent.is_pos('bottom') || (force && !parent.is_pos('top'))) {
           this.by_imposts(ivert, this.ivert, 'bottom');
         }
         else if(parent.is_pos('top')) {
@@ -5983,7 +5983,7 @@ class DimensionDrawer extends paper.Group {
       else {
         ivert.length = 0;
       }
-      this.by_contour(ihor, ivert, forse, by_side);
+      this.by_contour(ihor, ivert, force, by_side);
     }
     for (let dl of this.children) {
       dl.redraw && dl.redraw();
@@ -14715,14 +14715,20 @@ class Scheme extends paper.Project {
     return bounds;
   }
   get strokeBounds() {
-    const {l_connective: {strokeBounds: connectiveBounds}, l_dimensions: {strokeBounds: dimensionsBounds}} = this;
-    let bounds = this.contours.reduce((sum, curr) => 
+    const {l_connective, l_dimensions} = this;
+    let bounds = this.contours.filter(v => v.visible).reduce((sum, curr) => 
       sum ? sum.unite(curr.strokeBounds) : curr.strokeBounds, null);
-    if(connectiveBounds.area) {
-      bounds = bounds ? bounds.unite(connectiveBounds) : connectiveBounds;
+    if(l_connective.visible) {
+      const connectiveBounds = l_connective.strokeBounds; 
+      if(connectiveBounds.area) {
+        bounds = bounds ? bounds.unite(connectiveBounds) : connectiveBounds;
+      }
     }
-    if(dimensionsBounds.area) {
-      bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds; 
+    if(l_dimensions.visible) {
+      const dimensionsBounds = l_dimensions.strokeBounds;
+      if(dimensionsBounds.area) {
+        bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds;
+      }
     }
     return bounds || new paper.Rectangle();
   }
@@ -22310,6 +22316,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
                     for(const ref in imgs.p) {
                       if(ref !== characteristic.ref) {
                         res.ПродукцияЭскизы[ref] = imgs.p[ref];
+                        delete imgs.p[ref];
                       }
                     }
                   }

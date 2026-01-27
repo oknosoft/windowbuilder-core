@@ -6790,13 +6790,23 @@ set demand(v){this._setter_ts('demand',v)}
           }
           const root = project.separate_frame_root();
           if(root) {
-            const contours = [];
-            link.imgs.p = {[this.ref]: root.get_svg()};
-            for(const contour of project.contours) {
-              const layer = contour.prod_layer();
-              if(layer) {
-                link.imgs.p[layer.prod_ox.ref] = layer.get_svg();
+            const {contours, l_dimensions, l_connective} = project;
+            l_connective.visible = false;
+            l_dimensions.visible = false;
+            link.imgs.p = {};
+            for(const layer of contours) {
+              for(const other of contours) {
+                const visible = other === layer; 
+                for(const item of [other, ...other.getItems({class: EditorInvisible.Contour})]) {
+                  item.visible = visible;
+                  item.l_visualization.visible = visible;
+                  item.l_dimensions.visible = visible;
+                }
               }
+              layer.hide_generatrix();
+              layer.l_dimensions.redraw(true);
+              layer.zoom_fit();
+              link.imgs.p[layer.prod_ox.ref] = project.get_svg();
             }
           }
           if(attr.glasses !== false) {
