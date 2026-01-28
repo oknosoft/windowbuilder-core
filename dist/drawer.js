@@ -14681,9 +14681,10 @@ class Scheme extends paper.Project {
     }
   }
   get bounds() {
-    const {_attr, l_connective} = this;
+    const {_attr} = this;
+    const layers = $p.job_prm.builder.exclude_connective_area ? [] : [this.l_connective];
     if(!_attr._bounds) {
-      this.contours.concat([l_connective]).forEach(({bounds}) => {
+      this.contours.concat(layers).forEach(({bounds}) => {
         if(bounds.width && bounds.height) {
           if(!_attr._bounds) {
             _attr._bounds = bounds;
