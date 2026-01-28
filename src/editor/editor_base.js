@@ -255,7 +255,7 @@ class EditorInvisible extends paper.PaperScope {
       .filter((impost) => {
         const {b, e} = impost.rays;
         // отрезаем плохую ориентацию и неимпосты
-        return impost.orientation == orientation && (b.is_tt || e.is_tt || b.is_i || e.is_i);
+        return impost.orientation == orientation && (b.is_tt || e.is_tt || b.is_i || e.is_i || impost.elm_type.is('impost'));
       });
 
     // признак уравнивания геометрически, а не по заполнению
@@ -402,14 +402,8 @@ class EditorInvisible extends paper.PaperScope {
       }
 
       if(delta.length > consts.epsilon){
-        const {b, e} = impost.rays;
-        if(b.profile && impost.is_orthogonal(b.profile, b.point, 0.1) && e.profile && impost.is_orthogonal(e.profile, e.point, 0.1)) {
-          impost.move_gen(delta);
-        }
-        else {
-          impost.move_points(delta, true);
-          impost.layer.redraw();
-        }
+        impost.move_points(delta, true);
+        impost.layer.redraw();
         res.push(delta);
       }
     });
