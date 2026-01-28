@@ -1807,6 +1807,10 @@ get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
 get route(){return this._getter('route')}
 set route(v){this._setter('route',v)}
+get force_route(){return this._getter('force_route')}
+set force_route(v){this._setter('force_route',v)}
+get exclude_route(){return this._getter('exclude_route')}
+set exclude_route(v){this._setter('exclude_route',v)}
 get branch(){return this._getter('branch')}
 set branch(v){this._setter('branch',v)}
 get composition(){return this._getter_ts('composition')}
@@ -1830,6 +1834,10 @@ get obj_delivery_state(){return this._getter('obj_delivery_state')}
 set obj_delivery_state(v){this._setter('obj_delivery_state',v)}
 get route(){return this._getter('route')}
 set route(v){this._setter('route',v)}
+get force_route(){return this._getter('force_route')}
+set force_route(v){this._setter('force_route',v)}
+get exclude_route(){return this._getter('exclude_route')}
+set exclude_route(v){this._setter('exclude_route',v)}
 get branch(){return this._getter('branch')}
 set branch(v){this._setter('branch',v)}
 get owner(){return this._getter('owner')}
@@ -5969,6 +5977,10 @@ get editor(){return this._getter('editor')}
 set editor(v){this._setter('editor',v)}
 get route(){return this._getter('route')}
 set route(v){this._setter('route',v)}
+get force_route(){return this._getter('force_route')}
+set force_route(v){this._setter('force_route',v)}
+get exclude_route(){return this._getter('exclude_route')}
+set exclude_route(v){this._setter('exclude_route',v)}
 get branch(){return this._getter('branch')}
 set branch(v){this._setter('branch',v)}
 get owner(){return this._getter('owner')}
@@ -8564,6 +8576,10 @@ get approval(){return this._getter('approval')}
 set approval(v){this._setter('approval',v)}
 get route(){return this._getter('route')}
 set route(v){this._setter('route',v)}
+get force_route(){return this._getter('force_route')}
+set force_route(v){this._setter('force_route',v)}
+get exclude_route(){return this._getter('exclude_route')}
+set exclude_route(v){this._setter('exclude_route',v)}
 get branch(){return this._getter('branch')}
 set branch(v){this._setter('branch',v)}
 get production(){return this._getter_ts('production')}
