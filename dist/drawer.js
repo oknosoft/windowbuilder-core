@@ -14716,7 +14716,7 @@ class Scheme extends paper.Project {
     return bounds;
   }
   get strokeBounds() {
-    const {l_connective, l_dimensions} = this;
+    const {l_connective, l_dimensions, l_visualization} = this;
     let bounds = this.contours.filter(v => v.visible).reduce((sum, curr) => 
       sum ? sum.unite(curr.strokeBounds) : curr.strokeBounds, null);
     if(l_connective.visible) {
@@ -14729,6 +14729,16 @@ class Scheme extends paper.Project {
       const dimensionsBounds = l_dimensions.strokeBounds;
       if(dimensionsBounds.area) {
         bounds = bounds ? bounds.unite(dimensionsBounds) : dimensionsBounds;
+      }
+    }
+    if(l_visualization.visible) {
+      for(const grp of l_visualization.children) {
+        if(grp.visible) {
+          const visualizationBounds = grp.strokeBounds;
+          if(visualizationBounds.area) {
+            bounds = bounds ? bounds.unite(visualizationBounds) : visualizationBounds;
+          }
+        }
       }
     }
     return bounds || new paper.Rectangle();
