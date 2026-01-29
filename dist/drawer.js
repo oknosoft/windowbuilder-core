@@ -22134,7 +22134,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   product_rows(save, attr) {
     let res = [], weight = 0;
-    const {production, partner, obj_delivery_state, route, department, _deleted} = this;
+    const {production, partner, obj_delivery_state, route, force_route, exclude_route, department, _deleted} = this;
     const {utils, wsql} = $p;
     const user = wsql.get_user_param('user_name');    
     this.production.forEach(({row, characteristic, quantity}) => {
@@ -22145,10 +22145,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.partner !== partner ||
           characteristic.obj_delivery_state !== obj_delivery_state ||
           characteristic.route !== route ||
+          characteristic.force_route !== force_route ||
+          characteristic.exclude_route !== exclude_route ||
           characteristic.department !== department) {
           characteristic.product = row;
           characteristic.obj_delivery_state = obj_delivery_state;
           characteristic.route = route;
+          characteristic.force_route = force_route;
+          characteristic.exclude_route = exclude_route;
           characteristic.partner = partner;
           characteristic.department = department;
           characteristic._deleted = _deleted;
