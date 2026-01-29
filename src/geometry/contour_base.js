@@ -1351,7 +1351,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @summary Габариты по внешним краям профилей контура
    */
   get bounds() {
-    const {_attr, parent} = this;
+    const {_attr} = this;
     const {exclude_connective_area} = $p.job_prm.builder;
     if (!_attr._bounds || !_attr._bounds.width || !_attr._bounds.height) {
       const deposite = (profile) => {
@@ -1374,6 +1374,33 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
     return _attr._bounds;
+  }
+
+  /**
+   * @summary Габариты по внешним краям профилей контура
+   * @desc Без учёта константы exclude_connective_area
+   */
+  get profileBounds() {
+    let bounds;
+    const deposite = (profile) => {
+      let {path} = profile;
+      if(!path?.segments?.length) {
+        path = profile.generatrix;
+      }
+      if (path) {
+        bounds = bounds ? bounds.unite(path.bounds) : path.bounds;
+        profile.addls.forEach(deposite);
+      }
+    };
+    this.profiles.forEach(deposite);
+    this.sectionals.forEach((sectional) => {
+      bounds = bounds ? bounds.unite(sectional.bounds) : sectional.bounds;
+    });
+
+    if (!bounds) {
+      bounds = new paper.Rectangle();
+    }
+    return bounds;
   }
 
   /**

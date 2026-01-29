@@ -54,7 +54,19 @@ class DimensionLayer extends paper.Layer {
   }
 
   get bounds() {
-    return this.project.bounds;
+    let bounds;
+    const {l_connective, contours} = this.project;
+    contours.concat([l_connective]).forEach(({profileBounds}) => {
+      if(profileBounds.area) {
+        if(!bounds) {
+          bounds = profileBounds;
+        }
+        else {
+          bounds = bounds.unite(profileBounds);
+        }
+      }
+    });
+    return bounds || new paper.Rectangle();
   }
 
   get owner_bounds() {
@@ -73,8 +85,8 @@ class DimensionLayer extends paper.Layer {
    */
   draw_sizes() {
 
-    const {project} = this;
-    const {bounds, builder_props, contours} = project;
+    const {project, bounds} = this;
+    const {builder_props, contours} = project;
 
     if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
 
@@ -490,7 +502,8 @@ class DimensionDrawer extends paper.Group {
   by_contour(ihor, ivert, forse, by_side) {
 
     const {project, parent} = this;
-    const {bounds} = parent;
+    const {profileBounds: bounds} = parent;
+    const projectBounds = project.l_dimensions.bounds;
     let {base_offset, dop_offset} = consts;
     const {_regions} = this.project._attr;
     if(_regions) {
@@ -500,7 +513,7 @@ class DimensionDrawer extends paper.Group {
 
     if(project.contours.length > 1 || forse) {
 
-      if(parent.is_pos('left') && !parent.is_pos('right') && project.bounds.height != bounds.height) {
+      if(parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -514,6 +527,11 @@ class DimensionDrawer extends paper.Group {
           else {
             this.left.offset = base_offset + (ihor.length > 2 ? dop_offset : 0);
           }
+          this.left.redraw();
+          if(this.ihor.has_size(this.left.size)) {
+            this.left.remove();
+            this.left = null;
+          }
         }
       }
       else {
@@ -523,7 +541,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('right') && (project.bounds.height != bounds.height || forse)) {
+      if(parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -537,6 +555,11 @@ class DimensionDrawer extends paper.Group {
           else {
             this.right.offset = ihor.length > 2 ? -dop_offset * 2 : -dop_offset;
           }
+          this.right.redraw();
+          if(this.ihor.has_size(this.right.size)) {
+            this.right.remove();
+            this.right = null;
+          }
         }
       }
       else {
@@ -546,7 +569,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && project.bounds.width != bounds.width) {
+      if(parent.is_pos('top') && !parent.is_pos('bottom') && projectBounds.width != bounds.width) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
@@ -560,6 +583,11 @@ class DimensionDrawer extends paper.Group {
           else {
             this.top.offset = base_offset + (ivert.length > 2 ? dop_offset : 0);
           }
+          this.top.redraw();
+          if(this.ivert.has_size(this.top.size)) {
+            this.top.remove();
+            this.top = null;
+          }
         }
       }
       else {
@@ -569,7 +597,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('bottom') && (project.bounds.width != bounds.width || forse)) {
+      if(parent.is_pos('bottom') && (projectBounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -582,6 +610,11 @@ class DimensionDrawer extends paper.Group {
           }
           else {
             this.bottom.offset = ivert.length > 2 ? -dop_offset * 2 : -dop_offset;
+          }
+          this.bottom.redraw();
+          if(this.ivert.has_size(this.bottom.size)) {
+            this.bottom.remove();
+            this.bottom = null;
           }
         }
       }

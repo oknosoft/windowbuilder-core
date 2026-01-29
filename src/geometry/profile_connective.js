@@ -466,6 +466,10 @@ class ConnectiveLayer extends paper.Layer {
   get contours() {
     return [];
   }
+  
+  get profileBounds() {
+    return this.bounds;
+  }
 
   /**
    * Заглушка
