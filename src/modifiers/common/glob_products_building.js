@@ -721,9 +721,6 @@ class ProductsBuilding {
             cx.calc_order_row.ordn = ox;
             cx.prod_name();
           }
-          if(!cx.svg) {
-            cx.svg = layer.get_svg();
-          }
         }
       }
 
@@ -871,6 +868,15 @@ class ProductsBuilding {
         if(attr.svg !== false) {
           ox.svg = scheme.get_svg();
           const root = scheme.separate_frame_root();
+          for (const contour of scheme.getItems({class: Contour})) {
+            const layer = contour.prod_layer();
+            if(layer && layer !== root) {
+              const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
+              if(!cx.svg) {
+                cx.svg = layer.get_svg();
+              }
+            }
+          }
           if(root) {
             root.dop = {svg: root.get_svg()};
           }

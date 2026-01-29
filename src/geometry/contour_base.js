@@ -355,20 +355,24 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(!options.precision) {
       options.precision = 1;
     }
-
+    const tmp = new paper.Group({parent: this});
+    for(const {l_visualization} of [this, ...this.getItems({class: Contour})]) {
+      const curr = new paper.Group({parent: tmp});
+      curr.copyContent(l_visualization);
+    }
     const svg = this.exportSVG(options);
     const bounds = this.strokeBounds.unite(this.l_dimensions.strokeBounds);
-
-    svg.setAttribute('x', bounds.x);
+    svg.setAttribute('x', bounds.x - 10);
     svg.setAttribute('y', bounds.y);
     svg.setAttribute('width', bounds.width + 40);
     svg.setAttribute('height', bounds.height);
     svg.querySelector('g').removeAttribute('transform');
-
+    
     for(const item of selected) {
       item.selected = true;
     }
-
+    tmp.remove();
+    
     return svg.outerHTML;
   }
 
