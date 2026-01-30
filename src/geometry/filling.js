@@ -1198,6 +1198,10 @@ class Filling extends AbstractFilling(BuilderElement) {
     return path ? path.bounds : new paper.Rectangle();
   }
 
+  get profileBounds() {
+    return this.bounds;
+  }
+
   /**
    * Массив с рёбрами периметра по внутренней стороне профилей
    * @return {Array}

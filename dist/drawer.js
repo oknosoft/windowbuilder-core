@@ -7565,6 +7565,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {path} = this;
     return path ? path.bounds : new paper.Rectangle();
   }
+  get profileBounds() {
+    return this.bounds;
+  }
   perimeter_inner(size = 0) {
     const {center} = this.bounds;
     const res = this.outer_profiles.map((curr) => {
