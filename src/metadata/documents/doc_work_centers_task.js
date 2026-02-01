@@ -37,6 +37,15 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     return this;
   }
 
+  before_save(attr) {
+    const {run} = $p.enm.planning_phases;
+    for(const row of this.set) {
+      if(row.phase.empty()) {
+        row.phase = run;
+      }
+    }
+  }
+
   /**
    * значения по умолчанию при добавлении строки
    * @param {TabularSectionRow} row

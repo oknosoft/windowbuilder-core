@@ -7840,6 +7840,15 @@ set set(v){this._setter_ts('set',v)}
     return this;
   }
 
+  before_save(attr) {
+    const {run} = $p.enm.planning_phases;
+    for(const row of this.set) {
+      if(row.phase.empty()) {
+        row.phase = run;
+      }
+    }
+  }
+
   add_row(row, attr) {
     if(row?._owner === this.cuts) {
       if(!row.stick && !attr?.stick) {

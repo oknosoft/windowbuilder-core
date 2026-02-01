@@ -19622,11 +19622,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               if(fill_regions) {
                 frow.region = index + 1;
               }
-              for(const {kind} of srow.nom.demand) {
-                if(kind.applying.is('region')) {
-                  frow.specify = index + 1;
-                  break;
-                }
+              if(srow.stage.applying.is('region')) {
+                frow.specify = index + 1;
               }
               res.push(frow);
             }
