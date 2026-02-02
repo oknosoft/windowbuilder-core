@@ -8758,7 +8758,7 @@ class DocCalc_orderManager extends DocManager {
       await src.load_linked_refs();
     }
     const {clone, refill_props} = src;
-    const {organization, partner, contract, orders, _rev, posted, branch, department, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, posted, branch, route, force_route, exclude_route, department, ...others} = (src._obj || src);
     if(cat.partners.get(partner).is_new()) {
       await cat.partners.get(partner).load();
     }

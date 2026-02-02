@@ -61,7 +61,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     }
     // создаём заказ
     const {clone, refill_props} = src;
-    const {organization, partner, contract, orders, _rev, posted, branch, department, ...others} = (src._obj || src);
+    const {organization, partner, contract, orders, _rev, posted, branch, route, force_route, exclude_route, department, ...others} = (src._obj || src);
     if(cat.partners.get(partner).is_new()) {
       await cat.partners.get(partner).load();
     }
