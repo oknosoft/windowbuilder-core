@@ -114,10 +114,17 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     cuts.clear({width: 0});
     const noms = [];
     for(const srow of set) {
-      const {obj: {obj, type, specimen, region}, stage} = srow;
+      const {obj: {obj, elm, type, specimen, region}, stage} = srow;
       // для ключей типа 'Изделие', добавляем все строки, привязанные к этапу производства
-      if(type.is('product')) {
-        obj.specification.find_rows({stage}, (row) => {
+      const selector = {stage};
+      if(type.is('filling') || type.is('glass') || type.is('glunit')) {
+        selector.elm = elm;
+      }
+      if(type.is('glunit')) {
+        selector.region = region;
+      }
+      if(type.is('product') || type.is('filling') || type.is('glass') || type.is('glunit')) {
+        obj.specification.find_rows(selector, (row) => {
           const {cutting_optimization_type: ct, is_procedure, is_service} = row.nom;
           if(!row.len || is_procedure || is_service) {
             return;
