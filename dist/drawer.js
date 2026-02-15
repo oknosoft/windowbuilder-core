@@ -22345,6 +22345,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       НомерВнутр: this.number_internal,
       КлиентДилера: this.client_of_dealer,
       Комментарий: this.note,
+      СоставныеИзделия: new Map(),
     };
     this.extra_fields.forEach((row) => {
       res['Свойство' + row.property.name.replace(/\s/g, '')] = String(row.value);
@@ -22367,7 +22368,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       let editor, imgs = Promise.resolve();
       const builder_props = attr.builder_props && Object.assign({}, $p.CatCharacteristics.builder_props_defaults, attr.builder_props);
       this.production.forEach((row) => {
-        const {characteristic} = row;
+        const {characteristic, ordn} = row;
         if(!characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
           const description = this.row_description(row);
           res.Продукция.push(description);
@@ -22375,6 +22376,42 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           res.ВсегоПлощадьИзделий += row.quantity * characteristic.s;
           res.ВсегоМасса += row.quantity * description.Масса;
           res.ВсегоМассаЗаполнений += row.quantity * description.МассаЗаполнений;
+          if(!ordn.empty()) {
+            if(!res.СоставныеИзделия.has(ordn)) {
+              const {calc_order_row: crow, s} = ordn;
+              const description = this.row_description(crow);
+              const cmp = {
+                Изделия: [crow],
+                Допы: [],
+                Изделий: crow.quantity,
+                Допов: 0,
+                ПлощадьИзделий: crow.quantity * s,
+                ПлощадьДопов: 0,
+                Масса: crow.quantity * description.Масса,
+                МассаЗаполнений: crow.quantity * description.МассаЗаполнений,
+                МассаДопов: 0,
+                Сумма: crow.amount,
+                СуммаДопов: 0,
+              };
+              res.СоставныеИзделия.set(ordn, cmp);
+            }
+            const cmp = res.СоставныеИзделия.get(ordn);
+            if(characteristic.coordinates.count()) {
+              cmp.Изделия.push(row);
+              cmp.Изделий += row.quantity;
+              cmp.ПлощадьИзделий += row.quantity * characteristic.s;
+              cmp.Масса += row.quantity * description.Масса;
+              cmp.МассаЗаполнений += row.quantity * description.МассаЗаполнений;
+              cmp.Сумма += row.amount;
+            }
+            else {
+              cmp.Допы.push(row);
+              cmp.Допов += row.quantity;
+              cmp.ПлощадьДопов += row.quantity * characteristic.s;
+              cmp.МассаДопов += row.quantity * description.Масса;
+              cmp.СуммаДопов += row.amount;
+            }
+          }
           if(builder_props) {
             if(!editor) {
               editor = new EditorInvisible();
