@@ -8036,7 +8036,7 @@ set set(v){this._setter_ts('set',v)}
     return this;
   }
 
-  fragments2D() {
+  fragments2D(nom, scrap) {
     const {debit} = $p.enm.debit_credit_kinds;
     const res = {
       products: [],
@@ -8050,11 +8050,20 @@ set set(v){this._setter_ts('set',v)}
       if(!row.stick) {
         row.stick = this.cuts.aggregate([], ['stick'], 'max') + 1;
       }
+      if(nom && row.nom !== nom) {
+        continue;
+      }
+      if(scrap && row !== scrap) {
+        continue;
+      }
       if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
         res.scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
       }
     }
     for(const row of this.cutting) {
+      if(nom && row.nom !== nom) {
+        continue;
+      }
       if(row.width && row.len) {
         res.products.push({id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row});
       }
