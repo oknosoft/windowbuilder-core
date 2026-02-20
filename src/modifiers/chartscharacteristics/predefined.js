@@ -131,6 +131,25 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'top_glass_weight':
+          _data._formula = function (obj) {
+            const {elm, prm_row, ox} = obj || {};
+            const {generatrix, length, orientation} = elm;
+            if(orientation?.is('hor')) {
+              const gen = generatrix.clone({insert: false, deep: false}).elongation(100);
+              const el = length / 1000;
+              return elm.joined_glasses()
+                .filter(gl => {
+                  const pt = gl.interiorPoint?.() || gl.path.center;
+                  const gpt = gen.getNearestPoint(pt);
+                  return pt.y < gpt.y;
+                })
+                .reduce((sum, curr) => sum + curr.weight, 0);
+            }
+            return 0;
+          };
+          break;
+          
         case 'layer_weight':
             _data._formula = function (obj) {
               let {ox, elm, layer, prm_row} = obj;
@@ -636,6 +655,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'has_glasses_outer',  //  бит к профилю примыкает заполнение с другой стороны
     'has_addition',     // бит есть добор у текущего профиля
     'elm_weight',       // масса элемента
+    'top_glass_weight', // масса заполнений сверху
     'elm_orientation',  // ориентация элемента
     'elm_pos',          // положение элемента
     'node_pos',         // положение узла профиля
