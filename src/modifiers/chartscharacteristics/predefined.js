@@ -133,18 +133,20 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           
         case 'top_glass_weight':
           _data._formula = function (obj) {
-            const {elm, prm_row, ox} = obj || {};
-            const {generatrix, length, orientation} = elm;
-            if(orientation?.is('hor')) {
-              const gen = generatrix.clone({insert: false, deep: false}).elongation(100);
-              const el = length / 1000;
-              return elm.joined_glasses()
-                .filter(gl => {
-                  const pt = gl.interiorPoint?.() || gl.path.center;
-                  const gpt = gen.getNearestPoint(pt);
-                  return pt.y < gpt.y;
-                })
-                .reduce((sum, curr) => sum + curr.weight, 0);
+            const {elm} = obj || {};
+            if(elm) {
+              const {generatrix, length, orientation} = elm;
+              if(orientation?.is('hor')) {
+                const gen = generatrix.clone({insert: false, deep: false}).elongation(100);
+                const el = length / 1000;
+                return elm.joined_glasses()
+                  .filter(gl => {
+                    const pt = gl.interiorPoint?.() || gl.path.center;
+                    const gpt = gen.getNearestPoint(pt);
+                    return pt.y < gpt.y;
+                  })
+                  .reduce((sum, curr) => sum + curr.weight, 0);
+              }
             }
             return 0;
           };
