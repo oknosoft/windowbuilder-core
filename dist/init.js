@@ -4913,6 +4913,10 @@ get mmin(){return this._getter('mmin')}
 set mmin(v){this._setter('mmin',v)}
 get mmax(){return this._getter('mmax')}
 set mmax(v){this._setter('mmax',v)}
+get thickness(){return this._getter('thickness')}
+set thickness(v){this._setter('thickness',v)}
+get key(){return this._getter('key')}
+set key(v){this._setter('key',v)}
 get formula(){return this._getter('formula')}
 set formula(v){this._setter('formula',v)}
 get furn_set(){return this._getter('furn_set')}
@@ -8050,10 +8054,7 @@ set set(v){this._setter_ts('set',v)}
       if(!row.stick) {
         row.stick = this.cuts.aggregate([], ['stick'], 'max') + 1;
       }
-      if(nom && row.nom !== nom) {
-        continue;
-      }
-      if(scrap && row !== scrap) {
+      if(nom && row.nom !== nom || scrap && row !== scrap) {
         continue;
       }
       if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
