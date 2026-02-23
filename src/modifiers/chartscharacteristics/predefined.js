@@ -133,20 +133,21 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           
         case 'top_glass_weight':
           _data._formula = function (obj) {
-            const {elm} = obj || {};
-            if(elm) {
+            const {elm, elm2} = obj || {};
+            if(elm && elm2 instanceof Filling) {
               const {generatrix, length, orientation} = elm;
               if(orientation?.is('hor')) {
                 const gen = generatrix.clone({insert: false, deep: false}).elongation(100);
-                const el = length / 1000;
-                return elm.joined_glasses()
-                  .filter(gl => {
-                    const pt = gl.interiorPoint?.() || gl.path.center;
-                    const gpt = gen.getNearestPoint(pt);
-                    return pt.y < gpt.y;
-                  })
-                  .reduce((sum, curr) => sum + curr.weight, 0);
+                const pt = elm2.interiorPoint?.() || elm2.path.center;
+                const gpt = gen.getNearestPoint(pt);
+                if(pt.y < gpt.y) {
+                  return elm2.weight;
+                }
               }
+            }
+            else if(elm instanceof BuilderElement) {
+              const {nom} = job_prm;
+              elm.err_spec_row(nom.cnn_ii_error || nom.info_error, 'Запрещено вызывать параметр top_glass_weight из вставки', elm.inset);
             }
             return 0;
           };
