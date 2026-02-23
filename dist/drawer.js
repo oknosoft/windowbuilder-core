@@ -7209,7 +7209,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {project, elm, _row, _attr, ox} = this;
     _row.inset = inset;
     delete _attr.nom;
-    if(!ign_select){
+    if(!ign_select || force){
       const {glass_specification, _data} = ox;
       const {_loading} = _data;
       if(!_loading) {
@@ -7223,7 +7223,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
         this.default_params();
       }
-      project.selected_glasses().forEach((selm) => {
+      !ign_select && project.selected_glasses().forEach((selm) => {
         if(selm !== this){
           selm.set_inset(inset, true, force);
           glass_specification.clear({elm: selm.elm});
@@ -14275,7 +14275,7 @@ class Scheme extends paper.Project {
     const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
       if(glass.nom.elm_type != Заполнение) {
-        glass.set_inset(inset, true);
+        glass.set_inset(inset, true, true);
       }
     }
   }

@@ -709,7 +709,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.inset = inset;
     delete _attr.nom;
 
-    if(!ign_select){
+    if(!ign_select || force){
 
       const {glass_specification, _data} = ox;
       const {_loading} = _data;
@@ -731,7 +731,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
 
       // транслируем изменения на остальные выделенные заполнения
-      project.selected_glasses().forEach((selm) => {
+      !ign_select && project.selected_glasses().forEach((selm) => {
         if(selm !== this){
           // копируем вставку
           selm.set_inset(inset, true, force);

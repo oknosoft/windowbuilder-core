@@ -270,7 +270,7 @@ class Scheme extends paper.Project {
     const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
       if(glass.nom.elm_type != Заполнение) {
-        glass.set_inset(inset, true);
+        glass.set_inset(inset, true, true);
       }
     }
   }
