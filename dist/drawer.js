@@ -951,7 +951,10 @@ class BuilderElement extends paper.Group {
     return nom && !nom.empty() ? nom.ref : this.inset.ref;
   }
   get width() {
-    return this.nom.width || 80;
+    const {nom, inset} = this;
+    const {operations} = nom._obj;
+    const irow = operations?.find(v => v.stan == inset);
+    return irow?.width || nom.width || 1;
   }
   get thickness() {
     return this.inset.thickness(this);
