@@ -247,10 +247,12 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
 
   fragments2D(nom, scrap) {
     const {debit} = $p.enm.debit_credit_kinds;
-    const res = {
-      products: [],
-      scraps: [],
-      options: {}
+    const byNom = new Map();
+    const getRes = (row) => {
+      if(!byNom.has(row.nom)) {
+        byNom.set(row.nom, {products: [], scraps: [], options: {}});
+      }
+      return byNom.get(row.nom);
     };
     for(const row of this.cuts) {
       if(row.record_kind.empty()) {
@@ -263,7 +265,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         continue;
       }
       if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
-        res.scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+        getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
       }
     }
     for(const row of this.cutting) {
@@ -271,10 +273,10 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         continue;
       }
       if(row.width && row.len) {
-        res.products.push({id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row});
+        getRes(row).products.push({id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row});
       }
     }
-    return res;
+    return byNom;
   }
   
   /**
@@ -575,16 +577,19 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       }
     }
     const rm = [];
-    for(const [nom, characteristics] of noms) {
-      for(const characteristic of characteristics) {
-        this.cuts.find_rows({nom, characteristic}, (row) => {
-          if(row.record_kind.is('credit') || (!row.width && row.len === nom.len) || (row.width === nom.width && row.len === nom.len)) {
+    for(const row of this.cuts) {
+      if(noms.has(row.nom)) {
+        if(row.width) {
+          if(row.quantity === 1) {
             rm.push(row);
           }
           else {
             row.dop = {svg: ''};
           }
-        });
+        }
+        else if(row.record_kind.is('credit') && noms.get(row.nom).has(row.characteristic)) {
+          rm.push(row);
+        }
       }
     }
     for(const row of rm) {
