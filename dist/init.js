@@ -1408,9 +1408,11 @@ set params(v){this._setter_ts('params',v)}
 
       let subpath;
 
-      if(this.svg_path.indexOf('{"method":') == 0){
+      const {svg_path, attributes} = this;
 
-        const attr = JSON.parse(this.svg_path);
+            if(svg_path.indexOf('{"method":') == 0){
+
+        const attr = JSON.parse(svg_path);
         if(attr.dashArray){
           dashArray = attr.dashArray;
         }
@@ -1473,7 +1475,7 @@ set params(v){this._setter_ts('params',v)}
           subpath.strokeCap = attr.strokeCap || 'round';
         }
       }
-      else if(this.svg_path){
+      else if(svg_path){
 
         if(this.mode === 1) {
           const {attributes} = this;
@@ -1485,7 +1487,7 @@ set params(v){this._setter_ts('params',v)}
             dashArray,
             fontFamily: $p.job_prm.builder.font_family,
             fontSize: attributes.fontSize || 60,
-            content: this.svg_path,
+            content: svg_path,
           }, attributes, this.origin.empty() ? null : {_visualization: true, guide: false}));
         }
         else {
@@ -1497,7 +1499,7 @@ set params(v){this._setter_ts('params',v)}
             project,
             layer,
             parent: layer.by_spec,
-            pathData: this.svg_path,
+            pathData: svg_path,
             strokeColor: 'black',
             fillColor,
             strokeScaling: false,
@@ -1505,6 +1507,9 @@ set params(v){this._setter_ts('params',v)}
             pivot: [0, 0],
             opacity: elm.opacity
           }, this.origin.empty() ? null : {_visualization: true, guide: false}));
+          if(Object.keys(attributes).length) {
+            subpath.data = attributes;
+          }
         }
 
         if(elm instanceof constructor.Filling) {
@@ -1537,10 +1542,12 @@ set params(v){this._setter_ts('params',v)}
 
             subpath.position = p1.add(p2).divide(2);
 
-          }else if(!this.elm_side){
+          }
+          else if(!this.elm_side){
             subpath.position = inner.getNearestPoint(p0);
 
-          }else{
+          }
+          else{
             subpath.position = outer.getNearestPoint(p0);
           }
         }
