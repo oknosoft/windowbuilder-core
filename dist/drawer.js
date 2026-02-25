@@ -1526,7 +1526,7 @@ class GlassSegment {
             angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)
           };
           if(segm.outer && angle.angle < 0) {
-            angle.angle *= -1;
+            angle.angle += 360;
           }
           angles.push(angle);
         }
