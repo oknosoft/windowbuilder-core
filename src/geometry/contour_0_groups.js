@@ -76,8 +76,15 @@ class GlassSegment {
       const poffset = generatrix.getOffsetOf(ppoint);
       const ptangent = generatrix.getTangentAt(poffset);
       for(const segm of segments) {
-        if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {
-          angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});
+        if(segm.profile === elm.profile && segm[segm.outer ? 'e' : 'b'].is_nearest(ppoint, true)) {
+          const angle = {
+            profile: elm.profile,
+            angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)
+          };
+          if(segm.outer && angle.angle < 0) {
+            angle.angle *= -1;
+          }
+          angles.push(angle);
         }
       }
     }

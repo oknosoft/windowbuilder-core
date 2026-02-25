@@ -2826,7 +2826,7 @@ class ProfileItem extends GeneratrixElement {
    */
   get hasInner() {
     const {layer} = this;
-    if(!layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
+    if(layer && !layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
       layer.actualizeCach();
     }
     return super.hasInner;
@@ -2838,7 +2838,7 @@ class ProfileItem extends GeneratrixElement {
    */
   get hasOuter() {
     const {layer} = this;
-    if(!layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
+    if(layer && !layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
       layer.actualizeCach();
     }
     return super.hasOuter;
