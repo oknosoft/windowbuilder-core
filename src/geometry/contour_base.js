@@ -482,7 +482,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         upath = path.clone({insert: false});
       }
     });
-    return (upath.area/1e6).round(4);
+    return (upath?.area/1e6 || 0).round(4);
   }
 
   /**
