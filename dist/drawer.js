@@ -21783,7 +21783,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     };
     let fin = Promise.resolve();
-    return !sobjs.length ? unused() : bulk()
+    return !sobjs.length ? unused() : this.save_linked(obj_delivery_state, db)
+      .then(bulk)
       .then((bres) => {
         for(const row of bres) {
           const [cname, ref] = row.id.split('|');
@@ -21823,6 +21824,44 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         else {
           save_error(`${err.message} повторите попытку записи через минуту`);
         }
+      });
+  }
+  save_linked(obj_delivery_state, db) {
+    return obj_delivery_state.is('Шаблон') ? Promise.resolve() : db
+      .query('linked', {startkey: [this.ref, 'doc.calc_order'], endkey: [this.ref, 'doc.calc_order\u0fff']})
+      .then((res) => {
+        const links = new Set();
+        const refs = [];
+        for(const {calc_order} of this.links) {
+          if(!links.has(calc_order)) {
+            links.add(calc_order);
+            if(calc_order.is_new()) {
+              refs.push(calc_order.ref);
+            }
+          }
+        }
+        const {_manager} = this;
+        return (refs.length ? db.load_array(_manager, refs) : Promise.resolve())
+          .then(async () => {
+            for(const doc of links) {
+              if(doc.basis !== this) {
+                doc.basis = this;
+                await doc.save();
+              }
+            }
+            const rm = new Set();
+            refs.length = 0;
+            for(const {value} of res.rows) {
+              const doc = _manager.get(value);
+              if(!links.has(doc)) {
+                if(doc.is_new()) {
+                  await doc.load();
+                }
+                doc.basis = null;
+                await doc.save();
+              }
+            }
+          })
       });
   }
   before_save_errors() {
