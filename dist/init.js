@@ -8636,6 +8636,8 @@ get orders(){return this._getter_ts('orders')}
 set orders(v){this._setter_ts('orders',v)}
 get composition(){return this._getter_ts('composition')}
 set composition(v){this._setter_ts('composition',v)}
+get links(){return this._getter_ts('links')}
+set links(v){this._setter_ts('links',v)}
 }
 $p.DocCalc_order = DocCalc_order;
 class DocCalc_orderProductionRow extends TabularSectionRow{
@@ -8747,6 +8749,11 @@ get value(){return this._getter('value')}
 set value(v){this._setter('value',v)}
 }
 $p.DocCalc_orderCompositionRow = DocCalc_orderCompositionRow;
+class DocCalc_orderLinksRow extends TabularSectionRow{
+get calc_order(){return this._getter('calc_order')}
+set calc_order(v){this._setter('calc_order',v)}
+}
+$p.DocCalc_orderLinksRow = DocCalc_orderLinksRow;
 class DocCalc_orderManager extends DocManager {
 
   constructor(owner, class_name) {
