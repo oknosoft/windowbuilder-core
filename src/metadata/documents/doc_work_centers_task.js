@@ -265,11 +265,13 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         continue;
       }
       if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
-        getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+        if(row.quantity > 1 || !this.cutting.find({stick: row.stick})) {
+          getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+        }
       }
     }
     for(const row of this.cutting) {
-      if(nom && row.nom !== nom) {
+      if(row.stick || (nom && row.nom != nom)) {
         continue;
       }
       if(row.width && row.len) {

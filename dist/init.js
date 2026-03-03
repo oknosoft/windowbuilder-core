@@ -2353,14 +2353,20 @@ set parent(v){this._setter('parent',v)}
 $p.CatNom_kinds = CatNom_kinds;
 $p.cat.create('nom_kinds');
 class CatContracts extends CatObj{
-get settlements_currency(){return this._getter('settlements_currency')}
-set settlements_currency(v){this._setter('settlements_currency',v)}
-get mutual_settlements(){return this._getter('mutual_settlements')}
-set mutual_settlements(v){this._setter('mutual_settlements',v)}
+get organization(){return this._getter('organization')}
+set organization(v){this._setter('organization',v)}
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
 get contract_kind(){return this._getter('contract_kind')}
 set contract_kind(v){this._setter('contract_kind',v)}
 get date(){return this._getter('date')}
 set date(v){this._setter('date',v)}
+get number_doc(){return this._getter('number_doc')}
+set number_doc(v){this._setter('number_doc',v)}
+get settlements_currency(){return this._getter('settlements_currency')}
+set settlements_currency(v){this._setter('settlements_currency',v)}
+get mutual_settlements(){return this._getter('mutual_settlements')}
+set mutual_settlements(v){this._setter('mutual_settlements',v)}
 get check_days_without_pay(){return this._getter('check_days_without_pay')}
 set check_days_without_pay(v){this._setter('check_days_without_pay',v)}
 get allowable_debts_amount(){return this._getter('allowable_debts_amount')}
@@ -2373,10 +2379,6 @@ get check_debts_amount(){return this._getter('check_debts_amount')}
 set check_debts_amount(v){this._setter('check_debts_amount',v)}
 get check_debts_days(){return this._getter('check_debts_days')}
 set check_debts_days(v){this._setter('check_debts_days',v)}
-get number_doc(){return this._getter('number_doc')}
-set number_doc(v){this._setter('number_doc',v)}
-get organization(){return this._getter('organization')}
-set organization(v){this._setter('organization',v)}
 get main_cash_flow_article(){return this._getter('main_cash_flow_article')}
 set main_cash_flow_article(v){this._setter('main_cash_flow_article',v)}
 get main_project(){return this._getter('main_project')}
@@ -2389,12 +2391,12 @@ get prepayment_percent(){return this._getter('prepayment_percent')}
 set prepayment_percent(v){this._setter('prepayment_percent',v)}
 get validity(){return this._getter('validity')}
 set validity(v){this._setter('validity',v)}
+get vat_consider(){return this._getter('vat_consider')}
+set vat_consider(v){this._setter('vat_consider',v)}
 get vat_included(){return this._getter('vat_included')}
 set vat_included(v){this._setter('vat_included',v)}
 get price_type(){return this._getter('price_type')}
 set price_type(v){this._setter('price_type',v)}
-get vat_consider(){return this._getter('vat_consider')}
-set vat_consider(v){this._setter('vat_consider',v)}
 get days_without_pay(){return this._getter('days_without_pay')}
 set days_without_pay(v){this._setter('days_without_pay',v)}
 get invalid(){return this._getter('invalid')}
@@ -8067,11 +8069,13 @@ set set(v){this._setter_ts('set',v)}
         continue;
       }
       if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
-        getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+        if(row.quantity > 1 || !this.cutting.find({stick: row.stick})) {
+          getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+        }
       }
     }
     for(const row of this.cutting) {
-      if(nom && row.nom !== nom) {
+      if(row.stick || (nom && row.nom != nom)) {
         continue;
       }
       if(row.width && row.len) {
