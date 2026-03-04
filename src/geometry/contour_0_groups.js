@@ -95,6 +95,22 @@ class GlassSegment {
         return true;
       }
     }
+    if(node.length > 2) {
+      const others = node.filter(({profile}) => profile !== curr_profile && profile !== segm_profile);
+      for(const other of others) {
+        const {generatrix} = other.profile;
+        const ppoint = generatrix.getNearestPoint(point);
+        const poffset = generatrix.getOffsetOf(ppoint);
+        let ptangent = generatrix.getTangentAt(poffset);
+        if(other.point === 'e') {
+          ptangent = ptangent.negate(); 
+        }
+        const oangle = tangent.getDirectedAngle(ptangent);
+        if(oangle > angle) {
+          return true;
+        }
+      }
+    }
   }
 
   /**
