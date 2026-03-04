@@ -1520,15 +1520,8 @@ class GlassSegment {
       const poffset = generatrix.getOffsetOf(ppoint);
       const ptangent = generatrix.getTangentAt(poffset);
       for(const segm of segments) {
-        if(segm.profile === elm.profile && segm[segm.outer ? 'e' : 'b'].is_nearest(ppoint, true)) {
-          const angle = {
-            profile: elm.profile,
-            angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)
-          };
-          if(segm.outer && angle.angle < 0) {
-            angle.angle += 360;
-          }
-          angles.push(angle);
+        if(segm.profile === elm.profile && segm.b.is_nearest(ppoint, true)) {
+          angles.push({profile: elm.profile, angle: tangent.getDirectedAngle(segm.outer ? ptangent.negate() : ptangent)});
         }
       }
     }
@@ -2797,7 +2790,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   get bounds() {
     const {_attr} = this;
-    const {exclude_connective_area} = $p.job_prm.builder;
+    const {exclude_connective_area, include_addls_area} = $p.job_prm.builder;
     if (!_attr._bounds || !_attr._bounds.width || !_attr._bounds.height) {
       const deposite = (profile) => {
         let {path} = profile;
@@ -2806,7 +2799,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         if (path) {
           _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
-          !exclude_connective_area && profile.addls.forEach(deposite);
+          (!exclude_connective_area || include_addls_area)  && profile.addls.forEach(deposite);
         }
       }; 
       this.profiles.forEach(deposite);

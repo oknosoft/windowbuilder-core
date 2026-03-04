@@ -1352,7 +1352,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get bounds() {
     const {_attr} = this;
-    const {exclude_connective_area} = $p.job_prm.builder;
+    const {exclude_connective_area, include_addls_area} = $p.job_prm.builder;
     if (!_attr._bounds || !_attr._bounds.width || !_attr._bounds.height) {
       const deposite = (profile) => {
         let {path} = profile;
@@ -1361,7 +1361,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         if (path) {
           _attr._bounds = _attr._bounds ? _attr._bounds.unite(path.bounds) : path.bounds;
-          !exclude_connective_area && profile.addls.forEach(deposite);
+          (!exclude_connective_area || include_addls_area)  && profile.addls.forEach(deposite);
         }
       }; 
       this.profiles.forEach(deposite);
