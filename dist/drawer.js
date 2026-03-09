@@ -2180,16 +2180,26 @@ class Contour extends AbstractFilling(paper.Layer) {
     return (this.bounds.area/1e6).round(4);
   }
   get form_area() {
+    const {form_path} = this;
+    return (form_path?.area/1e6 || 0).round(4);
+  }
+  get form_path() {
     let upath;
-    this.glasses(false, true).concat(this.profiles).forEach(({path}) => {
+    const add = (path) => {
       if(upath) {
         upath = upath.unite(path, {insert: false});
       }
       else {
         upath = path.clone({insert: false});
       }
-    });
-    return (upath?.area/1e6 || 0).round(4);
+    };
+    for(const item of this.glasses(false, false)) {
+      add(item instanceof Contour ? item.form_path : item.path);     
+    }
+    for(const {path} of this.profiles) {
+      add(path);
+    }
+    return upath;
   }
   get weight() {
     const {_ox, cnstr} = this;

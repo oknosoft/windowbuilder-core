@@ -467,22 +467,37 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * площадь контура с учетом наклонов-изгибов профиля
-   * Получаем, как сумму площадей всех заполнений и профилей контура
-   * Вычисления тяжелые, но в общем случае, с учетом незамкнутых контуров и соединений с пустотой, короче не сделать
+   * @summary Площадь слоя с учетом наклонов-изгибов профиля
+   * @desc Получаем, как сумму площадей всех заполнений и профилей контура
    * @type Number
    */
   get form_area() {
+    const {form_path} = this;
+    return (form_path?.area/1e6 || 0).round(4);
+  }
+
+  /**
+   * @summary Площадь слоя с учетом наклонов-изгибов профиля
+   * @desc Получаем, как сумму путей всех заполнений и профилей контура
+   * @type {paper.Path}
+   */
+  get form_path() {
     let upath;
-    this.glasses(false, true).concat(this.profiles).forEach(({path}) => {
+    const add = (path) => {
       if(upath) {
         upath = upath.unite(path, {insert: false});
       }
       else {
         upath = path.clone({insert: false});
       }
-    });
-    return (upath?.area/1e6 || 0).round(4);
+    };
+    for(const item of this.glasses(false, false)) {
+      add(item instanceof Contour ? item.form_path : item.path);     
+    }
+    for(const {path} of this.profiles) {
+      add(path);
+    }
+    return upath;
   }
 
   /**
