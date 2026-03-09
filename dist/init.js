@@ -7882,7 +7882,7 @@ set set(v){this._setter_ts('set',v)}
 
   add_row(row, attr) {
     if(row?._owner === this.cuts) {
-      if(!row.stick && !attr?.stick) {
+      if(!row.stick && (attr instanceof row.constructor || !attr?.stick)) {
         const {_obj} = row._owner;
         row._obj.stick = 1 + (_obj.length ? Math.max.apply(null, _obj.map(({stick}) => stick)) : 0);
       }

@@ -53,7 +53,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
    */
   add_row(row, attr) {
     if(row?._owner === this.cuts) {
-      if(!row.stick && !attr?.stick) {
+      if(!row.stick && (attr instanceof row.constructor || !attr?.stick)) {
         const {_obj} = row._owner;
         row._obj.stick = 1 + (_obj.length ? Math.max.apply(null, _obj.map(({stick}) => stick)) : 0);
       }
