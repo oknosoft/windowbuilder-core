@@ -4067,20 +4067,82 @@ class Contour extends AbstractFilling(paper.Layer) {
     return layer ? layer.level + 1 : 0;
   }
   get sys() {
-    const {layer, project} = this;
-    return layer ? layer.sys : project._dp.sys;
+    const {layer, own_sys, project} = this;
+    if(layer) {
+      return layer.sys;  
+    }
+    const {sys} = project._dp;
+    if(own_sys) {
+      const {_row: {dop}} = this;
+      if(dop.sys) {
+        return sys._manager.get(dop.sys);
+      }
+    }
+    return sys;    
   }
   set sys(v) {
-    const {layer, project} = this;
+    const {layer, own_sys, project} = this;
     if(layer) {
       layer.sys = v;
+    }
+    else if(own_sys) {
+      const {_row, _ox: {params}, cnstr, project} = this;
+      const {sys} = project._dp;
+      const inset = $p.utils.blank.guid;
+      if(!v || v == sys) {
+        if(_row.dop.sys) {
+          _row.dop = {sys: null};
+        }
+        params.clear({cnstr, inset});
+      }
+      else {
+        _row.dop = {sys: v.valueOf()};
+        this.refill_prm();
+      }
+      project.register_change(true);
     }
     else {
       project._dp.sys = v;
     }
   }
   get own_sys() {
-    return this.layer ? false : [10, 11].includes(this.kind);
+    if(this.layer) {
+      return false;
+    }
+    if([10, 11].includes(this.kind)) {
+      return true;
+    }
+    return this.project.contours.indexOf(this) > 0;
+  }
+  refill_prm() {
+    const {_ox: {params}, cnstr, sys: {product_params}} = this;
+    const inset = $p.utils.blank.guid;
+    const rm = [];
+    params.find_rows({cnstr, inset}, (row) => {
+      if(!product_params.find({param: row.param})) {
+        rm.push(row);
+      }
+    });
+    for(const row of rm) {
+      params.del(row);
+    }
+    for(const row of product_params) {
+      let has;
+      params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
+        has = true;
+        return false;
+      });
+      if(!has) {
+        params.add({
+          cnstr,
+          inset,
+          region: 0,
+          param: row.param,
+          hide: row.hide,
+          value: row.value,
+        });
+      }
+    }
   }
   extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
     if(!(elm instanceof ProfileItem) && elm?.rnum) {
@@ -5173,36 +5235,6 @@ class ContourVirtual extends Contour {
   }
   get own_sys() {
     return true;
-  }
-  refill_prm() {
-    const {_ox: {params}, cnstr, sys: {product_params}} = this;
-    const inset = $p.utils.blank.guid;
-    const rm = [];
-    params.find_rows({cnstr, inset}, (row) => {
-      if(!product_params.find({param: row.param})) {
-        rm.push(row);
-      }
-    });
-    for(const row of rm) {
-      params.del(row);
-    }
-    for(const row of product_params) {
-      let has;
-      params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
-        has = true;
-        return false;
-      });
-      if(!has) {
-        params.add({
-          cnstr,
-          inset,
-          region: 0,
-          param: row.param,
-          hide: row.hide,
-          value: row.value,
-        });
-      }
-    }
   }
   get hidden() {
     return !!this._hidden;

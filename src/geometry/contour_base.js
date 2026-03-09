@@ -3020,13 +3020,39 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @type {CatProduction_params}
    */
   get sys() {
-    const {layer, project} = this;
-    return layer ? layer.sys : project._dp.sys;
+    const {layer, own_sys, project} = this;
+    if(layer) {
+      return layer.sys;  
+    }
+    const {sys} = project._dp;
+    if(own_sys) {
+      const {_row: {dop}} = this;
+      if(dop.sys) {
+        return sys._manager.get(dop.sys);
+      }
+    }
+    return sys;    
   }
   set sys(v) {
-    const {layer, project} = this;
+    const {layer, own_sys, project} = this;
     if(layer) {
       layer.sys = v;
+    }
+    else if(own_sys) {
+      const {_row, _ox: {params}, cnstr, project} = this;
+      const {sys} = project._dp;
+      const inset = $p.utils.blank.guid;
+      if(!v || v == sys) {
+        if(_row.dop.sys) {
+          _row.dop = {sys: null};
+        }
+        params.clear({cnstr, inset});
+      }
+      else {
+        _row.dop = {sys: v.valueOf()};
+        this.refill_prm();
+      }
+      project.register_change(true);
     }
     else {
       project._dp.sys = v;
@@ -3038,7 +3064,53 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @return {boolean}
    */
   get own_sys() {
-    return this.layer ? false : [10, 11].includes(this.kind);
+    // обычные створки наследуют систему родителя
+    if(this.layer) {
+      return false;
+    }
+    // вложения имеют свою систему
+    if([10, 11].includes(this.kind)) {
+      return true;
+    }
+    // второй и более рамные, так же, могут иметь свою систему
+    return this.project.contours.indexOf(this) > 0;
+  }
+
+  /**
+   * @summary Перезаполняет параметры слоя
+   * @desc С учетом системы, которая может отличаться от системы изделия
+   */
+  refill_prm() {
+    const {_ox: {params}, cnstr, sys: {product_params}} = this;
+    const inset = $p.utils.blank.guid;
+    // чистим
+    const rm = [];
+    params.find_rows({cnstr, inset}, (row) => {
+      if(!product_params.find({param: row.param})) {
+        rm.push(row);
+      }
+    });
+    for(const row of rm) {
+      params.del(row);
+    }
+    // добавляем
+    for(const row of product_params) {
+      let has;
+      params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
+        has = true;
+        return false;
+      });
+      if(!has) {
+        params.add({
+          cnstr,
+          inset,
+          region: 0,
+          param: row.param,
+          hide: row.hide,
+          value: row.value,
+        });
+      }
+    }
   }
 
   /**

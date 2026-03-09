@@ -58,42 +58,6 @@ class ContourVirtual extends Contour {
     return true;
   }
 
-  /**
-   * Перезаполняет параметры слоя с учетом системы, которая может отличаться от системы изделия
-   */
-  refill_prm() {
-    const {_ox: {params}, cnstr, sys: {product_params}} = this;
-    const inset = $p.utils.blank.guid;
-    // чистим
-    const rm = [];
-    params.find_rows({cnstr, inset}, (row) => {
-      if(!product_params.find({param: row.param})) {
-        rm.push(row);
-      }
-    });
-    for(const row of rm) {
-      params.del(row);
-    }
-    // добавляем
-    for(const row of product_params) {
-      let has;
-      params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
-        has = true;
-        return false;
-      });
-      if(!has) {
-        params.add({
-          cnstr,
-          inset,
-          region: 0,
-          param: row.param,
-          hide: row.hide,
-          value: row.value,
-        });
-      }
-    }
-  }
-
   get hidden() {
     return !!this._hidden;
   }
