@@ -8552,26 +8552,26 @@ $p.doc.create('work_centers_task', DocWork_centers_taskManager, false);
 class DocCalc_order extends DocObj{
 get number_internal(){return this._getter('number_internal')}
 set number_internal(v){this._setter('number_internal',v)}
-get project(){return this._getter('project')}
-set project(v){this._setter('project',v)}
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
 get partner(){return this._getter('partner')}
 set partner(v){this._setter('partner',v)}
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
+get project(){return this._getter('project')}
+set project(v){this._setter('project',v)}
 get client_of_dealer(){return this._getter('client_of_dealer')}
 set client_of_dealer(v){this._setter('client_of_dealer',v)}
 get contract(){return this._getter('contract')}
 set contract(v){this._setter('contract',v)}
-get bank_account(){return this._getter('bank_account')}
-set bank_account(v){this._setter('bank_account',v)}
-get note(){return this._getter('note')}
-set note(v){this._setter('note',v)}
 get manager(){return this._getter('manager')}
 set manager(v){this._setter('manager',v)}
 get leading_manager(){return this._getter('leading_manager')}
 set leading_manager(v){this._setter('leading_manager',v)}
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
+get buyer_main_manager(){return this._getter('buyer_main_manager')}
+set buyer_main_manager(v){this._setter('buyer_main_manager',v)}
+get bank_account(){return this._getter('bank_account')}
+set bank_account(v){this._setter('bank_account',v)}
 get warehouse(){return this._getter('warehouse')}
 set warehouse(v){this._setter('warehouse',v)}
 get doc_amount(){return this._getter('doc_amount')}
@@ -8580,6 +8580,8 @@ get amount_operation(){return this._getter('amount_operation')}
 set amount_operation(v){this._setter('amount_operation',v)}
 get amount_internal(){return this._getter('amount_internal')}
 set amount_internal(v){this._setter('amount_internal',v)}
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
 get phone(){return this._getter('phone')}
 set phone(v){this._setter('phone',v)}
 get delivery_area(){return this._getter('delivery_area')}
