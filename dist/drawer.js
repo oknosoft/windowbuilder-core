@@ -604,6 +604,8 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
+class Skeleton {
+};
 class BuilderElement extends paper.Group {
   constructor(attr) {
     const proto = attr?.proto;
@@ -16499,8 +16501,6 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
-class Skeleton {
-};
 class Pricing {
   constructor({md, adapters, job_prm}) {
     this.loading = [];
