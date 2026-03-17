@@ -599,14 +599,18 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
             });
           }
         }
-        if(engine._ch.length > length) {
+        let step = 0;
+        while(engine._ch.length > length && step < 10) {
           engine.redraw();
+          step++;
         }
       }
       // подмена параметров - одинаково для рисовалки и параметрика
       dp.product_params.forEach(({param, value, _ch}) => {
-        _ch && this.params.find_rows({param}, (row) => {
-          row.value = value;
+        this.params.find_rows({param}, (row) => {
+          if(_ch || (param.type.is_ref && (!row.value || row.value.empty?.()))) {
+            row.value = value;
+          }
         });
       });
     }

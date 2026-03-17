@@ -6537,13 +6537,17 @@ set demand(v){this._setter_ts('demand',v)}
             });
           }
         }
-        if(engine._ch.length > length) {
+        let step = 0;
+        while(engine._ch.length > length && step < 10) {
           engine.redraw();
+          step++;
         }
       }
       dp.product_params.forEach(({param, value, _ch}) => {
-        _ch && this.params.find_rows({param}, (row) => {
-          row.value = value;
+        this.params.find_rows({param}, (row) => {
+          if(_ch || (param.type.is_ref && (!row.value || row.value.empty?.()))) {
+            row.value = value;
+          }
         });
       });
     }
