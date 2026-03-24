@@ -604,8 +604,6 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
-class Skeleton {
-};
 class BuilderElement extends paper.Group {
   constructor(attr) {
     const proto = attr?.proto;
@@ -16501,6 +16499,8 @@ class Sectional extends GeneratrixElement {
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
+class Skeleton {
+};
 class Pricing {
   constructor({md, adapters, job_prm}) {
     this.loading = [];
@@ -17245,11 +17245,15 @@ class ProductsBuilding {
       spec = spec_tmp;
     }
     function base_spec_sectional(elm) {
-      const {_row, _attr, inset, layer} = elm;
+      const {_row, _attr, inset, layer, width} = elm;
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
       }
       inset.calculate_spec({elm, ox});
+      if(width < inset.lmin || (inset.lmax && width > inset.lmax)) {
+        const {len_error, critical_error} = $p.job_prm.nom;
+        elm.err_spec_row(len_error || critical_error, `Длина отлива ${width} ${width < inset.lmin ? ('< ' + inset.lmin) : ('> ' + inset.lmax)} `, inset);
+      }
       const spec_tmp = spec;
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
         if(inset.is_order_row_prod({ox, elm})) {
@@ -21598,7 +21602,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         if (characteristic instanceof $p.CatCharacteristics) {
           text += `<b>${characteristic.name}:</b><br/>`;
           errors.forEach((elms, nom) => {
-            text += `${nom.name} - элементы:${Array.from(elms)}<br/>`;
+            text += `${nom?.name || nom} - элементы:${Array.from(elms)}<br/>`;
             if(nom.elm_type == ОшибкаКритическая) {
               critical = true;
             }
@@ -21924,7 +21928,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const {amount, amount_internal, characteristic, nom, discount_percent, discount_percent_internal} = calc_order_row;
       doc_amount += amount;
       internal += amount_internal;
-      const registerError = ({nom, elm}) => {
+      const registerError = ({nom, elm, specify}) => {
         if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
           if(!errors.has(characteristic)){
             errors.set(characteristic, new Map());
@@ -21932,11 +21936,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           if(!errors.has(nom.elm_type)){
             errors.set(nom.elm_type, new Set());
           }
-          if(!errors.get(characteristic).has(nom)){
-            errors.get(characteristic).set(nom, new Set());
+          const text = specify ? `${nom.name} ${specify}` : nom;
+          if(!errors.get(characteristic).has(text)){
+            errors.get(characteristic).set(text, new Set());
           }
-          errors.get(characteristic).get(nom).add(elm);
-          errors.get(nom.elm_type).add(nom);
+          errors.get(characteristic).get(text).add(elm);
+          errors.get(nom.elm_type).add(text);
         }
       };
       if(job_prm.pricing.marginality_in_spec === 1) {

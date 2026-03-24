@@ -492,7 +492,7 @@ class ProductsBuilding {
      */
     function base_spec_sectional(elm) {
 
-      const {_row, _attr, inset, layer} = elm;
+      const {_row, _attr, inset, layer, width} = elm;
 
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
@@ -500,6 +500,11 @@ class ProductsBuilding {
 
       // спецификация вставки
       inset.calculate_spec({elm, ox});
+      if(width < inset.lmin || (inset.lmax && width > inset.lmax)) {
+        const {len_error, critical_error} = $p.job_prm.nom;
+        elm.err_spec_row(len_error || critical_error, `Длина отлива ${width} ${width < inset.lmin ? ('< ' + inset.lmin) : ('> ' + inset.lmax)} `, inset);
+      }
+      
 
       // спецификация вложенных в элемент вставок
       // во время расчетов возможна подмена объекта спецификации

@@ -273,7 +273,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         if (characteristic instanceof $p.CatCharacteristics) {
           text += `<b>${characteristic.name}:</b><br/>`;
           errors.forEach((elms, nom) => {
-            text += `${nom.name} - элементы:${Array.from(elms)}<br/>`;
+            text += `${nom?.name || nom} - элементы:${Array.from(elms)}<br/>`;
             if(nom.elm_type == ОшибкаКритическая) {
               critical = true;
             }
@@ -672,7 +672,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       doc_amount += amount;
       internal += amount_internal;
       
-      const registerError = ({nom, elm}) => {
+      const registerError = ({nom, elm, specify}) => {
         if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
           if(!errors.has(characteristic)){
             errors.set(characteristic, new Map());
@@ -681,11 +681,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             errors.set(nom.elm_type, new Set());
           }
           // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
-          if(!errors.get(characteristic).has(nom)){
-            errors.get(characteristic).set(nom, new Set());
+          const text = specify ? `${nom.name} ${specify}` : nom;
+          if(!errors.get(characteristic).has(text)){
+            errors.get(characteristic).set(text, new Set());
           }
-          errors.get(characteristic).get(nom).add(elm);
-          errors.get(nom.elm_type).add(nom);
+          errors.get(characteristic).get(text).add(elm);
+          errors.get(nom.elm_type).add(text);
         }
       };
       
