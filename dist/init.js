@@ -3345,6 +3345,8 @@ get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
 get demand(){return this._getter('demand')}
 set demand(v){this._setter('demand',v)}
+get smf_key(){return this._getter('smf_key')}
+set smf_key(v){this._setter('smf_key',v)}
 }
 $p.CatInsertsSpecificationRow = CatInsertsSpecificationRow;
 class CatInsertsInsertsRow extends TabularSectionRow{
@@ -4398,6 +4400,8 @@ get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
 get demand(){return this._getter('demand')}
 set demand(v){this._setter('demand',v)}
+get smf_key(){return this._getter('smf_key')}
+set smf_key(v){this._setter('smf_key',v)}
 }
 $p.CatCnnsSpecificationRow = CatCnnsSpecificationRow;
 class CatCnnsCnn_elmntsRow extends TabularSectionRow{
@@ -4898,6 +4902,8 @@ get inset(){return this._getter('inset')}
 set inset(v){this._setter('inset',v)}
 get demand(){return this._getter('demand')}
 set demand(v){this._setter('demand',v)}
+get smf_key(){return this._getter('smf_key')}
+set smf_key(v){this._setter('smf_key',v)}
 }
 $p.CatFurnsSpecificationRow = CatFurnsSpecificationRow;
 class CatFurnsSpecification_restrictionsRow extends TabularSectionRow{
