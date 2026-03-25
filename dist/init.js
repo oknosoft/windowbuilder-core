@@ -37,6 +37,7 @@ $p.enm.create('obj_delivery_states');
 $p.enm.create('use_cut');
 $p.enm.create('order_categories');
 $p.enm.create('planning_keys');
+$p.enm.create('smf_keys');
 $p.enm.create('color_price_group_destinations');
 $p.enm.create('open_directions');
 $p.enm.create('rounding_quantity');
@@ -6024,10 +6025,10 @@ get glasses(){return this._getter_ts('glasses')}
 set glasses(v){this._setter_ts('glasses',v)}
 get specification(){return this._getter_ts('specification')}
 set specification(v){this._setter_ts('specification',v)}
-get dop(){return this._getter_ts('dop')}
-set dop(v){this._setter_ts('dop',v)}
 get demand(){return this._getter_ts('demand')}
 set demand(v){this._setter_ts('demand',v)}
+get struct(){return this._getter_ts('struct')}
+set struct(v){this._setter_ts('struct',v)}
 
 
   before_save(attr) {
@@ -7115,23 +7116,10 @@ get changed(){return this._getter('changed')}
 set changed(v){this._setter('changed',v)}
 get dop(){return this._getter('dop')}
 set dop(v){this._setter('dop',v)}
+get half_stuff(){return this._getter('half_stuff')}
+set half_stuff(v){this._setter('half_stuff',v)}
 }
 $p.CatCharacteristicsSpecificationRow = CatCharacteristicsSpecificationRow;
-class CatCharacteristicsDopRow extends TabularSectionRow{
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
-get nom(){return this._getter('nom')}
-set nom(v){this._setter('nom',v)}
-get note(){return this._getter('note')}
-set note(v){this._setter('note',v)}
-get coordinate(){return this._getter('coordinate')}
-set coordinate(v){this._setter('coordinate',v)}
-get origin(){return this._getter('origin')}
-set origin(v){this._setter('origin',v)}
-get dop(){return this._getter('dop')}
-set dop(v){this._setter('dop',v)}
-}
-$p.CatCharacteristicsDopRow = CatCharacteristicsDopRow;
 class CatCharacteristicsDemandRow extends TabularSectionRow{
 get kind(){return this._getter('kind')}
 set kind(v){this._setter('kind',v)}
@@ -7141,6 +7129,19 @@ get days_to_execution(){return this._getter('days_to_execution')}
 set days_to_execution(v){this._setter('days_to_execution',v)}
 }
 $p.CatCharacteristicsDemandRow = CatCharacteristicsDemandRow;
+class CatCharacteristicsStructRow extends TabularSectionRow{
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
+get smf_key(){return this._getter('smf_key')}
+set smf_key(v){this._setter('smf_key',v)}
+get nom(){return this._getter('nom')}
+set nom(v){this._setter('nom',v)}
+get identifier(){return this._getter('identifier')}
+set identifier(v){this._setter('identifier',v)}
+}
+$p.CatCharacteristicsStructRow = CatCharacteristicsStructRow;
 $p.cat.create('characteristics');
 class CatPrice_groups extends CatObj{
 get definition(){return this._getter('definition')}

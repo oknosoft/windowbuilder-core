@@ -885,6 +885,13 @@ class ProductsBuilding {
           if(root) {
             root.dop = {svg: root.get_svg()};
           }
+          else {
+            for(const root of scheme.contours) {
+              if(root.dop.svg) {
+                root.dop = {svg: undefined};
+              }
+            }
+          }
         }
 
         return this.saver({ox, scheme, attr, finish})

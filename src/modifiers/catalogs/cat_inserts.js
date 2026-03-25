@@ -926,9 +926,10 @@
      * @param {Object} [len_angl] - контекст размеров элемента
      * @param {CatInsertsSpecificationRow|CatCnnsSpecificationRow} [own_row] - родительская строка для вложенных вставок
      * @param {CatInsert_bind} [bind] - заполнено, если вызов из привязки вставок
+     * @param {String} [semifinished] - идентификатор полуфабриката, разделённый запятыми, если иерархия
      * @return {Array.<CatInsertsSpecificationRow|CatCnnsSpecificationRow>}
      */
-    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox, bind}) {
+    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox, bind, semifinished}) {
 
       const res = [];
 
@@ -1001,6 +1002,13 @@
             fakerow.sz = row.sz;
           }
         }
+        
+        if(fakerow.semifinished && semifinished && !fakerow.semifinished.includes(semifinished)) {
+          fakerow.semifinished += `,${semifinished}`;
+        }
+        else if(semifinished) {
+          fakerow.semifinished = semifinished;
+        }
 
         return fakerow;
       }
@@ -1023,7 +1031,7 @@
         if(glass_rows.length){
           glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
-            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}})) {
+            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}, semifinished})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               if(fill_regions) {
@@ -1105,7 +1113,7 @@
               }
               selector.eclr = clr_in;
               if(check_params(selector)) {
-                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row, semifinished}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
@@ -1116,7 +1124,7 @@
               }
               selector.eclr = clr_out;
               if(check_params(selector)) {
-                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row, semifinished}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
@@ -1127,7 +1135,7 @@
               }
             }
             else {
-              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row, semifinished}).forEach((subrow) => {
                 const fakerow = fake_row(subrow, row);
                 fakerow._clr = eclr;
                 if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
@@ -1137,7 +1145,13 @@
             }
           }
           else {
-            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row}).forEach((subrow) => {
+            let semi_uid;
+            if(row.is_order_row.is('semifinished_elm') || row.is_order_row.is('semifinished_prod')) {
+              const base = row.smf_key.empty() ? row.nom : row.smf_key;
+              semi_uid = utils.generate_guid(); // row.is_order_row.uid({elm, ox, base});
+            }
+            
+            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row, semifinished: semi_uid || semifinished }).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
