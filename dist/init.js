@@ -5993,10 +5993,6 @@ get svg(){return this._getter('svg')}
 set svg(v){this._setter('svg',v)}
 get extra(){return this._getter('extra')}
 set extra(v){this._setter('extra',v)}
-get captured(){return this._getter('captured')}
-set captured(v){this._setter('captured',v)}
-get editor(){return this._getter('editor')}
-set editor(v){this._setter('editor',v)}
 get route(){return this._getter('route')}
 set route(v){this._setter('route',v)}
 get force_route(){return this._getter('force_route')}
@@ -6966,6 +6962,39 @@ set struct(v){this._setter_ts('struct',v)}
       this._data.frame = new CatCharacteristics.ProductFrame(this);
     }
     return this._data.frame;
+  }
+
+  smf_key({row, elm, layer, parent}) {
+    const {smf_key} = row;
+    if(!smf_key.empty()) {
+      const {utils} = $p;
+      if(parent && utils.is_empty_guid(parent)) {
+        parent = '';
+      }
+      if(smf_key.ref.includes('layer') && !layer && elm) {
+        layer = elm.layer;
+      }
+      const {struct} = this;
+      const key = {
+        parent,
+        elm: smf_key.ref.includes('layer') ? -layer.cnstr : (smf_key.ref.includes('elm') ? elm.elm : 0),
+        smf_key: smf_key.ref.includes('inset') ? row.nom : smf_key,
+      };
+      const smf_row = struct.find(key) || struct.add(key);
+      if(!smf_row.identifier || utils.is_empty_guid(smf_row.identifier)) {
+        smf_row.identifier = utils.generate_guid();
+      }
+      if(smf_key.ref.includes('inset')) {
+        smf_row.nom = row.nom.nom(elm, 0);
+      }
+      else if(smf_key.ref.includes('elm')) {
+        smf_row.nom = elm.nom;
+      }
+      else {
+        smf_row.nom = this.owner;
+      }
+      return smf_row.identifier;      
+    }
   }
 
   static builder_props_defaults = {

@@ -19613,7 +19613,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return true;
     }
-    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox, bind, semifinished}) {
+    filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox, bind, half_stuff}) {
       const res = [];
       if(this.empty()){
         return res;
@@ -19678,11 +19678,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             fakerow.sz = row.sz;
           }
         }
-        if(fakerow.semifinished && semifinished && !fakerow.semifinished.includes(semifinished)) {
-          fakerow.semifinished += `,${semifinished}`;
-        }
-        else if(semifinished) {
-          fakerow.semifinished = semifinished;
+        if(half_stuff && !fakerow.half_stuff) {
+          fakerow.half_stuff = half_stuff;
         }
         return fakerow;
       }
@@ -19698,7 +19695,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(glass_rows.length){
           glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
-            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}, semifinished})) {
+            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}, half_stuff})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               if(fill_regions) {
@@ -19771,7 +19768,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
               selector.eclr = clr_in;
               if(check_params(selector)) {
-                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row, semifinished}).forEach((subrow) => {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_in, len_angl, ox, own_row: own_row || row, half_stuff}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
                   fakerow._clr_side = '_in';
                   fakerow._clr = clr_in;
@@ -19782,7 +19779,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
               selector.eclr = clr_out;
               if(check_params(selector)) {
-                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row, semifinished}).forEach((subrow) => {
+                row.nom.filtered_spec({elm, elm2, eclr: clr_out, len_angl, ox, own_row: own_row || row, half_stuff}).forEach((subrow) => {
                   const fakerow = fake_row(subrow, row);
                   fakerow._clr_side = '_out';
                   fakerow._clr = clr_out;
@@ -19793,7 +19790,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             }
             else {
-              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row, semifinished}).forEach((subrow) => {
+              row.nom.filtered_spec({elm, elm2, eclr, len_angl, ox, own_row: own_row || row, half_stuff}).forEach((subrow) => {
                 const fakerow = fake_row(subrow, row);
                 fakerow._clr = eclr;
                 if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
@@ -19803,12 +19800,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
           else {
-            let semi_uid;
-            if(row.is_order_row.is('semifinished_elm') || row.is_order_row.is('semifinished_prod')) {
-              const base = row.smf_key.empty() ? row.nom : row.smf_key;
-              semi_uid = utils.generate_guid();
-            }
-            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row, semifinished: semi_uid || semifinished }).forEach((subrow) => {
+            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row,
+              half_stuff: ox.smf_key({row, elm, parent: half_stuff})}).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
