@@ -1003,7 +1003,7 @@ class ProductsBuilding {
         row.len = map.get(row.len);
       }
     }
-    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
 
   /**
@@ -1148,6 +1148,9 @@ class ProductsBuilding {
     }
     if(row_base?.region) {
       row_spec.region = row_base.region;
+    }
+    if(row_base?.half_stuff) {
+      row_spec.half_stuff = row_base.half_stuff;
     }
 
     // если алгоритм = характеристика по цвету

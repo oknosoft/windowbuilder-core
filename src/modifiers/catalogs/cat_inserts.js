@@ -1142,8 +1142,14 @@
             }
           }
           else {
-            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row,
-              half_stuff: ox.smf_key({row, elm, parent: half_stuff})}).forEach((subrow) => {
+            row.nom.filtered_spec({
+              elm,
+              elm2,
+              len_angl,
+              ox, 
+              own_row: own_row || row,
+              half_stuff: ox.smf_key({row, elm, parent: half_stuff}) || half_stuff,
+            }).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
@@ -1536,7 +1542,7 @@
             _owner.y = bounds.x * 1000;
             _owner.s = (bounds.x * bounds.y).round(4);
         }
-        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
       }
     }
 

@@ -2448,7 +2448,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const len_angl = new FakeLenAngl({len, inset: origin});
     const elm = new FakeElm(this);
     origin.calculate_spec({elm, len_angl, ox: characteristic});
-    characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+    characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
 
 };

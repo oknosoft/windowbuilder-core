@@ -6964,7 +6964,7 @@ set struct(v){this._setter_ts('struct',v)}
     return this._data.frame;
   }
 
-  smf_key({row, elm, layer, parent}) {
+  smf_key({row, elm, layer, parent = ''}) {
     const {smf_key} = row;
     if(!smf_key.empty()) {
       const {utils} = $p;

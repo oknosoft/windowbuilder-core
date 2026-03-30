@@ -1089,7 +1089,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @param {UID} parent
    * @return {*}
    */
-  smf_key({row, elm, layer, parent}) {
+  smf_key({row, elm, layer, parent = ''}) {
     const {smf_key} = row;
     if(!smf_key.empty()) {
       const {utils} = $p;

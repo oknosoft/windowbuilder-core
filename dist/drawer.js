@@ -17603,7 +17603,7 @@ class ProductsBuilding {
         row.len = map.get(row.len);
       }
     }
-    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+    specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
   static check_params({params, row_spec, count_calc_method, ...other}) {
     let ok = true;
@@ -17714,6 +17714,9 @@ class ProductsBuilding {
     }
     if(row_base?.region) {
       row_spec.region = row_base.region;
+    }
+    if(row_base?.half_stuff) {
+      row_spec.half_stuff = row_base.half_stuff;
     }
     if(row_base?.algorithm === cx_clr) {
       const clr = row_base?._clr || row_spec.clr;
@@ -19800,8 +19803,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
           else {
-            row.nom.filtered_spec({elm, elm2, len_angl, ox, own_row: own_row || row,
-              half_stuff: ox.smf_key({row, elm, parent: half_stuff})}).forEach((subrow) => {
+            row.nom.filtered_spec({
+              elm,
+              elm2,
+              len_angl,
+              ox, 
+              own_row: own_row || row,
+              half_stuff: ox.smf_key({row, elm, parent: half_stuff}) || half_stuff,
+            }).forEach((subrow) => {
               const fakerow = fake_row(subrow, row);
               if(fakerow.quantity || !subrow.count_calc_method.is('parameters')) {
                 res.push(fakerow); 
@@ -20136,7 +20145,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             _owner.y = bounds.x * 1000;
             _owner.s = (bounds.x * bounds.y).round(4);
         }
-        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+        spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
       }
     }
     dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row}) {
@@ -23390,7 +23399,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const len_angl = new FakeLenAngl({len, inset: origin});
     const elm = new FakeElm(this);
     origin.calculate_spec({elm, len_angl, ox: characteristic});
-    characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop', 'qty,totqty,totqty1');
+    characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
 };
 $p.DocCalc_orderProductionRow.rfields = {
