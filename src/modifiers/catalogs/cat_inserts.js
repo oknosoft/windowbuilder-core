@@ -1208,13 +1208,14 @@
       const {Основной, Соединение, СоединениеПополам} = enm.angle_calculating_ways;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
       const own_angle_calc_method = own_row?.angle_calc_method;
+      const half_stuff = own_row && elm && ox.smf_key({row: own_row, elm});
 
       if(!spec){
         spec = ox.specification;
       }
       let alp1, alp2;
 
-      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr, bind}).forEach((row_ins_spec) => {
+      this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr, bind, half_stuff}).forEach((row_ins_spec) => {
 
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = row_ins_spec;
