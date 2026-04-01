@@ -6310,8 +6310,13 @@ set struct(v){this._setter_ts('struct',v)}
     if(!origin) {
       origin = cat.inserts.get();
     }
+    const selector = {leading_product: this, leading_elm: elm, origin};
+    if(origin === 'any') {
+      origin = cat.inserts.get();
+      delete selector.origin;
+    }
     let cx;
-    _manager.find_rows({leading_product: this, leading_elm: elm, origin}, (obj) => {
+    _manager.find_rows(selector, (obj) => {
       if(!obj._deleted) {
         cx = obj;
         return false;
@@ -6891,7 +6896,7 @@ set struct(v){this._setter_ts('struct',v)}
     if(!isArray && elmno < 0) {
       coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
-          const cx = this.find_create_cx(num, $p.utils.blank.guid, false);
+          const cx = this.find_create_cx(num, inset, false);
           weight += cx.elm_weight();
         }
       });
