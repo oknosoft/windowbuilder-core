@@ -228,6 +228,21 @@ class EditorInvisible extends paper.PaperScope {
       };
       if(galign){
         const by_side = glass.profiles_by_side(null, profiles);
+        for(const side in by_side) {
+          const segm = by_side[side];
+          let {profile} = segm;
+          let prev;
+          while (profile.nearest(true)) {
+            prev = profile;
+            profile = profile.nearest(true);
+          }
+          if(profile instanceof ProfileConnective) {
+            by_side[side] = {
+              b: prev.corns(1),
+              e: prev.corns(2),
+            }
+          }
+        }
         res.width = (by_side.right.b.x + by_side.right.e.x - by_side.left.b.x - by_side.left.e.x) / 2;
         res.height = (by_side.bottom.b.y + by_side.bottom.e.y - by_side.top.b.y - by_side.top.e.y) / 2;
         medium += res[name];
