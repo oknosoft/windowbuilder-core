@@ -8384,10 +8384,13 @@ set set(v){this._setter_ts('set',v)}
 
   }
 
-  reset_sticks(kind) {
+  reset_sticks(kind, nom, stick) {
     const noms = new Map();
     for(const row of this.cutting) {
       if(!kind || (kind === '1D' && !row.width) || (kind === '2D' && row.width)) {
+        if((nom && row.nom !== nom) || (stick && row.stick !== stick)) {
+          continue;
+        }
         if(noms.has(row.nom)) {
           noms.get(row.nom).add(row.characteristic);
         }
@@ -8401,6 +8404,9 @@ set set(v){this._setter_ts('set',v)}
     const rm = [];
     for(const row of this.cuts) {
       if(noms.has(row.nom)) {
+        if(stick && row.stick !== stick) {
+          continue;
+        }
         if(row.width) {
           if(row.quantity === 1) {
             rm.push(row);
