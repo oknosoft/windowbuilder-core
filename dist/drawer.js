@@ -7460,7 +7460,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     return (this.bounds.area / 1e6).round(5);
   }
   get form_area() {
-    return (this.path.area/1e6).round(5);
+    return ((this.path?.area || 0)/1e6).round(5);
   }
   interiorPoint() {
     return this.path.interiorPoint;

@@ -967,7 +967,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    * @type {Number}
    */
   get form_area() {
-    return (this.path.area/1e6).round(5);
+    return ((this.path?.area || 0)/1e6).round(5);
   }
 
   /**
