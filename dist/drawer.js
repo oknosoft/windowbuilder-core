@@ -1008,7 +1008,8 @@ class BuilderElement extends paper.Group {
     return this.nom.sizefurn || 20;
   }
   get weight() {
-    let {ox, elm, inset, layer} = this;
+    const {elm, inset, layer} = this;
+    let ox = layer.prod_ox;
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
       ox = ox.find_create_cx(elm, $p.utils.blank.guid, false);
     }
