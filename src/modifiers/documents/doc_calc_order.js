@@ -1860,12 +1860,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         row_prod.unit = row_prod.nom.storage_unit;
         if(!row_dp.clr.empty()) {
           // ищем цветовую характеристику
-          $p.cat.characteristics.find_rows({owner: row_dp.nom}, (ox) => {
-            if(ox.clr == row_dp.clr) {
-              row_prod.characteristic = ox;
-              return false;
-            }
-          });
+          row_dp.nom.characteristics({clr: row_dp.clr}).some((ox) => row_prod.characteristic = ox);
         }
         res = res.then(() => row_prod);
       }

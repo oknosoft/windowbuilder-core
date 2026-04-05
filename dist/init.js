@@ -3022,6 +3022,19 @@ set demand(v){this._setter_ts('demand',v)}
     return CchProperties.prototype.filter_params_links.call(this, filter, attr, links);
   }
 
+  characteristics(selection) {
+    let {_acx} = this._data;
+    const {_owner} = this._manager; 
+    if(!_acx) {
+      _acx = [];
+      this._data._acx = _acx;
+      _owner.characteristics.find_rows({owner: this}, cx => {
+        _acx.push(cx);
+      });
+    }
+    return selection ? _owner.$p.utils._find_rows(_acx, selection) : _acx; 
+  }
+
   get type() {
     return {is_ref: true, types: ["cat.characteristics"]};
   }

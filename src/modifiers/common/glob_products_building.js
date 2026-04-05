@@ -286,6 +286,7 @@ class ProductsBuilding {
         };
         const cx = Object.assign(ox.find_create_cx(elm.elm, 'any'), attrs);
         ox._order_rows.push(cx);
+        cx._data._loading = true;
         spec = cx.specification.clear();
       }
 
@@ -469,6 +470,7 @@ class ProductsBuilding {
         if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
+          cx._data._loading = true;
           spec = cx.specification.clear();
         }
         else {
@@ -515,6 +517,7 @@ class ProductsBuilding {
         if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(layer));
           ox._order_rows.push(cx);
+          cx._data._loading = true;
           spec = cx.specification.clear();
         }
         else {
@@ -608,6 +611,7 @@ class ProductsBuilding {
         };
         const cx = Object.assign(ox.find_create_cx(elm.elm, blank.guid), attrs);
         ox._order_rows.push(cx);
+        cx._data._loading = true;
         spec = cx.specification.clear();
       }
 
@@ -637,6 +641,7 @@ class ProductsBuilding {
         if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
+          cx._data._loading = true;
           spec = cx.specification.clear();
         }
         else {
@@ -665,6 +670,7 @@ class ProductsBuilding {
         if(inset.is_order_row_prod({ox, contour})) {
           const cx = Object.assign(ox.find_create_cx(-contour.cnstr, inset.ref), inset.contour_attrs(contour));
           ox._order_rows.push(cx);
+          cx._data._loading = true;
           spec = cx.specification.clear();
         }
         else {
@@ -713,6 +719,7 @@ class ProductsBuilding {
         const layer = contour.prod_layer();
         if(layer) {
           const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
+          cx._data._loading = true;
           spec = cx.specification;
           if(!spec.count()) {
             cx.sys = layer.sys;
@@ -864,6 +871,9 @@ class ProductsBuilding {
       function finish() {
         delete scheme._attr._saving;
         ox._data._loading = false;
+        for(const cx of ox._order_rows || []) {
+          cx._data._loading = false;
+        }
       }
 
       // информируем мир о записи продукции
@@ -1157,10 +1167,10 @@ class ProductsBuilding {
     if(row_base?.algorithm === cx_clr) {
       const clr = row_base?._clr || row_spec.clr;
       // перебираем характеристики текущей номенклатуры
-      characteristics.find_rows({owner: row_spec.nom, clr}, (cx) => {
+      for(const cx of row_spec.nom.characteristics({clr})) {
         row_spec.characteristic = cx;
-        return false;
-      });
+        break;
+      }
     }
     else if(row_base?.algorithm === cx_prm && row_base._owner) {
       const prm_row = row_base._owner._owner.selection_params.find({elm: row_base.elm, origin: algorithm});
@@ -1170,10 +1180,9 @@ class ProductsBuilding {
           row_spec.characteristic = pv;
         }
         else if(pv instanceof CatProperty_values) {
-          characteristics.find_rows({owner: row_spec.nom}, (cx) => {
+          row_spec.nom.characteristics().some((cx) => {
             if(cx.params.find({param: prm_row.param, value: pv})) {
-              row_spec.characteristic = cx;
-              return false;
+              return row_spec.characteristic = cx;
             }
           });
         }

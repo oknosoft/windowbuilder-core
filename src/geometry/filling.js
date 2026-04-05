@@ -154,7 +154,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       is_rectangular: this.is_rectangular,
       is_sandwich: nom.elm_type == $p.enm.elm_types.Заполнение,
       thickness,
-    });
+    }, true);
 
     let curr, prev,	next
 
@@ -228,7 +228,7 @@ class Filling extends AbstractFilling(BuilderElement) {
         node2: '',
         cnn: curr.cnn.ref,
         aperture_len: curr.aperture_path.get_subpath(pb, pe).length.round(1)
-      });
+      }, true);
 
     }
 
