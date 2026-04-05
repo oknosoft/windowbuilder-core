@@ -3023,20 +3023,20 @@ set demand(v){this._setter_ts('demand',v)}
   }
 
   characteristics(selection) {
-    let {_acx} = this._data;
-    const {_owner} = this._manager; 
-    if(!_acx) {
-      _acx = [];
-      this._data._acx = _acx;
-      _owner.characteristics.find_rows({owner: this}, cx => {
-        _acx.push(cx);
+    const {_obj, _manager:  {_owner}} = this;
+    const {utils} = _owner.$p;
+    if(!_obj.characteristics) {
+      _obj.characteristics = [];
+      _owner.characteristics.find_rows({owner: this, calc_order: utils.blank.guid}, cx => {
+        _obj.characteristics.push(cx.ref);
       });
     }
-    return selection ? _owner.$p.utils._find_rows(_acx, selection) : _acx; 
+    const characteristics = _obj.characteristics.map(ref => _owner.characteristics.get(ref));
+    return selection ? utils._find_rows(characteristics, selection) : characteristics; 
   }
 
   get type() {
-    return {is_ref: true, types: ["cat.characteristics"]};
+    return {is_ref: true, types: ['cat.characteristics']};
   }
 }
 $p.CatNom = CatNom;
@@ -3053,6 +3053,7 @@ class CatNomManager extends CatManager {
 
   load_array(aattr, forse) {
     const units = [];
+    const cxs = [];
     const prices = {};
     for(const row of aattr) {
       if(row.units) {
@@ -3076,10 +3077,20 @@ class CatNomManager extends CatManager {
         prices[row.ref] = row._price;
         delete row._price;
       }
+      if(row.characteristics?.length) {
+        const cxrefs = [];
+        row.characteristics.forEach((cx) => {
+          cx.owner = row.ref;
+          cxrefs.push(cx.ref);
+          cxs.push(cx);
+        });
+        row.characteristics = cxrefs;
+      }
     }
     const res = super.load_array(aattr, forse);
-    const {currencies, nom_units} = this._owner;
+    const {currencies, nom_units, characteristics} = this._owner;
     units.length && nom_units.load_array(units, forse);
+    cxs.length && characteristics.load_array(cxs, forse);
 
     for(const {_data, _obj} of res) {
       const _price = prices[_obj.ref];
