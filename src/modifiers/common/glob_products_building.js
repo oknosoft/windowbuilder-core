@@ -1103,6 +1103,7 @@ class ProductsBuilding {
       CatCharacteristics,
       CatProperty_values,
       CatValues_options,
+      CatInserts,
     } = $p;
     
     if(!row_spec) {
@@ -1197,7 +1198,7 @@ class ProductsBuilding {
       }
 
       // цвет по параметру
-      clrs.clr_prm({row_base, row_spec, elm, origin, ox});
+      clrs.clr_prm({row_base, row_spec, elm, origin : origin instanceof CatInserts ? origin : row_base._owner?._owner, ox});
 
       if(row_base?.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);

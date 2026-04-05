@@ -82,9 +82,9 @@ exports.CatClrsManager = class CatClrsManager extends Object {
         }
       }
       if(!param && origin) {
-        const ctypes = [ct.get(), ct.eq];
+        const ctypes = [ct.get(), ct.eq, ct.filled];
         origin.selection_params.find_rows({elm: row_base.elm}, (prow) => {
-          if(ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
+          if(prow.origin.is('algorithm') || ctypes.includes(prow.comparison_type) && prow.param.type.types.includes('cat.clrs') && (!prow.value || prow.value.empty())) {
             param = prow.param;
           }
         });

@@ -17690,6 +17690,7 @@ class ProductsBuilding {
       CatCharacteristics,
       CatProperty_values,
       CatValues_options,
+      CatInserts,
     } = $p;
     if(!row_spec) {
       let {is_order_row} = row_base || {};
@@ -17776,7 +17777,7 @@ class ProductsBuilding {
       if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
         row_spec.characteristic = blank.guid;
       }
-      clrs.clr_prm({row_base, row_spec, elm, origin, ox});
+      clrs.clr_prm({row_base, row_spec, elm, origin : origin instanceof CatInserts ? origin : row_base._owner?._owner, ox});
       if(row_base?.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
