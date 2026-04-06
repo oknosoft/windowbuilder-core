@@ -5502,10 +5502,18 @@ class DimensionLine extends paper.Group {
               generatrix.segments.forEach((segm) => segm.selected = true)
             }
             else if(Math.abs(b[xy] - _bounds[event.name]) < width && !rays.b.profile?.nearest(true)){
-              generatrix.firstSegment.selected = true;
+              b.selected = true;
             }
             else if(Math.abs(e[xy] - _bounds[event.name]) < width && !rays.e.profile?.nearest(true)){
-              generatrix.lastSegment.selected = true;
+              e.selected = true;
+            }
+            if((b.selected || e.selected) && !(profile instanceof ProfileConnective)) {
+              if(b.selected && e.selected || !b.selected && !e.selected) {
+                profile.select_joined?.([]);
+              }
+              else {
+                profile.select_joined?.([], b.selected ? b : e);
+              }
             }
           }
       });
@@ -11360,18 +11368,24 @@ class ProfileItem extends GeneratrixElement {
   }
   select_joined(deselect, point) {
     for(const elm of this.joined_nearests()) {
-      for(const name of 'be') {
-        const cnn_point = elm.rays[name];
-        if(cnn_point.profile && cnn_point.profile_point) {
-          const segm = cnn_point.profile[cnn_point.profile_point];
-          if(!segm.selected && (!point || segm.is_nearest(point, true))) {
-            segm.selected = true;
-            deselect.push(segm);
+      if(!elm.elm_type.is('flap')) {
+        for(const name of 'be') {
+          const cnn_point = elm.rays[name];
+          if(!cnn_point.point.selected && (!point || cnn_point.point.is_nearest(point, true))) {
+            cnn_point.point.selected = true;
+            deselect.push(cnn_point.point);
+          }
+          if(cnn_point.point.selected && cnn_point.profile && cnn_point.profile_point) {
+            const segm = cnn_point.profile[cnn_point.profile_point];
+            if(!segm.selected && (!point || segm.is_nearest(point, true))) {
+              segm.selected = true;
+              deselect.push(segm);
+            }
           }
         }
-      } 
-      const {b, e} = elm.rays;
-      elm.select_joined(deselect, point);
+        const {b, e} = elm.rays;
+        elm.select_joined(deselect, point);
+      }
     }
   }
   is_shtulp() {
@@ -15023,6 +15037,12 @@ class Scheme extends paper.Project {
     const {impost} = $p.enm.elm_types;
     if(!all_points) {
       selected = Array.from(selected).sort((a, b) => {
+        if(!a.layer.layer && b.layer.layer) {
+          return -1;
+        }
+        if(a.layer.layer && !b.layer.layer) {
+          return 1;
+        }
         const afs = a.segments.every((segm) => segm.selected);
         const bfs = b.segments.every((segm) => segm.selected);
         if(afs && !bfs) {
@@ -15051,7 +15071,7 @@ class Scheme extends paper.Project {
           parent._hatching.remove();
           parent._hatching = null;
         }
-        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter) {
+        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter || parent instanceof ProfileRegion) {
           if(layer instanceof ConnectiveLayer) {
             other.push.apply(other, parent.move_points(delta, all_points));
           }

@@ -232,10 +232,18 @@ class DimensionLine extends paper.Group {
               generatrix.segments.forEach((segm) => segm.selected = true)
             }
             else if(Math.abs(b[xy] - _bounds[event.name]) < width && !rays.b.profile?.nearest(true)){
-              generatrix.firstSegment.selected = true;
+              b.selected = true;
             }
             else if(Math.abs(e[xy] - _bounds[event.name]) < width && !rays.e.profile?.nearest(true)){
-              generatrix.lastSegment.selected = true;
+              e.selected = true;
+            }
+            if((b.selected || e.selected) && !(profile instanceof ProfileConnective)) {
+              if(b.selected && e.selected || !b.selected && !e.selected) {
+                profile.select_joined?.([]);
+              }
+              else {
+                profile.select_joined?.([], b.selected ? b : e);
+              }
             }
           }
       });

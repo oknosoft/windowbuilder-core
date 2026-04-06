@@ -1237,6 +1237,12 @@ class Scheme extends paper.Project {
     const {impost} = $p.enm.elm_types;
     if(!all_points) {
       selected = Array.from(selected).sort((a, b) => {
+        if(!a.layer.layer && b.layer.layer) {
+          return -1;
+        }
+        if(a.layer.layer && !b.layer.layer) {
+          return 1;
+        }
         const afs = a.segments.every((segm) => segm.selected);
         const bfs = b.segments.every((segm) => segm.selected);
         if(afs && !bfs) {
@@ -1269,7 +1275,7 @@ class Scheme extends paper.Project {
           parent._hatching = null;
         }
 
-        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter) {
+        if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter || parent instanceof ProfileRegion) {
 
           if(layer instanceof ConnectiveLayer) {
             // двигаем и накапливаем связанные

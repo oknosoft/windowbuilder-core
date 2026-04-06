@@ -3009,18 +3009,24 @@ class ProfileItem extends GeneratrixElement {
    */
   select_joined(deselect, point) {
     for(const elm of this.joined_nearests()) {
-      for(const name of 'be') {
-        const cnn_point = elm.rays[name];
-        if(cnn_point.profile && cnn_point.profile_point) {
-          const segm = cnn_point.profile[cnn_point.profile_point];
-          if(!segm.selected && (!point || segm.is_nearest(point, true))) {
-            segm.selected = true;
-            deselect.push(segm);
+      if(!elm.elm_type.is('flap')) {
+        for(const name of 'be') {
+          const cnn_point = elm.rays[name];
+          if(!cnn_point.point.selected && (!point || cnn_point.point.is_nearest(point, true))) {
+            cnn_point.point.selected = true;
+            deselect.push(cnn_point.point);
+          }
+          if(cnn_point.point.selected && cnn_point.profile && cnn_point.profile_point) {
+            const segm = cnn_point.profile[cnn_point.profile_point];
+            if(!segm.selected && (!point || segm.is_nearest(point, true))) {
+              segm.selected = true;
+              deselect.push(segm);
+            }
           }
         }
-      } 
-      const {b, e} = elm.rays;
-      elm.select_joined(deselect, point);
+        const {b, e} = elm.rays;
+        elm.select_joined(deselect, point);
+      }
     }
   }
 
