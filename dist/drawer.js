@@ -22792,7 +22792,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
     let {current_user, cat: {abonents}, enm} = $p;
-    const {Черновик, Шаблон, Отозван, Отправлен} = enm.obj_delivery_states;
+    const {Черновик, Шаблон, Отозван, Отправлен, Отклонен} = enm.obj_delivery_states;
     if(!current_user) {
       current_user = this.manager;
     }
@@ -22808,7 +22808,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       ro = !_data._saving_trans && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     else if(!obj_delivery_state.empty()) {
-      ro = obj_delivery_state != Черновик && obj_delivery_state != Отозван && !current_user.role_available('СогласованиеРасчетовЗаказов');
+      ro = ![Черновик, Отозван, Отклонен].includes(obj_delivery_state) && !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
     return ro;
   }
