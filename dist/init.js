@@ -5106,13 +5106,13 @@ class CatClrsManager extends CatManager {
       if(row_base._or) {
         for(const grp of row_base._or.values()) {
           for(const prow of grp) {
-            if(prow.origin == "algorithm") {
+            if(prow.origin.is('algorithm')) {
               param = prow.param;
               break;
             }
-            if(param) {
-              break;
-            }
+          }
+          if(param) {
+            break;
           }
         }
       }
