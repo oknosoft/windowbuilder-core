@@ -9276,10 +9276,10 @@ get width(){return this._getter('width')}
 set width(v){this._setter('width',v)}
 get qty(){return this._getter('qty')}
 set qty(v){this._setter('qty',v)}
+get quantity(){return this._getter('quantity')}
+set quantity(v){this._setter('quantity',v)}
 get cell(){return this._getter('cell')}
 set cell(v){this._setter('cell',v)}
-get recorded_quantity(){return this._getter('recorded_quantity')}
-set recorded_quantity(v){this._setter('recorded_quantity',v)}
 }
 $p.DocInventory_cutsMaterialsRow = DocInventory_cutsMaterialsRow;
 $p.doc.create('inventory_cuts');
