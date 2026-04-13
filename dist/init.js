@@ -7415,6 +7415,12 @@ class CatInsert_bindManager extends CatManager {
     const old_rows = this.oldRows(ox, order);
     const insets = this.insets(ox, order);
 
+        function glassSpes(elm) {
+      const sep = properties.glass_separately?.extract_pvalue({ox, cnstr: -elm.elm, elm});
+      const cx = (sep && characteristics.find({leading_product: ox, leading_elm: elm.elm})) || elm.layer.prod_ox;
+      return cx.specification;
+    }
+
         function depositElm({inset, elm_type, by_order, bind, ox, spec}) {
       const elm = {
         _row: {},
@@ -7470,9 +7476,7 @@ class CatInsert_bindManager extends CatManager {
           if(scheme) {
             for (const elm of scheme.glasses) {
               if(!ox.leading_elm || ox.leading_elm === elm.elm) {
-                const sep = properties.glass_separately?.extract_pvalue({ox, cnstr: -elm.elm, elm});
-                const cx = sep ? characteristics.find({leading_product: ox, leading_elm: elm.elm}) : elm.layer.prod_ox;
-                const spec = cx.specification;
+                const spec = glassSpes(elm);
                 ox.glass_specification.find_rows({elm: elm.elm}, (row) => {
                   if(row.inset.insert_glass_type === inset.insert_glass_type) {
                     inset.calculate_spec({elm, row, layer: elm.layer, ox, spec, bind});
@@ -7487,9 +7491,7 @@ class CatInsert_bindManager extends CatManager {
           if(scheme) {
             for (const elm of scheme.glasses) {
               if(!ox.leading_elm || ox.leading_elm === elm.elm) {
-                const sep = properties.glass_separately?.extract_pvalue({ox, cnstr: -elm.elm, elm});
-                const cx = sep ? characteristics.find({leading_product: ox, leading_elm: elm.elm}) : elm.layer.prod_ox;
-                const spec = cx.specification;
+                const spec = glassSpes(elm);
                 inset.calculate_spec({elm, layer: elm.layer, ox, spec, bind});
               }
             }
