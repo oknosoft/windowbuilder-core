@@ -354,7 +354,11 @@ class EditorInvisible extends paper.PaperScope {
         delta = new Point([0, delta]);
       }
       if(delta.length > consts.epsilon){
+        const nearests = impost.joined_nearests().filter(v => v instanceof ProfileRegion);
         impost.move_points(delta, true);
+        for(const reg of nearests) {
+          reg.move_points(delta, true);
+        }
         impost.layer.redraw();
         res.push(delta);
       }
@@ -15381,7 +15385,7 @@ class Scheme extends paper.Project {
           glasses.indexOf(filling) == -1 && glasses.push(filling);
         }
       }
-      this._scope.glass_align('width', glasses);
+      this._scope.glass_align('width', glasses, auto_align == 'Геометрически');
     }, 100);
   }
   resize_canvas(w, h) {

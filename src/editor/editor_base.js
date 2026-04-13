@@ -417,7 +417,11 @@ class EditorInvisible extends paper.PaperScope {
       }
 
       if(delta.length > consts.epsilon){
+        const nearests = impost.joined_nearests().filter(v => v instanceof ProfileRegion);
         impost.move_points(delta, true);
+        for(const reg of nearests) {
+          reg.move_points(delta, true);
+        }
         impost.layer.redraw();
         res.push(delta);
       }

@@ -1696,7 +1696,7 @@ class Scheme extends paper.Project {
       // if(auto_align == $p.enm.align_types.ПоЗаполнениям) {
       //
       // }
-      this._scope.glass_align('width', glasses);
+      this._scope.glass_align('width', glasses, auto_align == 'Геометрически');
 
     }, 100);
 
