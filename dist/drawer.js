@@ -3619,7 +3619,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         for(const profile of nearests) {
           profile[n] = curr[n];
-          profile.rays.clear();
         }
         if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
