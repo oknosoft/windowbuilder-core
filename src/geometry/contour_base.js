@@ -2343,14 +2343,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     function set_node(n) {
       if (!curr[n].is_nearest(elm[n], 0)) {
         const {isegments, rays} = elm;
+        const nearests = elm.joined_nearests()
+          .filter(v => v instanceof ProfileRegion);
         elm[n] = curr[n];
-        
         rays.clear(true);
-        isegments.forEach(({profile, node}) => {
+        for(const {profile, node} of isegments) {
           profile.do_sub_bind(elm, node);
           profile.rays.clear();
-        });
-        
+        }
+        for(const profile of nearests) {
+          profile[n] = curr[n];
+        }
         if (!noti.profiles.includes(elm)) {
           noti.profiles.push(elm);
         }
