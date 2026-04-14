@@ -17547,6 +17547,8 @@ class ProductsBuilding {
       if(attr.save) {
         if(attr.svg !== false) {
           ox.svg = scheme.get_svg();
+          const {width, height} = scheme.l_dimensions.bounds;
+          ox.extra = {dimensions: {width, height}};
           const root = scheme.separate_frame_root();
           for (const contour of scheme.getItems({class: Contour})) {
             const layer = contour.prod_layer();
