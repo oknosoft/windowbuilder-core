@@ -81,7 +81,9 @@ exports.CatMargin_coefficientsManager = class CatMargin_coefficientsManager exte
       if(!this.has(obj) && ox) {
         const pl = ox.owner.nom_group;
         if(!pl.empty()) {
-          this.replenish(pl);
+          if(!this.has(pl)) {
+            this.replenish(pl);
+          }
           if(this.has(pl)) {
             this.set(obj, this.get(pl));
           }
