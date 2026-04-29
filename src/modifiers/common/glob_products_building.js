@@ -876,36 +876,35 @@ class ProductsBuilding {
         }
       }
 
-      // информируем мир о записи продукции
-      if(attr.save) {
-
-        // сохраняем картинку вместе с изделием
-        if(attr.svg !== false) {
-          ox.svg = scheme.get_svg();
-          const {width, height} = scheme.l_dimensions.bounds;
-          ox.extra = {dimensions: {width, height}};
-          const root = scheme.separate_frame_root();
-          for (const contour of scheme.getItems({class: Contour})) {
-            const layer = contour.prod_layer();
-            if(layer && layer !== root) {
-              const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
-              if(!cx.svg) {
-                cx.svg = layer.get_svg();
-              }
-            }
-          }
-          if(root) {
-            root.dop = {svg: root.get_svg()};
-          }
-          else {
-            for(const root of scheme.contours) {
-              if(root.dop.svg) {
-                root.dop = {svg: undefined};
-              }
+      // сохраняем картинку вместе с изделием
+      if(attr.svg !== false) {
+        ox.svg = scheme.get_svg();
+        const {width, height} = scheme.l_dimensions.bounds;
+        ox.extra = {dimensions: {width, height}};
+        const root = scheme.separate_frame_root();
+        for (const contour of scheme.getItems({class: Contour})) {
+          const layer = contour.prod_layer();
+          if(layer && layer !== root) {
+            const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
+            if(!cx.svg) {
+              cx.svg = layer.get_svg();
             }
           }
         }
+        if(root) {
+          root.dop = {svg: root.get_svg()};
+        }
+        else {
+          for(const root of scheme.contours) {
+            if(root.dop.svg) {
+              root.dop = {svg: undefined};
+            }
+          }
+        }
+      }
 
+      // информируем мир о записи продукции
+      if(attr.save) {
         return this.saver({ox, scheme, attr, finish})
           .catch((err) => {
 

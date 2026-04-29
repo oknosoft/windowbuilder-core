@@ -1945,7 +1945,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             // это изделие рисовалки
             tmp = tmp.then(() => {
               return project.load(cx, true, this)                                                     // читаем изделие в невизуальную рисовалку
-                .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false}))  // выполняем пересчет спецификации
+                .then(() => cx.apply_props(project, dp).save_coordinates({svg: true, save: false}))  // выполняем пересчет спецификации
                 .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
             });
           }

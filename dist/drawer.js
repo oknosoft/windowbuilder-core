@@ -17544,32 +17544,32 @@ class ProductsBuilding {
           cx._data._loading = false;
         }
       }
-      if(attr.save) {
-        if(attr.svg !== false) {
-          ox.svg = scheme.get_svg();
-          const {width, height} = scheme.l_dimensions.bounds;
-          ox.extra = {dimensions: {width, height}};
-          const root = scheme.separate_frame_root();
-          for (const contour of scheme.getItems({class: Contour})) {
-            const layer = contour.prod_layer();
-            if(layer && layer !== root) {
-              const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
-              if(!cx.svg) {
-                cx.svg = layer.get_svg();
-              }
-            }
-          }
-          if(root) {
-            root.dop = {svg: root.get_svg()};
-          }
-          else {
-            for(const root of scheme.contours) {
-              if(root.dop.svg) {
-                root.dop = {svg: undefined};
-              }
+      if(attr.svg !== false) {
+        ox.svg = scheme.get_svg();
+        const {width, height} = scheme.l_dimensions.bounds;
+        ox.extra = {dimensions: {width, height}};
+        const root = scheme.separate_frame_root();
+        for (const contour of scheme.getItems({class: Contour})) {
+          const layer = contour.prod_layer();
+          if(layer && layer !== root) {
+            const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
+            if(!cx.svg) {
+              cx.svg = layer.get_svg();
             }
           }
         }
+        if(root) {
+          root.dop = {svg: root.get_svg()};
+        }
+        else {
+          for(const root of scheme.contours) {
+            if(root.dop.svg) {
+              root.dop = {svg: undefined};
+            }
+          }
+        }
+      }
+      if(attr.save) {
         return this.saver({ox, scheme, attr, finish})
           .catch((err) => {
             finish();
@@ -23044,7 +23044,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           else if(cx.coordinates.count()) {
             tmp = tmp.then(() => {
               return project.load(cx, true, this)                                                    
-                .then(() => cx.apply_props(project, dp).save_coordinates({svg: false, save: false})) 
+                .then(() => cx.apply_props(project, dp).save_coordinates({svg: true, save: false})) 
                 .then(() => this.characteristic_saved(project));                                     
             });
           }
