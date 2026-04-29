@@ -266,7 +266,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       }
       if(row.record_kind.is('debit') && row.width && row.len && row.quantity) {
         if(row.quantity > 1 || !this.cutting.find({stick: row.stick})) {
-          getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity});
+          getRes(row).scraps.push({stick: row.stick, length: row.len, height: row.width, quantity: row.quantity, scrap: row.quantity === 1});
         }
       }
     }
