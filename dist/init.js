@@ -3057,6 +3057,7 @@ class CatNomManager extends CatManager {
     const units = [];
     const cxs = [];
     const prices = {};
+    const cxmap = new Map();
     for(const row of aattr) {
       if(row.units) {
         row.units.split('\n').forEach((urow) => {
@@ -3079,20 +3080,26 @@ class CatNomManager extends CatManager {
         prices[row.ref] = row._price;
         delete row._price;
       }
-      if(row.characteristics?.length) {
-        const cxrefs = [];
-        row.characteristics.forEach((cx) => {
-          cx.owner = row.ref;
-          cxrefs.push(cx.ref);
-          cxs.push(cx);
-        });
-        row.characteristics = cxrefs;
+      if(row.characteristics) {
+        if(Array.isArray(row.characteristics)) {
+          const cxrefs = [];
+          row.characteristics.forEach((cx) => {
+            cx.owner = row.ref;
+            cxrefs.push(cx.ref);
+            cxs.push(cx);
+          });
+          cxmap.set(row.ref, cxrefs);
+        }
+        delete row.characteristics;
       }
     }
     const res = super.load_array(aattr, forse);
     const {currencies, nom_units, characteristics} = this._owner;
     units.length && nom_units.load_array(units, forse);
     cxs.length && characteristics.load_array(cxs, forse);
+    for(const [ref, cxrefs] of cxmap) {
+      this.get(ref)._obj.characteristics = cxrefs;
+    }
 
     for(const {_data, _obj} of res) {
       const _price = prices[_obj.ref];
