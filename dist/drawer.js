@@ -14424,7 +14424,8 @@ class Scheme extends paper.Project {
         elm.visible = txts;
       }      
     }
-    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields) || (obj === ox && 'inserts' in fields)) {
+    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields && obj._owner._owner === ox) ||
+      (obj === ox && 'inserts' in fields)) {
       this.register_change(true);
     }
   }
@@ -17275,9 +17276,8 @@ class ProductsBuilding {
       const spec_tmp = spec;
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
         if(inset.is_order_row_prod({ox, elm})) {
-          const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
+          const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref, false, null, true), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
-          cx._data._loading = true;
           spec = cx.specification.clear();
         }
         else {

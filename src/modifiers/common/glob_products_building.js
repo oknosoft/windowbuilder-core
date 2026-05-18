@@ -468,9 +468,8 @@ class ProductsBuilding {
 
         // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
-          const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(elm.layer));
+          const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref, false, null, true), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
-          cx._data._loading = true;
           spec = cx.specification.clear();
         }
         else {

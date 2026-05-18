@@ -31,7 +31,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
     // пересчитываем наименование
     const name = this.prod_name();
-    if(name) {
+    if(name && name !== this.name) {
       this.name = name;
     }
 
@@ -325,10 +325,11 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @param elm {Number} - номер элемента или контура
    * @param [origin] {CatInserts} - порождающая вставка
    * @param [modify] {Boolean} - если false - не изменяем - только поиск
-   * @param [_order_rows] {Array} - если указано и есть в массиве - не перезаполняем
+   * @param [order_rows] {Array} - если указано и есть в массиве - не перезаполняем
+   * @param [loading] {Boolean} - если указано, взводим признак loading
    * @return {CatCharacteristics}
    */
-  find_create_cx(elm, origin, modify, _order_rows) {
+  find_create_cx(elm, origin, modify, order_rows, loading) {
     const {_manager, calc_order, params, inserts} = this;
     const {job_prm, utils, cat} = $p;
     if(!origin) {
@@ -354,11 +355,14 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         origin
       }, false, true)._set_loaded();
     }
-    if(_order_rows) {
-      if(_order_rows.includes(cx)) {
+    if(loading) {
+      cx._data._loading = true;
+    }
+    if(order_rows) {
+      if(order_rows.includes(cx)) {
         return cx;
       }
-      _order_rows.push(cx);
+      order_rows.push(cx);
       cx.specification.clear();
       cx.svg = '';
       if(!cx.calc_order_row) {

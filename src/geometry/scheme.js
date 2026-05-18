@@ -334,7 +334,8 @@ class Scheme extends paper.Project {
       }      
     }
     // изменили или удалили вложенную вставку
-    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields) || (obj === ox && 'inserts' in fields)) {
+    if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields && obj._owner._owner === ox) ||
+      (obj === ox && 'inserts' in fields)) {
       this.register_change(true);
     }
   }

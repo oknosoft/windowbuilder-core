@@ -6080,7 +6080,7 @@ set struct(v){this._setter_ts('struct',v)}
     this.weight = this.elm_weight();
 
     const name = this.prod_name();
-    if(name) {
+    if(name && name !== this.name) {
       this.name = name;
     }
 
@@ -6337,7 +6337,7 @@ set struct(v){this._setter_ts('struct',v)}
     }
   }
 
-  find_create_cx(elm, origin, modify, _order_rows) {
+  find_create_cx(elm, origin, modify, order_rows, loading) {
     const {_manager, calc_order, params, inserts} = this;
     const {job_prm, utils, cat} = $p;
     if(!origin) {
@@ -6363,11 +6363,14 @@ set struct(v){this._setter_ts('struct',v)}
         origin
       }, false, true)._set_loaded();
     }
-    if(_order_rows) {
-      if(_order_rows.includes(cx)) {
+    if(loading) {
+      cx._data._loading = true;
+    }
+    if(order_rows) {
+      if(order_rows.includes(cx)) {
         return cx;
       }
-      _order_rows.push(cx);
+      order_rows.push(cx);
       cx.specification.clear();
       cx.svg = '';
       if(!cx.calc_order_row) {
