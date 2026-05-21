@@ -271,11 +271,15 @@ exports.CatCnnsManager = class CatCnnsManager extends Object {
       }
     }
     const all = [];
+    const thickness = art1glass && elm1.thickness;
     elm2.forEach(({nom, side}, index) => {
       for(const cnn of region_cache.get(nom)) {
         if((!cnn_types || cnn_types.includes(cnn.cnn_type)) && (cnn.sd1.is('any') || cnn.sd1 === side)) {
           const is_nom = cnn.check_nom1(nom1);
           if(is_nom || art1glass) {
+            if(thickness && (cnn.tmin && cnn.tmin > thickness || cnn.tmax && cnn.tmax < thickness)) {
+              continue;
+            }
             all.push({cnn, priority: cnn.priority + (is_nom ? 1000 : 0) + ((art1glass && cnn.sd2 === index) ? 10000 : 0)});
           }
         }

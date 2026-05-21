@@ -530,12 +530,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     const {inset, elm, layer, _attr: {paths, _text}, project} = this;
     const {builder_props} = project;
     if(inset.region && !(layer instanceof ContourTearing)) {
+      const processed = new Set();
       this.ox.glass_specification.find_rows({elm}, (row) => {
         // 0 - не ряд
         // 1 - ряд внутри элемента
         // >1 - за элементом
         // <0 - перед элементом
-        if([1, 2, 3, -1, -2].includes(row.region)) {
+        if([1, 2, 3, -1, -2].includes(row.region) && !processed.has(row.region)) {
+          processed.add(row.region);
           const {profiles, path} = this;
           const nom = row.inset.nom(this);
           const interior = this.interiorPoint();
