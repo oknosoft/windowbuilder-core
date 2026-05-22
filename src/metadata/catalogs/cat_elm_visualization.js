@@ -50,7 +50,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
 
     try {
       const {project} = layer;
-      const {CompoundPath, PointText, Path, constructor} = project._scope;
+      const {CompoundPath, PointText, Path, Group, constructor} = project._scope;
 
       let subpath;
 
@@ -123,7 +123,8 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
       }
       else if(svg_path){
 
-        if(this.mode === 1) {
+        // текст или выноска
+        if(this.mode === 1 || this.mode === 4) {
           //const attr = JSON.parse(this.attributes || '{}');
           const {attributes} = this;
           subpath = new PointText(Object.assign({
@@ -159,7 +160,44 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
           }
         }
 
-        if(elm instanceof constructor.Filling) {
+        if(this.mode === 4) {
+          if(elm instanceof constructor.ProfileItem) {
+            const {path, bounds, pos, orientation, layer} = elm;
+            const {width, height} = subpath.bounds;
+            const grp = new Group({parent: layer.by_spec});
+            grp.addChild(subpath);
+            let start, callout, rack;
+            if(pos.is('right')) {
+              start = bounds.topRight.add([0, 100]);
+              callout = start.add([150, -200]);
+              rack = callout.add([width, 0]);
+            }
+            else if(pos.is('left')) {
+              start = bounds.topLeft.add([0, 100]);
+              callout = start.add([-150, -200]);
+              rack = callout.add([-width, 0]);
+            }
+            else if(pos.is('top')) {
+              start = bounds.topRight.add([-100, 0]);
+              callout = start.add([200, -150]);
+              rack = callout.add([width, 0]);
+            }
+            else if(pos.is('bottom')) {
+              start = bounds.bottomRight.add([-100, 0]);
+              callout = start.add([200, 200]);
+              rack = callout.add([width, 0]);
+            }
+            subpath.position = [(callout.x + rack.x) / 2, rack.y - height / 2];
+            const {attributes} = this;
+            new Path({
+              segments: [start, callout, rack],
+              parent: grp,
+              strokeWidth: attributes.strokeWidth || 1,
+              strokeColor: attributes.strokeColor || 'grey',
+            });
+          }
+        }
+        else if(elm instanceof constructor.Filling) {
           subpath.position = elm.bounds.topLeft.add(offset);
         }
         else {
