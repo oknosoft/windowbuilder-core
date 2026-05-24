@@ -54,7 +54,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupLayers({parent: this, name: 'topLayers'});
     super.create_groups();
     new GroupText({parent: this, name: 'text'});
-    this._attr.visualization = new GroupVisualization({owner: this, guide: true});
+    new GroupVisualization({owner: this, guide: true});
   }
 
   /**
@@ -3569,7 +3569,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Cлужебная группа визуализации допов,  петель и ручек
+   * Cлужебная группа визуализации допов, петель и ручек
    * @type {paper.Group}
    */
   get l_visualization() {

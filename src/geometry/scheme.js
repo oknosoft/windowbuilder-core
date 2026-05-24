@@ -1834,6 +1834,7 @@ class Scheme extends paper.Project {
       for (let contour of this.contours) {
         contour.draw_visualization();
       }
+      this.l_connective.draw_visualization();
       this.view.update();
     }
   }

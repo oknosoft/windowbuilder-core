@@ -1899,7 +1899,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupLayers({parent: this, name: 'topLayers'});
     super.create_groups();
     new GroupText({parent: this, name: 'text'});
-    this._attr.visualization = new GroupVisualization({owner: this, guide: true});
+    new GroupVisualization({owner: this, guide: true});
   }
   get ProfileConstructor() {
     return Profile;
@@ -13268,6 +13268,7 @@ class ConnectiveLayer extends paper.Layer {
   constructor(attr) {
     super(attr);
     this._errors = new paper.Group({parent: this});
+    new GroupVisualization({owner: this, guide: true});
   }
   presentation() {
     return 'Соединители';
@@ -13320,6 +13321,46 @@ class ConnectiveLayer extends paper.Layer {
     });
     _errors.removeChildren();
   }
+  draw_visualization(rows, region = 0) {
+    const {profiles, l_visualization, project: {_attr, builder_props, ox}} = this;
+    const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
+    const reflected = _attr._reflected;
+    l_visualization.by_insets.removeChildren();
+    l_visualization.by_spec.removeChildren();
+    const hide_by_spec = !builder_props.visualization;
+    if(!hide_by_spec) {
+      function draw(elm) {
+        if(this.elm === elm.elm && elm.visible) {
+          const {visualization} = this.nom;
+          const {attributes} = visualization;
+          if(!attributes?.regions || attributes.regions.includes?.(region)) {
+            let offset = this.len * 1000;
+            if(elm.flipped) {
+              offset = elm.length - offset;
+            }
+            visualization.draw({
+              elm,
+              layer: l_visualization,
+              offset,
+              offset0: this.width * 1000 * (this.alp1 || 1),
+              clr: this.clr,
+              reflected,
+            });
+            return true;
+          }
+        }
+      }
+      const push = (row) => {
+        const {sketch_view} = row.nom.visualization;
+        if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
+          (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
+          return;
+        }
+        profiles.some(draw.bind(row));
+      };
+      ox.specification.find_rows({dop: {in: [-1, -5]}}, push);
+    }
+  }
   save_coordinates() {
     return this.children.reduce((accumulator, elm) => {
       return elm?.save_coordinates ?  accumulator.then(() => elm.save_coordinates()) : accumulator;
@@ -13344,6 +13385,9 @@ class ConnectiveLayer extends paper.Layer {
   }
   get l_dimensions() {
     return this.project.contours[0].l_dimensions;
+  }
+  get l_visualization() {
+    return this.project.l_visualization.map.get(this);
   }
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
@@ -15460,6 +15504,7 @@ class Scheme extends paper.Project {
       for (let contour of this.contours) {
         contour.draw_visualization();
       }
+      this.l_connective.draw_visualization();
       this.view.update();
     }
   }

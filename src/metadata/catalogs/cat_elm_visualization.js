@@ -49,7 +49,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
     
 
     try {
-      const {project} = layer;
+      const {project, by_spec: parent} = layer;
       const {CompoundPath, PointText, Path, Group, constructor} = project._scope;
 
       let subpath;
@@ -115,7 +115,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
               subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
             }
           }
-          subpath.parent = layer.by_spec;
+          subpath.parent = parent;
           subpath.strokeWidth = attr.strokeWidth || 4;
           subpath.strokeColor = attr.strokeColor || 'red';
           subpath.strokeCap = attr.strokeCap || 'round';
@@ -129,8 +129,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
           const {attributes} = this;
           subpath = new PointText(Object.assign({
             project,
-            layer,
-            parent: layer.by_spec,
+            parent,
             fillColor: 'black',
             dashArray,
             fontFamily: $p.job_prm.builder.font_family,
@@ -145,8 +144,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
           }
           subpath = new CompoundPath(Object.assign({
             project,
-            layer,
-            parent: layer.by_spec,
+            parent,
             pathData: svg_path,
             strokeColor: 'black',
             fillColor,
@@ -162,9 +160,9 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
 
         if(this.mode === 4) {
           if(elm instanceof constructor.ProfileItem) {
-            const {path, bounds, pos, orientation, layer} = elm;
+            const {path, bounds, pos, orientation} = elm;
             const {width, height} = subpath.bounds;
-            const grp = new Group({parent: layer.by_spec});
+            const grp = new Group({parent});
             grp.addChild(subpath);
             let start, callout, rack;
             if(pos.is('right')) {

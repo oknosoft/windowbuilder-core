@@ -1404,7 +1404,7 @@ set params(v){this._setter_ts('params',v)}
 
 
         try {
-      const {project} = layer;
+      const {project, by_spec: parent} = layer;
       const {CompoundPath, PointText, Path, Group, constructor} = project._scope;
 
       let subpath;
@@ -1470,7 +1470,7 @@ set params(v){this._setter_ts('params',v)}
               subpath = elm.generatrix.get_subpath(elm.b, elm.e).equidistant(attr.offset || 0);
             }
           }
-          subpath.parent = layer.by_spec;
+          subpath.parent = parent;
           subpath.strokeWidth = attr.strokeWidth || 4;
           subpath.strokeColor = attr.strokeColor || 'red';
           subpath.strokeCap = attr.strokeCap || 'round';
@@ -1482,8 +1482,7 @@ set params(v){this._setter_ts('params',v)}
           const {attributes} = this;
           subpath = new PointText(Object.assign({
             project,
-            layer,
-            parent: layer.by_spec,
+            parent,
             fillColor: 'black',
             dashArray,
             fontFamily: $p.job_prm.builder.font_family,
@@ -1498,8 +1497,7 @@ set params(v){this._setter_ts('params',v)}
           }
           subpath = new CompoundPath(Object.assign({
             project,
-            layer,
-            parent: layer.by_spec,
+            parent,
             pathData: svg_path,
             strokeColor: 'black',
             fillColor,
@@ -1515,9 +1513,9 @@ set params(v){this._setter_ts('params',v)}
 
         if(this.mode === 4) {
           if(elm instanceof constructor.ProfileItem) {
-            const {path, bounds, pos, orientation, layer} = elm;
+            const {path, bounds, pos, orientation} = elm;
             const {width, height} = subpath.bounds;
-            const grp = new Group({parent: layer.by_spec});
+            const grp = new Group({parent});
             grp.addChild(subpath);
             let start, callout, rack;
             if(pos.is('right')) {
