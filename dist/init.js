@@ -8003,11 +8003,20 @@ set set(v){this._setter_ts('set',v)}
 
   before_save(attr) {
     const {run} = $p.enm.planning_phases;
-    for(const row of this.set) {
+    const {set, cutting} = this;
+    for(const row of set) {
       if(row.phase.empty()) {
         row.phase = run;
       }
     }
+    let optimized = 0;
+    const all = cutting.count() || 1;
+    for(const row of cutting) {
+      if(row.stick) {
+        optimized++;
+      }
+    }
+    this.optimized = (optimized * 100 / all).round(2);
   }
 
   add_row(row, attr) {

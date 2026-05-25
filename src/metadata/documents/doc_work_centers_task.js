@@ -39,11 +39,20 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
 
   before_save(attr) {
     const {run} = $p.enm.planning_phases;
-    for(const row of this.set) {
+    const {set, cutting} = this;
+    for(const row of set) {
       if(row.phase.empty()) {
         row.phase = run;
       }
     }
+    let optimized = 0;
+    const all = cutting.count() || 1;
+    for(const row of cutting) {
+      if(row.stick) {
+        optimized++;
+      }
+    }
+    this.optimized = (optimized * 100 / all).round(2);
   }
 
   /**
