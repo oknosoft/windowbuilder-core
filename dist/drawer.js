@@ -6054,7 +6054,7 @@ class DimensionDrawer extends paper.Group {
       this.layer?.layer?.l_dimensions?.clear();
     }
   }
-  redraw(force) {
+  redraw(force, forceDimensions) {
     const {parent, project: {builder_props}} = this;
     if(!force) {
       force = parent.show_dimensions;
@@ -6112,7 +6112,7 @@ class DimensionDrawer extends paper.Group {
       else {
         ivert.length = 0;
       }
-      this.by_contour(ihor, ivert, force, by_side);
+      this.by_contour(ihor, ivert, force, by_side, forceDimensions);
     }
     for (let dl of this.children) {
       dl.redraw && dl.redraw();
@@ -6300,7 +6300,7 @@ class DimensionDrawer extends paper.Group {
       }
     }
   }
-  by_contour(ihor, ivert, forse, by_side) {
+  by_contour(ihor, ivert, forse, by_side, forceDimensions) {
     const {project, parent} = this;
     const {profileBounds: bounds} = parent;
     const projectBounds = project.l_dimensions.bounds;
@@ -6311,7 +6311,7 @@ class DimensionDrawer extends paper.Group {
       dop_offset = base_offset + 40;
     }
     if(project.contours.length > 1 || forse) {
-      if(parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) {
+      if((parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) || (forceDimensions && !parent.is_pos('left'))) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -6338,8 +6338,8 @@ class DimensionDrawer extends paper.Group {
           this.left = null;
         }
       }
-      if(parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) {
-        if(!this.ihor.has_size(bounds.height)) {
+      if((parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) || (forceDimensions && !parent.is_pos('right'))) {
+        if(!this.ihor.has_size(bounds.height) && (!this.left || Math.abs(bounds.height - this.left.size) > 1)) {
           if(!this.right) {
             this.right = new DimensionLine({
               project,
@@ -6392,7 +6392,7 @@ class DimensionDrawer extends paper.Group {
           this.top = null;
         }
       }
-      if(parent.is_pos('bottom') && (projectBounds.width != bounds.width || forse)) {
+      if((parent.is_pos('bottom') || (forceDimensions && !this.top)) && (projectBounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -17596,20 +17596,25 @@ class ProductsBuilding {
         const {width, height} = scheme.l_dimensions.bounds;
         ox.extra = {dimensions: {width, height}};
         const root = scheme.separate_frame_root();
+        const {contours} = scheme;
         for (const contour of scheme.getItems({class: Contour})) {
           const layer = contour.prod_layer();
           if(layer && layer !== root) {
             const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
             if(!cx.svg) {
+              layer.l_dimensions.redraw(true, true);
               cx.svg = layer.get_svg();
+              layer.l_dimensions.redraw(true);
             }
           }
         }
         if(root) {
+          root.l_dimensions.redraw(true, true);
           root.dop = {svg: root.get_svg()};
+          root.l_dimensions.redraw(true);
         }
         else {
-          for(const root of scheme.contours) {
+          for(const root of contours) {
             if(root.dop.svg) {
               root.dop = {svg: undefined};
             }

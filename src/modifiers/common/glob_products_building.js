@@ -881,20 +881,25 @@ class ProductsBuilding {
         const {width, height} = scheme.l_dimensions.bounds;
         ox.extra = {dimensions: {width, height}};
         const root = scheme.separate_frame_root();
+        const {contours} = scheme;
         for (const contour of scheme.getItems({class: Contour})) {
           const layer = contour.prod_layer();
           if(layer && layer !== root) {
             const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
             if(!cx.svg) {
+              layer.l_dimensions.redraw(true, true);
               cx.svg = layer.get_svg();
+              layer.l_dimensions.redraw(true);
             }
           }
         }
         if(root) {
+          root.l_dimensions.redraw(true, true);
           root.dop = {svg: root.get_svg()};
+          root.l_dimensions.redraw(true);
         }
         else {
-          for(const root of scheme.contours) {
+          for(const root of contours) {
             if(root.dop.svg) {
               root.dop = {svg: undefined};
             }

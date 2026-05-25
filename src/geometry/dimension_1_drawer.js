@@ -184,7 +184,7 @@ class DimensionDrawer extends paper.Group {
   /**
    * формирует авторазмерные линии
    */
-  redraw(force) {
+  redraw(force, forceDimensions) {
 
     const {parent, project: {builder_props}} = this;
     
@@ -264,7 +264,7 @@ class DimensionDrawer extends paper.Group {
       }
 
       // далее - размерные линии контура
-      this.by_contour(ihor, ivert, force, by_side);
+      this.by_contour(ihor, ivert, force, by_side, forceDimensions);
 
     }
 
@@ -499,7 +499,7 @@ class DimensionDrawer extends paper.Group {
   /**
    * Формирует размерные линии контура
    */
-  by_contour(ihor, ivert, forse, by_side) {
+  by_contour(ihor, ivert, forse, by_side, forceDimensions) {
 
     const {project, parent} = this;
     const {profileBounds: bounds} = parent;
@@ -513,7 +513,7 @@ class DimensionDrawer extends paper.Group {
 
     if(project.contours.length > 1 || forse) {
 
-      if(parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) {
+      if((parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) || (forceDimensions && !parent.is_pos('left'))) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -541,8 +541,8 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) {
-        if(!this.ihor.has_size(bounds.height)) {
+      if((parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) || (forceDimensions && !parent.is_pos('right'))) {
+        if(!this.ihor.has_size(bounds.height) && (!this.left || Math.abs(bounds.height - this.left.size) > 1)) {
           if(!this.right) {
             this.right = new DimensionLine({
               project,
@@ -597,7 +597,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('bottom') && (projectBounds.width != bounds.width || forse)) {
+      if((parent.is_pos('bottom') || (forceDimensions && !this.top)) && (projectBounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
