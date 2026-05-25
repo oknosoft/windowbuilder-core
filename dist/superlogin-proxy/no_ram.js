@@ -77,6 +77,7 @@ export function load_common({adapters: {pouch}, md, msg}, types) {
   const zone = sessionStorage.getItem('zone') || pouch.props.zone;
   return pouch.fetch(`/couchdb/mdm/${zone}/common`, {headers})
     .then(stream_load(md, pouch))
+    .then(() => pouch.emit('common_loaded'))
     .catch((err) => {
       pouch.emit('user_log_fault', {message: 'custom', text: err.message.includes('406') ? err.message : msg.error_proxy});
       return err;
