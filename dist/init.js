@@ -9325,7 +9325,10 @@ get work_center(){return this._getter('work_center')}
 set work_center(v){this._setter('work_center',v)}
 get materials(){return this._getter_ts('materials')}
 set materials(v){this._setter_ts('materials',v)}
-}
+
+  before_save(attr) {
+    this.materials.group_by('nom,characteristic,len,width', 'qty,quantity');
+  }}
 $p.DocInventory_cuts = DocInventory_cuts;
 class DocInventory_cutsMaterialsRow extends TabularSectionRow{
 get nom(){return this._getter('nom')}
