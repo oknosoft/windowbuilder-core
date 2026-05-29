@@ -2137,13 +2137,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     l_visualization.by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    const hide_by_spec = !builder_props.visualization;
-    if(!rows && !hide_by_spec) {
+    const {visualization, workplace} = builder_props;
+    if(!rows && visualization) {
       const push = (row) => {
         const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
           (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
-          return;
+          if(!workplace || !sketch_view.find({kind: workplace})) {
+            return;
+          }
         }
         rows.push(row);
       };
@@ -2197,7 +2199,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // бежим по строкам спецификации с визуализацией
-    if(!hide_by_spec) {
+    if(visualization) {
       for (const row of rows) {
         // визуализация для текущего профиля
         if(!profiles.some(draw.bind(row))) {

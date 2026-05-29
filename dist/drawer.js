@@ -3459,13 +3459,15 @@ class Contour extends AbstractFilling(paper.Layer) {
     const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped;
     l_visualization.by_insets.removeChildren();
     l_visualization.by_spec.removeChildren();
-    const hide_by_spec = !builder_props.visualization;
-    if(!rows && !hide_by_spec) {
+    const {visualization, workplace} = builder_props;
+    if(!rows && visualization) {
       const push = (row) => {
         const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
           (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
-          return;
+          if(!workplace || !sketch_view.find({kind: workplace})) {
+            return;
+          }
         }
         rows.push(row);
       };
@@ -3507,7 +3509,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(builder_props.unfolding !== false) {
       sectionals.forEach(s => s.draw_unfolding());
     }
-    if(!hide_by_spec) {
+    if(visualization) {
       for (const row of rows) {
         if(!profiles.some(draw.bind(row))) {
           glasses.some((elm) => {
@@ -13327,8 +13329,8 @@ class ConnectiveLayer extends paper.Layer {
     const reflected = _attr._reflected;
     l_visualization.by_insets.removeChildren();
     l_visualization.by_spec.removeChildren();
-    const hide_by_spec = !builder_props.visualization;
-    if(!hide_by_spec) {
+    const {visualization, workplace} = builder_props;
+    if(visualization) {
       function draw(elm) {
         if(this.elm === elm.elm && elm.visible) {
           const {visualization} = this.nom;
@@ -13354,7 +13356,9 @@ class ConnectiveLayer extends paper.Layer {
         const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
           (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
-          return;
+          if(!workplace || !sketch_view.find({kind: workplace})) {
+            return;
+          }
         }
         profiles.some(draw.bind(row));
       };

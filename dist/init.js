@@ -1402,8 +1402,7 @@ set params(v){this._setter_ts('params',v)}
       }
     }
 
-
-        try {
+    try {
       const {project, by_spec: parent} = layer;
       const {CompoundPath, PointText, Path, Group, constructor} = project._scope;
 
@@ -1520,7 +1519,7 @@ set params(v){this._setter_ts('params',v)}
             let start, callout, rack;
             if(pos.is('right')) {
               start = bounds.topRight.add([0, 100]);
-              callout = start.add([150, -200]);
+              callout = start.add([150, -150]);
               rack = callout.add([width, 0]);
             }
             else if(pos.is('left')) {
@@ -1529,8 +1528,8 @@ set params(v){this._setter_ts('params',v)}
               rack = callout.add([-width, 0]);
             }
             else if(pos.is('top')) {
-              start = bounds.topRight.add([-100, 0]);
-              callout = start.add([200, -150]);
+              start = bounds.topRight.add([-150, 0]);
+              callout = start.add([150, -200]);
               rack = callout.add([width, 0]);
             }
             else if(pos.is('bottom')) {
@@ -6545,7 +6544,7 @@ set struct(v){this._setter_ts('struct',v)}
     }
     for(const prop in defaults){
       if(tmp.hasOwnProperty(prop)) {
-        props[prop] = ((prop === 'onlay_regions') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
+        props[prop] = ((prop === 'onlay_regions') || (prop === 'workplace') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
       }
       else {
         props[prop] = defaults[prop];
@@ -7096,6 +7095,7 @@ set struct(v){this._setter_ts('struct',v)}
     mode: 0,
     onlay_regions: '',
     unfolding: true,
+    workplace: ''
   };}
 $p.CatCharacteristics = CatCharacteristics;
 class CatCharacteristicsConstructionsRow extends TabularSectionRow{

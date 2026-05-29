@@ -519,7 +519,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     }
     for(const prop in defaults){
       if(tmp.hasOwnProperty(prop)) {
-        props[prop] = ((prop === 'onlay_regions') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
+        props[prop] = ((prop === 'onlay_regions') || (prop === 'workplace') || (typeof tmp[prop] === 'number')) ? tmp[prop] : !!tmp[prop];
       }
       else {
         props[prop] = defaults[prop];
@@ -1155,5 +1155,6 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     mode: 0,
     onlay_regions: '',
     unfolding: true,
+    workplace: ''
   };
 }

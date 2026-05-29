@@ -46,7 +46,6 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
         }
       }
     }
-    
 
     try {
       const {project, by_spec: parent} = layer;
@@ -167,7 +166,7 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
             let start, callout, rack;
             if(pos.is('right')) {
               start = bounds.topRight.add([0, 100]);
-              callout = start.add([150, -200]);
+              callout = start.add([150, -150]);
               rack = callout.add([width, 0]);
             }
             else if(pos.is('left')) {
@@ -176,8 +175,8 @@ exports.CatElm_visualization = class CatElm_visualization extends Object {
               rack = callout.add([-width, 0]);
             }
             else if(pos.is('top')) {
-              start = bounds.topRight.add([-100, 0]);
-              callout = start.add([200, -150]);
+              start = bounds.topRight.add([-150, 0]);
+              callout = start.add([150, -200]);
               rack = callout.add([width, 0]);
             }
             else if(pos.is('bottom')) {

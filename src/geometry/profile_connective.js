@@ -461,8 +461,8 @@ class ConnectiveLayer extends paper.Layer {
     l_visualization.by_spec.removeChildren();
 
     // если кеш строк визуализации пустой - наполняем
-    const hide_by_spec = !builder_props.visualization;
-    if(!hide_by_spec) {
+    const {visualization, workplace} = builder_props;
+    if(visualization) {
 
       function draw(elm) {
         if(this.elm === elm.elm && elm.visible) {
@@ -490,7 +490,9 @@ class ConnectiveLayer extends paper.Layer {
         const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
           (!reflected && sketch_view.count() && !sketch_view.find({kind: inner}) && !sketch_view.find({kind: inner1}))) {
-          return;
+          if(!workplace || !sketch_view.find({kind: workplace})) {
+            return;
+          }
         }
         // визуализация для текущего профиля
         profiles.some(draw.bind(row));
