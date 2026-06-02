@@ -1857,12 +1857,15 @@ class Scheme extends paper.Project {
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
-    const sys = attr?.elm?.layer ? attr.elm.layer.sys : this._dp.sys;
+    const sys = attr.elm?.layer ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
       rows = sys.inserts(attr.elm_type, true, attr.elm);
       // если доступна текущая, возвращаем её
-      if(attr.inset && rows.some((row) => attr.inset == row)) {
-        return attr.inset;
+      const {inset} = attr;
+      const isFilling = inset?.insert_type.is('Заполнение');
+      const thickness = isFilling && inset.thickness(attr.elm);
+      if(inset && rows.some((curr) => inset == curr || isFilling && curr.thickness(attr.elm) === thickness)) {
+        return inset;
       }
       return rows[0];
     }
