@@ -1502,6 +1502,8 @@ class Scheme extends paper.Project {
    * @param [attr] {Object} - указывает видимость слоёв и элементов, используется для формирования эскиза части изделия
    */
   get_svg(attr = {}) {
+    const selectedItems = Object.values(this._selectionItems).filter(v => v instanceof BuilderElement);
+    
     this.deselectAll();
     const options = attr.export_options || {};
     if(!options.precision) {
@@ -1561,6 +1563,9 @@ class Scheme extends paper.Project {
       this.zoom_fit();
     }
 
+    for(const item of selectedItems) {
+      item.selected = true;
+    }
     return svg.outerHTML;
   }
 
