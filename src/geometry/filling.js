@@ -1464,7 +1464,7 @@ $p.md.once('predefined_elmnts_inited', () => {
           if(!row) {
             row = ox.params.add({param: glass_separately, cnstr: -elm});
           }
-          row.value = Boolean(v);
+          row.value = (v && typeof v === 'number') ? v : Boolean(v);
         }
       }
     })

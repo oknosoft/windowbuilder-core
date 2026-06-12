@@ -7875,7 +7875,7 @@ $p.md.once('predefined_elmnts_inited', () => {
           if(!row) {
             row = ox.params.add({param: glass_separately, cnstr: -elm});
           }
-          row.value = Boolean(v);
+          row.value = (v && typeof v === 'number') ? v : Boolean(v);
         }
       }
     })
@@ -20699,7 +20699,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(prm_row?.origin?.is('nearest')){
               if(elm instanceof Filling) {
                 const res = new Set();
-                ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+                (elm.project?.ox || ox).glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                   if(row && inset !== row._owner?._owner) {
                     res.add(inset);
                   }
@@ -20727,7 +20727,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if((elm instanceof Filling || elm?.is_glass) && 
                 (prm_row?.comparison_type?.is('in') || prm_row?.comparison_type?.is('nin'))) {
               const res = new Set();
-              ox.glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
+              (elm.project?.ox || ox).glass_specification.find_rows({elm: elm.elm}, ({inset}) => {
                 if(!inset.insert_glass_type.empty()) {
                   res.add(inset.insert_glass_type);
                 }
