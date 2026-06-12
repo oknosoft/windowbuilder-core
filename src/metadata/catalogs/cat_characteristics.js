@@ -857,6 +857,10 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     return project.load(this, attr.builder_props || true)
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
+
+        for (let layer of project.contours) {
+          layer.l_dimensions.redraw();
+        }
         
         // видимость рядов профиля
         // 0, undefined - только контур основных элементов

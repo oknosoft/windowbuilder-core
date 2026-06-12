@@ -6849,6 +6849,10 @@ set struct(v){this._setter_ts('struct',v)}
       .then(() => {
         const {_obj: {glasses, constructions, coordinates}} = this;
 
+        for (let layer of project.contours) {
+          layer.l_dimensions.redraw();
+        }
+
         if(attr.regions) {
           for(const layer of project.getItems({class: EditorInvisible.Contour})) {
             if(attr.regions === 1) {
