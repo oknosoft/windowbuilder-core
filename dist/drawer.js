@@ -1153,7 +1153,7 @@ class BuilderElement extends paper.Group {
                 let prow;
                 params.find_rows({
                   param: prop,
-                  cnstr: {in: [0, -_row.row]},
+                  cnstr: {in: [0, -_row.elm]},
                   inset: concat || utils.blank.guid,
                   region: 0,
                 }, (row) => {
@@ -1176,7 +1176,7 @@ class BuilderElement extends paper.Group {
                 let prow, prow0;
                 params.find_rows({
                   param: prop,
-                  cnstr: {in: [0, -_row.row]},
+                  cnstr: {in: [0, -_row.elm]},
                   inset: concat || utils.blank.guid,
                   region: 0,
                 }, (row) => {
@@ -1196,7 +1196,7 @@ class BuilderElement extends paper.Group {
                 else {
                   params.add({
                     param: prop,
-                    cnstr: -_row.row,
+                    cnstr: -_row.elm,
                     region: 0,
                     inset: concat || utils.blank.guid,
                     value: v,
