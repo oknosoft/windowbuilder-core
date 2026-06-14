@@ -6359,6 +6359,16 @@ class DimensionDrawer extends paper.Group {
             this.right.remove();
             this.right = null;
           }
+          else if(this.left && Math.abs(this.right.size - this.left.size) < 1) {
+            if(this.right.offset <= this.left.offset) {
+              this.left.remove();
+              this.left = null;
+            }
+            else {
+              this.right.remove();
+              this.right = null;
+            }
+          }
         }
       }
       else {
