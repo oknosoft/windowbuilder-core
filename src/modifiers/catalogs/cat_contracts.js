@@ -23,18 +23,36 @@ $p.cat.contracts.__define({
 	},
 
 	by_partner_and_org: {
-    value(partner, organization, contract_kind = $p.enm.contract_kinds.СПокупателем) {
+    value(partner, organization, contract_kind, department) {
 
-      const {main_contract} = $p.cat.partners.get(partner);
+      const {enm: {contract_kinds}, cat: {partners, divisions}} = $p;
+      const {main_contract} = partners.get(partner);
+      
+      if(!contract_kind) {
+        contract_kind = contract_kinds.СПокупателем;
+      }
 
       //Если у контрагента есть основной договор, и он подходит по виду договора и организации,
       // возвращаем его, не бегая по массиву
       if(main_contract && main_contract.contract_kind == contract_kind && main_contract.organization == organization){
-        return main_contract;
+        if(!department || main_contract.department == department) {
+          return main_contract;
+        }
       }
 
-      const res = this.find_rows({owner: partner, organization: organization, contract_kind: contract_kind});
-      res.sort((a, b) => a.date > b.date);
+      const selector = {owner: partner, organization: organization, contract_kind: contract_kind};
+      const dep = department && divisions.get(department);
+      if(dep) {
+        selector.department = dep.empty() ? dep : {in: [dep, divisions.get()]};
+      }
+      const res = this.find_rows(selector);
+      const filtered = dep && res.filter(v => v.department == dep);
+      const sort = (a, b) => a.date > b.date;
+      if(filtered.length) {
+        filtered.sort(sort);
+        return filtered[0];
+      }
+      res.sort(sort);
       return res.length ? res[0] : this.get();
     }
 	}

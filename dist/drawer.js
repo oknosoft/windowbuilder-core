@@ -18585,13 +18585,30 @@ $p.cat.contracts.__define({
 		}
 	},
 	by_partner_and_org: {
-    value(partner, organization, contract_kind = $p.enm.contract_kinds.СПокупателем) {
-      const {main_contract} = $p.cat.partners.get(partner);
-      if(main_contract && main_contract.contract_kind == contract_kind && main_contract.organization == organization){
-        return main_contract;
+    value(partner, organization, contract_kind, department) {
+      const {enm: {contract_kinds}, cat: {partners, divisions}} = $p;
+      const {main_contract} = partners.get(partner);
+      if(!contract_kind) {
+        contract_kind = contract_kinds.СПокупателем;
       }
-      const res = this.find_rows({owner: partner, organization: organization, contract_kind: contract_kind});
-      res.sort((a, b) => a.date > b.date);
+      if(main_contract && main_contract.contract_kind == contract_kind && main_contract.organization == organization){
+        if(!department || main_contract.department == department) {
+          return main_contract;
+        }
+      }
+      const selector = {owner: partner, organization: organization, contract_kind: contract_kind};
+      const dep = department && divisions.get(department);
+      if(dep) {
+        selector.department = dep.empty() ? dep : {in: [dep, divisions.get()]};
+      }
+      const res = this.find_rows(selector);
+      const filtered = dep && res.filter(v => v.department == dep);
+      const sort = (a, b) => a.date > b.date;
+      if(filtered.length) {
+        filtered.sort(sort);
+        return filtered[0];
+      }
+      res.sort(sort);
       return res.length ? res[0] : this.get();
     }
 	}
@@ -21675,8 +21692,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.warehouse = row.acl_obj;
       return false;
     });
-    if(this.contract.empty() || this.contract.owner !== this.partner || this.contract.organization !== this.organization) {
-      this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
+    if(this.contract.empty() || this.contract.owner !== this.partner 
+        || this.contract.organization !== this.organization || this.contract.department !== this.department) {
+      this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization, undefined, job_prm.divisions?.in_contracts && this.department);
     }
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;
     return this.number_doc ? Promise.resolve(this) : this.new_number_doc();
@@ -22231,16 +22249,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
   value_change(field, type, value) {
     const ads = [];
+    const {cat: {contracts}, job_prm: {divisions}} = $p;
+    const in_contracts = divisions?.in_contracts;
     if(field === 'organization') {
       this.organization = value;
       if(this.contract.organization != value) {
-        this.contract = $p.cat.contracts.by_partner_and_org(this.partner, value);
+        this.contract = contracts.by_partner_and_org(this.partner, value, undefined, in_contracts && this.department);
         !this.constructor.prototype.hasOwnProperty('new_number_doc') && this.new_number_doc();
         ads.push('contract');
       }
     }
     else if(field === 'partner' && this.contract.owner != value) {
-      this.contract = $p.cat.contracts.by_partner_and_org(value, this.organization);
+      this.contract = contracts.by_partner_and_org(value, this.organization, undefined, in_contracts && this.department);
+      ads.push('contract');
+    }
+    else if(field === 'department' && in_contracts && this.contract.department != value) {
+      this.department = value;
+      this.contract = contracts.by_partner_and_org(this.partner, this.organization, undefined, value);
       ads.push('contract');
     }
     if(field === 'obj_delivery_state' && this.clear_templates_props) {

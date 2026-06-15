@@ -174,8 +174,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     });
 
     //Договор
-    if(this.contract.empty() || this.contract.owner !== this.partner || this.contract.organization !== this.organization) {
-      this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization);
+    if(this.contract.empty() || this.contract.owner !== this.partner 
+        || this.contract.organization !== this.organization || this.contract.department !== this.department) {
+      this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization, undefined, job_prm.divisions?.in_contracts && this.department);
     }
 
     //СостояниеТранспорта
@@ -850,16 +851,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   // при изменении реквизита
   value_change(field, type, value) {
     const ads = [];
+    const {cat: {contracts}, job_prm: {divisions}} = $p;
+    const in_contracts = divisions?.in_contracts;
     if(field === 'organization') {
       this.organization = value;
       if(this.contract.organization != value) {
-        this.contract = $p.cat.contracts.by_partner_and_org(this.partner, value);
+        this.contract = contracts.by_partner_and_org(this.partner, value, undefined, in_contracts && this.department);
         !this.constructor.prototype.hasOwnProperty('new_number_doc') && this.new_number_doc();
         ads.push('contract');
       }
     }
     else if(field === 'partner' && this.contract.owner != value) {
-      this.contract = $p.cat.contracts.by_partner_and_org(value, this.organization);
+      this.contract = contracts.by_partner_and_org(value, this.organization, undefined, in_contracts && this.department);
+      ads.push('contract');
+    }
+    else if(field === 'department' && in_contracts && this.contract.department != value) {
+      this.department = value;
+      this.contract = contracts.by_partner_and_org(this.partner, this.organization, undefined, value);
       ads.push('contract');
     }
     // если изменение инициировано человеком, дополним список изменённых полей
