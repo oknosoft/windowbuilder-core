@@ -723,8 +723,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
           project._attr._hide_errors = true;
           const olayer = project.getItem({cnstr: -leading_elm});
           const perimetr = olayer.perimeter_inner(sz, nom);
-          const {contours, l_dimensions, l_connective} = project;
-          for(const tmp of [l_dimensions, l_connective].concat(contours)) {
+          const {contours, l_dimensions, l_connective, l_visualization} = project;
+          for(const tmp of [l_dimensions, l_connective, l_visualization].concat(contours)) {
             tmp.visible = false;
           }
           const parent = EditorInvisible.Contour.create({project});

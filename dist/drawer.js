@@ -18604,7 +18604,7 @@ $p.cat.contracts.__define({
       const res = this.find_rows(selector);
       const filtered = dep && res.filter(v => v.department == dep);
       const sort = (a, b) => a.date > b.date;
-      if(filtered.length) {
+      if(filtered?.length) {
         filtered.sort(sort);
         return filtered[0];
       }
