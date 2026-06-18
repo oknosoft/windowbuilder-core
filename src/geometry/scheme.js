@@ -652,6 +652,7 @@ class Scheme extends paper.Project {
                   else {
                     _scheme.draw_visualization();
                     _scheme.zoom_fit();
+                    _scheme.ox._modified && _scheme.register_change(true);
                   }
                 }
                 else {

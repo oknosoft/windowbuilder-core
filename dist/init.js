@@ -7472,8 +7472,16 @@ class CatInsert_bindManager extends CatManager {
 
         function glassSpes(elm) {
       const sep = properties.glass_separately?.extract_pvalue({ox, cnstr: -elm.elm, elm});
-      const cx = (sep && characteristics.find({leading_product: ox, leading_elm: elm.elm})) || elm.layer.prod_ox;
-      return cx.specification;
+      let cx = elm.layer.prod_ox;
+      if(sep) {
+        const loc = ox._order_rows?.find(v => v.leading_elm === elm.elm) ||
+          characteristics.find({leading_product: ox, leading_elm: elm.elm});
+        if(loc) {
+          cx = loc;
+        }
+      }
+
+            return cx.specification;
     }
 
         function depositElm({inset, elm_type, by_order, bind, ox, spec}) {
