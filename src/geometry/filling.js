@@ -950,6 +950,12 @@ class Filling extends AbstractFilling(BuilderElement) {
   remove() {
     //удаляем детей
     this.remove_onlays();
+    
+    // чистим состав заполнения
+    const {_row} = this;
+    if(_row) {
+      _row._owner._owner.glass_specification.clear({elm: _row.elm});
+    }
 
     // стандартные действия по удалению элемента paperjs
     super.remove();
