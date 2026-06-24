@@ -497,8 +497,8 @@ exports.CchProperties = class CchProperties extends Object {
       //use_master бывает 0 - один ведущий, 1 - несколько ведущих через И, 2 - несколько ведущих через ИЛИ
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
-      //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущиъ для проверки
-      const arr = !use_master ? [{key: link.master}] : link.leadings;
+      //в зависимости от use_master у нас массив либо из одного, либо из нескольких ключей ведущих для проверки
+      const arr = !use_master ? [{key: link.master, exclude: false}] : link.leadings;
 
       arr.forEach((row_key) => {
         let ok_key = true;
@@ -526,15 +526,18 @@ exports.CchProperties = class CchProperties extends Object {
               break;
             }
           }
-          ok_key = grp_ok;
+          ok_key = (grp_ok && !row_key.exclude) || (!grp_ok && row_key.exclude);
           if(ok_key) {
             break;
           }
         }
 
-        //Для проверки через ИЛИ логика накопительная - надо проверить все ключи до единого
+        //Для проверки через ИЛИ логика накопительная до первого успеха
         if (use_master == 2){
-          ok = ok || ok_key;
+          ok = ok_key;
+          if(ok) {
+            return false;
+          }
         }
         //Для проверки через И достаточно найти один неподходящий ключ, чтобы остановиться и признать связь неподходящей
         else if (!ok_key){

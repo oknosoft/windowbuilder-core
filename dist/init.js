@@ -493,7 +493,7 @@ set hide(v){this._setter_ts('hide',v)}
     return this._params_links.filter((link) => {
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
-      const arr = !use_master ? [{key: link.master}] : link.leadings;
+      const arr = !use_master ? [{key: link.master, exclude: false}] : link.leadings;
 
       arr.forEach((row_key) => {
         let ok_key = true;
@@ -518,14 +518,17 @@ set hide(v){this._setter_ts('hide',v)}
               break;
             }
           }
-          ok_key = grp_ok;
+          ok_key = (grp_ok && !row_key.exclude) || (!grp_ok && row_key.exclude);
           if(ok_key) {
             break;
           }
         }
 
         if (use_master == 2){
-          ok = ok || ok_key;
+          ok = ok_key;
+          if(ok) {
+            return false;
+          }
         }
         else if (!ok_key){
           ok = false;
@@ -1032,6 +1035,8 @@ $p.CatParams_links = CatParams_links;
 class CatParams_linksLeadingsRow extends TabularSectionRow{
 get key(){return this._getter('key')}
 set key(v){this._setter('key',v)}
+get exclude(){return this._getter('exclude')}
+set exclude(v){this._setter('exclude',v)}
 }
 $p.CatParams_linksLeadingsRow = CatParams_linksLeadingsRow;
 class CatParams_linksValuesRow extends TabularSectionRow{
