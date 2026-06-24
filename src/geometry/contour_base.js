@@ -3786,6 +3786,48 @@ class Contour extends AbstractFilling(paper.Layer) {
     return sketch_view;
   }
 
+  /**
+   * @summary Рассчитывает световой проём створок
+   * @desc Если в спецификации есть петли с заданным отступом
+   */
+  flap_skylight() {
+    const {contours, profiles, prod_ox} = this;
+    if(contours.length) {
+      let hingeOffset;
+      for(const {nom} of profiles) {
+        if(hingeOffset) {
+          break;
+        }
+        if(nom._obj.operations?.length) {
+          for(const row of nom._obj.operations) {
+            const hinge = nom._manager.get(row.profile);
+            if(hinge?.elm_type.is('hinge') && prod_ox.specification.find({nom: hinge})) {
+              hingeOffset = row.len;
+              break;
+            }
+          }
+        }        
+      }
+      // если есть нужные петли
+      if(hingeOffset) {
+        const flaps = new Set();
+        for(const layer of contours) {
+          const shtulp_kind = layer.furn.shtulp_kind();
+          if(!shtulp_kind || shtulp_kind === 1) {
+            flaps.set(layer, []);
+          }
+        }
+        for(const layer of contours) {
+          if(!flaps.has(layer)) {
+            for(const [active] of flaps) {
+              
+            }
+          }
+        }
+      }
+    }
+  }
+
 }
 
 Contour.ecompare = (a, b) => b.elm - a.elm;

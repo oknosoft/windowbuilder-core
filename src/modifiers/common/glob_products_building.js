@@ -862,6 +862,9 @@ class ProductsBuilding {
         ox.calc_order._data._sub_recalc = true;
       }
 
+      // действия paper-проекта после расчёта спецификации
+      scheme.after_spec_calculated();
+
       // информируем мир о завершении пересчета
       if(attr.snapshot) {
         scheme.notify(scheme, 'scheme_snapshot', attr);

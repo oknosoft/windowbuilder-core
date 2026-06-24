@@ -1458,6 +1458,15 @@ class Scheme extends paper.Project {
   }
 
   /**
+   * @summary Действия после расчёта спецификации
+   */
+  after_spec_calculated() {
+    for(const layer of this.contours) {
+      layer.flap_skylight();
+    }
+  }
+
+  /**
    * @summary Изменяет центр и масштаб, чтобы изделие вписалось в размер окна
    * @desc Используется инструментом _ZoomFit_, вызывается при открытии изделия и после загрузки типового блока
    *
