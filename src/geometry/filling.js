@@ -952,8 +952,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.remove_onlays();
     
     // чистим состав заполнения
-    const {_row} = this;
-    if(_row) {
+    const {_row, project} = this;
+    if(_row && !project._attr._loading) {
       _row._owner._owner.glass_specification.clear({elm: _row.elm});
     }
 
