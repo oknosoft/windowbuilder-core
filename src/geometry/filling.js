@@ -952,9 +952,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     this.remove_onlays();
     
     // чистим состав заполнения
-    const {_row, project} = this;
-    if(_row && !project._attr._loading) {
-      _row._owner._owner.glass_specification.clear({elm: _row.elm});
+    const {_row, project: {_attr, ox}} = this;
+    if(_row && !_attr._loading && !ox.empty()) {
+      ox.glass_specification.clear({elm: _row.elm});
     }
 
     // стандартные действия по удалению элемента paperjs
