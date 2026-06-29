@@ -2631,8 +2631,7 @@ class Contour extends AbstractFilling(paper.Layer) {
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
   }
-
-
+  
   /**
    * Массив раскладок
    * @type {Array.<Onlay>}
@@ -2643,6 +2642,17 @@ class Contour extends AbstractFilling(paper.Layer) {
       filling.children.forEach((elm) => elm instanceof Onlay && res.push(elm));
     })
     return res;
+  }
+
+  /**
+   * Цвет первого попавшегося профиля слоя
+   */
+  get clr() {
+    const {profiles, project} = this;
+    if(profiles.length) {
+      return profiles[0].clr;
+    }
+    project.clr;
   }
 
   /**

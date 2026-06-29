@@ -3831,6 +3831,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     })
     return res;
   }
+  get clr() {
+    const {profiles, project} = this;
+    if(profiles.length) {
+      return profiles[0].clr;
+    }
+    project.clr;
+  }
   actualizeCach() {
     this._attr._bounds = null;
     this.recalcCnnMap(this.children.profiles.cnnMap, this.profiles);
@@ -20762,12 +20769,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               prm.values = property_values.find_rows({owner: prm});
             }
             if(!clr) {
-              clr = elm.clr;
+              clr = elm.clr || layer?.clr;
             }
-            if(clr.grouping.empty()) {
+            if(clr && clr.grouping.empty()) {
               clr.set_grouping(prm.values);
             }
-            return clr.grouping;
+            return clr?.grouping || prm.values.find(v => v.name === 'Нет');
           };
           break;
         case 'inset':

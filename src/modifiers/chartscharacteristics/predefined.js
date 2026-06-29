@@ -59,12 +59,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               prm.values = property_values.find_rows({owner: prm});
             }
             if(!clr) {
-              clr = elm.clr;
+              clr = elm.clr || layer?.clr;
             }
-            if(clr.grouping.empty()) {
+            if(clr && clr.grouping.empty()) {
               clr.set_grouping(prm.values);
             }
-            return clr.grouping;
+            return clr?.grouping || prm.values.find(v => v.name === 'Нет');
           };
           break;
 
