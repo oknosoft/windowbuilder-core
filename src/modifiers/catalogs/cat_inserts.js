@@ -1203,6 +1203,7 @@
         fillings,
         coloring,
         spacer,
+        area,
       } = enm.count_calculating_ways;
       const {profile_items} = enm.elm_types;
       const {Основной, Соединение, СоединениеПополам} = enm.angle_calculating_ways;
@@ -1273,7 +1274,7 @@
         }
         else{
 
-          if(count_calc_method.is('len_prm') || count_calc_method.is('area')) {
+          if(count_calc_method.is('len_prm') || count_calc_method.is('area') || count_calc_method.is('ky')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
           else if(count_calc_method === perim || count_calc_method === spacer){
