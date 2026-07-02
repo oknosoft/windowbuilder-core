@@ -1005,6 +1005,8 @@ get leadings(){return this._getter_ts('leadings')}
 set leadings(v){this._setter_ts('leadings',v)}
 get values(){return this._getter_ts('values')}
 set values(v){this._setter_ts('values',v)}
+get forcibly(){return this._getter_ts('forcibly')}
+set forcibly(v){this._setter_ts('forcibly',v)}
 
 
   append_values(values = []) {
@@ -1048,6 +1050,11 @@ get forcibly(){return this._getter('forcibly')}
 set forcibly(v){this._setter('forcibly',v)}
 }
 $p.CatParams_linksValuesRow = CatParams_linksValuesRow;
+class CatParams_linksForciblyRow extends TabularSectionRow{
+get param(){return this._getter('param')}
+set param(v){this._setter('param',v)}
+}
+$p.CatParams_linksForciblyRow = CatParams_linksForciblyRow;
 $p.cat.create('params_links');
 class CatPartner_bank_accounts extends CatObj{
 get account_number(){return this._getter('account_number')}
