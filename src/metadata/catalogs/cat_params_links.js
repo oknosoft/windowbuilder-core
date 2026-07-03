@@ -37,3 +37,28 @@ exports.CatParams_links = class CatParams_links extends Object {
     return values;
   }
 }
+
+exports.CatParams_linksManager = class CatParams_linksManager extends Object {
+
+  forcibly(name) {
+    if(!this._forcibly) {
+      this._forcibly = {};
+      for(const link of this) {
+        for(const {param} of link.forcibly) {
+          const name = param.predefined_name;
+          if(name) {
+            if(!this._forcibly[name]) {
+              this._forcibly[name] = new Map();
+            }
+            if(!this._forcibly[name].has(link.slave)) {
+              this._forcibly[name].set(link.slave, new Set());
+            }
+            this._forcibly[name].get(link.slave).add(link);
+          }
+        }
+      }
+    }
+    return this._forcibly[name];
+  }
+}
+

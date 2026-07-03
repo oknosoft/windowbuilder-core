@@ -3726,6 +3726,69 @@ class Contour extends AbstractFilling(paper.Layer) {
         });
       }
     });
+    
+    // дополнительные связи при смене системы
+    this.prm_forcibly('sys');
+  }
+
+  /**
+   * Обработчик при изменении цвета изделия
+   */
+  on_clr_changed() {
+    // дополнительные связи при смене цвета
+    for (const contour of this.contours) {
+      contour.on_clr_changed();
+    }
+    this.prm_forcibly('clr_product');
+  }
+  
+  prm_forcibly(area) {
+    const {cat: {params_links}, utils} = $p;
+    const {project, params, cnstr, furn} = this;
+    if(!project.is_read_only) {
+      const candidates = params_links.forcibly(area);
+      let notify;
+      if(candidates) {
+        for (const [param, forcibly] of candidates) {
+          // если параметр задаёт фурнитуру...
+          if(param.predefined_name === 'furn' && !furn.empty()) {
+            const prow = {cnstr, inset: utils.blank.guid, param, value: furn, ox: project.ox};
+            const links = param.params_links({
+              grid: {selection: {cnstr}},
+              obj: prow,
+              layer: this,
+              links: Array.from(forcibly),
+            });
+            if (links.length && param.linked_values(links, prow)) {
+              notify = true;
+              this.furn = prow.value;
+            }
+          }
+        }
+        if(!notify) {
+          for (const [param, forcibly] of candidates) {
+            // если параметр задаёт фурнитуру...
+            if(param.predefined_name !== 'furn') {
+              const prow = params.find({cnstr, inset: utils.blank.guid, param});
+              if(prow) {
+                const links = param.params_links({
+                  grid: {selection: {cnstr}},
+                  obj: prow,
+                  layer: this,
+                  links: Array.from(forcibly),
+                });
+                if (links.length && param.linked_values(links, prow)) {
+                  notify = true;
+                }
+              }
+            }
+          }
+        }
+      }
+      if(notify) {
+        project.register_change();
+      }
+    }
   }
 
   /**

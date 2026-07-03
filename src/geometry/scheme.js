@@ -104,7 +104,7 @@ class Scheme extends paper.Project {
    * @param clr {CatClrs}
    */
   set_clr(clr) {
-    const {ox, _dp} = this;
+    const {ox, _dp, contours} = this;
     ox._obj.clr = _dp._obj.clr = clr.valueOf();
     if(ox.clr.empty()) {
       return this.check_clr();
@@ -123,6 +123,10 @@ class Scheme extends paper.Project {
         elm.clr = conformity ? _manager.by_predefined(conformity, clr, clr, elm, specification) : clr;
       }
     });
+    
+    for (const contour of contours) {
+      contour.on_clr_changed();
+    }
   }
 
   /**

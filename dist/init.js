@@ -484,13 +484,16 @@ set hide(v){this._setter_ts('hide',v)}
     return v;
   }
 
-  params_links(attr) {
+  params_links({links, ...attr}) {
 
     if(!this.hasOwnProperty('_params_links')) {
       this._params_links = $p.cat.params_links.find_rows({slave: this});
     }
+    if(!links) {
+      links = this._params_links;
+    }
 
-    return this._params_links.filter((link) => {
+    return links.filter((link) => {
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
       const arr = !use_master ? [{key: link.master, exclude: false}] : link.leadings;
@@ -1055,7 +1058,30 @@ get param(){return this._getter('param')}
 set param(v){this._setter('param',v)}
 }
 $p.CatParams_linksForciblyRow = CatParams_linksForciblyRow;
-$p.cat.create('params_links');
+class CatParams_linksManager extends CatManager {
+
+  forcibly(name) {
+    if(!this._forcibly) {
+      this._forcibly = {};
+      for(const link of this) {
+        for(const {param} of link.forcibly) {
+          const name = param.predefined_name;
+          if(name) {
+            if(!this._forcibly[name]) {
+              this._forcibly[name] = new Map();
+            }
+            if(!this._forcibly[name].has(link.slave)) {
+              this._forcibly[name].set(link.slave, new Set());
+            }
+            this._forcibly[name].get(link.slave).add(link);
+          }
+        }
+      }
+    }
+    return this._forcibly[name];
+  }
+}
+$p.cat.create('params_links', CatParams_linksManager, false);
 class CatPartner_bank_accounts extends CatObj{
 get account_number(){return this._getter('account_number')}
 set account_number(v){this._setter('account_number',v)}

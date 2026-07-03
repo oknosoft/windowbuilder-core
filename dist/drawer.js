@@ -4618,6 +4618,61 @@ class Contour extends AbstractFilling(paper.Layer) {
         });
       }
     });
+    this.prm_forcibly('sys');
+  }
+  on_clr_changed() {
+    for (const contour of this.contours) {
+      contour.on_clr_changed();
+    }
+    this.prm_forcibly('clr_product');
+  }
+  prm_forcibly(area) {
+    const {cat: {params_links}, utils} = $p;
+    const {project, params, cnstr, furn} = this;
+    if(!project.is_read_only) {
+      const candidates = params_links.forcibly(area);
+      let notify;
+      if(candidates) {
+        for (const [param, forcibly] of candidates) {
+          if(param.predefined_name === 'furn') {
+            const prow = {cnstr, inset: utils.blank.guid, param, value: furn, ox: project.ox};
+            if(!furn.empty()) {
+              const links = param.params_links({
+                grid: {selection: {cnstr}},
+                obj: prow,
+                layer: this,
+                links: Array.from(forcibly),
+              });
+              if (links.length && param.linked_values(links, prow)) {
+                notify = true;
+                this.furn = prow.value;
+              }
+            }
+          }
+        }
+        if(!notify) {
+          for (const [param, forcibly] of candidates) {
+            if(param.predefined_name !== 'furn') {
+              const prow = params.find({cnstr, inset: utils.blank.guid, param});
+              if(prow) {
+                const links = param.params_links({
+                  grid: {selection: {cnstr}},
+                  obj: prow,
+                  layer: this,
+                  links: Array.from(forcibly),
+                });
+                if (links.length && param.linked_values(links, prow)) {
+                  notify = true;
+                }
+              }
+            }
+          }
+        }
+      }
+      if(notify) {
+        project.register_change();
+      }
+    }
   }
   apply_mirror() {
     const {l_visualization, contours, project: {_attr}, children} = this;
@@ -14367,7 +14422,7 @@ class Scheme extends paper.Project {
     }
   }
   set_clr(clr) {
-    const {ox, _dp} = this;
+    const {ox, _dp, contours} = this;
     ox._obj.clr = _dp._obj.clr = clr.valueOf();
     if(ox.clr.empty()) {
       return this.check_clr();
@@ -14386,6 +14441,9 @@ class Scheme extends paper.Project {
         elm.clr = conformity ? _manager.by_predefined(conformity, clr, clr, elm, specification) : clr;
       }
     });
+    for (const contour of contours) {
+      contour.on_clr_changed();
+    }
   }
   check_clr() {
     if(this.is_read_only) {

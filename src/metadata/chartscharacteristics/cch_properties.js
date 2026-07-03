@@ -486,14 +486,17 @@ exports.CchProperties = class CchProperties extends Object {
   /**
    * Возвращает массив связей текущего параметра
    */
-  params_links(attr) {
+  params_links({links, ...attr}) {
 
     // первым делом, выясняем, есть ли ограничитель на текущий параметр
     if(!this.hasOwnProperty('_params_links')) {
       this._params_links = $p.cat.params_links.find_rows({slave: this});
     }
+    if(!links) {
+      links = this._params_links;
+    }
 
-    return this._params_links.filter((link) => {
+    return links.filter((link) => {
       //use_master бывает 0 - один ведущий, 1 - несколько ведущих через И, 2 - несколько ведущих через ИЛИ
       const use_master = link.use_master || 0;
       let ok = true && use_master < 2;
