@@ -4634,19 +4634,17 @@ class Contour extends AbstractFilling(paper.Layer) {
       let notify;
       if(candidates) {
         for (const [param, forcibly] of candidates) {
-          if(param.predefined_name === 'furn') {
+          if(param.predefined_name === 'furn' && !furn.empty()) {
             const prow = {cnstr, inset: utils.blank.guid, param, value: furn, ox: project.ox};
-            if(!furn.empty()) {
-              const links = param.params_links({
-                grid: {selection: {cnstr}},
-                obj: prow,
-                layer: this,
-                links: Array.from(forcibly),
-              });
-              if (links.length && param.linked_values(links, prow)) {
-                notify = true;
-                this.furn = prow.value;
-              }
+            const links = param.params_links({
+              grid: {selection: {cnstr}},
+              obj: prow,
+              layer: this,
+              links: Array.from(forcibly),
+            });
+            if (links.length && param.linked_values(links, prow)) {
+              notify = true;
+              this.furn = prow.value;
             }
           }
         }
@@ -7504,45 +7502,51 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(note) {
       return note;
     }
-    const {utils: {blank}, cch: {properties}} = $p;
+    const {utils: {blank}, cch: {properties}, job_prm: {builder}} = $p;
     let res;
-    ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
-      let {name, article, clr_group} = inset;
-      const aname = name.split(' ');
-      if(by_art && article){
-        name = article;
-      }
-      else if(aname.length){
-        name = aname[0];
-      }
-      if(!res){
-        res = name;
-      }
-      else{
-        res += (by_art ? '*' : 'x') + name;
-      }
-      if(!clr_group.empty() && !clr.empty() && clr_group.clrs()[0] != clr) {
-        res += clr.machine_tools_clr || clr.name;
-      }
-      if(params) {
-        for(const ref in params) {
-          const param = properties.get(ref);
-          if(param.include_to_name) {
-            const pname = param.predefined_name || param.name.split(' ')[0];
-            if(param.type.types[0] == 'boolean') {
-              if(params[ref]) {
-                res += pname;
+    if(builder.glass_formula_from_nom) {
+      const nom = inset.nom(this);
+      res = by_art ? nom.article || nom.name : nom.name;
+    }
+    else {
+      ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
+        let {name, article, clr_group} = inset;
+        const aname = name.split(' ');
+        if(by_art && article){
+          name = article;
+        }
+        else if(aname.length){
+          name = aname[0];
+        }
+        if(!res){
+          res = name;
+        }
+        else{
+          res += (by_art ? '*' : 'x') + name;
+        }
+        if(!clr_group.empty() && !clr.empty() && clr_group.clrs()[0] != clr) {
+          res += clr.machine_tools_clr || clr.name;
+        }
+        if(params) {
+          for(const ref in params) {
+            const param = properties.get(ref);
+            if(param.include_to_name) {
+              const pname = param.predefined_name || param.name.split(' ')[0];
+              if(param.type.types[0] == 'boolean') {
+                if(params[ref]) {
+                  res += pname;
+                }
+                continue;
               }
-              continue;
-            }
-            const v = param.fetch_type(params[ref]);
-            if(v != undefined) {
-              res += `${pname}:${v.toString()}`;
+              const v = param.fetch_type(params[ref]);
+              if(v != undefined) {
+                res += `${pname}:${v.toString()}`;
+              }
             }
           }
         }
-      }
-    });
+      });
+    }
     return res || (by_art ? inset.article || inset.name : inset.name);
   }
   deselect_onlay_points() {

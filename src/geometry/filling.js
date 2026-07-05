@@ -838,49 +838,56 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(note) {
       return note;
     }
-    const {utils: {blank}, cch: {properties}} = $p;
+    const {utils: {blank}, cch: {properties}, job_prm: {builder}} = $p;
     let res;
-    ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
-      let {name, article, clr_group} = inset;
-      const aname = name.split(' ');
-      if(by_art && article){
-        name = article;
-      }
-      else if(aname.length){
-        name = aname[0];
-      }
-      if(!res){
-        res = name;
-      }
-      else{
-        res += (by_art ? '*' : 'x') + name;
-      }
-      // подмешаем цвет, если он отличается от умолчания
-      if(!clr_group.empty() && !clr.empty() && clr_group.clrs()[0] != clr) {
-        res += clr.machine_tools_clr || clr.name;
-      }
+    if(builder.glass_formula_from_nom) {
+      const nom = inset.nom(this);
+      res = by_art ? nom.article || nom.name : nom.name;
+    }
+    else {
+      ox.glass_specification.find_rows({elm, inset: {not: blank.guid}}, ({inset, clr, dop: {params}}) => {
+        let {name, article, clr_group} = inset;
+        const aname = name.split(' ');
+        if(by_art && article){
+          name = article;
+        }
+        else if(aname.length){
+          name = aname[0];
+        }
+        if(!res){
+          res = name;
+        }
+        else{
+          res += (by_art ? '*' : 'x') + name;
+        }
+        // подмешаем цвет, если он отличается от умолчания
+        if(!clr_group.empty() && !clr.empty() && clr_group.clrs()[0] != clr) {
+          res += clr.machine_tools_clr || clr.name;
+        }
 
-      // подмешаем параметры с битом 'включать в наименование'
-      if(params) {
-        for(const ref in params) {
-          const param = properties.get(ref);
-          if(param.include_to_name) {
-            const pname = param.predefined_name || param.name.split(' ')[0];
-            if(param.type.types[0] == 'boolean') {
-              if(params[ref]) {
-                res += pname;
+        // подмешаем параметры с битом 'включать в наименование'
+        if(params) {
+          for(const ref in params) {
+            const param = properties.get(ref);
+            if(param.include_to_name) {
+              const pname = param.predefined_name || param.name.split(' ')[0];
+              if(param.type.types[0] == 'boolean') {
+                if(params[ref]) {
+                  res += pname;
+                }
+                continue;
               }
-              continue;
-            }
-            const v = param.fetch_type(params[ref]);
-            if(v != undefined) {
-              res += `${pname}:${v.toString()}`;
+              const v = param.fetch_type(params[ref]);
+              if(v != undefined) {
+                res += `${pname}:${v.toString()}`;
+              }
             }
           }
         }
-      }
 
-    });
+      });
+    }
+    
     return res || (by_art ? inset.article || inset.name : inset.name);
   }
 
