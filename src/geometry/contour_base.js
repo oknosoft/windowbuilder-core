@@ -2182,6 +2182,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           return true;
         }
       }
+      const {addls} = elm;
+      if(addls?.length) {
+        for(const addl of addls) {
+          draw.call(this, addl);
+        }
+      }
     }
 
     // рисуем москитки

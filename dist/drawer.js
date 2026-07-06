@@ -3502,6 +3502,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           return true;
         }
       }
+      const {addls} = elm;
+      if(addls?.length) {
+        for(const addl of addls) {
+          draw.call(this, addl);
+        }
+      }
     }
     this.draw_mosquito();
     this.draw_sill();
@@ -13035,6 +13041,9 @@ class ProfileAddlOuter extends ProfileItem {
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
     _attr._nearest_cnn = $p.cat.cnns.elm_cnn(parent, this, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return parent;
+  }
+  get pos() {
+    return this.parent.pos;
   }
   cnn_point(node, point) {
     const res = this.rays[node];

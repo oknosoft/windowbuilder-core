@@ -86,6 +86,10 @@ class ProfileAddlOuter extends ProfileItem {
     return parent;
   }
 
+  get pos() {
+    return this.parent.pos;
+  }
+
   /**
    * @override
    * @return {CnnPoint}
