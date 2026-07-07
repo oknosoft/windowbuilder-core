@@ -1373,6 +1373,11 @@ class Filling extends AbstractFilling(BuilderElement) {
   }
 
   _thickness(elm) {
+    
+    if($p.job_prm.builder.glass_formula_from_nom) {
+      return elm.nom.thickness;
+    }
+    
     const {_attr} = elm;
     if(!_attr.thickness) {
       let res = 0;
@@ -1382,6 +1387,14 @@ class Filling extends AbstractFilling(BuilderElement) {
       _attr.thickness = res || this.target.thickness(elm);
     }
     return _attr.thickness;
+  }
+
+  refresh_inset_depends(param, with_neighbor) {
+    if($p.job_prm.properties.force_nom?.includes(param)) {
+      const {_attr} = this;
+      delete _attr.nom;
+      delete _attr.thickness;
+    }
   }
 
   /**
