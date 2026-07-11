@@ -6546,13 +6546,11 @@ EditorInvisible.Contour = Contour;
 EditorInvisible.GlassSegment = GlassSegment;
 
 
-
 /**
  * @summary Служебный слой соединительных профилей и проёмов
  *
  * @extends paper.Layer
  */
-
 class ConnectiveLayer extends paper.Layer {
 
   constructor(attr) {
@@ -24378,7 +24376,7 @@ class ProductsBuilding {
       totqty = qty * len * width;
     }
 
-    _obj.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
+    _obj.totqty1 = totqty0 ? 0 : totqty * nom.loss_factor;
     
     if(_quantity) {
       _obj.qty *= _quantity;
@@ -29888,7 +29886,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   after_del_row(name, rows) {
     if(name === 'production'){
       this.product_rows();
-      !this._slave_recalc && this.reset_specify();
+      if(!this._slave_recalc) {
+        this.reset_specify();
+        this.spread_min_volume();
+      }
     }
     return this;
   }
@@ -30621,7 +30622,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * Обработчик события _ЗаписанаХарактеристикаПостроителя_
+   * Обработчик события `Рассчитана характеристика построителя`
    * @param scheme
    * @param sattr
    */
@@ -30649,6 +30650,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       row.unit = row.nom.storage_unit;
     }
     this.reset_specify();
+    this.spread_min_volume();
     this._data._loading = false;
   }
 
@@ -30809,6 +30811,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     return res.then((ax) => {
       this.reset_specify();
+      this.spread_min_volume();
       return ax;
     });
   }
@@ -31027,6 +31030,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     const {CatInsert_bind, CatInserts, cat: {insert_bind, characteristics}} = $p;
     const links = [];
+    const volumes_map = new Map();
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
@@ -31046,6 +31050,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           row.value_change('quantity', 'update', row.quantity);
         }
+        
+        // накапливаем строки с минимальным объёмом
+        for(const sub of characteristic.specification) {
+          const {nom, totqty1} = sub;
+          if(nom.min_volume && totqty1) {
+            if(!volumes_map.has(nom)) {
+              volumes_map.set(nom, {total: 0, prices: []});
+            }
+            const volumes = volumes_map.get(nom);
+            volumes.total += row.quantity * totqty1;
+            volumes.prices.push({row, sub});
+          }
+        }
       }
     }
     insert_bind.deposit({ox: {calc_order: this, _manager: characteristics}, order: true});
@@ -31054,6 +31071,62 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       row.value_change('quantity', 'update', row.quantity);
     }
     this._slave_recalc = false;
+  }
+
+  /**
+   * @summary Округление минимального объёма
+   */
+  spread_min_volume() {
+
+    const {_slave_recalc} = this;
+    this._slave_recalc = true;
+    
+    const volumes_map = new Map();
+    for(const row of this.production) {
+      const {characteristic} = row;
+      if (characteristic.calc_order === this) {
+        // накапливаем строки с минимальным объёмом
+        for(const sub of characteristic.specification) {
+          const {nom, totqty1} = sub;
+          if(nom.min_volume && totqty1) {
+            if(!volumes_map.has(nom)) {
+              volumes_map.set(nom, {total: 0, prices: []});
+            }
+            const volumes = volumes_map.get(nom);
+            volumes.total += row.quantity * totqty1;
+            volumes.prices.push({row, sub});
+          }
+        }
+      }
+    }
+    
+    const rows = new Map();
+    for(const [nom, {total, prices}] of volumes_map) {
+      const k = nom.min_volume / total;
+      if(k > 1) {
+        // распределяем
+        for(const {row, sub} of prices) {
+          if(!rows.has(row)) {
+            rows.set(row, {amount: 0, amount_marged: 0});
+          }
+          const {amount, amount_marged} = sub;
+          sub.totqty1 *= k;
+          sub.amount *= k;
+          sub.amount_marged *= k;
+          const delta = rows.get(row);
+          delta.amount += sub.amount - amount;
+          delta.amount_marged += sub.amount_marged - amount_marged;
+        }
+      }
+    }
+    for(const [row, delta] of rows) {
+      row.first_cost = (row.first_cost + delta.amount).round(2);
+      row.price = (row.price + delta.amount_marged).round(2);
+      row.price_internal = (row.price_internal + delta.amount_marged).round(2);
+      row.value_change('price', {}, row.price, true);
+    }
+
+    this._slave_recalc = _slave_recalc;
   }
 
   /**
