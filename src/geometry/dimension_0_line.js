@@ -98,10 +98,10 @@ class DimensionLine extends paper.Group {
    */
   is_disabled() {
     const {project, layer, _attr: {elm1, elm2}} = this;
-    if(project._attr.elm_fragment > 0 || (layer instanceof DimensionLayer && project.rootLayer() instanceof ContourParent)) {
+    if(project._attr.elm_fragment > 0) {
       return true;
     }
-    if(project._scope?.tool?.disable_size || (elm1 instanceof ProfileParent && elm2 instanceof ProfileParent)) {
+    if(project._scope?.tool?.disable_size) {
       return true;
     }
     return false;
@@ -129,34 +129,6 @@ class DimensionLine extends paper.Group {
     event.stop();
   }
 
-  correct_move_name({event, p1, p2}) {
-    const {pos, _attr: {elm1, elm2}} = this;
-    const e1 = elm1 instanceof ProfileParent;
-    const e2 = elm2 instanceof ProfileParent;
-    if(!e1 && !e2) {
-      return;
-    }
-
-    if(pos == 'top' || pos == 'bottom') {
-      const dir = p1.x < p2.x;
-      if(event.name == 'left' && dir && e1) {
-        event.name = 'right';
-      }
-      if(event.name == 'right' && dir && e2) {
-        event.name = 'left';
-      }
-    }
-    else {
-      const dir = p1.y > p2.y;
-      if(event.name == 'bottom' && dir && e1) {
-        event.name = 'top';
-      }
-      if(event.name == 'top' && dir && e2) {
-        event.name = 'bottom';
-      }
-    }
-  }
-
   _move_points(event, xy) {
 
     let _bounds, delta;
@@ -172,7 +144,6 @@ class DimensionLine extends paper.Group {
 
       const p1 = (_attr.elm1._sub || _attr.elm1)[_attr.p1];
       const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2];
-      this.correct_move_name({event, p1, p2, _attr});
 
       if(pos == 'top' || pos == 'bottom') {
         //const size = Math.abs(p1.x - p2.x);

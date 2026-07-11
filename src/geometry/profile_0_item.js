@@ -1048,7 +1048,7 @@ class ProfileItem extends GeneratrixElement {
    */
   get info() {
     const {elm, angle_hor, length, layer} = this;
-    return `№${layer instanceof ContourNestedContent ? `${layer.layer.cnstr}-${elm}` : elm}  α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
+    return `№${elm}  α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
   }
 
   /**
@@ -1740,105 +1740,99 @@ class ProfileItem extends GeneratrixElement {
       _row.r = generatrix.ravg().round(2);
     }
 
-    if(this instanceof ProfileNested || this instanceof ProfileParent) {
-      _row.alp1 = _row.alp2 = 0;
-      _row.inset = this.inset;
-      _row.clr = this.clr;
+
+
+    const row_b = cnn_elmnts.add({
+      elm1: _row.elm,
+      node1: 'b',
+      cnn: b.cnn,
+      aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
+    });
+    const row_e = cnn_elmnts.add({
+      elm1: _row.elm,
+      node1: 'e',
+      cnn: e.cnn,
+      aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
+    });
+
+    // сохраняем информацию о соединениях
+    if(b.profile) {
+      row_b.elm2 = b.profile.elm;
+      if(b.profile.e.is_nearest(b.point)) {
+        row_b.node2 = 'e';
+      }
+      else if(b.profile.b.is_nearest(b.point)) {
+        row_b.node2 = 'b';
+      }
+      else {
+        row_b.node2 = 't';
+      }
     }
-    else {
-
-      const row_b = cnn_elmnts.add({
-        elm1: _row.elm,
-        node1: 'b',
-        cnn: b.cnn,
-        aperture_len: this.corns(1).getDistance(this.corns(4)).round(1)
-      });
-      const row_e = cnn_elmnts.add({
-        elm1: _row.elm,
-        node1: 'e',
-        cnn: e.cnn,
-        aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
-      });
-
-      // сохраняем информацию о соединениях
-      if(b.profile) {
-        row_b.elm2 = b.profile.elm;
-        if(b.profile.e.is_nearest(b.point)) {
-          row_b.node2 = 'e';
-        }
-        else if(b.profile.b.is_nearest(b.point)) {
-          row_b.node2 = 'b';
-        }
-        else {
-          row_b.node2 = 't';
-        }
+    if(e.profile) {
+      row_e.elm2 = e.profile.elm;
+      if(e.profile.b.is_nearest(e.point)) {
+        row_e.node2 = 'b';
       }
-      if(e.profile) {
-        row_e.elm2 = e.profile.elm;
-        if(e.profile.b.is_nearest(e.point)) {
-          row_e.node2 = 'b';
-        }
-        else if(e.profile.e.is_nearest(e.point)) {
-          row_e.node2 = 'e';
-        }
-        else {
-          row_e.node2 = 't';
-        }
+      else if(e.profile.e.is_nearest(e.point)) {
+        row_e.node2 = 'e';
       }
+      else {
+        row_e.node2 = 't';
+      }
+    }
 
 
-      if(!(this instanceof ProfileSegment)) {
+    if(!(this instanceof ProfileSegment)) {
 
-        _row.dop = {
-          index: layer.profiles.indexOf(this),
-          nearest: _attr._nearest?.elm,
-        };
+      _row.dop = {
+        index: layer.profiles.indexOf(this),
+        nearest: _attr._nearest?.elm,
+      };
 
-        // в том числе - о соединениях с другой стороны
-        if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
-          cnn_elmnts.add({
-            elm1: _row.elm,
-            node1: 'b',
-            elm2: b._cnno.elm2,
-            node2: b._cnno.node2,
-            cnn: b._cnno.cnn,
-            aperture_len: row_b.aperture_len,
-          });
-        }
-        if(e._cnno && row_e.elm2 !== e._cnno.elm2) {
-          cnn_elmnts.add({
-            elm1: _row.elm,
-            node1: 'e',
-            elm2: e._cnno.elm2,
-            node2: e._cnno.node2,
-            cnn: e._cnno.cnn,
-            aperture_len: row_e.aperture_len,
-          });
-        }
-
-        // для створочных и доборных профилей добавляем соединения с внешними элементами
-        const nrst = this.nearest();
-        if(nrst) {
-          cnn_elmnts.add({
-            elm1: _row.elm,
-            elm2: nrst.elm,
-            cnn: _attr._nearest_cnn,
-            aperture_len: _row.len
-          });
-        }
+      // в том числе - о соединениях с другой стороны
+      if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          node1: 'b',
+          elm2: b._cnno.elm2,
+          node2: b._cnno.node2,
+          cnn: b._cnno.cnn,
+          aperture_len: row_b.aperture_len,
+        });
+      }
+      if(e._cnno && row_e.elm2 !== e._cnno.elm2) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          node1: 'e',
+          elm2: e._cnno.elm2,
+          node2: e._cnno.node2,
+          cnn: e._cnno.cnn,
+          aperture_len: row_e.aperture_len,
+        });
       }
 
-      _row.alp1 = Math.round(((this.corns(5) || this.corns(4)).subtract(this.corns(1)).angle - 
-        generatrix.getTangentAt(0).angle) * 10) / 10;
-      if(_row.alp1 < 0) {
-        _row.alp1 = _row.alp1 + 360;
+      // для створочных и доборных профилей добавляем соединения с внешними элементами
+      const nrst = this.nearest();
+      if(nrst) {
+        cnn_elmnts.add({
+          elm1: _row.elm,
+          elm2: nrst.elm,
+          cnn: _attr._nearest_cnn,
+          aperture_len: _row.len
+        });
       }
+    }
 
-      _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - 
-        this.corns(2).subtract(this.corns(6) || this.corns(3)).angle) * 10) / 10;
-      if(_row.alp2 < 0) {
-        _row.alp2 = _row.alp2 + 360;
-      }
+    _row.alp1 = Math.round(((this.corns(5) || this.corns(4)).subtract(this.corns(1)).angle -
+      generatrix.getTangentAt(0).angle) * 10) / 10;
+    if(_row.alp1 < 0) {
+      _row.alp1 = _row.alp1 + 360;
+    }
+
+    _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle -
+      this.corns(2).subtract(this.corns(6) || this.corns(3)).angle) * 10) / 10;
+    if(_row.alp2 < 0) {
+      _row.alp2 = _row.alp2 + 360;
     }
 
     // устанавливаем тип элемента

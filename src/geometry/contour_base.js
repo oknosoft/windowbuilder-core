@@ -202,19 +202,16 @@ class Contour extends AbstractFilling(paper.Layer) {
       Constructor = ContourVirtual;
     }
     else if(kind === 2) {
-      Constructor = ContourNested;
+      Constructor = ContourVirtual;
     }
     else if(kind === 3) {
-      Constructor = ContourParent;
+      Constructor = ContourVirtual;
     }
     else if(kind === 4) {
       Constructor = ContourTearing;
     }
     else if(kind === 5) {
       Constructor = ContourRegion;
-    }
-    else if(layer instanceof ContourNestedContent || layer instanceof ContourNested) {
-      Constructor = ContourNestedContent;
     }
 
     // строка в таблице конструкций
@@ -2312,7 +2309,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    */
   get imposts() {
     return this.getItems({class: Profile}).filter((elm) => {
-      if(elm instanceof ProfileNestedContent || elm instanceof ProfileVirtual) {
+      if(elm instanceof ProfileVirtual) {
         return false;
       }
       const {b, e} = elm.rays;
@@ -2481,9 +2478,7 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
 
     // пересчитываем вставки створок
-    if(!(this instanceof ContourNestedContent)) {
-      this.profiles.forEach((p) => p.default_inset());
-    }
+    this.profiles.forEach((p) => p.default_inset());
 
     // информируем систему об изменениях
     if (noti.points.length) {
@@ -3155,7 +3150,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       cnstr = this.cnstr;
     }
     if(!cnstr) {
-      if(layer && !own_sys && !(layer instanceof ContourParent)) {
+      if(layer && !own_sys) {
         return layer.extract_pvalue({param, cnstr, elm, elm2, node, node2, origin, prm_row});
       }
     }
@@ -3292,7 +3287,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const elm = this.profile_by_furn_side(row.side, cache);
         const nearest = elm && elm.nearest();
         if(nearest) {
-          if(nearest instanceof ProfileParent || nearest instanceof ProfileVirtual) {
+          if(nearest instanceof ProfileVirtual) {
             if(row.shtulp_available) {
               if(bool) {
                 return true;

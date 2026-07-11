@@ -113,7 +113,7 @@ class Scheme extends paper.Project {
     const {clr: {_manager}, specification}  = ox;
     const {clr_conformity} = _dp.sys;
     this.getItems({class: ProfileItem}).forEach((elm) => {
-      if(!(elm instanceof Onlay) && !(elm instanceof ProfileNestedContent)) {
+      if(!(elm instanceof Onlay)) {
         const region = elm.rnum || 0;
         if(!cache.has(region)) {
           const row = clr_conformity.find({region});
@@ -1180,14 +1180,6 @@ class Scheme extends paper.Project {
         });
       }
     }
-    this.getItems({class: ContourNested}).forEach(({_ox}) => {
-      if(_ox._modified) {
-        revert = revert.then(() => {
-          _ox._data._loading = false;
-          return _ox.load();
-        });
-      }
-    });
 
     this.remove();
     return revert;

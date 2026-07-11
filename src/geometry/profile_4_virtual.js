@@ -18,7 +18,7 @@ class ProfileVirtual extends Profile {
         set(v) {}
       },
       _nearest_cnn: {
-        get() {return ProfileNested.nearest_cnn;},
+        get() {return ProfileVirtual.nearest_cnn;},
         set(v) {}
       }
     });
@@ -97,7 +97,27 @@ class ProfileVirtual extends Profile {
   }
 
   cnn_point(node, point) {
-    return ProfileParent.prototype.cnn_point.call(this, node, point);
+    const {project, parent, rays} = this;
+    const res = rays[node];
+    if(!res.profile) {
+      if(!point) {
+        point = this[node];
+      }
+      const pp = node === 'b' ? 'e' : 'b';
+      for(const profile of parent.profiles) {
+        if(profile !== this && profile[pp].is_nearest(point, true)) {
+          res.profile = profile;
+          res.profile_point = pp;
+          res.point = point;
+          res.cnn_types = $p.enm.cnn_types.acn.a;
+          break;
+        }
+      }
+    }
+    if(!res.cnn) {
+      res.cnn = $p.cat.cnns.elm_cnn(this, res.profile, res.cnn_types);
+    }
+    return res;
   }
 
   do_bind(profile, bcnn, ecnn, moved) {
@@ -233,6 +253,23 @@ class ProfileVirtual extends Profile {
 
     return this;
   }
+}
+
+ProfileVirtual.nearest_cnn = {
+  size(profile) {
+    return profile.nearest().width;
+  },
+  empty() {
+    return false;
+  },
+  get cnn_type() {
+    return $p.enm.cnn_types.ii;
+  },
+  specification: [],
+  selection_params: [],
+  filtered_spec() {
+    return [];
+  },
 }
 
 EditorInvisible.ProfileVirtual = ProfileVirtual;

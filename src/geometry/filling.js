@@ -165,19 +165,7 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.y2 = (h - bounds.topRight.y).round(3);
     _row.s = form_area;
     _row.len = 0;
-    if(layer instanceof ContourNestedContent) {
-      const {lbounds} = layer.layer;
-      const path = this.path.clone({insert: false});
-      path.translate([-lbounds.x, -lbounds.y]);
-      _row.path_data = path.pathData;
-      _row.x1 -= lbounds.x;
-      _row.y1 -= lbounds.y;
-      _row.x2 -= lbounds.x;
-      _row.y2 -= lbounds.y;
-    }
-    else {
-      _row.path_data = this.path.pathData;
-    }
+    _row.path_data = this.path.pathData;
 
     // получаем пути граней профиля
     for(let i=0; i<length; i++ ){
@@ -1334,8 +1322,7 @@ class Filling extends AbstractFilling(BuilderElement) {
    */
   get info() {
     const {elm, bounds: {width, height}, thickness, weight, layer} = this;
-    return `№${layer instanceof ContourNestedContent ?
-      `${layer.layer.cnstr}-${elm}` : elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
+    return `№${elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
 
   get default_clr_str() {

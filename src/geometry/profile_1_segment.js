@@ -77,8 +77,7 @@ class ProfileSegment extends ProfileItem {
    */
   get info() {
     const {elm, angle_hor, length, layer} = this;
-    return `№${layer instanceof ContourNestedContent ? `${
-      layer.layer.cnstr}-${elm}` : elm} сегм. α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
+    return `№${elm} сегм. α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
   }
 
   cnn_point(node, point) {

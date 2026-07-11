@@ -705,8 +705,6 @@ class ProductsBuilding {
      */
     function base_spec(scheme) {
 
-      const {Contour, Filling, Sectional, Profile, ProfileParent, ProfileConnective} = $p.Editor;
-
       // сбрасываем структуру обработанных соединений
       added_cnn_spec = {};
 
