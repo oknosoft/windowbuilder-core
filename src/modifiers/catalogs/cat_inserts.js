@@ -1026,13 +1026,32 @@
 
         // если спецификация верхнего уровня задана в изделии, используем её, параллельно формируем формулу
         if(glass_rows.length){
+          const glr = {
+            region: 0,
+          };
           glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
+            if(fill_regions) {
+              glr.nom = `n|${row.inset.nom(elm)?.ref}`;
+              const {insert_glass_type} = row.inset;
+              const is_glass = !insert_glass_type.is('dist') &&
+                !insert_glass_type.is('dists') &&
+                !insert_glass_type.is('gas') &&
+                !insert_glass_type.is('film') &&
+                !insert_glass_type.is('film_triplex') &&
+                !insert_glass_type.is('blank');
+              if(is_glass) {
+                glr.region++;
+                glr.nom += `|${glr.region}`;
+              }
+            }            
+            
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}, half_stuff})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               if(fill_regions) {
                 frow.region = index + 1;
+                frow._origin.unshift(glr.nom);
               }
               if(srow.stage.applying.is('region')) {
                 frow.specify = index + 1;

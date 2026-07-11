@@ -1,8 +1,7 @@
 
+
 /**
  * Предопределенные дополнительные реквизиты
- *
- * @module predefined_props
  *
  * Created by Evgeniy Malyarov on 01.06.2019.
  */

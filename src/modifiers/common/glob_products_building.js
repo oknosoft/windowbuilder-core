@@ -1148,7 +1148,7 @@ class ProductsBuilding {
 
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
-    if(debug) {
+    if(debug || origin?.[0]?.startsWith?.('n|')) {
       if(!Array.isArray(origin) && Array.isArray(row_base._origin)) {
         origin = row_base._origin;
       }
