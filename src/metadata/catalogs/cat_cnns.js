@@ -671,11 +671,20 @@ exports.CatCnns = class CatCnns extends Object {
               ray = elm2.rays.inner.clone({insert: false, deep: false});
               ray.reverse();
             }
-            const pb = elm2.elm_type.is('flap') ? elm2.corns(1) : elm2.b;
-            const offsetB = ray.getOffsetOf(ray.getNearestPoint(pb));
-            const pt = elm.elm_type.is('flap') ? (len_angl.node === 'b' ? elm.corns(1) : elm.corns(2)) : elm[len_angl.node];
-            const offsetPt = ray.getOffsetOf(ray.getNearestPoint(pt));
-            row_spec.len = (offsetPt - offsetB) * (row_base.coefficient || 0.001) + elm.generatrix.point_pos(ray.firstSegment.point) * sz;
+            if(elm2.flipped) {
+              const pe = elm2.elm_type.is('flap') ? elm2.corns(2) : elm2.e;
+              const offsetE = ray.getOffsetOf(ray.getNearestPoint(pe));
+              const pt = elm.elm_type.is('flap') ? (len_angl.node === 'b' ? elm.corns(1) : elm.corns(2)) : elm[len_angl.node];
+              const offsetPt = ray.getOffsetOf(ray.getNearestPoint(pt));
+              row_spec.len = (offsetE - offsetPt) * (row_base.coefficient || 0.001) - elm.generatrix.point_pos(ray.firstSegment.point) * sz; 
+            }
+            else {
+              const pb = elm2.elm_type.is('flap') ? elm2.corns(1) : elm2.b;
+              const offsetB = ray.getOffsetOf(ray.getNearestPoint(pb));
+              const pt = elm.elm_type.is('flap') ? (len_angl.node === 'b' ? elm.corns(1) : elm.corns(2)) : elm[len_angl.node];
+              const offsetPt = ray.getOffsetOf(ray.getNearestPoint(pt));
+              row_spec.len = (offsetPt - offsetB) * (row_base.coefficient || 0.001) + elm.generatrix.point_pos(ray.firstSegment.point) * sz;
+            }
           }
           else {
             if(this.cnn_type.is('t')) {
