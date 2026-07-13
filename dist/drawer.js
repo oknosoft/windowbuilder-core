@@ -3,30 +3,16 @@
  * &copy; Evgeniy Malyarov https://oknosoft.ru 2014-2023
  */
  
-module.exports = function({$p, paper}) {
-/**
- * Константы и параметры
- */
-const consts = {
-
+module.exports = function({$p, paper}) {const consts = {
 	tune_paper({settings, eve}) {
-
     const {job_prm} = $p;
     if(job_prm.debug) {
       eve.setMaxListeners(200);
     }
-
 	  const builder = job_prm.builder || {};
-
-    /* Размер визуализации узла пути */
 		if(builder.handle_size) {
       settings.handleSize = builder.handle_size;
     }
-
-    /* Деформации применяем к самим элементам, а не к их matrix */
-    //settings.applyMatrix = false;
-
-    /* Прилипание. На этом расстоянии узел пытается прилепиться к другому узлу или элементу */
 		this.sticking = builder.sticking || 90;
 		this.sticking_l = builder.sticking_l || 9;
 		this.sticking0 = this.sticking / 2;
@@ -34,9 +20,7 @@ const consts = {
 		this.font_size = builder.font_size || 90;
     this.font_family = builder.font_family || 'GOST type B';
     this.elm_font_size = builder.elm_font_size || 60;
-    /* если габариты изделия больше этого значения, увеличиваем шрифт */
     this.cutoff = builder.cutoff || 1300;
-
     if(!builder.font_family) {
       builder.font_family = this.font_family;
     }
@@ -46,22 +30,16 @@ const consts = {
     if(!builder.elm_font_size) {
       builder.elm_font_size = this.elm_font_size;
     }
-
     if($p.wsql.alasql.utils.isNode) {
       this.font_size *= 1.2;
       this.elm_font_size *= 1.2;
     }
-
-    /* в пределах этого угла, считаем элемент вертикальным или горизонтальным */
 		this.orientation_delta = builder.orientation_delta || 30;
-
 	},
-
   epsilon: 0.01,
 	move_points: 'move_points',
 	move_handle: 'move_handle',
 	move_shapes: 'move-shapes',
-
   get base_offset() {
 	  const {font_size} = this;
     return font_size < 80 ? 90 : font_size + 18;
@@ -69,60 +47,22 @@ const consts = {
   get dop_offset() {
 	  return this.base_offset + 44;
   }
-
 };
-
-
-/**
- *
- *
- * @module invisible
- *
- * Created by Evgeniy Malyarov on 04.04.2018.
- */
-
 class EditorInvisible extends paper.PaperScope {
-
   constructor() {
-
     super();
-
-    /**
-     * fake-undo
-     * @private
-     */
     this._undo = new EditorInvisible.History(this);
-
-    /**
-     * Собственный излучатель событий для уменьшения утечек памяти
-     */
     this.eve = new (Object.getPrototypeOf($p.md.constructor))();
-
     consts.tune_paper(this);
   }
-
   get consts() {
     return consts;
   }
-
-  /**
-   * Возвращает элемент по номеру
-   * @param num
-   */
   elm(num) {
     return this.project.getItem({class: BuilderElement, elm: num});
   }
-
-  /**
-   * Заглушка установки заголовка редактора
-   */
   set_text() {
   }
-
-  /**
-   * Создаёт проект с заданным типом канваса
-   * @param format
-   */
   create_scheme() {
     if(!this._canvas) {
       this._canvas = document.createElement('CANVAS');
@@ -135,18 +75,11 @@ class EditorInvisible extends paper.PaperScope {
     }
     return new Scheme(this._canvas, this, true);
   }
-
-  /**
-   * Выполняет команду редактирования
-   * @param type
-   * @param attr
-   */
   cmd(type, ...attr) {
     if(this._deformer[type] && this._deformer[type](...attr)) {
       this._undo.push(type, attr);
     }
   }
-
   unload() {
     this.eve.removeAllListeners();
     const revert = [];
@@ -158,46 +91,28 @@ class EditorInvisible extends paper.PaperScope {
         elm.remove();
       }
     }
-
     const {_scopes} = EditorInvisible;
     for(let i in _scopes) {
       if(_scopes[i] === this) {
         delete _scopes[i];
       }
     }
-
     return Promise.all(revert);
   }
-
-  /**
-   * Returns all items intersecting the rect.
-   * Note: only the item outlines are tested
-   */
   paths_intersecting_rect(rect) {
-
     const paths = [];
     const boundingRect = new paper.Path.Rectangle(rect);
-
     this.project.getItems({class: ProfileItem}).forEach((item) => {
       if (rect.contains(item.generatrix.bounds)) {
         paths.push(item.generatrix);
         return;
       }
     });
-
     boundingRect.remove();
-
     return paths;
   }
-
-  /**
-   * Returns path points which are contained in the rect
-   * @param rect
-   * @returns {Array}
-   */
   segments_in_rect(rect) {
     const segments = [];
-
     function checkPathItem(item) {
       if(item._locked || !item._visible || item._guide) {
         return;
@@ -223,19 +138,15 @@ class EditorInvisible extends paper.PaperScope {
           checkPathItem(children[i]);
       }
     }
-
     this.project.getItems({class: Contour}).forEach(checkPathItem);
-
     return segments;
   }
-
   clear_selection_bounds() {
     if (this._selectionBoundsShape) {
       this._selectionBoundsShape.remove();
     }
     this._selectionBoundsShape = null;
   }
-
   hide_selection_bounds() {
     if(this._drawSelectionBounds > 0) {
       this._drawSelectionBounds--;
@@ -246,13 +157,6 @@ class EditorInvisible extends paper.PaperScope {
       }
     }
   }
-
-  /**
-   * Устанавливает икону курсора
-   * Действие выполняется для всех канвасов редактора
-   *
-   * @param name {String} - имя css класса курсора
-   */
   canvas_cursor(name) {
     this.projects.forEach(({view}) => {
       const {classList} = view.element;
@@ -268,29 +172,15 @@ class EditorInvisible extends paper.PaperScope {
       classList.add(name);
     });
   }
-
-  /**
-   * Смещает импосты чтобы получить одинаковые размеры заполнений  
-   * возвращает массив дельт
-   * @param {String} [name]
-   * @param {Array} [glasses]
-   * @param {Boolean} [geometric] - уравнивать геометрически, вместо ширин заполнений
-   * @return {Array}
-   */
   do_glass_align(name = 'auto', glasses, geometric) {
-
     const {project, Point, Key} = this;
-
     if(!glasses){
       glasses = project.selected_glasses();
     }
     if(glasses.length < 2){
       return;
     }
-
     const {enm, ui} = $p;
-
-    // получаем текущий внешний контур
     let parent_layer;
     if(glasses.some(({layer}) => {
       const gl = layer.layer || layer;
@@ -315,29 +205,19 @@ class EditorInvisible extends paper.PaperScope {
         return;
       }
     }
-
-    // выясняем направление, в котром уравнивать
     if(name == 'auto'){
       name = 'width';
     }
-
-    // собираем в массиве shift все импосты подходящего направления
     const orientation = name == 'width' ? enm.orientations.vert : enm.orientations.hor;
-    // parent_layer.profiles
     const shift = parent_layer
       .getItems({class: Profile})
       .filter((impost) => {
         const {b, e} = impost.rays;
-        // отрезаем плохую ориентацию и неимпосты
         return impost.orientation == orientation && (b.is_tt || e.is_tt || b.is_i || e.is_i || impost.elm_type.is('impost'));
       });
-
-    // признак уравнивания геометрически, а не по заполнению
     const galign = geometric || Key.modifiers.control || Key.modifiers.shift ||
       project.auto_align == enm.align_types.Геометрически;
     let medium = 0;
-
-    // модифицируем коллекцию заполнений - подклеиваем в неё импосты, одновременно, вычисляем средний размер
     const glmap = new Map();
     glasses = glasses.map((glass) => {
       const {bounds, profiles} = glass;
@@ -346,9 +226,7 @@ class EditorInvisible extends paper.PaperScope {
         width: bounds.width,
         height: bounds.height,
       };
-
       if(galign){
-        // находим левый-правый-верхний-нижний профили
         const by_side = glass.profiles_by_side(null, profiles);
         for(const side in by_side) {
           const segm = by_side[side];
@@ -372,16 +250,12 @@ class EditorInvisible extends paper.PaperScope {
       else{
         medium += bounds[name];
       }
-
       profiles.forEach((curr) => {
         const profile = curr.profile.nearest() || curr.profile;
-
         if(shift.includes(profile)){
-
           if(!glmap.has(profile)){
             glmap.set(profile, {dx: new Set, dy: new Set});
           }
-
           const gl = glmap.get(profile);
           if(curr.outer || (profile != curr.profile && profile.cnn_side(curr.profile, bounds.center) == enm.cnn_sides.outer)){
             gl.is_outer = true;
@@ -389,7 +263,6 @@ class EditorInvisible extends paper.PaperScope {
           else{
             gl.is_inner = true;
           }
-
           const point = curr.b.add(curr.e).divide(2);
           if(name == 'width'){
             gl.dx.add(res);
@@ -414,10 +287,7 @@ class EditorInvisible extends paper.PaperScope {
       return res;
     });
     medium /= glasses.length;
-
-    // дополняем в glmap структуры подходящих заполнений
     shift.forEach((impost) => {
-      // если примыкают с двух сторон или вторая сторона рамная - импост проходит
       const gl = glmap.get(impost);
       if(!gl){
         return;
@@ -448,19 +318,13 @@ class EditorInvisible extends paper.PaperScope {
         });
       }
     });
-
-    // рассчитываем, на сколько и в какую сторону двигать
     const res = [];
-
     shift.forEach((impost) => {
-
       const gl = glmap.get(impost);
       if(!gl || !gl.ok){
         return;
       }
-
       let delta = gl.delta || 0;
-
       if (name == 'width') {
         if(!gl.hasOwnProperty('delta')){
           gl.dx.forEach((glass) => {
@@ -489,7 +353,6 @@ class EditorInvisible extends paper.PaperScope {
         }
         delta = new Point([0, delta]);
       }
-
       if(delta.length > consts.epsilon){
         const nearests = impost.joined_nearests().filter(v => v instanceof ProfileRegion);
         impost.move_points(delta, true);
@@ -500,24 +363,13 @@ class EditorInvisible extends paper.PaperScope {
         res.push(delta);
       }
     });
-
     return res;
   }
-
-  /**
-   * Уравнивание по ширинам заполнений  
-   * выполняет в цикле до получения приемлемой дельты
-   * @param {String} [name]
-   * @param {Array} [glasses]
-   * @param {Boolean} [geometric] - уравнивать геометрически, вместо ширин заполнений
-   */
   async glass_align(name = 'auto', glasses, geometric) {
-
     const shift = this.do_glass_align(name, glasses, geometric);
     if(!shift){
       return;
     }
-
     const {project: {_attr, _ch}, eve} = this;
     if(!_attr._align_counter){
       clearTimeout(_attr._align_timer);
@@ -529,7 +381,6 @@ class EditorInvisible extends paper.PaperScope {
       _attr._align_counter = 0;
       return;
     }
-
     if(shift.some((delta) => delta.length > 0.1)) {
       _attr._align_counter++;
       const {utils} = $p;
@@ -549,20 +400,9 @@ class EditorInvisible extends paper.PaperScope {
       return true;
     }
   }
-
-  /**
-   * Смещает раскладку по световому проему, с учетом толщины раскладки  
-   * возвращает истину в случае успеха
-   * @param name
-   * @param glass
-   * @return {Boolean}
-   */
   do_lay_impost_align(name = 'auto', glass) {
-
     const {project, Point} = this;
     const {orientations, elm_types} = $p.enm;
-
-    // выбираем заполнение, если не выбрано
     if(!glass) {
       const glasses = project.selected_glasses();
       if(glasses.length != 1) {
@@ -570,15 +410,11 @@ class EditorInvisible extends paper.PaperScope {
       }
       glass = glasses[0];
     }
-
-    // проверяем наличие раскладки у заполнения
     if (!(glass instanceof Filling)
       || !glass.imposts.length
       || glass.imposts.some(impost => impost.elm_type != elm_types.Раскладка)) {
       return;
     }
-
-    // восстановление соединений с заполнением
     let restored;
     for(const impost of glass.imposts) {
       for(const node of ['b','e']) {
@@ -598,17 +434,12 @@ class EditorInvisible extends paper.PaperScope {
     if(restored) {
       return true;
     }
-
-    // выясняем направление, в котором уравнивать
     if(name === 'auto') {
       name = 'width';
     }
-
-    // собираем в массиве shift все импосты подходящего направления, остальные помещаем в neighbors
     const orientation = name === 'width' ? orientations.vert : orientations.hor;
     const neighbors = [];
     const shift = glass.imposts.filter(impost => {
-      // отрезаем плохую ориентацию, учитываем наклонные импосты
       const vert = (impost.angle_hor > 45 && impost.angle_hor <= 135) || (impost.angle_hor > 225 && impost.angle_hor <= 315);
       const passed = impost.orientation == orientation
         || (orientation === orientations.vert && vert)
@@ -618,30 +449,19 @@ class EditorInvisible extends paper.PaperScope {
       }
       return passed;
     });
-
-    // выходим, если отсутствуют импосты подходящего направления
     if (!shift.length) {
       return;
     }
-
-    // получение ближайших связанных импостов
     function get_nearest_link(link, src, pt) {
-      // поиск близжайшего импоста к точке
       const index = src.findIndex(elm => elm.b.is_nearest(pt) || elm.e.is_nearest(pt));
       if (index !== -1) {
-        // запоминаем импост
         const impost = src[index];
-        // удаляем импост из доступных импостов
         src.splice(index, 1);
-        // добавляем импост в связь
         link.push(impost);
-        // получаем близжайшие импосты
         get_nearest_link(link, src, impost.b);
         get_nearest_link(link, src, impost.e);
       }
     }
-
-    // группируем импосты для сдвига
     const tmp = Array.from(shift);
     const links = [];
     while (tmp.length) {
@@ -651,36 +471,22 @@ class EditorInvisible extends paper.PaperScope {
         links.push(link);
       }
     }
-    // сортируем группы по возрастанию координат начальной точки первого импоста в связи
     links.sort((a, b) => {
       return orientation === orientations.vert ? (a[0].b._x - b[0].b._x) : (a[0].b._y - b[0].b._y);
     });
-
-    // извлекаем ширину раскладки из номенклатуры первого импоста
     const widthNom = shift[0].nom.width;
-    // определяем границы светового проема
     const bounds = glass.bounds_light(0);
-
-    // вычисление смещения
     function get_delta(dist, pt) {
       return orientation === orientations.vert
         ? (bounds.x + dist - pt._x)
         : (bounds.y + dist - pt._y);
     }
-
-    // получаем ширину строки или столбца
     const width = (orientation === orientations.vert ? bounds.width : bounds.height) / links.length;
-    // получаем шаг между осями накладок без учета ширины элементов раскладки
     const step = ((orientation === orientations.vert ? bounds.width : bounds.height) - widthNom * links.length) / (links.length + 1);
-    // накопительная переменная
     let pos = 0;
-    // двигаем строки или столбцы
     for (const link of links) {
-      // рассчитываем расположение осевой линии импоста с учетом предыдущей
       pos += step + widthNom / (pos === 0 ? 2 : 1);
-
       for (const impost of link) {
-        // собираем соседние узлы для сдвига
         let nbs = [];
         for (const nb of neighbors) {
           if (nb.b.is_nearest(impost.b) || nb.b.is_nearest(impost.e)) {
@@ -696,20 +502,14 @@ class EditorInvisible extends paper.PaperScope {
             });
           }
         }
-
-        // двигаем начальную точку
         let delta = get_delta(pos, impost.b);
         impost.select_node("b");
         impost.move_points(new Point(orientation === orientations.vert ? [delta, 0] : [0, delta]));
         glass.deselect_onlay_points();
-
-        // двигаем конечную точку
         delta = get_delta(pos, impost.e);
         impost.select_node("e");
         impost.move_points(new Point(orientation === orientations.vert ? [delta, 0] : [0, delta]));
         glass.deselect_onlay_points();
-
-        // двигаем промежуточные точки импоста
         impost.generatrix.segments.forEach(segm => {
           if (segm.point === impost.b || segm.point === impost.e) {
             return;
@@ -717,8 +517,6 @@ class EditorInvisible extends paper.PaperScope {
           delta = get_delta(pos, segm.point);
           segm.point = segm.point.add(delta);
         });
-
-        // двигаем соседние узлы
         nbs.forEach(node => {
           delta = get_delta(pos, node.impost[node.point]);
           node.impost.select_node(node.point);
@@ -727,170 +525,90 @@ class EditorInvisible extends paper.PaperScope {
         });
       }
     }
-
     return true;
   }
-
-  /**
-   * Уравнивание раскладки по световому проему  
-   * выполняет смещение по ширине и высоте
-   * @param [name]
-   * @param [glass]
-   * @return {Boolean}
-   */
   lay_impost_align(name = 'auto', glass) {
-    // выравниваем по длине
     const width = (name === 'auto' || name === 'width') && this.do_lay_impost_align('width', glass);
-    // выравниваем по высоте
     const height = (name === 'auto' ||  name === 'height') && this.do_lay_impost_align('height', glass);
     if (!width && !height) {
       return;
     }
-
-    // перерисовываем контуры
     this.project.contours.forEach(l => l.redraw());
-
     return true;
   }
-
-
 }
-
-/*
- * Экспортируем конструктор EditorInvisible, чтобы экземпляры построителя можно было создать снаружи
- */
 $p.EditorInvisible = EditorInvisible;
-
-
-/**
- * История редактирования
- */
 class History {
-
   constructor(editor) {
     this.editor = editor;
     this.history = [];
     this.pos = -1;
   }
-
   push(type, attr) {
     this.history.push({time: new Date(), type, attr});
   }
-
   buttons_accessibility() {
     return {back: false, rewind: false};
   }
-
   clear() {
     this.history.length = 0;
     this.pos = -1;
   }
-
   back() {
     if(this.pos > 0) {
       this.pos--;
     }
     if(this.pos >= 0) {
-
     }
     else {
-
     }
   }
-
   rewind() {
     if (this.pos <= (this.history.length - 1)) {
       this.pos++;
     }
   }
-
-  /**
-   * Для совместимости со старым интерфейсом
-   */
   save_snapshot() {}
 }
-
 EditorInvisible.History = History;
-
-
-/**
- * Виртуальный инструмент - прототип для инструментов _select_node_ и _select_elm_
- *
- * @extends paper.Tool
- */
 class ToolElement extends paper.Tool {
-
-  /* eslint-disable-next-line */
   resetHot(type, event, mode) {
-
   }
-
-  /* eslint-disable-next-line */
   testHot(type, event, mode) {
     return this.hitTest(event);
   }
-
-  /**
-   * Отключает и выгружает из памяти окно свойств инструмента
-   *
-   * @param tool
-   */
   detache_wnd() {
     this.profile = null;
   }
-
-  /**
-   * Проверяет, есть ли в проекте слои, при необходимости добавляет
-   */
   check_layer() {
     const {project, eve} = this._scope;
     if (!project.contours.length) {
-      // создаём пустой новый слой
       EditorInvisible.Contour.create({project});
-      // оповещаем мир о новых слоях
       eve.emit_async('rows', project.ox, {constructions: true});
     }
   }
-
-  /**
-   * Общие действия при активизации инструмента
-   */
   on_activate(cursor) {
-
     this._scope.canvas_cursor(cursor);
     this.eve.emit_async('tool_activated', this);
-
-    // для всех инструментов, кроме select_node...
     if(this.options.name != 'select_node') {
       this.check_layer();
-      // проверяем заполненность системы
       if(this.project._dp.sys.empty()) {
         const {msg, ui} = $p;
         ui && ui.dialogs.alert({text: msg.bld_not_sys, title: msg.bld_title});
       }
     }
   }
-
   get eve() {
     return this._scope.eve;
   }
-
   get project() {
     return this._scope.project;
   }
-
   get mover() {
     return this._scope._mover;
   }
-
 };
-
 EditorInvisible.ToolElement = ToolElement;
-
-
-
-
-// ошибка в paper-core
 (() => {
   function getZoom() {
     const scaling = this._decompose().scaling;
@@ -905,32 +623,8 @@ EditorInvisible.ToolElement = ToolElement;
     set: setZoom,
   });
 })();
-
-
-/**
- * @summary Элемент изделия
- * @desc Базовый класс элементов построителя    
- * Унаследован от [paper.Group](http://paperjs.org/reference/group/). Cвойства и методы `BuilderElement` присущи всем элементам построителя,
- * но не характерны для классов [Path](http://paperjs.org/reference/path/) и [Group](http://paperjs.org/reference/group/) фреймворка [paper.js](http://paperjs.org/about/),
- * т.к. описывают не линию и не коллекцию графических примитивов, а элемент конструкции с определенной физикой и поведением
- *
- * @extends paper.Group
- * @abstract
- */
 class BuilderElement extends paper.Group {
-
-  /**
-   * @param {Object} attr - объект со свойствами создаваемого элемента
-   *  @param {Contour} [attr.layer] - контур (слой), которому принадлежит элемент
-   *  @param {BuilderElement} [attr.parent] - контур (слой), которому принадлежит элемент
-   *  @param [attr.inset] {CatInserts} -  вставка элемента. если не указано, будет вычислена по типу элемента
-   *  @param [attr.path] {paper.Path|Array} (r && arc_ccw && more_180)
-   *  @param {paper.Point} [attr.b] - координата узла начала элемента - не путать с координатами вершин пути элемента
-   *  @param {paper.Point} attr.e - координата узла конца элемента - не путать с координатами вершин пути элемента
-   *  @param {EnmElm_types} [attr.type_el]  может измениться при конструировании. например, импост -> рама
-   */
   constructor(attr) {
-
     const proto = attr?.proto;
     if(proto) {
       delete attr.proto;
@@ -943,92 +637,55 @@ class BuilderElement extends paper.Group {
     else if(!attr.parent && proto.parent && proto.parent !== this.parent){
       this.parent = proto.parent;
     }
-
     if(!attr.row){
       attr.row = this.layer._ox.coordinates.add();
     }
-
     this._row = attr.row;
-
     this._attr = {paths: new Map()};
-
     if(!this._row.elm){
       this._row.elm = (attr.elm && typeof attr.elm === 'number') ? attr.elm : this._row._owner.aggregate([], ['elm'], 'max') + 1;
     }
-
     if(attr._nearest){
       this._attr._nearest = attr._nearest;
       this._attr.binded = true;
       this._attr.simulated = true;
       this._row.elm_type = $p.enm.elm_types.Створка;
     }
-
     if(proto){
-
       if(proto.inset){
         this.set_inset(proto.inset, true);
       }
-
       if(proto instanceof Profile){
         this.insertBelow(proto);
       }
-
       this.clr = proto.clr;
-
     }
-
     if(!this._row.cnstr && this.layer.cnstr){
       this._row.cnstr = this.layer.cnstr;
     }
-
     if(this._row.elm_type.empty() && !this.inset.empty()){
       this._row.elm_type = proto?.elm_type || this.nom.elm_type;
     }
-
     this.project.register_change();
-
     if(this.getView()?._countItemEvent) {
       this.on('doubleclick', this.elm_dblclick);
     }
-
   }
-
-  /**
-   * Элемент - владелец
-   * имеет смысл для раскладок и рёбер заполнения
-   * @type BuilderElement
-   */
   get owner() {
     return this._attr.owner;
   }
   set owner(v) {
     this._attr.owner = v;
   }
-
-  /**
-   * @summary Примыкающий внешний элемент
-   * @desc имеет смысл для сегментов створок, доборов и рам с внешними соединителями
-   * @abstract
-   * @return {BuilderElement|void}
-   */
   nearest() {}
-
-  /**
-   * @summary Образующая
-   * @desc Здесь может быть линия, простая дуга или безье. По ней будут пересчитаны pathData и прочие свойства
-   * @type paper.Path
-   */
   get generatrix() {
     return this._attr.generatrix;
   }
   set generatrix(attr) {
-
     const {_attr} = this;
     const {generatrix} = _attr;
     generatrix.removeSegments();
-
     this.rays && this.rays.clear();
-
     if(attr instanceof paper.Path){
       generatrix.addSegments(attr.segments);
     }
@@ -1036,14 +693,10 @@ class BuilderElement extends paper.Group {
       generatrix.addSegments(attr);
     }
     else if(attr.proto &&  attr.p1 &&  attr.p2){
-
-      // сначала, выясняем направление пути
       let tpath = attr.proto;
       if(tpath.getDirectedAngle(attr.ipoint) < 0){
         tpath.reverse();
       }
-
-      // далее, уточняем порядок p1, p2
       let d1 = tpath.getOffsetOf(attr.p1);
       let d2 = tpath.getOffsetOf(attr.p2), d3;
       if(d1 > d2){
@@ -1058,22 +711,14 @@ class BuilderElement extends paper.Group {
       if(d2 < tpath.length){
         tpath.split(d2);
       }
-
       generatrix.remove();
       _attr.generatrix = tpath;
       _attr.generatrix.parent = this;
-
       if(this.layer?.layer){
         _attr.generatrix.guide = true;
       }
     }
   }
-
-  /**
-   * путь элемента - состоит из кривых, соединяющих вершины элемента
-   * для профиля, вершин всегда 4, для заполнений может быть <> 4
-   * @type paper.Path
-   */
   get path() {
     return this._attr.path;
   }
@@ -1087,11 +732,6 @@ class BuilderElement extends paper.Group {
       }
     }
   }
-  
-  /**
-   * Виртуальные метаданные для ui
-   * @type metadata.Meta
-   */
   get _metadata() {
     return this.__metadata();
   }
@@ -1109,15 +749,11 @@ class BuilderElement extends paper.Group {
       cnn2 = Object.assign({}, cnn1, {synonym: 'Соединение 2'}),
       cnn3 = Object.assign({}, cnn1, {synonym: 'Соед. примыкания'}),
       clr = Object.assign(utils._clone(_xfields.clr), {choice_params: []});
-
     if(iface !== false) {
       iface = $p.iface;
     }
-
     function cnn_choice_links(o, cnn_point){
-
       const nom_cnns = cnns.nom_cnn(t, cnn_point.profile, cnn_point.cnn_types, false, undefined, cnn_point);
-
       if(!iface || utils.is_data_obj(o)){
         return nom_cnns.some((cnn) => o.ref == cnn);
       }
@@ -1132,32 +768,18 @@ class BuilderElement extends paper.Group {
         return `_t_.ref in (${refs})`;
       }
     }
-
-
-    // динамические отборы для вставок и соединений
     const {_types_filling} = inserts;
-
     inset.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o, f) => {
         const {sys} = this.layer;
-
         let selection;
-
         if(this instanceof Filling) {
-          // glass_thickness:
-          // 0 - по толщинам из списка
-          // 1 - по списку
-          // 2 - по вилке толщин (min max)
-          // 3 - без ограничений
           const {glass_thickness, thicknesses} = sys;
-
-          // !iface - нет dhtmlx, чистый react
           if(!iface || utils.is_data_obj(o)) {
             const insert = inserts.get(o);
             const {insert_type, insert_glass_type} = insert;
             if(_types_filling.includes(insert_type) && (glass_thickness === 1 || insert_glass_type.empty() || insert_glass_type.is('glass') || insert_glass_type.is('blank'))) {
-              /*разбор параметра glass_thickness*/
               if(glass_thickness === 0) {
                 return thicknesses.includes(insert.thickness(this));
               }
@@ -1205,8 +827,6 @@ class BuilderElement extends paper.Group {
         else {
           selection = {elm_type: this.elm_type || this.nom.elm_type};
         }
-
-        // !iface - нет dhtmlx, чистый react
         if(!iface || utils.is_data_obj(o)) {
           let ok = false;
           selection.nom = inserts.get(o);
@@ -1228,23 +848,19 @@ class BuilderElement extends paper.Group {
         }
       }]
     }];
-
     cnn1.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o, f) => cnn_choice_links(o, this.rays.b)]
     }];
-
     cnn2.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o, f) => cnn_choice_links(o, this.rays.e)]
     }];
-
     cnn3.choice_links = [{
       name: ['selection', 'ref'],
       path: [(o) => {
         const cnn_ii = this.selected_cnn_ii();
         let nom_cnns = [utils.blank.guid];
-
         if(cnn_ii) {
           if(cnn_ii.elm instanceof Filling || this instanceof ProfileAdjoining) {
             nom_cnns = cnns.nom_cnn(cnn_ii.elm, this, cnn_types.acn.ii);
@@ -1256,7 +872,6 @@ class BuilderElement extends paper.Group {
             nom_cnns = cnns.nom_cnn(this, cnn_ii.elm, cnn_types.acn.ii);
           }
         }
-
         if(!iface || utils.is_data_obj(o)) {
           return nom_cnns.some((cnn) => o.ref == cnn);
         }
@@ -1272,10 +887,7 @@ class BuilderElement extends paper.Group {
         }
       }]
     }];
-
-    // дополняем свойства поля цвет отбором по служебным цветам
     clrs.selection_exclude_service(clr, this);
-
     const mfields = {
       info,
       inset,
@@ -1304,7 +916,6 @@ class BuilderElement extends paper.Group {
         type: {types: ['boolean']},
       }
     };
-
     const fieldsProxy = new Proxy(mfields, {
       get(target, prop) {
         if(target[prop]) {
@@ -1330,21 +941,9 @@ class BuilderElement extends paper.Group {
     func.fields = fieldsProxy;
     return func;
   }
-
-  
-  /**
-   * Виртуальный датаменеджер для ui 
-   * @type {metadata.DataManager}
-   */
   get _manager() {
     return this.project._dp._manager;
   }
-
-  /**
-   * @summary Объект продукции текущего элемеента  
-   * @desc может отличаться от продукции текущего проекта
-   * @type {CatCharacteristics}
-   */
   get ox() {
     const {layer, _row} = this;
     const _ox = layer?._ox;
@@ -1353,13 +952,6 @@ class BuilderElement extends paper.Group {
     }
     return _row ? _row._owner._owner : {cnn_elmnts: []};
   }
-
-  /**
-   * @summary Номенклатура элемента
-   * @desc свойство только для чтения, т.к. вычисляется во вставке с учётом текущих параметров и геометрии
-   * @final
-   * @type CatNom
-   */
   get nom() {
     const {_attr} = this;
     if(!_attr.nom) {
@@ -1367,48 +959,25 @@ class BuilderElement extends paper.Group {
     }
     return _attr.nom;
   }
-
-  /**
-   * Номер элемента
-   * @final
-   * @type {Number}
-   */
   get elm() {
     return (this._row && this._row._obj.elm) || 0;
   }
-
-  // информация для редактора свойств
   get info() {
     return "№" + this.elm;
   }
-
-  // виртуальная ссылка
   get ref() {
     const {nom} = this;
     return nom && !nom.empty() ? nom.ref : this.inset.ref;
   }
-
-  // ширина
   get width() {
     const {nom, inset} = this;
     const {operations} = nom._obj;
     const irow = operations?.find(v => v.stan == inset);
     return irow?.width || nom.width || 1;
   }
-
-  /**
-   * @summary Толщина элемента
-   * @desc для заполнений и, возможно, профилей в 3D
-   * @type {Number}
-   */
   get thickness() {
     return this.inset.thickness(this);
   }
-
-  /**
-   * @summary вспомогательный метод для sizeb
-   * @return {Number}
-   */
   get_sizeb() {
     const {sizeb} = this.inset;
     if(sizeb === -1100) {
@@ -1419,7 +988,7 @@ class BuilderElement extends paper.Group {
       return this.width / 2;
     }
     else if(sizeb > 1000) {
-      let parts = sizeb.toFixed(); //[для импоста]/[для рамы]
+      let parts = sizeb.toFixed();
       while (parts.length < 6) {
         parts = '0' + parts;
       }
@@ -1436,25 +1005,14 @@ class BuilderElement extends paper.Group {
     }
     return sizeb || 0;
   }
-
-  /**
-   * @summary Опорный размер
-   * @desc рассчитывается таким образом, чтобы имитировать для вложенных изделий профили родителя
-   * @type {Number}
-   */
   get sizeb() {
     return this.get_sizeb();
   }
-
-  // размер до фурнитурного паза
   get sizefurn() {
     return this.nom.sizefurn || 20;
   }
-
-  // масса элемента
   get weight() {
     let {ox, elm, inset, layer} = this;
-    // если элемент оформлен отдельной строкой заказа, массу берём из соседней характеристики
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
       ox = this.ox.find_create_cx(elm, $p.utils.blank.guid, false);
     }
@@ -1463,10 +1021,6 @@ class BuilderElement extends paper.Group {
     }
     return ox.elm_weight(elm, {elm: this, contour: layer});
   }
-
-  /**
-   * Примыкающее соединение для диалога свойств
-   */
   get cnn3(){
     const cnn_ii = this.selected_cnn_ii();
     return cnn_ii ? cnn_ii.row.cnn : $p.cat.cnns.get();
@@ -1482,23 +1036,18 @@ class BuilderElement extends paper.Group {
       this.project.register_change();
     }
   }
-
-  // вставка
   get inset() {
     return $p.cat.inserts.get(this._row && this._row._obj.inset);
   }
   set inset(v) {
     this.set_inset(v);
   }
-
-  // цвет элемента
   get clr() {
     return this._row.clr;
   }
   set clr(v) {
     this.set_clr(v);
   }
-
   get clr_in() {
     return this.clr.clr_in;
   }
@@ -1506,7 +1055,6 @@ class BuilderElement extends paper.Group {
     const {clr} = this;
     this.clr = $p.cat.clrs.composite_ref('clr_in', clr.clr_out.empty() ? clr : clr.clr_out, v);
   }
-
   get clr_out() {
     return this.clr.clr_out;
   }
@@ -1514,56 +1062,30 @@ class BuilderElement extends paper.Group {
     const {clr} = this;
     this.clr = $p.cat.clrs.composite_ref('clr_out', clr.clr_in.empty() ? clr : clr.clr_in, v);
   }
-
-  /**
-   * Дополнительные свойства json
-   * @type {Object}
-   */
   get dop() {
     return this._row.dop;
   }
   set dop(v) {
     this._row.dop = v;
   }
-
-  /**
-   * Произвольный комментарий
-   * @type {String}
-   */
   get note() {
     return this.dop.note || '';
   }
   set note(v) {
     this.dop = {note: v};
   }
-
-  /**
-   * Плановая себестоимость единицы хранения в валюте упр. учёта
-   * @type {Number}
-   */
   get first_cost() {
     return this.dop.first_cost || 0;
   }
   set first_cost(v) {
     this.dop = {first_cost: v};
   }
-
-  /**
-   * Плановая цена продажи единицы хранения в валюте упр. учёта
-   * @type {Number}
-   */
   get price() {
     return this.dop.price || 0;
   }
   set price(v) {
     this.dop = {price: v};
   }
-
-  /**
-   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
-   * [inset] {CatInserts} - указываем для дополнительных вставок
-   * @return {Array}
-   */
   elm_props(inset) {
     const {utils, md, enm: {positions}} = $p;
     let {_attr, _row, layer, ox: {params}, rnum} = this;
@@ -1574,11 +1096,8 @@ class BuilderElement extends paper.Group {
     if(!inset) {
       inset = this.inset;
     }
-
-    // получаем список свойств
     const props = [];
     if(this.isInserted()) {
-      // свойства, нужные вставке текущего элемента
       const inset_params = inset.used_params();
       const product_params = [];
       if(concat) {
@@ -1600,13 +1119,10 @@ class BuilderElement extends paper.Group {
         if (!inset_params.includes(param)) {
           continue;
         }
-        // если переопределение явно указано в системе
         if(elm) {
           props.push(param);
         }
-        // если переопределение указано в самом параметре
         else if([1, 2].includes(param.inheritance)) {
-          // дополнительно учтём тип и положение элемента
           const {elm_type, pos, orientation} = this;
           if(!param.applying.count()) {
             props.push(param);
@@ -1622,16 +1138,13 @@ class BuilderElement extends paper.Group {
           }
         }
       }
-
       if(!rnum) {
-        // удаляем возможные паразитные свойства
         _attr.props && _attr.props.forEach((prop) => {
           if(!props.includes(prop)) {
             delete this[concat ? concat.ref + prop.ref : prop.ref];
           }
         });
         _attr.props = props;
-        // создаём свойства
         props.forEach((prop) => {
           const key = concat ? concat.ref + prop.ref : prop.ref;
           if(!this.hasOwnProperty(key)) {
@@ -1648,7 +1161,6 @@ class BuilderElement extends paper.Group {
                     prow = row;
                   }
                 });
-
                 if(prow) {
                   return prow.value;
                 }
@@ -1675,7 +1187,6 @@ class BuilderElement extends paper.Group {
                     prow0 = row;
                   }
                 });
-                // если устанавливаемое значение совпадает со значением изделия - удаляем
                 if(prow0 && prow0.value == v) {
                   prow && prow._owner.del(prow);
                 }
@@ -1700,24 +1211,10 @@ class BuilderElement extends paper.Group {
         });
       }
     }
-
     return props;
   }
-
-  /**
-   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
-   * @param param {CchProperties}
-   * @param with_neighbor {Boolean} - с учетом примыкающих
-   */
   refresh_inset_depends(param, with_neighbor) {
-
   }
-
-  /**
-   * Сеттер вставки с учетом выделенных элементов
-   * @param v {CatInserts}
-   * @param [ignore_select] {Boolean}
-   */
   set_inset(v, ignore_select) {
     const {_row, _attr, project} = this;
     if(_row.inset != v){
@@ -1730,17 +1227,10 @@ class BuilderElement extends paper.Group {
       project._scope.eve.emit('set_inset', this);
     }
   }
-
-  /**
-   * Сеттер цвета элемента
-   * @param v {CatClrs}
-   * @param [ignore_select] {Boolean}
-   */
   set_clr(v, ignore_select) {
     const {_row, path, project} = this;
     const {clr_group} = _row.inset;
     let clr = _row.clr._manager.getter(v);
-
     if(!project.is_read_only && (clr.empty() || !clr_group.contains(clr))) {
       const {sys} = this.layer;
       const group = clr_group.empty() ? sys.clr_group : clr_group;
@@ -1753,24 +1243,17 @@ class BuilderElement extends paper.Group {
       }
       clr = default_clr;
     }
-
     if((clr_group.contains(clr) || project.is_read_only) && _row.clr != clr) {
       _row.clr = clr;
       project.register_change();
     }
-    // цвет элементу присваиваем только если он уже нарисован
     if(path instanceof paper.Path){
       path.fillColor = BuilderElement.clr_by_clr.call(this, _row.clr);
     }
   }
-
-  /**
-   * Возвращает примыкающий элемент и строку табчасти соединений
-   */
   selected_cnn_ii() {
     const {project, elm, ox} = this;
     const items = [];
-
     for(const item of project.getSelectedItems()) {
       const {parent} = item;
       if(!items.includes(parent) && (parent instanceof ProfileItem || parent instanceof Filling)) {
@@ -1780,12 +1263,10 @@ class BuilderElement extends paper.Group {
         items.push(item);
       }
     }
-
     if(items.length > 1 && items.includes(this)) {
       const nelm = this.nearest();
       const shift = nelm instanceof ProfileVirtual && nelm.nearest();
       const {cat: {cnns}, enm: {cnn_types}} = $p;
-
       for(const item of items) {
         if(item === this) {
           continue;
@@ -1811,13 +1292,6 @@ class BuilderElement extends paper.Group {
       }
     }
   }
-
-  /**
-   * Добавляет информацию об ошибке в спецификацию, если таковой нет для текущего элемента
-   * @param nom {CatNom}
-   * @param text {String}
-   * @param origin {DataObj} - происхождение
-   */
   err_spec_row(nom, text, origin) {
     const {job_prm, cat, ProductsBuilding} = $p;
     if(!nom){
@@ -1835,23 +1309,19 @@ class BuilderElement extends paper.Group {
       row.specify = text;
     }
   }
-
   elm_dblclick(event) {
     this.project._scope.eve.emit('elm_dblclick', this, event);
   }
-
   static clr_by_clr(clr) {
     let {clr_str, clr_in, clr_out} = clr;
     let {project: {_attr, builder_props}, layer}  = this;
-    
     if(builder_props.bw) {
       return new paper.Color(1, 1, 1, 0.92);
     }
     if(!layer) {
       layer = this.project.activeLayer;
     }
-
-    if(_attr._reflected){ //&& !layer?.flipped || !_attr._reflected && layer?.flipped
+    if(_attr._reflected){
       if(!clr_out.empty() && clr_out.clr_str) {
         clr_str = clr_out.clr_str;
       }
@@ -1861,11 +1331,9 @@ class BuilderElement extends paper.Group {
         clr_str = clr_in.clr_str;
       }
     }
-
     if(!clr_str) {
       clr_str = this.default_clr_str ? this.default_clr_str : 'fff';
     }
-
     if(clr_str) {
       clr = clr_str.split(',');
       if(clr.length == 1) {
@@ -1894,41 +1362,27 @@ class BuilderElement extends paper.Group {
       return clr;
     }
   }
-  
   beforeRemove() {
     return true;
   }
-
-  /**
-   * Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_ и отключает наблюдателя
-   */
   remove() {
-    
     if(!this.beforeRemove()) {
       return false;
     }
-    
     this.detache_wnd && this.detache_wnd();
-
     const {parent, project, _row, ox, elm, path} = this;
-
     if(parent && parent.on_remove_elm) {
       parent.on_remove_elm(this);
     }
-
     if(path && path.onMouseLeave) {
       path.onMouseEnter = null;
       path.onMouseLeave = null;
     }
-
     project._scope.eve.emit('elm_removed', this);
-
     if (this.observer){
       project._scope.eve.off(consts.move_points, this.observer);
       delete this.observer;
     }
-
     if(_row && _row._owner._owner === ox && !project.ox.empty()){
       ox.params.clear({cnstr: -elm});
       ox.inserts.clear({cnstr: -elm});
@@ -1936,46 +1390,31 @@ class BuilderElement extends paper.Group {
       ox.cnn_elmnts.clear({elm2: elm});   
       _row._owner.del(_row);
     }
-
     project.register_change();
-
     super.remove();
   }
 }
-
 EditorInvisible.BuilderElement = BuilderElement;
-
-
-/**
- * Обёртка строки табчасти параметра
- */
 class BuilderPrmRow {
-
   constructor(_owner, _row) {
     this._owner = _owner;
     this._row = _row;
   }
-
   get row() {
     return this._row.row;
   }
-
   get param() {
     return this._row.param;
   }
-
   get inset() {
     return this._row.inset;
   }
-
   get cnstr() {
     return this._row.cnstr;
   }
-
   get sorting_field() {
     return this.param.sorting_field;
   }
-
   get value() {
     return this._row.value;
   }
@@ -2001,32 +1440,21 @@ class BuilderPrmRow {
     }
   }
 }
-
-/**
- * Свойства слоя или элемента
- *
- * Created by Evgeniy Malyarov on 11.04.2022.
- */
 class BuilderPrms {
-
   constructor({elm, layer}) {
     this.elm = elm;
     this.layer = layer;
     this.cnstr = layer ? layer.cnstr : elm.elm;
   }
-
   get _name() {
     return 'params';
   }
-
   get _owner() {
     return this.elm ? (elm.prm_ox || elm.ox) : this.layer._ox;
   }
-
   get params() {
     return this._owner.params;
   }
-
   find_rows({inset}, cb) {
     const {cnstr, params, layer: {sys, own_sys}} = this;
     const map = new Map();
@@ -2045,56 +1473,28 @@ class BuilderPrms {
     for(const [param, row] of map) {
       res.push(new BuilderPrmRow(this, row));
     }
-
     res.sort($p.utils.sort('sorting_field'));
     for(const row of res) {
       cb(row);
     }
     return res;
   }
-  
   add(proto) {
     return this.params.find(proto) || this.params.add(proto);
   }
-
   del(row) {
     const {_obj} = this.params;
     const _row = row instanceof BuilderPrmRow ? row._row : row;
     this.params.del(_row);
   }
-
 }
-
-
-/*
- * Created by Evgeniy Malyarov on 09.02.2022.
- */
-
-/**
- * Элемент составного пути (например, подоконник с закруглением и вырезом)
- * @extends BuilderElement
- */
 class Compound extends BuilderElement {
-
-  /**
-   * Возвращает тип элемента (Составной путь)
-   * @type EnmElm_types
-   */
   get elm_type() {
     return $p.enm.elm_types.compound;
   }
 }
-
 EditorInvisible.Compound = Compound;
-
-
-/**
- * Сегмент заполнения
- *
- * содержит информацию о примыкающем профиле и координатах начала и конца
- */
 class GlassSegment {
-
   constructor(profile, b, e, outer) {
     this.profile = profile;
     this.b = b.clone();
@@ -2102,25 +1502,16 @@ class GlassSegment {
     this.outer = outer;
     this.segment();
   }
-
-  /**
-   * часть конструктора оформлена отдельным методом из-за рекурсии
-   */
   segment() {
-
     let gen;
     const {profile} = this;
     const cond = profile.children.some((addl) => {
-
       if (addl instanceof ProfileAddl && this.outer == addl.outer) {
         if (!gen) {
           gen = profile.generatrix;
         }
         const b = profile instanceof ProfileAddl ? profile.b : this.b;
         const e = profile instanceof ProfileAddl ? profile.e : this.e;
-
-        // TODO: учесть импосты, привязанные к добору
-
         if (b.is_nearest(gen.getNearestPoint(addl.b), true) && e.is_nearest(gen.getNearestPoint(addl.e), true)) {
           this.profile = addl;
           this.outer = false;
@@ -2128,38 +1519,24 @@ class GlassSegment {
         }
       }
     });
-
     if (cond) {
       this.segment();
     }
   }
-
-  /**
-   * Проверяет наличие соединения по углам в узле
-   * @param nodes
-   * @param {Array} segments
-   * @param {ProfileItem} curr_profile
-   * @param {ProfileItem} segm_profile
-   * @return {Boolean}
-   */
   break_by_angle(nodes, segments, point, offset, curr_profile, segm_profile) {
-
     const node = nodes.byPoint(point);
     if(!node) {
       return false;
     }
-
     let tangent = curr_profile.generatrix.getTangentAt(offset);
     if(this.outer) {
       tangent = tangent.negate();
     }
-
     const angles = [];
     for(const elm of node) {
       if(elm.profile === curr_profile) {
         continue;
       }
-      // сравним углы между образующими в точке
       const {generatrix} = elm.profile;
       const ppoint = generatrix.getNearestPoint(point);
       const poffset = generatrix.getOffsetOf(ppoint);
@@ -2201,22 +1578,11 @@ class GlassSegment {
       }
     }
   }
-
-  /**
-   * Выясняет, есть ли у текущего сегмента соединение с соседним
-   * @param segm
-   * @param point
-   * @param nodes
-   */
   has_cnn(segm, nodes, segments) {
-
-    // если узлы не совпадают - дальше не смотрим
     const point = segm.b;
     if(!this.e.is_nearest(point, 0)) {
       return false;
     }
-
-    // идём вверх по доборным профилям
     let curr_profile = this.profile;
     let segm_profile = segm.profile;
     while (curr_profile instanceof ProfileAddl) {
@@ -2231,62 +1597,47 @@ class GlassSegment {
       }
       segm_profile = segm_profile.parent;
     }
-
     if(curr_profile === segm_profile && (this.profile instanceof ProfileAddl || segm.profile instanceof ProfileAddl)) {
       return false;
     }
     if(curr_profile.gb.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
       const by_angle = this.break_by_angle(nodes, segments, point, 0, curr_profile, segm_profile);
       if(by_angle) {
         return false;
       }
-      // проверяем для обычного узла
       else if(by_angle === undefined || curr_profile.rays.b.profile === segm_profile) {
         return true;
       }
     }
-
     if(curr_profile.ge.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
       const by_angle = this.break_by_angle(nodes, segments, point, curr_profile.generatrix.length, curr_profile, segm_profile);
       if(by_angle) {
         return false;
       }
-      // проверяем для обычного узла
       else if(by_angle === undefined || curr_profile.rays.e.profile === segm_profile) {
         return true;
       }
     }
-
     if(segm_profile.gb.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
       const by_angle = segm.break_by_angle(nodes, segments, point, 0, segm_profile, curr_profile)
       if(by_angle) {
         return false;
       }
-      // проверяем для обычного узла
       else if(by_angle === undefined || segm_profile.rays.b.profile == curr_profile) {
         return true;
       }
     }
-
     if(segm_profile.ge.is_nearest(point, true)) {
-      // проверяем для узла с несколькими профилями
       const by_angle = segm.break_by_angle(nodes, segments, point, segm_profile.generatrix.length, segm_profile, curr_profile);
       if(by_angle) {
         return false;
       }
-      // проверяем для обычного узла
       else if(by_angle === undefined || segm_profile.rays.e.profile == curr_profile) {
         return true;
       }
     }
-
     return false;
-
   }
-
   get _sub() {
     const {sub_path} = this;
     return {
@@ -2304,15 +1655,12 @@ class GlassSegment {
       },
     };
   }
-
   interiorPoint() {
     const {sub_path} = this;
     return sub_path.getPointAt(sub_path.length / 2);
   }
 }
-
 class PointMap extends Map {
-
   byPoint(point) {
     for(const [key, value] of this) {
       if(point.is_nearest(key, 0)) {
@@ -2321,7 +1669,6 @@ class PointMap extends Map {
     }
   }
 }
-
 class LayerGroup extends paper.Group {
   save_coordinates(short, save, close) {
     let res = Promise.resolve();
@@ -2331,7 +1678,6 @@ class LayerGroup extends paper.Group {
     return res;
   }
 }
-
 class GroupVisualization extends LayerGroup {
   constructor({owner, ...attr}) {
     const {l_visualization} = owner.project;
@@ -2346,38 +1692,31 @@ class GroupVisualization extends LayerGroup {
     this.owner = owner;
     l_visualization.map.set(owner, this);
   }
-  
   remove() {
     this.project.l_visualization.map.delete(this.owner);
     super.remove();
   }
-
   clear() {
     this.children.by_insets.clear();
     this.children.by_spec.clear();
     this.children.static.clear();
     this.children.cnn.clear();
   }
-
   get cnn() {
     return this.children.cnn;
   }
-
   get _opening() {
     return this.children._opening;
   }
   get _opening2() {
     return this.children._opening2;
   }
-  
   get static() {
     return this.children.static;
   }
-  
   get by_insets() {
     return this.children.by_insets;
   }
-  
   get by_spec() {
     return this.children.by_spec;
   }
@@ -2388,15 +1727,12 @@ class GroupLayers extends LayerGroup {
   }
 }
 class GroupSectionals extends LayerGroup {
-  
 }
 class GroupProfiles extends LayerGroup {
-  
   constructor(...attr) {
     super(...attr);
     this.cnnMap = new Map();
   }
-  
   get profiles() {
     return this.children;
   }
@@ -2406,38 +1742,12 @@ class GroupProfiles extends LayerGroup {
 }
 class GroupFillings extends LayerGroup {}
 class GroupText extends LayerGroup {}
-
-
-
-
-/**
- * Абстрактное заполнение
- *
- * Общие свойства заполнения и контура
- *
- * @class
- * @extends BuilderElement
- * @hideconstructor
- *
- */
 const AbstractFilling = (superclass) => class extends superclass {
-
-  /**
-   * Тест положения контура в изделии
-   * @param pos {EnmElm_positions}
-   * @memberOf AbstractFilling
-   * @instance
-   * @return {Boolean}
-   */
   is_pos(pos) {
-    // если в изделии один контур или если контур является створкой, он занимает одновременно все положения
     if(this.project.contours.count == 1 || this.parent){
       return true;
     }
-
-    // если контур реально верхний или правый и т.д. - возвращаем результат сразу
     let res = Math.abs(this.bounds[pos] - this.project.bounds[pos]) < consts.sticking_l;
-
     if(!res){
       let rect;
       if(pos == "top"){
@@ -2452,25 +1762,13 @@ const AbstractFilling = (superclass) => class extends superclass {
       else if(pos == "bottom"){
         rect = new paper.Rectangle(this.bounds.bottomLeft, this.bounds.bottomRight.add([0, 200]));
       }
-
       res = !this.project.contours.some((l) => {
         return l != this && rect.intersects(l.bounds);
       });
     }
-
     return res;
   }
-
-  /**
-   * Возвращает структуру профилей по сторонам
-   * @memberOf AbstractFilling
-   * @instance
-   * @param {String} [side]
-   * @param {Array.<ProfileItem>} [profiles]
-   * @return {Object}
-   */
   profiles_by_side(side, profiles) {
-    // получаем таблицу расстояний профилей от рёбер габаритов
     if(!profiles){
       profiles = this.profiles;
     }
@@ -2483,7 +1781,6 @@ const AbstractFilling = (superclass) => class extends superclass {
     const res = {};
     const ares = [];
     const mid = profiles.length < 3;
-
     function by_side(name) {
       ares.some((elm) => {
         if(elm[name] == bounds[name]){
@@ -2492,7 +1789,6 @@ const AbstractFilling = (superclass) => class extends superclass {
         }
       })
     }
-
     if (profiles.length) {
       profiles.forEach((profile) => {
         const {b, e} = profile;
@@ -2523,37 +1819,19 @@ const AbstractFilling = (superclass) => class extends superclass {
         by_side(side);
         return res[side];
       }
-
       Object.keys(bounds).forEach(by_side);
     }
-
     return res;
   }
-  
   get skeleton() {
     return this._skeleton;
   }
-  
   create_groups() {
     new DimensionDrawer({parent: this, name: 'dimlns'});
   }
-
-  /**
-   * Cлужебная группа размерных линий
-   * @memberOf AbstractFilling
-   * @instance
-   * @type DimensionDrawer
-   */
   get l_dimensions() {
     return this.children.dimlns;
   }
-
-  /**
-   * Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
-   * @memberOf AbstractFilling
-   * @instance
-   * @type paper.Rectangle
-   */
   get dimension_bounds() {
     let {bounds} = this;
     this.getItems({class: DimensionLineCustom}).forEach((dl) => {
@@ -2561,7 +1839,6 @@ const AbstractFilling = (superclass) => class extends superclass {
     });
     return bounds;
   }
-  
   recalcCnnMap(map, profiles) {
     if(map && !map.size) {
       this._attr.recalcCnnMap = true;
@@ -2574,10 +1851,8 @@ const AbstractFilling = (superclass) => class extends superclass {
               map.set(cpt.profile, []);
             }
             const curr = map.get(cpt.profile);
-            // точка на образующей текущего элемента
             const ept = generatrix.length < 320 ? (generatrix.getPointAt(generatrix.length / 2)) :
               (node === 'b' ? generatrix.getPointAt(160) :  generatrix.getPointAt(generatrix.length - 160));
-            // точка на образующей профиля, к которому примыкает текущий
             const pg = cpt.profile.generatrix;
             let loc = pg.getNearestLocation(ept);
             if(!pg.is_linear()) {
@@ -2596,59 +1871,26 @@ const AbstractFilling = (superclass) => class extends superclass {
       this._attr.recalcCnnMap = false;
     }
   }
-
 };
-
 EditorInvisible.AbstractFilling = AbstractFilling;
-
-
-/*
- * Контур (слой) изделия
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 24.07.2015
- *
- */
-
-
-/**
- * Контур (слой) изделия
- *
- * Новые элементы попадают в активный слой-контур и не могут его покинуть
- * @extends paper.Layer
- */
 class Contour extends AbstractFilling(paper.Layer) {
-
   constructor(attr) {
-
     super({parent: attr.parent, project: attr.project});
-
     this._attr = {chnom: []};
-    
-    // узлы и рёбра текущего слоя
     this._skeleton = new Skeleton(this);
     this.create_groups();
-
     const {project} = this;
-
-    // строка в таблице конструкций
     this._row = attr.row;
-
     if(attr.direction) {
       this.direction = attr.direction;
     }
     if(attr.furn && typeof attr.furn !== 'string') {
       this.furn = attr.furn || this.default_furn;
     }
-
-    // добавляем элементы контура
     const ox = attr.ox || project.ox;
     this.prms = new BuilderPrms({layer: this});
     this.create_children({coordinates: ox.coordinates, cnstr: this.cnstr, attr});
-
   }
-
   create_groups() {
     new GroupLayers({parent: this, name: 'bottomLayers'});
     new GroupFillings({parent: this, name: 'fillings'});
@@ -2659,23 +1901,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     new GroupText({parent: this, name: 'text'});
     new GroupVisualization({owner: this, guide: true});
   }
-
-  /**
-   * @summary Возвращает класс-конструктор профилей текущего слоя
-   * @desc Актуально для вложенных и виртуальных слоёв
-   * $type {Function}
-   */
   get ProfileConstructor() {
     return Profile;
   }
-
-  /**
-   * @summary Фурнитура по умолчанию
-   * @desc Возвращает фурнитуру текущего слоя по умолчанию
-   * $type {CatFurns}
-   */
   get default_furn() {
-    // ищем ранее выбранную фурнитуру для системы
     let {sys} = this;
     let res;
     const {job_prm: {builder}, cat} = $p;
@@ -2714,18 +1943,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return res;
   }
-
-  /**
-   * Создаёт дочерние элементы
-   * @param coordinates {TabularSection}
-   * @param cnstr {Number}
-   */
   create_children({coordinates, cnstr}) {
-
     if (!cnstr) {
       return;
     }
-
     const {enm: {elm_types}, utils} = $p;
     const glasses = [];
     const rows = [];
@@ -2737,7 +1958,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     rows.sort(utils.sort('dopIndex'));
     for(const row of rows) {
       const attr = {row, parent: this.children.profiles};
-      // профили и доборы
       if(elm_types.profiles.includes(row.elm_type) || row.elm_type === elm_types.attachment) {
         if(this instanceof ContourVirtual && row.elm_type === elm_types.impost) {
           new Profile(attr);
@@ -2746,15 +1966,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           new this.ProfileConstructor(attr);
         }
       }
-      // заполнения
       else if(elm_types.glasses.includes(row.elm_type)) {
         glasses.push(row);
       }
-      // разрезы
       else if(row.elm_type === elm_types.drainage) {
         new Sectional({row, parent: this.children.sectionals})
       }
-      // остальные элементы (текст)
       else if(row.elm_type === elm_types.text) {
         new FreeText({row, parent: this.l_text})
       }
@@ -2763,7 +1980,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       new Filling({row, parent: this.children.fillings});
     }
   }
-
   createProfile({b, e, cnns, clr}) {
     const attr = {
       parent: this.children.profiles,
@@ -2771,20 +1987,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     };
     const profile = new this.ProfileConstructor(attr);
     if(cnns?.b?.profile) {
-      
     }
     if(cnns?.e?.profile) {
-
     }
     profile.clr = clr || this.prod_ox.clr;
     return profile;
   }
-
-  /**
-   *
-   * @param attr
-   * @return {Contour}
-   */
   static create(attr = {}) {
     let {kind, row, project, parent, layer} = attr;
     if(typeof kind === 'undefined') {
@@ -2799,7 +2007,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(!layer && parent) {
       layer = parent.layer;
     }
-    
     let Constructor = Contour;
     if(kind === 1) {
       Constructor = ContourVirtual;
@@ -2816,8 +2023,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     else if(kind === 5) {
       Constructor = ContourRegion;
     }
-
-    // строка в таблице конструкций
     if (!attr.row) {
       const {constructions} = project.ox;
       attr.row = constructions.add({parent: layer ? layer.cnstr : 0});
@@ -2826,7 +2031,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(kind && attr.row.kind !== kind) {
       attr.row.kind = kind;
     }
-    // оповещаем мир о новых слоях
     const contour = new Constructor(Object.assign(attr, {layer, parent}));
     if(layer) {
       let {flipped} = contour;
@@ -2840,11 +2044,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         contour.parent = layer.children.topLayers;
       }
     }
-    
     project._scope.eve.emit_async('rows', contour._ox, {constructions: true});
     return contour;
   }
-
   presentation(bounds) {
     if(!this.isInserted()) {
       return 'Удалён';
@@ -2857,36 +2059,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
-
-  /**
-   * Синоним presentation
-   * @return {String}
-   */
   get info() {
     return this.presentation();
   }
-
-  /**
-   * Ключ слоя - переопределяется для вложение
-   * @return {String}
-   */
   get key() {
     return this.cnstr.toFixed();
   }
-
-  /**
-   * @summary Тип слоя
-   * @description
-   * 0 - обычный слой
-   * 1 - виртуальный
-   * 2 - вложенное изделие
-   * 3 - слой родительского изделия
-   * 4 - разрыв заполнения
-   * 5 - слой ряда
-   * 10 - вирт. изделие к слою
-   * 11 - вирт. изделие к изделию
-   * @return {Number}
-   */
   get kind() {
     let {kind} = this._row;
     let layer = this;
@@ -2901,11 +2079,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return kind;
   }
-
-  /**
-   * Текущий или слой верхнего уровня для вытягивания в заказ
-   * @return {Contour}
-   */
   prod_layer() {
     let {kind, _owner} = this._row;
     let layer = this;
@@ -2914,7 +2087,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       separate_frame_layers = false;
     }
     while (kind === 0 && layer) {
-      
       if(!layer.layer) {
         if(separate_frame_layers) {
           let min = Infinity;
@@ -2929,7 +2101,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         break;
       }
-      
       layer = layer.layer;      
       if([1, 10, 11].includes(layer._row?.kind)) {
         return layer;
@@ -2937,12 +2108,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return [1, 10, 11].includes(kind) ? layer : null;
   }
-
-  /**
-   * Возвращает строку svg слоя
-   *
-   * @param [attr] {Object}
-   */
   get_svg(attr = {}) {
     const selected = [];
     for(const item of this.fillings.concat(this.profiles)) {
@@ -2967,19 +2132,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     svg.setAttribute('width', bounds.width + 40);
     svg.setAttribute('height', bounds.height);
     svg.querySelector('g').removeAttribute('transform');
-    
     for(const item of selected) {
       item.selected = true;
     }
     tmp.remove();
-    
     return svg.outerHTML;
   }
-
-  /**
-   * Перемещает слой выше-ниже по координате Z
-   * @param {('up'|'down')} direction
-   */
   bring(direction = 'up', lock) {
     const {layer, parent, project, _row} = this;
     const contours = layer ? layer.contours : project.contours;
@@ -3006,10 +2164,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     _row._owner.swap(_row, other._row);
     project.register_change(true);
   }
-
-  /**
-   * Врезаем оповещение при активации слоя
-   */
   activate(custom) {
     super.activate();
     if (this._row) {
@@ -3017,21 +2171,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.project.register_update();
     }
   }
-
-  /**
-   * @summary Продукция текущего слоя
-   * @desc Для вложенных, отличается от изделия проекта
-   * @type {CatCharacteristics}
-   */
   get _ox() {
     const {layer, project} = this;
     return layer ? layer._ox : project.ox;
   }
-
-  /**
-   * Продукция слоя c учётом вытягивания
-   * @type {CatCharacteristics}
-   */
   get prod_ox() {
     const layer = this.prod_layer();
     if(layer) {
@@ -3049,38 +2192,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return this._ox;
   }
-
-  /**
-   * Отдел абрнента текущего слоя получаем из проекта
-   * @return {CatBranches}
-   */
   get branch() {
     return this.project.branch;
   }
-
-  /**
-   * Габаритная площадь контура
-   * @type Number
-   */
   get area() {
     return (this.bounds.area/1e6).round(4);
   }
-
-  /**
-   * @summary Площадь слоя с учетом наклонов-изгибов профиля
-   * @desc Получаем, как сумму площадей всех заполнений и профилей контура
-   * @type Number
-   */
   get form_area() {
     const {form_path} = this;
     return (form_path?.area/1e6 || 0).round(4);
   }
-
-  /**
-   * @summary Площадь слоя с учетом наклонов-изгибов профиля
-   * @desc Получаем, как сумму путей всех заполнений и профилей контура
-   * @type {paper.Path}
-   */
   get form_path() {
     let upath;
     const add = (path) => {
@@ -3099,22 +2220,10 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return upath;
   }
-
-  /**
-   * @summary Масса слоя
-   * @type {Number}
-   */
   get weight() {
     const {_ox, cnstr} = this;
     return _ox.elm_weight(-cnstr, {contour: this});
   }
-
-  /**
-   * @summary Толщина слоя
-   * @desc Принимается равной максимальной толщине профиля
-   * @param {Boolean} [withChildren]
-   * @return {Number}
-   */
   thickness(withChildren) {
     const {contours, profiles, level} = this;
     let thickness = profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
@@ -3139,12 +2248,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return thickness + wt + wtn;
   }
-
-  /**
-   * @summary Утолщение слоя
-   * @desc Вклад в толщину петель, ручек и прочих материалов из спецификации
-   * @return {Number}
-   */
   thickening() {
     const prop = $p.cch.properties.predefined(`thickening_${this.level ? 'flap' : 'rama'}`);
     const map = new Map();
@@ -3173,12 +2276,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return [plus, minus];
   }
-
-  /**
-   * @summary Смещение слоя по Z
-   * @desc Относительно родительского слоя
-   * @type {Number}
-   */
   get offsetZ() {
     const {layer, profiles} = this;
     return layer ? profiles.reduce((sum, elm1) =>  {
@@ -3190,75 +2287,45 @@ class Contour extends AbstractFilling(paper.Layer) {
       return sum;
     }, 0) : 0;
   }
-  
-  /**
-   * указатель на фурнитуру
-   */
   get furn() {
     return this._row?.furn || $p.cat.furns.get();
   }
   set furn(v) {
     const {_row, profiles, project, sys, level} = this;
-
     if(sys.furn_level > level) {
       v = _row.furn._manager.get();
     }
-
     if (_row.furn == v) {
       return;
     }
-
     _row.furn = v;
-
-    // при необходимости устанавливаем направление открывания
     if (this.direction.empty()) {
       sys.furn_params.find_rows({param: $p.job_prm.properties.direction}, ({value}) => {
         _row.direction = value;
         return false;
       });
     }
-
-    // перезаполняем параметры фурнитуры
     _row.furn.refill_prm(this);
-
-    // двигаем по Z
     switch(_row.furn.shtulp_kind()) {
-    case 2: // пассивная
+    case 2:
       this.bring('down', true);
       break;
-    case 1: // активная
+    case 1:
       this.bring('up');
     }
-
-    // пересчитываем вставки и соединения, если они зависят от параметров фурнитуры
     for(const {_attr} of profiles) {
       _attr._rays?.clear('with_neighbor');
     }
-
     project.register_change(true);
-
     this.notify(this, 'furn_changed');
   }
-
-  /**
-   * Набор фурнитуры с учётом фильтра по размерам и графику
-   * @return {*}
-   */
   get furn_set() {
     return this.furn.find_set(this);
   }
-
-  /**
-   * Возвращает массив вложенных контуров текущего контура
-   * @memberOf AbstractFilling
-   * @instance
-   * @type Array.<Contour>
-   */
   get contours() {
     const {topLayers, bottomLayers} = this.children;
     return [...bottomLayers.contours, ...topLayers.contours];
   }
-
   get tearings() {
     const res = [];
     for(const {children} of this.children.fillings.children) {
@@ -3270,13 +2337,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return res;
   }
-
-  /**
-   * Возвращает массив заполнений + створок текущего контура
-   * @param [hide] {Boolean} - если истина, устанавливает для заполнений visible=false
-   * @param [glass_only] {Boolean} - если истина, возвращает только заполнения
-   * @return {Array.<Contour|Filling>}
-   */
   glasses(hide, glass_only) {
     const {topLayers, bottomLayers, fillings} = this.children;
     const res = glass_only ? [...fillings.children] : 
@@ -3289,10 +2349,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       return true;
     });
   }
-
-  /**
-   * Возвращает массив заполнений текущего и вложенного контуров
-   */
   get fillings() {
     const fillings = [];
     for(const glass of this.glasses()){
@@ -3305,18 +2361,11 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return fillings;
   }
-
-  /**
-   * Возвращает массив массивов сегментов - база для построения пути заполнений
-   * @type Array
-   */
   get glass_contours() {
     const segments = this.glass_segments;
     const nodes = this.count_nodes();
     const res = [];
     let curr, acurr;
-
-    // рекурсивно получает следующий сегмент, пока не уткнётся в текущий
     function go_go(segm) {
       const anext = GlassSegment.next(segm, nodes, segments);
       for (const next of anext) {
@@ -3329,16 +2378,12 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
     while (segments.length) {
-
       curr = segments[0];
       acurr = [curr];
       if (go_go(curr) && acurr.length > 1) {
         res.push(acurr);
       }
-
-      // удаляем из segments уже задействованные или не пригодившиеся сегменты
       acurr.forEach((el) => {
         const ind = segments.indexOf(el);
         if (ind != -1) {
@@ -3346,32 +2391,18 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
     }
-
     return res;
   }
-
-  /**
-   * Ищет и привязывает узлы профилей к пути заполнения
-   * @param path {paper.Path} - массив ограничивается узлами, примыкающими к пути
-   * @param [nodes] {Array} - если указано, позволяет не вычислять исходный массив узлов контура, а использовать переданный
-   * @param [bind] {Boolean} - если указано, сохраняет пары узлов в path._attr.curve_nodes
-   * @returns {Array}
-   */
   glass_nodes(path, nodes, bind) {
     const curve_nodes = [];
     const path_nodes = [];
     const ipoint = path.interiorPoint.negate();
     let curve, findedb, findede, d, node1, node2;
-
     if (!nodes) {
       nodes = this.nodes;
     }
-
-    // имеем путь и контур.
     for (let i in path.curves) {
       curve = path.curves[i];
-
-      // в node1 и node2 получаем ближайший узел контура к узлам текущего сегмента
       let d1 = Infinity;
       let d2 = Infinity;
       nodes.forEach((n) => {
@@ -3384,17 +2415,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           node2 = n;
         }
       });
-
-      // в path_nodes просто накапливаем узлы. наверное, позже они будут упорядочены
       if (path_nodes.indexOf(node1) == -1)
         path_nodes.push(node1);
       if (path_nodes.indexOf(node2) == -1)
         path_nodes.push(node2);
-
       if (!bind)
         continue;
-
-      // заполнение может иметь больше курв, чем профиль
       if(node1 === node2) {
         continue;
       }
@@ -3409,7 +2435,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         findedb = this.profile_by_nodes(node1, node2);
         const loc1 = findedb.generatrix.getNearestLocation(node1);
         const loc2 = findedb.generatrix.getNearestLocation(node2);
-        // уточняем порядок нод
         if (node1.add(ipoint).getDirectedAngle(node2.add(ipoint)) < 0)
           curve_nodes.push({
             node1: node2,
@@ -3426,24 +2451,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           });
       }
     }
-
     this.sort_nodes(curve_nodes);
-
     return path_nodes;
   }
-
-  /**
-   * Вычисляет рейтинг контура для заполнения
-   * @param glcontour
-   * @param glass
-   * @return {number}
-   */
   calck_rating(glcontour, glass) {
-
     const {outer_profiles} = glass;
     let crating = 0;
-
-    // если есть привязанные профили, используем их. иначе - координаты узлов
     if (outer_profiles.length) {
       for(const cnt of glcontour) {
         for(const curr of outer_profiles) {
@@ -3471,23 +2484,15 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
     return crating;
   }
-  
   defaultFilling() {
     return this.getItem({class: Filling}) || this.project.getItem({class: Filling});
   }
-
-  /**
-   * Получает замкнутые контуры, ищет подходящие створки или заполнения, при необходимости создаёт новые
-   */
   glass_recalc() {
-    const {glass_contours} = this;      // массивы новых рёбер
-    const glasses = this.glasses(true); // массив старых заполнений
+    const {glass_contours} = this;     
+    const glasses = this.glasses(true);
     const binded = new Set();
-
-    // сначала, пробегаем по заполнениям и пытаемся оставить их на месте
     for(const glass of glasses) {
       if (glass.visible) {
         continue;
@@ -3507,25 +2512,17 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
-    // бежим по найденным контурам заполнений и выполняем привязку
     for(const glcontour of glass_contours) {
       if (binded.has(glcontour)) {
         continue;
       }
-
       let rating = 0, glass, crating, cglass, glass_center;
-
       for (const g in glasses) {
-
         glass = glasses[g];
         if (glass.visible) {
           continue;
         }
-
-        // вычисляем рейтинг
         crating = this.calck_rating(glcontour, glass);
-
         if (crating > rating || !cglass) {
           rating = crating;
           cglass = glass;
@@ -3539,8 +2536,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
         }
       }
-
-      // TODO реализовать настоящее ранжирование
       if (cglass || (cglass = this.getItem({class: Filling, visible: false}))) {
         cglass.path = glcontour;
         cglass.visible = true;
@@ -3549,9 +2544,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
       else {
-        // добавляем заполнение
-        // 1. ищем в изделии любое заполнение
-        // 2. если не находим, используем умолчание системы
         cglass = new Filling({
           proto: this.defaultFilling(),
           parent: this.children.fillings, 
@@ -3561,15 +2553,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * Возвращает массив отрезков, которые потенциально могут образовывать заполнения
-   * (соединения с пустотой отбрасываются)
-   * @type Array.<GlassSegment>
-   */
   get glass_segments() {
     const nodes = [];
-
     function push_new(profile, b, e, outer = false) {
       if(b.is_nearest(e, 0)){
         return;
@@ -3581,62 +2566,41 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       nodes.push(new GlassSegment(profile, b, e, outer));
     }
-
-    // для всех профилей контура
     for(const p of this.profiles) {
       const sort = GlassSegment.fn_sort.bind(p.generatrix);
-
-      // ищем примыкания T к текущему профилю
       const ip = p.joined_imposts();
       const {b: pb, e: pe} = p.rays;
-
-      // для створочных импостов используем не координаты их b и e, а ближайшие точки примыкающих образующих
       const pbg = pb.is_t && pb.profile.d0 ? pb.profile.generatrix.getNearestPoint(p.b) : p.b;
       const peg = pe.is_t && pe.profile.d0 ? pe.profile.generatrix.getNearestPoint(p.e) : p.e;
-
-      // если есть примыкания T, добавляем сегменты, исключая соединения с пустотой
       if (ip.inner.length) {
-
         ip.inner.sort(sort);
-
         if (!pb.is_i && !pbg.is_nearest(ip.inner[0].point)) {
           push_new(p, pbg, ip.inner[0].point);
         }
-
         for (let i = 1; i < ip.inner.length; i++) {
           push_new(p, ip.inner[i - 1].point, ip.inner[i].point);
         }
-
         if (!pe.is_i && !ip.inner[ip.inner.length - 1].point.is_nearest(peg)) {
           push_new(p, ip.inner[ip.inner.length - 1].point, peg);
         }
-
       }
       if (ip.outer.length) {
-
         ip.outer.sort(sort);
-
         if (!pb.is_i && !ip.outer[0].point.is_nearest(pbg)) {
           push_new(p, ip.outer[0].point, pbg, true);
         }
-
         for (let i = 1; i < ip.outer.length; i++) {
           push_new(p, ip.outer[i].point, ip.outer[i - 1].point, true);
         }
-
         if (!pe.is_i && !peg.is_nearest(ip.outer[ip.outer.length - 1].point)) {
           push_new(p, peg, ip.outer[ip.outer.length - 1].point, true);
         }
       }
-
-      // добавляем, если нет соединений с пустотой
       if (!ip.inner.length) {
         if (!pb.is_i && !pe.is_i) {
           push_new(p, pbg, peg);
         }
       }
-
-      // для импостов добавляем сегмент в обратном направлении
       if (!ip.outer.length && (pb.is_cut || pe.is_cut || pb.is_t || pe.is_t)) {
         if (!pb.is_i && !pe.is_i) {
           push_new(p, peg, pbg, true);
@@ -3646,19 +2610,13 @@ class Contour extends AbstractFilling(paper.Layer) {
         push_new(p, peg, pbg, true);
       }
     }
-
     return nodes;
   }
-
-  /**
-   * Признак прямоугольности
-   */
   get is_rectangular() {
     const {Импост} = $p.enm.elm_types;
     const outer = this.profiles.filter((v) => v.elm_type != Импост);
     return outer.length === 4 && !outer.some(profile => !(profile.is_linear() && Math.abs(profile.angle_hor % 90) < 0.2));
   }
-
   move(delta) {
     const {contours, tearings, profiles, project} = this;
     const crays = (p) => p.rays.clear();
@@ -3667,11 +2625,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     profiles.forEach(crays);
     project.register_change();
   }
-
-  /**
-   * Возвращает массив узлов текущего контура
-   * @type Array
-   */
   get nodes() {
     const nodes = [];
     this.profiles.forEach(({b, e}) => {
@@ -3694,11 +2647,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return nodes;
   }
-
-  /**
-   * Рассчитывает количество профилей в узлах
-   * @return {Map<any, any>}
-   */
   count_nodes() {
     const nodes = new PointMap();
     this.profiles.forEach((profile) => {
@@ -3724,11 +2672,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return nodes;
   }
-
-  /**
-   * Формирует оповещение для тех, кто следит за this._noti
-   * @param obj
-   */
   notify(obj, type = 'update') {
     if (obj.type) {
       type = obj.type;
@@ -3739,27 +2682,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.project.register_change(false, null, true);
     }
   }
-
-  /**
-   * Возвращает массив внешних профилей текущего контура. Актуально для створок, т.к. они всегда замкнуты
-   * @type Array
-   */
   get outer_nodes() {
     return this.outer_profiles.map((v) => v.elm);
   }
-
-  /**
-   * Возвращает массив внешних и примыкающих профилей текущего контура
-   */
   get outer_profiles() {
-    // сначала получим все профили
     const {profiles} = this;
     const to_remove = [];
     const res = [];
-
     let findedb, findede;
-
-    // прочищаем, выкидывая такие, начало или конец которых соединениы не в узле
     for(const elm of profiles) {
       if (elm._attr.simulated) {
         continue;
@@ -3797,54 +2727,31 @@ class Contour extends AbstractFilling(paper.Layer) {
     res.sort(Contour.acompare);
     return res;
   }
-
-  /**
-   * Возвращает профиль по номеру стороны фурнитуры, учитывает направление открывания, по умолчанию - левое
-   * - первая первая сторона всегда нижняя
-   * - далее, по часовой стрелке 2 - левая, 3 - верхняя и т.д.
-   * - если направление правое, обход против часовой
-   * @param {Number} side
-   * @param {Object} [cache]
-   */
   profile_by_furn_side(side, cache) {
-
     if (!cache || !cache.profiles) {
       cache = {
         profiles: this.outer_nodes,
         bottom: this.profiles_by_side('bottom'),
       };
     }
-    
     const profile_node = (this.direction.is('right') ^ this.flipped) ? 'b' : 'e';
     const other_node = profile_node == 'b' ? 'e' : 'b';
-
     let profile = cache.bottom;
-
     const next = () => {
       side--;
       if (side <= 0) {
         return profile;
       }
-
       cache.profiles.some((curr) => {
         if (curr[other_node].is_nearest(profile[profile_node])) {
           profile = curr;
           return true;
         }
       });
-
       return next();
     };
-
     return next();
-
   }
-
-  /**
-   * @summary Проверяет, есть ли на текущем профиле ось поворота
-   * @param {Profile} profile
-   * @return {Boolean}
-   */
   is_rotation_axis(profile) {
     const cache = {
       profiles: this.outer_nodes,
@@ -3858,15 +2765,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-
-  /**
-   * Возвращает ребро текущего контура по узлам
-   * @param n1 {paper.Point} - первый узел
-   * @param n2 {paper.Point} - второй узел
-   * @param [point] {paper.Point} - дополнительная проверочная точка
-   * @returns {Profile}
-   */
   profile_by_nodes(n1, n2, point) {
     const {profiles} = this;
     for (let i = 0; i < profiles.length; i++) {
@@ -3877,31 +2775,21 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-  
   clearChildren() {
-    // сначала удаляем створки и заполнения
     for(const elm of this.glasses()) {
       elm.remove();
     }
-    // затем - импосты
     const {imposts} = this;
     imposts.sort($p.utils.sort('elm', true));
     for(const elm of imposts) {
       elm.remove();
     }
-    // и остальные профили
     for(const elm of this.profiles) {
       elm.remove();
     }
   }
-
-  /**
-   * Удаляет контур из иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти _Конструкции_ и подчиненные строки из табчасти _Координаты_
-   */
   remove() {
     this.clearChildren();
-    // и всех остальных детей
     const {children, project, _row, cnstr, _ox, l_visualization} = this;
     while (children.length) {
       if(children[0].remove() === false) {
@@ -3910,7 +2798,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     l_visualization.remove();
     project._scope.eve.emit('elm_removed', this);
-
     if (_row) {
       if(!project.ox.empty()) {
         if(_ox === _row._owner._owner) {
@@ -3922,31 +2809,17 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       this._row = null;
     }
-
-    // стандартные действия по удалению элемента paperjs
     super.remove();
   }
-
-  /**
-   * виртуальный датаменеджер для автоформ
-   * @type metadata.DataManager
-   */
   get _manager() {
     return this.project._dp._manager;
   }
-
-  /**
-   * виртуальные метаданные для автоформ
-   */
   _metadata(fld) {
-
     const {tabular_sections, fields: {sys}} = this._ox._metadata();
     const {fields} = tabular_sections.constructions;
-
     if(fld === 'sys') {
       return sys;
     }
-
     return fld ? (fields[fld] || tabular_sections[fld]) : {
       fields: {
         furn: fields.furn,
@@ -3959,12 +2832,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         params: tabular_sections.params,
       },
     };
-
   }
-
-  /**
-   * @summary Габариты по внешним краям профилей контура
-   */
   get bounds() {
     const {_attr} = this;
     const {exclude_connective_area, include_addls_area} = $p.job_prm.builder;
@@ -3983,18 +2851,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.sectionals.forEach((sectional) => {
         _attr._bounds = _attr._bounds ? _attr._bounds.unite(sectional.bounds) : sectional.bounds;
       });
-
       if (!_attr._bounds) {
         _attr._bounds = new paper.Rectangle();
       }
     }
     return _attr._bounds;
   }
-
-  /**
-   * @summary Габариты по внешним краям профилей контура
-   * @desc Без учёта константы exclude_connective_area
-   */
   get profileBounds() {
     let bounds;
     const deposite = (profile) => {
@@ -4011,26 +2873,16 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.sectionals.forEach((sectional) => {
       bounds = bounds ? bounds.unite(sectional.bounds) : sectional.bounds;
     });
-
     if (!bounds) {
       bounds = new paper.Rectangle();
     }
     return bounds;
   }
-
-  /**
-   * @summary Габариты вместе с визуализацией
-   */
   get strokeBounds() {
     const visualizationBounds = this.l_visualization.strokeBounds;
     const bounds = super.strokeBounds;
     return visualizationBounds.area ?  bounds.unite(visualizationBounds) : bounds;
   }
-
-  /**
-   * Габариты по образующим
-   * @type {paper.Rectangle}
-   */
   get lbounds() {
     const parent = new paper.Group({insert: false});
     for (const {generatrix} of this.profiles) {
@@ -4038,21 +2890,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return parent.bounds;
   }
-
-  /**
-   * Номер конструкции текущего слоя
-   */
   get cnstr() {
     return this._row ? this._row.cnstr : 0;
   }
-
   set cnstr(v) {
     this._row && (this._row.cnstr = v);
   }
-
-  /**
-   * Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
-   */
   get dimension_bounds() {
     let bounds = super.dimension_bounds;
     const ib = this.l_visualization.by_insets.bounds;
@@ -4074,22 +2917,13 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return bounds;
   }
-
-  /**
-   * Направление открывания
-   */
   get direction() {
     return this._row.direction;
   }
-
   set direction(v) {
     this._row.direction = v;
     this.project.register_change(true);
   }
-
-  /**
-   * Открывание (внутрь, наружу)
-   */
   get opening() {
     const {enm, cch} = $p;
     const param = cch.properties.predefined('opening');
@@ -4097,7 +2931,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(param && !param.empty()) {
       let {params, cnstr, layer} = this;
       const cnstrs = [0, cnstr];
-      // проверим виртуальный слой над нами
       while (layer) {
         cnstrs.push(layer.cnstr);
         if(layer instanceof ContourVirtual) {
@@ -4116,7 +2949,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return res || enm.opening.in;
   }
-
   set opening(v) {
     const param = $p.cch.properties.predefined('opening');
     if(param && !param.empty()) {
@@ -4131,34 +2963,19 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.project.register_change(true);
     }
   }
-
-  /**
-   * Изменяет центр и масштаб, чтобы слой вписался в размер окна
-   * Используется инструментом {{#crossLink "ZoomFit"}}{{/crossLink}}, вызывается при открытии изделия и после загрузки типового блока
-   *
-   */
   zoom_fit() {
     this.project.zoom_fit.call(this, null, true);
   }
-
-  /**
-   * Рисует ошибки статики
-   */
   draw_static_errors() {
     const {l_visualization, sys} = this;
     l_visualization.static.removeChildren();
-    
     if(!sys.check_static) {
       return;
     }
-
     const {Рама, Импост} = $p.enm.elm_types;
-
     for (let i = 0; i < this.profiles.length; i++) {
-
       if([Рама, Импост].includes(this.profiles[i].elm_type) &&
         this.profiles[i].static_load().can_use === false) {
-        //this.profiles[i].err_spec_row($p.job_prm.nom.static_error);
         new paper.Path.Circle({
           center: this.profiles[i].bounds.center,
           radius: 20,
@@ -4173,21 +2990,13 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * Рисует ошибки соединений
-   */
   draw_cnn_errors() {
-
     const {l_visualization, project: {_scope: {eve}}} = this;
     const {job_prm: {nom}, msg} = $p;
-
     l_visualization.cnn.removeChildren();
-
     if(eve._async?.move_points?.timer) {
       return;
     }
-
     const err_attrs = {
       strokeColor: 'red',
       strokeWidth: 2,
@@ -4198,12 +3007,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       guide: true,
       parent: l_visualization.cnn,
     };
-
-    // ошибки соединений с заполнениями
     this.glasses(false, true).forEach(glass => {
       let err;
       const {_row, path, profiles, imposts, inset} = glass;
-
       profiles.forEach(({cnn, sub_path}) => {
         if (!cnn) {
           glass.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
@@ -4211,26 +3017,21 @@ class Contour extends AbstractFilling(paper.Layer) {
           err = true;
         }
       });
-
       if(path.is_self_intersected()) {
         glass.err_spec_row(nom.info_error, msg.err_self_intersected, inset);
         err = true;
       }
-
       let text = inset.check_base_restrictions(inset, glass);
       if(text !== true) {
         glass.err_spec_row(nom.info_error, `${msg.err_sizes} ${text}`, inset);
         err = true;
       }
-
       if (err) {
         glass.fill_error();
       }
       else {
         path.fillColor = BuilderElement.clr_by_clr.call(glass, _row.clr);
       }
-
-      // Ошибки соединений Onlay в этом заполнении
       imposts.forEach((impost) => {
         if(impost instanceof Onlay) {
           const {b, e} = impost._attr._rays;
@@ -4240,14 +3041,10 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
     });
-
-    // ошибки соединений профиля
     this.profiles.forEach((elm) => {
       const {_corns, _rays} = elm._attr;
-      // ошибки угловых (торцевых) соединений
       _rays.b.check_err(err_attrs);
       _rays.e.check_err(err_attrs);
-      // ошибки примыкающих соединений
       if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {
         const subpath = elm.path.get_subpath(_corns[1], _corns[2]);
         Object.assign(subpath, err_attrs);
@@ -4255,22 +3052,14 @@ class Contour extends AbstractFilling(paper.Layer) {
           subpath.parent = elm._attr._nearest.layer._errors;
         }
       }
-      // если у профиля есть доборы, проверим их соединения
       elm.addls.forEach((elm) => {
         if (elm.nearest(true) && (!elm._attr._nearest_cnn || elm._attr._nearest_cnn.empty())) {
           Object.assign(elm.path.get_subpath(_corns[1], _corns[2]), err_attrs);
         }
       });
-
       elm.check_err(err_attrs);
-      
     });
-    
   }
-
-  /**
-   * Рисует визуализацию москитки
-   */
   draw_mosquito() {
     const {l_visualization, project, _ox, cnstr} = this;
     if(project.builder_props.mosquito === false) {
@@ -4287,28 +3076,22 @@ class Contour extends AbstractFilling(paper.Layer) {
           strokeScaling: false,
         };
         let {sz, nom, imposts} = origin.mosquito_props(this, clr, _ox);
-
         if(!nom) {
           return false;
         }
-
         if(_ox.specification.find({elm: -cnstr, origin, nom: $p.job_prm.nom.cnn_ii_error})) {
           props.strokeColor = '#f00';
           props.dashArray = [8, 2, 2];
         }
-
-        // рисуем контур
         const perimetr = this.perimeter_inner(sz, nom);
         const ppath = new paper.Path(props);
         for(const {sub_path} of perimetr) {
           ppath.addSegments(sub_path.segments);
         }
-
-        // добавляем текст
         const {elm_font_size, font_family} = consts;
         const {bounds} = ppath;
         new paper.PointText({
-          parent: props.parent, // this.children.text,
+          parent: props.parent,
           fillColor: 'black',
           fontFamily: font_family,
           fontSize: elm_font_size,
@@ -4316,11 +3099,8 @@ class Contour extends AbstractFilling(paper.Layer) {
           content: origin.presentation,
           point: bounds.bottomLeft.add([elm_font_size * 1.2, -elm_font_size * 0.4]),
         });
-
-        // рисуем поперечину
         if (imposts) {
           const by_x = imposts.step_angle && imposts.step_angle !== 180;
-          
           const add_impost = (coord) => {
             const segments = by_x ? 
               [[coord, bounds.bottom + 100], [coord, bounds.top - 100]] : 
@@ -4338,7 +3118,6 @@ class Contour extends AbstractFilling(paper.Layer) {
               }
             }
           };
-          
           $p.cat.inserts.traverse_steps({
             imposts,
             bounds,
@@ -4348,17 +3127,11 @@ class Contour extends AbstractFilling(paper.Layer) {
             origin,
             by_x,
           });
-
         }
-
         return false;
       }
     });
   }
-
-  /**
-   * Рисует визуализацию жалюзи
-   */
   draw_jalousie(glass) {
     const {l_visualization, project, _ox} = this;
     if(project.builder_props.jalousie === false) {
@@ -4366,7 +3139,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     _ox.inserts.find_rows({cnstr: -glass.elm}, ({inset, clr}) => {
       if(inset.insert_type.is('jalousie')) {
-
         let control, type, shift, step, steps, pos;
         _ox.params.find_rows({inset, cnstr: -glass.elm}, ({param, value}) => {
           if(value.css && ['tb_jalousie_horizontal', 'tb_jalousie_vertical', 'tb_jalousie_roller'].includes(value.css)) {
@@ -4382,7 +3154,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         if(!control) {
           control = 'left';
         }
-
         const props = {
           parent: new paper.Group({parent: l_visualization.by_insets}),
           fillColor: BuilderElement.clr_by_clr.call(this, clr),
@@ -4404,14 +3175,12 @@ class Contour extends AbstractFilling(paper.Layer) {
             return false;
           }
         });
-
         switch (type) {
         case 'roller':
           new paper.Path(Object.assign({
             segments: [bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft],
           }, props));
           break;
-
         case 'horizontal':
           steps = Math.floor(bounds.height / 60);
           step = bounds.height / steps - 0.01;
@@ -4423,7 +3192,6 @@ class Contour extends AbstractFilling(paper.Layer) {
             pos += step;
           }
           break;
-
         case 'vertical':
           steps = Math.floor(bounds.width / 60);
           step = bounds.width / steps - 0.01;
@@ -4436,8 +3204,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
           break;
         }
-
-        // рисуем верёвочку
         pos = control === 'left' ? bounds.left - 10 : bounds.right + 10;
         new paper.Path(Object.assign({
           segments: [
@@ -4454,7 +3220,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           fillColor: 'gray',
           opacity: 0.6,
         }));
-        // и палочку сверху
         new paper.Path(Object.assign({
           segments: [
             bounds.topLeft.add([0, -10]),
@@ -4468,8 +3233,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           fillColor: 'lightgray',
           opacity: 0.6,
         }));
-
-        // добавляем текст
         const {elm_font_size} = consts;
         new paper.PointText({
           parent: props.parent,
@@ -4480,27 +3243,19 @@ class Contour extends AbstractFilling(paper.Layer) {
           content: inset.presentation,
           point: bounds.topLeft.add([elm_font_size/3, 0]),
         });
-
         return false;
       }
     });
   }
-
-  /**
-   * Рисует визуализацию подоконника
-   */
   draw_sill() {
     const {l_visualization, cnstr, _ox} = this;
     const {properties} = $p.job_prm;
     if (!properties) {
       return;
     }
-    // указатели на параметры длина и ширина
     const {length, width} = properties;
-
     _ox.inserts.find_rows({cnstr}, (row) => {
       if (row.inset.insert_type.is('sill')) {
-
         const bottom = this.profiles_by_side('bottom');
         let vlen, vwidth;
         _ox.params.find_rows({cnstr: cnstr, inset: row.inset}, (prow) => {
@@ -4521,7 +3276,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           vwidth = 200;
         }
         const delta = (vlen - bottom.length) / 2;
-
         new paper.Path({
           parent: new paper.Group({parent: l_visualization.by_insets}),
           strokeColor: 'grey',
@@ -4539,20 +3293,13 @@ class Contour extends AbstractFilling(paper.Layer) {
             bottom.b.add([delta - vwidth, vwidth]),
           ],
         });
-
         return false;
       }
     });
   }
-
-  /**
-   * Рисует направление открывания
-   */
   draw_opening() {
-
     const {l_visualization, furn, opening} = this;
     const {open_types} = $p.enm;
-
     if (!this.parent || !open_types.is_opening(furn.open_type)) {
       if (l_visualization?._opening?.visible) {
         l_visualization._opening.visible = false;
@@ -4562,34 +3309,25 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       return;
     }
-
-    // создаём кеш элементов по номеру фурнитуры
     const cache = {
       profiles: this.outer_nodes,
       bottom: this.profiles_by_side('bottom'),
     };
-
-    // рисует линии открывания на поворотной, поворотнооткидной и фрамужной фурнитуре
     const rotary_folding = () => {
-
       const {_opening, _opening2} = l_visualization;
       const {side_count, flipped, project: {sketch_view}} = this;
-      
       if(side_count < furn.side_count) {
         return;
       }
-
       furn.open_tunes.forEach((row) => {
         if (row.rotation_axis) {
           const axis = this.profile_by_furn_side(row.side, cache);
           const other = this.profile_by_furn_side(
             row.side + 2 <= side_count ? row.side + 2 : row.side - 2, cache);
-          
           const center = other.rays.inner.getPointAt(other.rays.inner.length / 2);
           _opening.moveTo(axis.corns(3));
           _opening.lineTo(center);
           _opening.lineTo(axis.corns(4));
-
           if(furn.open_type.is('pendulum')) {
             const loc = axis.generatrix.getLocationAt(0);
             _opening2.moveTo(axis.corns(3).add(loc.normal.multiply(-30)));
@@ -4599,7 +3337,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
         }
       });
-
       if(furn.open_type.is('pendulum')) {
         _opening2.visible = true;
       }
@@ -4614,13 +3351,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       _opening.visible = true;
     };
-
-    // рисует линии открывания на раздвижке
     const sliding = () => {
-      // находим центр
       const {center} = this.bounds;
       const {_opening} = l_visualization;
-
       if (this.direction.is('right')) {
         if(furn.open_type.is('up_sliding')) {
           _opening.moveTo(center.add([-100, 70]));
@@ -4649,16 +3382,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       _opening.visible = true;
     };
-
-    // подготавливаем слой для рисования
     l_visualization._opening.removeChildren();
     l_visualization._opening2.removeChildren();
-
-    // рисуем направление открывания
     return furn.is_sliding ? sliding() : rotary_folding();
-
   }
-
   draw_selection() {
     const {layer, project: {_scope: {consts}}, l_visualization} = this;
     let stamp = 0;
@@ -4721,22 +3448,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       return stamp;
     }
   }
-
-  /**
-   * Рисует дополнительную визуализацию. Данные берёт из спецификации и проблемных соединений
-   */
   draw_visualization(rows, region = 0) {
-
     const {profiles, sectionals, l_visualization, contours, project: {_attr, builder_props}, flipped, _ox, prod_ox} = this;
     const glasses = this.glasses(false, true).filter(({visible}) => visible);
     const {enm: {elm_visualization: {inner, outer, inner1, outer1}}, cch, cat} = $p;
     const glass_separately = cch.properties.predefined('glass_separately');
     const reflected = _attr._reflected && !flipped || !_attr._reflected && flipped;
-    
     l_visualization.by_insets.removeChildren();
     l_visualization.by_spec.removeChildren();
-
-    // если кеш строк визуализации пустой - наполняем
     const {visualization, workplace} = builder_props;
     if(!rows && visualization) {
       const push = (row) => {
@@ -4751,7 +3470,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       };
       rows = [];
       prod_ox.specification.find_rows({dop: {in: [-1, -5]}}, push);
-      // для заполнений отдельно, дополняем строки визуализации
       if(glass_separately) {
         for(const elm of glasses) {
           if(glass_separately?.extract_pvalue({ox: _ox, cnstr: -elm.elm, elm})) {
@@ -4761,7 +3479,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
     function draw(elm) {
       if(this.elm === elm.elm && elm.visible) {
         const {visualization} = this.nom;
@@ -4789,27 +3506,15 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
-    // рисуем москитки
     this.draw_mosquito();
-
-    // рисуем подоконники
     this.draw_sill();
-
-    // рисуем жалюзи
     glasses.forEach(this.draw_jalousie.bind(this));
-    
-    // развёртки разрезов
     if(builder_props.unfolding !== false) {
       sectionals.forEach(s => s.draw_unfolding());
     }
-
-    // бежим по строкам спецификации с визуализацией
     if(visualization) {
       for (const row of rows) {
-        // визуализация для текущего профиля
         if(!profiles.some(draw.bind(row))) {
-          // визуализация для текущего заполнения
           glasses.some((elm) => {
             if(row.elm === elm.elm) {
               const {visualization} = row.nom;
@@ -4825,30 +3530,19 @@ class Contour extends AbstractFilling(paper.Layer) {
                 return true;
               }
             }
-            // визуализация для текущей раскладки
             return elm.imposts.some(draw.bind(row));
           });
         }
       }
     }
-
-    // подписи заполнений
     if(builder_props.glass_numbers) {
       this.draw_glass_numbers();
     }
-    
-    // перерисовываем вложенные контуры
     for(const contour of contours){
       contour.draw_visualization(contour.prod_ox === prod_ox ? rows : null, region);
     }
-    
     this.draw_selection();
-
   }
-
-  /**
-   * Рисует номера заполнений
-   */
   draw_glass_numbers() {
     const {l_visualization} = this;
     for(const glass of this.glasses(false, true)) {
@@ -4856,7 +3550,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         const text = new paper.PointText({
           parent: l_visualization.by_spec,
           guide: true,
-          //justification: 'left',
           fillColor: 'darkgreen',
           fontFamily: consts.font_family,
           fontSize: consts.font_size * 2,
@@ -4866,19 +3559,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * Надо ли строить авторазмерные линии
-   * @type {Boolean}
-   */
   get show_dimensions() {
     return !this.layer;
   }
-  
-  /**
-   * Признак сокрытия слоя
-   * @type {boolean}
-   */
   get hidden() {
     return !!this._hidden;
   }
@@ -4899,17 +3582,11 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.project.draw_sizes();
     }
   }
-
   hide_generatrix() {
     this.profiles.forEach((elm) => {
       elm.generatrix.visible = false;
     });
   }
-
-  /**
-   * Возвращает массив импостов текущего + вложенных контуров
-   * @returns {Array.<Profile>}
-   */
   get imposts() {
     return this.getItems({class: Profile}).filter((elm) => {
       if(elm instanceof ProfileVirtual) {
@@ -4919,35 +3596,21 @@ class Contour extends AbstractFilling(paper.Layer) {
       return b.is_tt || e.is_tt || b.is_i || e.is_i;
     });
   }
-
-  /**
-   * виртуальная табличная часть параметров фурнитуры
-   */
   get params() {
     return this._ox.params;
   }
-
-  /**
-   * путь контура - при чтении похож на bounds
-   * для вложенных контуров определяет положение, форму и количество сегментов створок
-   * @type paper.Rectangle
-   */
   get path() {
     return this.bounds;
   }
-
   set path(attr) {
     if (!Array.isArray(attr)) {
       return;
     }
-
     const noti = {type: consts.move_points, profiles: [], points: []};
     const {outer_nodes} = this;
-
     let need_bind = attr.length,
       available_bind = outer_nodes.length,
       elm, curr;
-
     function set_node(n) {
       if (!curr[n].is_nearest(elm[n], 0)) {
         const {isegments, rays} = elm;
@@ -4970,13 +3633,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
-    // первый проход: по двум узлам либо примыканию к образующей
     if (need_bind) {
       for (let i = 0; i < attr.length; i++) {
-        curr = attr[i];             // curr.profile - сегмент внешнего профиля
+        curr = attr[i];            
         for (let j = 0; j < outer_nodes.length; j++) {
-          elm = outer_nodes[j];   // elm - сегмент профиля текущего контура
+          elm = outer_nodes[j];  
           if (elm._attr.binded) {
             continue;
           }
@@ -4985,17 +3646,13 @@ class Contour extends AbstractFilling(paper.Layer) {
             curr.binded = true;
             need_bind--;
             available_bind--;
-
             set_node('b');
             set_node('e');
-
             break;
           }
         }
       }
     }
-
-    // второй проход: по одному узлу
     if (need_bind) {
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
@@ -5010,17 +3667,13 @@ class Contour extends AbstractFilling(paper.Layer) {
             curr.binded = true;
             need_bind--;
             available_bind--;
-
             set_node('b');
             set_node('e');
-
             break;
           }
         }
       }
     }
-
-    // третий проход - из оставшихся
     if (need_bind && available_bind) {
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
@@ -5034,17 +3687,12 @@ class Contour extends AbstractFilling(paper.Layer) {
           curr.binded = true;
           need_bind--;
           available_bind--;
-          // TODO заменить на клонирование образующей
-
           set_node('b');
           set_node('e');
-
           break;
         }
       }
     }
-
-    // четвертый проход - добавляем
     if (need_bind) {
       for (let i = 0; i < attr.length; i++) {
         curr = attr[i];
@@ -5056,20 +3704,15 @@ class Contour extends AbstractFilling(paper.Layer) {
           proto: outer_nodes.length ? outer_nodes[0] : {parent: this.children.profiles, clr: curr.profile.clr},
           _nearest: curr.profile,
         });
-
         curr.profile = elm;
         delete curr.outer;
         curr.binded = true;
-
         noti.profiles.push(elm);
         noti.points.push(elm.b);
         noti.points.push(elm.e);
-
         need_bind--;
       }
     }
-
-    // удаляем лишнее
     if (available_bind) {
       outer_nodes.forEach((elm) => {
         if (!elm._attr.binded) {
@@ -5079,23 +3722,13 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       });
     }
-
-    // пересчитываем вставки створок
     this.profiles.forEach((p) => p.default_inset());
-
-    // информируем систему об изменениях
     if (noti.points.length) {
       this.profiles.forEach((p) => p._attr?._rays?.clear());
       this.notify(noti);
     }
-
     this._attr._bounds = null;
   }
-
-  /**
-   * Массив с рёбрами периметра
-   * @return {Array}
-   */
   get perimeter() {
     const res = [];
     this.outer_profiles.forEach((curr) => {
@@ -5115,31 +3748,18 @@ class Contour extends AbstractFilling(paper.Layer) {
     });
     return res;
   }
-
-  /**
-   * Массив с рёбрами периметра по внутренней стороне профилей
-   * @param [size] {Number}
-   * @param [nom] {CatNom}
-   * @param [check_cnn] {Object} - если указан, в него поместим найденное соединение
-   * @return {Array}
-   */
   perimeter_inner(size = 0, nom, check_cnn) {
-    // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
     const {cat: {cnns}, enm: {cnn_types}, CatInserts} = $p;
-
-    // если передали вставку, ищем первую подходящую строку рамки профиля
     if(nom instanceof CatInserts) {
       for(const row of nom.specification) {
         if(row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
-          //TODO: сюда бы еще, check_condition()
           nom = row.nom;
           size = row.sz;
           break;
         }
       }
     }
-
     const res = this.outer_profiles.map((curr) => {
       const profile = curr.profile || curr.elm;
       const {inner, outer} = profile.rays;
@@ -5147,15 +3767,12 @@ class Contour extends AbstractFilling(paper.Layer) {
         inner.get_subpath(inner.getNearestPoint(curr.b), inner.getNearestPoint(curr.e)) : outer.get_subpath(outer.getNearestPoint(curr.b), outer.getNearestPoint(curr.e));
       let angle = curr.e.subtract(curr.b).angle.round(1);
       if(angle < 0) angle += 360;
-
-      // поправка на размер соединения
       const cnn = nom && cnns.nom_cnn(nom, profile, cnn_types.ii, true)[0];
       const sz = cnn ? cnn.size(profile, profile) : 0;
       const offset = size + sz;
       if(check_cnn) {
         check_cnn.cnn = cnn;
       }
-      
       return {
         profile,
         cnn,
@@ -5186,13 +3803,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       };
     });
   }
-
-  /**
-   * Габариты по рёбрам периметра внутренней стороны профилей
-   * @param [size] {Number}
-   * @param [nom] {CatNom}
-   * @return {Rectangle}
-   */
   bounds_inner(size = 0, nom) {
     const path = new paper.Path({insert: false});
     for (let curr of this.perimeter_inner(size, nom)) {
@@ -5204,42 +3814,17 @@ class Contour extends AbstractFilling(paper.Layer) {
     path.reduce();
     return path.bounds;
   }
-
-  /**
-   * Положение контура в изделии или створки в контуре
-   */
   get pos() {
-
   }
-
-  /**
-   * Возвращает массив профилей текущего контура
-   * @returns {Array.<Profile>}
-   */
   get profiles() {
     return this.children.profiles.children;
   }
-
-  /**
-   * Массив разрезов
-   * @return {Array.<Sectional>}
-   */
   get sectionals() {
     return this.children.sectionals.children;
   }
-
-  /**
-   * Массив примыканий
-   * @type {Array.<ProfileAdjoining>}
-   */
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
   }
-  
-  /**
-   * Массив раскладок
-   * @type {Array.<Onlay>}
-   */
   get onlays() {
     const res = [];
     this.fillings.forEach((filling) => {
@@ -5247,10 +3832,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     })
     return res;
   }
-
-  /**
-   * Цвет первого попавшегося профиля слоя
-   */
   get clr() {
     const {profiles, project} = this;
     if(profiles.length) {
@@ -5258,53 +3839,30 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     project.clr;
   }
-
-  /**
-   * @summary Перед отрисовкой
-   */
   actualizeCach() {
-    // сбрасываем кеш габаритов
     this._attr._bounds = null;
-    // и освежаем карту соединений
     this.recalcCnnMap(this.children.profiles.cnnMap, this.profiles);
   }
-
-  /**
-   * @summary При изменении проекта
-   */
   register_change() {
-    // во вложенных слоях и рядах
     for(const layer of this.contours.concat(this.tearings)) {
       layer.register_change?.();
     }
-    // сбрасываем толщины заполнений
     for(const glass of this.glasses(false, true)) {
       glass.register_change();
       glass._attr.thickness = 0;
     }
-    // сбрасываем кеш габаритов
     this._attr._bounds = null;
-    // карту соединений
     this.children.profiles.cnnMap.clear();
   }
-
-  /**
-   * Перерисовывает элементы контура
-   */
   redraw() {
-
     if (!this.visible || this.hidden) {
       return;
     }
     this.actualizeCach();
-
-    // чистим визуализацию
     const {l_visualization: {by_insets, by_spec}, project, profiles, _attr: {chnom}} = this;
     const {_attr, _scope} = project;
     by_insets.removeChildren();
     !_attr._saving && by_spec.removeChildren();
-
-    // перерисовываем все профили контура
     const imposts = [];
     const addls = [];
     const other = new Set();
@@ -5343,8 +3901,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         addls.push(addl);
       }
     }
-
-    // упорядочиваем по z TODO: оптимизировать
     for (const elm of imposts.sort(Contour.ecompare)) {
       const {_rays: {b, e}, _corns} = elm._attr;
       if(b.profile_point !== 'b' && b.profile_point !== 'e' && b.profile?.isBelow(elm)) {
@@ -5354,20 +3910,11 @@ class Contour extends AbstractFilling(paper.Layer) {
         elm.insertBelow(e.profile);
       }
     }
-    // z-index доборов
-    // for (const elm of addls) {
-    //   const {b, e} = elm.rays;
-    //   b.profile && elm.isAbove(b.profile) && b.profile.insertAbove(elm.parent);
-    //   e.profile && elm.isAbove(e.profile) && e.profile.insertAbove(elm.parent);
-    // }
-    // z-index штапиков
     for (const elm of this.getItems({class: ProfileGlBead})) {
       const {b, e} = elm.rays;
       b?.profile?.profile && elm.isBelow(b.profile.profile) && elm.insertAbove(b.profile.profile);
       e?.profile?.profile && elm.isBelow(e.profile.profile) && elm.insertAbove(e.profile.profile);
     }
-    
-    // уточняем номенклатуры и соединения для новой геометрии профилей
     const changed = chnom.splice(0);
     for(const elm of profiles) {
       if(!changed.includes(elm)) {
@@ -5382,53 +3929,26 @@ class Contour extends AbstractFilling(paper.Layer) {
       project.register_change();
       return;
     }
-
-    // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
-
-    // рисуем направление открывания
     this.draw_opening();
-
-    // перерисовываем вложенные контуры и ряды
     for(const elm of this.contours.concat(this.tearings)) {
       elm.redraw();
     }
-
     if(!_attr._hide_errors) {
-      // рисуем ошибки соединений
       this.draw_cnn_errors();
-
-      //рисуем ошибки статических прогибов
       this.draw_static_errors();
     }
-
-    // перерисовываем все водоотливы контура
     for(const elm of this.sectionals) {
       elm.redraw();
     }
-    
-    // сюда добавляли прочистку паразитов, но убрали
-
-    // информируем мир о новых размерах нашего контура
     this.notify(this, 'contour_redrawed', this._attr._bounds);
-
   }
-
-  /**
-   * Формирует альтернативный связям параметров, список значений системных параметров
-   * @param {Object} attr
-   * @param {CatProduction_params} [sys]
-   * @param {Number} [cnstr]
-   * @return {boolean}
-   */
   params_links(attr, sys, cnstr) {
     if(!sys) {
       sys = this.sys;
       cnstr = this.cnstr;
     }
     const {prow, meta} = attr;
-
-    // Цвет основы
     if(prow.param === sys.base_clr && sys.color_price_groups.count()) {
       attr.oselect = true;
       const values = sys.color_price_groups.unload_column('base_clr');
@@ -5441,15 +3961,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       return true;
     }
-    
   }
-
-  /**
-   * Пересчитывает связи параметров
-   * @param root
-   */
   refresh_prm_links(root) {
-
     const cnstr = root ? 0 : this.cnstr || -9999;
     const {project, sys, own_sys, prod_ox, params, layer} = this;
     const {_dp, _attr, is_read_only} = project;
@@ -5458,8 +3971,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     const {blank} = $p.utils;
     let notify;
-
-    // пробегаем по всем строкам
     params.find_rows({cnstr, inset: blank.guid}, (prow) => {
       const {param} = prow;
       const links = param.params_links({
@@ -5467,8 +3978,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         obj: prow,
         layer: this,
       });
-
-      // сокрытие по умолчаниям или связям
       let hide = (!param.show_calculated && param.is_calculated) || links.some((link) => link.hide);
       if(!hide) {
         const drow = sys.prm_defaults(param, own_sys ? 0 : cnstr);
@@ -5476,8 +3985,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           hide = true;
         }
       }
-
-      // проверим вхождение значения в доступные и при необходимости изменим
       if (links.length && param.linked_values(links, prow)) {
         notify = true;
       }
@@ -5487,7 +3994,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           prow.value = bvalue;
           notify = true;
         }
-        // для режима 4 - умолчание для отдела, устанавливаем только если пусто
         else if(!prow.value || prow.value.empty?.()) {
           prow.value = bvalue;
           notify = true;
@@ -5498,8 +4004,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         notify = true;
       }
     });
-    
-    // умолчания для параметров заполнений
     if(!root && !layer) {
       const {product_params} = this.sys;
       for(const filling of this.fillings) {
@@ -5507,7 +4011,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         const inset_params = inset.used_params();
         for(const param of inset_params) {
           if(param.inheritance === 2 || (param.inheritance === 1 && !product_params.find({param}))) {
-            // если нет строки в params - добавляем
             const key = {cnstr: -elm, param, inset: blank.guid, region: 0};
             const prow = params.find(key) || params.add(key);
             const drow = inset?.product_params?.find({param});
@@ -5527,8 +4030,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
-    // информируем мир о новых размерах нашего контура
     if(notify) {
       this.notify(this, 'refresh_prm_links');
       if(root) {
@@ -5537,11 +4038,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * Пересчитывает пути элементов, если изменились параметры, влияющие на основной материал вставок
-   * @param param {CchProperties}
-   */
   refresh_inset_depends(param) {
     const {contours, profiles} = this;
     for(const profile of profiles) {
@@ -5554,16 +4050,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       contour.refresh_inset_depends(param);
     }
   }
-
-  /**
-   * Вычисляемые поля в таблицах конструкций и координат
-   * @param short {Boolean} - короткий вариант - только координаты контура
-   * @param [save] {Boolean}
-   * @param [close] {Boolean}
-   * @return {Promise<void>}
-   */
   save_coordinates(short, save, close) {
-
     let res = Promise.resolve();
     if(short) {
       this._row.by_contour(this);
@@ -5572,12 +4059,9 @@ class Contour extends AbstractFilling(paper.Layer) {
       const push = (elm) => {
         res = res.then(() => elm.save_coordinates(short, save, close));
       };
-      // если контур не скрыт, удаляем скрытые заполнения
       if(!this.hidden) {
         this.glasses(false, true).forEach((glass) => !glass.visible && glass.remove());
       }
-
-      // запись в таблице координат, каждый элемент пересчитывает самостоятельно
       for (const elm of this.children) {
         if (elm.save_coordinates) {
           push(elm);
@@ -5585,14 +4069,8 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       res = res.then(() => this._row.by_contour(this));
     }
-
     return res;
   }
-
-  /**
-   * Упорядочивает узлы, чтобы по ним можно было построить путь заполнения
-   * @param [nodes] {Array}
-   */
   sort_nodes(nodes) {
     if (!nodes.length) {
       return nodes;
@@ -5600,7 +4078,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     let prev = nodes[0];
     const res = [prev];
     let couner = nodes.length + 1;
-
     while (res.length < nodes.length && couner) {
       couner--;
       for (let i = 0; i < nodes.length; i++) {
@@ -5622,22 +4099,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       res.length = 0;
     }
   }
-
-  /**
-   * Уровень вложенности слоя
-   * @type {number}
-   * @final
-   */
   get level() {
     const {layer} = this;
     return layer ? layer.level + 1 : 0;
   }
-
-  /**
-   * Система текущего слоя
-   * пока, повторяет систему проекта, но в будущем, можем переопределить
-   * @type {CatProduction_params}
-   */
   get sys() {
     const {layer, own_sys, project} = this;
     if(layer) {
@@ -5677,32 +4142,18 @@ class Contour extends AbstractFilling(paper.Layer) {
       project._dp.sys = v;
     }
   }
-
-  /**
-   * Бит, может ли данный слой иметь собственную систему
-   * @return {boolean}
-   */
   get own_sys() {
-    // обычные створки наследуют систему родителя
     if(this.layer) {
       return false;
     }
-    // вложения имеют свою систему
     if([10, 11].includes(this.kind)) {
       return true;
     }
-    // второй и более рамные, так же, могут иметь свою систему
     return this.project.contours.indexOf(this) > 0;
   }
-
-  /**
-   * @summary Перезаполняет параметры слоя
-   * @desc С учетом системы, которая может отличаться от системы изделия
-   */
   refill_prm() {
     const {_ox: {params}, cnstr, sys: {product_params}} = this;
     const inset = $p.utils.blank.guid;
-    // чистим
     const rm = [];
     params.find_rows({cnstr, inset}, (row) => {
       if(!product_params.find({param: row.param})) {
@@ -5712,7 +4163,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     for(const row of rm) {
       params.del(row);
     }
-    // добавляем
     for(const row of product_params) {
       let has;
       params.find_rows({cnstr: {in: [0, cnstr]}, param: row.param, inset}, () => {
@@ -5731,19 +4181,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * Возвращает значение параметра с учётом наследования
-   * @param {CchProperties} param
-   * @param {Number} cnstr
-   * @param {BuilderElement} elm
-   * @param {BuilderElement} [elm2]
-   * @param {String} [node]
-   * @param {String} [node2]
-   * @param {CatInserts|undefined} [origin]
-   * @param prm_row
-   * @returns {*}
-   */
   extract_pvalue({param, cnstr, elm,  elm2, node, node2,  origin, prm_row}) {
     if(!(elm instanceof ProfileItem) && elm?.rnum) {
       return elm[param.valueOf()];
@@ -5762,7 +4199,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     if(prm_ox) {
       _ox = prm_ox;
     }
-    // параметры, переопределяемые для отдела, читаем из отдела
     if(param.inheritance !== 3 &&
         plan_detailing.eq_product.includes(prm_row.origin) && (!cnstr || cnstr === this.cnstr)) {
       if(!cnstr && elm?.elm && [1, 2].includes(param.inheritance)) {
@@ -5803,11 +4239,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return param.extract_pvalue({ox: _ox, cnstr, elm, elm2, node, node2, origin, layer: this, prm_row});
   }
-
-  /**
-   * Кеш используется при расчете спецификации фурнитуры
-   * @return {Object}
-   */
   get furn_cache() {
     const {bounds: {height, width}, w, h} = this;
     return {
@@ -5820,14 +4251,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       h,
     };
   }
-
-  /**
-   * Проверяет, подходит ли фурнитура текущему слою
-   * @param [furn] {CatFurns}
-   * @param [cache] {Object}
-   * @param [bool] {Boolean} - только проверка без формирования массива ошибочных профилей
-   * @return {Array.<Profile>|boolean}
-   */
   open_restrictions_err({furn, cache, bool}) {
     if(!furn) {
       furn = this.furn;
@@ -5838,28 +4261,22 @@ class Contour extends AbstractFilling(paper.Layer) {
     let err = [];
     const {side_count, sys} = this;
     const {open_types, elm_types} = $p.enm;
-
-    // проверяем количество сторон
     if(furn.open_type !== open_types.Глухое && furn.side_count && side_count !== furn.side_count) {
       if(bool) {
         return true;
       }
       this.profiles.forEach(err.push.bind(err));
     }
-
     if(!err.length) {
       if(furn.formula.empty()) {
-        // геометрия по табчасти настроек открывания
         for(const row of furn.open_tunes) {
           const elm = this.profile_by_furn_side(row.side, cache);
           const prev = this.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
           const next = this.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
           const len = elm.length - prev.nom.sizefurn - next.nom.sizefurn;
-
           const angle = (this.direction.is('right') ^ this.flipped) ?
             elm.generatrix.angle_between(prev.generatrix, elm.e) :
             prev.generatrix.angle_between(elm.generatrix, elm.b);
-
           const {lmin, lmax, amin, amax} = row;
           if(len < lmin || len > lmax || angle < amin || (angle > amax && amax > 0) || (!elm.is_linear() && !row.arc_available)) {
             if(bool) {
@@ -5870,7 +4287,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
       else {
-        // габариты по формуле
         try {
           const path = furn.formula.execute();
           if(!path.contains([cache.w, cache.h])) {
@@ -5883,8 +4299,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         catch (e) {}
       }
     }
-
-    // в створках без импоста штульповые не используем и наоборот
     if(!furn.direction) {
       for(const row of furn.open_tunes) {
         const elm = this.profile_by_furn_side(row.side, cache);
@@ -5911,18 +4325,9 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
     return bool ? false : err;
   }
-
-  /**
-   * Возаращает линию, проходящую через ручку
-   * @param elm {Profile}
-   * @return {paper.Path}
-   */
   handle_line(elm) {
-
-    // строим горизонтальную линию от нижней границы контура, находим пересечение и offset
     const {bounds, h_ruch} = this;
     const by_side = this.profiles_by_side();
     return (elm == by_side.top || elm == by_side.bottom) ?
@@ -5934,57 +4339,39 @@ class Contour extends AbstractFilling(paper.Layer) {
         insert: false,
         segments: [[bounds.left - 200, bounds.bottom - h_ruch], [bounds.right + 200, bounds.bottom - h_ruch]],
       });
-
   }
-
-  /**
-   * Уточняет высоту ручки
-   * @param cache {Object}
-   */
   update_handle_height(cache, from_setter) {
-
     const {furn, _row, project, furn_set} = this;
     const {handle_side} = furn;
     if (!handle_side || furn_set.empty()) {
       return;
     }
-
     if (!cache) {
       cache = this.furn_cache;
       cache.ignore_formulas = true;
     }
-
-    // получаем элемент, на котором ручка и длину элемента
     const elm = this.profile_by_furn_side(handle_side, cache);
     if (!elm) {
       return;
     }
-
     const {len} = elm._row;
     let handle_height;
-
     function set_handle_height(row) {
       const {handle_height_base, fix_ruch} = row;
       if (handle_height_base < 0) {
-        // если fix_ruch - устанавливаем по центру
         if (fix_ruch || _row.fix_ruch != -3) {
           _row.fix_ruch = fix_ruch ? -2 : -1;
           return handle_height = (len / 2).round();
         }
       }
       else if (handle_height_base > 0) {
-        // если fix_ruch - устанавливаем по базовой высоте
         if (fix_ruch || _row.fix_ruch != -3) {
           _row.fix_ruch = fix_ruch ? -2 : -1
           return handle_height = handle_height_base;
         }
       }
     }
-
-    // бежим по спецификации набора в поисках строки про ручку
     furn_set.specification.find_rows({dop: 0}, (row) => {
-
-      // проверяем, проходит ли строка
       if (!row.quantity || row.check_restrictions(this, cache) !== true) {
         return;
       }
@@ -6004,18 +4391,12 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     });
-
     if(handle_height && !from_setter && _row.h_ruch != handle_height){
       _row.h_ruch = handle_height;
       project._dp._manager.emit('update', this, {h_ruch: true});
     }
     return handle_height;
   }
-
-  /**
-   * Высота ручки
-   * @type {Number}
-   */
   get h_ruch() {
     const {layer, furn, _row} = this;
     if(!layer) {
@@ -6032,7 +4413,6 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   set h_ruch(v) {
     const {layer, _row, project} = this;
-
     if (layer) {
       const old_fix_ruch = _row.fix_ruch;
       if (old_fix_ruch == -3) {
@@ -6042,11 +4422,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       if(h_ruch && (old_fix_ruch != -3 || v == 0)){
         _row.h_ruch = h_ruch;
       }
-
-      // Высота ручки по умолчанию
-      // >0: фиксированная высота
-      // =0: Высоту задаёт оператор
-      // <1: Ручка по центру, можно ли редактировать, зависит от реквизита fix_ruch
       if (v != 0 && [0, -1, -3].indexOf(_row.fix_ruch) != -1) {
         _row.h_ruch = v;
         if (_row.fix_ruch == -1 && v != h_ruch) {
@@ -6060,22 +4435,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     project._dp._manager.emit('update', this, {h_ruch: true});
   }
-
-  /**
-   * Дополнительные свойства json
-   * @return {Object}
-   */
   get dop() {
     return this._row.dop;
   }
   set dop(v) {
     this._row.dop = v;
   }
-
-  /**
-   * Элемент, вокруг образующей которого повёрнут слой
-   * @return {BuilderElement}
-   */
   get rotation_elm() {
     const {dop, project} = this;
     return dop.rotation_elm ? project.getItem({class: BuilderElement, elm: dop.rotation_elm}) : null;
@@ -6088,22 +4453,12 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.dop = {rotation_elm: v};
     }
   }
-
-  /**
-   * Угол поворота в пространстве
-   * @return {Number}
-   */
   get angle3d() {
     return this.dop.angle3d || 0;
   }
   set angle3d(v) {
     this.dop = {angle3d: v};
   }
-
-  /**
-   * @summary Признак нахождения текущего слоя внутри виртуального
-   * @type {Boolean}
-   */
   get in_virt_layer() {
     let layer = this;
     while (layer) {
@@ -6114,16 +4469,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return false;
   }
-
-  /**
-   * Перевёрнутость слоя (штапик наружу)
-   * (0) - авто, (1) - перевёрнут, (-1) - не перевёрнут
-   * @returns {boolean}
-   */
   get flipped() {
     const {_row: {flipped}} = this;
     if(!flipped) {
-      // TODO: алгоритм расчёта перевёртутости по системе и уровню
       const {sys, layer, level} = this;
       const auto_flipped = sys._extra('auto_flipped');
       if(!auto_flipped && layer) {
@@ -6145,58 +4493,28 @@ class Contour extends AbstractFilling(paper.Layer) {
     this.redraw();
     project.register_change(true);
   }
-
-  /**
-   * Количество сторон контура
-   */
   get side_count() {
     const {Импост} = $p.enm.elm_types;
     let res = 0;
     this.profiles.forEach((v) => v.elm_type != Импост && res++);
     return res;
   }
-
-  /**
-   * Ширина контура по фальцу
-   * @type {Number}
-   */
   get w() {
     const {is_rectangular, bounds} = this;
     const {left, right} = this.profiles_by_side();
     return bounds && left && right ? bounds.width - left.nom.sizefurn - right.nom.sizefurn : 0;
   }
-
-  /**
-   * Высота контура по фальцу
-   * @type {Number}
-   */
   get h() {
     const {is_rectangular, bounds} = this;
     const {top, bottom} = this.profiles_by_side();
     return bounds && top && bottom ? bounds.height - top.nom.sizefurn - bottom.nom.sizefurn : 0;
   }
-
-  /**
-   * Cлужебная группа текстовых комментариев
-   * @type {paper.Group}
-   */
   get l_text() {
     return this.children.text;
   }
-
-  /**
-   * Cлужебная группа визуализации допов, петель и ручек
-   * @type {paper.Group}
-   */
   get l_visualization() {
     return this.project.l_visualization.map.get(this);
   }
-
-  /**
-   * @summary Непрозрачность без учета вложенных контуров  
-   * @desc В отличии от прототипа `opacity`, затрагивает только элементы текущего слоя
-   * @type {Boolean}
-   */
   get opacity() {
     for(const elm of this.profiles) {
       if(elm.opacity !== 1) {
@@ -6212,20 +4530,10 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * Признак наличия цветных профилей
-   * @return {boolean}
-   */
   is_clr() {
     const white = $p.cat.clrs.predefined('Белый');
     return this.profiles.some(({clr}) => !clr.empty() && clr !== white);
   }
-
-  /**
-   * @summary Удаляет всех детей слоя
-   * @param {Boolean} [interactive]
-   */
   clear(interactive) {
     if(interactive) {
       this._removing = true;
@@ -6239,18 +4547,12 @@ class Contour extends AbstractFilling(paper.Layer) {
     for(const elm of [...this.profiles].reverse()) {
       elm.remove();
     }
-    //this.project.l_dimensions.clear(this);
     this.project.register_change();
     if(interactive) {
       delete this._removing;
     }
   }
-
-  /**
-   * Обработчик события при удалении элемента
-   */
   on_remove_elm(elm) {
-    // при удалении любого профиля, удаляем размрные линии импостов
     if (this.layer) {
       this.layer.on_remove_elm(elm);
     }
@@ -6258,12 +4560,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.l_dimensions.clear();
     }
   }
-
-  /**
-   * Обработчик события при вставке элемента
-   */
   on_insert_elm(elm) {
-    // при вставке любого профиля, удаляем размрные линии импостов
     if (this.layer) {
       this.layer.on_insert_elm(elm);
     }
@@ -6271,21 +4568,14 @@ class Contour extends AbstractFilling(paper.Layer) {
       this.l_dimensions.clear();
     }
   }
-
-  /**
-   * Обработчик при изменении системы
-   * @param [refill] {Boolean}
-   */
   on_sys_changed(refill) {
     const {enm: {elm_types, cnn_types}, cat: {cnns, inserts}} = $p;
     this.profiles.forEach((elm) => elm.default_inset(true, refill));
-
     this.glasses().forEach((elm) => {
       if (elm instanceof Contour) {
         elm.on_sys_changed(refill);
       }
       else {
-        // заполнения проверяем с учетом правила системы - по толщине, массиву толщин или явному вхождению вставки
         const {thickness, project, ox} = elm;
         if(!refill) {
           const {thicknesses, glass_thickness} = this.sys;
@@ -6300,7 +4590,7 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
         }
         if(refill) {
-          let {elm_type} = elm.nom; // тип элемента номенклатуры, чтобы выявить непрозрачные заполнения
+          let {elm_type} = elm.nom;
           if(!elm_types.glasses.includes(elm_type)) {
             elm_type = elm_types.Стекло;
           }
@@ -6322,7 +4612,6 @@ class Contour extends AbstractFilling(paper.Layer) {
             }
           }
         }
-        // проверяем-изменяем соединения заполнений с профилями
         elm.profiles.forEach((curr) => {
           if(!curr.cnn || !curr.cnn.check_nom2(curr.profile)) {
             curr.cnn = cnns.elm_cnn(elm, curr.profile, cnn_types.acn.ii);
@@ -6330,22 +4619,14 @@ class Contour extends AbstractFilling(paper.Layer) {
         });
       }
     });
-    
-    // дополнительные связи при смене системы
     this.prm_forcibly('sys');
   }
-
-  /**
-   * Обработчик при изменении цвета изделия
-   */
   on_clr_changed() {
-    // дополнительные связи при смене цвета
     for (const contour of this.contours) {
       contour.on_clr_changed();
     }
     this.prm_forcibly('clr_product');
   }
-  
   prm_forcibly(area) {
     const {cat: {params_links}, utils} = $p;
     const {project, params, cnstr, furn} = this;
@@ -6354,7 +4635,6 @@ class Contour extends AbstractFilling(paper.Layer) {
       let notify;
       if(candidates) {
         for (const [param, forcibly] of candidates) {
-          // если параметр задаёт фурнитуру...
           if(param.predefined_name === 'furn' && !furn.empty()) {
             const prow = {cnstr, inset: utils.blank.guid, param, value: furn, ox: project.ox};
             const links = param.params_links({
@@ -6371,7 +4651,6 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
         if(!notify) {
           for (const [param, forcibly] of candidates) {
-            // если параметр задаёт фурнитуру...
             if(param.predefined_name !== 'furn') {
               const prow = params.find({cnstr, inset: utils.blank.guid, param});
               if(prow) {
@@ -6394,32 +4673,20 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
     }
   }
-
-  /**
-   * @summary Порядок групп в зависимости от признака mirror
-   */
   apply_mirror() {
-    
     const {l_visualization, contours, project: {_attr}, children} = this;
-    
-    // обновляем визуализацию
     this.draw_visualization();
-    
-    // обновляем отображение составных цветов
     for(const profile of this.profiles) {
       const {clr} = profile;
       if(clr.is_composite()) {
         profile.path.fillColor = BuilderElement.clr_by_clr.call(profile, clr);
       }
     }
-
-     // обновляем отображение составных цветов заполнений
     for (const fill of this.fillings) {
       const {clr} = fill;
       if(clr.is_composite()) {
         fill.path.fillColor = BuilderElement.clr_by_clr.call(fill, fill.clr);
       }
-      // обновляем отображение составных цветов раскладок
       for (const profile of fill.imposts) {
         const {clr} = profile;
         if(clr.is_composite()) {
@@ -6427,12 +4694,10 @@ class Contour extends AbstractFilling(paper.Layer) {
         }
       }
     }
-
     for(const layer of contours) {
       layer.apply_mirror();
     }
-
-    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children; //(_attr._reflected && !flipped || !_attr._reflected && flipped)
+    const {bottomLayers, fillings, profiles, sectionals, topLayers} = children;
     const order = _attr._reflected ?
       [topLayers, fillings, profiles, sectionals, bottomLayers] :
       [bottomLayers, fillings, profiles, sectionals, topLayers];
@@ -6442,9 +4707,7 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       this.insertChildren(0, order);
     }
-    
   }
-
   get sketch_view() {
     let {sys: {sketch_view}, project: {_attr}} = this;
     const {hinge, out_hinge, inner, outer} = sketch_view._manager;
@@ -6462,11 +4725,6 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return sketch_view;
   }
-
-  /**
-   * @summary Рассчитывает световой проём створок
-   * @desc Если в спецификации есть петли с заданным отступом
-   */
   flap_skylight() {
     const {contours, profiles, prod_ox} = this;
     if(contours.length) {
@@ -6485,7 +4743,6 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
         }        
       }
-      // если есть нужные петли
       if(hingeOffset) {
         const flaps = new Set();
         for(const layer of contours) {
@@ -6497,19 +4754,15 @@ class Contour extends AbstractFilling(paper.Layer) {
         for(const layer of contours) {
           if(!flaps.has(layer)) {
             for(const [active] of flaps) {
-              
             }
           }
         }
       }
     }
   }
-
 }
-
 Contour.ecompare = (a, b) => b.elm - a.elm;
 Contour.acompare = (a, b) => b.angle_hor - a.angle_hor;
-
 GlassSegment.fn_sort = function fn_sort(a, b) {
   const da = this.getOffsetOf(a.point);
   const db = this.getOffsetOf(b.point);
@@ -6521,8 +4774,6 @@ GlassSegment.fn_sort = function fn_sort(a, b) {
   }
   return 0;
 };
-
-// возвращает массив сегментов, которые могут следовать за текущим
 GlassSegment.next = function next_segments(curr, nodes, segments) {
   if (!curr.anext) {
     curr.anext = [];
@@ -6530,8 +4781,6 @@ GlassSegment.next = function next_segments(curr, nodes, segments) {
       if (segm === curr || segm.profile === curr.profile){
         continue;
       }
-      // если конец нашего совпадает с началом следующего...
-      // и если существует соединение нашего со следующим
       if (curr.has_cnn(segm, nodes, segments)) {
         const angle = curr.e.subtract(curr.b).getDirectedAngle(segm.e.subtract(segm.b));
         if (segments.length < 3 || angle >= 0 || Math.abs(angle + 180) < 1)
@@ -6541,51 +4790,35 @@ GlassSegment.next = function next_segments(curr, nodes, segments) {
   }
   return curr.anext;
 }
-
 EditorInvisible.Contour = Contour;
 EditorInvisible.GlassSegment = GlassSegment;
-
-
-/**
- * @summary Служебный слой соединительных профилей и проёмов
- *
- * @extends paper.Layer
- */
 class ConnectiveLayer extends paper.Layer {
-
   constructor(attr) {
     super(attr);
     this._errors = new paper.Group({parent: this});
     new GroupVisualization({owner: this, guide: true});
   }
-
   presentation() {
     return 'Соединители';
   }
-
   get info() {
     return this.presentation;
   }
-
   get kind() {
     return 0;
   }
-
   get skeleton() {
     return this.project._skeleton;
   }
-
   get cnstr() {
     return null;
   }
-
   get flipped() {
     return false;
   }
   set flipped(v) {
     return false;
   }
-
   get hidden() {
     return !this.visible || this.project.builder_props.cnns === false;
   }
@@ -6593,33 +4826,15 @@ class ConnectiveLayer extends paper.Layer {
     this.visible = !v;
     this.redraw();
   }
-
-
-  /**
-   * Продукция слоя соединителей
-   * Совпадает с продукцией проекта
-   * @return {CatCharacteristics}
-   */
   get _ox() {
     return this.project.ox;
   }
-
-  /**
-   * Система слоя соединителей
-   * @return {CatProduction_params}
-   */
   get sys() {
     return this.project._dp.sys;
   }
-
-  /**
-   * Фурнитура слоя соединителей всегда пустая
-   * @type {CatFurns}
-   */
   get furn() {
     return $p.cat.furns.get();
   }
-
   redraw() {
     const {_errors, children} = this;
     const visible = !this.hidden;
@@ -6633,25 +4848,15 @@ class ConnectiveLayer extends paper.Layer {
       }
     });
     _errors.removeChildren();
-    //_errors.bringToFront();
   }
-
-  /**
-   * Рисует дополнительную визуализацию. Данные берёт из спецификации и проблемных соединений
-   */
   draw_visualization(rows, region = 0) {
-
     const {profiles, l_visualization, project: {_attr, builder_props, ox}} = this;
     const {inner, outer, inner1, outer1} = $p.enm.elm_visualization;
     const reflected = _attr._reflected;
-
     l_visualization.by_insets.removeChildren();
     l_visualization.by_spec.removeChildren();
-
-    // если кеш строк визуализации пустой - наполняем
     const {visualization, workplace} = builder_props;
     if(visualization) {
-
       function draw(elm) {
         if(this.elm === elm.elm && elm.visible) {
           const {visualization} = this.nom;
@@ -6673,7 +4878,6 @@ class ConnectiveLayer extends paper.Layer {
           }
         }
       }
-
       const push = (row) => {
         const {sketch_view} = row.nom.visualization;
         if((reflected && !sketch_view.find({kind: outer}) && !sketch_view.find({kind: outer1})) ||
@@ -6682,166 +4886,84 @@ class ConnectiveLayer extends paper.Layer {
             return;
           }
         }
-        // визуализация для текущего профиля
         profiles.some(draw.bind(row));
       };
-
       ox.specification.find_rows({dop: {in: [-1, -5]}}, push);
-
     }
   }
-
   save_coordinates() {
     return this.children.reduce((accumulator, elm) => {
       return elm?.save_coordinates ?  accumulator.then(() => elm.save_coordinates()) : accumulator;
     }, Promise.resolve());
   }
-
-  /**
-   * Заглушка
-   */
   glasses() {
     return [];
   }
-
-  /**
-   * Заглушка
-   */
   get contours() {
     return [];
   }
-
   get profileBounds() {
     return this.bounds;
   }
-
-  /**
-   * Заглушка
-   */
   refresh_prm_links() {
-
   }
-
   get _manager() {
     return this.project._dp._manager;
   }
-
   _metadata(fld) {
     return Contour.prototype._metadata.call(this, fld);
   }
-
-  /**
-   * Возвращает слой размерных линий проекта
-   * @type {DimensionLayer}
-   */
   get l_dimensions() {
     return this.project.contours[0].l_dimensions;
   }
-
-  /**
-   * Cлужебная группа визуализации допов, петель и ручек
-   * @type {paper.Group}
-   */
   get l_visualization() {
     return this.project.l_visualization.map.get(this);
   }
-
-  /**
-   * Возвращает массив профилей текущего слоя
-   * @type {Array.<ProfileItem>}
-   */
   get profiles() {
     return this.children.filter((elm) => elm instanceof ProfileItem);
   }
-
-  /**
-   * Возвращает массив раскладок текущего слоя
-   * @type {Array}
-   */
   get onlays() {
     return [];
   }
-
-  /**
-   * Площадь профилей слоя соединителей
-   * @type {number}
-   */
   get area() {
     return (this.profiles.reduce((sum, {path}) => sum + path.area, 0) /1e6).round(4);
   }
-
-  /**
-   * @summary Толщина слоя
-   * @desc Принимается равной максимальной толщине профиля
-   * @param {Boolean} [withChildren]
-   * @return {Number}
-   */
   thickness() {
     return this.profiles.reduce((sum, {thickness}) =>  thickness > sum ? thickness : sum, 0);
   }
-
-  /**
-   * Обработчик при изменении системы
-   */
   on_sys_changed() {
     this.profiles.forEach((elm) => elm.default_inset(true));
   }
-
-  /**
-   * Возвращает значение параметра с учётом наследования
-   */
   extract_pvalue({param, cnstr, elm, origin, prm_row}) {
     return param.extract_pvalue({ox: this._ox, cnstr, elm, origin, prm_row});
   }
-
-  /**
-   * Формирует оповещение для тех, кто следит за this._noti
-   * @param obj
-   */
   notify(obj, type = 'update') {
-    //Contour.prototype.notify.call(this, obj, type);
   }
 }
-
 EditorInvisible.ConnectiveLayer = ConnectiveLayer;
-
-
-
-/**
- * @summary Дополнительный ряд профилей
- * @desc Может располагаться за, перед или внутри основного слоя
- */
 class ContourRegion extends Contour {
-
   constructor(attr) {
     super(attr);
     const region = attr.region || attr.row?.dop?.region;
     if(region !== this.dop.region) {
       this.dop = {region};
     }
-    //this.hidden = !(attr.show || region > 1);
   }
-
   get ProfileConstructor() {
     return ProfileRegion;
   }
-
   get key() {
     return `r${this.cnstr.toFixed()}`;
   }
-
   glasses(hide, glass_only) {
     return [];
   }
-
   get glass_contours() {
     return [];
   }
-
   glass_nodes(path, nodes, bind) {
     return [];
   }
-
   presentation(bounds) {
     if(!bounds){
       bounds = this.bounds;
@@ -6852,29 +4974,16 @@ class ContourRegion extends Contour {
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
-  
   get region() {
     return this.dop.region || 0;
   }
-
-  /**
-   * Уровень вложенности слоя
-   * @type {number}
-   * @final
-   */
   get level() {
     return this.layer.level;
   }
-
-  /**
-   * Надо ли строить авторазмерные линии
-   * @return {Boolean}
-   */
   get show_dimensions() {
     const {visible, hidden} = this.layer;
     return !visible || hidden;
   }
-
   redraw() {
     if (!this.visible || this.hidden) {
       return;
@@ -6886,18 +4995,9 @@ class ContourRegion extends Contour {
       }
     }
   }
-
 }
-
 EditorInvisible.ContourRegion = ContourRegion;
-
-
-/**
- * @summary Область разрыва заполнения
- * @desc В ней живут профили разрыва (образуют замкнутую фигуру) и вложенное заполнение
- */
 class ContourTearing extends Contour {
-
   constructor(attr) {
     if(attr.row && attr.layer) {
       const {parent} = attr.row.dop;
@@ -6908,42 +5008,30 @@ class ContourTearing extends Contour {
     }
     super(attr);
   }
-
   get ProfileConstructor() {
     return ProfileTearing;
   }
-
   get path() {
     return this.bounds;
   }
   set path(attr) {
-    
   }
-
   defaultFilling() {
     const tearing = this.layer.tearings.find(v => v !==this);
     return tearing?.fillings?.[0] || this.project.getItem({class: Filling});
   }
-
-  /**
-   * Путь внешних рёбер профилей разрыва
-   * @return {paper.Path}
-   */
   get profile_path() {
     const path = new paper.Path({insert: false});
     for(const profile of this.profiles) {
       if(!profile.elm_type.is('impost')) {
-        // добавляем сегменты образующей
         path.addSegments(profile.generatrix.segments);
       }
     }
     return path;
   }
-
   get glass_path() {
     return new paper.Path({insert: false});
   }
-
   presentation(bounds) {
     if(!bounds){
       bounds = this.bounds;
@@ -6953,7 +5041,6 @@ class ContourTearing extends Contour {
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()} ` : '') +
       (left ? `X=${Math.min(left.x1, left.x2).toFixed()} Y=${Math.min(bottom.y1, bottom.y2).toFixed()}` : ``);
   }
-
   initialize({inset, clr, path, parent}) {
     this.dop = {parent: parent.elm};
     const proto = {elm_type: $p.enm.elm_types.tearing, inset, clr};
@@ -6967,11 +5054,6 @@ class ContourTearing extends Contour {
       profile.elm;
     }
   }
-
-  /**
-   * Признак сокрытия слоя
-   * @type {boolean}
-   */
   get hidden() {
     return super.hidden;
   }
@@ -6988,43 +5070,18 @@ class ContourTearing extends Contour {
       parent.children.text.visible = true;
     }
   }
-  
 }
-
 EditorInvisible.ContourTearing = ContourTearing;
-
-
-/*
- * Виртуальный слой
- * https://github.com/oknosoft/windowbuilder/issues/563
- *
- *
- * Created by Evgeniy Malyarov on 20.04.2020.
- */
-
-
-/**
- * Виртуальный слой
- * @link https://github.com/oknosoft/windowbuilder/issues/563
- * @extends Contour
- */
 class ContourVirtual extends Contour {
-
   constructor(attr) {
     super(attr);
     if(!this._row.kind) {
       this._row.kind = 1;
     }
   }
-
   get ProfileConstructor() {
     return ProfileVirtual;
   }
-
-  /**
-   * Система виртуального слоя - можем переопределить
-   * @type {CatProduction_params}
-   */
   get sys() {
     const {_row: {dop}, layer: {sys}} = this;
     return dop.sys ? sys._manager.get(dop.sys) : sys;
@@ -7044,15 +5101,9 @@ class ContourVirtual extends Contour {
     }
     project.register_change(true);
   }
-
-  /**
-   * Бит, может ли данный слой иметь собственную систему
-   * @type {boolean}
-   */
   get own_sys() {
     return true;
   }
-
   get hidden() {
     return !!this._hidden;
   }
@@ -7066,23 +5117,13 @@ class ContourVirtual extends Contour {
       });
     }
   }
-
-  /**
-   * Виртуальный слой не добавляет вложенности
-   * @return {number}
-   */
   get level() {
     return -1;
   }
-
   presentation(bounds) {
     const text = super.presentation(bounds);
     return text.replace('Створка', 'Виртуал');
   }
-  /**
-   * Доступные системы
-   * @return {Set.<CatProduction_params>}
-   */
   get permitted_sys() {
     const res = new Set();
     const prow = this.project._dp.sys.extra_fields.find({property: $p.cch.properties.predefined('permitted_sys')});
@@ -7104,94 +5145,42 @@ class ContourVirtual extends Contour {
     }
     return res;
   }
-  
   save_coordinates(...args) {
     return super.save_coordinates(...args);
   }
-
-  /**
-   * Перерисовывает элементы контура
-   */
   redraw() {
-
     if(!this.visible || this.hidden) {
       return;
     }
-
-    // сбрасываем кеш габаритов
     this._attr._bounds = null;
-
-    // сначала перерисовываем все профили контура
     for(const elm of this.profiles) {
       elm.redraw();
     }
-
-    // затем, создаём и перерисовываем заполнения, которые перерисуют свои раскладки
     this.glass_recalc();
-
-    // затем - вложенное изделие
     for(const elm of this.contours) {
       elm.redraw();
     }
-
-    // информируем мир о новых размерах нашего контура
     this.notify(this, 'contour_redrawed', this._attr._bounds);
   }
-
 }
-
 EditorInvisible.ContourVirtual = ContourVirtual;
-
-
-/**
- * Cлой визуализации
- */
 class ContourVisualization extends paper.Layer {
-
   constructor(attr) {
     super(attr);
     this.map = new Map();
   }
-  
   clear() {
     for(const [layer, group] of this.map) {
       group.clear();
     }
   }
-
 }
-
-
-
-/*
- * Размерные линии на эскизе
- *
- * Created 21.08.2015
- *
- * @module geometry
- * @submodule dimension_line
- */
-
-/**
- * Размерная линия на эскизе  
- * Унаследована от [paper.Group](http://paperjs.org/reference/group/)<br />
- * См. так же, {{#crossLink "DimensionLineCustom"}}{{/crossLink}} - размерная линия, устанавливаемая пользователем
- *
- * @extends paper.Group
- * @param attr {Object} - объект с указанием на строку координат и родительского слоя
- */
-
 class DimensionLine extends paper.Group {
-
   constructor(attr) {
-    
     super({parent: attr.parent, project: attr.project});
     const {project} = this;
-
     const _attr = this._attr = {};
-
     this._row = attr.row;
-
     if(this._row && this._row.path_data){
       attr._mixin(JSON.parse(this._row.path_data));
       if(attr.elm1){
@@ -7211,17 +5200,13 @@ class DimensionLine extends paper.Group {
       attr.p2 = 'e';
     }
     Object.assign(_attr, attr);
-
     if(attr.contour){
       _attr.contour = true;
     }
-
     if(!_attr.pos && (!_attr.elm1 || !_attr.elm2)){
       this.remove();
       return;
     }
-
-    // создаём детей
     new paper.Path({project, parent: this, name: 'callout1', strokeColor: 'black', guide: true});
     new paper.Path({project, parent: this, name: 'callout2', strokeColor: 'black', guide: true});
     new paper.Path({project, parent: this, name: 'scale', strokeColor: 'black', guide: true});
@@ -7233,33 +5218,21 @@ class DimensionLine extends paper.Group {
       fillColor: 'black',
       fontFamily: consts.font_family,
       fontSize: this._font_size()});
-
     !project._attr._from_service && this.on({
       mouseenter: this._mouseenter,
       mouseleave: this._mouseleave,
       click: this._click
     });
-
   }
-
   _font_size() {
     return DimensionLine._font_size(this.project.bounds);
   }
-
-  // виртуальные метаданные для автоформ
   _metadata(fld) {
     return $p.dp.builder_size.metadata(fld);
   }
-
-  // виртуальный датаменеджер для автоформ
   get _manager() {
     return $p.dp.builder_size;
   }
-
-  /**
-   *
-   * @return {boolean}
-   */
   is_disabled() {
     const {project, layer, _attr: {elm1, elm2}} = this;
     if(project._attr.elm_fragment > 0) {
@@ -7270,7 +5243,6 @@ class DimensionLine extends paper.Group {
     }
     return false;
   }
-
   _mouseenter() {
     const {children: {text}, project: {_scope}, is_smart_size} = this;
     const dis = this.is_disabled();
@@ -7281,36 +5253,24 @@ class DimensionLine extends paper.Group {
       text.shadowOffset = 10;
     }
   }
-
   _mouseleave() {
     const {text} = this.children;
     text.fontWeight = 'normal';
     text.shadowBlur = 0;
     text.shadowOffset = 0;
   }
-
   _click(event) {
     event.stop();
   }
-
   _move_points(event, xy) {
-
     let _bounds, delta;
-
     const {_attr, pos, project, size} = this;
     const {Point} = project._scope;
-
-    // получаем дельту - на сколько смещать
     if(_attr.elm1){
-
-      // в _bounds[event.name] надо поместить координату по x или у (в зависисмости от xy), которую будем двигать
       _bounds = {};
-
       const p1 = (_attr.elm1._sub || _attr.elm1)[_attr.p1];
       const p2 = (_attr.elm2._sub || _attr.elm2)[_attr.p2];
-
       if(pos == 'top' || pos == 'bottom') {
-        //const size = Math.abs(p1.x - p2.x);
         if(event.name == 'right') {
           delta = new Point(event.size - size, 0);
           _bounds[event.name] = Math.max(p1.x, p2.x);
@@ -7321,7 +5281,6 @@ class DimensionLine extends paper.Group {
         }
       }
       else{
-        //const size = Math.abs(p1.y - p2.y);
         if(event.name == 'bottom') {
           delta = new Point(0, event.size - size);
           _bounds[event.name] = Math.max(p1.y, p2.y);
@@ -7351,7 +5310,6 @@ class DimensionLine extends paper.Group {
         }
       }
     }
-
     if(delta.length){
       if(typeof event.divide === 'number') {
         delta = delta.divide(event.divide);
@@ -7390,17 +5348,9 @@ class DimensionLine extends paper.Group {
         event.cb?.();
       });
     }
-
   }
-
-  /**
-   * Обрабатывает сообщение окна размеров
-   * @param event
-   */
   sizes_wnd(event) {
-
     if(event.wnd == this || (this.wnd && event.wnd == this.wnd.wnd)){
-
       switch (event.name) {
       case 'close':
         if(this.children.text) {
@@ -7408,21 +5358,18 @@ class DimensionLine extends paper.Group {
         }
         this.wnd = null;
         break;
-
       case 'left':
       case 'right':
         if(this.pos == 'top' || this.pos == 'bottom') {
           this._move_points(event, 'x');
         }
         break;
-
       case 'top':
       case 'bottom':
         if(this.pos == 'left' || this.pos == 'right') {
           this._move_points(event, 'y');
         }
         break;
-        
       case 'rateably': {
         event.divide = 2;
         const {parent, pos, contour, elm1, elm2, p1, p2} = this._attr;
@@ -7450,7 +5397,6 @@ class DimensionLine extends paper.Group {
         }
         break;
       }
-
       case 'auto':
         const {_attr: {impost, pos, elm1, elm2}, project, layer}  = this;
         const {positions} = $p.enm;
@@ -7478,13 +5424,10 @@ class DimensionLine extends paper.Group {
           this._move_points(event, 'y');
         }
         break;
-
       }
     }
   }
-
   redraw() {
-
     const {children, path, align, project: {builder_props}} = this;
     if(!children.length){
       return;
@@ -7493,15 +5436,12 @@ class DimensionLine extends paper.Group {
       this.visible = false;
       return;
     }
-
-    // прячем крошечные размеры
     const length = path.length;
     if(length < 1){
       this.visible = false;
       return;
     }
     this.visible = true;
-
     const b = path.firstSegment.point;
     const e = path.lastSegment.point;
     const normal = path.getNormalAt(0).multiply(this.offset + path.offset);
@@ -7509,7 +5449,6 @@ class DimensionLine extends paper.Group {
     const ns = nl > 30 ? normal.normalize(nl - 10) : normal;
     const bs = b.add(ns);
     const es = e.add(ns);
-
     if(children.callout1.segments.length){
       children.callout1.firstSegment.point = b;
       children.callout1.lastSegment.point = b.add(normal);
@@ -7517,7 +5456,6 @@ class DimensionLine extends paper.Group {
     else{
       children.callout1.addSegments([b, b.add(normal)]);
     }
-
     if(children.callout2.segments.length){
       children.callout2.firstSegment.point = e;
       children.callout2.lastSegment.point = e.add(normal);
@@ -7525,7 +5463,6 @@ class DimensionLine extends paper.Group {
     else{
       children.callout2.addSegments([e, e.add(normal)]);
     }
-
     if(children.scale.segments.length){
       children.scale.firstSegment.point = bs;
       children.scale.lastSegment.point = es;
@@ -7533,15 +5470,12 @@ class DimensionLine extends paper.Group {
     else{
       children.scale.addSegments([bs, es]);
     }
-
     children.callout1.visible = !this.hide_c1;
     children.callout2.visible = !this.hide_c2;
     children.scale.visible = !this.hide_line;
-
     children.text.content = length.round(length > 220 ? builder_props.rounding : 0).toString();
     children.text.rotation = e.subtract(b).angle;
     children.text.justification = align.ref;
-
     const font_size = this._font_size();
     const {isNode} = $p.wsql.alasql.utils;
     children.text.fontSize = length < 220 ? font_size * 0.8 : font_size;
@@ -7562,16 +5496,13 @@ class DimensionLine extends paper.Group {
       }
     }
   }
-
   get path() {
-
     const {parent, project, children, _attr, pos} = this;
     if(!children.length){
       return;
     }
     const {owner_bounds, dimension_bounds} = parent;
     let offset = 0, b, e;
-
     if(!pos){
       b = typeof _attr.p1 == "number" ? _attr.elm1.corns(_attr.p1) : _attr.elm1[_attr.p1];
       e = typeof _attr.p2 == "number" ? _attr.elm2.corns(_attr.p2) : _attr.elm2[_attr.p2];
@@ -7596,18 +5527,13 @@ class DimensionLine extends paper.Group {
       e = owner_bounds.topRight;
       offset = owner_bounds[pos] - dimension_bounds[pos];
     }
-    
     if(project._attr._regions && parent.layer?.layer?.contours?.filter?.(l => l !== parent.layer)?.length) {
       offset += (pos == 'right' || pos == 'bottom') ? -60 : 50;
     }
-
-    // если точки профиля еще не нарисованы - выходим
     if(!b || !e){
       return;
     }
-
     const path = new paper.Path({project, insert: false, segments: [b, e] });
-
     if(_attr.elm1 && pos){
       b = path.getNearestPoint(_attr.elm1[_attr.p1]);
       e = path.getNearestPoint(_attr.elm2[_attr.p2]);
@@ -7624,23 +5550,17 @@ class DimensionLine extends paper.Group {
       path.lastSegment.point = e;
     }
     path.offset = offset;
-
     return path;
   }
-
   get eve() {
     return this.project?._scope?.eve;
   }
-
-  // размер
   get size() {
     return (this.children.text && parseFloat(this.children.text.content)) || 0;
   }
   set size(v) {
     this.children.text.content = parseFloat(v).round(1);
   }
-
-  // расположение относительно контура $p.enm.pos
   get pos() {
     return this._attr.pos || "";
   }
@@ -7648,8 +5568,6 @@ class DimensionLine extends paper.Group {
     this._attr.pos = v;
     this.redraw();
   }
-
-  // отступ от внешней границы изделия
   get offset() {
     return this._attr.offset || 90;
   }
@@ -7660,8 +5578,6 @@ class DimensionLine extends paper.Group {
       this.project.register_change(true);
     }
   }
-
-  // расположение надписи
   get align() {
     return (!this._attr.align || this._attr.align == '_') ? $p.enm.text_aligns.center : this._attr.align;
   }
@@ -7669,8 +5585,6 @@ class DimensionLine extends paper.Group {
     this._attr.align = v;
     this.redraw();
   }
-
-  // сокрытие первой выноски
   get hide_c1() {
     return !!this._attr.hide_c1;
   }
@@ -7680,8 +5594,6 @@ class DimensionLine extends paper.Group {
     v && children.callout1.setSelection(false);
     this.redraw();
   }
-
-  // сокрытие второй выноски
   get hide_c2() {
     return !!this._attr.hide_c2;
   }
@@ -7691,8 +5603,6 @@ class DimensionLine extends paper.Group {
     v && children.callout2.setSelection(false);
     this.redraw();
   }
-
-  // сокрытие линии
   get hide_line() {
     return !!this._attr.hide_line;
   }
@@ -7702,11 +5612,6 @@ class DimensionLine extends paper.Group {
     v && children.scale.setSelection(false);
     this.redraw();
   }
-
-  /**
-   * Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
-   */
   remove() {
     if(this._row){
       this._row._owner.del(this._row);
@@ -7715,62 +5620,32 @@ class DimensionLine extends paper.Group {
     }
     super.remove();
   }
-  
   static _font_size({width, height}) {
     const {cutoff, font_size} = consts;
     const size = Math.max(width - cutoff, height - cutoff) / 60;
     return Math.min(font_size + (size > 0 ? size : 0), font_size * 1.5);
   }
 }
-
-
-/**
- * Размерные линии, определяемые пользователем
- * @extends DimensionLine
- * @param attr
- */
 class DimensionLineCustom extends DimensionLine {
-
   constructor(attr) {
-
     if(!attr.row){
       attr.row = attr.parent.project.ox.coordinates.add();
     }
-
-    // слой, которому принадлежит размерная линия
     if(!attr.row.cnstr && attr.parent.layer){
       attr.row.cnstr = attr.parent.layer.cnstr;
     }
-
-    // номер элемента
     if(!attr.row.elm){
       attr.row.elm = attr.parent.project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
     }
-
     super(attr);
-
   }
-
-  /**
-   * Возвращает тип элемента (размерная линия)
-   */
   get elm_type() {
     return $p.enm.elm_types.Размер;
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
   save_coordinates() {
     const {_row, _attr, elm_type, pos, offset, size, align} = this;
-
-    // сохраняем размер
     _row.len = size;
-
-    // устанавливаем тип элемента
     _row.elm_type = elm_type;
-
-    // сериализованные данные
     const path_data = {
       pos: pos,
       elm1: _attr.elm1.elm,
@@ -7800,13 +5675,10 @@ class DimensionLineCustom extends DimensionLine {
     }
     _row.path_data = JSON.stringify(path_data);
   }
-  
   get is_smart_size() {
     const {_scope} = this._project;
     return _scope?.tool?.is_smart_size;
   }
-
-  // выделяем подключаем окно к свойствам
   setSelection(selection) {
     super.setSelection(selection);
     const {project, children, hide_c1, hide_c2, hide_line} = this;
@@ -7817,16 +5689,12 @@ class DimensionLineCustom extends DimensionLine {
       hide_line && children.scale.setSelection(false);
     }
   }
-
-  // выделяем только при активном инструменте
   _click(event) {
     event.stop();
     if(this.is_smart_size){
       this.selected = true;
     }
   }
-
-  // угол к горизонту в направлении размера
   get angle() {
     if(this.fix_angle) {
       return this._attr.angle || 0;
@@ -7838,8 +5706,6 @@ class DimensionLineCustom extends DimensionLine {
     this._attr.angle = parseFloat(v).round(1);
     this.project.register_change(true);
   }
-
-  // использование фикс угла
   get fix_angle() {
     return !!this._attr.fix_angle;
   }
@@ -7847,65 +5713,38 @@ class DimensionLineCustom extends DimensionLine {
     this._attr.fix_angle = v;
     this.project.register_change(true);
   }
-
   get path() {
     if(this.fix_angle) {
-      // рисум линию под требуемым углом из точки 1
-      // ищем на линии ближайшую от точки 2
-      // рисуем остатки, смещаем на offset
-
       const {children, _attr} = this;
       if(!children.length){
         return;
       }
       let b = typeof _attr.p1 == "number" ? _attr.elm1.corns(_attr.p1) : _attr.elm1[_attr.p1];
       let e = typeof _attr.p2 == "number" ? _attr.elm2.corns(_attr.p2) : _attr.elm2[_attr.p2];
-      // если точки профиля еще не нарисованы - выходим
       if(!b || !e){
         return;
       }
-
-      // дельта
       const d = e.subtract(b);
-      // касательная
       const t = d.clone();
       t.angle = this.angle;
-      // путь по углу
       const path = new paper.Path({project: this.project, insert: false, segments: [b, b.add(t)]});
-      // удлиненный путь
       path.lastSegment.point.add(t.multiply(10000));
-      // обрезаем ближайшей точкой к 'e'
       path.lastSegment.point = path.getNearestPoint(e);
       path.offset = 0;
       return path;
     }
     else {
-      // если угол не задан, рисуем стандартную линию
       return super.path;
     }
   }
-
   redraw() {
     super.redraw();
     this.visible = this.project.builder_props.custom_lines;
   }
 }
-
 EditorInvisible.DimensionLine = DimensionLine;
 EditorInvisible.DimensionLineCustom = DimensionLineCustom;
-
-
-/*
- * Вспомогательные классы для формирования размерных линий
- *
- * Created by Evgeniy Malyarov on 12.05.2017.
- *
- * @module geometry
- * @submodule dimension_drawer
- */
-
 class DimensionGroup {
-
   clear() {
     for (let key in this) {
       this[key].removeChildren();
@@ -7913,7 +5752,6 @@ class DimensionGroup {
       delete this[key];
     }
   }
-
   has_size(size) {
     for (let key in this) {
       const {path} = this[key];
@@ -7922,7 +5760,6 @@ class DimensionGroup {
       }
     }
   }
-
   sizes() {
     const res = [];
     for (let key in this) {
@@ -7932,23 +5769,13 @@ class DimensionGroup {
     }
     return res;
   }
-
 }
-
-/**
- * Служебный слой размерных линий  
- * Унаследован от [paper.Layer](http://paperjs.org/reference/layer/)
- *
- * @extends paper.Layer
- */
 class DimensionLayer extends paper.Layer {
-  
   constructor(...attr) {
     super(...attr);
     this.articles = new paper.Group({parent: this, name: 'articles'});
     this.articles.map = new Map();
   }
-
   get bounds() {
     let bounds;
     const {l_connective, contours} = this.project;
@@ -7964,28 +5791,16 @@ class DimensionLayer extends paper.Layer {
     });
     return bounds || new paper.Rectangle();
   }
-
   get owner_bounds() {
     return this.bounds;
   }
-
   get dimension_bounds() {
     return this.project.dimension_bounds;
   }
-
-  /**
-   * @summary Создаёт и перерисовавает габаритные линии изделия
-   * @desc Отвечает только за габариты изделия
-   * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
-   *
-   */
   draw_sizes() {
-
     const {project, bounds} = this;
     const {builder_props, contours} = project;
-
     if(bounds && builder_props.auto_lines && contours.some((l) => l.visible && !l.hidden)) {
-
       if(!this.bottom) {
         this.bottom = new DimensionLine({
           project,
@@ -7997,7 +5812,6 @@ class DimensionLayer extends paper.Layer {
       else {
         this.bottom.offset = -120;
       }
-
       if(!this.right) {
         this.right = new DimensionLine({
           project,
@@ -8009,10 +5823,6 @@ class DimensionLayer extends paper.Layer {
       else {
         this.right.offset = -120;
       }
-
-
-      // если среди размеров, сформированных контурами есть габарит - второй раз не выводим
-
       if(contours.some((l) => l.l_dimensions.children.some((dl) =>
         dl.pos == 'right' && Math.abs(dl.size - bounds.height) < consts.sticking_l))) {
         this.right.visible = false;
@@ -8020,7 +5830,6 @@ class DimensionLayer extends paper.Layer {
       else {
         this.right.redraw();
       }
-
       if(contours.some((l) => l.l_dimensions.children.some((dl) =>
         dl.pos == 'bottom' && Math.abs(dl.size - bounds.width) < consts.sticking_l))) {
         this.bottom.visible = false;
@@ -8038,32 +5847,16 @@ class DimensionLayer extends paper.Layer {
       }
     }
   }
-
 }
-
-/**
- * Построитель авторазмерных линий
- *
- * @extends paper.Group
- * @param attr
- * @param attr.parent - {paper.Item}, родитель должен иметь свойства profiles_by_side(), is_pos(), profiles, imposts
- */
 class DimensionDrawer extends paper.Group {
-
   constructor(attr) {
     super(attr);
     this.ihor = new DimensionGroup();
     this.ivert = new DimensionGroup();
   }
-
-  /**
-   * Стирает размерные линии
-   */
   clear(local) {
-
     this.ihor?.clear();
     this.ivert?.clear();
-
     for (const pos of ['bottom', 'top', 'right', 'left']) {
       if(this[pos]) {
         this[pos].removeChildren();
@@ -8071,67 +5864,44 @@ class DimensionDrawer extends paper.Group {
         this[pos] = null;
       }
     }
-    
     if(!local) {
       this.layer?.layer?.l_dimensions?.clear();
     }
   }
-
-  /**
-   * формирует авторазмерные линии
-   */
   redraw(force, forceDimensions) {
-
     const {parent, project: {builder_props}} = this;
-    
     if(!force) {
       force = parent.show_dimensions;
     }
-
     if(!force) {
       this.clear(true);
     }
     else if(force || !builder_props.auto_lines) {
       this.clear();
     }
-
-    // сначала, перерисовываем размерные линии вложенных контуров, чтобы получить отступы
     const {contours} = parent;
     if(contours) {
       for (let chld of contours) {
         chld.l_dimensions.redraw();
       }
     }
-
-    // для внешних контуров строим авторазмерные линии
     if(builder_props.auto_lines && force) {
-
       const {ihor, ivert, by_side} = this.imposts();
       if(!Object.keys(by_side).length) {
         return this.clear();
       }
-
-      // подмешиваем импосты вложенных контуров
       const our_profiles = parent.profiles;
       const profiles = new Set(our_profiles);
       parent.imposts.forEach((elm) => elm.visible && profiles.add(elm));
-
       for (let elm of profiles) {
-
-        // получаем точки начала и конца элемента
         const our = our_profiles.includes(elm);
         const eb = our ? (elm instanceof GlassSegment ? elm._sub.b : elm.b) : elm.rays.b.npoint;
         const ee = our ? (elm instanceof GlassSegment ? elm._sub.e : elm.e) : elm.rays.e.npoint;
-
         this.push_by_point({ihor, ivert, eb, ee, elm});
-
         if(!parent.layer && elm.nearest() instanceof ProfileConnective) {
           this.push_by_point({ihor, ivert, eb: elm.c1, ee: elm.c2, elm});
         }
-        
       }
-
-      // для ihor добавляем по вертикали
       if(ihor.length > 2) {
         ihor.sort((a, b) => b.point - a.point);
         if(parent.is_pos('right') || (force && !parent.is_pos('left'))) {
@@ -8144,8 +5914,6 @@ class DimensionDrawer extends paper.Group {
       else {
         ihor.length = 0;
       }
-
-      // для ivert добавляем по горизонтали
       if(ivert.length > 2) {
         ivert.sort((a, b) => a.point - b.point);
         if(parent.is_pos('bottom') || (force && !parent.is_pos('top'))) {
@@ -8158,19 +5926,12 @@ class DimensionDrawer extends paper.Group {
       else {
         ivert.length = 0;
       }
-
-      // далее - размерные линии контура
       this.by_contour(ihor, ivert, force, by_side, forceDimensions);
-
     }
-
-    // перерисовываем размерные линии текущего контура
     for (let dl of this.children) {
       dl.redraw && dl.redraw();
     }
-
   }
-
   push_by_point({ihor, ivert, eb, ee, elm}) {
     const cond = (v, n) => Math.abs(v.point - n) > 1;
     if(eb && ihor.every((v) => cond(v, eb.y))) {
@@ -8202,19 +5963,11 @@ class DimensionDrawer extends paper.Group {
       });
     }
   }
-
-  /**
-   * Формирует пользовательские линии по импостам
-   */
   draw_by_imposts() {
     const {parent, project} = this;
     this.clear();
-
-    // для всех палок контура
-    // если на палке есть импосты, добавляем точки
     let index = 0;
     for (let elm of parent.profiles) {
-
       const {inner, outer} = elm.joined_imposts();
       const {generatrix, angle_hor} = elm;
       generatrix.visible = false;
@@ -8240,7 +5993,6 @@ class DimensionDrawer extends paper.Group {
           dx1 = dxo + nom.sizefaltz;
           dx2 = dxi - nom.sizefaltz;
         }
-
         this.ihor[`i${++index}`] = new DimensionLineImpost({
           project,
           parent: this,
@@ -8255,26 +6007,15 @@ class DimensionDrawer extends paper.Group {
         });
       }
     }
-
-    // далее - размерные линии контура
     this.by_contour([], [], true);
-
-    // перерисовываем размерные линии текущего контура
     for (let dl of this.children) {
       dl.redraw && dl.redraw();
     }
-
   }
-
-  /**
-   * Формирует линии по импостам по раскладкам
-   */
   draw_by_falsebinding() {
     const {parent} = this;
     this.clear();
-
     const {ihor, ivert, by_side} = this.imposts();
-    
     function crossing(elm, imposts) {
       for(const other of imposts) {
         if(other !== elm && other.generatrix.getCrossings(elm.generatrix).length) {
@@ -8282,7 +6023,6 @@ class DimensionDrawer extends paper.Group {
         }
       }
     }
-
     for(const filling of parent.fillings) {
       if(!filling.visible) {
         continue;
@@ -8290,7 +6030,6 @@ class DimensionDrawer extends paper.Group {
       const {path, imposts} = filling;
       for(const elm of imposts) {
         let {b: eb, e: ee} = elm;
-        // если точка не на границе заполнения и импост имеет пересечения
         if(path.is_nearest(eb) && crossing(elm, imposts)) {
           eb = null;
         }
@@ -8302,11 +6041,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
     }
-
-    // далее - размерные линии контура
     this.by_contour([], [], true, by_side);
-
-    // для ihor добавляем по вертикали
     if(ihor.length > 2) {
       ihor.sort((a, b) => b.point - a.point);
       this.by_base(ihor, this.ihor, 'left');
@@ -8314,8 +6049,6 @@ class DimensionDrawer extends paper.Group {
     else {
       ihor.length = 0;
     }
-
-    // для ivert добавляем по горизонтали
     if(ivert.length > 2) {
       ivert.sort((a, b) => a.point - b.point);
       this.by_base(ivert, this.ivert, 'top');
@@ -8323,16 +6056,10 @@ class DimensionDrawer extends paper.Group {
     else {
       ivert.length = 0;
     }
-
-    // перерисовываем размерные линии текущего контура
     for (let dl of this.children) {
       dl.redraw && dl.redraw();
     }
   }
-
-  /**
-   * Формирует размерные линии импоста
-   */
   by_imposts(arr, collection, pos) {
     let {base_offset, dop_offset} = consts;
     const {project} = this;
@@ -8367,10 +6094,6 @@ class DimensionDrawer extends paper.Group {
       }
     }
   }
-
-  /**
-   * Формирует размерные линии от габарита
-   */
   by_base(arr, collection, pos) {
     let {base_offset, dop_offset} = consts;
     let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
@@ -8391,12 +6114,7 @@ class DimensionDrawer extends paper.Group {
       }
     }
   }
-
-  /**
-   * Формирует размерные линии контура
-   */
   by_contour(ihor, ivert, forse, by_side, forceDimensions) {
-
     const {project, parent} = this;
     const {profileBounds: bounds} = parent;
     const projectBounds = project.l_dimensions.bounds;
@@ -8406,9 +6124,7 @@ class DimensionDrawer extends paper.Group {
       base_offset += 60;
       dop_offset = base_offset + 40;
     }
-
     if(project.contours.length > 1 || forse) {
-
       if((parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) || (forceDimensions && !parent.is_pos('left'))) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
@@ -8436,7 +6152,6 @@ class DimensionDrawer extends paper.Group {
           this.left = null;
         }
       }
-
       if((parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) || (forceDimensions && !parent.is_pos('right'))) {
         if(!this.ihor.has_size(bounds.height) && (!this.left || Math.abs(bounds.height - this.left.size) > 1)) {
           if(!this.right) {
@@ -8474,7 +6189,6 @@ class DimensionDrawer extends paper.Group {
           this.right = null;
         }
       }
-
       if(parent.is_pos('top') && !parent.is_pos('bottom') && projectBounds.width != bounds.width) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
@@ -8502,7 +6216,6 @@ class DimensionDrawer extends paper.Group {
           this.top = null;
         }
       }
-
       if((parent.is_pos('bottom') || (forceDimensions && !this.top)) && (projectBounds.width != bounds.width || forse)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
@@ -8530,17 +6243,11 @@ class DimensionDrawer extends paper.Group {
           this.bottom = null;
         }
       }
-
     }
-
     if(forse === 'faltz') {
       this.by_faltz(ihor, ivert, by_side);
     }
   }
-
-  /**
-   * Формирует размерные линии контура по фальцу
-   */
   by_faltz(ihor, ivert, by_side) {
     const {base_offset} = consts;
     if (!this.left) {
@@ -8564,19 +6271,13 @@ class DimensionDrawer extends paper.Group {
       });
     }
   }
-
   imposts() {
-
     const {parent} = this;
     const {bounds} = parent;
-
     const by_side = parent.profiles_by_side();
     if(!Object.keys(by_side).length) {
       return {ihor: [], ivert: [], by_side: {}};
     }
-
-    // сначала, строим размерные линии импостов
-    // получаем все профили контура, делим их на вертикальные и горизонтальные
     const ihor = [
       {
         point: bounds.top.round(),
@@ -8599,17 +6300,14 @@ class DimensionDrawer extends paper.Group {
         elm: by_side.right,
         p: by_side.right.b.x > by_side.right.e.x ? 'b' : 'e'
       }];
-
     return {ihor, ivert, by_side};
   }
-
   save_coordinates(short, save, close) {
     for (const elm of this.children) {
       elm.save_coordinates?.(short, save, close);
     }
     return Promise.resolve();
   }
-  
   find({pos, contour, elm1, elm2, p1, p2}) {
     if(contour) {
       return this[pos];
@@ -8624,28 +6322,16 @@ class DimensionDrawer extends paper.Group {
       }
     }
   }
-
   get owner_bounds() {
     return this.parent.bounds;
   }
-
   get dimension_bounds() {
     return this.parent.dimension_bounds;
   }
-  
 }
-
 EditorInvisible.DimensionDrawer = DimensionDrawer;
 EditorInvisible.DimensionLayer = DimensionLayer;
-
-
-/*
- * ### Размерная линия угла между лучами
- * Created 19.05.2023
- */
-
 class DimensionAngle extends DimensionLineCustom {
-
   constructor(attr) {
     super(attr);
     const {p1, p2, o, through, pos, content} = attr;
@@ -8662,25 +6348,13 @@ class DimensionAngle extends DimensionLineCustom {
     });
     scale.addSegments(tmp.segments);
   }
-
-  /**
-   * Возвращает тип элемента (Угол)
-   * @type {EnmElm_types}
-   */
   get elm_type() {
     return $p.enm.elm_types.Угол;
   }
-
   save_coordinates() {
     const {_row, _attr, elm_type, children: {callout1, callout2, scale, text}} = this;
-
-    // сохраняем размер
     _row.len = parseFloat(text.content);
-
-    // устанавливаем тип элемента
     _row.elm_type = elm_type;
-
-    // сериализованные данные
     const through = scale.getPointAt(scale.length / 2);
     const path_data = {
       o: [callout1.firstSegment.point.x, callout1.firstSegment.point.y],
@@ -8692,15 +6366,12 @@ class DimensionAngle extends DimensionLineCustom {
     };
     _row.path_data = JSON.stringify(path_data);
   }
-
   is_disabled() {
     return true;
   }
-
   get path() {
     return this.children.scale;
   }
-
   redraw() {
     const {children, _attr, path, align} = this;
     if(!path){
@@ -8709,25 +6380,10 @@ class DimensionAngle extends DimensionLineCustom {
     }
     this.visible = true;
   }
-
 }
-
 EditorInvisible.DimensionAngle = DimensionAngle;
-
-
-/*
- *
- *
- * @module dimension_line_impost
- *
- * Created by Evgeniy Malyarov on 25.05.2018.
- */
-
-
 class DimensionLineImpost extends DimensionLineCustom {
-
   constructor(attr) {
-
     attr.row = {
       cnstr: 1,
       elm: 1,
@@ -8735,9 +6391,7 @@ class DimensionLineImpost extends DimensionLineCustom {
         del() {}
       }
     }
-
     super(attr);
-
     new paper.PointText({
       parent: this,
       name: 'dx1',
@@ -8745,7 +6399,6 @@ class DimensionLineImpost extends DimensionLineCustom {
       fontFamily: consts.font_family,
       fillColor: 'black',
       fontSize: consts.font_size});
-
     new paper.PointText({
       parent: this,
       name: 'dx2',
@@ -8753,21 +6406,14 @@ class DimensionLineImpost extends DimensionLineCustom {
       fontFamily: consts.font_family,
       fillColor: 'black',
       fontSize: consts.font_size});
-
   }
-
   get path() {
-
-    // рисум линию между точками dx1 и dx2 и смещаем на offset
-
     const {children, _attr: {elm1: {generatrix}, p1, p2, dx1, dx2}} = this;
     if(!children.length){
       return;
     }
-
     let b = generatrix.getPointAt(typeof p1 == 'number' ? dx2 : dx1);
     let e = generatrix.getPointAt(typeof p1 == 'number' ? dx1 : dx2);
-    // если точки профиля еще не нарисованы - выходим
     if(!b || !e){
       return;
     }
@@ -8775,9 +6421,7 @@ class DimensionLineImpost extends DimensionLineCustom {
     path.offset = 0;
     return path;
   }
-
   redraw() {
-
     const {children, path, offset, _attr: {elm1, p1, p2, dx1, dx2, outer}} = this;
     if(!children.length){
       return;
@@ -8786,9 +6430,7 @@ class DimensionLineImpost extends DimensionLineCustom {
       this.visible = false;
       return;
     }
-
     this.visible = true;
-
     const b = path.firstSegment.point;
     const e = path.lastSegment.point;
     const normal = path.getNormalAt(0).multiply((outer ? -1 : 1) * (offset + path.offset));
@@ -8796,7 +6438,6 @@ class DimensionLineImpost extends DimensionLineCustom {
     const ns = normal.normalize(normal.length - 20);
     const bs = b.add(ns);
     const es = e.add(ns);
-    // ищем дальнее ребро соседнего профиля в точке b
     let offsetB = 0;
     const elmB = elm1.cnn_point('b').profile;
     if(elmB) {
@@ -8810,7 +6451,6 @@ class DimensionLineImpost extends DimensionLineCustom {
         offsetB = Math.min(oo - ob, oi - ob);
       }
     }
-
     if(children.callout1.segments.length){
       children.callout1.firstSegment.point = b;
       children.callout1.lastSegment.point = b.add(normal);
@@ -8818,7 +6458,6 @@ class DimensionLineImpost extends DimensionLineCustom {
     else{
       children.callout1.addSegments([b, b.add(normal)]);
     }
-
     if(children.callout2.segments.length){
       children.callout2.firstSegment.point = e;
       children.callout2.lastSegment.point = e.add(normal);
@@ -8826,7 +6465,6 @@ class DimensionLineImpost extends DimensionLineCustom {
     else{
       children.callout2.addSegments([e, e.add(normal)]);
     }
-
     if(children.scale.segments.length){
       children.scale.firstSegment.point = bs;
       children.scale.lastSegment.point = es;
@@ -8835,7 +6473,6 @@ class DimensionLineImpost extends DimensionLineCustom {
       children.scale.addSegments([bs, es]);
     }
     children.scale.elongation(200);
-
     children.text.rotation = children.dx1.rotation = children.dx2.rotation = 0;
     children.text.content = ((typeof p1 == 'number' ? p1 : p2) - offsetB).toFixed(0);
     children.dx1.content = (dx1 - offsetB).toFixed(0);
@@ -8863,56 +6500,29 @@ class DimensionLineImpost extends DimensionLineCustom {
         .add(normal.normalize(-consts.font_size * 0.6));
     }
     children.text.rotation = children.dx1.rotation = children.dx2.rotation = e.subtract(b).angle;
-
     children.text.position = bs.add(es).divide(2).add(normal.normalize(consts.font_size * 0.8));
   }
-
 }
-
 EditorInvisible.DimensionLineImpost = DimensionLineImpost;
-
-
-/*
- * ### Размерная линия радиуса
- *
- * @module dimension_radius
- *
- * Created by Evgeniy Malyarov on 01.05.2018.
- */
-
 class DimensionRadius extends DimensionLineCustom {
-
-  /**
-   * Возвращает тип элемента (размерная линия радиуса)
-   */
   get elm_type() {
     return $p.enm.elm_types.Радиус;
   }
-
   get path() {
-    // ищем точку 1 на пути профиля
-    // строим нормаль - это и будет наш путь
-
     const {children, _attr} = this;
     if(!children.length){
       return;
     }
     const {path} = _attr.elm1;
-    // если точки профиля еще не нарисованы - выходим
     if(!path){
       return;
     }
-
-    // точка начала
     let b = path.getPointAt(_attr.p1);
-    // нормаль
     const n = path.getNormalAt(_attr.p1).normalize(100);
-    // путь
     const res = new paper.Path({insert: false, segments: [b, b.add(n)]});
     res.offset = 0;
     return res;
   }
-
   redraw() {
     const {children, _attr, path, align} = this;
     if(!path){
@@ -8920,14 +6530,12 @@ class DimensionRadius extends DimensionLineCustom {
       return;
     }
     this.visible = true;
-
     const b = path.firstSegment.point;
     const e = path.lastSegment.point;
     const c = path.getPointAt(50);
     const n = path.getNormalAt(0).multiply(10);
     const c1 = c.add(n);
     const c2 = c.subtract(n);
-
     if(children.callout1.segments.length){
       children.callout1.firstSegment.point = b;
       children.callout1.lastSegment.point = c1;
@@ -8935,7 +6543,6 @@ class DimensionRadius extends DimensionLineCustom {
     else{
       children.callout1.addSegments([b, c1]);
     }
-
     if(children.callout2.segments.length){
       children.callout2.firstSegment.point = b;
       children.callout2.lastSegment.point = c2;
@@ -8943,7 +6550,6 @@ class DimensionRadius extends DimensionLineCustom {
     else{
       children.callout2.addSegments([b, c2]);
     }
-
     if(children.scale.segments.length){
       children.scale.firstSegment.point = b;
       children.scale.lastSegment.point = e;
@@ -8951,7 +6557,6 @@ class DimensionRadius extends DimensionLineCustom {
     else{
       children.scale.addSegments([b, e]);
     }
-
     children.text.rotation = e.subtract(b).angle;
     children.text.justification = 'left';
     if(_attr.by_curve) {
@@ -8967,72 +6572,40 @@ class DimensionRadius extends DimensionLineCustom {
         _attr.elm1.path;
       children.text.content = `R${sub.ravg().round()}`;
     }
-
     children.text.position = e.add(path.getTangentAt(0).multiply(consts.font_size * 1.4));
   }
-
 }
-
 EditorInvisible.DimensionRadius = DimensionRadius;
-
-
-/**
- * Заполнение
- * - Инкапсулирует поведение элемента заполнения
- * - У заполнения есть коллекция рёбер, образующая путь контура
- * - Путь всегда замкнутый, образует простой многоугольник без внутренних пересечений, рёбра могут быть гнутыми
- *
- * @extends AbstractFilling
- */
 class Filling extends AbstractFilling(BuilderElement) {
-
-  /**
-   *
-   * @param attr {Object} - объект со свойствами создаваемого элемента
-   */
   constructor(attr) {
-
     const {path, proto} = attr;
     if(path){
       delete attr.path;
     }
-
     super(attr);
-
     if(path){
       attr.path = path;
     }
     if(proto){
       attr.proto = proto;
     }
-    
     this.create_groups();
-
-    // initialize
     this.initialize(attr);
-
   }
-
   create_groups() {
     super.create_groups();
     new GroupLayers({parent: this, name: 'tearings'});
     new GroupText({parent: this, name: 'text'});
     this.cnnMap = new Map();
   }
-
   initialize(attr) {
-
-    // узлы и рёбра раскладок заполнения
     this._skeleton = new Skeleton(this);
-
     const _row = attr.row;
     const {_attr, project, layer} = this;
     const {bounds: pbounds} = project;
-
     if(_row.path_data){
       _attr.path = new FillingPath({project, pathData: _row.path_data});
     }
-
     else if(attr.path){
       _attr.path = new FillingPath({project});
       this.path = attr.path;
@@ -9048,18 +6621,13 @@ class Filling extends AbstractFilling(BuilderElement) {
           [_row.x2, h - _row.y1]
         ]});
     }
-
     _attr.path.closePath(true);
     _attr.path.reduce();
     _attr.path.strokeWidth = 0;
-
-    // для нового устанавливаем вставку по умолчанию
     const {enm: {elm_types}, utils} = $p;
     if(_row.inset.empty()){
       _row.inset = project.default_inset({elm_type: elm_types.glasses, elm: this});
     }
-
-    // для нового устанавливаем цвет по умолчанию
     if(_row.clr.empty()){
       layer.sys.elmnts.find_rows({nom: _row.inset}, (row) => {
         _row.clr = row.clr;
@@ -9073,23 +6641,16 @@ class Filling extends AbstractFilling(BuilderElement) {
       });
     }
     this.clr = _row.clr;
-
     if(_row.elm_type.empty()){
       _row.elm_type = elm_types.Стекло;
     }
-
     _attr.path.visible = false;
-
     this.addChild(_attr.path);
-
-    // раскладки текущего заполнения
     _row._owner.find_rows({
       cnstr: this.layer.cnstr,
       parent: this.elm,
       elm_type: elm_types.layout
     }, (row) => new Onlay({row, parent: this}));
-
-    // спецификация стеклопакета прототипа
     if (attr.proto) {
       const {glass_specification, _data} = this.ox;
       const {_loading} = _data;
@@ -9102,25 +6663,16 @@ class Filling extends AbstractFilling(BuilderElement) {
       tmp.forEach((row) => glass_specification.add(row));
       _data._loading = _loading;
     }
-
   }
-
   get elm_type() {
     const {elm_types} = $p.enm;
     const {nom} = this;
     return nom.elm_type == elm_types.Заполнение ? nom.elm_type : elm_types.Стекло;
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
   save_coordinates() {
-
     const {_row, project, layer, profiles, bounds, form_area, thickness, nom, ox: {cnn_elmnts: cnns, glasses}} = this;
     const h = project.bounds.height + project.bounds.y;
     const {length} = profiles;
-
-    // строка в таблице заполнений продукции
     glasses.add({
       elm: _row.elm,
       nom: nom,
@@ -9132,10 +6684,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       is_sandwich: nom.elm_type == $p.enm.elm_types.Заполнение,
       thickness,
     }, true);
-
     let curr, prev,	next
-
-    // координаты bounds
     _row.x1 = (bounds.bottomLeft.x - project.bounds.x).round(3);
     _row.y1 = (h - bounds.bottomLeft.y).round(3);
     _row.x2 = (bounds.topRight.x - project.bounds.x).round(3);
@@ -9143,12 +6692,8 @@ class Filling extends AbstractFilling(BuilderElement) {
     _row.s = form_area;
     _row.len = 0;
     _row.path_data = this.path.pathData;
-
-    // получаем пути граней профиля
     for(let i=0; i<length; i++ ){
-
       curr = profiles[i];
-
       if(!curr.profile || !curr.profile._row){
         if($p.job_prm.debug) {
           console.error('Не найдено ребро заполнения');
@@ -9161,21 +6706,15 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
         return;
       }
-
       curr.aperture_path = curr.profile.generatrix.get_subpath(curr.b, curr.e)._reversed ?
         curr.profile.rays.outer : curr.profile.rays.inner;
     }
-
-    // получам пересечения
     for(let i=0; i<length; i++ ){
-
       prev = i === 0 ? profiles[length-1] : profiles[i-1];
       curr = profiles[i];
       next = i === length-1 ? profiles[0] : profiles[i+1];
-
       const pb = curr.aperture_path.intersect_point(prev.aperture_path, curr.b, true);
       const pe = curr.aperture_path.intersect_point(next.aperture_path, curr.e, true);
-
       if(!pb || !pe) {
         if($p.job_prm.debug) {
           throw 'Filling:path';
@@ -9184,8 +6723,6 @@ class Filling extends AbstractFilling(BuilderElement) {
           return;
         }
       }
-
-      // соединения с профилями
       cnns.add({
         elm1: _row.elm,
         elm2: curr.profile._row.elm,
@@ -9194,31 +6731,17 @@ class Filling extends AbstractFilling(BuilderElement) {
         cnn: curr.cnn.ref,
         aperture_len: curr.aperture_path.get_subpath(pb, pe).length.round(1)
       }, true);
-
     }
-
-    // удаляем лишние ссылки
     for(let i=0; i<length; i++ ){
       delete profiles[i].aperture_path;
     }
-
-    // дочерние раскладки и разрывы заполнений
     for(const child of this.imposts.concat(this.children.tearings.children)) {
       child.save_coordinates?.();
     }
   }
-
-  /**
-   * Создаёт створку в текущем заполнении
-   */
   create_leaf(furn, direction) {
-
     const {project, layer, _row, ox, elm: elm1} = this;
-
-    // прибиваем соединения текущего заполнения
     ox.cnn_elmnts.clear({elm1});
-
-    // создаём пустой новый слой
     let kind = 0;
     if(typeof furn === 'string') {
       if(furn.includes('nested')) {
@@ -9229,7 +6752,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
     const cattr = {project, kind, parent: layer.children.topLayers};
-    // фурнитура и параметры по умолчанию
     if(direction) {
       cattr.direction = direction;
     }
@@ -9243,49 +6765,27 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
     const contour = Contour.create(cattr);
-
-    // задаём его путь - внутри будут созданы профили
     contour.path = this.profiles;
-
-    // помещаем себя вовнутрь нового слоя
     if(kind === 2) {
       this.remove();
     }
     else {
       this.parent = contour.children.fillings;
       _row.cnstr = contour.cnstr;
-      // проверим вставку
       this.set_inset(project.default_inset({
         inset: this.inset,
         elm: this,
         elm_type: elm_types.glasses,
       }), true);      
-      // дочерние раскладки
       this.imposts.forEach(({_row}) => _row.cnstr = contour.cnstr);
     }
-
-    // оповещаем мир о новых слоях
     project.notify(contour, 'rows', {constructions: true});
-
-    // делаем створку текущей
     contour.activate();
     return contour;
   }
-
-  /**
-   * Возвращает сторону соединения заполнения с профилем раскладки
-   */
   cnn_side() {
     return $p.enm.cnn_sides.inner;
   }
-
-  /**
-   * @summary Примыкающий внешний элемент
-   * @description если указан point, ищет ближайшее ребро, иначе - пусто
-   * @override
-   * @param {paper.Point} [point]
-   * @return {void|BuilderElement}
-   */
   nearest(point) {
     if(point && point !== true) {
       let distance = Infinity;
@@ -9300,7 +6800,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       return profile;
     }
   }
-
   select_node(v) {
     let point, segm, delta = Infinity;
     if(v === "b"){
@@ -9320,7 +6819,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       this.view.update();
     }
   }
-
   setSelection(selection) {
     if(selection && !this.getSelection()) {
       this._attr.selectionStamp = Date.now();
@@ -9328,29 +6826,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     super.setSelection(selection);
     this.path.setSelection(selection);
   }
-
-  /**
-   * @summary Перед отрисовкой
-   */
   actualizeCach() {
     this.recalcCnnMap(this.cnnMap, this.imposts);
   }
-
-  /**
-   * @summary При изменении проекта
-   */
   register_change() {
-    // чистим карту соединений
     this.cnnMap?.clear?.();
   }
-  
-  /**
-   * Перерисовывает раскладки текущего заполнения
-   */
   redraw() {
-
     this.actualizeCach();
-
     const {path, imposts, glbeads, _attr, is_rectangular, elm, project, visible} = this;
     const {bounds: pbounds, ox} = project;
     const {elm_font_size, font_family} = consts;
@@ -9366,11 +6849,7 @@ class Filling extends AbstractFilling(BuilderElement) {
       elm.redraw();
       elm.visible = visible && (!builder_props.onlay_regions || elm.region == builder_props.onlay_regions);
     });
-
-    // прочистим пути
     this.purge_paths();
-
-    // если текст не создан - добавляем
     if(!_attr._text){
       _attr._text = new paper.PointText({
         project,
@@ -9382,15 +6861,11 @@ class Filling extends AbstractFilling(BuilderElement) {
         visible: true,
       });
     }
-
-    // Задаем надпись формулы
     const {bounds} = path;
     _attr._text.content = this.formula();
-
     const textBounds = bounds.scale(0.88);
     textBounds.width = textBounds.width > maxTextWidth ? maxTextWidth : textBounds.width;
     textBounds.height = textBounds.height > maxTextWidth ? maxTextWidth : textBounds.height;
-
     if(is_rectangular){
       const turn = textBounds.width * 1.5 < textBounds.height;
       if(turn){
@@ -9410,7 +6885,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       textBounds.height = elm_font_size;
       _attr._text.rotation = 0;
       _attr._text.fitBounds(textBounds);
-      // Поиск самой длинной кривой пути
       const maxCurve = path.curves.reduce((curv, item) => item.length > curv.length ? item : curv, path.curves[0]);
       if(maxCurve) {
         const {angle, angleInRadians} = maxCurve.line.vector;
@@ -9418,15 +6892,12 @@ class Filling extends AbstractFilling(BuilderElement) {
         _attr._text.rotation = angle;
         const biasPoint = new paper.Point(Math.cos(angleInRadians + PI / 4), Math.sin(angleInRadians + PI / 4)).multiply(3 * elm_font_size);
         _attr._text.point = maxCurve.point1.add(biasPoint);
-        // Перевернуть с головы на ноги
         if(Math.abs(angle) >= 85 && Math.abs(angle) <= 185){
           _attr._text.point = _attr._text.bounds.rightCenter;
           _attr._text.rotation += 180;
         }
       }
     }
-    
-    // Заполнения отдельно
     const param = $p.cch.properties.predefined('glass_separately');
     if(param?.extract_pvalue({ox, cnstr: -elm, elm: this})) {
       if(!_attr._text_sep){
@@ -9446,17 +6917,11 @@ class Filling extends AbstractFilling(BuilderElement) {
       _attr._text_sep.remove();
       _attr._text_sep = null;
     }
-
     for(const glbead of glbeads) {
       glbead.redraw();
     }
-
     return this.draw_regions();
   }
-
-  /**
-   * Рисует заполнение отдельным элементом
-   */
   draw_fragment(no_zoom) {
     const {l_dimensions, layer, path, imposts, project: {builder_props}} = this;
     if(layer instanceof ContourTearing) {
@@ -9487,20 +6952,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     lv.visible = true;
     !no_zoom && layer.zoom_fit();
   }
-
-  /**
-   * Рисует при необходимости ряды
-   */
   draw_regions() {
     const {inset, elm, layer, _attr: {paths, _text}, project} = this;
     const {builder_props} = project;
     if(inset.region && !(layer instanceof ContourTearing)) {
       const processed = new Set();
       this.ox.glass_specification.find_rows({elm}, (row) => {
-        // 0 - не ряд
-        // 1 - ряд внутри элемента
-        // >1 - за элементом
-        // <0 - перед элементом
         if([1, 2, 3, -1, -2].includes(row.region) && !processed.has(row.region)) {
           processed.add(row.region);
           const {profiles, path} = this;
@@ -9514,7 +6971,6 @@ class Filling extends AbstractFilling(BuilderElement) {
           rpath.fillColor = path.fillColor;
           rpath._owner = this;
           rpath.removeSegments();
-          // получаем периметр ряда
           const {enm: {cnn_types}, cat: {cnns}, job_prm: {nom: {strip}}} = $p;
           const outer_profiles = profiles.map((v) => {
             let profile = v.profile.nearest() || v.profile;
@@ -9587,7 +7043,6 @@ class Filling extends AbstractFilling(BuilderElement) {
               curr.strip_path = curr.strip_path.get_subpath(curr.sb, curr.se, true);
             }
           }
-          // формируем пути внешнего заполнения и полосы
           let strip_path = new FillingPath({project, insert: false});
           rpath.removeChildren();
           for (const curr of outer_profiles) {
@@ -9644,7 +7099,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     return this;
   }
-  
   reset_fragment() {
     const {children, layer, path} = this;
     children.dimlns.clear(true);
@@ -9656,75 +7110,49 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
     this.visible = !layer.hidden;
   }
-
-  /**
-   * Сеттер вставки с учетом выделенных элементов
-   * @param v {CatInserts}
-   * @param [ign_select] {Boolean}
-   * @param [force] {Boolean}
-   */
   set_inset(v, ign_select, force) {
-
     if(!force && this.inset == v) {
       return;
     }
-
     const inset = $p.cat.inserts.get(v);
     const {insert_type} = inset;
-
     const {project, elm, _row, _attr, ox} = this;
     _row.inset = inset;
     delete _attr.nom;
-
     if(!ign_select || force){
-
       const {glass_specification, _data} = ox;
       const {_loading} = _data;
       if(!_loading) {
         _data._loading = true;
       }
-
-      // проверим доступность цветов, при необходимости обновим
       inset.clr_group.default_clr(this);
-
-      // если для заполнения был определён состав - очищаем
       glass_specification.clear({elm});
-      // если тип стеклопакет - заполняем по умолчанию
       if(insert_type.is('composite')) {
         for(const row of inset.specification) {
           row.quantity && glass_specification.add({elm, inset: row.nom});
         }
         this.default_params();
       }
-
-      // транслируем изменения на остальные выделенные заполнения
       !ign_select && project.selected_glasses().forEach((selm) => {
         if(selm !== this){
-          // копируем вставку
           selm.set_inset(inset, true, force);
-          // сбрасываем состав заполнения
           glass_specification.clear({elm: selm.elm});
-          // если тип стеклопакет - заполняем по умолчанию
           if(insert_type.is('composite')) {
             for(const row of inset.specification) {
               row.quantity && glass_specification.add({elm: selm.elm, inset: row.nom});
             }
             selm.default_params();
           }
-          // устанавливаем цвет, как у нас
           selm.clr = this.clr;
         }
       });
-
       if(!_loading) {
         _data._loading = false;
       }
     }
-
     project.register_change();
     project._scope.eve.emit('set_inset', this);
   }
-
   default_params() {
     const {ox: {_owner, _data, glass_specification}, elm} = this;
     const {_loading} = _data;
@@ -9740,12 +7168,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       _data._loading = false;
     }
   }
-
-  /**
-   * Сеттер цвета элемента
-   * @param v {CatClrs}
-   * @param ign_select {Boolean}
-   */
   set_clr(v, ign_select) {
     if(!ign_select && this.project.selectedItems.length > 1){
       this.project.selected_glasses().forEach((elm) => {
@@ -9756,21 +7178,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     super.set_clr(v);
   }
-
-  /**
-   * Произвольный комментарий
-   * @type {String}
-   */
   get note() {
     return this.dop.note || '';
   }
   set note(v) {
     this.project.selected_glasses().forEach(elm => elm.dop = {note: v});
   }
-
-  /**
-   * Прочищает паразитные пути
-   */
   purge_paths() {
     const {path, children, _attr: {paths}} = this;
     const {Path, CompoundPath} = paper;
@@ -9781,10 +7194,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
   }
-
-  /**
-   * Заливка красным с градиентом
-   */
   fill_error() {
     const {path} = this;
     path.fillColor = new paper.Color({
@@ -9793,11 +7202,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       destination: path.bounds.topRight
     });
   }
-
-  /**
-   * Возвращает формулу (код состава) заполнения
-   * @type String
-   */
   formula(by_art) {
     const {elm, inset, ox, note} = this;
     if(note) {
@@ -9825,12 +7229,9 @@ class Filling extends AbstractFilling(BuilderElement) {
         else{
           res += (by_art ? '*' : 'x') + name;
         }
-        // подмешаем цвет, если он отличается от умолчания
         if(!clr_group.empty() && !clr.empty() && clr_group.clrs()[0] != clr) {
           res += clr.machine_tools_clr || clr.name;
         }
-
-        // подмешаем параметры с битом 'включать в наименование'
         if(params) {
           for(const ref in params) {
             const param = properties.get(ref);
@@ -9849,16 +7250,10 @@ class Filling extends AbstractFilling(BuilderElement) {
             }
           }
         }
-
       });
     }
-    
     return res || (by_art ? inset.article || inset.name : inset.name);
   }
-
-  /**
-   * сбрасывает выделение с точек раскладки
-   */
   deselect_onlay_points() {
     for(const {generatrix} of this.imposts) {
       generatrix.segments.forEach((segm) => {
@@ -9871,17 +7266,9 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     }
   }
-
-  /**
-   * Создаёт-удаляет дополнительные свойства элемента в зависимости от их наличия в системе или параметрах параметра
-   * [inset] {CatInserts} - указываем для дополнительных вставок
-   * @override
-   * @return {Array}
-   */
   elm_props(inset) {
     const res = super.elm_props(inset);
     let {ox: {params}, layer: {sys}} = this;
-    
     const {glass_separately} = $p.job_prm.properties; 
     if([1, 2].includes(glass_separately?.inheritance)) {
       const prow = sys.product_params.find({param: glass_separately});
@@ -9891,99 +7278,49 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     return res;
   }
-
-  /**
-   * Массив раскладок
-   */
   get imposts() {
     return this.getItems({class: Onlay});
   }
-
   get profiles() {
     return this._attr._profiles || [];
   }
-  
   get glbeads() {
     return this.layer.getItems({class: ProfileGlBead, glass: this}); 
   }
-
-  /**
-   * Удаляет все раскладки заполнения
-   */
   remove_onlays() {
     for(let onlay of this.imposts){
       onlay.remove();
     }
   }
-
-  /**
-   * При удалении заполнения, не забываем про вложенные раскладки
-   */
   remove() {
-    //удаляем детей
     this.remove_onlays();
-    
-    // чистим состав заполнения
     const {_row, project: {_attr, ox}} = this;
     if(_row && !_attr._loading && !ox.empty()) {
       ox.glass_specification.clear({elm: _row.elm});
     }
-
-    // стандартные действия по удалению элемента paperjs
     super.remove();
   }
-
-
-  /**
-   * Габаритная площадь заполнения
-   * @type {Number}
-   */
   get area() {
     return (this.bounds.area / 1e6).round(5);
   }
-
-  /**
-   * Площадь заполнения с учетом наклонов-изгибов сегментов
-   * @type {Number}
-   */
   get form_area() {
     return ((this.path?.area || 0)/1e6).round(5);
   }
-
-  /**
-   * Точка внутри пути
-   * Возвращает точку, расположенную гарантированно внутри заполнения
-   *
-   * @type {paper.Point}
-   */
   interiorPoint() {
     return this.path.interiorPoint;
   }
-
-  /**
-   * Признак прямоугольности
-   * @type {Boolean}
-   */
   get is_rectangular() {
     const {profiles, path} = this;
     return profiles.length === 4 && !path.hasHandles() && !profiles.some(({profile}) => !(Math.abs(profile.angle_hor % 90) < 0.2));
   }
-
   get generatrix() {
     return this.path;
   }
-
-  /**
-   * путь элемента - состоит из кривых, соединяющих вершины элемента
-   * @type paper.Path
-   */
   get path() {
     return this._attr.path;
   }
   set path(attr) {
     let {_attr, path, project, children} = this;
-
-    // чистим старый путь
     if(path){
       path.removeSegments();
     }
@@ -9993,15 +7330,12 @@ class Filling extends AbstractFilling(BuilderElement) {
     if(children.tearings.isBelow(path)) {
       path.insertBelow(children.tearings);
     }
-
-    // чистим старые сегменты
     if(Array.isArray(_attr._profiles)){
       _attr._profiles.length = 0;
     }
     else{
       _attr._profiles = [];
     }
-
     if(attr instanceof paper.Path){
       path.addSegments(attr.segments);
     }
@@ -10015,14 +7349,12 @@ class Filling extends AbstractFilling(BuilderElement) {
           next = i === length-1 ? attr[0] : attr[i+1];
         };
         const {cat: {cnns}, enm: {cnn_types}, job_prm} = $p;
-        // получаем эквидистанты сегментов, смещенные на размер соединения
         for (let i = 0; i < length; i++) {
           nominate(i);
           const sub_path = curr.profile.generatrix.get_subpath(curr.b, curr.e, true);
           curr.cnn = cnns.elm_cnn(this, curr.profile, cnn_types.acn.ii, project.elm_cnn(this, curr.profile), false, curr.outer);
           curr.sub_path = sub_path.equidistant((sub_path._reversed ? -curr.profile.d1 : curr.profile.d2) + (curr.cnn ? curr.cnn.size(this, curr.profile) : 20));
         }
-        // получаем пересечения
         for (let i = 0; i < length; i++) {
           nominate(i);
           if(!curr.pb) {
@@ -10047,8 +7379,6 @@ class Filling extends AbstractFilling(BuilderElement) {
             throw 'Filling:path';
           }
         }
-
-        // прочищаем для пересечений
         if(length > 2) {
           const remove = [];
           for (let i = 0; i < length; i++) {
@@ -10068,8 +7398,6 @@ class Filling extends AbstractFilling(BuilderElement) {
             length--;
           }
         }
-
-        // формируем путь
         for (let i = 0; i < length; i++) {
           curr = attr[i];
           const segments = curr.sub_path.segments.filter((v, index) => {
@@ -10084,16 +7412,11 @@ class Filling extends AbstractFilling(BuilderElement) {
         }
       }
     }
-
     if(path.segments.length && !path.closed){
       path.closePath(true);
     }
-
-    // прочищаем самопересечения
     const intersections = path.self_intersections();
     if(intersections.length) {
-
-      // ищем лишние рёбра
       const {curves, segments} = path;
       const purge = new Set();
       for(const {point} of intersections) {
@@ -10106,14 +7429,10 @@ class Filling extends AbstractFilling(BuilderElement) {
           const ind = attr.indexOf(rib);
           attr.splice(ind, 1);
         });
-
-        // пересоздаём путь по новому массиву профилей
         return this.path = attr;
       }
     }
     path.reduce();
-
-    // прочищаем от колинеарных кусочков
     for (let i = 0; i < path.segments.length;) {
       const prev = i === 0 ? path.segments[path.segments.length - 1] : path.segments[i - 1];
       const curr = path.segments[i];
@@ -10128,8 +7447,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       i++;
     }
   }
-
-  // возвращает текущие (ранее установленные) узлы заполнения
   get nodes() {
     let res = this.profiles.map((curr) => curr.b);
     if(!res.length){
@@ -10140,17 +7457,9 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     return res;
   }
-
-  /**
-   * Возвращает массив внешних примыкающих профилей текущего заполнения
-   */
   get outer_profiles() {
     return this.profiles;
   }
-
-  /**
-   * Массив с рёбрами периметра
-   */
   get perimeter() {
     const res = [];
     const {profiles} = this;
@@ -10172,22 +7481,14 @@ class Filling extends AbstractFilling(BuilderElement) {
     });
     return res;
   }
-
   get bounds() {
     const {path} = this;
     return path ? path.bounds : new paper.Rectangle();
   }
-
   get profileBounds() {
     return this.bounds;
   }
-
-  /**
-   * Массив с рёбрами периметра по внутренней стороне профилей
-   * @return {Array}
-   */
   perimeter_inner(size = 0) {
-    // накопим в res пути внутренних рёбер профилей
     const {center} = this.bounds;
     const res = this.outer_profiles.map((curr) => {
       const profile = curr.profile || curr.elm;
@@ -10223,11 +7524,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       };
     });
   }
-
-  /**
-   * Массив с рёбрами периметра по кромке стеклопакета
-   * @return {Array}
-   */
   perimeter_spacer(size = 0) {
     const {profiles: res} = this;
     const ubound = res.length - 1;
@@ -10248,12 +7544,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       };
     });
   }
-
-  /**
-   * Габариты по световому проему
-   * @param size
-   * @return {Rectangle}
-   */
   bounds_light(size = 0) {
     const path = new paper.Path({project: this.project, insert: false});
     for (const {sub_path} of this.perimeter_inner(size)) {
@@ -10265,53 +7555,28 @@ class Filling extends AbstractFilling(BuilderElement) {
     path.reduce();
     return path.bounds;
   }
-
-  /**
-   * Координата x левой границы (только для чтения)
-   */
   get x1() {
     return (this.bounds.left - this.project.bounds.x).round(1);
   }
-
-  /**
-   * Координата x правой границы (только для чтения)
-   */
   get x2() {
     return (this.bounds.right - this.project.bounds.x).round(1);
   }
-
-  /**
-   * Координата y нижней границы (только для чтения)
-   */
   get y1() {
     return (this.project.bounds.height + this.project.bounds.y - this.bounds.bottom).round(1);
   }
-
-  /**
-   * Координата y верхней (только для чтения)
-   */
   get y2() {
     return (this.project.bounds.height + this.project.bounds.y - this.bounds.top).round(1);
   }
-
-  /**
-   * информация для редактора свойста
-   */
   get info() {
     const {elm, bounds: {width, height}, thickness, weight, layer} = this;
     return `№${elm} ${width.toFixed()}х${height.toFixed()}, ${thickness.toFixed()}мм, ${weight.toFixed()}кг`;
   }
-
   get default_clr_str() {
     return "#def,#d0ddff,#eff";
   }
-
-  // виртуальная ссылка для заполнений равна толщине
   get ref() {
     return this.thickness.toFixed();
   }
-
-  // переопределяем геттер вставки
   get inset() {
     const {_attr, _row, ox} = this;
     if(!_attr._ins_proxy || _attr._ins_proxy.ref != _row.inset){
@@ -10335,13 +7600,10 @@ class Filling extends AbstractFilling(BuilderElement) {
   set inset(v) {
     this.set_inset(v);
   }
-
   _thickness(elm) {
-    
     if($p.job_prm.builder.glass_formula_from_nom) {
       return elm.nom.thickness;
     }
-    
     const {_attr} = elm;
     if(!_attr.thickness) {
       let res = 0;
@@ -10352,7 +7614,6 @@ class Filling extends AbstractFilling(BuilderElement) {
     }
     return _attr.thickness;
   }
-
   refresh_inset_depends(param, with_neighbor) {
     if($p.job_prm.properties.force_nom?.includes(param)) {
       const {_attr} = this;
@@ -10360,12 +7621,6 @@ class Filling extends AbstractFilling(BuilderElement) {
       delete _attr.thickness;
     }
   }
-
-  /**
-   * Proxy-обёртка над заполнением
-   * @param row
-   * @return {Proxy.<Filling>}
-   */
   region(row) {
     const {utils, cch} = $p;
     const _metadata = this.__metadata(false);
@@ -10394,7 +7649,6 @@ class Filling extends AbstractFilling(BuilderElement) {
           return pvalue === undefined ? target[prop] : pvalue;
         }
       },
-
       set(target, prop, val, receiver) {
         switch (prop) {
         case 'clr':
@@ -10427,12 +7681,8 @@ class Filling extends AbstractFilling(BuilderElement) {
       }
     });
   }
-  
 }
-
 EditorInvisible.Filling = Filling;
-
-// свойство `Заполнения отдельно`
 $p.md.once('predefined_elmnts_inited', () => {
   const {glass_separately} = $p.job_prm.properties;
   if([1, 2].includes(glass_separately?.inheritance)) {
@@ -10460,25 +7710,8 @@ $p.md.once('predefined_elmnts_inited', () => {
     })
   }
 });
-
-
-/*
- * Created 21.08.2015
- */
-
-/**
- * Произвольный текст на эскизе
- * @extends paper.PointText
- */
 class FreeText extends paper.PointText {
-
-  /**
-   *
-   * @param attr {Object} - объект с указанием на строку координат и родительского слоя
-   * @param attr.parent {BuilderElement} - элемент, к которому привязывается комментарий
-   */
   constructor(attr) {
-
     if(!attr.fontSize){
       attr.fontSize = consts.font_size;
       if(attr.parent) {
@@ -10489,28 +7722,21 @@ class FreeText extends paper.PointText {
       }
     }
     attr.fontFamily = consts.font_family;
-
     super(attr);
-
     const {project} = this;
-
     if(attr.row){
       this._row = attr.row;
     }
     else{
       this._row = attr.row = project.ox.coordinates.add();
     }
-
     const {_row} = this;
-
     if(!_row.cnstr){
       _row.cnstr = attr.parent ? attr.parent.layer.cnstr : project.activeLayer.cnstr;
     }
-
     if(!_row.elm){
       _row.elm = project.ox.coordinates.aggregate([], ["elm"], "max") + 1;
     }
-
     if(attr.point){
       if(attr.point instanceof paper.Point)
         this.point = attr.point;
@@ -10518,10 +7744,8 @@ class FreeText extends paper.PointText {
         this.point = new paper.Point(attr.point);
     }
     else{
-
       this.clr = _row.clr;
       this.angle = _row.angle_hor;
-
       if(_row.path_data){
         const {point, bounds_x, bounds_y, ...path_data} = JSON.parse(_row.path_data);
         if(point) {
@@ -10537,17 +7761,10 @@ class FreeText extends paper.PointText {
         this.point = [_row.x1, _row.y1];
       }
     }
-    
     if(project.builder_props.txts === false) {
       this.visible = false;
     }
-
   }
-
-  /**
-   * @summary Удаляет элемент из контура и иерархии проекта
-   * @desc Одновлеменно, удаляет строку из табчасти табчасти _Координаты_
-   */
   remove() {
     if(this._row) {
       this._row._owner.del(this._row);
@@ -10555,21 +7772,12 @@ class FreeText extends paper.PointText {
     }
     super.remove();
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
   save_coordinates() {
     const {_row, point} = this;
-
     _row.x1 = point.x;
     _row.y1 = point.y;
     _row.angle_hor = this.angle;
-
-    // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
-
-    // сериализованные данные
     _row.path_data = JSON.stringify({
       text: this.text,
       font_family: this.font_family,
@@ -10579,34 +7787,19 @@ class FreeText extends paper.PointText {
       point: [point.x, point.y],
     });
   }
-
-  /**
-   * Перемещает элемент и информирует об этом наблюдателя
-   */
   move_points(point) {
     this.point = point;
     this.project.notify(this, 'update', {x: true, y: true});
   }
-
-  /**
-   * Возвращает тип элемента (Текст)
-   * @type EnmElm_types
-   */
   get elm_type() {
     return $p.enm.elm_types.Текст;
   }
-
-  // виртуальные метаданные для автоформ
   _metadata(fld) {
     return $p.dp.builder_text.metadata(fld);
   }
-
-  // виртуальный датаменеджер для автоформ
   get _manager() {
     return $p.dp.builder_text;
   }
-
-  // транслирует цвет из справочника в строку и обратно
   get clr() {
     return this._row ? this._row.clr : $p.cat.clrs.get();
   }
@@ -10616,11 +7809,6 @@ class FreeText extends paper.PointText {
       this.fillColor = "#" + this._row.clr.clr_str;
     this.project.register_update();
   }
-
-  /**
-   * Семейство шрифта
-   * @type {String}
-   */
   get font_family() {
     return this.fontFamily || "";
   }
@@ -10628,11 +7816,6 @@ class FreeText extends paper.PointText {
     this.fontFamily = v;
     this.project.register_update();
   }
-
-  /**
-   * Размер шрифта
-   * @type {Number}
-   */
   get font_size() {
     return this.fontSize || consts.font_size;
   }
@@ -10640,22 +7823,12 @@ class FreeText extends paper.PointText {
     this.fontSize = v;
     this.project.register_update();
   }
-
-  /**
-   * Жирность шрифта
-   * @type {Boolean}
-   */
   get bold() {
     return this.fontWeight != 'normal';
   }
   set bold(v) {
     this.fontWeight = v ? 'bold' : 'normal';
   }
-
-  /**
-   * Координата x
-   * @type {Number}
-   */
   get x() {
     return (this.point.x - this.project.bounds.x).round(1);
   }
@@ -10663,11 +7836,6 @@ class FreeText extends paper.PointText {
     this.point.x = parseFloat(v) + this.project.bounds.x;
     this.project.register_update();
   }
-
-  /**
-   * Координата y
-   * @type {Number}
-   */
   get y() {
     const {bounds} = this.project;
     return (bounds.height + bounds.y - this.point.y).round(1);
@@ -10676,12 +7844,6 @@ class FreeText extends paper.PointText {
     const {bounds} = this.project;
     this.point.y = bounds.height + bounds.y - parseFloat(v);
   }
-
-  /**
-   * @summary текст элемента
-   * @desc при установке пустой строки, элемент удаляется
-   * @type {String}
-   */
   get text() {
     return this.content;
   }
@@ -10692,11 +7854,6 @@ class FreeText extends paper.PointText {
     this.content = v;
     this.project.register_update();
   }
-
-  /**
-   * Угол к горизонту
-   * @type {Number}
-   */
   get angle() {
     return Math.round(this.rotation);
   }
@@ -10704,11 +7861,6 @@ class FreeText extends paper.PointText {
     this.rotation = v;
     this.project.register_update();
   }
-
-  /**
-   * Выравнивание текста
-   * @type {EnmText_aligns}
-   */
   get align() {
     return $p.enm.text_aligns.get(this.justification);
   }
@@ -10716,23 +7868,9 @@ class FreeText extends paper.PointText {
     this.justification = $p.utils.is_data_obj(v) ? v.ref : v;
     this.project.register_update();
   }
-
 }
-
 EditorInvisible.FreeText = FreeText;
-
-
-
-/**
- * Элемент c образующей
- * Виртуальный класс элементов построителя, у которго есть образующая
- *
- * @abstract
- * @extends BuilderElement
- * @tutorial 02_geometry
- */
 class GeneratrixElement extends BuilderElement {
-
   constructor(attr = {}) {
     const {generatrix} = attr;
     if (generatrix) {
@@ -10744,11 +7882,6 @@ class GeneratrixElement extends BuilderElement {
     }
     this.initialize(attr);
   }
-
-  /**
-   * Координаты начала элемента
-   * @type paper.Point
-   */
   get b() {
     const {generatrix} = this._attr;
     return generatrix && generatrix.firstSegment.point;
@@ -10758,11 +7891,6 @@ class GeneratrixElement extends BuilderElement {
     _rays.clear();
     if(generatrix) generatrix.firstSegment.point = v;
   }
-
-  /**
-   * Координаты конца элемента
-   * @type paper.Point
-   */
   get e() {
     const {generatrix} = this._attr;
     return generatrix && generatrix.lastSegment.point;
@@ -10772,11 +7900,6 @@ class GeneratrixElement extends BuilderElement {
     _rays.clear();
     if(generatrix) generatrix.lastSegment.point = v;
   }
-
-  /**
-   * Координата x начала профиля
-   * @type Number
-   */
   get x1() {
     const {bounds} = this.project;
     return bounds ? (this.b.x - bounds.x).round(1) : 0;
@@ -10788,11 +7911,6 @@ class GeneratrixElement extends BuilderElement {
       this.move_points(new paper.Point(v, 0));
     }
   }
-
-  /**
-   * Координата y начала профиля
-   * @type Number
-   */
   get y1() {
     const {bounds} = this.project;
     return bounds ? (bounds.height + bounds.y - this.b.y).round(1) : 0;
@@ -10804,11 +7922,6 @@ class GeneratrixElement extends BuilderElement {
       this.move_points(new paper.Point(0, v));
     }
   }
-
-  /**
-   * Координата x конца профиля
-   * @type Number
-   */
   get x2() {
     const {bounds} = this.project;
     return bounds ? (this.e.x - bounds.x).round(1) : 0;
@@ -10820,11 +7933,6 @@ class GeneratrixElement extends BuilderElement {
       this.move_points(new paper.Point(v, 0));
     }
   }
-
-  /**
-   * Координата y конца профиля
-   * @type Number
-   */
   get y2() {
     const {bounds} = this.project;
     return bounds ? (bounds.height + bounds.y - this.e.y).round(1) : 0;
@@ -10836,12 +7944,6 @@ class GeneratrixElement extends BuilderElement {
       this.move_points(new paper.Point(0, v));
     }
   }
-
-  /**
-   * Выделяет начало или конец профиля
-   *
-   * @param node {String} b, e - начало или конец элемента
-   */
   select_node(node) {
     const {generatrix, project, _attr, view} = this;
     project.deselect_all_points();
@@ -10856,19 +7958,9 @@ class GeneratrixElement extends BuilderElement {
     }
     view.update();
   }
-
-  /**
-   * Двигает элемент за один такт
-   * Синхронно тянет импосты и угловые соединения
-   * @param delta
-   */
   move_gen(delta) {
-
-    // сразу получаем сегменты примыкающих импостов и створок
     const {isegments} = this;
     const nearests = this.joined_nearests();
-
-    // угловые соединения b, e
     const {generatrix, rays, project} = this;
     generatrix.translate(delta);
     for(const {profile, profile_point, point} of [rays.b, rays.e]) {
@@ -10879,65 +7971,36 @@ class GeneratrixElement extends BuilderElement {
         profile[profile_point].selected = false;
       }
     }
-
-    // ранняя привязка импостов
     rays.clear();
     isegments.forEach(({profile, node}) => {
       profile.do_sub_bind(this, node);
       profile.rays.clear();
     });
-
-    // ранняя привязка створок
     for(const profile of nearests) {
       profile.move_gen(delta);
     }
-
     rays.clear();
     project.register_change();
   }
-
-  /**
-   * Двигает узлы
-   * Обрабатывает смещение выделенных сегментов образующей профиля
-   *
-   * @param delta {paper.Point} - куда и насколько смещать
-   * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
-   * @param [direct] {Array.<paper.Segment>} - конкретные сегменты к сдвигу
-   */
   move_points(delta, all_points, start_point, direct) {
-
     if(!delta.length){
       return;
     }
-
     const	other = [];
     const noti = {type: consts.move_points, profiles: [this], points: []};
-
     let changed;
-
-    // если не выделено ни одного сегмента, двигаем все сегменты
     if(!all_points && !direct){
       all_points = !this.generatrix.segments.some((segm) => {
         if (segm.selected)
           return true;
       });
     }
-
-    // сразу получаем сегменты примыкающих импостов
     const {isegments} = this;
-
     this.generatrix.segments.forEach((segm) => {
-
       let cnn_point;
-
       if (direct ? direct.includes(segm) : (segm.selected || all_points)){
-
         const noti_points = {old: segm.point.clone(), delta: delta};
-
-        // собственно, сдвиг узлов
         const free_point = segm.point.add(delta);
-
         if(segm.point == this.b){
           cnn_point = this.rays.b;
           if(!cnn_point.profile_point || paper.Key.isDown('control')) {
@@ -10950,15 +8013,12 @@ class GeneratrixElement extends BuilderElement {
             cnn_point = this.cnn_point('e', free_point);
           }
         }
-
         let {profile, profile_point} = cnn_point || {};
-
         if(cnn_point && cnn_point.cnn_types == $p.enm.cnn_types.acn.t && (segm.point == this.b || segm.point == this.e)){
           if(cnn_point.point.is_nearest(free_point, 0)){
             segm.point = cnn_point.point;
           }
           else{
-            // при сдвигах примыканий к наклонным элементам, ищем точку на луче
             const ppath = (profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
             const {bounds} = ppath;
             if(profile instanceof Filling) {
@@ -10966,7 +8026,6 @@ class GeneratrixElement extends BuilderElement {
             }
             else {
               if(Math.abs(delta.y) < consts.epsilon){
-                // режем вертикальным лучом
                 const ray = new paper.Path({
                   insert: false,
                   segments: [[free_point.x, bounds.top - 100], [free_point.x, bounds.bottom + 100]]
@@ -10974,7 +8033,6 @@ class GeneratrixElement extends BuilderElement {
                 segm.point = ppath.intersect_point(ray, free_point, true) || free_point;
               }
               else if(Math.abs(delta.x) < consts.epsilon){
-                // режем горизонтальным лучом
                 const ray = new paper.Path({
                   insert: false,
                   segments: [[bounds.left - 100, free_point.y], [bounds.right + 100, free_point.y]]
@@ -10989,9 +8047,7 @@ class GeneratrixElement extends BuilderElement {
         }
         else{
           segm.point = free_point;
-          // если соединение угловое, тянем тянем соседние узлы сразу
           if(cnn_point && !paper.Key.isDown('control')){
-
             if(profile && profile_point && profile_point !== 't' && !profile[profile_point].is_nearest(free_point, 0)){
               if(this instanceof Onlay){
                 this.move_nodes(noti_points.old, free_point);
@@ -10999,7 +8055,6 @@ class GeneratrixElement extends BuilderElement {
               else{
                 other.push(profile_point == 'b' ? profile.generatrix.firstSegment : profile.generatrix.lastSegment);
                 noti.profiles.push(profile);
-                // если разрыв, тянем третий профиль
                 if(cnn_point.is_cut) {
                   this.layer.profiles.some((p) => {
                     if(p !== profile && p !== this) {
@@ -11023,29 +8078,19 @@ class GeneratrixElement extends BuilderElement {
             }
           }
         }
-
-        // накапливаем точки в нотификаторе
         noti_points.new = segm.point;
         if(start_point){
           noti_points.start = start_point;
         }
         noti.points.push(noti_points);
-        
         if(cnn_point?.is_i) {
           cnn_point.clear('with_neighbor');
         }
-
         changed = true;
       }
-
     });
-
-
-    // информируем систему об изменениях
     if(changed){
       const {_attr: {_rays}, layer, project} = this;
-
-      // ранняя привязка импостов
       _rays.clear();
       for(const {profile, node} of isegments) {
         profile.do_sub_bind(this, node);
@@ -11054,18 +8099,11 @@ class GeneratrixElement extends BuilderElement {
         !noti.profiles.includes(profile) && noti.profiles.push(profile);
       }
       _rays.recalc();
-
       layer?.notify?.(noti);
       project.notify(this, 'update', {x1: true, x2: true, y1: true, y2: true});
     }
-
     return other;
   }
-
-  /**
-   * Сегменты примыкающих импостов
-   * @return {Array}
-   */
   get isegments() {
     const imposts = this.joined_imposts ? this.joined_imposts() : {inner: [], outer: []};
     const segments = [];
@@ -11080,13 +8118,6 @@ class GeneratrixElement extends BuilderElement {
     });
     return segments;
   }
-
-  /**
-   * Вспомогательная функция do_bind, привязка импостов
-   * @param profile {ProfileItem} - к которому примыкает текущий импост
-   * @param node {String} - b,e
-   * @return {boolean|paper.Point}
-   */
   do_sub_bind(profile, node) {
     const ppath = (!(profile instanceof ProfileRegion) && profile.nearest(true) ? profile.rays.outer : profile.generatrix).clone({insert: false});
     let mpoint = ppath.getNearestPoint(this[node]);
@@ -11097,11 +8128,9 @@ class GeneratrixElement extends BuilderElement {
       return true;
     }
   }
-
   get carcass() {
     return this.skeleton.carcass;
   }
-
   set carcass(v) {
     const {generatrix, path} = this;
     if(v) {
@@ -11112,53 +8141,26 @@ class GeneratrixElement extends BuilderElement {
       generatrix.strokeWidth = 1;
     }
   }
-
-  /**
-   * @summary Существуют элементы с внутренней стороны
-   * @type {boolean}
-   */
   get hasInner() {
     const nodes = this.parent.cnnMap?.get(this) || [];
     return Boolean(nodes.find(v => v.side === -1));
   }
-
-  /**
-   * @summary Существуют элементы с наружной стороны
-   * @type {boolean}
-   */
   get hasOuter() {
     const nodes = this.parent.cnnMap?.get(this) || [];
     return Boolean(nodes.find(v => v.side === 1));
   }
-
   sticking() {
     const sticking_l = this.layer?.sys?.sticking_l;
     return sticking_l ? {sticking: sticking_l * 10, sticking_l} : consts;
   } 
-  
 }
-
 EditorInvisible.GeneratrixElement = GeneratrixElement;
-
-
-/*
- * Визуализация таблицы координат
- *
- * @module grid_coordinates
- *
- * Created by Evgeniy Malyarov on 08.09.2018.
- */
-
 class GridCoordinates extends paper.Group {
-
   constructor({parent, step, offset, angle, bind}) {
     super({parent});
-
     const points_color = new paper.Color(0, 0.7, 0, 0.8);
     const sel_color = new paper.Color(0.1, 0.4, 0, 0.9);
     const lines_color = new paper.Color(0, 0, 0.7, 0.8);
-
-    // создаём детей
     this._attr = {
       lines_color,
       points_color,
@@ -11186,9 +8188,7 @@ class GridCoordinates extends paper.Group {
         strokeScaling: false
       }),
     };
-
   }
-
   get path() {
     return this._attr.path;
   }
@@ -11198,7 +8198,6 @@ class GridCoordinates extends paper.Group {
     this.set_bind();
     this.set_line();
   }
-
   set_line() {
     const {bind, offset, path, line, angle} = this._attr;
     let {firstSegment: {point: b}, lastSegment: {point: e}} = path;
@@ -11212,8 +8211,6 @@ class GridCoordinates extends paper.Group {
     else {
       line.addSegments([b, e]);
     }
-
-    // повернём линию при необходимости
     const langle = e.subtract(b).angle.round(2);
     let dangle = Infinity;
     if(angle) {
@@ -11236,12 +8233,10 @@ class GridCoordinates extends paper.Group {
       line.firstSegment.point = line.getNearestPoint(b);
       line.lastSegment.point = line.getNearestPoint(e);
     }
-
     const n0 = line.getNormalAt(0).multiply(offset);
     line.firstSegment.point = line.firstSegment.point.subtract(n0);
     line.lastSegment.point = line.lastSegment.point.subtract(n0);
   }
-
   set_bind() {
     const {point, path, bind} = this._attr;
     switch (bind) {
@@ -11259,7 +8254,6 @@ class GridCoordinates extends paper.Group {
       break;
     }
   }
-
   get bind() {
     return this._attr.bind;
   }
@@ -11268,7 +8262,6 @@ class GridCoordinates extends paper.Group {
     this.set_bind();
     this.set_line();
   }
-
   get step() {
     return this._attr.step;
   }
@@ -11276,7 +8269,6 @@ class GridCoordinates extends paper.Group {
     this._attr.step = v;
     this.set_line();
   }
-
   get angle() {
     return this._attr.angle;
   }
@@ -11286,7 +8278,6 @@ class GridCoordinates extends paper.Group {
       this.set_line();
     }
   }
-
   get offset() {
     return this._attr.offset;
   }
@@ -11294,22 +8285,14 @@ class GridCoordinates extends paper.Group {
     this._attr.offset = v;
     this.set_line();
   }
-
-  /**
-   * Возвращает точки пути, попутно, добавляя визуализацию
-   * @return {Array}
-   */
   grid_points(sel_x) {
     const {path, line, lines, lines_color, sel_color, step, bind, point: {position}} = this._attr;
     const res = [];
     const n0 = line.getNormalAt(0).multiply(10000);
     let do_break;
     let prev;
-
     function add(tpath, x, tpoint, point) {
-
       let pt;
-
       if(position.getDistance(point) > 20) {
         pt = new paper.Path.Circle({
           parent: lines,
@@ -11319,7 +8302,6 @@ class GridCoordinates extends paper.Group {
           fillColor: lines_color,
         });
       }
-
       const pth = new paper.Path({
         parent: lines,
         guide: true,
@@ -11327,11 +8309,9 @@ class GridCoordinates extends paper.Group {
         strokeScaling: false,
         segments: [tpoint, point],
       })
-
       const d1 = tpath.getOffsetOf(tpoint);
       const d2 = tpath.getOffsetOf(point);
       res.push({x: x.round(1), y: (d2 - d1).round(1)});
-
       if(Math.abs(x - sel_x) < 10) {
         if(pt) {
           pt.fillColor = sel_color;
@@ -11339,10 +8319,7 @@ class GridCoordinates extends paper.Group {
         pth.strokeColor = sel_color;
       }
     }
-
     lines.removeChildren();
-
-    // движемся по пути и вычисляем расстояние
     for (let x = 0; x < line.length + step; x += step) {
       if(x >= line.length) {
         if(do_break) {
@@ -11371,68 +8348,11 @@ class GridCoordinates extends paper.Group {
         add(tpath, x, tpoint, bind === 'e' ? path.firstSegment.point : path.lastSegment.point);
       }
     }
-
     return res;
   }
-
 }
-
 EditorInvisible.GridCoordinates = GridCoordinates;
-
-
-/*
- * Расширения объектов paper.js
- *
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author	Evgeniy Malyarov
- *
- */
-
-/**
- * @typedef PointAndProfile
- * @prop {paper.Point} point
- * @prop {ProfileItem} profile
- */
-
-/**
- * @typedef JoinedProfiles
- * @prop {Array.<PointAndProfile>} outer
- * @prop {Array.<PointAndProfile>} inner
- */
-
-/**
- * @typedef InnerOuter {'inner'|'outer'}
- */
-
-/**
- * @typedef NodeBE {'b'|'e'}
- */
-
-/**
- * @typedef NodeAndProfile
- * @prop {NodeBE} node
- * @prop {ProfileItem} profile
- */
-
-/**
- * @typedef RectangleRib
- * @prop {paper.Line} rib
- * @prop {paper.Line} parallel
- * @prop {String} pos
- */
-
-/**
- * Расширение класса Path
- */
 Object.defineProperties(paper.Path.prototype, {
-
-  /**
-   * Вычисляет направленный угол в точке пути
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Point} point
-   * @return {Number}
-   */
   getDirectedAngle: {
     value: function getDirectedAngle(point) {
       if(!point) {
@@ -11443,14 +8363,6 @@ Object.defineProperties(paper.Path.prototype, {
       return this.getTangentAt(offset).getDirectedAngle(point.add(np.negate()));
     }
   },
-
-  /**
-   * Возвращает массив самопересечений
-   * @memberof paper.Path#
-   * @method
-   * @param {Boolean} [first] - возвращать первое найденное пересечение
-   * @return {Array}
-   */
   self_intersections: {
     value: function self_intersections(first) {
       const {curves} = this;
@@ -11485,29 +8397,11 @@ Object.defineProperties(paper.Path.prototype, {
       return res;
     }
   },
-
-  /**
-   * Является ли путь самопересекающимся
-   * @memberof paper.Path#
-   * @method
-   * @return {Boolean}
-   */
   is_self_intersected: {
     value: function is_self_intersected() {
       return this.self_intersections(true).length > 0;
     }
   },
-
-  /**
-   * Угол по отношению к соседнему пути _other_ в точке _point_
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Path} other - соседний путь
-   * @param {paper.Point} point - точка, в окрестности которой ищем угол
-   * @param {paper.Point} [interior]  - точка внутри нашего пути
-   * @param {Number} [round] - округлять до N знаков
-   * @return {Number}
-   */
   angle_to: {
       value : function angle_to(other, point, interior, round){
         const p1 = this.getNearestPoint(point),
@@ -11524,17 +8418,6 @@ Object.defineProperties(paper.Path.prototype, {
         return typeof round === 'number' ? res.round(round) : res.round(1);
       }
     },
-
-  /**
-   * Угол между путями в точке _point_
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Path} other - соседний путь
-   * @param {paper.Point} point - точка, в окрестности которой ищем угол
-   * @param {paper.Point} [interior]  - точка внутри нашего пути
-   * @param {Number} [round] - округлять до N знаков
-   * @return {Number}
-   */
   angle_between: {
     value : function angle_between(other, point, interior, round){
       let res = 180 - this.angle_to(other, point, interior, round);
@@ -11544,7 +8427,6 @@ Object.defineProperties(paper.Path.prototype, {
       return res;
     }
   },
-
   is_orthogonal: {
     value: function is_orthogonal(other, point, delta = 1) {
       const offset1 = this.getOffsetOf(this.getNearestPoint(point));
@@ -11561,26 +8443,16 @@ Object.defineProperties(paper.Path.prototype, {
       return Math.abs(angl) < delta;
     }
   },
-
-  /**
-   * Выясняет, является ли путь прямым
-   * @memberof paper.Path#
-   * @method
-   * @return {Boolean}
-   */
   is_linear: {
     value: function is_linear() {
       const {curves, firstCurve} = this;
-      // если в пути единственная кривая и она прямая - путь прямой
       if(curves.length === 1 && (!firstCurve.hasHandles() || firstCurve.isLinear())) {
         return true;
       }
-      // если в пути есть искривления, путь кривой
       else if(this.hasHandles()) {
         return false;
       }
       else {
-        // если у всех кривых пути одинаковые направленные углы - путь прямой
         const da = firstCurve.point2.subtract(firstCurve.point1).angle;
         for (let i = 1; i < curves.length; i++) {
           const dc = curves[i].point2.subtract(curves[i].point1).angle;
@@ -11592,35 +8464,15 @@ Object.defineProperties(paper.Path.prototype, {
       return true;
     }
   },
-
-  /**
-   * Выясняет, расположена ли точка в окрестности пути
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Point} point - точка, положение которой надо оценить
-   * @param {Boolean|Number} [sticking] - прилипание (размер окрестности)
-   * @return {Boolean}
-   */
   is_nearest: {
     value: function is_nearest(point, sticking) {
       return point.is_nearest(this.getNearestPoint(point), sticking);
     }
   },
-
-  /**
-   * Возвращает фрагмент пути между точками
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Point} point1 - точка начала фрагмента
-   * @param {paper.Point} point2 - точка конца фрагмента
-   * @param {Boolean} [strict] - если точки 1-2 не лежат в точности на пути, искать ли ближайшую
-   * @return {paper.Path}
-   */
   get_subpath: {
       value: function get_subpath(point1, point2, strict) {
         let tmp;
         const {project} = this;
-
         if(!this.length || !point1 || !point2 || (!strict && point1.is_nearest(this.firstSegment.point) && point2.is_nearest(this.lastSegment.point))){
           tmp = this.clone({insert: false, deep: false});
         }
@@ -11634,14 +8486,10 @@ Object.defineProperties(paper.Path.prototype, {
           const loc2 = this.getLocationOf(point2) || this.getNearestLocation(point2);
           const offset1 = loc1.offset;
           const offset2 = loc2.offset;
-
           if(this.is_linear()){
-            // для прямого формируем новый путь из двух точек
             tmp = new paper.Path({project, segments: [loc1.point, loc2.point], insert: false});
           }
           else{
-            // для кривого, создаём клон, вырезаем и добавляем плоский хвостик
-            
             if(offset1 > offset2){
               tmp = this.clone({insert: false});
               tmp.splitAt(offset1);
@@ -11662,27 +8510,15 @@ Object.defineProperties(paper.Path.prototype, {
               tmp.firstSegment.clearHandles();
             }
           }
-
           if(offset1 > offset2){
             tmp._reversed = true;
           }
         }
-
         return tmp;
       }
     },
-
-  /**
-   * Возвращает путь, равноотстоящий от текущего пути
-   * @memberof paper.Path#
-   * @method
-   * @param {number} delta - расстояние, на которое будет смещен новый путь
-   * @param {number} elong - удлинение нового пути с каждого конца
-   * @return {paper.Path}
-   */
   equidistant: {
       value: function equidistant(delta, elong) {
-
         const {project, firstSegment, lastSegment} = this;
         let normal = this.getNormalAt(0);
         const res = new paper.Path({
@@ -11690,13 +8526,10 @@ Object.defineProperties(paper.Path.prototype, {
           segments: [firstSegment.point.add(normal.multiply(delta))],
           insert: false
         });
-
         if(this.is_linear()) {
-          // добавляем последнюю точку
           res.add(lastSegment.point.add(normal.multiply(delta)));
         }
         else{
-
           if(firstSegment.handleIn.length){
             res.firstSegment.handleIn = firstSegment.handleIn.clone();
             res.firstSegment.handleIn.length /= 2;
@@ -11705,8 +8538,6 @@ Object.defineProperties(paper.Path.prototype, {
             res.firstSegment.handleOut = firstSegment.handleOut.clone();
             res.firstSegment.handleOut.length /= 2;
           }
-
-          // для кривого бежим по точкам
           let len = this.length, step = len * 0.02, point;
           if(step < 20) {
             step = len * 0.04;
@@ -11714,7 +8545,6 @@ Object.defineProperties(paper.Path.prototype, {
           else if(step > 90) {
             step = len * 0.014;
           }
-
           let addLast;
           for(let i = step; i < len; i += step) {
             point = this.getPointAt(i);
@@ -11724,13 +8554,10 @@ Object.defineProperties(paper.Path.prototype, {
             res.add(point.add(normal.multiply(delta)));
             addLast = len - 1 > 0.2;
           }
-
-          // добавляем последнюю точку
           if(addLast) {
             normal = this.getNormalAt(len);
             res.add(lastSegment.point.add(normal.multiply(delta)));
           }
-
           if(lastSegment.handleIn.length){
             res.lastSegment.handleIn = lastSegment.handleIn.clone();
             res.lastSegment.handleIn.length /= 2;
@@ -11741,21 +8568,11 @@ Object.defineProperties(paper.Path.prototype, {
           }
           res.simplify(0.6);
         }
-
         return res.elongation(elong);
       }
     },
-
-  /**
-   * Удлиняет путь касательными в начальной и конечной точках
-   * @memberof paper.Path#
-   * @method
-   * @param {number} delta - расстояние, на которое будет смещен новый путь
-   * @return {paper.Path}
-   */
   elongation: {
       value: function elongation(delta) {
-
         if(delta){
           if(this.is_linear()) {
             let tangent = this.getTangentAt(0);
@@ -11772,39 +8589,22 @@ Object.defineProperties(paper.Path.prototype, {
         return this;
       }
     },
-
-  /**
-   * Находит координату пересечения путей в окрестности точки
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Path} path
-   * @param {paper.Point|NodeBE} point - точка или имя узла (b,e)
-   * @param {Boolean|Number} [elongate] - если истина, пути будут продолжены до пересечения
-   * @param {paper.Point} [other_point] - если указано, контролируем вектор пересечения
-   * @param {Boolean} [clone] - если указано, не удлиняем текущие пути
-   * @return {paper.Point}
-   */
   intersect_point: {
       value: function intersect_point(path, point, elongate, other_point, clone) {
         const intersections = this.getIntersections(path);
         let delta = Infinity, tdelta, tpoint;
-
         if(intersections.length === 1){
           if(!point || typeof elongate !== 'number' || point.is_nearest(intersections[0].point, elongate * elongate)) {
             return intersections[0].point;
           }
         }
         if(intersections.length > 1){
-
           if(typeof point === 'string' && this.parent) {
             point = this.parent[point];
           }
-
           if(!point){
             point = this.getPointAt(this.length /2);
           }
-
-          // здесь надо учесть не только близость пересечения к точке, но в первую очередь, вектор пересечения
           intersections.forEach((o) => {
             tdelta = o.point.getDistance(point, true);
             if(other_point) {
@@ -11821,21 +8621,15 @@ Object.defineProperties(paper.Path.prototype, {
           return tpoint;
         }
         else if(elongate == "nearest"){
-
-          // ищем проекцию ближайшей точки на path на наш путь
           return this.getNearestPoint(path.getNearestPoint(point));
-
         }
         else if(elongate){
-
           if(!this.length || !path.length) {
             return null;
           }
-          
           const project = this.project || path.project;
           const path1 = clone ? this.clone({insert: false, deep: false}) : this;
           const path2 = clone ? path.clone({insert: false, deep: false}) : path;
-
           let p1 = path1.getNearestPoint(point),
             p2 = path2.getNearestPoint(point),
             p1f = path1.firstSegment.point.getDistance(p1),
@@ -11845,15 +8639,11 @@ Object.defineProperties(paper.Path.prototype, {
             p1last = p1f > p1l,
             p2last = p2f > p2l,
             p4 = 4, tg;
-
           if(p1.getDistance(p2) < 0.4) {
             if((p1f < p4 || p1l < p4) && (p2f < p4 || p2l < p4)) {
               return p1.add(p2).divide(2);
             }
           }
-
-          // продлеваем пути до пересечения
-
           if(!path1.closed) {
             tg = (p1last ? path1.getTangentAt(path1.length) : path1.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
             if(path1.is_linear()){
@@ -11873,7 +8663,6 @@ Object.defineProperties(paper.Path.prototype, {
               }
             }
           }
-
           if(!path2.closed) {
             tg = (p2last ? path2.getTangentAt(path2.length) : path2.getTangentAt(0).negate()).multiply(typeof elongate === 'number' ? elongate : 100);
             if(path2.is_linear()){
@@ -11893,21 +8682,10 @@ Object.defineProperties(paper.Path.prototype, {
               }
             }
           }
-
           return path1.intersect_point(path2, point, false, other_point);
-
         }
       }
     },
-
-  /**
-   * Определяет положение точки относительно пути в окрестности interior
-   * @memberof paper.Path#
-   * @method
-   * @param {paper.Point} point
-   * @param {paper.Point} [interior]
-   * @return {Number}
-   */
   point_pos: {
     value: function point_pos(point, interior) {
       if(!point) {
@@ -11922,14 +8700,6 @@ Object.defineProperties(paper.Path.prototype, {
       return line.getSide(point, true);
     }
   },
-
-  /**
-   * @summary Минимальный радиус, высисляемый по кривизне пути
-   * @desc для прямых = 0
-   * @memberof paper.Path#
-   * @method
-   * @return {Number}
-   */
   rmin: {
     value() {
       if(this.is_linear()){
@@ -11947,14 +8717,6 @@ Object.defineProperties(paper.Path.prototype, {
       return (max === 0 ? 0 : 1 / max).round(2);
     }
   },
-
-  /**
-   * Максимальный радиус, высисляемый по кривизне пути
-   * для прямых = 0
-   * @memberof paper.Path#
-   * @method
-   * @return {Number}
-   */
   rmax: {
     value() {
       if(this.is_linear()){
@@ -11972,13 +8734,6 @@ Object.defineProperties(paper.Path.prototype, {
       return (min === 0 ? 0 : 1 / min).round(2);
     }
   },
-
-  /**
-   * Cредний радиус пути по трём точкам
-   * @memberof paper.Path#
-   * @method
-   * @return {Number}
-   */
   ravg: {
     value() {
       if(this.is_linear()){
@@ -11991,22 +8746,8 @@ Object.defineProperties(paper.Path.prototype, {
       return ph0.arc_r(b.x, b.y, e.x, e.y, ph0.getDistance(ph1));
     }
   }
-
 });
-
-/**
- * Расширение класса Point
- */
 Object.defineProperties(paper.Point.prototype, {
-
-	/**
-	 * Выясняет, расположена ли точка в окрестности точки
-   * @memberof paper.Point#
-   * @method
-	 * @param {paper.Point} point
-	 * @param {Boolean|Number} [sticking]
-	 * @return {Boolean}
-	 */
 	is_nearest: {
 		value: function is_nearest(point, sticking) {
       if(!point) {
@@ -12018,45 +8759,17 @@ Object.defineProperties(paper.Point.prototype, {
 			return this.getDistance(point, true) < (typeof sticking === 'number' ? sticking : (sticking ? consts.sticking2 : 16));
 		}
 	},
-
-	/**
-	 * Положение точки относительно прямой
-   * @memberof paper.Point#
-   * @method
-	 * @param {Number} x1
-	 * @param {Number} y1
-	 * @param {Number} x2
-	 * @param {Number} y2
-	 * @return {Number}
-	 */
 	point_pos: {
 		value: function point_pos(x1,y1, x2,y2){
 			if (Math.abs(x1-x2) < 0.2){
-				// вертикаль  >0 - справа, <0 - слева,=0 - на линии
 				return (this.x-x1)*(y1-y2);
 			}
 			if (Math.abs(y1-y2) < 0.2){
-				// горизонталь >0 - снизу, <0 - сверху,=0 - на линии
 				return (this.y-y1)*(x2-x1);
 			}
-			// >0 - справа, <0 - слева,=0 - на линии
 			return (this.y-y1)*(x2-x1)-(y2-y1)*(this.x-x1);
 		}
 	},
-
-	/**
-	 * Рассчитывает координаты центра окружности по точкам и радиусу
-   * @memberof paper.Point#
-   * @method
-	 * @param {Number} x1
-	 * @param {Number} y1
-	 * @param {Number} x2
-	 * @param {Number} y2
-	 * @param {Number} r
-	 * @param {Boolean} arc_ccw
-	 * @param {Boolean} more_180
-	 * @return {paper.Point}
-	 */
 	arc_cntr: {
     value(x1, y1, x2, y2, r0, ccw) {
       let a, b, p, r, q, yy1, xx1, yy2, xx2;
@@ -12089,7 +8802,6 @@ Object.defineProperties(paper.Point.prototype, {
         xx2 = (-r + Math.sqrt(r * r - 4 * p * q)) / (2 * p);
         yy2 = a + b * xx2;
       }
-
       if(new paper.Point(xx1, yy1).point_pos(x1, y1, x2, y2) > 0) {
         return {x: xx1, y: yy1};
       }
@@ -12098,20 +8810,6 @@ Object.defineProperties(paper.Point.prototype, {
       }
     }
   },
-
-	/**
-	 * Рассчитывает координаты точки, лежащей на окружности
-   * @memberof paper.Point#
-   * @method
-   * @param {Number} x1
-   * @param {Number} y1
-   * @param {Number} x2
-   * @param {Number} y2
-   * @param {Number} r
-   * @param {Boolean} arc_ccw
-   * @param {Boolean} more_180
-	 * @return {{x: number, y: number}}
-	 */
 	arc_point: {
     value(x1, y1, x2, y2, r, arc_ccw, more_180) {
       const point = {x: (x1 + x2) / 2, y: (y1 + y2) / 2};
@@ -12120,16 +8818,14 @@ Object.defineProperties(paper.Point.prototype, {
         if(dr >= 0) {
           const centr = this.arc_cntr(x1, y1, x2, y2, r, arc_ccw);
           dx = point.x - centr.x;
-          dy = point.y - centr.y;	// т.к. Y перевернут
+          dy = point.y - centr.y;
           l = Math.sqrt(dx * dx + dy * dy);
-
           if(more_180) {
             h = r + Math.sqrt(dr);
           }
           else {
             h = r - Math.sqrt(dr);
           }
-
           point.x += dx * h / l;
           point.y += dy * h / l;
         }
@@ -12137,18 +8833,6 @@ Object.defineProperties(paper.Point.prototype, {
       return point;
     }
 	},
-
-  /**
-   * Рассчитывает радиус окружности по двум точкам и высоте
-   * @memberof paper.Point#
-   * @method
-   * @param {Number} x1
-   * @param {Number} y1
-   * @param {Number} x2
-   * @param {Number} y2
-   * @param {Number} h
-   * @return {Number}
-   */
   arc_r: {
     value(x1, y1, x2, y2, h) {
       if(!h) {
@@ -12158,58 +8842,27 @@ Object.defineProperties(paper.Point.prototype, {
       return (h / 2 + (dx * dx + dy * dy) / (8 * h)).round(2);
     }
   },
-
-	/**
-	 * @summary Привязка к углу
-	 * @desc Сдвигает точку к ближайшему лучу с углом, кратным snapAngle
-	 * @memberof paper.Point#
-   * @method
-	 * @param {Number} [snapAngle] - шаг угла, по умолчанию 45°
-	 * @return {paper.Point}
-	 */
 	snap_to_angle: {
 		value: function snap_to_angle(snapAngle, shift) {
-
 			if(!snapAngle){
         snapAngle = Math.PI*2/8;
       }
-
 			let angle = Math.atan2(this.y, this.x);
 			angle = Math.round(angle/snapAngle) * snapAngle;
-
 			const dirx = Math.cos(angle),
 				diry = Math.sin(angle),
 				d = dirx*this.x + diry*this.y;
-
 			return shift || paper.Key.isDown('shift') ?
         new paper.Point(dirx*d, diry*d) :
         new paper.Point((dirx*d / 10).round() * 10, (diry*d / 10).round() * 10);
 		}
 	},
-
-  /**
-   * Выясняет одинаковость направлений векторов
-   * @memberof paper.Point#
-   * @method
-   * @param {paper.Point} point - вектор, с которым сравниваем
-   * @return {Boolean}
-   */
   some_angle: {
     value: function some_angle(point) {
       const delta = Math.abs(this.angle - point.angle);
       return delta < 1 || (delta > 179 && delta < 181);
     }
   },
-
-  /**
-   * Осуществляем привязку (магнетизм) к узлам текущего слоя
-   * Используется инструментами ui
-   * @memberof paper.Point#
-   * @method
-   * @param {Number} sticking - размер области магнетизма
-   * @param {Contour} activeLayer - текущий слой
-   * @return {Boolean}
-   */
   bind_to_nodes: {
 	  value: function bind_to_nodes(sticking, {activeLayer}) {
       return activeLayer?.nodes?.some((point) => {
@@ -12221,14 +8874,7 @@ Object.defineProperties(paper.Point.prototype, {
       });
     }
   },
-
 });
-
-/**
- * Возвращает ближайшее ребро прямоугольника
- * @param {paper.Point} point
- * @return {RectangleRib}
- */
 paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
   const {left, top, right, bottom} = this;
   const {x, y} = point;
@@ -12256,9 +8902,7 @@ paper.Rectangle.prototype.nearest_rib = function nearest_rib(point) {
   }
   return res;
 };
-
 class PathUnselectable extends paper.Path {
-
   setSelection(selection) {
     const {parent, project: {_scope}} = this;
     if(parent) {
@@ -12266,21 +8910,18 @@ class PathUnselectable extends paper.Path {
     }
   }
 }
-
 class ProfilePath extends paper.Path {
   _drawSelected(ctx, matrix, items) {
     const selectedSegments = this._segments.filter(({selected}) => selected);
     if(selectedSegments.length !== 1) {
       return;
     }
-
     let size = this.project._scope.settings.handleSize,
       half = size / 2,
       miniSize = size - 2,
       miniHalf = half - 1,
       coords = new Array(6),
       pX, pY;
-
     function drawHandle(index) {
       var hX = coords[index],
         hY = coords[index + 1];
@@ -12294,7 +8935,6 @@ class ProfilePath extends paper.Path {
         ctx.fill();
       }
     }
-
     const segment = selectedSegments[0],
       selection = segment._selection;
     segment._transformCoordinates(matrix, coords);
@@ -12311,13 +8951,10 @@ class ProfilePath extends paper.Path {
       ctx.fillRect(pX - miniHalf, pY - miniHalf, miniSize, miniSize);
       ctx.fillStyle = fillStyle;
     }
-    
   }
 }
-
 class FillingPath extends paper.Path {
   _drawSelected(ctx, matrix, items) {
-
     let segments = this._segments,
       length = segments.length,
       coords = new Array(6),
@@ -12326,7 +8963,6 @@ class FillingPath extends paper.Path {
       prevX, prevY,
       inX, inY,
       outX, outY;
-
     function drawSegment(segment) {
       if (matrix) {
         segment._transformCoordinates(matrix, coords);
@@ -12367,21 +9003,15 @@ class FillingPath extends paper.Path {
         outY = prevY + handle._y;
       }
     }
-    
     ctx.beginPath();
     for (var i = 0; i < length; i++)
       drawSegment(segments[i]);
     if (this._closed && length > 0)
       drawSegment(segments[0]);
     ctx.stroke();
-    
   }
 }
-
-
-
 class TextUnselectable extends paper.PointText {
-
   setSelection(selection) {
     const {parent, project: {_scope}} = this;
     if(parent) {
@@ -12389,86 +9019,37 @@ class TextUnselectable extends paper.PointText {
     }
   }
 }
-
 EditorInvisible.PathUnselectable = PathUnselectable;
 EditorInvisible.ProfilePath = ProfilePath;
 EditorInvisible.FillingPath = FillingPath;
 EditorInvisible.TextUnselectable = TextUnselectable;
-
-
-
-
-
-
-
-/*
- * Базовые классы профиля
- *
- * Created by Evgeniy Malyarov on 24.07.2015.
- */
-
-/**
- * Объект, описывающий геометрию соединения
- */
 class CnnPoint {
-
-  /**
-   *
-   * @param {ProfileItem} parent - родительский профиль
-   * @param {NodeBE} node - имя узла профиля
-   */
   constructor(parent, node) {
-
     this._parent = parent;
-
-    /**
-     * Имя точки соединения (b или e)
-     * @type String
-     */
     this.node = node;
-
     this.initialize();
   }
-
-  /**
-   * Проверяет, является ли соединение в точке Т-образным.
-   * L для примыкающих рассматривается, как Т
-   */
   get is_t() {
     const {cnn, parent, profile, profile_point} = this;
     const {cnn_types, orientations} = $p.enm;
-
-    // если примыкание не в углу, это точно Т
     if (profile && !profile_point) {
       return true;
     }
-
-    // если это угол, то точно не T
     if (!cnn || cnn.cnn_type == cnn_types.ad) {
       return false;
     }
-
-    // если это Ʇ, или † то без вариантов T
     if (cnn.cnn_type == cnn_types.t) {
       return true;
     }
-
-    // если это Ꞁ или └─, то может быть T в разрыв - проверяем
     if (cnn.cnn_type == cnn_types.av && parent.orientation != orientations.vert) {
       return true;
     }
     if (cnn.cnn_type == cnn_types.ah && parent.orientation != orientations.hor) {
       return true;
     }
-
     return false;
   }
-
-  /**
-   * Строгий вариант is_t: Ꞁ и └ не рассматриваются, как T
-   */
   get is_tt() {
-    // если это угол, то точно не T
     let {profile_point, profile, parent, point} = this;
     if (profile instanceof Filling) {
       return true;
@@ -12484,17 +9065,11 @@ class CnnPoint {
     }
     return true;
   }
-
-  /**
-   * Проверяет, является ли соединение в точке L-образным
-   * Соединения Т всегда L-образные
-   */
   get is_l() {
     const {cnn} = this;
     const {av, ah} = $p.enm.cnn_types;
     return this.is_t || !!(cnn && (cnn.cnn_type === av || cnn.cnn_type === ah));
   }
-
   get is_short() {
     const {cnn, parent: {orientation}} = this;
     const {short, av, ah, t} = $p.enm.cnn_types;
@@ -12502,10 +9077,6 @@ class CnnPoint {
       (cnn.cnn_type === av && orientation.is('hor')) ||
       (cnn.cnn_type === ah && orientation.is('vert')));
   }
-
-  /**
-   * Вариант is_l - по удаленности от узла
-   */
   get is_ll() {
     const {point, profile, parent} = this;
     if (!parent._attr.sticking) {
@@ -12513,30 +9084,16 @@ class CnnPoint {
     }
     return profile && (profile.b.is_nearest(point, parent._attr.sticking) || profile.e.is_nearest(point, parent._attr.sticking));
   }
-
-  /**
-   * Проверяет, является ли соединение в точке соединением с пустотой
-   */
   get is_i() {
     return !this.profile && !this.is_cut;
   }
-
-  /**
-   * Проверяет, является ли соединение в точке соединением крест в стык
-   */
   get is_x() {
     const {cnn} = this;
     return cnn && cnn.cnn_type === $p.enm.cnn_types.xx;
   }
-
-  /**
-   * Профиль, которому принадлежит точка соединения
-   * @type Profile
-   */
   get parent() {
     return this._parent;
   }
-
   clear(mode) {
     const {_attr, project} = this._parent;
     if(mode === 'with_neighbor') {
@@ -12571,11 +9128,6 @@ class CnnPoint {
       _attr._corns.length = 5;
     }
   }
-
-  /**
-   * Массив ошибок соединения
-   * @type Array
-   */
   get err() {
     return this._err;
   }
@@ -12587,11 +9139,6 @@ class CnnPoint {
       this._err.push(v);
     }
   }
-
-  /**
-   * Проверяет ошибки в узле профиля
-   * @param style
-   */
   check_err(style) {
     const {node, _parent} = this;
     const {_corns, _rays} = _parent._attr;
@@ -12621,7 +9168,6 @@ class CnnPoint {
       if(!cnn.cnn_type.is('t') && profile && profile_point) {
         const other = profile.rays[profile_point]?.cnn?.cnn_type;
         if(other) {
-          // ad, av, ah, long, short, t, ii, i, xt, xx
           if((cnn.cnn_type.is('xx') && !other.is('xx') && !other.is('ad')) ||
             (cnn.cnn_type.is('ad') && !other.is('ad')) ||
             (!cnn.cnn_type.is('ad') && !cnn.cnn_type.is('xx') && other.is('ad'))) {
@@ -12630,7 +9176,6 @@ class CnnPoint {
         }
       }
     }
-
     if(aerr || !cnn || (cnn.lmin && cnn.lmin > len) || (cnn.lmax && cnn.lmax < len)) {
       if(style) {
         Object.assign(new paper.Path.Circle({
@@ -12645,11 +9190,6 @@ class CnnPoint {
       }
     }
   }
-
-  /**
-   * Профиль, с которым пересекается наш элемент в точке соединения
-   * @type Profile
-   */
   get profile() {
     const {_profile, _row} = this;
     if(!_profile && _row && _row.elm2) {
@@ -12660,7 +9200,6 @@ class CnnPoint {
   set profile(v) {
     this._profile = v;
   }
-
   get npoint() {
     const point = this.point || this.parent[this.node];
     if(!this.is_tt) {
@@ -12672,24 +9211,12 @@ class CnnPoint {
     }
     return profile.nearest(true).generatrix.getNearestPoint(point) || point;
   }
-
-  /**
-   * Строить ли при наличии соединения с другой стороны, по лучам другой стороны
-   * @type {boolean}
-   */
   get elongate_by_other() {
     const {elongate_by_other} = $p.job_prm.properties;
     const {parent, node} = this;
     return Boolean(elongate_by_other && parent.dop[node]?.[elongate_by_other.ref]);
   }
-
-  /**
-   * Возвращает профиль и узел, если есть соединение с outer-стороны профиля
-   *
-   * @return {NodeAndProfile}
-   */
   find_other() {
-
     let {parent, profile, point} = this;
     if (!point) {
       point = parent[this.node];
@@ -12699,8 +9226,6 @@ class CnnPoint {
     if(parent.cnn_side(profile, null, rays) === outer){
       outer = inner;
     }
-
-    // ищем концы профилей в окрестности нас
     for (const elm of layer.profiles) {
       if (elm === parent || elm === profile) {
         continue;
@@ -12712,18 +9237,10 @@ class CnnPoint {
       }
     }
   }
-
-  /**
-   * При наличии соединения с другой стороны, исправляет ссылки на основной профиль и profile_point
-   * @param other
-   * @return {void}
-   */
   correct_profile({profile}, cnn) {
     const {parent, point} = this;
     const {rays, layer} = parent;
     const {outer} = $p.enm.cnn_sides;
-
-    // ищем концы профилей в окрестности нас
     for(const elm of layer.profiles) {
       if(elm === parent || elm === profile) {
         continue;
@@ -12751,14 +9268,7 @@ class CnnPoint {
       }
     }
   }
-
-  /**
-   * Возвращает соединение с обратной стороны конца профиля
-   * @param other
-   * @return {CatCnns}
-   */
   cnno(other) {
-    // ищем концы профилей в окрестности e
     if(!other) {
       other = this.find_other();
     }
@@ -12782,7 +9292,6 @@ class CnnPoint {
       delete this._cnno;
     }
   }
-
   set_cnno(v) {
     const other = this.find_other();
     if(other) {
@@ -12797,21 +9306,14 @@ class CnnPoint {
         this.correct_profile(other, row.cnn);
       }
       row.cnn = v;
-
       this._cnno = {
         elm2: other.profile.elm,
         node2: other.node,
         cnn: row.cnn,
       };
-
       parent.project.register_change();
     }
   }
-
-  /**
-   * fake-структура для расчета спецификации
-   * @return {Object}
-   */
   len_angl() {
     const {is_t, cnn} = this;
     const invert = cnn && cnn.cnn_type === $p.enm.cnn_types.av;
@@ -12821,24 +9323,16 @@ class CnnPoint {
       art2: invert ? is_t : !is_t,
     };
   }
-
   initialize() {
-
     let {_parent, node} = this;
     if(_parent.rnum) {
       node += _parent.rnum.toFixed();
     }
-
-    //  массив ошибок соединения
     this._err = [];
-
-    // строка в таблице соединений
     _parent.ox.cnn_elmnts.find_rows({elm1: _parent.elm, node1: node}, (row) => {
       if(this._row) {
-        // строк больше одной - проверим, не other ли предыдущая с если что - поменяем
         const elm = _parent.layer.getItem({class: ProfileItem, elm: row.elm2});
         if(elm) {
-
         }
         else if(row.node2 !== node) {
           this._row = row;
@@ -12848,25 +9342,13 @@ class CnnPoint {
         this._row = row;
       }
     });
-
     const {acn} = $p.enm.cnn_types;
     if(this._row) {
-
-      /**
-       * Текущее соединение - объект справочника соединения
-       * @type CatCnns
-       */
       this.cnn = this._row.cnn;
       this.profile_point = this._row.node2.substring(0, 1);
       if(['b', 'e', 't'].includes(this.profile_point)) {
         this.distance = 0;
       }
-
-      /**
-       * Массив допустимых типов соединений
-       * По умолчанию - соединение с пустотой
-       * @type Array
-       */
       if(acn.a.includes(this.cnn.cnn_type)) {
         this.cnn_types = acn.a;
       }
@@ -12882,24 +9364,13 @@ class CnnPoint {
       this.cnn_types = (_parent.rnum && _parent.parent_elm) ? _parent.parent_elm.rays[this.node]?.cnn_types : acn.i;
       this.profile_point = '';
     }
-
-    /**
-     * Расстояние до ближайшего профиля
-     * @type Number
-     */
     if(!this.hasOwnProperty('distance')) {
       this.distance = Infinity;
     }
     this.point = null;
-
   }
 }
-
-/**
- * Объект, описывающий лучи пути профиля
- */
 class ProfileRays {
-
   constructor(parent) {
     this.parent = parent;
     this.b = new CnnPoint(this.parent, 'b');
@@ -12907,7 +9378,6 @@ class ProfileRays {
     this.inner = new paper.Path({insert: false});
     this.outer = new paper.Path({insert: false});
   }
-
   clear_segments() {
     if(this.inner.segments.length) {
       this.inner.removeSegments();
@@ -12916,7 +9386,6 @@ class ProfileRays {
       this.outer.removeSegments();
     }
   }
-
   clear(with_cnn) {
     this.clear_segments();
     if(with_cnn) {
@@ -12926,8 +9395,6 @@ class ProfileRays {
     if(with_cnn === 'with_neighbor') {
       const {enm: {cnn_types}, cat: {cnns}} = $p;
       const {parent} = this;
-
-      // прибиваем соединения в точках b и e
       const nodes = ['b', 'e'];
       for(const node of nodes) {
         const {profile, profile_point} = parent._attr._rays[node];
@@ -12942,8 +9409,6 @@ class ProfileRays {
           }
         }
       }
-
-      // прибиваем соединения примыкающих к текущему импостов
       const {inner, outer} = parent.joined_imposts();
       const elm2 = parent.elm;
       const {cnn_elmnts} = parent.ox;
@@ -12960,127 +9425,66 @@ class ProfileRays {
           }
         }
       }
-
-      // для соединительных профилей и элементов со створками, пересчитываем соседей
       for (const {_attr, elm} of parent.joined_nearests()) {
         _attr._rays && _attr._rays.clear(with_cnn);
         _attr._nearest_cnn = null;
       }
-
-      // так же, пересчитываем соединения с примыкающими заполнениями
       parent.layer.glasses(false, true).forEach((glass) => {
         cnn_elmnts.clear({elm1: glass.elm, node1: cnn_nodes, elm2});
       });
     }
   }
-
   recalc() {
-
     const {parent} = this;
     const gen = parent.generatrix;
     const len = gen.length;
-
     this.clear();
-
     if(!len) {
       return;
     }
-
     const {d1, d2, width} = parent;
     const ds = 3 * (width > 20 ? width : 20);
     const step = len * 0.02;
-
-    // первая точка эквидистанты. аппроксимируется касательной на участке (from < начала пути)
     let point_b = gen.firstSegment.point,
       tangent_b = gen.getTangentAt(0),
       normal_b = gen.getNormalAt(0),
       point_e = gen.lastSegment.point,
       tangent_e, normal_e;
-
-    // добавляем первые точки путей
     this.outer.add(point_b.add(normal_b.multiply(d1)).add(tangent_b.multiply(-ds)));
     this.inner.add(point_b.add(normal_b.multiply(d2)).add(tangent_b.multiply(-ds)));
-
-    // для прямого пути, строим в один проход
     if(gen.is_linear()) {
       this.outer.add(point_e.add(normal_b.multiply(d1)).add(tangent_b.multiply(ds)));
       this.inner.add(point_e.add(normal_b.multiply(d2)).add(tangent_b.multiply(ds)));
     }
     else {
-
       this.outer.add(point_b.add(normal_b.multiply(d1)));
       this.inner.add(point_b.add(normal_b.multiply(d2)));
-
       for (let i = step; i < len; i += step) {
         point_b = gen.getPointAt(i);
         normal_b = gen.getNormalAt(i);
         this.outer.add(point_b.add(normal_b.normalize(d1)));
         this.inner.add(point_b.add(normal_b.normalize(d2)));
       }
-
       normal_e = gen.getNormalAt(len);
       this.outer.add(point_e.add(normal_e.multiply(d1)));
       this.inner.add(point_e.add(normal_e.multiply(d2)));
-
       tangent_e = gen.getTangentAt(len);
       this.outer.add(point_e.add(normal_e.multiply(d1)).add(tangent_e.multiply(ds)));
       this.inner.add(point_e.add(normal_e.multiply(d2)).add(tangent_e.multiply(ds)));
-
     }
-
     this.inner.reverse();
   }
-
 }
-
-
-/**
- * @summary Абстрактный элемент профиля
- * @desc Виртуальный класс описывает общие свойства профиля и раскладки
- *
- * @abstract
- * @extends GeneratrixElement
- * @tutorial 02_geometry
- */
 class ProfileItem extends GeneratrixElement {
-
-  /**
-   * @summary Расстояние от узла до опорной линии
-   * @desc Для сегментов створок и вложенных элементов зависит от ширины элементов и свойств примыкающих соединений,
-   * для соединителей и раскладок = 0
-   * @type Number
-   * @final
-   */
   get d0() {
     return 0;
   }
-
-  /**
-   * @summary Расстояние от узла до внешнего ребра элемента
-   * @desc для рамы, обычно = 0, для импоста 1/2 ширины, зависит от `d0` и `sizeb`
-   * @type Number
-   * @final
-   */
   get d1() {
     return -(this.d0 - this.sizeb);
   }
-
-  /**
-   * @summary Расстояние от узла до внутреннего ребра элемента
-   * @desc зависит от ширины элементов и свойств примыкающих соединений
-   * @type Number
-   * @final
-   */
   get d2() {
     return this.d1 - this.width;
   }
-
-  /**
-   * @summary Задаваемое пользователем смещение от образующей
-   * @desc Особенно актуально для наклонных элементов а так же, в случае,
-   * когда чертёж должен опираться на размеры проёма и отступы, вместо габаритов по профилю
-   * @type Number
-   */
   get offset() {
     const {_row} = this;
     return (_row && _row.offset) || 0;
@@ -13100,22 +9504,9 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-
-  /**
-   * @summary Дополнительный отступ на раме для углубления створки
-   * @desc Экзотика. Используется, например, в системах Термогласс
-   * @return {Number}
-   */
   get frame_indent() {
     return this.nom._extra('frame_indent') || 0;
   }
-
-  /**
-   * Точка проекции высоты ручки на ребро профиля
-   *
-   * @param {InnerOuter} side
-   * @return {paper.Point|void}
-   */
   hhpoint(side) {
     const {layer, rays} = this;
     if(layer instanceof ConnectiveLayer) {
@@ -13126,84 +9517,43 @@ class ProfileItem extends GeneratrixElement {
     if(!h_ruch || !handle_side) {
       return;
     }
-    // получаем элемент, на котором ручка и длину элемента
     if(layer.profile_by_furn_side(handle_side) == this) {
       return rays[side].intersect_point(layer.handle_line(this));
     }
   }
-
-  /**
-   * Точка проекции высоты ручки на внутреннее ребро профиля
-   * @type {paper.Point|void}
-   */
   get hhi() {
     return this.hhpoint('inner');
   }
-
-  /**
-   * Точка проекции высоты ручки на внешнее ребро профиля
-   * @type {paper.Point|void}
-   */
   get hho() {
     return this.hhpoint('outer');
   }
-
-  /**
-   * Соединение в точке 'b' для диалога свойств
-   * @type CatCnns
-   * @private
-   */
   get cnn1() {
     return this.getcnnn('b');
   }
-
   set cnn1(v) {
     this.setcnnn(v, 'b');
   }
-
-  /**
-   * Соединение в точке 'b' c обратной стороны
-   * @type CatCnns
-   * @private
-   */
   get cnn1o() {
     return this.rays.b.cnno();
   }
-
   set cnn1o(v) {
     this.rays.b.set_cnno(v);
   }
-
-  /**
-   * Соединение в точке 'e' для диалога свойств
-   * @type CatCnns
-   * @private
-   */
   get cnn2() {
     return this.getcnnn('e');
   }
-
   set cnn2(v) {
     this.setcnnn(v, 'e');
   }
-
-  /**
-   * Соединение в точке 'e' c обратной стороны
-   * @type CatCnns
-   * @private
-   */
   get cnn2o() {
     return this.rays.e.cnno();
   }
-
   set cnn2o(v) {
     this.rays.e.set_cnno(v);
   }
-
   getcnnn(n) {
     return this.cnn_point(n).cnn || $p.cat.cnns.get();
   }
-
   setcnnn(v, n) {
     const {rays} = this;
     const cnn = $p.cat.cnns.get(v);
@@ -13212,27 +9562,8 @@ class ProfileItem extends GeneratrixElement {
       this.project.register_change();
     }
   }
-
-  /**
-   * С этой функции начинается пересчет и перерисовка сегмента раскладки
-   * Возвращает объект соединения конца профиля
-   * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
-   * - Не делает подмену соединения, хотя могла бы
-   * - Не делает подмену вставки, хотя могла бы
-   *
-   * @abstract
-   * @param {NodeBE} node - имя узла профиля
-   * @param {paper.Point} [point] - координаты точки, в окрестности которой искать
-   * @return {CnnPoint}
-   */
   cnn_point(node, point) {
-
   }
-
-  /**
-   * Положение элемента в контуре
-   * @type {EnmElm_positions}
-   */
   get pos() {
     const {layer, orientation} = this;
     const {top, bottom, left, right} = layer.profiles_by_side();
@@ -13263,36 +9594,14 @@ class ProfileItem extends GeneratrixElement {
     if(!orientation.is('hor') && Math.abs(right.x1 + right.x2 - x1 - x2) < delta) {
       return Прав;
     }
-    // TODO: рассмотреть случай с выносом стоек и разрывами
     return Центр;
   }
-
-  /**
-   * Проекция точки b на образующую родительского элемента
-   * Для рам и створок, совпадает с 'b', для импостов - отличается
-   * @type {paper.Point}
-   * @final
-   */
   get gb() {
     return this.gn('b');
   }
-
-  /**
-   * Проекция точки e на образующую родительского элемента
-   * Для рам и створок, совпадает с 'e', для импостов - отличается
-   * @type {paper.Point}
-   * @final
-   */
   get ge() {
     return this.gn('e');
   }
-
-  /**
-   * Вспомогательная для {@link ProfileItem#gb} {@link ProfileItem#ge}
-   * @private
-   * @param {String} n
-   * @return {paper.Point}
-   */
   gn(n) {
     const {profile, is_t} = this.cnn_point(n);
     if(is_t && profile) {
@@ -13300,11 +9609,6 @@ class ProfileItem extends GeneratrixElement {
     }
     return this[n];
   }
-
-  /**
-   * Точка для размерных линий
-   * @return {paper.Point}
-   */
   get c1() {
     const pt = this.corns(1);
     if(pt) {
@@ -13312,11 +9616,6 @@ class ProfileItem extends GeneratrixElement {
     }
     return pt;
   }
-
-  /**
-   * Точка для размерных линий
-   * @return {paper.Point}
-   */
   get c2() {
     const pt = this.corns(2);
     if(pt) {
@@ -13324,15 +9623,10 @@ class ProfileItem extends GeneratrixElement {
     }
     return pt;
   }
-  
   get flipped() {
     const {flipped} = this.inset;
     return flipped === 2 || flipped === 3;
   }
-
-  /**
-   * Отрывает точку от соседнего профиля
-   */
   unlink() {
     const {generatrix, b, e, rays} = this;
     const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking_l + 1) : (
@@ -13348,10 +9642,6 @@ class ProfileItem extends GeneratrixElement {
       this.move_points(tg);
     }
   }
-
-  /**
-   * Привязывает точку к соседнему профилю
-   */
   link() {
     const {generatrix, b, e, rays, parent} = this;
     const tg = b.selected ? generatrix.getTangentAt(0).multiply(consts.sticking).negate() : (
@@ -13376,7 +9666,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-    
   bringUp() {
     const {b, e, rays} = this;
     const node = b.selected ? rays.b : (e.selected ? rays.e : null);
@@ -13384,7 +9673,6 @@ class ProfileItem extends GeneratrixElement {
       this.insertAbove(node?.profile);
     }
   }
-
   bringDown() {
     const {b, e, rays} = this;
     const node = b.selected ? rays.b : (e.selected ? rays.e : null);
@@ -13392,12 +9680,6 @@ class ProfileItem extends GeneratrixElement {
       this.insertBelow(node?.profile);
     }
   }
-
-  /**
-   * Угол к соседнему элементу
-   * @param node {NodeBE}
-   * @return {number}
-   */
   angle_at(node) {
     const {profile, point} = this.rays[node] || this.cnn_point(node);
     if(!profile || !point) {
@@ -13424,43 +9706,19 @@ class ProfileItem extends GeneratrixElement {
     const a = t2.negate().getDirectedAngle(t1).round(1);
     return a > 180 ? a - 180 : (a < 0 ? -a : a);
   }
-
-  /**
-   * Угол к соседнему элементу в точке 'b'
-   * @type Number
-   * @final
-   */
   get a1() {
     return this.angle_at('b');
   }
-
-  /**
-   * Угол к соседнему элементу в точке 'e'
-   * @type Number
-   * @final
-   */
   get a2() {
     return this.angle_at('e');
   }
-
-  /**
-   * Информация для диалога свойств
-   * @type String
-   * @final
-   */
   get info() {
     const {elm, angle_hor, length, layer} = this;
     return `№${elm}  α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
   }
-
-  /**
-   * Радиус сегмента профиля
-   * @type Number
-   */
   get r() {
     return this._row.r;
   }
-
   set r(v) {
     const {_row, _attr} = this;
     if(typeof v !== 'number') {
@@ -13476,31 +9734,15 @@ class ProfileItem extends GeneratrixElement {
       this.project.notify(this, 'update', {r: true, arc_h: true, arc_ccw: true});
     }
   }
-
-  /**
-   * Минимальный радиус, высисляемый по кривизне элемента
-   * для прямых = 0
-   */
   get rmin() {
     return this.generatrix.rmin();
   }
-
-  /**
-   * Максимальный радиус, высисляемый по кривизне элемента
-   * для прямых = 0
-   */
   get rmax() {
     return this.generatrix.rmax();
   }
-
-  /**
-   * Средний радиус, высисляемый по трём точкам
-   * для прямых = 0
-   */
   get ravg() {
     return this.generatrix.ravg();
   }
-
   get rinner() {
     if(this.is_linear()) {
       return 0;
@@ -13509,7 +9751,6 @@ class ProfileItem extends GeneratrixElement {
     const sub = rays.inner.get_subpath(_corns[3], _corns[4]);
     return sub.ravg();
   }
-
   get router() {
     if(this.is_linear()) {
       return 0;
@@ -13518,15 +9759,9 @@ class ProfileItem extends GeneratrixElement {
     const sub = rays.outer.get_subpath(_corns[1], _corns[2]);
     return sub.ravg();
   }
-
-  /**
-   * Направление дуги сегмента профиля против часовой стрелки
-   * @type Boolean
-   */
   get arc_ccw() {
     return this._row.arc_ccw;
   }
-
   set arc_ccw(v) {
     const {_row, _attr} = this;
     if(_row.arc_ccw != v) {
@@ -13536,11 +9771,6 @@ class ProfileItem extends GeneratrixElement {
       this.project.notify(this, 'update', {r: true, arc_h: true, arc_ccw: true});
     }
   }
-
-  /**
-   * Высота дуги сегмента профиля
-   * @type Number
-   */
   get arc_h() {
     const {_row, b, e, generatrix} = this;
     if(_row.r) {
@@ -13549,7 +9779,6 @@ class ProfileItem extends GeneratrixElement {
     }
     return 0;
   }
-
   set arc_h(v) {
     const {_row, _attr, b, e, arc_h} = this;
     v = parseFloat(v);
@@ -13570,38 +9799,20 @@ class ProfileItem extends GeneratrixElement {
       this.project.notify(this, 'update', {r: true, arc_h: true, arc_ccw: true});
     }
   }
-
-  /**
-   * @summary Угол к горизонту
-   * @desc Рассчитывается для прямой, проходящей через узлы
-   *
-   * @type Number
-   * @final
-   */
   get angle_hor() {
     const {b, e} = this;
     const res = (new paper.Point(e.x - b.x, b.y - e.y)).angle.round(2);
     return res < 0 ? (res < -.12 ? res + 360 : 0) : res;
   }
-
-  /**
-   * Длина профиля с учетом соединений
-   * @type Number
-   * @final
-   */
   get length() {
     const {b, e, outer} = this.rays;
     const ppoints = {};
-
-    // находим проекции четырёх (шести) вершин на образующую
     for (const i of [1, 2, 3, 4, 7, 8]) {
       const pt = this.corns(i);
       if(pt) {
         ppoints[i] = outer.getNearestPoint(pt);
       }
     }
-
-    // находим точки, расположенные ближе к концам
     let distanse = Infinity;
     for(const i of [7, 1, 4]) {
       const pt = ppoints[i];
@@ -13630,23 +9841,11 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
-
-    // получаем фрагмент образующей
     const sub_gen = outer.get_subpath(ppoints.b, ppoints.e);
     const res = sub_gen.length;
     sub_gen.remove();
-
     return (res * 2).round() / 2;
   }
-
-  /**
-   * @summary Ориентация профиля
-   * @desc Вычисляется по гулу к горизонту.
-   * Если угол в пределах `orientation_delta`, элемент признаётся горизонтальным или вертикальным. Иначе - наклонным
-   *
-   * @type EnmOrientations
-   * @final
-   */
   get orientation() {
     let {angle_hor} = this;
     if(angle_hor > 180) {
@@ -13663,12 +9862,6 @@ class ProfileItem extends GeneratrixElement {
     }
     return orientations.incline;
   }
-
-  /**
-   * @summary Опорные точки и лучи
-   * @type ProfileRays
-   * @final
-   */
   get rays() {
     const {_rays} = this._attr;
     if(!_rays.inner.segments.length || !_rays.outer.segments.length) {
@@ -13676,87 +9869,41 @@ class ProfileItem extends GeneratrixElement {
     }
     return _rays;
   }
-
-  /**
-   * @summary Доборы текущего профиля
-   * @type Array.<ProfileAddl>
-   * @final
-   */
   get addls() {
     return this.children.filter((elm) => elm instanceof ProfileAddl || elm instanceof ProfileAddlOuter);
   }
-
-  /**
-   * @summary Штапики текущего профиля
-   * @type Array.<ProfileGlBead>
-   * @final
-   */
   get glbeads() {
     return this.layer.getItems({class: ProfileGlBead, profile: this});
   }
-
-  /**
-   * @summary Сегменты текущей связки
-   * @type Array.<ProfileSegment>
-   * @final
-   */
   get segms() {
     return this.children.filter((elm) => elm instanceof ProfileSegment);
   }
-
-  /**
-   * @summary Примыкания текущего профиля
-   * @type Array.<ProfileAddl>
-   * @final
-   */
   get adjoinings() {
     return this.children.filter((elm) => elm instanceof ProfileAdjoining);
   }
-
-  /**
-   * Строка цвета по умолчанию для эскиза
-   * @type {String}
-   */
   get default_clr_str() {
     return 'FEFEFE';
   }
-
-  /**
-   * Непрозрачность профиля
-   *
-   * В отличии от прототипа `opacity`, не изменяет прозрачость образующей
-   * @type {Number}
-   */
   get opacity() {
     return this.path ? this.path.opacity : 1;
   }
   set opacity(v) {
     this.path && (this.path.opacity = v);
   }
-
-  /**
-   * Припуск для соединения "сварной шов"
-   * @type {Number}
-   */
   get dx0() {
     const {cnn} = this.rays.b;
     const main_row = cnn && cnn.main_row(this);
     return main_row && main_row.angle_calc_method == $p.enm.angle_calculating_ways.СварнойШов ? -main_row.sz : 0;
   }
-
-  /**
-   * Структура примыкающих заполнений
-   * @type {Object}
-   */
   get nearest_glasses() {
     const res = {
-      all: [],    // все
-      inner: [],  // изнутри по отношению к образующей
-      outer: [],  // снаружи по отношению к образующей
-      left: [],   // слева от элемента
-      right: [],  // справа от элемента
-      top: [],    // сверху
-      bottom: [], // снизу
+      all: [],   
+      inner: [], 
+      outer: [], 
+      left: [],  
+      right: [], 
+      top: [],   
+      bottom: [],
     };
     const {layer, generatrix, orientation} = this;
     for(const glass of layer.glasses(false, true)) {
@@ -13793,36 +9940,12 @@ class ProfileItem extends GeneratrixElement {
     }
     return res;
   }
-
-  /**
-   * Возвращает массив примыкающих импостов
-   * @param {Boolean} [check_only] - не формировать подробный ответ, только проверить наличие примыкающих импостов
-   * @returns {Object|Boolean}
-   */
   joined_imposts(check_only) {
-
-    // const map = this.parent.cnnMap.get(this) || [];
-    // if(check_only) {
-    //   return map.some(({node}) => !node.profile_point || node.profile_point === 't');
-    // }
-    // const toJoinedProfiles = ({elm, node}) => ({point: node.point, profile: elm});
-    // return {
-    //   inner: map
-    //     .filter(({node, side}) => side === -1 && !node.profile_point || node.profile_point === 't')
-    //     .map(toJoinedProfiles),
-    //   outer: map
-    //     .filter(({node, side}) => side === 1 && !node.profile_point || node.profile_point === 't')
-    //     .map(toJoinedProfiles),
-    // };
-    
     const {rays, generatrix, layer} = this;
     const tinner = [];
     const touter = [];
-    
     if(this.isInserted()) {
-      // точки, в которых сходятся более 2 профилей
       const candidates = {b: [], e: []};
-
       const {outer} = $p.enm.cnn_sides;
       const add_impost = (ip, curr, point) => {
         const res = {point: generatrix.getNearestPoint(point), profile: curr};
@@ -13833,7 +9956,6 @@ class ProfileItem extends GeneratrixElement {
           tinner.push(res);
         }
       };
-
       if(layer.profiles.some((curr) => {
         if(curr != this) {
           for(const pname of ['b', 'e']) {
@@ -13855,13 +9977,10 @@ class ProfileItem extends GeneratrixElement {
       })) {
         return true;
       }
-
-      // если в точке примыкает более 1 профиля...
       ['b', 'e'].forEach((node) => {
         if(candidates[node].length > 1) {
           candidates[node].some((ip) => {
             if(ip && this.cnn_side(null, ip, rays) === outer) {
-              //this.cnn_point(node).is_cut = true;
               this.rays[node].is_cut = true;
               return true;
             }
@@ -13869,16 +9988,8 @@ class ProfileItem extends GeneratrixElement {
         }
       });
     }
-
     return check_only ? false : {inner: tinner, outer: touter};
-
   }
-
-  /**
-   * @summary Чистит лучи примыкающих элементов
-   * @param with_nearest
-   * @param postprocess
-   */
   clear_joined(with_nearest, postprocess) {
     const {inner, outer} = this.joined_imposts();
     const imposts = inner.concat(outer);
@@ -13901,7 +10012,6 @@ class ProfileItem extends GeneratrixElement {
     _attr._rays?.clear();
     delete _attr.d0;
   }
-
   setSelection(selection) {
     const {_attr: {generatrix, path}, project: {builder_props, _scope: {consts}}} = this;
     if(!generatrix || !path) {
@@ -13910,16 +10020,11 @@ class ProfileItem extends GeneratrixElement {
     if(selection && !this.getSelection()) {
       this._attr.selectionStamp = Date.now();
     }
-
     super.setSelection(selection);
-    
     generatrix.setSelection(selection);
     this.ruler_line_select(false);
-
     if(selection && (consts.tab !== 'stv' || consts.mode !== 'select')) {
-
       const {inner, outer} = this.rays;
-
       if(this._hatching) {
         this._hatching.removeChildren();
       }
@@ -13931,9 +10036,7 @@ class ProfileItem extends GeneratrixElement {
           strokeScaling: false
         });
       }
-
       path.setSelection(0);
-
       if([0, 1].includes(builder_props.mode) && path.length) {
         for (let t = 0; t < inner.length; t += 50) {
           const ip = inner.getPointAt(t);
@@ -13943,7 +10046,6 @@ class ProfileItem extends GeneratrixElement {
             segments: [ip, ip.add(np)]
           });
           const op = fp.intersect_point(outer, ip);
-
           if(ip && op) {
             const cip = path.getNearestPoint(ip);
             const cop = path.getNearestPoint(op);
@@ -13970,39 +10072,30 @@ class ProfileItem extends GeneratrixElement {
           }
         }
       }
-
     }
     else if(this._hatching) {
       this._hatching.remove();
       this._hatching = null;
     }
   }
-
-  // выделяет внутреннее или внешнее ребро профиля
   ruler_line_select(mode) {
-
     const {_attr} = this;
-
     if(_attr.ruler_line_path) {
       _attr.ruler_line_path.remove();
       delete _attr.ruler_line_path;
     }
-
     if(mode) {
       switch (_attr.ruler_line = mode) {
-
       case 'inner':
         _attr.ruler_line_path = this.path.get_subpath(this.corns(3), this.corns(4));
         _attr.ruler_line_path.parent = this;
         _attr.ruler_line_path.selected = true;
         break;
-
       case 'outer':
         _attr.ruler_line_path = this.path.get_subpath(this.corns(1), this.corns(2));
         _attr.ruler_line_path.parent = this;
         _attr.ruler_line_path.selected = true;
         break;
-
       default:
         this.generatrix.selected = true;
         break;
@@ -14012,8 +10105,6 @@ class ProfileItem extends GeneratrixElement {
       delete _attr.ruler_line;
     }
   }
-
-  // координата стороны или образующей профиля
   ruler_line_coordin(xy) {
     switch (this._attr.ruler_line) {
     case 'inner':
@@ -14024,8 +10115,6 @@ class ProfileItem extends GeneratrixElement {
       return (this.b[xy] + this.e[xy]) / 2;
     }
   }
-
-  // если профиль примыкает к соседнему слою и нет соединителя
   check_err(style) {
     const {layer, project, generatrix} = this;
     if(layer.layer || !layer.sys.show_ii || this.nearest(true) || this.elm_type.is('impost')) {
@@ -14077,15 +10166,8 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-
-  /**
-   * @summary Проверяет, не изменилась ли номенклатура элемента после изменения геометрии
-   * @desc складывает изменённые элементы в параметр arr
-   * @param {Array} arr
-   */
   check_nom(arr) {
     const {_row, _attr, length, glbeads, angle_hor} = this;
-    // сохраняем угол к горизонту и длину профиля в _row
     if(_row.len !== length || _row.angle_hor !== angle_hor) {
       const {_attr, is_read_only} = this.project;
       if(is_read_only) {
@@ -14108,42 +10190,26 @@ class ProfileItem extends GeneratrixElement {
       chld.check_nom(arr);
     }
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   * @return {void}
-   */
   save_coordinates() {
-
     const {_attr, _row, ox: {cnn_elmnts}, rays: {b, e, inner, outer}, generatrix, layer} = this;
-
     if(!generatrix) {
       return;
     }
     else if(!_attr._corns.length) {
       this.redraw();
     }
-
     _row.x1 = this.x1;
     _row.y1 = this.y1;
     _row.x2 = this.x2;
     _row.y2 = this.y2;
     _row.path_data = generatrix.pathData;
     _row.nom = this.nom;
-
-    // радиус, как дань традиции - вычисляем для внешнего ребра профиля??
     if(generatrix.is_linear()) {
       _row.r = 0;
     }
     else {
-      // const r1 = inner.get_subpath(_attr._corns[3], _attr._corns[4]).ravg();
-      // const r2 = outer.get_subpath(_attr._corns[1], _attr._corns[2]).ravg();
-      // _row.r = Math.max(r1, r2);
       _row.r = generatrix.ravg().round(2);
     }
-
-
-
     const row_b = cnn_elmnts.add({
       elm1: _row.elm,
       node1: 'b',
@@ -14156,8 +10222,6 @@ class ProfileItem extends GeneratrixElement {
       cnn: e.cnn,
       aperture_len: this.corns(2).getDistance(this.corns(3)).round(1)
     });
-
-    // сохраняем информацию о соединениях
     if(b.profile) {
       row_b.elm2 = b.profile.elm;
       if(b.profile.e.is_nearest(b.point)) {
@@ -14182,16 +10246,11 @@ class ProfileItem extends GeneratrixElement {
         row_e.node2 = 't';
       }
     }
-
-
     if(!(this instanceof ProfileSegment)) {
-
       _row.dop = {
         index: layer.profiles.indexOf(this),
         nearest: _attr._nearest?.elm,
       };
-
-      // в том числе - о соединениях с другой стороны
       if(b._cnno && row_b.elm2 !== b._cnno.elm2) {
         cnn_elmnts.add({
           elm1: _row.elm,
@@ -14212,8 +10271,6 @@ class ProfileItem extends GeneratrixElement {
           aperture_len: row_e.aperture_len,
         });
       }
-
-      // для створочных и доборных профилей добавляем соединения с внешними элементами
       const nrst = this.nearest();
       if(nrst) {
         cnn_elmnts.add({
@@ -14224,44 +10281,28 @@ class ProfileItem extends GeneratrixElement {
         });
       }
     }
-
     _row.alp1 = Math.round(((this.corns(5) || this.corns(4)).subtract(this.corns(1)).angle -
       generatrix.getTangentAt(0).angle) * 10) / 10;
     if(_row.alp1 < 0) {
       _row.alp1 = _row.alp1 + 360;
     }
-
     _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle -
       this.corns(2).subtract(this.corns(6) || this.corns(3)).angle) * 10) / 10;
     if(_row.alp2 < 0) {
       _row.alp2 = _row.alp2 + 360;
     }
-
-    // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
-
-    // TODO: Рассчитать положение и ориентацию
     _row.orientation = this.orientation;
     _row.pos = this.pos;
-
-    // координаты доборов и прочих детей
     this.children.forEach((addl) => addl.save_coordinates?.());
   }
-
-  /**
-   * Вызывается из конструктора - создаёт пути и лучи
-   * @private
-   */
   initialize(attr) {
-
     const {project, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
     const {job_prm, utils} = $p;
-
     if(attr.r) {
       _row.r = attr.r;
     }
-
     if(attr.generatrix) {
       _attr.generatrix = attr.generatrix;
       if(_attr.generatrix._reversed) {
@@ -14284,45 +10325,24 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
-
-    // точки пересечения профиля с соседями с внутренней стороны
     _attr._corns = [];
-
-    // кеш лучей в узлах профиля
     _attr._rays = new ProfileRays(this);
-
     _attr.generatrix.strokeColor = 'gray';
     _attr.generatrix._drawSelected = ProfileItem._drawSelected;
-
     _attr.path = new ProfilePath();
     Object.assign(_attr.path, ProfileItem.path_attr);
     this.clr = _row.clr.empty() ? job_prm.builder.base_clr : _row.clr;
-
     this.addChild(_attr.path);
     this.addChild(_attr.generatrix);
-
   }
-
-  /**
-   * Возвращает скелетон родителя
-   * @return {Skeleton}
-   */
   get skeleton() {
     return this.parent.skeleton;
   }
-
-  /**
-   * Обсервер  
-   * Наблюдает за изменениями контура и пересчитывает путь элемента при изменении соседних элементов
-   *
-   * @private
-   */
   observer(an) {
     const {profiles} = an;
     if(profiles) {
       let binded;
       if(!profiles.includes(this)) {
-        // если среди профилей есть такой, к которму примыкает текущий, пробуем привязку
         for(const profile of profiles) {
           if(profile instanceof Onlay && !(this instanceof Onlay)) {
             continue;
@@ -14337,15 +10357,9 @@ class ProfileItem extends GeneratrixElement {
       this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
     }
   }
-
-  /**
-   * Вспомогательная функция обсервера, выполняет привязку узлов
-   */
   do_bind(profile, bcnn, ecnn, moved) {
-
     const {acn, ad} = $p.enm.cnn_types;
     let moved_fact, nearests;
-
     if(profile instanceof ProfileConnective) {
       nearests = this.joined_nearests();
       const gen = profile.generatrix.clone({insert: false}).elongation(3000);
@@ -14374,7 +10388,6 @@ class ProfileItem extends GeneratrixElement {
     }
     else {
       if(bcnn?.cnn && bcnn.profile == profile) {
-        // обрабатываем угол
         if(bcnn.profile_point && bcnn.profile_point !== 't' && !bcnn.is_x) {
           const pp = profile[bcnn.profile_point];
           if(!this.b.is_nearest(pp, 0)) {
@@ -14389,21 +10402,17 @@ class ProfileItem extends GeneratrixElement {
                 moved_fact = true;
               }
             }
-            // отрываем привязанный ранее профиль
             else {
               bcnn.clear();
               this._attr._rays.clear();
             }
           }
         }
-        // обрабатываем T
         else if(acn.t.indexOf(bcnn.cnn.cnn_type) != -1 && this.do_sub_bind(profile, 'b')) {
           moved_fact = true;
         }
       }
-
       if(ecnn?.cnn && ecnn.profile == profile) {
-        // обрабатываем угол
         if(ecnn.profile_point && ecnn.profile_point !== 't' && !ecnn.is_x) {
           const pp = profile[ecnn.profile_point];
           if(!this.e.is_nearest(pp, 0)) {
@@ -14419,20 +10428,16 @@ class ProfileItem extends GeneratrixElement {
               }
             }
             else {
-              // отрываем привязанный ранее профиль
               ecnn.clear();
               this._attr._rays.clear();
             }
           }
         }
-        // обрабатываем T
         else if(acn.t.indexOf(ecnn.cnn.cnn_type) != -1 && this.do_sub_bind(profile, 'e')) {
           moved_fact = true;
         }
       }
     }
-
-    // если мы в обсервере и есть T и в массиве обработанных есть примыкающий T - пересчитываем
     if(moved && moved_fact) {
       const imposts = this.joined_imposts();
       imposts.inner.concat(imposts.outer).forEach(({profile}) => {
@@ -14448,10 +10453,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-
-  /**
-   * Возвращает сторону соединения текущего профиля с указанным
-   */
   cnn_side(profile, interior, rays) {
     if(!interior) {
       interior = profile?.interiorPoint?.();
@@ -14466,30 +10467,22 @@ class ProfileItem extends GeneratrixElement {
     return rays.inner.getNearestPoint(interior).getDistance(interior, true) <
       rays.outer.getNearestPoint(interior).getDistance(interior, true) ? Изнутри : Снаружи;
   }
-
-  /**
-   * Искривляет образующую в соответствии с радиусом
-   */
   set_generatrix_radius(height) {
     const {generatrix, _row, layer, selected} = this;
     const b = generatrix.firstSegment.point.clone();
     const e = generatrix.lastSegment.point.clone();
     const min_radius = b.getDistance(e) / 2;
-
     generatrix.removeSegments(1);
     generatrix.firstSegment.handleIn = null;
     generatrix.firstSegment.handleOut = null;
-
     let full;
     if(_row.r && _row.r <= min_radius) {
       _row.r = min_radius + 0.0001;
       full = true;
     }
-
     if(selected) {
       this.selected = false;
     }
-
     if(_row.r) {
       let p = new paper.Point(b.arc_point(b.x, b.y, e.x, e.y, _row.r, _row.arc_ccw, false));
       if(p.point_pos(b.x, b.y, e.x, e.y) > 0 && !_row.arc_ccw || p.point_pos(b.x, b.y, e.x, e.y) < 0 && _row.arc_ccw) {
@@ -14506,30 +10499,19 @@ class ProfileItem extends GeneratrixElement {
     else {
       generatrix.lineTo(e);
     }
-
     this.rays.clear('with_neighbor');
     layer.notify({
       type: consts.move_points,
       profiles: [this],
       points: []
     });
-
     if(selected) {
       setTimeout(() => this.selected = selected, 100);
     }
   }
-
-  /**
-   * Сеттер вставки с учетом выделенных элементов
-   * @param v {CatInserts}
-   * @param ign_select {Boolean}
-   * @param ign_rays {Boolean}
-   */
   set_inset(v, ign_select, ign_rays) {
-
     const {_row, _attr, project} = this;
     const profiles = [];
-
     if(!ign_select && project.selectedItems.length > 1) {
       project.selected_profiles(true).forEach((elm) => {
         if(elm != this && elm.elm_type == this.elm_type) {
@@ -14538,19 +10520,13 @@ class ProfileItem extends GeneratrixElement {
         }
       });
     }
-
     if(_row.inset != v) {
-
       _row.inset = v;
-
-      // для уже нарисованных элементов...
       if(_attr && _attr._rays) {
         delete _attr.nom;
         _attr._rays.clear(ign_rays ? undefined : 'with_neighbor');
         this.set_clr(_row.clr, true);
       }
-
-      // если в новой вставке не разрешены текущие вставки в элемент - удаляем
       const rm = [];
       const {inset: {inserts}, _owner: {_owner}} = _row;
       _owner.inserts.find_rows({cnstr: -this.elm}, (row) => {
@@ -14561,21 +10537,13 @@ class ProfileItem extends GeneratrixElement {
       for(const row of rm) {
         _owner.inserts.del(row);
       }
-
       project.register_change();
       project._scope.eve.emit('set_inset', this);
     }
-
     for(const {_attr} of profiles) {
       _attr._rays?.clear('with_neighbor');
     }
   }
-
-  /**
-   * Сеттер цвета элемента
-   * @param v {CatClrs}
-   * @param ignore_select {Boolean}
-   */
   set_clr(v, ignore_select) {
     if(!ignore_select && this.project.selectedItems.length > 1) {
       this.project.selected_profiles(true).forEach((elm) => {
@@ -14586,13 +10554,6 @@ class ProfileItem extends GeneratrixElement {
     }
     BuilderElement.prototype.set_clr.call(this, v);
   }
-
-  /**
-   * Дополняет cnn_point свойствами соединения
-   *
-   * @param node {String} b, e - начало или конец элемента
-   * @return CnnPoint
-   */
   postcalc_cnn(node) {
     const cnn_point = this.cnn_point(node);
     cnn_point.cnn = $p.cat.cnns.elm_cnn(this, cnn_point.profile, cnn_point.cnn_types, cnn_point.cnn, false, undefined, cnn_point);
@@ -14601,33 +10562,16 @@ class ProfileItem extends GeneratrixElement {
     }
     return cnn_point;
   }
-
-  /**
-   * Пересчитывает вставку после пересчета соединений
-   * Контроль пока только по типу элемента
-   * @return {ProfileItem}
-   */
   postcalc_inset() {
-    // если слева и справа T - и тип не импост или есть не T и тпи импост
     this.set_inset(this.project.check_inset({elm: this}), true);
     return this;
   }
-
-  /**
-   * Пересчитывает вставку при смене системы или добавлении створки
-   * Контроль пока только по типу элемента
-   *
-   * @param all {Boolean} - пересчитывать для любых (не только створочных) элементов
-   * @param [refill] {Boolean} - принудительно устанавливать вставку из системы
-   */
   default_inset(all, refill) {
     let {orientation, project, layer, _attr, elm_type, inset} = this;
     const {sys} = layer;
     const nearest = this.nearest(true);
     const {cat: {cnns}, enm: {positions, orientations, elm_types, cnn_types}} = $p;
-
     if(nearest || all) {
-      // импост может оказаться штульпом
       if(elm_type === elm_types.impost){
         if (this.is_shtulp()) {
           if(sys.elmnts.find({nom: inset, elm_type: elm_types.impost})) {
@@ -14656,30 +10600,16 @@ class ProfileItem extends GeneratrixElement {
       _attr._nearest_cnn = cnns.elm_cnn(this, _attr._nearest, cnn_types.acn.ii, _attr._nearest_cnn || project.elm_cnn(this, nearest));
     }
   }
-
-  /**
-   * @summary Рассчитывает точки пути
-   * @desc на пересечении текущего и указанного профилей
-   *
-   * @param {CnnPoint} cnn_point
-   * @param {NodeBE} [profile_point]
-   * @param {Array.<ProfileItem>} [profiles]
-   */
   path_points(cnn_point, profile_point, profiles) {
-
     const {cnn_types, cnn_sides, angle_calculating_ways: {СоединениеПополам: a2}} = $p.enm;
     const {_attr, rays, generatrix} = this;
     if(!generatrix.curves.length) {
       return cnn_point;
     }
     const {_corns} = _attr;
-
-    // ищет точку пересечения открытых путей
-    // если указан индекс, заполняет точку в массиве _corns. иначе - возвращает расстояние от узла до пересечения
     function intersect_point(path1, path2, index, ipoint = cnn_point.point) {
       const intersections = path1.getIntersections(path2);
       let delta = Infinity, tdelta, point, tpoint;
-
       if(intersections.length == 1) {
         if(index) {
           _corns[index] = intersections[0].point;
@@ -14705,8 +10635,6 @@ class ProfileItem extends GeneratrixElement {
       }
       return delta;
     }
-
-    // возвращает лучи второго профиля
     const inner2 = (profile2) => {
       const interior = generatrix.getPointAt(generatrix.length/2)
       const {rays: prays2} = profile2;
@@ -14722,8 +10650,6 @@ class ProfileItem extends GeneratrixElement {
       }
       return [interior, oinner2];
     };
-
-    // если пересечение в узлах, используем лучи профиля
     const other = cnn_point.profile;
     const prays = other instanceof ProfileItem ? other.rays : (other instanceof Filling ? {
       inner: other.path,
@@ -14733,13 +10659,10 @@ class ProfileItem extends GeneratrixElement {
     const is_e = profile_point === 'e';
     const {cnn_type} = cnn_point.cnn || {};
     const delta = cnn_point?.cnn?.size(this) || 0;
-    
     if(prays) {
       const side = other.cnn_side(this, null, prays) === cnn_sides.outer ? 'outer' : 'inner';
       let oinner = prays[side];
       let oouter = prays[side === 'inner' ? 'outer' : 'inner'];
-
-      // строим эквидистанту к внутренней стороне соседнего профиля
       if(delta || cnn_point?.cnn?.sd2) {
         let base = cnn_point.cnn.sd2 ? oouter : oinner;
         const pt = base.getNearestPoint(cnn_point.point);
@@ -14749,10 +10672,7 @@ class ProfileItem extends GeneratrixElement {
         tmp.translate(normal);
         oinner = tmp;
       }
-
-      // импосты рисуем с учетом стороны примыкания
       if(cnn_point.is_t || (cnn_type == cnn_types.xx && (!cnn_point.profile_point || cnn_point.profile_point === 't'))) {
-
         const {width} = this;
         const w2 = width * width / 4;
         const nodes = new Set();
@@ -14780,21 +10700,17 @@ class ProfileItem extends GeneratrixElement {
             }
           }
         });
-        // убираем из nodes тех, кто соединяется с нами в окрестности cnn_point.point
         nodes.forEach((p2) => {
           if(p2 !== other) {
             profile2 = p2;
           }
         });
-
         if(profile2) {
           const [interior, oinner2] = inner2(profile2);
-
           const pt1 = intersect_point(oinner, rays.outer, 0, interior);
           const pt2 = intersect_point(oinner, rays.inner, 0, interior);
           const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
           const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
-
           if(is_b) {
             pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
             pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
@@ -14804,7 +10720,6 @@ class ProfileItem extends GeneratrixElement {
               delete _corns[7];
             }
             else {
-              // ищем удлинение
               const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
               const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
               if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
@@ -14824,7 +10739,6 @@ class ProfileItem extends GeneratrixElement {
               delete _corns[8];
             }
             else {
-              // ищем удлинение
               const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
               const lx = new paper.Path({insert: false, segments: [_corns[6], _corns[3]]}).elongation(width * 6);
               if(generatrix.is_orthogonal(lx, _corns[3]) || generatrix.is_orthogonal(l2, _corns[2])) {
@@ -14837,17 +10751,13 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
-                    
-          // для Т-соединений сначала определяем, изнутри или снаружи находится наш профиль
           if(is_b) {
-            // в зависимости от стороны соединения
             intersect_point(oinner, rays.outer, 1);
             intersect_point(oinner, rays.inner, 4);
             delete _corns[5];
             delete _corns[7];
           }
           else if(is_e) {
-            // в зависимости от стороны соединения
             intersect_point(oinner, rays.outer, 2);
             intersect_point(oinner, rays.inner, 3);
             delete _corns[6];
@@ -14855,12 +10765,8 @@ class ProfileItem extends GeneratrixElement {
           }
         }
       }
-
-      // крест в стык
       else if(cnn_type === cnn_types.xx) {
         let {width} = this;
-
-        // для раскладок, отступаем ширину профиля
         if(other instanceof Onlay) {
           width *= 0.7;
           const l = is_b ? width : generatrix.length - width;
@@ -14880,7 +10786,6 @@ class ProfileItem extends GeneratrixElement {
           }
         }
         else {
-          // получаем второй примыкающий профиль
           const cnn_point2 = other.cnn_point(cnn_point.profile_point);
           const profile2 = cnn_point2 && cnn_point2.profile;
           if(profile2) {
@@ -14890,7 +10795,6 @@ class ProfileItem extends GeneratrixElement {
             const pt3 = intersect_point(oinner2, rays.outer, 0, interior);
             const pt4 = intersect_point(oinner2, rays.inner, 0, interior);
             const pti = intersect_point(oinner2, oinner, 0, interior);
-
             if(is_b) {
               if(pti < pt1 && pti < pt4) {
                 pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
@@ -14900,14 +10804,12 @@ class ProfileItem extends GeneratrixElement {
                 pt1 < pt3 ? intersect_point(oinner, rays.outer, 1) : intersect_point(oinner2, rays.outer, 1);
                 pt2 < pt4 ? intersect_point(oinner, rays.inner, 4) : intersect_point(oinner2, rays.inner, 4);
               }
-
               intersect_point(oinner2, oinner, 5);
               if(rays.inner.point_pos(_corns[5]) >= 0 || rays.outer.point_pos(_corns[5]) >= 0) {
                 delete _corns[5];
                 delete _corns[7];
               }
               else {
-                // ищем удлинение
                 const l4 = new paper.Path({insert: false, segments: [_corns[4], _corns[5]]}).elongation(width * 6);
                 const lx = new paper.Path({insert: false, segments: [_corns[5], _corns[1]]}).elongation(width * 6);
                 if(generatrix.is_orthogonal(lx, _corns[1]) || generatrix.is_orthogonal(l4, _corns[4])) {
@@ -14927,14 +10829,12 @@ class ProfileItem extends GeneratrixElement {
                 pt1 < pt3 ? intersect_point(oinner, rays.outer, 2) : intersect_point(oinner2, rays.outer, 2);
                 pt2 < pt4 ? intersect_point(oinner, rays.inner, 3) : intersect_point(oinner2, rays.inner, 3);
               }
-
               intersect_point(oinner2, oinner, 6);
               if(rays.inner.point_pos(_corns[6]) >= 0 || rays.outer.point_pos(_corns[6]) >= 0) {
                 delete _corns[6];
                 delete _corns[8];
               }
               else {
-                // ищем удлинение
                 const l2 = new paper.Path({insert: false, segments: [_corns[2], _corns[6]]}).elongation(width * 6);
                 const lx = new paper.Path({insert: false, segments: [_corns[6], _corns[3]]}).elongation(width * 6);
                 if(generatrix.is_orthogonal(lx, _corns[3]) || generatrix.is_orthogonal(l2, _corns[2])) {
@@ -14957,20 +10857,12 @@ class ProfileItem extends GeneratrixElement {
             }
           }
         }
-
       }
-
-      // варианты угловых соединений
       else {
-        // если есть соединение с обратной стороны, его надо учитывать при отрисовке узла
         const cnn_other = cnn_point.find_other();
         const cnno = cnn_other && cnn_point.cnno(cnn_other);
         const {orientation} = this;
-
-        // угловое диагональное с переменными ширинами
         if(cnno && cnno.cnn_type === cnn_types.ad && (cnn_type != cnn_types.ad || other.width < cnn_other.profile.width)) {
-
-          // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
           const tw = this.width, ow = other.width;
           let check_a2 = tw !== ow && cnno.main_row(this);
           if(check_a2 && check_a2.angle_calc_method === a2) {
@@ -14981,7 +10873,6 @@ class ProfileItem extends GeneratrixElement {
               const pt = _corns[1];
               const tg = winner.getTangentAt(winner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? -1 : 1));
               const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
-
               if(wprofile === this) {
                 intersect_point(oouter, median, 5);
                 intersect_point(rays.inner, median, 7);
@@ -14993,14 +10884,11 @@ class ProfileItem extends GeneratrixElement {
                 delete _corns[7];
               }
             }
-
             else if(is_e) {
               intersect_point(oinner, rays.outer, 2);
-
               const pt = _corns[2];
               const tg = winner.getTangentAt(winner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? 1 : -1));
               const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
-
               if(wprofile === this) {
                 intersect_point(oouter, median, 6);
                 intersect_point(rays.inner, median, 8);
@@ -15036,22 +10924,17 @@ class ProfileItem extends GeneratrixElement {
             }
           }
         }
-
-        // угловое диагональное со стандартными или переменными ширинами
         else if(cnn_type === cnn_types.ad) {
-          // если профили разной ширины и угол соединение/2, добавляем pt5, pt6
           const tw = this.width, ow = other.width;
           let check_a2 = tw !== ow && cnn_point.cnn.main_row(this);
           if(check_a2 && check_a2.angle_calc_method === a2) {
             const wprofile = tw > ow ? this : other;
             const winner = wprofile === this ? rays.inner : oinner;
-            
             if(is_b) {
               intersect_point(oinner, rays.inner, 4);
               const pt = _corns[4];
               const tg = winner.getTangentAt(winner.getOffsetOf(pt)).rotate((this.a1 / 2) * (wprofile === this ? 1 : -1));
               const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
-
               if(wprofile === this) {
                 intersect_point(oouter, median, 5);
                 intersect_point(rays.outer, median, 7);
@@ -15063,14 +10946,11 @@ class ProfileItem extends GeneratrixElement {
                 delete _corns[7];
               }
             }
-
             else if(is_e) {
               intersect_point(oinner, rays.inner, 3);
-
               const pt = _corns[3];
               const tg = winner.getTangentAt(winner.getOffsetOf(pt)).rotate((this.a2 / 2) * (wprofile === this ? -1 : 1));
               const median = new paper.Path({insert: false, segments: [pt, pt.add(tg)]}).elongation(Math.max(tw, ow) * 3);
-
               if(wprofile === this) {
                 intersect_point(oouter, median, 6);
                 intersect_point(rays.outer, median, 8);
@@ -15123,8 +11003,6 @@ class ProfileItem extends GeneratrixElement {
             }
           }
         }
-
-        // короткое или угловое к вертикальной с учетом ориентации
         else if((cnn_type === cnn_types.short) ||
             (cnn_type === cnn_types.av && orientation.is('hor')) || 
             (cnn_type === cnn_types.ah && orientation.is('vert'))) {
@@ -15137,8 +11015,6 @@ class ProfileItem extends GeneratrixElement {
             intersect_point(oinner, rays.inner, 3);
           }
         }
-
-        // длинное угловое к горизонтальной с учётом ориентации
         else if ((cnn_type === cnn_types.long) ||
           (cnn_type === cnn_types.ah && orientation.is('hor')) ||
           (cnn_type === cnn_types.av && orientation.is('vert'))) {
@@ -15157,9 +11033,7 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
-    // соединение с пустотой
     else {
-      // точки рассчитаются автоматически, как для ненайденных
       if(is_b) {
         delete _corns[1];
         delete _corns[4];
@@ -15173,7 +11047,6 @@ class ProfileItem extends GeneratrixElement {
         delete _corns[8];
       }
     }
-    // если точка не рассчиталась - рассчитываем по умолчанию - как с пустотой
     if(is_b) {
       const tangent = generatrix.firstCurve.getTangentAt(0, true).normalize(-delta);
       const pt = this.b.add(tangent);
@@ -15194,16 +11067,8 @@ class ProfileItem extends GeneratrixElement {
         _corns[3] = pt.add(generatrix.lastCurve.getNormalAt(1, true).normalize(this.d2));
       }
     }
-
     return cnn_point;
   }
-
-  /**
-   * Точка внутри пути
-   * Возвращает точку, расположенную гарантированно внутри профиля
-   *
-   * @type paper.Point
-   */
   interiorPoint() {
     const {generatrix, layer: {children, _attr}} = this;
     let d1 = 0, d2 = 0;
@@ -15215,11 +11080,6 @@ class ProfileItem extends GeneratrixElement {
     const normal = generatrix.getNormalAt(generatrix.getOffsetOf(igen));
     return igen.add(normal.multiply((d1 + d2) / 2));
   }
-
-  /**
-   * @summary Существуют элементы с внутренней стороны
-   * @type {boolean}
-   */
   get hasInner() {
     const {layer} = this;
     if(layer && !layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
@@ -15227,11 +11087,6 @@ class ProfileItem extends GeneratrixElement {
     }
     return super.hasInner;
   }
-
-  /**
-   * @summary Существуют элементы с наружной стороны
-   * @type {boolean}
-   */
   get hasOuter() {
     const {layer} = this;
     if(layer && !layer.children.profiles.cnnMap.size && !layer._attr.recalcCnnMap) {
@@ -15239,7 +11094,6 @@ class ProfileItem extends GeneratrixElement {
     }
     return super.hasOuter;
   }
-  
   get base_clr() {
     const {layer} = this;
     const {sys: {base_clr}, _ox} = layer;
@@ -15248,21 +11102,12 @@ class ProfileItem extends GeneratrixElement {
     }
     return base_clr.extract_pvalue({ox: _ox, elm: this, layer, prm_row: {origin: $p.enm.plan_detailing.elm}});
   }
-
-  /**
-   * @summary Выделяет сегмент пути профиля, ближайший к точке
-   *
-   * @param {paper.Point|NodeBE|Number} point
-   * @param {Boolean} [presaveSelected]
-   */
   select_corn(point, presaveSelected) {
-
     let res = this.corns(point);
     if(res) {
       if(res instanceof paper.Point) {
         res = {point: res, dist: 0};
       }
-      
       if(res.point.is_nearest(this.b, 0)) {
         res.segm = this.generatrix.firstSegment;
       }
@@ -15277,16 +11122,13 @@ class ProfileItem extends GeneratrixElement {
           }
         });  
       }
-
       if(res.segm && res.dist < consts.sticking0) {
         !presaveSelected && this.project.deselectAll();
         res.segm.selected = true;
       }
     }
-
     return res;
   }
-
   selected_corn() {
     const {generatrix, path} = this;
     if(generatrix.firstSegment.selected && !generatrix.lastSegment.selected) {
@@ -15300,32 +11142,16 @@ class ProfileItem extends GeneratrixElement {
       return tmp[0];
     }
   }
-
-  /**
-   * Признак прямолинейности
-   * Вычисляется, как `is_linear()` {{#crossLink "BuilderElement/generatrix:property"}}образующей{{/crossLink}}
-   *
-   * @return Boolean
-   */
   is_linear() {
     const {generatrix} = this;
     return generatrix ? generatrix.is_linear() : true;
   }
-
-  /**
-   * @summary Выясняет, примыкает ли указанный профиль к текущему
-   * @desc Вычисления делаются на основании близости координат концов текущего профиля образующей соседнего
-   *
-   * @param p {ProfileItem}
-   * @return Boolean
-   */
   is_nearest(p) {
     const {b, e, generatrix} = this;
     if ((b.is_nearest(p.b, true) || generatrix.is_nearest(p.b)) && (e.is_nearest(p.e, true) || generatrix.is_nearest(p.e))) {
       if(p.is_linear() && this.is_linear()) {
         return true;
       }
-      // если один или оба профиля изогнуты, проверим среднюю точку
       const pl = p.generatrix.length;
       const tl = generatrix.length;
       if(pl <= tl) {
@@ -15338,17 +11164,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-
-  /**
-   * @summary Выясняет, параллельны ли профили
-   * @desc в пределах `consts.orientation_delta`
-   *
-   * @param {ProfileItem} profile
-   * @param {Number} [delta] - в пределах этой дельты угла
-   * @param {Boolean} [reverce] - считать разнонаправленные параллельными
-   * @param {paper.Point} [point] - анализировать в окрестности этой точки
-   * @return {Boolean}
-   */
   is_collinear(profile, delta, reverce, point) {
     const gen = this.generatrix;
     const pg = profile.generatrix;
@@ -15380,29 +11195,12 @@ class ProfileItem extends GeneratrixElement {
     }
     return Math.abs(angl) < (delta || consts.orientation_delta);
   }
-
-  /**
-   * Выясняет, перпендикулярны ли профили в точке point
-   * @param {ProfileItem} profile
-   * @param {paper.Point} point
-   * @param {Number} [delta]
-   */
   is_orthogonal(profile, point, delta) {
     return this.generatrix.is_orthogonal(profile.generatrix, point, delta || consts.orientation_delta);
   }
-
-  /**
-   * Возвращает массив примыкающих профилей
-   */
   joined_nearests() {
     return [];
   }
-
-  /**
-   * Выделяет образующие подчинённых профилей
-   * @param deselect {Array}
-   * @param [point] {paper.Point}
-   */
   select_joined(deselect, point) {
     for(const elm of this.joined_nearests()) {
       if(!elm.elm_type.is('flap')) {
@@ -15425,11 +11223,6 @@ class ProfileItem extends GeneratrixElement {
       }
     }
   }
-
-  /**
-   * Считаем профиль штульпом, если к нему примыкает хотя бы одна штульповая фурнитура
-   * @return {boolean}
-   */
   is_shtulp() {
     if(this.elm_type.is('impost') && this.orientation.is('vert')) {
       const nearests = this.joined_nearests();
@@ -15444,24 +11237,16 @@ class ProfileItem extends GeneratrixElement {
     }
     return false;
   }
-
-  /**
-   * Переворачивает профиль (меняет местами b и e)
-   */
   flip() {
     const nearests = this.joined_nearests();
     const {inner, outer} = this.joined_imposts();
     const shtulp = this.is_shtulp();
-
     const {elm, rays, generatrix, ox, project, layer} = this;
     rays.b.clear();
     rays.e.clear();
     rays.clear('with_neighbor');
     ox.cnn_elmnts.clear({elm1: elm});
     ox.cnn_elmnts.clear({elm2: elm});
-
-
-    // если это штульп - меняем фурнитуру после переворота
     if(shtulp && nearests.length === 2) {
       nearests.forEach(({layer}, index) => {
         const {cnstr, furn, direction, h_ruch} = layer;
@@ -15481,17 +11266,12 @@ class ProfileItem extends GeneratrixElement {
         });
       }
     }
-
-    // переворот
     generatrix.reverse();
-
-    // смена фурнитуры
     if(shtulp && nearests.length === 2) {
       nearests[0].layer.furn = nearests[1].furn;
       nearests[1].layer.furn = nearests[0].furn;
       nearests[0].layer.h_ruch = nearests[1].h_ruch;
       nearests[1].layer.h_ruch = nearests[0].h_ruch;
-
       for(const prow of ox.params) {
         let other;
         if(prow.cnstr === nearests[0].cnstr) {
@@ -15504,8 +11284,6 @@ class ProfileItem extends GeneratrixElement {
           Object.assign(prow, other);
         }
       }
-
-      // чистим пути рядов стеклопакетов
       for(const {layer} of nearests) {
         for(const {_attr} of layer.fillings) {
           if(_attr.paths.size) {
@@ -15517,57 +11295,30 @@ class ProfileItem extends GeneratrixElement {
         }
       }
     }
-
-    // пересчёт
     project.register_change(true, () => {
       rays.clear('with_neighbor');
       project.register_change();
     });
   }
-
-  /**
-   * @summary Формирует путь сегмента профиля
-   * @desc Пересчитывает соединения с соседями и стоит путь профиля на основании пути образующей
-   * - Сначала, вызывает `postcalc_cnn()` для узлов `b` и `e`
-   * - Внутри `postcalc_cnn`, выполняется `cnn_point()` для пересчета соединений на концах профиля
-   * - Внутри `cnn_point`:
-   *    + `check_distance()` - проверяет привязку, если вернулось false, `cnn_point` завершает свою работы
-   *    + цикл по всем профилям и поиск привязки
-   * - `postcalc_inset()` - проверяет корректность вставки, заменяет при необходимости
-   * - `path_points()` - рассчитывает координаты вершин пути профиля
-   *
-   * @override
-   * @return {ProfileItem}
-   */
   redraw() {
-    // получаем узлы
     const bcnn = this.postcalc_cnn('b');
     const ecnn = this.postcalc_cnn('e');
     const {path, generatrix, rays, _attr} = this;
-
-    // получаем соединения концов профиля и точки пересечения с соседями
     this.path_points(bcnn, 'b');
     this.path_points(ecnn, 'e');
-
-    // очищаем существующий путь
     path.removeSegments();
-
-    // TODO отказаться от повторного пересчета и задействовать клоны rays-ов
     this.corns(5) && path.add(this.corns(5));
     path.add(this.corns(1));
-
     if(generatrix.is_linear()) {
       path.add(this.corns(2));
       this.corns(6) && path.add(this.corns(6));
       path.add(this.corns(3));
     }
     else {
-
       let tpath = new paper.Path({insert: false});
       let offset1 = rays.outer.getNearestLocation(this.corns(1)).offset;
       let offset2 = rays.outer.getNearestLocation(this.corns(2)).offset;
       let step = (offset2 - offset1) / 50;
-
       for (let i = offset1 + step; i < offset2; i += step) {
         tpath.add(rays.outer.getPointAt(i));
       }
@@ -15576,7 +11327,6 @@ class ProfileItem extends GeneratrixElement {
       path.add(this.corns(2));
       this.corns(6) && path.add(this.corns(6));
       path.add(this.corns(3));
-
       tpath = new paper.Path({insert: false});
       offset1 = rays.inner.getNearestLocation(this.corns(3)).offset;
       offset2 = rays.inner.getNearestLocation(this.corns(4)).offset;
@@ -15586,14 +11336,10 @@ class ProfileItem extends GeneratrixElement {
       }
       tpath.simplify(0.8);
       path.join(tpath);
-
     }
-
     path.add(this.corns(4));
     path.closePath();
     path.reduce();
-
-    // если задан frame_indent - рисуем
     if(_attr._corns.i1 && _attr._corns.i2) {
       if(!_attr.indent) {
         _attr.indent = new paper.Path({
@@ -15610,19 +11356,12 @@ class ProfileItem extends GeneratrixElement {
         _attr.indent.lastSegment.point = _attr._corns.i2;
       }
     }
-
-    // перерисовываем всех детей
     for(const chld of this.getItems({class: ProfileItem})) {
       chld.observer?.(this);
       chld.redraw();
     }
-
     return this;
   }
-
-  /**
-   * рисует стрелочку направления элемента
-   */
   mark_direction() {
     const {generatrix, rays: {inner, outer}} = this;
     const gb = generatrix.getPointAt(130);
@@ -15631,14 +11370,12 @@ class ProfileItem extends GeneratrixElement {
     const ie = inner.getNearestPoint(ge);
     const ob = outer.getNearestPoint(gb);
     const oe = outer.getNearestPoint(ge);
-
     const b = ib.add(ob).divide(2);
     const e = ie.add(oe).divide(2);
     const c = b.add(e).divide(2);
     const n = e.subtract(b).rotate(90).normalize(10);
     const c1 = c.add(n);
     const c2 = c.subtract(n);
-
     const path = new paper.Path({
       parent: this,
       segments: [b, e, c1, c2, e],
@@ -15648,11 +11385,6 @@ class ProfileItem extends GeneratrixElement {
       strokeScaling: false,
     })
   }
-
-  /**
-   * Подписи профилей в отдельном методе
-   * @return {Profile}
-   */
   draw_articles(kind) {
     let {rays: {inner, outer}, generatrix, project: {_attr, builder_props: {articles}, l_dimensions}, layer, elm, inset, nom, angle_hor} = this;
     if(typeof kind === 'number') {
@@ -15666,13 +11398,12 @@ class ProfileItem extends GeneratrixElement {
         level = 0;
       }
       const ray = impost ? generatrix : (level ? inner : outer);
-      let offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4);  // вдоль профиля
+      let offset = ray.length * 0.54 + (level ? -consts.font_size * 1.2 * level : consts.font_size * 1.4); 
       if(offset > ray.length * 0.8) {
         offset = ray.length * 0.8;
       }
       const p0 = ray.getPointAt(offset);
-      let font_move = this.elm_type.is('impost') ? consts.font_size / 4 : (nom.width > 30 ? consts.font_size / 5 : -consts.font_size / 1.1); // поперёк
-      // если к образующей родителя привязаны другие элементы - увеличиваем сдвиг
+      let font_move = this.elm_type.is('impost') ? consts.font_size / 4 : (nom.width > 30 ? consts.font_size / 5 : -consts.font_size / 1.1);
       if(nearest?.joined_nearests()?.some(v => v !== this &&
         (v.b.is_nearest(this.b, 100) && v.e.is_nearest(this.e, 100) || v.e.is_nearest(this.b, 100) && v.b.is_nearest(this.e, 100))
       )) {
@@ -15687,7 +11418,6 @@ class ProfileItem extends GeneratrixElement {
       }
       else if(Math.abs(angle - 90) < 1) {
         angle = -90;
-        //flip = true;
       }
       else if(Math.abs(angle - 270) < 1) {
         flip = true;
@@ -15743,7 +11473,6 @@ class ProfileItem extends GeneratrixElement {
           }
           break;
       }
-
       if(!l_dimensions.articles.map.has(this)) {
         const parent = new paper.Group({parent: l_dimensions.articles});
         new paper.Path.Rectangle({
@@ -15772,7 +11501,6 @@ class ProfileItem extends GeneratrixElement {
       children.article.content = content;
       children.article.position = position;
       children.article.rotation = angle;
-
       const size = children.article.bounds.size.add(20);
       children.back.segments[0].point = position.add([-size.width/2, size.height/2]);
       children.back.segments[1].point = position.add([-size.width/2, -size.height/2]);
@@ -15787,23 +11515,14 @@ class ProfileItem extends GeneratrixElement {
     }
     return this;
   }
-
-  /**
-   * Координаты вершин (cornx1...corny4)
-   *
-   * @param corn {String|Number} - имя или номер вершины
-   * @return {paper.Point|Number} - координата или точка
-   */
   corns(corn) {
     const {_corns} = this._attr;
     if(typeof corn == 'number') {
       return corn < 10 ? _corns[corn] : this.generatrix.getPointAt(corn);
     }
     else if(corn instanceof paper.Point) {
-
       const res = {dist: Infinity, profile: this};
       let dist;
-
       if(_corns.length > 4) {
         for (let i = 1; i < 5; i++) {
           dist = _corns[i]?.getDistance(corn);
@@ -15814,7 +11533,6 @@ class ProfileItem extends GeneratrixElement {
           }
         }
       }
-
       const {hhi} = this;
       if(hhi) {
         dist = hhi.getDistance(corn);
@@ -15831,7 +11549,6 @@ class ProfileItem extends GeneratrixElement {
           res.point_name = 'hho';
         }
       }
-
       dist = this.b.getDistance(corn);
       if(dist <= res.dist) {
         res.dist = this.b.getDistance(corn);
@@ -15846,7 +11563,6 @@ class ProfileItem extends GeneratrixElement {
           res.point_name = 'e';
         }
       }
-
       return res;
     }
     else {
@@ -15858,12 +11574,7 @@ class ProfileItem extends GeneratrixElement {
       return _corns[index][axis];
     }
   }
-
-  /**
-   * Выясняет, имеет ли текущий профиль соединение с `profile` в окрестности точки `point`
-   */
   has_cnn(profile, point) {
-
     let t = this;
     while (t.parent instanceof ProfileItem) {
       t = t.parent;
@@ -15871,7 +11582,6 @@ class ProfileItem extends GeneratrixElement {
     while (profile.parent instanceof ProfileItem) {
       profile = profile.parent;
     }
-
     if(
       (t.b.is_nearest(point, true) && t.cnn_point('b').profile == profile) ||
       (t.e.is_nearest(point, true) && t.cnn_point('e').profile == profile) ||
@@ -15880,13 +11590,8 @@ class ProfileItem extends GeneratrixElement {
     ) {
       return true;
     }
-
     return false;
   }
-
-  /**
-   * Выясняет по таблице соединений, являются ли соединения на концах угловыми
-   */
   is_corner() {
     const {ox, elm} = this;
     const {_obj} = ox.cnn_elmnts;
@@ -15898,19 +11603,9 @@ class ProfileItem extends GeneratrixElement {
       ae: rows.find(({node1}) => node1 === 'e')
     }
   }
-
-  /**
-   * Вызывает одноименную функцию _scheme в контексте текущего профиля
-   */
   check_distance(element, res, point, check_only) {
     return this.project.check_distance(element, this, res, point, check_only);
   }
-
-  /**
-   * Дополняет и сортирует массив свойств примыкающих профилей
-   * @param ares
-   * @return {boolean}
-   */
   max_right_angle(ares) {
     const {generatrix} = this;
     let has_a = true;
@@ -15927,7 +11622,6 @@ class ProfileItem extends GeneratrixElement {
     });
     return has_a;
   }
-
   remove() {
     const {layer, project} = this;
     const res = super.remove(); 
@@ -15943,12 +11637,10 @@ class ProfileItem extends GeneratrixElement {
     return res;
   }
 }
-
 ProfileItem.path_attr = {
   strokeColor: 'black',
   strokeWidth: 1,
   strokeScaling: false,
-
   onMouseEnter(event) {
     if(this.isInserted()) {
       const {fillColor, parent: {_attr}, project} = this;
@@ -15963,7 +11655,6 @@ ProfileItem.path_attr = {
       fillColor.blue = blue > 0.7 ? blue - 0.07 : blue + 0.07;
     }
   },
-
   onMouseLeave(event) {
     if(this.isInserted()) {
       const {_attr, project} = this.parent;
@@ -15981,44 +11672,22 @@ ProfileItem._drawSelected = function _drawSelected(ctx, matrix, items) {
   }
   return paper.Path.prototype._drawSelected.call(this, ctx, matrix, items);
 };
-
 EditorInvisible.ProfileItem = ProfileItem;
 EditorInvisible.ProfileRays = ProfileRays;
 EditorInvisible.CnnPoint = CnnPoint;
-
-
-/**
- * Сегмент (кусочек) связки
- *
- * Created 26.07.2021.
- */
-
 class ProfileSegment extends ProfileItem {
-
-  // elm_type такой же, как у обычного профиля
   get elm_type() {
     return this.parent.elm_type;
   }
-
-  /** @override */
   get d0() {
     return this.parent.d0;
   }
-
-  // Расстояние от узла до внешнего ребра элемента
   get d1() {
     return this.parent.d1;
   }
-
-  // Расстояние от узла до внутреннего ребра элемента
   get d2() {
     return this.parent.d2;
   }
-
-  /**
-   * Координаты начала элемента
-   * @type paper.Point
-   */
   get b() {
     return super.b;
   }
@@ -16026,11 +11695,6 @@ class ProfileSegment extends ProfileItem {
     super.b = v;
     this._attr._rays.b.point = this.b;
   }
-
-  /**
-   * Координаты конца элемента
-   * @type paper.Point
-   */
   get e() {
     return super.e;
   }
@@ -16038,56 +11702,36 @@ class ProfileSegment extends ProfileItem {
     super.e = v;
     this._attr._rays.e.point = this.e;
   }
-
-  // вставка - внешний профиль
   get inset() {
     return this.parent.inset;
   }
   set inset(v) {}
-
   set_inset(v) {
-
   }
-
   get nom() {
     return this.parent.nom;
   }
-
   get pos() {
     return this.parent.pos;
   }
-
-  /**
-   * информация для диалога свойств
-   *
-   * @type String
-   * @final
-   */
   get info() {
     const {elm, angle_hor, length, layer} = this;
     return `№${elm} сегм. α:${angle_hor.toFixed(0)}° l: ${length.toFixed(0)}`;
   }
-
   cnn_point(node, point) {
-
     const res = this.rays[node];
     const {parent} = this;
-
     const check_distance = (elm) => {
-
       if(elm == this || elm == parent){
         return;
       }
-
       const gp = elm.generatrix.getNearestPoint(point);
       let distance;
-
       if(gp && (distance = gp.getDistance(point)) < consts.sticking){
         if(distance <= res.distance){
           res.point = gp;
           res.distance = distance;
           res.profile = elm;
-
           if(elm.generatrix.firstSegment.point.is_nearest(gp)) {
             res.profile_point = 'b';
           }
@@ -16096,27 +11740,19 @@ class ProfileSegment extends ProfileItem {
           }
         }
       }
-
     };
-
     if(!point){
       point = this[node];
     }
-
-    // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile?.children?.length){
       if(!res.cnn) {
         res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
       }
       return res;
     }
-
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     res.clear();
     res.cnn_types = [$p.enm.cnn_types.ad];
-
     parent.segms.forEach((segm) => check_distance(segm, true));
-
     if(!res.profile || !res.profile_point) {
       const {rays, generatrix} = parent;
       if(generatrix.firstSegment.point.is_nearest(res.point)) {
@@ -16130,21 +11766,17 @@ class ProfileSegment extends ProfileItem {
         res.cnn = $p.cat.cnns.elm_cnn(res.parent, res.profile, res.cnn_types, res.cnn, true, false, res);
       }
     }
-
     return res;
   }
-
   cnn_side(profile, interior, rays) {
     return profile instanceof ProfileSegment ? $p.enm.cnn_sides.inner : this.parent.cnn_side(profile, interior, rays);
   }
-
   save_coordinates() {
     super.save_coordinates();
     const {_row, parent} = this;
     _row.elm_type = $p.enm.elm_types.bundle;
     _row.parent = parent.elm;
   }
-
   path_points(cnn_point, profile_point) {
     const {_attr: {_corns}, parent} = this;
     if(parent.b.is_nearest(cnn_point.point)) {
@@ -16174,17 +11806,11 @@ class ProfileSegment extends ProfileItem {
     }
     return cnn_point;
   }
-
-  /**
-   * @override
-   */
   nearest() {
     return this.parent;
   }
-
   move_points(delta) {
     const {b, e, rays, parent: {generatrix}} = this;
-
     for(const segm of this.generatrix.segments) {
       if (segm.selected){
         const free_point = generatrix.getNearestPoint(segm.point.add(delta));
@@ -16206,13 +11832,10 @@ class ProfileSegment extends ProfileItem {
             rays.e.profile[rays.e.profile_point] = free_point;
           }
         }
-
-        // собственно, сдвиг узлов
         segm.point = free_point;
       }
     }
   }
-
   do_bind() {
     const {b, e, rays, parent: {generatrix}} = this;
     if(generatrix.is_linear()) {
@@ -16248,13 +11871,11 @@ class ProfileSegment extends ProfileItem {
       }
     }
   }
-
   observer(p) {
     if(p === this.parent) {
       this.do_bind();
     }
   }
-
   joined_imposts() {
     const {b, e, parent, generatrix} = this;
     const tmp = parent.joined_imposts();
@@ -16264,32 +11885,21 @@ class ProfileSegment extends ProfileItem {
     };
     return {inner: tmp.inner.filter(filter), outer: tmp.outer.filter(filter)};
   }
-
-  /**
-   * У сегмента нет доборов
-   */
   get addls() {
     return [];
   }
-
-  /**
-   * У сегмента нет сегментов
-   */
   get segms() {
     return [];
   }
-
   remove(force) {
     if(force !== true) {
       const {parent: {segms, e}, rays} = this;
-      // если сегментов 2 - просто чистим
       if(segms.length <= 2) {
         for(const segm of segms) {
           segm.remove(true);
         }
         return;
       }
-      // последний сегмент удаляем иначе
       if(this.e.is_nearest(e)) {
         const {profile} = rays.b;
         const pe = profile.cnn_point('e');
@@ -16302,76 +11912,32 @@ class ProfileSegment extends ProfileItem {
     this.selected = false;
     super.remove();
   }
-
 }
-
 EditorInvisible.ProfileSegment = ProfileSegment;
-
-
-/*
- * Created 24.07.2015
- *
- * @module geometry
- * @submodule profile
- */
-
-/**
- * @summary Профиль
- * @desc Класс описывает поведение сегмента профиля (створка, рама, импост).
- * У профиля есть координаты конца и начала, есть путь образующей - прямая или кривая линия
- *
- * @extends ProfileItem
- *
- * @tutorial 02_geometry
- *
- * @example {@caption Создаём элемент профиля на основании пути образующей. Одновременно, указываем контур, которому будет принадлежать профиль, вставку и цвет}
- *
- * new Profile({
- *   generatrix: new paper.Path({
- *     segments: [[1000,100], [0, 100]]
- *    }),
- *    proto: {parent, inset, clr}
- *  });
- */
 class Profile extends ProfileItem {
-
-  /** @inheritdoc */
   constructor(attr) {
-
     const fromCoordinates = attr.row && attr.row.elm;
-
     super(attr);
-
     if(this.parent) {
       const {project: {_scope}, observer, layer} = this;
-
-      // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
-
-      // Информируем контур о том, что у него появился новый ребёнок
       this.layer.on_insert_elm(this);
-
-      // ищем и добавляем доборные профили
       if(fromCoordinates){
         const {cnstr, elm, _owner} = attr.row;
         _owner.find_rows({cnstr, parent: {in: [elm, -elm]}}, (row) => {
-          // добор
           if(row.elm_type.is('addition')) {
             new ProfileAddl({row, parent: this});
           }
           if(row.elm_type.is('addition_outer')) {
             new ProfileAddlOuter({row, parent: this});
           }
-          // примыкание
           else if(row.elm_type.is('adjoining')) {
             new ProfileAdjoining({row, parent: this});
           }
-          // связка (чулок)
           else if(row.elm_type.is('bundle')) {
             new ProfileSegment({row, parent: this});
           }
-          // штапик
           else if(row.elm_type.is('glbead')) {
             new ProfileGlBead({row, parent: layer.children.profiles, profile: this});
           }
@@ -16380,8 +11946,6 @@ class Profile extends ProfileItem {
       this.auto_insets();
     }
   }
-
-  /** @override */
   get d0() {
     const {_attr} = this;
     if(!_attr.hasOwnProperty('d0')) {
@@ -16395,45 +11959,24 @@ class Profile extends ProfileItem {
     }
     return _attr.d0;
   }
-
-  /**
-   * Возвращает тип элемента (рама, створка, импост)
-   * @type {EnmElm_types}
-   */
   get elm_type() {
     const {_rays, _nearest} = this._attr;
     const {elm_types} = $p.enm;
-
-    // если начало или конец элемента соединены с соседями по Т, значит это импост
     if((this.hasInner && this.hasOuter) || _rays && !_nearest && (_rays.b.is_tt || _rays.e.is_tt)) {
       return elm_types.impost;
     }
-
-    // Если вложенный контур, значит это створка
     return this.layer?.level ? elm_types.flap : elm_types.rama;
   }
-
-  /**
-   * Является ли текущий элемент _связкой_
-   * @type {Boolean}
-   */
   get is_bundle() {
     return Boolean(this.children.find((elm) => elm instanceof ProfileSegment));
   }
-
-  /**
-   * @override
-   */
   nearest(ign_cnn) {
-
     const {enm, cat} = $p;
     const {b, e, _attr, layer, project} = this;
     let {_nearest, _nearest_cnn} = _attr;
-
     if(!ign_cnn && this.inset.empty()) {
       ign_cnn = true;
     }
-    
     if(_nearest instanceof ProfileConnective) {
       if(!ign_cnn) {
         if(!_nearest_cnn) {
@@ -16443,7 +11986,6 @@ class Profile extends ProfileItem {
       }
       return _nearest;
     }
-
     const check_nearest = (elm) => {
       if(!(elm instanceof Profile || elm instanceof ProfileConnective || elm instanceof ProfileTearing) || !elm.isInserted() || !b || !e) {
         return;
@@ -16485,13 +12027,11 @@ class Profile extends ProfileItem {
           }
         }
       }
-
       if(is_nearest.length > 1) {
         if(!ign_cnn) {
           if(!_nearest_cnn) {
             _nearest_cnn = project.elm_cnn(this, elm);
           }
-          // выясним сторону соединения
           let outer;
           if(elm.is_linear()) {
             outer = Math.abs(elm.angle_hor - this.angle_hor) > 60;
@@ -16506,11 +12046,9 @@ class Profile extends ProfileItem {
         _attr._nearest = elm;
         return true;
       }
-
       _attr._nearest = null;
       _attr._nearest_cnn = null;
     };
-
     const find_nearest = (children) => children.some((elm) => {
       if(_nearest == elm || !elm.generatrix) {
         return;
@@ -16522,7 +12060,6 @@ class Profile extends ProfileItem {
         _attr._nearest = null;
       }
     });
-    
     if(layer && (!_attr._nearest || !check_nearest(_attr._nearest))) {
       if(layer.layer) {
         find_nearest(layer.layer.profiles);
@@ -16531,16 +12068,8 @@ class Profile extends ProfileItem {
         find_nearest(project.l_connective.children);
       }
     }
-
     return _attr._nearest;
   }
-
-  /**
-   * Добавляет сегменты
-   * Превращает текущий элемент в "Чулок сегментов" и создаёт внутри несколько {@link ProfileSegment}
-   * @param [count=2] {Number} - на сколько сегментов резать
-   * @return {void}
-   */
   split_by(count) {
     const {generatrix, segms, inset, clr, project} = this;
     if(!count || typeof count !== 'number' || count < 2) {
@@ -16556,7 +12085,6 @@ class Profile extends ProfileItem {
     }
     new ProfileSegment({generatrix: first, proto: {inset, clr}, parent: this, project});
   }
-
   beforeRemove() {
     const {project, layer} = this;
     if(project?._attr && !project._attr._loading && !layer?._removing && (this.joined_imposts(true) || this.joined_nearests().length)) {
@@ -16568,14 +12096,8 @@ class Profile extends ProfileItem {
     }
     return true;
   }
-
-  /**
-   * Возвращает массив примыкающих створочных профилей
-   * @returns {Array.<Profile>}
-   */
   joined_nearests() {
     const res = [];
-
     this.layer?.contours?.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this) {
@@ -16588,15 +12110,8 @@ class Profile extends ProfileItem {
         }
       });
     });
-
     return res;
   }
-
-  /**
-   * Возвращает массив примыкающих заполнений и вложенных контуров
-   * @param [glasses]
-   * @return {Array.<Filling>}
-   */
   joined_glasses(glasses) {
     if(!glasses) {
       glasses = this.layer.glasses();
@@ -16610,31 +12125,14 @@ class Profile extends ProfileItem {
     }
     return res;
   }
-
-  /**
-   * Соединение конца профиля
-   * С этой функции начинается пересчет и перерисовка профиля
-   * Возвращает объект соединения конца профиля
-   * - Попутно проверяет корректность соединения. Если соединение не корректно, сбрасывает его в пустое значение и обновляет ограничитель типов доступных для узла соединений
-   * - Попутно устанавливает признак `is_cut`, если в точке сходятся больше двух профилей
-   * - Не делает подмену соединения, хотя могла бы
-   * - Не делает подмену вставки, хотя могла бы
-   *
-   * @param {NodeBE} node - имя узла профиля
-   * @param {paper.Point} [point] - координаты точки, в окрестности которой искать
-   * @return {CnnPoint} - объект {point, profile, cnn_types}
-   */
   cnn_point(node, point) {
     const {project, parent, rays} = this;
     const {sticking, sticking_l} = this.sticking();
     const res = rays[node];
     const {cnn, profile, profile_point} = res;
-
     if(!point) {
       point = this[node];
     }
-
-    // Если привязка не нарушена, возвращаем предыдущее значение
     let ok;
     if(profile?.children.length) {
       if(!project.has_changes()) {
@@ -16644,13 +12142,10 @@ class Profile extends ProfileItem {
         ok = true;
       }
     }
-
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     if(!ok) {
       res.clear();
       if(parent) {
         const ares = [];
-
         for(const profile of parent.profiles) {
           if(this.check_distance(profile, res, point, false) === false || (res.distance < ((res.is_t || !res.is_l) ? sticking : sticking_l))) {
             ares.push({
@@ -16662,20 +12157,16 @@ class Profile extends ProfileItem {
             res.clear();
           }
         }
-
         if(ares.length === 1) {
           res._mixin(ares[0]);
         }
-        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
         else if(ares.length >= 2) {
           if(this.max_right_angle(ares)) {
             res._mixin(ares[0]);
-            // если установленное ранее соединение проходит по типу, нового не ищем
             if(cnn && res.cnn_types && res.cnn_types.includes(cnn.cnn_type)) {
               res.cnn = cnn;
             }
           }
-          // и среди соединений нет углового диагонального, вероятно, мы находимся в разрыве - выбираем соединение с пустотой
           else {
             res.clear();
           }
@@ -16683,16 +12174,8 @@ class Profile extends ProfileItem {
         }
       }
     }
-
     return res;
   }
-
-  /**
-   * Для всех элементов, кроме импостов, возвращает сам элемент
-   * Используется справочником {@link CatClrs|цветов} для расчёта алгоритмом КакВедущий*
-   * @param {NodeBE} be - узел
-   * @return {BuilderElement}
-   */
   t_parent(be) {
     if(!this.elm_type.is('impost')) {
       return this;
@@ -16706,23 +12189,12 @@ class Profile extends ProfileItem {
     }
     return _rays && (_rays.b.profile || _rays.e.profile);
   }
-
-  /**
-   * Пересчитывает путь элемента, если изменились параметры, влияющие на основной материал вставки
-   * @param param {CchProperties}
-   * @return {void}
-   */
   refresh_inset_depends(param, with_neighbor) {
     const {inset, _attr: {_rays, _nearest_cnn}} = this;
     if(_rays && (inset.is_depend_of(param) || _nearest_cnn?.is_depend_of?.(param))) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
-
-  /**
-   * @summary Добавляет автовставки
-   * @desc Только обычные. Вставки рядов игнорируем
-   */
   auto_insets() {
     const {inset, elm, layer, ox} = this;
     ox.inserts && inset.inserts.find_rows({by_default: true}, (row) => {
@@ -16735,12 +12207,10 @@ class Profile extends ProfileItem {
       }
     });
   }
-  
   redraw() {
     super.redraw();
     return this.draw_articles();
   }
-
   remove() {
     const res = super.remove();
     if(res !== false) {
@@ -16752,22 +12222,9 @@ class Profile extends ProfileItem {
     }
     return res;
   }
-  
 }
-
 EditorInvisible.Profile = Profile;
-
-
-/*
- * Created by Evgeniy Malyarov on 21.04.2020.
- */
-
-/**
- * Виртуальный профиль для виртуальных слоёв (не путать с вложенными изделиями)
- * @extends Profile
- */
 class ProfileVirtual extends Profile {
-
   initialize(attr) {
     super.initialize(attr);
     const nearest = attr._nearest || super.nearest(true);
@@ -16784,77 +12241,43 @@ class ProfileVirtual extends Profile {
     this.path.strokeColor = 'darkgreen';
     this.path.dashArray = [8, 4, 2, 4];
   }
-
-  /**
-   * @override
-   */
   nearest() {
     return this._attr._nearest;
   }
-
-  // пересчет вставок и соединений не делаем
   default_inset(all) {
-
   }
-
   refresh_inset_depends(param, with_neighbor) {
     const {inset, _attr: {_rays}} = this;
     if(_rays && inset.is_depend_of(param)) {
       _rays.clear(with_neighbor ? 'with_neighbor' : true);
     }
   }
-
-  /**
-   * Возвращает тип элемента (Створка, виртуальнвя)
-   * @type EnmElm_types
-   */
   get elm_type() {
     return $p.enm.elm_types.flap;
   }
-
-  // вставка - внешний профиль
   get inset() {
     return this.nearest().inset;
   }
   set inset(v) {}
-
   get nom() {
     return this.nearest().nom;
   }
-
-  /**
-   * Цвет внешнего элемента
-   * @type CatClrs
-   */
   get clr() {
     return this.nearest().clr;
   }
   set clr(v) {}
-
   get sizeb() {
     return 0;
   }
-
-  /**
-   * Запрещаем редактировать элемент из интерфейса
-   * @type Boolean
-   */
   get locked() {
     return true;
   }
-
-  /**
-   * Элемент не делает вклада в спецификацию
-   * @type Boolean
-   */
   get virtual() {
     return true;
   }
-
   get info() {
     return `вирт ${super.info}`;
   }
-
   cnn_point(node, point) {
     const {project, parent, rays} = this;
     const res = rays[node];
@@ -16878,37 +12301,27 @@ class ProfileVirtual extends Profile {
     }
     return res;
   }
-
   do_bind(profile, bcnn, ecnn, moved) {
     if(!moved) {
       return super.do_bind(profile, bcnn, ecnn, moved);
     }
     if(profile === this.nearest()) {
-      
     }
     else if(bcnn.profile.nearest() == profile) {
-      
     }
     else if(ecnn.profile.nearest() == profile) {
-
     }
   }
-
   path_points(cnn_point, profile_point) {
-
     const {_attr: {_corns}, generatrix, layer: {bounds}} = this;
     if(!generatrix.curves.length) {
       return cnn_point;
     }
     const {rays} = this.nearest();
     const prays = cnn_point.profile.nearest().rays;
-
-    // ищет точку пересечения открытых путей
-    // если указан индекс, заполняет точку в массиве _corns. иначе - возвращает расстояние от узла до пересечения
     function intersect_point(path1, path2, index, ipoint = cnn_point.point) {
       const intersections = path1.getIntersections(path2);
       let delta = Infinity, tdelta, point, tpoint;
-
       if(intersections.length == 1) {
         if(index) {
           _corns[index] = intersections[0].point;
@@ -16934,13 +12347,10 @@ class ProfileVirtual extends Profile {
       }
       return delta;
     }
-
     const pinner = prays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
       prays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? prays.inner : prays.outer;
-
     const inner = rays.inner.getNearestPoint(bounds.center).getDistance(bounds.center, true) >
     rays.outer.getNearestPoint(bounds.center).getDistance(bounds.center, true) ? rays.inner : rays.outer;
-
     const offset = -2;
     if(profile_point == 'b') {
       intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 1);
@@ -16950,70 +12360,28 @@ class ProfileVirtual extends Profile {
       intersect_point(pinner.equidistant(offset), inner.equidistant(offset), 2);
       intersect_point(pinner, inner, 3);
     }
-
     return cnn_point;
   }
-
   beforeRemove() {
     return true;
   }
-  
   redraw() {
-    // получаем узлы
     const bcnn = this.cnn_point('b');
     const ecnn = this.cnn_point('e');
     const {rays} = this.nearest();
     const {path, generatrix} = this;
-
-    // получаем соединения концов профиля и точки пересечения с соседями
     this.path_points(bcnn, 'b');
     this.path_points(ecnn, 'e');
-
-    // очищаем существующий путь
     path.removeSegments();
-
     path.add(this.corns(1));
-
-    // if(generatrix.is_linear()) {
       path.add(this.corns(2));
       path.add(this.corns(3));
-    // }
-    // else {
-    //
-    //   let tpath = new paper.Path({insert: false});
-    //   let offset1 = rays.outer.getNearestLocation(this.corns(1)).offset;
-    //   let offset2 = rays.outer.getNearestLocation(this.corns(2)).offset;
-    //   let step = (offset2 - offset1) / 50;
-    //
-    //   for (let i = offset1 + step; i < offset2; i += step) {
-    //     tpath.add(rays.outer.getPointAt(i));
-    //   }
-    //   tpath.simplify(0.8);
-    //   path.join(tpath);
-    //   path.add(this.corns(2));
-    //   this.corns(6) && path.add(this.corns(6));
-    //   path.add(this.corns(3));
-    //
-    //   tpath = new paper.Path({insert: false});
-    //   offset1 = rays.inner.getNearestLocation(this.corns(3)).offset;
-    //   offset2 = rays.inner.getNearestLocation(this.corns(4)).offset;
-    //   step = (offset2 - offset1) / 50;
-    //   for (let i = offset1 + step; i < offset2; i += step) {
-    //     tpath.add(rays.inner.getPointAt(i));
-    //   }
-    //   tpath.simplify(0.8);
-    //   path.join(tpath);
-    //
-    // }
-
     path.add(this.corns(4));
     path.closePath();
     path.reduce();
-
     return this;
   }
 }
-
 ProfileVirtual.nearest_cnn = {
   size(profile) {
     return profile.nearest().width;
@@ -17030,23 +12398,8 @@ ProfileVirtual.nearest_cnn = {
     return [];
   },
 }
-
 EditorInvisible.ProfileVirtual = ProfileVirtual;
-
-
-/**
- * @summary Опорная линия
- * @desc Вспомогательная линия для привязки узлов и уравнивания
- *
- * - у линии есть координаты конца и начала
- * - есть путь образующей - прямая или кривая линия, такая же, как у {@link Profile}
- * - живут линии в слое соединителей изделия
- * - никаких соединений у линии нет
- *
- * @extends ProfileItem
- */
 class BaseLine extends ProfileItem {
-
   constructor(attr) {
     super(attr);
     if(!attr.preserv_parent) {
@@ -17061,50 +12414,26 @@ class BaseLine extends ProfileItem {
       dashArray: [4, 4],
     });
   }
-
   get d1() {
     return 0;
   }
-
   get d2() {
     return 0;
   }
-
-  /**
-   * Путь линии равен образующей
-   * @return {paper.Path}
-   */
   get path() {
     return this.generatrix;
   }
   set path(v) {
   }
-
-  /**
-   * Возвращает тип элемента (линия)
-   */
   get elm_type() {
     return $p.enm.elm_types.Линия;
   }
-
   get length() {
     return (this.generatrix.length * 2).round() / 2;
   }
-
-  /**
-   * У линии не бывает внешних примыкающих элементов
-   * @override
-   * @return {void}
-   */
   nearest() {}
-
-  /**
-   * Возвращает массив примыкающих рам
-   */
   joined_nearests() {
-
     const res = [];
-
     this.project.contours.forEach((contour) => {
       contour.profiles.forEach((profile) => {
         if(profile.nearest(true) === this){
@@ -17112,29 +12441,16 @@ class BaseLine extends ProfileItem {
         }
       });
     });
-
     return res;
-
   }
-
-  /**
-   * К линиям ипосты не крепятся
-   */
   joined_imposts(check_only) {
     return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
   save_coordinates() {
-
     if(!this._attr.generatrix){
       return;
     }
-
     const {_row} = this;
-
     _row.x1 = this.x1;
     _row.y1 = this.y1;
     _row.x2 = this.x2;
@@ -17146,131 +12462,58 @@ class BaseLine extends ProfileItem {
     _row.elm_type = this.elm_type;
     _row.orientation = this.orientation;
   }
-
   cnn_point(node) {
     return this.rays[node];
   }
-
-  /**
-   * Для перерисовки линии, накаих вычислений не требуется
-   */
   redraw() {
-
   }
 }
-
 EditorInvisible.BaseLine = BaseLine;
-
-
-
-/*
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 16.05.2016
- *
- * @module geometry
- * @submodule profile_addl
- */
-
-
-/**
- * @summary Дополнительный профиль
- * @desc Класс описывает поведение внутреннего доборного профиля
- *
- * - похож в поведении на сегмент створки, но расположен в том же слое, что и ведущий элемент
- * - у дополнительного профиля есть координаты конца и начала, такие же, как у Profile
- * - в случае внутреннего добора, могут быть Т - соединения, как у импоста
- * - в случае внешнего, концы соединяются с пустотой
- * - имеет одно ii примыкающее соединение
- * - есть путь образующей - прямая или кривая линия, такая же, как у створки
- * - длина дополнительного профиля может отличаться от длины ведущего элемента
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends ProfileItem
- */
 class ProfileAddl extends ProfileItem {
-
   constructor(attr) {
-
     const fromCoordinates = !!attr.row;
-
     super(attr);
-
     const {project, _attr, _row} = this;
-
     _attr.generatrix.strokeWidth = 0;
-
     if(!attr.side && _row.parent < 0) {
       attr.side = 'outer';
     }
-
     _attr.side = attr.side || 'inner';
-
     if(!_row.parent){
       _row.parent = this.parent.elm;
       if(this.outer){
         _row.parent = -_row.parent;
       }
     }
-
-    // ищем и добавляем доборы к доборам
     if(fromCoordinates){
       const {cnstr, elm} = attr.row;
       project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition}, (row) => new ProfileAddl({row, parent: this}));
     }
-
   }
-
-  /** @override */
   get d0() {
     const nearest = this.nearest();
     return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
   }
-
-  /**
-   * Возвращает истина, если соединение с наружной стороны
-   */
   get outer() {
     return this._attr.side == 'outer';
   }
-
-  /**
-   * Возвращает тип элемента (Добор)
-   */
   get elm_type() {
     return $p.enm.elm_types.addition;
   }
-
-  /**
-   * @summary Примыкающий внешний элемент
-   * @desc У добора, равен родителю
-   * @override
-   */
   nearest() {
     const {_attr, parent, project} = this;
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
     _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, parent, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return parent;
   }
-
-  /**
-   * @override
-   * @return {CnnPoint}
-   */
   cnn_point(node, point) {
-
     const res = this.rays[node];
-
     const check_distance = (elm, with_addl) => {
-
         if(elm == this || elm == this.parent){
           return;
         }
-
         const gp = elm.generatrix.getNearestPoint(point);
         let distance;
-
         if(gp && (distance = gp.getDistance(point)) < consts.sticking){
           if(distance <= res.distance){
             res.point = gp;
@@ -17278,195 +12521,108 @@ class ProfileAddl extends ProfileItem {
             res.profile = elm;
           }
         }
-
         if(with_addl){
           elm.getItems({class: ProfileAddl, parent: elm}).forEach((addl) => {
             check_distance(addl, with_addl);
           });
         }
-
       };
-
     if(!point){
       point = this[node];
     }
-
-    // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile?.children?.length){
       check_distance(res.profile);
       if(res.distance < consts.sticking){
         return res;
       }
     }
-
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     res.clear();
     res.cnn_types = $p.enm.cnn_types.acn.t;
-
     this.layer.profiles.forEach((addl) => check_distance(addl, true));
-
     return res;
   }
-  
-  /**
-   * Вспомогательная функция обсервера, выполняет привязку узлов добора
-   */
   do_bind(p, bcnn, ecnn, moved) {
-
     let imposts, moved_fact;
-
     const bind_node = (node, cnn) => {
-
       if(!cnn.profile) {
         return;
       }
-
       const gen = this.outer ? this.parent.rays.outer : this.parent.rays.inner;
       const mpoint = cnn.profile.generatrix.intersect_point(gen, cnn.point, 'nearest');
       if(!mpoint.is_nearest(this[node], 0)) {
         this[node] = mpoint;
         moved_fact = true;
       }
-
     };
-
-    // при смещениях родителя, даигаем образующую
     if(this.parent == p) {
       bind_node('b', bcnn);
       bind_node('e', ecnn);
     }
-
     if(bcnn.cnn && bcnn.profile == p) {
       bind_node('b', bcnn);
     }
     if(ecnn.cnn && ecnn.profile == p) {
       bind_node('e', ecnn);
     }
-
   }
-
   glass_segment() {
-
   }
-
   redraw() {
     super.redraw();
     return this.draw_articles();
   }
-
 }
-
 EditorInvisible.ProfileAddl = ProfileAddl;
-
-
-/*
- * Created 29.06.2025
- */
-
-
-/**
- * @summary Дополнительный профиль снаружи
- * @desc Класс описывает поведение расширительного профиля
- *
- * - похож в поведении на соединитель, но расположен в том же слое, что и ведущий элемент
- * - у внешнего добора есть координаты конца и начала, такие же, как у Profile
- * - могут быть Т - соединения, как у импоста
- * - концы соединяются с пустотой или другими внешними доборами
- * - имеет одно ii примыкающее соединение
- * - есть путь образующей - прямая или кривая линия, такая же, как у ведущей рамы или створки
- * - длина дополнительного профиля может отличаться от длины ведущего элемента
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends ProfileItem
- */
 class ProfileAddlOuter extends ProfileItem {
-
   constructor(attr) {
-
     const fromCoordinates = !!attr.row;
-
     super(attr);
-
     const {project, _attr, _row} = this;
-
     _attr.generatrix.strokeWidth = 0;
-
     if(!attr.side && _row.parent < 0) {
       attr.side = 'outer';
     }
-
     _attr.side = attr.side || 'inner';
     _attr.old = {};
-
     if(!_row.parent){
       _row.parent = this.parent.elm;
       if(this.outer){
         _row.parent = -_row.parent;
       }
     }
-
-    // ищем и добавляем доборы к доборам
     if(fromCoordinates){
       const {cnstr, elm} = attr.row;
       project.ox.coordinates.find_rows({cnstr, parent: {in: [elm, -elm]}, elm_type: $p.enm.elm_types.addition_outer}, (row) => new ProfileAddlOuter({row, parent: this}));
     }
-
   }
-
-  /** @override */
   get d0() {
     const nearest = this.nearest();
     const {_nearest_cnn} = this._attr;
     return _nearest_cnn ? _nearest_cnn.size(this, nearest) : 0;
   }
-
-  /**
-   * Возвращает истина, если соединение с наружной стороны
-   */
   get outer() {
     return this._attr.side == 'outer';
   }
-
-  /**
-   * Возвращает тип элемента (Добор)
-   */
   get elm_type() {
     return $p.enm.elm_types.addition_outer;
   }
-
-  /**
-   * @summary Примыкающий внешний элемент
-   * @desc У добора, равен родителю
-   * @override
-   */
   nearest() {
     const {_attr, parent, project} = this;
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, parent);
     _attr._nearest_cnn = $p.cat.cnns.elm_cnn(parent, this, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return parent;
   }
-
   get pos() {
     return this.parent.pos;
   }
-
-  /**
-   * @override
-   * @return {CnnPoint}
-   */
   cnn_point(node, point) {
-
     const res = this.rays[node];
-
     const check_distance = (elm, with_addl) => {
-
         if(elm == this || elm == this.parent){
           return;
         }
-
         const gp = elm.generatrix.getNearestPoint(point);
         let distance;
-
         if(gp && (distance = gp.getDistance(point)) < consts.sticking){
           if(distance <= res.distance){
             res.point = gp;
@@ -17474,46 +12630,22 @@ class ProfileAddlOuter extends ProfileItem {
             res.profile = elm;
           }
         }
-
         if(with_addl){
           elm.getItems({class: ProfileAddlOuter, parent: elm}).forEach((addl) => {
             check_distance(addl, with_addl);
           });
         }
-
       };
-
     if(!point){
       point = this[node];
     }
-
-    // Если привязка не нарушена, возвращаем предыдущее значение
-    // if(res.profile?.children?.length){
-    //   check_distance(res.profile);
-    //   if(res.distance < consts.sticking){
-    //     return res;
-    //   }
-    // }
-
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     res.clear();
-    //res.cnn_types = $p.enm.cnn_types.acn.i;
-
-    //this.layer.profiles.forEach((addl) => check_distance(addl, true));
-
     return res;
   }
-  
-  /**
-   * Вспомогательная функция обсервера, выполняет привязку узлов добора
-   */
   do_bind(p, bcnn, ecnn, moved) {
-
     const gen = (this.outer ? this.parent.rays.outer : this.parent.rays.inner).equidistant(this.width);
-
     const bind_node = (node, cnn) => {
       const old = this._attr.old[node];
-
       const parent = this.parent.corns(this.outer ? (node === 'b' ? 1 : 2) : (node === 'b' ? 4 : 3)).clone();
       const mpoint = cnn.profile?.generatrix?.intersect_point(gen, cnn.point, 'nearest') ||
         gen.getNearestPoint(old ? parent.add(old.delta) : this[node]);
@@ -17522,8 +12654,6 @@ class ProfileAddlOuter extends ProfileItem {
       }
       this._attr.old[node] = {point: mpoint, parent, delta: mpoint.subtract(parent)};
     };
-
-    // при смещениях родителя, даигаем образующую
     if(this.parent == p) {
       bind_node('b', bcnn);
       bind_node('e', ecnn);
@@ -17534,9 +12664,7 @@ class ProfileAddlOuter extends ProfileItem {
     if(ecnn.cnn && ecnn.profile == p) {
       bind_node('e', ecnn);
     }
-
   }
-
   observer(an) {
     const {profiles} = an;
     if(profiles) {
@@ -17556,7 +12684,6 @@ class ProfileAddlOuter extends ProfileItem {
       this.do_bind(an, this.cnn_point('b'), this.cnn_point('e'));
     }
   }
-
   move_points(delta, all_points, start_point) {
     if(delta?.length && !delta._dimln) {
       const gen = this.e.subtract(this.b);
@@ -17568,7 +12695,6 @@ class ProfileAddlOuter extends ProfileItem {
       }
     }
   }
-  
   redraw() {
     super.redraw();
     const visible = this.project.builder_props.cnns !== false;
@@ -17577,75 +12703,28 @@ class ProfileAddlOuter extends ProfileItem {
     }    
     return this.draw_articles();
   }
-
 }
-
 EditorInvisible.ProfileAddlOuter = ProfileAddlOuter;
-
-
-/**
- * @summary Соединительный профиль
- * @desc Класс описывает поведение соединительного профиля
- *
- * - у соединительного профиля есть координаты конца и начала, такие же, как у Profile
- * - концы соединяются с пустотой
- * - имеет как минимум одно ii примыкающее соединение
- * - есть путь образующей - прямая или кривая линия, такая же, как у Profile
- * - сдвиг и искривление пути передаются примыкающим профилям
- * - соединительный профиль живёт в слое одного из рамных контуров изделия, но может оказывать влияние на соединёные с ним контуры
- * - длина соединительного профиля может отличаться от длин профилей, к которым он примыкает
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends ProfileItem
- */
 class ProfileConnective extends ProfileItem {
-
-  /**
-   * Возвращает тип элемента (соединитель)
-   */
   get elm_type() {
     return $p.enm.elm_types.Соединитель;
   }
-
-  /** @override */
   get d0() {
     const d0 = Object.getOwnPropertyDescriptor(Profile.prototype, 'd0');
     return d0.get.call(this);
   }
-
-  /**
-   * С этой функции начинается пересчет и перерисовка соединительного профиля
-   * т.к. концы соединителя висят в пустоте и не связаны с другими профилями, возвращаем голый cnn_point
-   *
-   * @param node {String} - имя узла профиля: "b" или "e"
-   * @return {CnnPoint} - объект {point, profile, cnn_types}
-   */
   cnn_point(node) {
     return this.rays[node];
   }
-
-  /**
-   * Двигает узлы
-   * Обрабатывает смещение выделенных сегментов образующей профиля
-   *
-   * @param delta {paper.Point} - куда и насколько смещать
-   * @param [all_points] {Boolean} - указывает двигать все сегменты пути, а не только выделенные
-   * @param [start_point] {paper.Point} - откуда началось движение
-   */
   move_points(delta, all_points, start_point) {
-
     const nearests = this.joined_nearests();
     super.move_points(delta, all_points, start_point);
-
-    // двигаем примыкающие
     if(!paper.Key.isDown('control')) {
       this.bind_nearests(nearests);
     }
-
     this._attr._corns.length = 0;
     this.project.register_change();
   }
-  
   bind_nearests(nearests) {
     if(!nearests) {
       nearests = this.joined_nearests();
@@ -17654,7 +12733,6 @@ class ProfileConnective extends ProfileItem {
     for (const nearest of nearests) {
       const {_rays} = nearest._attr;
       nearest.do_bind(this, _rays.b, _rays.e, moved);
-      // двигаем связанные с примыкающими
       for(const cp of [_rays.b, _rays.e]) {
         if(cp.profile) {
           const {b, e} = cp.profile._attr._rays;
@@ -17663,7 +12741,6 @@ class ProfileConnective extends ProfileItem {
       }
     }
   }
-
   move_linked(deleting) {
     if(!this.generatrix) {
       return;
@@ -17673,7 +12750,6 @@ class ProfileConnective extends ProfileItem {
     const profiles = new Set();
     const connectives = new Set([this]);
     const {orientation} = this;
-
     function move_layer(profile, delta) {
       if(profiles.has(profile)) {
         return;
@@ -17689,7 +12765,6 @@ class ProfileConnective extends ProfileItem {
         layer.translate(delta);
         delete layer._attr._bounds;
         let checkLayers = true;
-        // если у профилей сдвинутого слоя есть соединители, двигаем соседние слои
         for (const sub of layer.profiles) {
           if(!profiles.has(sub)) {
             const nearest = sub.nearest(true);
@@ -17709,7 +12784,6 @@ class ProfileConnective extends ProfileItem {
           }
         }
         if(checkLayers) {
-          // если соединителей не нашлось, ищем пересечения
           bounds = deleting ? bounds.expand(3 * delta.length) : layer.bounds;
           for (const candidate of profile.project.contours) {
             if(!layers.has(candidate) && candidate.bounds.intersects(bounds)) {
@@ -17728,7 +12802,6 @@ class ProfileConnective extends ProfileItem {
         }
       }
     }
-
     function clear_joined(layer) {
       for (const sub of layer.contours) {
         clear_joined(sub);
@@ -17739,7 +12812,6 @@ class ProfileConnective extends ProfileItem {
         delete _attr.d0;
       }
     }
-
     for (const profile of nearests) {
       move_layer(profile);
     }
@@ -17747,7 +12819,6 @@ class ProfileConnective extends ProfileItem {
     for(const connective of connectives) {
       connective.bind_nearests();
     }
-
     for (const layer of layers) {
       clear_joined(layer);
     }
@@ -17758,10 +12829,6 @@ class ProfileConnective extends ProfileItem {
       profile.rays.recalc();
     }
   }
-
-  /**
-   * Возвращает массив примыкающих рам
-   */
   joined_nearests() {
     const res = [];
     const {project: {contours}, layer} = this;
@@ -17774,24 +12841,12 @@ class ProfileConnective extends ProfileItem {
     });
     return res;
   }
-
-  /**
-   * К соединителям импосты не крепятся
-   * @override
-   */
   joined_imposts(check_only) {
     return check_only ? false : {inner: [], outer: []};
   }
-
-  /**
-   * Примыкающий внешний элемент - для соединителя всегда пусто
-   * @override
-   * @return {void}
-   */
   nearest(ign_cnn) {
     const {_attr, layer, project} = this;
     let {_nearest, _nearest_cnn} = _attr;
-
     if(_nearest) {
       if(!_nearest_cnn) {
         _nearest_cnn = project.elm_cnn(this, _nearest);
@@ -17804,14 +12859,8 @@ class ProfileConnective extends ProfileItem {
         row.cnn = _attr._nearest_cnn;
       }
     }
-    
     return _nearest;
   }
-
-  /**
-   * Положение соединительного профиля
-   * @type {EnmPositions}
-   */
   get pos() {
     const nearests = this.joined_nearests();
     if(nearests.length > 1) {
@@ -17819,8 +12868,6 @@ class ProfileConnective extends ProfileItem {
     }
     return nearests[0].pos;
   }
-
-  /** @inheritdoc */
   check_err(style) {
     const {ox: {cnn_elmnts}, elm: elm2} = this;
     for(const profile of this.joined_nearests()) {
@@ -17838,17 +12885,11 @@ class ProfileConnective extends ProfileItem {
       }
     }
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
   save_coordinates() {
-
     const {_attr, _row, generatrix} = this;
     if(!generatrix){
       return;
     }
-
     _row.x1 = this.x1;
     _row.y1 = this.y1;
     _row.x2 = this.x2;
@@ -17856,27 +12897,18 @@ class ProfileConnective extends ProfileItem {
     _row.nom = this.nom;
     _row.path_data = generatrix.pathData;
     _row.parent = 0;
-
-    // добавляем припуски соединений
     _row.len = this.length.round(1);
-
-    // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
-
     _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
     if(_row.alp1 < 0){
       _row.alp1 = _row.alp1 + 360;
     }
-
     _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
     if(_row.alp2 < 0){
       _row.alp2 = _row.alp2 + 360;
     }
-
-    // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
     _row.dop = {nearest: this._attr._nearest?.elm};
-
     if(_attr._nearest) {
       this.ox.cnn_elmnts.add({
         elm1: _row.elm,
@@ -17885,31 +12917,20 @@ class ProfileConnective extends ProfileItem {
         aperture_len: _row.len,
       });
     }
-
   }
-
-  /** @inheritdoc */
   set_inset(v) {
     const {_row, selected} = this;
     if(_row.inset != v) {
       this.move_linked(true);
       super.set_inset(v);
-
-      // для уже нарисованных элементов...
       this.move_linked();
       this.setSelection(selected);
     }
   }
-
   redraw() {
     super.redraw();
     return this.draw_articles();
   }
-
-  /**
-   * Удаляет элемент из контура и иерархии проекта
-   * Одновлеменно, инициирует обновление путей примыкающих элементов
-   */
   remove() {
     const {d2} = this;
     const postprocess = {imposts: new Map(), sub: new Set()};
@@ -17938,22 +12959,9 @@ class ProfileConnective extends ProfileItem {
       elm.bind_nearests(nearests);
     }
   }
-
 }
-
 EditorInvisible.ProfileConnective = ProfileConnective;
-
-
-/**
- * Сечение фрагмена изделия
- *
- * Сечение - полноценный BuilderElement. Его можно разместить в произвольном месте изделия.
- * Сечение не оставляет следов в спецификации, но умеет генерировать эскиз разреза
- * @extends BaseLine
- *
- */
 class ProfileCut extends BaseLine {
-
   constructor(attr) {
     super(attr);
     if(!attr.preserv_parent) {
@@ -17966,8 +12974,6 @@ class ProfileCut extends BaseLine {
       dashOffset: 0,
       dashArray: [],
     });
-
-    // создаём детей
     const content = this.text_content();
     new PathUnselectable({parent: this, name: 'callout1', strokeColor: 'black', guide: true, strokeScaling: false});
     new PathUnselectable({parent: this, name: 'callout2', strokeColor: 'black', guide: true, strokeScaling: false});
@@ -17976,7 +12982,6 @@ class ProfileCut extends BaseLine {
     new TextUnselectable({
       parent: this,
       name: 'text1',
-      //justification: 'center',
       fillColor: 'black',
       fontFamily: consts.font_family,
       fontSize: consts.font_size,
@@ -17985,26 +12990,18 @@ class ProfileCut extends BaseLine {
     new TextUnselectable({
       parent: this,
       name: 'text2',
-      //justification: 'center',
       fillColor: 'black',
       fontFamily: consts.font_family,
       fontSize: consts.font_size,
       content,
     });
   }
-
-  /**
-   * Возвращает тип элемента (сечение)
-   * @type {EnmElm_types}
-   */
   get elm_type() {
     return $p.enm.elm_types.Сечение;
   }
-
   setSelection(selection) {
     paper.Item.prototype.setSelection.call(this.generatrix, selection);
   }
-
   text_content() {
     const letters = ['A','B','C','D','E','F','G','H','I','J','K'];
     const {elm, layer: {_ox}, elm_type} = this;
@@ -18020,10 +13017,6 @@ class ProfileCut extends BaseLine {
     }
     return (index + 1) >= letters.length ? `X${elm}` : letters[index];
   }
-
-  /**
-   * Перерисовывает элемент на эскизе
-   */
   redraw() {
     const {children: {thick1, thick2, callout1, callout2, text1, text2}, generatrix, length} = this;
     const tlength = length > 200 ? 90 : (length/2 - 10);
@@ -18040,14 +13033,12 @@ class ProfileCut extends BaseLine {
       const ttangent = thick1.getTangentAt(0);
       text1.position = pt1.add(tnormal.multiply(tlength + 30));
       text2.position = pt2.add(tnormal.multiply(tlength + 30));
-
       const c1base = pt1.subtract(ttangent.multiply(20)).add(tnormal.multiply(20));
       callout1.moveTo(c1base.add(tnormal.multiply(60)));
       callout1.lineTo(c1base);
       callout1.lineTo(c1base.add(tnormal.multiply(24)).add(ttangent.multiply(6)));
       callout1.lineTo(c1base.add(tnormal.multiply(24)).subtract(ttangent.multiply(6)));
       callout1.lineTo(c1base);
-
       const c2base = pt2.add(ttangent.multiply(20)).add(tnormal.multiply(20));
       callout2.moveTo(c2base.add(tnormal.multiply(60)));
       callout2.lineTo(c2base);
@@ -18055,86 +13046,37 @@ class ProfileCut extends BaseLine {
       callout2.lineTo(c2base.add(tnormal.multiply(24)).subtract(ttangent.multiply(6)));
       callout2.lineTo(c2base);
     }
-
   }
-
 }
-
 EditorInvisible.ProfileCut = ProfileCut;
-
-
-/**
- * @summary Штапик
- * @desc Класс описывает поведение штапика
- *
- * - похож в поведении на доборный профиль, но не "толкает" заполнение
- * - у штапика есть координаты конца и начала, такие же, как у Profile
- * - имеет одно ii примыкающее соединение
- * - есть путь образующей - прямая или кривая линия - фрагмент родительской образующей
- * - длина штапика отличается от длины ведущего элемента
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends ProfileItem
- */
 class ProfileGlBead extends ProfileItem {
-
   constructor(attr) {
-
     super(attr);
-
     const {layer, _attr, _row} = this;
-
     _attr.generatrix.strokeWidth = 0;
-
-    // parent
     if(!_row.parent && attr.profile){
       _row.parent = (this.outer ? -1 : 1) * attr.profile.elm;
       _attr.profile = attr.profile;
     }
-    
-    // side
     if(!attr.side && _row.parent < 0) {
       attr.side = 'outer';
     }
     _attr.side = attr.side || 'inner';
-    
-    // profile
     _attr.profile = attr.profile || layer.getItem({elm: Math.abs(_row.parent)});
-    
   }
-
-  /** @override */
   get d0() {
     const nearest = this.nearest();
     return this._attr._nearest_cnn ? -this._attr._nearest_cnn.size(this, nearest) : 0;
   }
-
-  /**
-   * К штапикам импосты не крепятся
-   * @override
-   */
   joined_imposts(check_only) {
     return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
-
-  /**
-   * Возвращает истина, если соединение с наружной стороны
-   */
   get outer() {
     return this._attr.side == 'outer';
   }
-
-  /**
-   * Возвращает тип элемента (Штапик)
-   */
   get elm_type() {
     return $p.enm.elm_types.glbead;
   }
-
-  /**
-   * @summary Заполнение, к которому примыкает штапик
-   * @type Filling
-   */
   get glass() {
     const {_attr} = this;
     if(!_attr.glass) {
@@ -18151,19 +13093,9 @@ class ProfileGlBead extends ProfileItem {
     }
     return _attr.glass || this.layer.getItem({class: Filling});
   }
-
-  /**
-   * Ведущий профиль
-   * @type Profile
-   */
   get profile() {
     return this._attr.profile;
   }
-
-  /**
-   * Ребро заполнения
-   * @type GlassSegment
-   */
   get rib() {
     const {glass, profile} = this;
     for(const rib of glass.profiles) {
@@ -18172,35 +13104,20 @@ class ProfileGlBead extends ProfileItem {
       }
     }
   }
-
-  /**
-   * @summary Соседние штапики
-   * @type Array.<ProfileGlBead>
-   */
   get brothers() {
     return this.glass.glbeads;
   }
-
-  /**
-   * @summary Примыкающий внешний элемент
-   * @desc У штапика, равен родителю
-   * @override
-   */
   nearest() {
     const {_attr, profile, project} = this;
     const _nearest_cnn = _attr._nearest_cnn || project.elm_cnn(this, profile);
     _attr._nearest_cnn = $p.cat.cnns.elm_cnn(this, profile, $p.enm.cnn_types.acn.ii, _nearest_cnn, true);
     return profile;
   }
-
   get glbeads() {
     return [];
   }
-
   observer() {
-    
   }
-
   do_bind() {
     const {rib, glass, profile, b, e, generatrix, _attr: {side, _rays}} = this;
     const {profiles} = glass;
@@ -18212,7 +13129,6 @@ class ProfileGlBead extends ProfileItem {
     const nray = next.profile.rays[next.outer ? 'outer' : 'inner'];
     const rb = pray.intersect_point(ray, b);
     const re = nray.intersect_point(ray, e);
-
     if(!rb.is_nearest(b, 0) || !re.is_nearest(e, 0)) {
       const sub_path = ray.get_subpath(rb, re);
       if(sub_path.length) {
@@ -18227,37 +13143,21 @@ class ProfileGlBead extends ProfileItem {
       }
     }
   }
-
   draw_regions() {
     return this;
   }
-
-  /**
-   * @override
-   * @return {ProfileGlBead}
-   */
   redraw() {
     this.do_bind();
     return super.redraw();
   }
-
-  /**
-   * @override
-   * @return {CnnPoint}
-   */
   cnn_point(node, point) {
-
     const res = this.rays[node];
-
     const check_distance = (elm) => {
-
         if(elm == this){
           return;
         }
-
         const gp = elm.generatrix.getNearestPoint(point);
         let distance;
-
         if(gp && (distance = gp.getDistance(point)) < consts.sticking){
           if(distance <= res.distance){
             res.point = gp;
@@ -18266,57 +13166,23 @@ class ProfileGlBead extends ProfileItem {
           }
         }
       };
-
     if(!point){
       point = this[node];
     }
-
-    // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile?.children?.length){
       check_distance(res.profile);
       if(res.distance < consts.sticking){
         return res;
       }
     }
-
-    // TODO вместо полного перебора профилей контура, реализовать анализ текущего соединения и успокоиться, если соединение корректно
     res.clear();
     res.cnn_types = $p.enm.cnn_types.acn.a;
     this.brothers.forEach(check_distance);
-    
     return res;
   }
-  
 }
-
 EditorInvisible.ProfileGlBead = ProfileGlBead;
-
-
-/*
- *
- *
- * @module profile_adjoining
- *
- * Created by Evgeniy Malyarov on 18.03.2021.
- */
-
-/**
- * @summary Виртуальный профиль примыкания
- * @desc Класс описывает поведение внешнего примыкания к рамам изделия
- *
- * - у примыкания есть координаты конца и начала, такие же, как у Profile
- * - концы соединяются с пустотой
- * - имеет как минимум одно ii примыкающее соединение
- * - есть путь образующей - прямая или кривая линия, такая же, как у Profile
- * - слвиг и искривление пути передаются примыкающим профилям
- * - живёт в том же слое, что и рамные профили
- * - длина может отличаться от длин профилей, к которым он примыкает
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends ProfileConnective
- */
 class ProfileAdjoining extends BaseLine {
-
   constructor({row, parent, proto, b, e, side, project}) {
     const generatrix = b && e && parent.rays[side].get_subpath(e.elm[e.point], b.elm[b.point]);
     super({row, generatrix, parent, proto, preserv_parent: true, project});
@@ -18337,29 +13203,15 @@ class ProfileAdjoining extends BaseLine {
     });
     this.selected_cnn_ii();
   }
-
-  /**
-   * Возвращает тип элемента (соединитель)
-   */
   get elm_type() {
     return $p.enm.elm_types.Примыкание;
   }
-
-  /**
-   * Возвращает массив примыкающих рам
-   */
   joined_nearests() {
     return [this.parent];
   }
-
-  /**
-   * У примыкания, внешний равен родителю
-   * @override
-   */
   nearest() {
     return this.parent;
   }
-
   selected_cnn_ii() {
     const {parent, elm, ox, _attr} = this;
     const find = {elm1: parent.elm, elm2: elm, node1: '', node2: ''};
@@ -18378,7 +13230,6 @@ class ProfileAdjoining extends BaseLine {
     }
     return {elm: parent, row};
   }
-
   save_coordinates() {
     ProfileItem.prototype.save_coordinates.call(this);
     const {_row, parent} = this;
@@ -18386,7 +13237,6 @@ class ProfileAdjoining extends BaseLine {
     _row.parent = parent.elm;
     row.aperture_len = this.generatrix.length.round(1);
   }
-
   setSelection(selection) {
     super.setSelection(selection);
     const {generatrix, path, children} = this;
@@ -18396,11 +13246,9 @@ class ProfileAdjoining extends BaseLine {
       }
     }
   }
-
   get length() {
     return Object.getOwnPropertyDescriptor(ProfileItem.prototype, 'length').get.call(this);
   }
-
   corns(n) {
     const {_attr} = this;
     if([1, 4, 5, 7].includes(n)) {
@@ -18410,7 +13258,6 @@ class ProfileAdjoining extends BaseLine {
       return _attr._corns[2];
     }
   }
-
   redraw(mode) {
     const {cat: {cnns}, enm: {cnn_types}} = $p;
     const {generatrix, path, children, _attr, _row, rays, project} = this;
@@ -18430,7 +13277,6 @@ class ProfileAdjoining extends BaseLine {
         rays.e.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
       }
     }
-    
     const szb = rays?.b?.cnn?.size(this) || 0;
     const sze = rays?.e?.cnn?.size(this) || 0;
     if(_attr) {
@@ -18438,7 +13284,6 @@ class ProfileAdjoining extends BaseLine {
       _attr._corns[1] = this.b.add(generatrix.getTangentAt(0).negate().normalize(szb));
       _attr._corns[2] = this.e.add(generatrix.getTangentAt(length).normalize(sze));
     }
-    
     for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
       const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
@@ -18455,7 +13300,6 @@ class ProfileAdjoining extends BaseLine {
     if(mode !== 'compact') {
       let proto = generatrix.clone({insert: false}).equidistant(10);
       const outer = path.clone();
-      //outer.parent = this;
       outer.addSegments(proto.segments)
       proto = proto.equidistant(80);
       proto.reverse();
@@ -18464,29 +13308,10 @@ class ProfileAdjoining extends BaseLine {
     }
   }
 }
-
 EditorInvisible.ProfileAdjoining = ProfileAdjoining;
-
-
-/**
- * @summary Раскладка
- * @desc Класс описывает поведение элемента раскладки
- *
- * - у раскладки есть координаты конца и начала
- * - есть путь образующей - прямая или кривая линия, такая же, как у {@link ProfileItem}
- * - владелец типа {@link Filling}
- * - концы могут соединяться не только с пустотой или другими раскладками, но и с рёбрами заполнения
- *
- * @extends ProfileItem
- */
 class Onlay extends ProfileItem {
-
-  /**
-   * @inheritdoc
-   */
   constructor(attr) {
     super(attr);
-    // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
     if(this.parent) {
       const {project: {_scope}, observer} = this;
       this.observer = observer.bind(this);
@@ -18496,20 +13321,9 @@ class Onlay extends ProfileItem {
       this.region = attr.region;
     }
   }
-  
-
-  /**
-   * Возвращает тип элемента (раскладка)
-   * @type EnmElm_types
-   */
   get elm_type() {
     return $p.enm.elm_types.layout;
   }
-
-  /**
-   * Слой раскладки в стеклопакете
-   * @type {EnmLay_regions}
-   */
   get region() {
     let region = this._row?.region;
     if(!region || region.empty?.()) {
@@ -18520,7 +13334,6 @@ class Onlay extends ProfileItem {
   set region(v) {
     this.set_region(v);
   }
-
   set_region(v, ignore_select) {
     if(!ignore_select) {
       const {selectedItems} = this.project;
@@ -18537,24 +13350,11 @@ class Onlay extends ProfileItem {
       _row.region = v;
     }
   }
-
-  /**
-   * У раскладки не бывает примыкающих параллельных элементов
-   * @override
-   * @return {void}
-   */
   nearest() {}
-
-  /**
-   * @override
-   * @return {void}
-   */
   save_coordinates() {
-
     if(!this._attr.generatrix){
       return;
     }
-
     const {_row, rays, generatrix, ox} = this;
     const cnns = ox.cnn_elmnts;
     const {b, e} = rays;
@@ -18570,7 +13370,6 @@ class Onlay extends ProfileItem {
       cnn: e.cnn ? e.cnn.ref : '',
       aperture_len: this.corns(2).getDistance(this.corns(3))
     });
-
     _row.x1 = this.x1;
     _row.y1 = this.y1;
     _row.x2 = this.x2;
@@ -18578,12 +13377,7 @@ class Onlay extends ProfileItem {
     _row.path_data = generatrix.pathData;
     _row.nom = this.nom;
     _row.parent = this.parent.elm;
-
-
-    // добавляем припуски соединений
     _row.len = this.length;
-
-    // сохраняем информацию о соединениях
     if(b.profile) {
       row_b.elm2 = b.profile.elm;
       if(b.profile instanceof Filling) {
@@ -18614,37 +13408,21 @@ class Onlay extends ProfileItem {
         row_e.node2 = 't';
       }
     }
-
-    // получаем углы между элементами и к горизонту
     _row.angle_hor = this.angle_hor;
-
     _row.alp1 = Math.round((this.corns(4).subtract(this.corns(1)).angle - generatrix.getTangentAt(0).angle) * 10) / 10;
     if(_row.alp1 < 0)
       _row.alp1 = _row.alp1 + 360;
-
     _row.alp2 = Math.round((generatrix.getTangentAt(generatrix.length).angle - this.corns(2).subtract(this.corns(3)).angle) * 10) / 10;
     if(_row.alp2 < 0)
       _row.alp2 = _row.alp2 + 360;
-
-    // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
   }
-
-  /**
-   * @override
-   * @return {CnnPoint}
-   */
   cnn_point(node, point) {
-
     const res = this.rays[node];
-
     if(!point){
       point = this[node];
     }
-    
     const is_filling = res.profile instanceof Filling;
-
-    // Если привязка не нарушена, возвращаем предыдущее значение
     if(res.profile?.children?.length){
       if(is_filling){
         const np = res.profile.path.getNearestPoint(point);
@@ -18660,8 +13438,6 @@ class Onlay extends ProfileItem {
         }
       }
     }
-
-    
     res.clear();
     if(this.parent){
       const res_bind = this.bind_node(point, [this.parent], node, is_filling);
@@ -18674,25 +13450,12 @@ class Onlay extends ProfileItem {
     }
     return res;
   }
-
-  /**
-   * Пытается привязать точку к рёбрам и раскладкам
-   * @param {paper.Point} point
-   * @param {Array.<Filling>} [glasses]
-   * @param {NodeBE} [node]
-   * @param {Boolean} [is_filling]
-   * @return {Object}
-   */
   bind_node(point, glasses, node, is_filling) {
-
     let res = {distance: Infinity, is_l: true};
-    
     if(!glasses){
       glasses = [this.parent];
     }
-
     const {b, e, generatrix, region } = this;
-    // сначала, к образующим заполнений
     for(const glass of glasses) {
       const other = node === 'b' ? e : b;
       let line;
@@ -18705,7 +13468,6 @@ class Onlay extends ProfileItem {
         const point = node === 'b' ? b : e;
         line = new paper.Path({insert: false, segments: [point.subtract(tg), point.add(tg)]}).elongation(300);
       }
-      
       for(const {sub_path} of glass.profiles) {
         const np = sub_path.intersect_point(line, point);
         if(np) {
@@ -18714,14 +13476,12 @@ class Onlay extends ProfileItem {
             const angle = Math.abs(dother.angle - point.subtract(other).angle);
             if(angle < consts.epsilon || Math.abs(angle - 360) < consts.epsilon) {
               let distance = np.getDistance(point);
-
               if(distance < res.distance){
                 res.distance = distance;
                 res.point = np;
                 res.profile = glass;
                 res.cnn_types = $p.enm.cnn_types.acn.t;
               }
-
               if((is_filling && res.point) || distance < consts.sticking_l){
                 res.binded = true;
                 return res;
@@ -18730,7 +13490,6 @@ class Onlay extends ProfileItem {
           }
         }
       }
-      // затем, если не привязалось - к сегментам раскладок текущего заполнения
       if(!res.point || res.distance > consts.sticking_l) {
         res.cnn_types = $p.enm.cnn_types.acn.t;
         const ares = [];
@@ -18743,11 +13502,9 @@ class Onlay extends ProfileItem {
               point: res.point});
           }
         }
-
         if(ares.length == 1){
           res._mixin(ares[0]);
         }
-        // если в точке сходятся 3 и более профиля, ищем тот, который смотрит на нас под максимально прямым углом
         else if(ares.length >= 2){
           if(this.max_right_angle(ares)){
             res._mixin(ares[0]);
@@ -18756,20 +13513,11 @@ class Onlay extends ProfileItem {
         }
       }
     }
-
     if (!res.binded && res.point && res.distance < consts.sticking_l) {
       res.binded = true;
     }
-
     return res;
   }
-
-  /**
-   * Сдвигает узлы к точкам from и to
-   * @param {paper.Point} from
-   * @param {paper.Point} to
-   * @return {void}
-   */
   move_nodes(from, to) {
     for(let elm of this.parent.imposts){
       if(elm == this || !elm.visible){
@@ -18783,33 +13531,11 @@ class Onlay extends ProfileItem {
       }
     }
   }
-
-  /** @inheritdoc */
   check_err() {
-    
   }
 }
-
 EditorInvisible.Onlay = Onlay;
-
-
-
-/**
- * @summary Профиль проёма
- * @desc Описывает поведение ребра проёма
- *
- * - у него есть координаты конца и начала, такие же, как у Profile
- * - концы соединяются другими профилямитолько по углам - Т и разрывы запрещены
- * - в него встраиваются рамы
- * - есть путь образующей - прямая или кривая линия, такая же, как у Profile
- * - слвиг и искривление пути передаются примыкающим профилям
- * - живёт в том же слое, что и соединители
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends BaseLine
- */
 class ProfilePortal extends BaseLine {
-
   constructor({row, proto, b, e, project}) {
     const generatrix = b && e && new paper.Path({insert: false, segments: [b, e]});
     super({row, generatrix, proto, project});
@@ -18830,29 +13556,15 @@ class ProfilePortal extends BaseLine {
     });
     this.selected_cnn_ii();
   }
-
-  /**
-   * Возвращает тип элемента (соединитель)
-   */
   get elm_type() {
     return $p.enm.elm_types.portal;
   }
-
-  /**
-   * Возвращает массив примыкающих рам
-   */
   joined_nearests() {
     return [];
   }
-
-  /**
-   * У проёма, нет внешнего соединения
-   * @override
-   */
   nearest() {
     return null;
   }
-
   setSelection(selection) {
     super.setSelection(selection);
     const {generatrix, path, children} = this;
@@ -18862,11 +13574,9 @@ class ProfilePortal extends BaseLine {
       }
     }
   }
-
   get length() {
     return Object.getOwnPropertyDescriptor(ProfileItem.prototype, 'length').get.call(this);
   }
-
   corns(n) {
     const {_attr} = this;
     if([1, 4, 5, 7].includes(n)) {
@@ -18876,7 +13586,6 @@ class ProfilePortal extends BaseLine {
       return _attr._corns[2];
     }
   }
-
   redraw(mode) {
     const {cat: {cnns}, enm: {cnn_types}} = $p;
     const {generatrix, path, children, _attr, _row, rays, project} = this;
@@ -18896,7 +13605,6 @@ class ProfilePortal extends BaseLine {
         rays.e.cnn = cnns.elm_cnn(this, null, cnn_types.acn.i, project.elm_cnn(this, elm2), false);
       }
     }
-    
     const szb = rays?.b?.cnn?.size(this) || 0;
     const sze = rays?.e?.cnn?.size(this) || 0;
     if(_attr) {
@@ -18904,7 +13612,6 @@ class ProfilePortal extends BaseLine {
       _attr._corns[1] = this.b.add(generatrix.getTangentAt(0).negate().normalize(szb));
       _attr._corns[2] = this.e.add(generatrix.getTangentAt(length).normalize(sze));
     }
-    
     for(let pos = 25; pos < length - 75; pos += 90) {
       const pt = generatrix.getPointAt(pos);
       const pn = generatrix.getNormalAt(pos).rotate(30).multiply(120);
@@ -18921,7 +13628,6 @@ class ProfilePortal extends BaseLine {
     if(mode !== 'compact') {
       let proto = generatrix.clone({insert: false}).equidistant(10);
       const outer = path.clone();
-      //outer.parent = this;
       outer.addSegments(proto.segments)
       proto = proto.equidistant(80);
       proto.reverse();
@@ -18930,30 +13636,14 @@ class ProfilePortal extends BaseLine {
     }
   }
 }
-
 EditorInvisible.ProfilePortal = ProfilePortal;
-
-
-/*
- * Профиль ряда
- *
- * Created 11.1.2023.
- */
-
 class ProfileRegion extends Profile {
-
-  /**
-   * Возвращает тип элемента (ряд)
-   */
   get elm_type() {
     return $p.enm.elm_types.region;
   }
-  
   get rnum() {
     return this.layer.region;
   }
-
-  /** @override */
   get d0() {
     const {_attr} = this;
     if(!_attr.hasOwnProperty('d0')) {
@@ -18966,7 +13656,6 @@ class ProfileRegion extends Profile {
     }
     return _attr.d0;
   }
-
   selected_cnn_ii() {
     const {elm, ox, _attr} = this;
     const parent = this.nearest();
@@ -18988,41 +13677,17 @@ class ProfileRegion extends Profile {
       return {elm: parent, row};
     }
   }
-  
 }
-
 EditorInvisible.ProfileRegion = ProfileRegion;
-
-
-/**
- * Разрыв заполнения  
- * Похож на раскладку, но в отличии от неё, образует новое заполнение внутри своего замкнутого пути
- * и вычитает фрагмент площади из родительского заполнения
- *
- * - у Разрыва заполнения есть координаты конца и начала
- * - есть путь образующей - прямая или кривая линия, такая же, как у Profile
- * - владелец типа Filling
- * - концы должны соединяться с другими разрывами заполнений
- *
- * @param attr {Object} - объект со свойствами создаваемого элемента см. {{#crossLink "BuilderElement"}}параметр конструктора BuilderElement{{/crossLink}}
- * @extends ProfileItem
- */
 class ProfileTearing extends ProfileItem {
-
-  /** @inheritdoc */
   constructor(attr) {
-
     super(attr);
-
     if(this.parent) {
       const {project: {_scope}, observer} = this;
-
-      // Подключаем наблюдателя за событиями контура с именем _consts.move_points_
       this.observer = observer.bind(this);
       _scope.eve.on(consts.move_points, this.observer);
     }
   }
-
   observer(an) {
     const {layer} = this;
     if(an?.profiles?.some?.((elm) => elm.layer === layer)) {
@@ -19030,68 +13695,31 @@ class ProfileTearing extends ProfileItem {
       this._attr._corns.length = 0;
     }
   }
-
-  /**
-   * Возвращает тип элемента (разрыв заполнения)
-   * @type EnmElm_types
-   */
   get elm_type() {
     return $p.enm.elm_types.tearing;
   }
-
   get info() {
     return `разрыв ${super.info}`;
   }
-
   cnn_point(node, point) {
     return Profile.prototype.cnn_point.call(this, node, point);
   }
-
   joined_imposts(check_only) {
     return ProfileConnective.prototype.joined_imposts.call(this, check_only);
   }
-
-  /**
-   * У разрыва не бывает внешних профилей
-   * @return {null}
-   */
   nearest() {
     return null;
   }
-
   save_coordinates() {
     super.save_coordinates();
     this._row.parent = this.parent.elm;
   }
 }
-
 EditorInvisible.ProfileTearing = ProfileTearing;
-
-
-/**
- * Изделие
- * - Расширение [paper.Project](http://paperjs.org/reference/project/)
- * - Стандартные слои (layers) - это контуры изделия, в них живут элементы
- * - Размерные линии, фурнитуру и визуализацию располагаем в отдельных слоях
- *
- * @extends paper.Project
- */
-
 class Scheme extends paper.Project {
-
-  /**
-   *
-   * @param {HTMLCanvasElement} _canvas - канвас, в котором будет размещено изделие
-   * @param {paper.PaperScope} _editor - экземпляр редактора
-   * @param {boolean} _silent - тихий режим
-   */
   constructor(_canvas, _editor, _silent) {
-
-    // создаём объект проекта paperjs
     super(_canvas);
-
     _editor.project = this;
-
     const _attr = this._attr = {
       _silent,
       _bounds: null,
@@ -19099,43 +13727,22 @@ class Scheme extends paper.Project {
       _update_timer: 0,
       _vis_timer: 0,
     };
-
-    // массив с моментами времени изменений изделия
     this._ch = [];
-
-    // массив с функциями, ожидающими redraw
     this._deffer = [];
-
-    // узлы и рёбра
     this._skeleton = new Skeleton(this);
-
-    // объект обработки с табличными частями
     this._dp = $p.dp.buyers_order.create();
-
-    // бит, что мы в браузере
     this.isBrowser = typeof requestAnimationFrame === 'function';
-
-    // биндим redraw
     this.redraw = this.redraw.bind(this);
-    
-    // служебные слои
     const {l_connective, l_dimensions, l_visualization} = this;
-
-    // начинаем следить за _dp, чтобы обработать изменения цвета и параметров
     if(!_attr._silent) {
-      // наблюдатель за изменениями свойств изделия
       this._dp_listener = this._dp_listener.bind(this);
       this._dp._manager.on('update', this._dp_listener);
     }
-
-    // начинаем следить за событиями контуров для перерисовки допвизуализации
     _editor.eve.on('contour_redrawed', () => {
       clearTimeout(_attr._vis_timer);
       _attr._vis_timer = setTimeout(this.draw_visualization.bind(this), 300);
     });
-
   }
-
   _insertItem(index, item, _created) {
     if(index === undefined && !_created && (
       item instanceof Contour || item instanceof ConnectiveLayer || item instanceof DimensionLayer 
@@ -19150,12 +13757,6 @@ class Scheme extends paper.Project {
     }
     return super._insertItem(index, item, _created);
   }
-
-  /**
-   * Обновляет связи параметров в иерархии слоёв
-   * @param contour {Contour}
-   * @param [isBrowser] {Boolean}
-   */
   refresh_recursive(contour, isBrowser) {
     const {contours, l_dimensions, layer} = contour;
     if(!this._attr._loading) {
@@ -19167,11 +13768,6 @@ class Scheme extends paper.Project {
       this.refresh_recursive(curr, isBrowser);
     }
   }
-
-  /**
-   * Устанавливает цвет всех профилей изделия
-   * @param clr {CatClrs}
-   */
   set_clr(clr) {
     const {ox, _dp, contours} = this;
     ox._obj.clr = _dp._obj.clr = clr.valueOf();
@@ -19192,15 +13788,10 @@ class Scheme extends paper.Project {
         elm.clr = conformity ? _manager.by_predefined(conformity, clr, clr, elm, specification) : clr;
       }
     });
-    
     for (const contour of contours) {
       contour.on_clr_changed();
     }
   }
-
-  /**
-   * Освежает отбор в метаданных доступных цветов и при необходимости, цвет изделия
-   */
   check_clr() {
     if(this.is_read_only) {
       return;
@@ -19210,7 +13801,6 @@ class Scheme extends paper.Project {
     const cmeta = _dp._metadata('clr');
     const clr_group = _dp.sys.find_group(ox);
     const clrs = [...clr_group.clrs()];
-
     cat.clrs.selection_exclude_service(cmeta, _dp, this);
     let first;
     if(cmeta.choice_params.length > 2) {
@@ -19236,26 +13826,14 @@ class Scheme extends paper.Project {
       }
     }
   }
-
-  /**
-   * наблюдатель за изменениями свойств изделия
-   * @param obj
-   * @param fields
-   * @private
-   */
   _dp_listener(obj, fields) {
-
     const {_attr, ox} = this;
-
     if(_attr._loading || _attr._snapshot || obj != this._dp) {
       return;
     }
-
     const scheme_changed_names = ['clr', 'sys'];
     const row_changed_names = ['note', 'quantity', 'discount_percent', 'discount_percent_internal'];
-
     if(scheme_changed_names.some((name) => fields.hasOwnProperty(name))) {
-      // информируем мир об изменениях
       this.notify(this, 'scheme_changed');
       const {_select_template: st} = ox._manager._owner.templates;
       if(st) {
@@ -19267,78 +13845,45 @@ class Scheme extends paper.Project {
         }
       }
     }
-
     if(fields.hasOwnProperty('clr')) {
       this.set_clr(obj.clr);
     }
-
     if(fields.hasOwnProperty('sys') && !obj.sys.empty()) {
-
       obj.sys.refill_prm(ox, 0, true, this);
-
-      // cменить на цвет по умолчанию если не входит в список доступных
       this.check_clr();
-
-      // обновляем свойства изделия и створки
       obj._manager.emit_async('rows', obj, {extra_fields: true});
-
-      // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
       this.l_connective.on_sys_changed();
       for (const contour of this.contours) {
         contour.on_sys_changed();
       }
-
       if(obj.sys != $p.wsql.get_user_param('editor_last_sys')) {
         $p.wsql.set_user_param('editor_last_sys', obj.sys.ref);
       }
-
       this.register_change(true);
     }
-
     for (const name of row_changed_names) {
       if(_attr._calc_order_row && fields.hasOwnProperty(name)) {
         _attr._calc_order_row[name] = obj[name];
         this.register_change(true);
       }
     }
-
   }
-
-  /**
-   * устанавливает систему
-   * @param sys
-   * @param [defaults] {TabularSection}
-   * @param [refill] {Boolean}
-   */
   set_sys(sys, defaults, refill) {
-
     const {_dp, ox} = this;
-
     if(_dp.sys === sys && !defaults) {
       return;
     }
-
     _dp.sys = sys;
     ox.sys = sys;
-
     _dp.sys.refill_prm(ox, 0, 1, this, defaults);
-
-    // информируем контуры о смене системы, чтобы пересчитать материал профилей и заполнений
     this.l_connective.on_sys_changed(refill);
     for (const contour of this.contours) {
       contour.on_sys_changed(refill);
     }
-
     if(ox.clr.empty()) {
       ox.clr = _dp.sys.default_clr;
     }
-
   }
-
-  /**
-   * Меняет вставку прозрачных заполнений
-   * @param inset
-   */
   set_glasses(inset) {
     const {Заполнение} = $p.enm.elm_types;
     for(const glass of this.getItems({class: Filling})) {
@@ -19347,12 +13892,6 @@ class Scheme extends paper.Project {
       }
     }
   }
-
-  /**
-   * Устанавливает фурнитуру в створках изделия
-   * @param furn {CatFur}
-   * @param fprops {Object}
-   */
   set_furn(furn, fprops) {
     for (const rama of this.contours) {
       for (const contour of rama.contours) {
@@ -19363,20 +13902,12 @@ class Scheme extends paper.Project {
       }
     }
   }
-
-  /**
-   * наблюдатель за изменениями параметров изделия и слоя
-   * @param obj
-   * @param fields
-   * @private
-   */
   _papam_listener(obj, fields) {
     const {_attr, _ch, ox, _scope} = this;
     if(_attr._loading || _attr._snapshot) {
       return;
     }
     const is_row = obj._owner === ox.params;
-    // запоминаем значения базовых параметров в обработке шаблонов
     if(is_row || (obj === ox && 'params' in fields)) {
       !_ch.length && this.register_change();
       const {job_prm: {builder}, cat: {templates}} = $p;
@@ -19394,31 +13925,21 @@ class Scheme extends paper.Project {
         contour.refresh_inset_depends(obj.param);
       }
     }
-    // при смене цвета основы, уточняем цвет изделия
     if(is_row && ox.sys.base_clr === obj.param) {
       this.check_clr();
       _scope?._acc?.props?._grid?.reload();
     }
-    // при изменении builder_props, уточняем видимость надписей
     if(obj === ox && 'builder_props' in fields) {
       const {txts} = this.builder_props;
       for(const elm of this.getItems({class: FreeText})) {
         elm.visible = txts;
       }      
     }
-    // изменили или удалили вложенную вставку
     if((obj instanceof $p.CatCharacteristicsInsertsRow && 'inset' in fields && obj._owner._owner === ox) ||
       (obj === ox && 'inserts' in fields)) {
       this.register_change(true);
     }
   }
-
-  /**
-   * Возвращает соединение между элементами
-   * @param elm1
-   * @param elm2
-   * @return {*}
-   */
   elm_cnn(elm1, elm2) {
     const {elm: e1, _row: {_owner: o1}} = elm1;
     const {elm: e2, _row: {_owner: o2}} = elm2;
@@ -19427,7 +13948,6 @@ class Scheme extends paper.Project {
       return res && res._row.cnn;
     }
   }
-
   get is_read_only() {
     const {obj_delivery_state, posted, is_read_only} = this.ox.calc_order;
     if(typeof is_read_only === 'boolean') {
@@ -19435,26 +13955,15 @@ class Scheme extends paper.Project {
     }
     return posted || obj_delivery_state.is('Отправлен') || obj_delivery_state.is('Подтвержден');
   }
-
-  /**
-   * Алиас к табчасти соединений текущей продукции
-   */
   get cnns() {
     return this.ox.cnn_elmnts;
   }
-
-  /**
-   * ХарактеристикаОбъект текущего изделия
-   * @type CatCharacteristics
-   */
   get ox() {
     return this._dp.characteristic;
   }
   set ox(v) {
     const {_dp, _attr, _scope} = this;
     let setted;
-
-    // пытаемся отключить обсервер от табчасти
     if(!_attr._silent) {
       if(!this.hasOwnProperty('_papam_listener')){
         this._papam_listener = this._papam_listener.bind(this);
@@ -19462,39 +13971,27 @@ class Scheme extends paper.Project {
       _dp.characteristic._manager.off('update', this._papam_listener);
       _dp.characteristic._manager.off('rows', this._papam_listener);
     }
-
-    // устанавливаем в _dp характеристику
     _dp.characteristic = v;
-
     const ox = _dp.characteristic;
-
     _dp.len = ox.x;
     _dp.height = ox.y;
     _dp.s = ox.s;
     _dp.sys = ox.sys;
     _dp.clr = ox.clr;
-
-    // устанавливаем строку заказа
     _attr._calc_order_row = ox.calc_order_row;
-
-    // устанавливаем в _dp свойства строки заказа
     if(_attr._calc_order_row) {
       'quantity,price_internal,discount_percent_internal,discount_percent,price,amount,amount_internal,note'.split(',').forEach((fld) => _dp[fld] = _attr._calc_order_row[fld]);
     }
     else {
-      // TODO: установить режим только просмотр, если не найдена строка заказа
       if(ox.empty()) {
         return;
       }
     }
-
-    // устанавливаем в _dp систему профилей
     if(_dp.sys.empty()) {
       if(ox.owner.empty()) {
         _dp.sys = $p.wsql.get_user_param('editor_last_sys');
         setted = !_dp.sys.empty();
       }
-      // иначе, ищем первую подходящую систему
       else {
         $p.cat.production_params.find_rows({is_folder: false}, (o) => {
           if(setted) {
@@ -19508,63 +14005,33 @@ class Scheme extends paper.Project {
         });
       }
     }
-
-    // пересчитываем параметры изделия, если изменилась система
     if(setted) {
       _dp.sys.refill_prm(ox, 0, true, this);
     }
-
-    // устанавливаем в _dp цвет по умолчанию
     if(_dp.clr.empty()) {
       _dp.clr = _dp.sys.default_clr;
     }
-
-    // оповещаем о новых слоях и свойствах изделия
     if(!_attr._silent) {
       _scope.eve.emit_async('rows', ox, {constructions: true});
       _dp._manager.emit_async('rows', _dp, {extra_fields: true});
-
-      // начинаем следить за ox, чтобы обработать изменения параметров фурнитуры
       _dp.characteristic._manager.on({
         update: this._papam_listener,
         rows: this._papam_listener,
       });
     }
-
   }
-
-  /**
-   * Допсвойства, например, скрыть размерные линии
-   * при рендеринге может переопределяться или объединяться с параметрами рендеринга
-   * @type Object
-   */
   get builder_props() {
     const {ox, _attr} = this;
     return _attr._builder_props || ox.builder_props;
   }
-
-  /**
-   * Методы сдвига узлов и элементов
-   * @type Mover
-   */
   get mover() {
     return this._scope._mover;
   }
-
-  /**
-   * Задаёт режим отрисовки: каркас или полноценный эскиз
-   * @param [v] {Boolean}
-   */
   set_carcass(v) {
     const contours = this.getItems({class: Contour});
     contours.forEach(({skeleton}) => skeleton.carcass = v);
     this.redraw();
   }
-
-  /**
-   * @summary Загружает пользовательские размерные линии
-   * @desc Этот код нельзя выполнить внутри load_contour, т.к. линия может ссылаться на элементы разных контуров
-   */
   load_dimension_lines() {
     const {Размер, Радиус, Угол} = $p.enm.elm_types;
     this.ox.coordinates.find_rows({elm_type: {in: [Размер, Радиус, Угол]}}, (row) => {
@@ -19583,55 +14050,23 @@ class Scheme extends paper.Project {
       });
     });
   }
-
-  /**
-   * Рекурсивно создаёт контуры изделия
-   * @param [parent] {Contour}
-   */
   load_contour(parent) {
-    // создаём семейство конструкций
     this.ox.constructions.find_rows({parent: parent ? parent.cnstr : 0}, (row) => {
-      // и вложенные створки
       this.load_contour(Contour.create({project: this, parent, row}));
     });
   }
-
-  /**
-   * @summary Читает изделие по ссылке или объекту продукции
-   * @desc Выполняет следующую последовательность действий:
-   * - Если передана ссылка, получает объект из базы данных
-   * - Удаляет все слои и элементы текущего графического контекста
-   * - Рекурсивно создаёт контуры изделия по данным табличной части конструкций текущей продукции
-   * - Рассчитывает габариты эскиза
-   * - Згружает пользовательские размерные линии
-   * - Делает начальный снапшот для {{#crossLink "UndoRedo"}}{{/crossLink}}
-   * - Рисует автоматические размерные линии
-   * - Активирует текущий слой в дереве слоёв
-   * - Рисует дополнительные элементы визуализации
-   *
-   * @param id {String|CatObj} - идентификатор или объект продукции
-   * @param [from_service] {Boolean} - вызов произведен из сервиса, визуализацию перерисовываем сразу и делаем дополнительный zoom_fit
-   * @param [order] {DocCalc_order}
-   * @async
-   */
   load(id, from_service, order) {
     const {_attr} = this;
     const _scheme = this;
     const {enm: {elm_types}, cat: {templates, characteristics}, doc, utils} = $p;
-
     function load_object(o) {
-
       if(!_scheme._scope) {
         return Promise.resolve();
       }
       _scheme.ox = o;
-
-      // включаем перерисовку
       _attr._opened = true;
       _attr._no_mod = true;
       _attr._bounds = new paper.Rectangle({point: [0, 0], size: [o.x, o.y]});
-
-      // первым делом создаём соединители и опорные линии
       o.coordinates.forEach((row) => {
         if(row.elm_type === elm_types.Соединитель) {
           new ProfileConnective({row, parent: _scheme.l_connective});
@@ -19643,20 +14078,14 @@ class Scheme extends paper.Project {
           new ProfileCut({row, parent: _scheme.l_connective});
         }
       });
-
-      // если указаны внешние builder_props, установим их для текущего проекта
       if(typeof from_service === 'object') {
         _attr._builder_props = Object.assign({}, o.constructor.builder_props_defaults, from_service);
       }
       else {
         delete _attr._builder_props;
       }
-
       o = null;
-
-      // создаём семейство конструкций
       _scheme.load_contour(null);
-      // если сохранено, зададим внешние примыкающие
       const profiles = _scheme.getItems({class: ProfileItem});
       for(const elm of profiles) {
         const {nearest} = elm._row.dop;
@@ -19664,47 +14093,26 @@ class Scheme extends paper.Project {
           elm._attr._nearest = profiles.find(({elm}) => elm === nearest);
         }
       }
-
-      // перерисовываем каркас
       _scheme.redraw({from_service});
-
-      // ограничиваем список систем в интерфейсе
       !from_service && templates._select_template && templates._select_template.permitted_sys_meta(_scheme.ox);
       _scheme.check_clr();
-
-      // запускаем таймер, чтобы нарисовать размерные линии и визуализацию
       return new Promise((resolve) => {
-
         _attr._bounds = null;
-
-        // згружаем пользовательские размерные линии
         _scheme.load_dimension_lines();
-
         setTimeout(() => {
-
           _attr._bounds = null;
           _scheme.zoom_fit();
-
           const {_scope} = _scheme;
-
-          // заставляем UndoRedo сделать начальный снапшот, одновременно, обновляем заголовок
           if(!_attr._snapshot) {
             _scope._undo.clear();
             _scope._undo.save_snapshot(_scheme);
             _scope.set_text();
           }
-
-          // регистрируем изменение, чтобы отрисовались размерные линии
           _scheme.register_change(true);
-
-          // виртуальное событие, чтобы активировать слой в дереве слоёв
           if(_scheme.contours.length) {
             _scheme.notify(_scheme.contours[0], 'layer_activated', true);
           }
-
           delete _attr._loading;
-
-          // при необходимости загружаем типовой блок
           ((_scheme.ox.base_block.empty() || !_scheme.ox.base_block.is_new() || _scheme.ox.obj_delivery_state == 'Шаблон')
             ?
             Promise.resolve()
@@ -19732,7 +14140,6 @@ class Scheme extends paper.Project {
                   }
                 }
                 else {
-                  // если нет спецификации при заполненных координатах, скорее всего, прочитали типовой блок или снапшот - запускаем пересчет
                   $p.products_building.recalc(_scheme, {});
                 }
               }
@@ -19743,13 +14150,11 @@ class Scheme extends paper.Project {
                 _scope.load_stamp && _scope.load_stamp();
               }
               delete _attr._snapshot;
-
               (!from_service || !_scheme.ox.specification.count()) && resolve();
             });
         }, 30);
       })
         .then(() => {
-          // при необходимости, перезаполним параметры изделия и фурнитуры
           if(_scheme.ox._data.refill_props) {
             _scheme._dp.sys.refill_prm(_scheme.ox, 0, true, _scheme);
             _scheme._scope._acc && _scheme._scope._acc.props.reload();
@@ -19758,16 +14163,12 @@ class Scheme extends paper.Project {
           _scheme.notify(_scheme, 'loaded');
         });
     }
-
     _attr._loading = true;
-
     if(from_service) {
       _attr._from_service = true;
     }
-
     this.ox = null;
     this.clear();
-
     if(utils.is_data_obj(id) && id.calc_order && (order === id.calc_order || !id.calc_order.is_new())) {
       return load_object(id);
     }
@@ -19785,45 +14186,20 @@ class Scheme extends paper.Project {
         });
     }
   }
-
-  /**
-   * Рисует фрагмент загруженного изделия
-   * @param attr {Object}
-   * @param [attr.elm] {Number} - Элемент или Контур
-   * - = 0, формируется эскиз изделия,
-   * - > 0, эскиз элемента (заполнения или палки)
-   * - < 0, эскиз контура (рамы или створки)
-   * @param [attr.width] {Number} - если указано, эскиз будет вписан в данную ширину (по умолчению - 600px)
-   * @param [attr.height] {Number} - если указано, эскиз будет вписан в данную высоту (по умолчению - 600px)
-   * @param [attr.sz_lines] {enm.ТипыРазмерныхЛиний} - правила формирования размерных линий (по умолчению - Обычные)
-   * @param [attr.txt_cnstr] {Boolean} - выводить текст, привязанный к слоям изделия (по умолчению - Да)
-   * @param [attr.txt_elm] {Boolean} - выводить текст, привязанный к элементам (например, формулы заполнений, по умолчению - Да)
-   * @param [attr.visualisation] {Boolean} - выводить визуализацию (по умолчению - Да)
-   * @param [attr.opening] {Boolean} - выводить направление открывания (по умолчению - Да)
-   * @param [attr.select] {Number} - выделить на эскизе элемент по номеру (по умолчению - 0)
-   * @param [attr.format] {String} - [svg, png, pdf] - (по умолчению - png)
-   * @param [attr.children] {Boolean} - выводить вложенные контуры (по умолчению - Нет)
-   */
   draw_fragment(attr = {}) {
-
     const {l_dimensions, l_connective, _attr} = this;
-
-    // скрываем все слои
     const contours = this.getItems({class: Contour});
-
     const hide = () => {
       contours.forEach((l) => l.hidden = true);
       l_dimensions.visible = false;
       l_connective.visible = false;
     };
-
     const transparence = () => {
       contours.forEach((l) => {
         l.opacity = .16;
         l.hide_generatrix();
       });
     };
-
     let elm;
     _attr.elm_fragment = attr.elm;
     if(attr.elm > 0) {
@@ -19885,17 +14261,13 @@ class Scheme extends paper.Project {
     this.view.update();
     return elm;
   }
-
   reset_fragment() {
     const {l_dimensions, l_connective, _attr, view} = this;
-
     if(_attr.elm_fragment > 0) {
       const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
       elm && elm.reset_fragment && elm.reset_fragment();
     }
     _attr.elm_fragment = 0;
-
-    // показываем серытые слои
     const contours = this.getItems({class: Contour});
     contours.forEach((l) => {
       if(l.hidden) {
@@ -19908,43 +14280,26 @@ class Scheme extends paper.Project {
     view.update();
     this.zoom_fit();
   }
-
-  /**
-   * @summary Перерисовывает все контуры изделия. Не занимается биндингом.
-   * @desc Предполагается, что взаимное перемещение профилей уже обработано
-   * @param [attr] {Object} - параметры, уточняющие, как перерисовывать
-   */
   redraw(attr = {}) {
-
     const {_attr, _ch, contours, isBrowser, _scope, _deffer} = this;
     const {length} = _ch;
-
     _attr._opened && !_attr._silent && _scope && isBrowser && requestAnimationFrame(this.redraw);
-
     if(_attr._lock || !_scope?.eve || (isBrowser && _scope.eve._async?.move_points?.timer)) {
       return;
     }
-
     if(!_attr._opened || _attr._saving || !length) {
       _deffer.length = 0;
       return;
     }
-
     if(contours.length) {
-
       if (_attr.elm_fragment > 0) {
         const elm = this.getItem({class: BuilderElement, elm: _attr.elm_fragment});
         elm && elm.draw_fragment && elm.draw_fragment(true);
       } 
       else {
-        // перерисовываем соединительные профили
         const {l_connective} = this;
         l_connective.redraw();
-
-        // TODO: обновляем связи параметров изделия
         isBrowser && !_attr._silent && contours[0].refresh_prm_links(true);
-
-        // перерисовываем все контуры
         for (let contour of contours) {
           contour.redraw();
           if(l_connective.isBelow(contour)) {
@@ -19955,13 +14310,9 @@ class Scheme extends paper.Project {
           }
         }
       }
-
-      // если перерисованы все контуры, перерисовываем их размерные линии
       _attr._bounds = null;
       contours.forEach((contour) => this.refresh_recursive(contour, isBrowser));
     }
-    
-    // перерисовываем габаритные размерные линии изделия
     this.draw_sizes();
     if(this.l_visualization.isBelow(this.l_connective)) {
       this.l_visualization.insertAbove(this.l_connective);
@@ -19969,81 +14320,44 @@ class Scheme extends paper.Project {
     if(this.l_dimensions.isBelow(this.l_visualization)) {
       this.l_dimensions.insertAbove(this.l_visualization);
     }
-
-    // обновляем изображение на экране
     this.view.update();
-
-    // сбрасываем счетчик изменений
     _ch.length = 0;
-
-    // выполняем отложенные подписки
     for(const deffer of _deffer) {
       deffer(this);
     }
     _deffer.length = 0;
   }
-
-  /**
-   * Выясняет, есть ли необработанные изменения
-   */
   has_changes() {
     return this._ch.length > 0;
   }
-
-  /**
-   * Регистрирует необходимость обновить изображение
-   */
   register_update() {
     const {_attr} = this;
     if(_attr._update_timer) {
       clearTimeout(_attr._update_timer);
     }
-    // _attr._update_timer = setTimeout(() => {
-    //   this.view && this.view.update();
-    //   _attr._update_timer = 0;
-    // }, 100);
   }
-
-  /**
-   * Регистрирует факты изменения элемнтов
-   */
   register_change(with_update, deffer, local) {
-
     const {_attr, _ch, _deffer, contours} = this;
-    
     if(!local) {
       for(const layer of contours) {
         layer.register_change();
       }
     }
-
     if(!_attr._loading) {
-
-      // сбрасываем габариты
       _attr._bounds = null;
-
-      // сбрасываем d0 для всех профилей
       this.getItems({class: Profile}).forEach((p) => {
         delete p._attr.d0;
         delete p._attr.nom;
       });
-
-      // регистрируем изменённость характеристики
       this.ox._data._modified = true;
       this.notify(this, 'scheme_changed');
     }
     _ch.push(Date.now());
     deffer && _deffer.push(deffer);
-
     if(with_update) {
       this.register_update();
     }
   }
-
-  /**
-   * Габариты изделия. Рассчитываются, как объединение габаритов всех слоёв типа Contour
-   * @type Rectangle
-   */
   get bounds() {
     const {_attr} = this;
     const layers = $p.job_prm.builder.exclude_connective_area ? [] : [this.l_connective];
@@ -20061,10 +14375,6 @@ class Scheme extends paper.Project {
     }
     return _attr._bounds || new paper.Rectangle();
   }
-
-  /**
-   * Габариты с учетом пользовательских размерных линий, чтобы рассчитать отступы автолиний
-   */
   get dimension_bounds() {
     let {bounds} = this;
     this.getItems({class: DimensionLine}).forEach((dl) => {
@@ -20083,12 +14393,6 @@ class Scheme extends paper.Project {
     });
     return bounds;
   }
-
-  /**
-   * @summary Габариты эскиза со всеми видимыми дополнениями
-   * @desc В свойстве `strokeBounds` учтены все видимые дополнения - размерные линии, визуализация и т.д.
-   *
-   */
   get strokeBounds() {
     const {l_connective, l_dimensions, l_visualization} = this;
     let bounds = this.contours.filter(v => v.visible).reduce((sum, curr) => 
@@ -20117,22 +14421,12 @@ class Scheme extends paper.Project {
     }
     return bounds || new paper.Rectangle();
   }
-
-  /**
-   * @summary Толщина изделия
-   * @desc Вычисляется, как сумма толщин слоёв за вычетом размеров соединений по Z
-   * @type {Number}
-   */
   get thickness() {
     return this.contours.reduce((sum, layer) => {
       const thickness = layer.thickness(true);
       return thickness > sum ? thickness : sum;
     }, this.l_connective.thickness());
   }
-
-  /**
-   * Строка табчасти продукция текущего заказа, соответствующая редактируемому изделию
-   */
   get _calc_order_row() {
     const {_attr, ox} = this;
     if(!_attr._calc_order_row && !ox.empty()) {
@@ -20140,38 +14434,17 @@ class Scheme extends paper.Project {
     }
     return _attr._calc_order_row;
   }
-
-  /**
-   * Отдел абонента текущего изделия
-   * По умолчанию, равен отделу абонента автора заказа, но может быть переопределён
-   * @type {CatBranches}
-   */
   get branch() {
     const {ox} = this;
     const param = $p.job_prm.properties.branch;
     return param ? param.calculated._data._formula({ox}, $p) : ox.calc_order.manager.branch;
   }
-
-  /**
-   * Формирует оповещение для тех, кто следит за this._noti
-   * @param obj
-   * @param [type] {String}
-   * @param [fields] {Array}
-   */
   notify(obj, type = 'update', fields) {
     if(obj.type) {
       type = obj.type;
     }
     this._scope?.eve?.emit_async?.(type, obj, fields);
   }
-
-  /**
-   * Формирует альтернативный связям параметров, список значений системных параметров
-   * @param {Object} attr
-   * @param {CatProduction_params} [sys]
-   * @param {Number} [cnstr]
-   * @return {boolean}
-   */
   params_links(attr, sys, cnstr) {
     if(!sys) {
       sys = this._dp.sys;
@@ -20181,10 +14454,6 @@ class Scheme extends paper.Project {
     }
     return Contour.prototype.params_links(attr, sys, cnstr);
   }
-
-  /**
-   * Чистит изображение
-   */
   clear() {
     const {_attr, _children, l_visualization} = this;
     const pnames = '_bounds,_update_timer,_loading,_removing,_snapshot,_silent,_from_service,_regions';
@@ -20193,20 +14462,13 @@ class Scheme extends paper.Project {
         delete _attr[fld];
       }
     }
-
     l_visualization?.clear();
     for (let i = _children.length - 1; i >= 0; i--) {
       if(_children[i] !== l_visualization) {
         _children[i].remove();
       }
     }
-      
-    //new paper.Layer({project: this});
   }
-
-  /**
-   * Деструктор
-   */
   unload() {
     const {_dp, _attr, _calc_order_row, _deffer} = this;
     _deffer.length = 0;
@@ -20222,12 +14484,10 @@ class Scheme extends paper.Project {
         delete _attr[fld];
       }
     }
-
     if(this.hasOwnProperty('_dp_listener')){
       _dp._manager.off('update', this._dp_listener);
       this._dp_listener = null;
     }
-
     const ox = _dp.characteristic;
     if(this.hasOwnProperty('_papam_listener')){
       ox._manager.off('update', this._papam_listener);
@@ -20249,27 +14509,16 @@ class Scheme extends paper.Project {
         });
       }
     }
-
     this.remove();
     return revert;
   }
-
-  /**
-   * Двигает выделенные точки путей либо все точки выделенных элементов
-   * @param {paper.Point} delta - куда и на сколько сдвигать
-   * @param {Boolean} [all_points] - указывает, двигать выделенные элементы целиком или только их выделенные узлы
-   * @return {void}
-   */
   move_points(delta, all_points) {
-
     const other = [];
     const layers = [];
     const profiles = new Set();
     let selected = new Set();
     const nearests = new Map();
     const {auto_align, _dp} = this;
-
-    // добавляем в selected вложенные створки, совпадающие по узлам с рамами
     for (const item of this.selectedItems) {
       const {parent} = item;
       if(item instanceof paper.Path && parent instanceof GeneratrixElement && !(parent instanceof Sectional)) {
@@ -20294,7 +14543,6 @@ class Scheme extends paper.Project {
             }
           });
           if(!check_selected) {
-            //  item.parent.generatrix
             selected.add(generatrix);
           }
         }
@@ -20303,7 +14551,6 @@ class Scheme extends paper.Project {
         selected.add(parent.generatrix);
       }
     }
-
     const {impost} = $p.enm.elm_types;
     if(!all_points) {
       selected = Array.from(selected).sort((a, b) => {
@@ -20335,43 +14582,30 @@ class Scheme extends paper.Project {
         continue;
       }
       const {parent, layer} = item;
-
       if(!profiles.has(parent)) {
-
         profiles.add(parent);
-
         if(parent._hatching) {
           parent._hatching.remove();
           parent._hatching = null;
         }
-
         if(!parent.nearest || !parent.nearest() || parent instanceof ProfileSegment || parent instanceof ProfileAddlOuter || parent instanceof ProfileRegion) {
-
           if(layer instanceof ConnectiveLayer) {
-            // двигаем и накапливаем связанные
             other.push.apply(other, parent.move_points(delta, all_points));
           }
           else {
-            // автоуравнивание $p.enm.align_types.Геометрически для импостов внешнего слоя
             if(auto_align && parent.elm_type === impost && !parent.layer.layer && Math.abs(delta.x) > 1) {
               continue;
             }
-
             let check_selected;
             item.segments.forEach((segm) => {
               if(segm.selected && other.indexOf(segm) != -1) {
                 check_selected = !(segm.selected = false);
               }
             });
-
-            // если уже двигали и не осталось ни одного выделенного - выходим
             if(check_selected && !item.segments.some((segm) => segm.selected)) {
               continue;
             }
-
-            // двигаем и накапливаем связанные
             other.push.apply(other, parent.move_points(delta, all_points));
-
             if(!layers.includes(layer)) {
               layers.push(layer);
               layer.l_dimensions.clear();
@@ -20383,41 +14617,24 @@ class Scheme extends paper.Project {
         item.purge_paths();
       }
     }
-
-    // при необходимости двигаем импосты
     if(other.length && Math.abs(delta.x) > 1) {
       this.do_align(auto_align, profiles);
     }
-    // иначе перерисовываем контуры
     else if(!this._attr._from_service) {
       this.register_change(true);
     }
-
     _dp._manager.emit_async('update', {}, {x1: true, x2: true, y1: true, y2: true, a1: true, a2: true, cnn1: true, cnn2: true, info: true});
-
-    // TODO: возможно, здесь надо подвигать примыкающие контуры
   }
-
-  /**
-   * Сохраняет координаты и пути элементов в табличных частях характеристики
-   * @return {Promise}
-   */
   save_coordinates(attr = {}) {
-
     const {_attr, bounds, ox, contours} = this;
-
     _attr._saving = true;
     ox._data._loading = true;
-
-    // чистим табчасти, которые будут перезаполнены
     const {cnn_nodes} = ProductsBuilding;
     const {inserts} = ox;
     ox.cnn_elmnts.clear(({elm1, node1}) => {
       return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
     ox.glasses.clear();
-    
-    // проверим уникальность номеров элементов
     const {wsql: {alasql}, job_prm} = $p;
     for(const elm of alasql('select elm from ? group by elm having count(*) > 1',
       [ox.coordinates._obj]).map(v => v.elm)) {
@@ -20450,8 +14667,6 @@ class Scheme extends paper.Project {
         });
       }
     }
-    
-    // пустые строки в glass_specification
     if(attr.save) {
       const rm = [];
       for(const row of ox.glass_specification) {
@@ -20463,14 +14678,11 @@ class Scheme extends paper.Project {
         ox.glass_specification.del(row);
       }
     }
-
     let res = Promise.resolve();
     const push = (contour) => {
       res = res.then(() => contour.save_coordinates(false, attr.save, attr.close))
     };
-
     if(bounds) {
-      // устанавливаем размеры в характеристике
       const root = this.separate_frame_root();
       if(root) {
         const {bounds} = root;
@@ -20485,8 +14697,6 @@ class Scheme extends paper.Project {
         ox.z = this.thickness;
         ox.s = this.area;
       }
-
-      // вызываем метод save_coordinates в дочерних слоях
       contours.forEach((contour) => {
         if(attr.save && contours.length > 1 && !contour.getItem({class: BuilderElement})) {
           if(this.activeLayer === contour) {
@@ -20500,8 +14710,6 @@ class Scheme extends paper.Project {
           push(contour);
         }
       });
-
-      // вызываем метод save_coordinates в слое соединителей
       push(this.l_connective);
     }
     else {
@@ -20510,8 +14718,6 @@ class Scheme extends paper.Project {
       ox.z = 0;
       ox.s = 0;
     }
-
-    // пересчет спецификации и цен
     return res
       .then(() => attr.no_recalc ? this : $p.products_building.recalc(this, attr))
       .catch((err) => {
@@ -20519,30 +14725,16 @@ class Scheme extends paper.Project {
         ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
         throw err;
       });
-
   }
-
-  /**
-   * @summary Действия после расчёта спецификации
-   */
   after_spec_calculated() {
     for(const layer of this.contours) {
       layer.flap_skylight();
     }
   }
-
-  /**
-   * @summary Изменяет центр и масштаб, чтобы изделие вписалось в размер окна
-   * @desc Используется инструментом _ZoomFit_, вызывается при открытии изделия и после загрузки типового блока
-   *
-   * return {void}
-   */
   zoom_fit(bounds, isNode) {
-
     if(!bounds) {
       bounds = this.strokeBounds;
     }
-
     if (bounds) {
       if(!isNode) {
         isNode = $p.wsql.alasql.utils.isNode;
@@ -20561,7 +14753,6 @@ class Scheme extends paper.Project {
       const zoom = Math.min(view.viewSize.height / height, view.viewSize.width / width);
       const {scaling} = view._decompose();
       view.scaling = [Math.sign(scaling.x) * zoom, Math.sign(scaling.y) * zoom];
-
       const dx = view.viewSize.width - width * zoom;
       if(isNode) {
         const dy = view.viewSize.height - height * zoom - 20;
@@ -20572,22 +14763,13 @@ class Scheme extends paper.Project {
       }
     }
   }
-
-  /**
-   * @summary Возвращает строку svg эскиза изделия
-   * @desc Вызывается при записи изделия. Полученный эскиз сохраняется во вложении к характеристике
-   *
-   * @param [attr] {Object} - указывает видимость слоёв и элементов, используется для формирования эскиза части изделия
-   */
   get_svg(attr = {}) {
     const selectedItems = Object.values(this._selectionItems).filter(v => v instanceof BuilderElement);
-    
     this.deselectAll();
     const options = attr.export_options || {};
     if(!options.precision) {
       options.precision = 1;
     }
-    // в шаблонах скрываем размерные линии
     const hidden = new Set();
     const {sz_lines} = $p.job_prm.builder;
     if(this.ox.calc_order.obj_delivery_state == 'Шаблон' || sz_lines == 'БезРазмеров' || attr.sz_lines == 'БезРазмеров') {
@@ -20607,7 +14789,6 @@ class Scheme extends paper.Project {
         }
       }
       this.zoom_fit();
-
       const {ownerDocument} = this.view.element;
       if(ownerDocument) {
         options.onExport = function (item, node, options) {
@@ -20619,13 +14800,11 @@ class Scheme extends paper.Project {
     }
     const svg = this.exportSVG(options);
     const {x, y, width, height} = this.strokeBounds;
-
     svg.setAttribute('x', x);
     svg.setAttribute('y', y);
     svg.setAttribute('width', width + 40);
     svg.setAttribute('height', height);
     svg.querySelector('g').removeAttribute('transform');
-
     options.onExport = null;
     if(hidden.size) {
       for(const el of hidden) {
@@ -20640,38 +14819,19 @@ class Scheme extends paper.Project {
       }
       this.zoom_fit();
     }
-
     for(const item of selectedItems) {
       item.selected = true;
     }
     return svg.outerHTML;
   }
-
-  /**
-   * @summary Перезаполняет изделие данными типового блока или снапшота
-   * @desc Вызывается, обычно, из формы выбора типового блока, но может быть вызван явно в скриптах тестирования или групповых обработках
-   * @param {String|CatObj|Object} obx - идентификатор или объект-основание (характеристика продукции либо снапшот)
-   * @param {Boolean} [is_snapshot]
-   * @param {Boolean} [no_refill]
-   * @param {Boolean} [from_service]
-   * @return {Promise}
-   */
   load_stamp(obx, is_snapshot, no_refill, from_service) {
-
     const do_load = (obx) => {
-
       const {ox} = this;
-
-      // если отложить очитску на потом - получим лажу, т.к. будут стёрты новые хорошие строки
       this.clear();
-
-      // переприсваиваем номенклатуру, цвет и размеры
       const src = Object.assign({_not_set_loaded: true}, is_snapshot ? obx : obx._obj);
       ox._mixin(src, null,
         'ref,name,calc_order,product,leading_product,leading_elm,origin,base_block,note,partner,_not_set_loaded,obj_delivery_state,_rev'.split(','),
         true);
-      
-      // сохраняем ссылку на типовой блок
       if(!is_snapshot) {
         ox.base_block = (obx.base_block.empty() || obx.base_block.obj_delivery_state.is('Шаблон') ||
           obx.base_block.calc_order.obj_delivery_state.is('Шаблон')) ? obx : obx.base_block;
@@ -20679,8 +14839,6 @@ class Scheme extends paper.Project {
           ox._data.refill_props = true;
         }
       }
-
-      // параметры составных пакетов
       for(const {elm, inset} of ox.coordinates) {
         if(inset.insert_type.is('Заполнение')) {
           ox.glass_specification.clear({elm});
@@ -20693,7 +14851,6 @@ class Scheme extends paper.Project {
           }
         }
       }
-
       return this.load(ox, from_service)
         .then(() => {
           for(const filling of this.glasses) {
@@ -20702,11 +14859,8 @@ class Scheme extends paper.Project {
           ox._data._modified = true;
           this.notify(this, 'scheme_changed');
         });
-
     };
-
     this._attr._loading = true;
-
     if(is_snapshot) {
       this._attr._snapshot = true;
       return do_load(obx);
@@ -20719,19 +14873,12 @@ class Scheme extends paper.Project {
         .then(do_load);
     }
   }
-
-  /**
-   * Выясняет, надо ли автоуравнивать изделие при сдвиге точек
-   * @return {boolean}
-   */
   get auto_align() {
     const {calc_order, base_block} = this.ox;
     const {enm: {obj_delivery_states: st}, job_prm: {properties}} = $p;
-
     if(base_block.empty() || calc_order.obj_delivery_state == st.Шаблон || base_block.calc_order.obj_delivery_state != st.Шаблон) {
       return false;
     }
-
     let align;
     if(properties.auto_align) {
       base_block.params.find_rows({param: properties.auto_align, cnstr: 0}, (row) => {
@@ -20741,113 +14888,50 @@ class Scheme extends paper.Project {
     }
     return align && align != '_' && align;
   }
-
-  /**
-   * Уравнивает геометрически или по заполнениям
-   * сюда попадаем из move_points, когда меняем габариты
-   * @param auto_align {Boolean}
-   * @param profiles {Set}
-   */
   do_align(auto_align, profiles) {
-
     if(!auto_align || !profiles.size) {
       return;
     }
-
-    // получаем слои, в которых двигались элементы
     const layers = new Set();
     for (const profile of profiles) {
       profile.layer.fillings && layers.add(profile.layer);
     }
-
     if(this._attr._align_timer) {
       clearTimeout(this._attr._align_timer);
     }
-
     this._attr._align_timer = setTimeout(() => {
-
       this._attr._align_timer = 0;
-
-      // получаем массив заполнений изменённых контуров
       const glasses = [];
       for (const layer of layers) {
         for(const filling of layer.fillings){
           glasses.indexOf(filling) == -1 && glasses.push(filling);
         }
       }
-
-      // TODO: понять, что хотел автор
-      // if(auto_align == $p.enm.align_types.ПоЗаполнениям) {
-      //
-      // }
       this._scope.glass_align('width', glasses, auto_align == 'Геометрически');
-
     }, 100);
-
   }
-
-  /**
-   * @summary Вписывает канвас в указанные размеры
-   * @desc Используется при создании проекта и при изменении размеров области редактирования
-   *
-   * @param w {Number} - ширина, в которую будет вписан канвас
-   * @param h {Number} - высота, в которую будет вписан канвас
-   */
   resize_canvas(w, h) {
     const {viewSize} = this.view;
     viewSize.width = w;
     viewSize.height = h;
   }
-
-  /**
-   * Возвращает массив РАМНЫХ контуров текущего изделия
-   * @type Array.<Contour>
-   */
   get contours() {
     return this.layers.filter((l) => l instanceof Contour);
   }
-
-  /**
-   * @summary Габаритная площадь изделия
-   * @desc Сумма габаритных площадей рамных контуров
-   *
-   * @type Number
-   * @final
-   */
   get area() {
     const {l_connective, contours} = this;
     const layers = $p.job_prm.builder.exclude_connective_area ? [] : [l_connective];
     return layers.concat(contours).reduce((sum, {area}) => sum + area, 0).round(4);
   }
-
-  /**
-   * @summary Площадь изделия с учетом наклонов-изгибов профиля
-   * @desc Сумма площадей рамных контуров
-   *
-   * @type Number
-   * @final
-   */
   get form_area() {
     return this.contours.reduce((sum, {form_area}) => sum + form_area, 0).round(4);
   }
-
-  /**
-   * @summary Цвет текущего изделия
-   * @desc По сути, это не свойство, а макрос. При установке, пробегает по всем профилям изделия и присваивает им цвет 
-   * @type CatClrs
-   */
   get clr() {
     return this.ox.clr;
   }
   set clr(v) {
     this.ox.clr = v;
   }
-
-  /**
-   * Служебный слой размерных линий
-   * @type DimensionLayer
-   * @final
-   */
   get l_dimensions() {
     const {_attr} = this;
     if(!_attr.l_dimensions && !_attr._removing) {
@@ -20859,13 +14943,6 @@ class Scheme extends paper.Project {
     }
     return _attr.l_dimensions;
   }
-
-  /**
-   * Служебный слой соединительных профилей
-   *
-   * @type ConnectiveLayer
-   * @final
-   */
   get l_connective() {
     const {_attr} = this;
     if(!_attr.l_connective && !_attr._removing) {
@@ -20877,13 +14954,6 @@ class Scheme extends paper.Project {
     }
     return _attr.l_connective;
   }
-
-  /**
-   * Служебный слой визуализации
-   *
-   * @type ContourVisualization
-   * @final
-   */
   get l_visualization() {
     const {layers} = this;
     if(!layers.visualization) {
@@ -20895,22 +14965,9 @@ class Scheme extends paper.Project {
     }
     return layers.visualization;
   }
-  
-
-  /**
-   * @summary Создаёт и перерисовавает габаритные линии изделия
-   * @desc Отвечает только за габариты изделия
-   * Авторазмерные линии контуров и пользовательские размерные линии, контуры рисуют самостоятельно
-   *
-   */
   draw_sizes() {
     this.l_dimensions.draw_sizes();
   }
-
-  /**
-   * Перерисовавает визуализацию контуров изделия
-   * @return {void}
-   */
   draw_visualization() {
     if(this.view){
       this._scope.activate();
@@ -20921,24 +14978,12 @@ class Scheme extends paper.Project {
       this.view.update();
     }
   }
-
-  /**
-   * @summary Вставка по умолчанию
-   * @desc Возвращает вставку по умолчанию с учетом свойств системы и положения элемента
-   *
-   * @param {Object} [attr]
-   * @param {BuilderElement} [attr.elm]
-   * @param {EnmPositions} [attr.pos] - положение элемента
-   * @param {EnmElm_types} [attr.elm_type] - тип элемента
-   * @return {Array.<ProfileItem>}
-   */
   default_inset(attr) {
     const {positions, elm_types} = $p.enm;
     let rows;
     const sys = attr.elm?.layer ? attr.elm.layer.sys : this._dp.sys;
     if(!attr.pos) {
       rows = sys.inserts(attr.elm_type, true, attr.elm);
-      // если доступна текущая, возвращаем её
       const {inset} = attr;
       const isFilling = inset?.insert_type.is('Заполнение');
       const thickness = isFilling && inset.thickness(attr.elm);
@@ -20947,24 +14992,17 @@ class Scheme extends paper.Project {
       }
       return rows[0];
     }
-
     rows = sys.inserts(attr.elm_type, 'rows', attr.elm);
-
-    // если без вариантов, возвращаем без вариантов
     if(rows.length == 1) {
       return rows[0].nom;
     }
-
     const pos_array = Array.isArray(attr.pos);
-
     function check_pos(pos) {
       if(pos_array) {
         return attr.pos.some((v) => v == pos);
       }
       return attr.pos == pos;
     }
-
-    // если подходит текущая, возвращаем текущую
     if(pos_array && Array.isArray(attr.elm_type) &&
       attr.pos.includes(positions.ЦентрВертикаль) &&
       rows.find(({pos}) => pos === positions.ЦентрВертикаль) &&
@@ -20976,15 +15014,12 @@ class Scheme extends paper.Project {
     else if(attr.inset && rows.some((row) => attr.inset == row.nom && (row.pos === positions.any || check_pos(row.pos)))) {
       return attr.inset;
     }
-
     let inset;
-    // ищем по умолчанию + pos
     rows.some((row) => {
       if(check_pos(row.pos) && row.by_default) {
         return inset = row.nom;
       }
     });
-    // ищем по pos без умолчания
     if(!inset) {
       rows.some((row) => {
         if(check_pos(row.pos)) {
@@ -20992,7 +15027,6 @@ class Scheme extends paper.Project {
         }
       });
     }
-    // ищем по умолчанию + любое
     if(!inset) {
       rows.some((row) => {
         if(row.by_default && (row.pos == positions.any || row.pos?.empty?.())) {
@@ -21000,9 +15034,7 @@ class Scheme extends paper.Project {
         }
       });
     }
-    // ищем любое без умолчаний
     if(!inset) {
-      // если не нашлось штульпа, ищем импост
       if(attr.elm_type === elm_types.Штульп) {
         attr.elm_type = elm_types.Импост;
         return this.default_inset(attr);
@@ -21013,21 +15045,12 @@ class Scheme extends paper.Project {
         }
       });
     }
-
     return inset;
   }
-
-  /**
-   * @summary Контроль вставки
-   * @desc Проверяет, годится ли текущая вставка для данного типа элемента и положения
-   * @return {CatInserts}
-   */
   check_inset(attr) {
     const inset = attr.inset ? attr.inset : attr.elm.inset;
     const elm_type = attr.elm ? attr.elm.elm_type : attr.elm_type;
     const rows = [];
-
-    // получаем список вставок с той же номенклатурой, что и наша
     let finded;
     this._dp.sys.elmnts.forEach((row) => {
       if((elm_type ? row.elm_type == elm_type : true)) {
@@ -21038,51 +15061,28 @@ class Scheme extends paper.Project {
         rows.push(row);
       }
     });
-
-    // TODO: отфильтровать по положению attr.pos
-
     if(finded) {
       return inset;
     }
     if(rows.length) {
       return rows[0].nom;
     }
-
   }
-
-  /**
-   * Находит точку на примыкающем профиле и проверяет расстояние до неё от текущей точки
-   * !! Изменяет res - CnnPoint
-   * @param element {Profile} - профиль, расстояние до которого проверяем
-   * @param profile {Profile|null} - текущий профиль - используется, чтобы не искать соединения с самим собой
-   * TODO: возможно, имеет смысл разрешить змее кусать себя за хвост
-   * @param res {CnnPoint} - описание соединения на конце текущего профиля
-   * @param point {paper.Point} - точка, окрестность которой анализируем
-   * @param check_only {Boolean|String} - указывает, выполнять только проверку или привязывать точку к узлам или профилю или к узлам и профилю
-   * @returns {Boolean|void}
-   */
   check_distance(element, profile, res, point, check_only) {
-
     const {elm_types, cnn_types: {acn, av, ah, long}, orientations} = $p.enm;
-
     let distance, cnns, addls,
       bind_node = typeof check_only == 'string' && check_only.indexOf('node') != -1,
       bind_generatrix = typeof check_only == 'string' ? check_only.indexOf('generatrix') != -1 : check_only,
       node_distance;
-    
     const {sticking, sticking_l} = (profile || element).sticking();
-
-    // Проверяет дистанцию в окрестности начала или конца соседнего элемента
     function check_node_distance(node) {
       distance = element[node].getDistance(point)
       if(distance < sticking_l) {
-
         if(typeof res.distance == 'number' && res.distance < distance) {
           res.profile = element;
           res.profile_point = node;
           return 1;
         }
-
         if(check_only === true && res.profile === element && res.cnn && acn.a.includes(res.cnn.cnn_type)) {
           if(res.distance > distance) {
             res.distance = distance;
@@ -21091,24 +15091,15 @@ class Scheme extends paper.Project {
           res.point = point;
           return 2;
         }
-
         if(profile && (!res.cnn || res.cnn.empty())) {
-
-          // а есть ли подходящее?
           cnns = $p.cat.cnns.nom_cnn(profile, element, acn.a);
           if(!cnns || !cnns.length) {
             return 1;
           }
-
-          // если в точке сходятся 2 профиля текущего контура - ок
-
-          // если сходятся > 2 и разрешены разрывы TODO: учесть не только параллельные
-
         }
         else if(res.cnn && acn.t.includes(res.cnn.cnn_type)) {
           return 1;
         }
-
         res.point = bind_node ? element[node] : point;
         res.distance = distance;
         res.profile = element;
@@ -21117,36 +15108,19 @@ class Scheme extends paper.Project {
         if(cnns && cnns.length && !res.cnn) {
           res.cnn = cnns[0];
         }
-        // if(cnns && cnns.length && acn.t.includes(cnns[0].cnn_type)) {
-        //   res.profile_point = '';
-        //   res.cnn_types = acn.t;
-        //   if(!res.cnn) {
-        //     res.cnn = cnns[0];
-        //   }
-        // }
-        // else {
-        //   res.profile_point = node;
-        //   res.cnn_types = acn.a;
-        // }
-
         return 2;
       }
-
     }
-
     const b = res.profile_point === 'b' ? 'b' : 'e';
     const e = b === 'b' ? 'e' : 'b';
-
     if(element === profile) {
       if(profile.is_linear()) {
         return;
       }
       else {
-        // проверяем другой узел, затем - Т
       }
       return;
     }
-    // если мы находимся в окрестности начала соседнего элемента
     else if((node_distance = check_node_distance(b)) || (node_distance = check_node_distance(e))) {
       if(res.cnn_types !== acn.a && res.profile_point){
         res.cnn_types = acn.a;
@@ -21154,41 +15128,16 @@ class Scheme extends paper.Project {
       }
       return node_distance == 2 ? false : void(0);
     }
-
-    // это соединение с пустотой или T
     res.profile_point = '';
-
-    // // если возможна привязка к добору, используем её
-    // element.addls.forEach(function (addl) {
-    // 	gp = addl.generatrix.getNearestPoint(point);
-    // 	distance = gp.getDistance(point);
-    //
-    // 	if(distance < res.distance){
-    // 		res.point = addl.rays.outer.getNearestPoint(point);
-    // 		res.distance = distance;
-    // 		res.point = gp;
-    // 		res.profile = addl;
-    // 		res.cnn_types = acn.t;
-    // 	}
-    // });
-    // if(res.distance < ((res.is_t || !res.is_l)  ? sticking : sticking_l)){
-    // 	return false;
-    // }
-
-    // если к доборам не привязались - проверяем профиль
-    //const gp = element.generatrix.getNearestPoint(point);
     const {_nearest} = element._attr;
     const outer = _nearest && element.rays.outer.get_subpath(element.b, element.e);
     const gp = _nearest && (!profile || !profile._attr._nearest) ?
       (outer.getNearestPoint(point) || element.generatrix.getNearestPoint(point)) :
       element.generatrix.getNearestPoint(point);
     distance = gp.getDistance(point);
-
     if(distance < ((res.is_t || !res.is_l) ? sticking : sticking_l)) {
-
       if(distance < res.distance || bind_generatrix) {
         if(element.d0 != 0 && outer) {
-          // для вложенных створок и смещенных рам учтём смещение
           res.point = outer.getNearestPoint(point);
           res.distance = 0;
         }
@@ -21197,7 +15146,6 @@ class Scheme extends paper.Project {
           res.distance = distance;
         }
         res.profile = element;
-
         const {cnn, parent} = res;
         const {orientation} = parent || {};
         if(cnn && (
@@ -21216,18 +15164,9 @@ class Scheme extends paper.Project {
       }
     }
   }
-
-  /**
-   * @summary Цвет по умолчанию
-   * @desc Возвращает цвет по умолчанию с учетом свойств системы и элемента
-   *
-   * @param {Object} [attr]
-   * @return {CatClrs}
-   */
   default_clr(attr) {
     return this.ox.clr;
   }
-
   draw_selection() {
     for(const profile of this.selected_profiles(true)) {
       profile.setSelection(1);
@@ -21262,14 +15201,6 @@ class Scheme extends paper.Project {
       }
     }
   }
-
-  /**
-   * @summary Выделенные профили
-   * @desc Возвращает массив выделенных профилей. Выделенным считаем профиль, у которого выделены `b` и `e` или выделен сам профиль при невыделенных узлах
-   *
-   * @param {Boolean} [all] - если true, возвращает все выделенные профили. Иначе, только те, которе можно двигать
-   * @returns {Array.<ProfileItem>}
-   */
   selected_profiles(all) {
     const res = [];
     const {selectedItems} = this;
@@ -21290,7 +15221,6 @@ class Scheme extends paper.Project {
     }
     return res;
   }
-
   selected_nodes() {
     const res = [];
     const {selectedItems} = this;
@@ -21306,33 +15236,13 @@ class Scheme extends paper.Project {
     }
     return res;
   }
-
-  /**
-   * Выделенные заполнения
-   *
-   * @return {Array.<Filling>}
-   */
   selected_glasses() {
     return this.selected_elements.filter((item) => item instanceof Filling);
   }
-
-  /**
-   * @summary Выделенный элемент
-   * @desc Возвращает первый из найденных выделенных элементов
-   *
-   * @returns {BuilderElement}
-   */
   get selected_elm() {
     const {selected_elements} = this;
     return selected_elements.length && selected_elements[0];
   }
-
-  /**
-   * @summary Выделенные элементы
-   * @desc Возвращает массив выделенных элементов
-   *
-   * @returns {Array.<BuilderElement>}
-   */
   get selected_elements() {
     const res = new Set();
     for(const item of this.selectedItems) {
@@ -21345,11 +15255,6 @@ class Scheme extends paper.Project {
     }
     return Array.from(res);
   }
-
-  /**
-   * @summary Все профили изделия
-   * @type {Array<ProfileItem>}
-   */
   get profiles() {
     const {profiles} = this.l_connective;
     for(const contour of this.getItems({class: Contour})) {
@@ -21357,11 +15262,6 @@ class Scheme extends paper.Project {
     }
     return profiles;
   }
-
-  /**
-   * @summary Все раскладки изделия
-   * @type {Array<Onlay>}
-   */
   get onlays() {
     const onlays = [];
     for(const contour of this.getItems({class: Contour})) {
@@ -21369,19 +15269,9 @@ class Scheme extends paper.Project {
     }
     return onlays;
   }
-
-  /**
-   * @summary Ищет точки в выделенных элементах. Если не находит, то во всём проекте
-   * @param point {paper.Point}
-   * @param [tolerance] {Number}
-   * @param [selected_first] {Boolean}
-   * @param [with_onlays] {Boolean}
-   * @returns {paper.HitItem|void}
-   */
   hitPoints(point, tolerance, selected_first, with_onlays) {
     let item, hit;
     let dist = Infinity;
-
     function check_corns(elm) {
       const corn = elm.corns(point);
       if(corn.dist < dist) {
@@ -21394,11 +15284,8 @@ class Scheme extends paper.Project {
         }
       }
     }
-
-    // отдаём предпочтение сегментам выделенных путей
     if(selected_first && selected_first !== 1) {
       this.selectedItems.some((item) => hit = item.hitTest(point, {segments: true, tolerance: tolerance || 8}));
-      // если нет в выделенных, ищем во всех
       if(!hit) {
         hit = this.hitTest(point, {segments: true, tolerance: tolerance || 6});
       }
@@ -21418,13 +15305,8 @@ class Scheme extends paper.Project {
         }
       }
     }
-
     return hit;
   }
-
-  /**
-   * Корневой слой для текущего слоя
-   */
   rootLayer(layer) {
     if(!layer) {
       layer = this.activeLayer;
@@ -21434,12 +15316,6 @@ class Scheme extends paper.Project {
     }
     return layer;
   }
-
-  /**
-   * Снимает выделение со всех узлов всех путей
-   * В отличии от deselectAll() сами пути могут оставаться выделенными
-   * учитываются узлы всех путей, в том числе и не выделенных
-   */
   deselect_all_points(with_items) {
     const res = [];
     this.getItems({class: paper.Path}).forEach((item) => {
@@ -21456,49 +15332,25 @@ class Scheme extends paper.Project {
     });
     return res;
   }
-
-  /**
-   * Массив с рёбрами периметра
-   */
   get perimeter() {
     let res = [],
       contours = this.contours,
       tmp;
-
-    // если в изделии один рамный контур - просто возвращаем его периметр
     if(contours.length == 1) {
       return contours[0].perimeter;
     }
-
-    // находим самый нижний правый контур
-
-    // бежим по всем контурам, находим примыкания, исключаем их из результата
-
     return res;
   }
-
-  /**
-   * Возвращает массив заполнений изделия
-   */
   get glasses() {
     return this.getItems({class: Filling});
   }
-
   get skeleton() {
     return this._skeleton;
   }
-
   set skeleton(v) {
     const {_skeleton} = this;
     _skeleton.skeleton = !!v;
   }
-
-  /**
-   * Зеркалирует эскиз
-   * @param v {undefined|boolean} признак чтения или установки значения
-   * @param animate {boolean} признак выполнять ли анимацию зеркалирования
-   * @return {boolean}
-   */
   async mirror(v) {
     const {_attr, view} = this;
     const {_from_service, _reflected} = _attr;
@@ -21528,7 +15380,6 @@ class Scheme extends paper.Project {
     this.zoom_fit();
     return _attr._reflected;
   }
-
   get sketch_view() {
     let {sketch_view} = this._dp.sys;
     const {hinge, out_hinge, inner, outer} = sketch_view._manager;
@@ -21546,7 +15397,6 @@ class Scheme extends paper.Project {
     }
     return sketch_view;
   }
-
   separate_frame_root() {
     if($p.job_prm.builder.separate_frame_layers && !this.ox.calc_order.obj_delivery_state.is('Шаблон')) {
       const {contours} = this;
@@ -21562,18 +15412,8 @@ class Scheme extends paper.Project {
       }
     }
   }
-
 }
-
 EditorInvisible.Scheme = Scheme;
-
-
-/**
- * fake-элемент для допвставок и параметров
- *
- * Created 26.11.2021.
- */
-
 class FakePrmElm {
   constructor(owner) {
     const {inserts} = $p.cat; 
@@ -21587,7 +15427,6 @@ class FakePrmElm {
       this.inserts = inserts.find_rows({insert_type: 'Изделие', available: true});
     }
   }
-
   get inset() {
     const {inserts} = this;
     return {
@@ -21610,29 +15449,22 @@ class FakePrmElm {
       }
     };
   }
-
   get ox() {
     return this.project.ox;
   }
-
   get elm() {
     return this.layer ? -this.layer.cnstr : 0;
   }
-
   get _metadata() {
     return {fields: FakePrmElm.fields};
   }
-  
   get info() {
     return this.layer ? `слой ${this.layer.layer ? 'створок' : 'рам'} №${this.layer.cnstr}` : 'изделие';
   }
-
   region(row) {
     return FakePrmElm.region(row, this.project);
   }
-
 }
-
 FakePrmElm.fields = new Proxy({}, {
   get(target, prop) {
     const param = $p.cch.properties.get(prop);
@@ -21654,13 +15486,6 @@ FakePrmElm.fields = new Proxy({}, {
     }
   }
 });
-
-/**
- * Proxy-обёртка над строкой допвставок
- * @param row {CatCharacteristicsInsertsRow}
- * @param target {Scheme}
- * @return {Proxy}
- */
 FakePrmElm.region = function region(row, target) {
   const {utils, cch: {properties}, enm} = $p;
   return new Proxy(target, {
@@ -21687,12 +15512,10 @@ FakePrmElm.region = function region(row, target) {
               prm_row: {origin: enm.plan_detailing.get()},
             });
           }
-          //prow = target.ox.params.find({param: prop, cnstr: 0, region: 0, inset: row.inset});
         }
         return target[prop];
       }
     },
-
     set(target, prop, val, receiver) {
       switch (prop) {
       case 'clr':
@@ -21726,30 +15549,14 @@ FakePrmElm.region = function region(row, target) {
     }
   });
 };
-
 Scheme.FakePrmElm = FakePrmElm;
-
-
-/*
- * ### Разрез
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 24.07.2015
- *
- * @module geometry
- * @submodule sectional
- */
-
 class EditableText extends paper.PointText {
-
   constructor(props) {
     props.justification = 'center';
     props.fontFamily = consts.font_family;
     super(props);
     this._edit = null;
     this._owner = props._owner;
-
     !this.project._attr._from_service && this.on({
       mouseenter: this.mouseenter,
       mouseleave: this.mouseleave,
@@ -21758,15 +15565,12 @@ class EditableText extends paper.PointText {
       click: this.click,
     });
   }
-
   mouseenter(event) {
     this.project._scope.canvas_cursor('cursor-arrow-ruler-light');
   }
-
   mouseleave(event) {
     this.project._scope.canvas_cursor('cursor-arrow-white');
   }
-
   mousedrag(event) {
     const {point, curve, prefix} = this;
     this.point = point.add(event.delta);
@@ -21776,15 +15580,12 @@ class EditableText extends paper.PointText {
     curve.positions[prefix] = this.point.clone();
     this._dragged = true;
   }
-
   mouseup(event) {
     if(this._dragged) {
       event.stop();
       delete this._dragged;
     }
   }
-  
-
   click(event) {
     if(!this._edit) {
       const {view, bounds, content} = this;
@@ -21802,7 +15603,6 @@ class EditableText extends paper.PointText {
       });
     }
   }
-
   edit_keydown(event) {
     switch (event.code) {
     case 'Escape':
@@ -21868,38 +15668,30 @@ class EditableText extends paper.PointText {
       return false;
     }
   }
-
   edit_remove() {
     if(this._edit){
       this._edit.parentNode && this._edit.parentNode.removeChild(this._edit);
       this._edit = null;
     }
   }
-
   remove() {
     this.edit_remove();
     super.remove();
   }
-  
   get curve() {
     return this._owner;
   }
-
   get prefix() {
     return 'l';
   }
 }
-
 class AngleText extends EditableText {
-
   constructor(props) {
     props.fillColor = new paper.Color(0, 0, 0.9, 0.9);
     super(props);
     this._ind = props._ind;
   }
-
   apply(value) {
-
     const {project, generatrix, _attr} = this._owner;
     const {zoom} = _attr;
     const {curves, segments} = generatrix;
@@ -21920,7 +15712,6 @@ class AngleText extends EditableText {
     const ray1 = ray0.clone();
     ray1.angle += invert ? angle - value : value - angle;
     const delta = ray1.subtract(ray0);
-
     let start;
     for(const segment of segments) {
       if(segment.point.equals(c2.point2)) {
@@ -21934,27 +15725,21 @@ class AngleText extends EditableText {
       delete curve.positions;
     }
     project.register_change(true);
-
   }
-
   get curve() {
     const {_owner: {generatrix}, _ind} = this;
     const {curves} = generatrix;
     return curves[_ind];
   }
-  
   get prefix() {
     return 'a';
   }
 }
-
 class LenText extends EditableText {
-
   constructor(props) {
     props.fillColor = new paper.Color(0.1, 0.9);
     super(props);
   }
-
   apply(l0, l1, a0, a1) {
     const {path, segment1, segment2, length} = this._owner;
     const {parent: {_attr, project, generatrix}, segments} = path;
@@ -21987,13 +15772,7 @@ class LenText extends EditableText {
     project.register_change(true);
   }
 }
-
-/**
- * Вид в разрезе. например, водоотливы
- * @extends GeneratrixElement
- */
 class Sectional extends GeneratrixElement {
-  
   static FakeRays = class FakeRays {
     constructor() {
       this.b = {};
@@ -22002,26 +15781,16 @@ class Sectional extends GeneratrixElement {
     clear() {}
     recalc() {}
   };
-
-  /**
-   * Вызывается из конструктора - создаёт пути и лучи
-   * @private
-   */
   initialize(attr) {
-
     const {project, layer, _attr, _row} = this;
     const h = project.bounds.height + project.bounds.y;
     if(this.parent === layer) {
       this.parent = layer.children.sectionals;
     }
-
     _attr._rays = new Sectional.FakeRays();
-
     _attr.children = [];
-
     _attr.zoom = 5;
     _attr.radius = 50;
-
     if(attr.generatrix) {
       _attr.generatrix = attr.generatrix;
     }
@@ -22042,14 +15811,11 @@ class Sectional extends GeneratrixElement {
         }
       }
     }
-
     _attr.generatrix.strokeColor = 'black';
     _attr.generatrix.strokeWidth = 1;
     _attr.generatrix.strokeScaling = false;
     this.clr = _row.clr.empty() ? $p.job_prm.builder.base_clr : _row.clr;
-
     this.addChild(_attr.generatrix);
-
     const {lengths, positions, angles} = _row.dop;
     if(Array.isArray(lengths)) {
       lengths.forEach((part, index) => {
@@ -22084,32 +15850,19 @@ class Sectional extends GeneratrixElement {
         }
       });
     }
-
   }
-
-  /**
-   * Формирует путь разреза
-   *
-   * @return {Sectional}
-   */
   redraw() {
     const {layer, generatrix, _attr, radius, visible} = this;
     const {children, zoom} = _attr;
     const {segments, curves} = generatrix;
-
-    // чистим углы и длины
     for(let child of children){
       child.remove();
     }
     children.length = 0;
-
     if(visible) {
-      // рисуем углы
       for(let i = 1; i < segments.length - 1; i++){
         this.draw_angle(i);
       }
-
-      // рисуем длины
       curves.forEach((curve, ind) => {
         const {lengths, length, angles} = curve;
         let content = lengths ? lengths.join('-') : (length / zoom).toFixed(0);
@@ -22131,21 +15884,14 @@ class Sectional extends GeneratrixElement {
         }));
       });
     }
-
-
     return this;
   }
-
   beforeRemove() {
     for(const elm of this._attr.children) {
       elm.remove?.();
     }    
     return true;
   }
-
-  /**
-   * @summary Рисует развёртку в слое визуализации
-   */
   draw_unfolding() {
     const {layer, generatrix: {curves, bounds}, width, radius, _attr: {zoom}} = this;
     const {l_visualization, children: {text}} = layer;
@@ -22157,15 +15903,12 @@ class Sectional extends GeneratrixElement {
       bottom: curr.bottom.clone(),
       top: curr.top.clone(),
     };
-    // del--находим самую широкую--
-    // тупо слева направо
     if(curves.length) {
       const curve = curves[0];
       const {length, lengths, angles} = curve;
       const first = {curve, length, lengths, angles};
       curves.forEach(step);
     }
-    
     function step(curve) {
       const angle = 90;
       const {lengths, angles} = curve;
@@ -22175,7 +15918,6 @@ class Sectional extends GeneratrixElement {
       const vector = curr.top.subtract(curr.bottom).normalize();
       const vect0 = vector.rotate(angles?.[0] || angle);
       const vect1 = angles?.[0] ? vector.rotate(180 - (angles?.[1] || angles?.[0])) : vect0;
-
       const top = curr.top.add(vect1.multiply(dx1));
       const bottom = curr.bottom.add(vect0.multiply(dx0));
       const path = new paper.Path({
@@ -22212,20 +15954,12 @@ class Sectional extends GeneratrixElement {
           justification: 'center',
         });
       }
-
       curr.top = top;
       curr.bottom = bottom;
     }
-    
-    // сдвинем при необходимости
     const dx = bounds.unite(text.bounds).bottomRight.x - l_visualization.by_insets.bounds.bottomLeft.x + 100;
     l_visualization.by_insets.translate([dx, 0]);
   }
-
-  /**
-   * Рисует дуги и текст в углах
-   * @param ind
-   */
   draw_angle(ind) {
     const {layer, generatrix, _attr, radius} = this;
     let {children, zoom} = _attr;
@@ -22242,14 +15976,9 @@ class Sectional extends GeneratrixElement {
     if(angle > 180){
       angle = 360 - angle;
     }
-
-    // радиус зависит от габаритов
-
-
     if (c1.length < radius || c2.length < radius || 180 - angle < 1){
       return;
     }
-
     const from = c1.getLocationAt(c1.length - radius).point;
     const to = c2.getLocationAt(radius).point;
     const end = center.subtract(from.add(to).divide(2)).normalize(radius).negate();
@@ -22261,8 +15990,6 @@ class Sectional extends GeneratrixElement {
       guide: true,
       parent: layer.children.text,
     }));
-
-    // Angle Label
     const point = c2.positions?.a || center.add(end.multiply(-2.2));
     children.push(new AngleText({
       point,
@@ -22272,35 +15999,20 @@ class Sectional extends GeneratrixElement {
       _owner: this,
       _ind: ind,
     }));
-
   }
-
-  /**
-   * Вычисляемые поля в таблице координат
-   */
   save_coordinates() {
-
     const {_row, generatrix, layer} = this;
-
     if(!generatrix){
       return;
     }
-
     _row.x1 = this.x1;
     _row.y1 = this.y1;
     _row.x2 = this.x2;
     _row.y2 = this.y2;
     _row.path_data = generatrix.pathData;
     _row.nom = this.nom;
-
-
-    // добавляем припуски соединений
     _row.len = this.length.round(1);
-
-    // устанавливаем тип элемента
     _row.elm_type = this.elm_type;
-    
-    // длины с обратной стороны, углы и положения надписей
     _row.dop = {
       lengths: generatrix.curves.map(curve => curve.lengths || 0),
       angles: generatrix.curves.map(curve => curve.angles || 0),      
@@ -22315,17 +16027,9 @@ class Sectional extends GeneratrixElement {
         return 0;
       })
     };
-
   }
-
-  /**
-   * заглушка для совместимости с профилем
-   * @override
-   */
   cnn_point() {
-
   }
-
   setSelection(selection) {
     const {generatrix} = this._attr;
     if (!generatrix) {
@@ -22334,42 +16038,22 @@ class Sectional extends GeneratrixElement {
     super.setSelection(selection);
     generatrix.setSelection(selection);
   }
-
-  /**
-   * Длина разреза
-   * @return {number}
-   */
   get length() {
     const {generatrix, zoom} = this._attr;
     const len = generatrix.curves.reduce((sum, curve) => sum + (curve.lengths ? Math.max(...curve.lengths) :  curve.length / zoom), 0);
-    //return (2 * generatrix.length / zoom).round() / 2;
     return (2 * len).round() / 2;
   }
-  
   get width() {
     const {length} = $p.job_prm.properties;
     const {project, layer} = this
     return length.extract_pvalue({ox: project.ox, cnstr: 0, layer, elm: this});
   }
-
-  /**
-   * Виртуальные лучи для совместимости с профилем
-   * @return {{b: {}, e: {}, clear: (function())}|*|ProfileRays}
-   */
   get rays() {
     return this._attr._rays;
   }
-
-  /**
-   * Возвращает тип элемента (Водоотлив)
-   */
   get elm_type() {
     return $p.enm.elm_types.drainage;
   }
-
-  /**
-   * радиус с учетом габаритов
-   */
   get radius() {
     let {generatrix, radius} = this._attr;
     const {height, width} = generatrix.bounds;
@@ -22379,113 +16063,56 @@ class Sectional extends GeneratrixElement {
     }
     return radius;
   }
-  
 }
-
 EditorInvisible.Sectional = Sectional;
 EditorInvisible.EditableText = EditableText;
 EditorInvisible.AngleText = AngleText;
-
-
-/*
- * Болванка пустого класса, чтобы файлы двух веток меньше отличались
- *
- * @module Skeleton
- *
- * Created by Evgeniy Malyarov on 02.05.2020.
- */
-
 class Skeleton {
-
 };
-
-
-
-/**
- * Модуль Ценообразование  
- * Аналог УПзП-шного __ЦенообразованиеСервер__
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- * @module  glob_pricing
- */
-
-/**
- * Ценообразование
- *
- * @param $p {MetaEngine} - контекст
- * @static
- */
 class Pricing {
-
   constructor({md, adapters, job_prm}) {
-    
     this.loading = [];
-
-    // подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
     md.once('predefined_elmnts_inited', () => {
       const {pouch} = adapters;
       if(pouch.props.user_node || job_prm.use_ram) {
         this.load_prices();
       }
     });
-
   }
-
-  // грузит в ram цены номенклатуры
   load_prices() {
-
     const {adapters: {pouch}, job_prm} = $p;
     if(job_prm.use_ram === false || job_prm.skip_prices) {
       return Promise.resolve();
     }
-
-    // читаем цены из документов установки цен
     return this.by_range({})
       .then(() => {
-        // излучаем событие "можно открывать формы"
         pouch.emit('pouch_complete_loaded');
       });
   }
-
-  /**
-   * Грузит после паузы при изменении документа установки цен
-   * пауза нужна, чтобы не создавать водопад при пакетном изменении документов
-   * индекс в этом случае, надо пересчитывать один наз, а не на каждый документ
-   * @param [force] {Boolean}
-   */
   deffered_load_prices(log, force, price_type) {
     const {job_prm: {skip_prices, server}, adapters: {pouch}} = $p;
-
     if(skip_prices) {
       return Promise.resolve();
     }
-    
     if(this.prices_timeout) {
       clearTimeout(this.prices_timeout);
       this.prices_timeout = 0;
     }
-    
     if(!force && !price_type) {
       const defer = (server ? server.defer : 180000) + Math.random() * 10000;
       this.prices_timeout = setTimeout(this.deffered_load_prices.bind(this, log, true), defer);
       return;
     }
-
-    // если указан price_type, строим очередь
     if(price_type) {
       this.loading.push(price_type);
-      // loading.length > 1 - значит, идёт пересчёт по предыдущему типу - выходим и не мешаем, нас вызовут позже
       if(!force && this.loading.length > 1) {
         return;
       }
     }
-
     if(force) {
       this.loading.length = 0;
       price_type = undefined;
     }
-
-    // новые цены пишем в кеш, чтобы на время загрузки не портить номенклатуру
     const cache = new Map();
     return this.by_range({log, cache, price_type})
       .then(() => this.update_nom_price(price_type, cache))
@@ -22500,12 +16127,6 @@ class Pricing {
         }
       });
   }
-
-  /**
-   * заменяет старые цены новыми
-   * @param price_type
-   * @param cache
-   */
   update_nom_price(price_type, cache) {
     if(price_type) {
       for(const onom of $p.cat.nom) {
@@ -22539,17 +16160,9 @@ class Pricing {
       }
     }
   }
-
-  /**
-   * Перестраивает кеш цен номенклатуры по длинному ключу
-   * @param startkey
-   * @return {Promise}
-   */
   by_range({bookmark, step=1, limit=60, log=null, cache=null, price_type}) {
     const {utils, adapters: {pouch},  cat: {abonents}} = $p;
-    
     (log || console.log)(`load prices: page №${step}`);
-
     return utils.sleep(limit / 2)
       .then(() => pouch.remote.ram.find({
         selector: {
@@ -22571,26 +16184,16 @@ class Pricing {
         return res.docs.length === limit ? this.by_range({bookmark, step, limit, log, cache, price_type}) : 'done';
       });
   }
-
-  /**
-   * Перестраивает кеш цен номенклатуры по табчасти текущего документа
-   * @param goods
-   * @param date
-   * @param currency
-   * @param cache {Map}
-   */
   by_doc({goods, date, currency}, cache) {
     const {cat: {nom, currencies}, utils} = $p;
     date = utils.fix_date(date, true);
     date.setHours(0, 0, 0, 0);
     currency = currencies.get(currency);
     for(const row of goods) {
-      // если не задан тип цен - уходим
       if (!row.price_type || !utils.is_guid(row.nom, true) || utils.is_empty_guid(row.nom)){
         continue;
       }
       const onom = nom.create({ref: row.nom}, false, true);
-
       let _price;
       if(cache) {
         if(!cache.has(onom)) {
@@ -22604,7 +16207,6 @@ class Pricing {
         }
         _price = onom._data._price;
       }
-
       const key1 = (row.nom_characteristic || utils.blank.guid).valueOf();
       if (!_price[key1]) {
         _price[key1] = {};
@@ -22614,27 +16216,10 @@ class Pricing {
         _price[key1][key2] = [];
       }
       _price[key1][key2].push({currency, date, price: row.price});
-
-      // сразу сортируем массив по датам, т.к. порядок используется в других местах
       _price[key1][key2].sort((a, b) => b.date - a.date);
     }
   }
-
-  /**
-   * Возвращает цену номенклатуры по типу цен из регистра пзМаржинальныеКоэффициентыИСкидки
-   * Если в маржинальных коэффициентах или номенклатуре указана формула - выполняет
-   * @param {CatNom} nom
-   * @param {CatCharacteristics} characteristic
-   * @param {CatNom_prices_types|CatBranches} price_type
-   * @param {Object} prm
-   * @param {Object} row
-   * @param {CatClrs} clr
-   * @param {CatFormulas} [formula]
-   * @param {Date} [date]
-   * @return {Number}
-   */
   nom_price(nom, characteristic, price_type, prm, row, clr, formula, date) {
-
     if (row && prm) {
       const {_owner} = prm.calc_order_row._owner,
         price_prm = {
@@ -22643,11 +16228,9 @@ class Pricing {
           date: date || new Date(),
           currency: _owner.doc_currency
         };
-
       if (formula && !formula.empty()) {
         price_prm.formula = formula;
       }
-
       if(clr && !clr.empty()) {
         price_prm.clr = clr;
       }
@@ -22655,27 +16238,14 @@ class Pricing {
         price_prm.clr = characteristic.clr;
       }
       price_prm.prm = prm;
-
       row.price = nom._price(price_prm);
       return row.price;
     }
   }
-
-  /**
-   * Возвращает структуру типов цен и КМарж
-   * Аналог УПзП-шного __ПолучитьТипЦенНоменклатуры__
-   * @param prm {Object}
-   * @param prm.calc_order_row {TabularSectionRow.doc.calc_order.production}
-   */
   price_type(prm) {
-
-    // Рез = Новый Структура("КМарж, КМаржМин, КМаржВнутр, Скидка, СкидкаВнешн, НаценкаВнешн, ТипЦенСебестоимость, ТипЦенПрайс, ТипЦенВнутр,
-    // 				|Формула, ФормулаПродажа, ФормулаВнутр, ФормулаВнешн",
-    // 				1.9, 1.2, 1.5, 0, 10, 0, ТипЦенПоУмолчанию, ТипЦенПоУмолчанию, ТипЦенПоУмолчанию, "", "", "",);
     const {utils, job_prm, enm, ireg, cat, CatNom_prices_types} = $p;
     const empty_formula = cat.formulas.get();
     const empty_price_type = cat.nom_prices_types.get();
-
     prm.price_type = {
       marginality: 1.9,
       marginality_min: 1.2,
@@ -22691,7 +16261,6 @@ class Pricing {
       internal_formula: empty_formula,
       external_formula: empty_formula
     };
-
     const {calc_order_row} = prm;
     const {nom, characteristic, _owner: {_owner}} = calc_order_row;
     const {partner} = _owner;
@@ -22699,40 +16268,31 @@ class Pricing {
         {price_group: nom.price_group} :
         {price_group: {in: [nom.price_group, cat.price_groups.get()]}};
     const ares = [];
-
-    // фильтруем по параметрам
     ireg.margin_coefficients.find_rows(filter, (row) => {
       if(row.key.check_condition({ox: characteristic, calc_order_row})){
         ares.push(row);
       }
     });
-
-    // сортируем по приоритету и ценовой группе
     if(ares.length){
       ares.sort((a, b) => {
-
         if ((!a.key.empty() && b.key.empty()) || (a.key.priority > b.key.priority)) {
           return -1;
         }
         if ((a.key.empty() && !b.key.empty()) || (a.key.priority < b.key.priority)) {
           return 1;
         }
-
         if (a.price_group.ref > b.price_group.ref) {
           return -1;
         }
         if (a.price_group.ref < b.price_group.ref) {
           return 1;
         }
-
         return 0;
       });
       Object.keys(prm.price_type).forEach((key) => {
         prm.price_type[key] = ares[0][key];
       });
     }
-
-    // если для контрагента установлена индивидуальная наценка, подмешиваем её в prm
     partner.extra_fields.find_rows({property: job_prm.pricing.dealer_surcharge}, (row) => {
       const val = parseFloat(row.value);
       if(val){
@@ -22740,30 +16300,15 @@ class Pricing {
       }
       return false;
     });
-
-    // если для контрагента задан индивидуальный тип цен продажи, подмешиваем его в prm
     partner.extra_fields.find_rows({property: job_prm.pricing.partner_price_group}, (row) => {
       if(row.value instanceof CatNom_prices_types){
         prm.price_type.price_type_sale = row.value;
       }
       return false;
     });
-
     return prm.price_type;
   }
-
-  /**
-   * @summary Рассчитывает плановую себестоимость строки документа Расчет
-   * @desc Если есть спецификация, расчет ведется по ней. Иначе - по номенклатуре строки расчета.
-   * Аналог УПзП-шного __РассчитатьПлановуюСебестоимость__
-   * 
-   * @param {Object} prm
-   * @param {DocCalc_orderProductionRow} prm.calc_order_row
-   * @param {Date} prm.date
-   * @param {TabularSection} prm.spec
-   */
   calc_first_cost(prm) {
-
     const {job_prm, cat} = $p;
     const {marginality_in_spec, price_grp_in_spec} = job_prm.pricing;
     const fake_row = {};
@@ -22771,17 +16316,12 @@ class Pricing {
     const price_grp = new Map();
     const slice = marginality_in_spec === 1 ?
       cat.margin_coefficients.slice({date, calc_order_row}) : new Map();
-
     if(!spec) {
       return;
     }
-
-    // пытаемся рассчитать по спецификации
     if(spec.count()){
       spec.forEach((row) => {
-
         const {_obj, nom, characteristic, clr} = row;
-
         if(price_grp_in_spec) {
           const {price_group} = nom;
           if(!price_grp.has(price_group)) {
@@ -22824,7 +16364,6 @@ class Pricing {
       calc_order_row.first_cost = spec.aggregate([], ["amount"]).round(2);
     }
     else {
-      // расчет себестомиости по номенклатуре строки расчета
       fake_row.nom = calc_order_row.nom;
       fake_row.characteristic = calc_order_row.characteristic;
       calc_order_row.first_cost = this.nom_price(
@@ -22843,8 +16382,6 @@ class Pricing {
         });
       }
     }
-
-    // себестоимость вытянутых строк спецификации в заказ
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
@@ -22855,22 +16392,11 @@ class Pricing {
       this.calc_first_cost(fake_prm);
     });
   }
-
-  /**
-   * Рассчитывает стоимость продажи в строке документа Расчет
-   *
-   * Аналог УПзП-шного __РассчитатьСтоимостьПродажи__
-   * @param prm {Object}
-   * @param prm.calc_order_row {TabularSectionRow.doc.calc_order.production}
-   */
   calc_amount(prm) {
-
     const {calc_order_row, price_type, first_cost, date} = prm;
     const {marginality_in_spec, not_update, use_internal} = $p.job_prm.pricing;
     const calc_order = calc_order_row._owner._owner;
     const {rounding, manager} = calc_order;
-
-    // если цена уже задана и номенклатура в группе "не обновлять цены" - не обновляем
     if(calc_order_row.price && (marginality_in_spec === 1 && !prm.spec.count() ||
       !calc_order.is_new() && (not_update?.includes(calc_order_row.nom) || not_update?.includes(calc_order_row.nom.parent)))) {
       ;
@@ -22879,8 +16405,6 @@ class Pricing {
       const price_cost = marginality_in_spec && prm.spec.count() ?
         prm.spec.aggregate([], ['amount_marged']) :
         this.nom_price(calc_order_row.nom, calc_order_row.characteristic, price_type.price_type_sale, prm, {},null, price_type.sale_formula, date);
-
-      // цена продажи
       if(price_cost) {
         calc_order_row.price = price_cost.round(rounding);
       }
@@ -22892,29 +16416,17 @@ class Pricing {
         calc_order_row.price = (calc_order_row.first_cost * price_type.marginality).round(rounding);
       }
     }
-
-    // КМарж в строке расчета
     calc_order_row.marginality = calc_order_row.first_cost ?
       calc_order_row.price * ((100 - calc_order_row.discount_percent) / 100) / calc_order_row.first_cost : 0;
-
-
-    // Рассчитаем цену и сумму ВНУТР или ДИЛЕРСКУЮ цену и скидку
     let extra_charge = 0;
     if(use_internal !== false) {
       extra_charge = calc_order_row.extra_charge_external || $p.wsql.get_user_param('surcharge_internal', 'number');
-      // если пересчет выполняется менеджером, используем наценку по умолчанию
       if(!manager.partners_uids.length || !extra_charge) {
         extra_charge = price_type.extra_charge_external || 0;
       }
     }    
-
-    // TODO: учесть формулу
     calc_order_row.price_internal = (calc_order_row.price * (100 - calc_order_row.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
-
-    // Эмулируем событие окончания редактирования, чтобы единообразно пересчитать строку табчасти
     !prm.hand_start && calc_order_row.value_change('price', {}, calc_order_row.price, true);
-
-    // Цены и суммы вытянутых строк спецификации в заказ
     prm.order_rows && prm.order_rows.forEach((value) => {
       const fake_prm = {
         spec: value.characteristic.specification,
@@ -22924,21 +16436,13 @@ class Pricing {
       this.price_type(fake_prm);
       this.calc_amount(fake_prm);
     });
-
   }
-
-  /**
-   * В случае нулевых цен, дополняет в спецификацию строку ошибки
-   * @param prm
-   */
   check_prices({calc_order_row}) {
     const {pricing: {marginality_in_spec}, nom: {empty_price}} = $p.job_prm;
     let err;
-
     calc_order_row.characteristic.specification.forEach((row) => {
       const {_obj, nom, characteristic} = row;
       if(_obj.totqty1 && !nom.is_procedure && !nom.is_service) {
-        // проверяем цену продужи или себестоимости
         if((marginality_in_spec && !_obj.amount_marged) || (!marginality_in_spec && !_obj.price)){
           err = row;
           return false;
@@ -22947,45 +16451,13 @@ class Pricing {
     });
     return err;
   }
-
-  /**
-   * Пересчитывает сумму из валюты в валюту
-   * @param amount {Number} - сумма к пересчету
-   * @param date {Date} - дата курса
-   * @param from {CatCurrencies} - исходная валюта
-   * @param [to] {CatCurrencies} - конечная валюта
-   * @return {Number}
-   */
   from_currency_to_currency (amount, date, from, to) {
     return from.to_currency(amount, date, to);
   }
-
-
 }
-
-
-/**
- * Объект ценообразования в контексте MetaEngine
- * @property pricing
- * @memberOf $p
- */
 $p.pricing = new Pricing($p);
-
-
-/**
- * Аналог УПзП-шного __ПостроительИзделийСервер__
- *
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module  glob_products_building
- * Created 26.05.2015
- */
-
 class ProductsBuilding {
-
   constructor(listen) {
-
     let added_cnn_spec,
       ox,
       spec,
@@ -22994,16 +16466,6 @@ class ProductsBuilding {
       cnn_elmnts,
       glass_specification,
       params;
-
-    //this._editor_invisible = null;
-
-
-    /**
-     * СтрокаСоединений
-     * @param elm1
-     * @param elm2
-     * @return {Number|DataObj}
-     */
     function cnn_row(elm1, elm2, cnn) {
       const {cnn_nodes} = ProductsBuilding;
       let res = cnn_elmnts.find_rows({elm1: elm1, elm2: elm2, node1: cnn_nodes, node2: cnn_nodes});
@@ -23013,17 +16475,9 @@ class ProductsBuilding {
       res = cnn_elmnts.find_rows({elm1: elm2, elm2: elm1, node1: {in: cnn_nodes}, node2: {in: cnn_nodes}});
       return res.length ? res[0].row : (cnn || 0);
     }
-
-    /**
-     * НадоДобавитьСпецификациюСоединения
-     * @param cnn
-     * @param elm1
-     * @param elm2
-     */
     function cnn_need_add_spec(cnn, elm1, elm2, point) {
       const {short, long, t, xx} = $p.enm.cnn_types;
       const cnn_type = cnn && cnn.cnn_type;
-      // соединения крест в стык обрабатываем по координатам, остальные - по паре элементов
       if(cnn_type === xx) {
         if(!added_cnn_spec.points) {
           added_cnn_spec.points = [];
@@ -23045,47 +16499,22 @@ class ProductsBuilding {
       added_cnn_spec[elm1] = elm2;
       return true;
     }
-
-
-    /**
-     * ДополнитьСпецификациюСпецификациейСоединения
-     * @param {CatCnns} cnn
-     * @param {BuilderElement} elm
-     * @param {Object} len_angl
-     * @param {CatCnns} [cnn_other]
-     * @param {BuilderElement} [elm2]
-     */
     function cnn_add_spec(cnn, elm, len_angl, cnn_other, elm2) {
       if(!cnn) {
         return;
       }
       cnn.calculate_spec({elm, elm2, len_angl, cnn_other, ox, spec});
     }
-
-    /**
-     * Спецификации фурнитуры
-     * @param contour {Contour}
-     */
     function furn_spec(contour) {
-      
-      // у рамных контуров и вложенных изделий, фурнитуры не бывает
       if(!contour.level) {
         return false;
       }
-
-      // кеш сторон фурнитуры
       const {furn_cache, furn} = contour;
       const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
-
-      // проверяем, подходит ли фурнитура под геометрию контура
       if(!furn_cache.profiles.length || !furn_check_opening_restrictions(contour, furn_cache)) {
         return;
       }
-
-      // уточняем высоту ручки, т.к. от неё зависят координаты в спецификации
       contour.update_handle_height(furn_cache);
-
-      // получаем спецификацию фурнитуры и переносим её в спецификацию изделия
       const blank_clr = $p.cat.clrs.get();
       const {cnstr, furn_set, weight} = contour;
       furn_set.get_spec(contour, furn_cache).forEach((row) => {
@@ -23097,7 +16526,6 @@ class ProductsBuilding {
           spec,
           ox
         });
-
         if(row.is_procedure_row) {
           if(row_spec.nom.elm_type.error && row.side) {
             row_spec.elm = contour.profile_by_furn_side(row.side, furn_cache)?.elm;
@@ -23121,7 +16549,6 @@ class ProductsBuilding {
           const profile = contour.profile_by_furn_side(row.side, furn_cache);
           const len = profile ? profile._row.len : 0;
           const coefficient = row.coefficient || 0.001;
-
           switch (row.contraction_option) {
           case ФиксированнаяДлина:
             row_spec.len = row.contraction * coefficient;
@@ -23151,29 +16578,13 @@ class ProductsBuilding {
           calc_count_area_mass(row_spec, spec);
         }
       });
-
-      // если задано ограничение по массе - проверяем
       if(furn_set.flap_weight_max && weight > furn_set.flap_weight_max) {
-        // Визуализируем все стороны
         const row_base = {clr: blank_clr, nom: $p.job_prm.nom.flap_weight_max};
         contour.profiles.forEach(elm => {
           new_spec_row({elm, row_base, origin: furn, spec, ox});
         });
       }
-
-      // ограничения размеров по графикам
-      // const checks = ox.sys.graph_restrictions(new paper.Point(contour.bounds.width, contour.bounds.height).divide(10), contour.is_clr());
-      // if(Object.keys(checks)) {
-      //   console.table(checks);
-      // }
     }
-
-    /**
-     * Проверяет ограничения открывания, добавляет визуализацию ошибок
-     * @param contour {Contour}
-     * @param cache {Object}
-     * @return {boolean}
-     */
     function furn_check_opening_restrictions(contour, cache) {
       const err = contour.open_restrictions_err({cache});
       if(err.length) {
@@ -23187,11 +16598,6 @@ class ProductsBuilding {
       }
       return true;
     }
-
-    /**
-     * Спецификации соединений примыкающих профилей
-     * @param elm {Profile}
-     */
     function cnn_spec_nearest(elm) {
       const nearest = elm.nearest();
       const {_attr} = elm;
@@ -23216,13 +16622,7 @@ class ProductsBuilding {
         }        
       }
     }
-
-    /**
-     * Спецификация профиля
-     * @param elm {Profile}
-     */
     function base_spec_profile(elm, totqty0) {
-
       const {_row, _attr, rays, layer, segms, inset} = elm;
       const {enm: {
         angle_calculating_ways,
@@ -23233,7 +16633,6 @@ class ProductsBuilding {
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == cat.clrs.ignored()) {
         return;
       }
-
       const len_angl = {
         angle: 0,
         len: _row.len,
@@ -23241,8 +16640,6 @@ class ProductsBuilding {
         art2: true,
         node: 'e',
       };
-
-      // во время расчетов возможна подмена объекта спецификации
       const spec_tmp0 = spec;
       if(inset.is_order_row_prod({ox, elm})) {
         const prow = inset.specification.find({quantity: 0, is_order_row: prod});
@@ -23262,28 +16659,22 @@ class ProductsBuilding {
         cx._data._loading = true;
         spec = cx.specification.clear();
       }
-
       if(segms?.length) {
-        // если профиль разбит на связки, добавляем их спецификации, вместо спецификации самого профиля
         segms.forEach(base_spec_profile);
       }
       else {
         const {b, e} = rays;
-
         if(!b.cnn || !e.cnn) {
           return;
         }
         elm.check_err();
         b.check_err();
         e.check_err();
-
         const prev = b.profile;
         const next = e.profile;
         const row_cnn_prev = b.cnn?.main_row(elm);
         const row_cnn_next = e.cnn?.main_row(elm);
         const {new_spec_row, calc_count_area_mass} = ProductsBuilding;
-
-        // добавляем строку спецификации
         const row_cnn = row_cnn_prev || row_cnn_next;
         _attr.row_spec = null;
         const row_spec = new_spec_row({
@@ -23296,8 +16687,6 @@ class ProductsBuilding {
         });
         _attr.row_spec = row_spec;
         row_spec.qty = row_cnn ? row_cnn.quantity : 1;
-
-        // уточняем размер
         const seam = angle_calculating_ways.СварнойШов;
         const d45 = Math.sin(Math.PI / 4);
         const dprev = row_cnn_prev ? (
@@ -23306,7 +16695,6 @@ class ProductsBuilding {
         const dnext = row_cnn_next ? (
           row_cnn_next.angle_calc_method == seam && _row.alp2 > 0 ? row_cnn_next.sz * d45 / Math.sin(_row.alp2 / 180 * Math.PI) : row_cnn_next.sz
         ) : 0;
-
         const k001 = 0.001;
         row_spec.len = (_row.len - dprev - dnext)
           * ((row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
@@ -23316,21 +16704,13 @@ class ProductsBuilding {
         if(row_cnn_next && row_cnn_next.algorithm === w2) {
           row_spec.len += next.width * k001;
         }
-
-        // profile._row._len - геометрический размер
-        // profile._attr._len - то, что получится после обработки
-        // row_spec.len - сколько взять (отрезать)
         elm._attr._len = (_row.len
             - (!row_cnn_prev || row_cnn_prev.angle_calc_method == seam ? 0 : row_cnn_prev.sz)
             - (!row_cnn_next || row_cnn_next.angle_calc_method == seam ? 0 : row_cnn_next.sz))
           * 1000 * ( (row_cnn_prev ? row_cnn_prev.coefficient : k001) + (row_cnn_next ? row_cnn_next.coefficient : k001)) / 2;
-
-        // припуск для гнутых элементов
         if(!elm.is_linear()) {
           row_spec.len = row_spec.len + _row.nom.arc_elongation * k001;
         }
-
-        // дополнительная корректировка формулой - здесь можно изменить размер, номенклатуру и вообще, что угодно в спецификации
         if(row_cnn_prev && !row_cnn_prev.formula.empty()) {
           row_cnn_prev.formula.execute({
             ox: ox,
@@ -23351,8 +16731,6 @@ class ProductsBuilding {
             row_spec: row_spec
           });
         }
-
-        // РассчитатьКоличествоПлощадьМассу
         const {СоединениеПополам: s2, Соединение: s1} = angle_calculating_ways;
         let acmethod_prev = row_cnn_prev ? row_cnn_prev.angle_calc_method : null;
         let acmethod_next = row_cnn_next ? row_cnn_next.angle_calc_method : null;
@@ -23381,18 +16759,13 @@ class ProductsBuilding {
           alp2,
           totqty0,
         );
-
-        // добавляем спецификации соединений
         len_angl.len = row_spec.len * 1000;
         len_angl.alp1 = prev ? prev.generatrix.angle_between(elm.generatrix, elm.b) : 90;
         len_angl.alp2 = next ? elm.generatrix.angle_between(next.generatrix, elm.e) : 90;
         const sl_types = [cnn_types.long, cnn_types.short];
         const other_side_types = [cnn_types.t, cnn_types.i, cnn_types.xx, ...sl_types];
         if(cnn_need_add_spec(b.cnn, _row.elm, prev ? prev.elm : 0, b.point)) {
-
           len_angl.angle = len_angl.alp2;
-
-          // для ТОбразного, Незамкнутого контура и short-long, надо рассчитать еще и с другой стороны
           if(e.cnn && sl_types.includes(e.cnn.cnn_type)) {
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
@@ -23402,44 +16775,26 @@ class ProductsBuilding {
             }
           }
           else {
-            // для угловых, добавляем из e.cnn строки с {art2: true}, а для внешних с {art2: false}
             if(!e.profile_point || (next.rays[e.profile_point] && next.rays[e.profile_point].profile !== elm)) {
               len_angl.art2 = false;
               len_angl.art1 = true;
             }
             cnn_add_spec(e.cnn, elm, len_angl, b.cnn, next);
           }
-
-          // спецификацию с предыдущей стороны рассчитваем всегда
           len_angl.angle = len_angl.alp1;
           len_angl.art2 = false;
           len_angl.art1 = true;
           len_angl.node = 'b';
           cnn_add_spec(b.cnn, elm, len_angl, e.cnn, prev);
         }
-
-        // спецификация вставки
         inset.calculate_spec({elm, ox, spec});
       }
-
-      // если у профиля есть примыкающий родительский элемент, добавим спецификацию II соединения
       cnn_spec_nearest(elm);
-
-      // возвращаем указатель на спецификацию на место
       spec = spec_tmp0;
-
-      // если у профиля есть доборы, добавляем их спецификации
       elm.addls.forEach(base_spec_profile);
-
-      // если у профиля есть примыкания, добавляем их спецификации
       elm.adjoinings.forEach(base_spec_profile);
-
-      // спецификация вложенных в элемент вставок
-      // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
-
-        // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref, false, null, true), inset.contour_attrs(elm.layer));
           ox._order_rows.push(cx);
@@ -23448,7 +16803,6 @@ class ProductsBuilding {
         else {
           spec = spec_tmp;
         }
-
         len_angl.origin = inset;
         len_angl.angle = elm.angle_hor;
         len_angl.cnstr = -elm.elm;
@@ -23459,33 +16813,18 @@ class ProductsBuilding {
       });
       spec = spec_tmp;
     }
-
-    /**
-     * Спецификация сечения (водоотлива)
-     * @param elm {Sectional}
-     */
     function base_spec_sectional(elm) {
-
       const {_row, _attr, inset, layer, width} = elm;
-
       if(_row.nom.empty() || _row.nom.is_service || _row.nom.is_procedure || _row.clr == $p.cat.clrs.ignored()) {
         return;
       }
-
-      // спецификация вставки
       inset.calculate_spec({elm, ox});
       if(width < inset.lmin || (inset.lmax && width > inset.lmax)) {
         const {len_error, critical_error} = $p.job_prm.nom;
         elm.err_spec_row(len_error || critical_error, `Длина отлива ${width} ${width < inset.lmin ? ('< ' + inset.lmin) : ('> ' + inset.lmax)} `, inset);
       }
-      
-
-      // спецификация вложенных в элемент вставок
-      // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
-
-        // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, elm})) {
           const cx = Object.assign(ox.find_create_cx(elm.elm, inset.ref), inset.contour_attrs(layer));
           ox._order_rows.push(cx);
@@ -23495,8 +16834,6 @@ class ProductsBuilding {
         else {
           spec = spec_tmp;
         }
-
-        // рассчитаем спецификацию вставки
         const len_angl = {
           angle: 0,
           alp1: 0,
@@ -23506,46 +16843,28 @@ class ProductsBuilding {
           cnstr: -elm.elm
         };
         inset.calculate_spec({elm, len_angl, ox, spec});
-
       });
-
-      // восстанавливаем исходную ссылку объекта спецификации
       spec = spec_tmp;
-
     }
-
-    /**
-     * Спецификация заполнения
-     * @param elm {Filling}
-     */
     function base_spec_glass(elm) {
-
       const {profiles, imposts, inset, _row} = elm;
       const {utils: {blank}, cat: {clrs}, cch, job_prm: {nom}, msg} = $p;
-
       if(_row.clr == clrs.ignored()) {
         return;
       }
-
       const glength = profiles.length;
-
-      // для всех рёбер заполнения
       for (let i = 0; i < glength; i++) {
         const curr = profiles[i];
-
         if(curr.profile && curr.profile._row.clr == clrs.ignored()) {
           return;
         }
-
         const prev = (i == 0 ? profiles[glength - 1] : profiles[i - 1]);
         const next = (i == glength - 1 ? profiles[0] : profiles[i + 1]);
         const row_cnn = cnn_elmnts.find({elm1: _row.elm, elm2: curr.profile.elm});
-
         let angle_hor = (new paper.Point(curr.e.x - curr.b.x, curr.b.y - curr.e.y)).angle.round(2);
         if(angle_hor < 0) {
           angle_hor += 360;
         }
-
         const len_angl = {
           angle_hor,
           angle: 0,
@@ -23557,18 +16876,11 @@ class ProductsBuilding {
           next,
           curr,
         };
-
-        // добавляем спецификацию соединения рёбер заполнения с профилем
         (len_angl.len > 3) && cnn_add_spec(curr.cnn, curr.profile, len_angl, null, elm);
-
-        // строка ошибки ii соединения
         if(!row_cnn) {
           elm.err_spec_row(nom.cnn_ii_error || nom.info_error, msg.err_no_cnn, inset);
         }
-
       }
-
-      // во время расчетов возможна подмена объекта спецификации
       const spec_tmp0 = spec;
       let spec_tmp = spec;
       if(inset.is_order_row_prod({ox, elm})) {
@@ -23586,22 +16898,13 @@ class ProductsBuilding {
         cx._data._loading = true;
         spec = cx.specification.clear();
       }
-
-      // учтём параметр without_glasses
       const param = cch.properties.predefined('without_glasses');
       const totqty0 = Boolean(param && ox.params.find({param, value: true}));
-
-      // добавляем спецификацию вставки в заполнение
       inset.calculate_spec({elm, ox, spec, totqty0});
-
-      // для всех раскладок заполнения
       for(const lay of imposts) {
         base_spec_profile(lay, totqty0)
       }
-
-      // спецификация вложенных в элемент вставок
       ox.inserts.find_rows({cnstr: -elm.elm}, ({inset, clr}) => {
-        // если во вставке указано создавать продукцию, создаём
         const len_angl = {
           angle: 0,
           alp1: 0,
@@ -23621,24 +16924,11 @@ class ProductsBuilding {
         }
         inset.calculate_spec({elm, len_angl, ox, spec, totqty0});
       });
-
-      // возвращаем указатель на спецификацию на место
       spec = spec_tmp0;
     }
-
-
-    /**
-     * Спецификация вставок в контур
-     * @param contour
-     */
     function inset_contour_spec(contour) {
-
-      // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-
       ox.inserts.find_rows({cnstr: contour.cnstr}, ({inset, clr}) => {
-
-        // если во вставке указано создавать продукцию, создаём
         if(inset.is_order_row_prod({ox, contour})) {
           const cx = Object.assign(ox.find_create_cx(-contour.cnstr, inset.ref), inset.contour_attrs(contour));
           ox._order_rows.push(cx);
@@ -23648,8 +16938,6 @@ class ProductsBuilding {
         else {
           spec = spec_tmp;
         }
-
-        // рассчитаем спецификацию вставки
         const elm = {
           _row: {},
           elm: 0,
@@ -23665,26 +16953,12 @@ class ProductsBuilding {
           cnstr: contour.cnstr
         };
         inset.calculate_spec({elm, len_angl, ox, spec, clr});
-
       });
-
-      // восстанавливаем исходную ссылку объекта спецификации
       spec = spec_tmp;
     }
-
-    /**
-     * Основная cпецификация по соединениям и вставкам таблицы координат
-     * @param scheme {Scheme}
-     */
     function base_spec(scheme) {
-
-      // сбрасываем структуру обработанных соединений
       added_cnn_spec = {};
-
-      // во время расчетов возможна подмена объекта спецификации
       const spec_tmp = spec;
-
-      // если текущий слой должен формировать виртуальное изделие - создаём
       function prod_row(contour) {
         const layer = contour.prod_layer();
         if(layer) {
@@ -23705,65 +16979,41 @@ class ProductsBuilding {
           }
         }
       }
-
-      // для всех контуров изделия
       const contours = scheme.getItems({class: Contour});
       for (const contour of contours.reverse()) {
-
-        // пропускаем слои вложенных изделий
         if(contour._ox !== ox) {
           continue;
         }
-
         prod_row(contour);
-
-        // для всех профилей контура
         for (const elm of contour.profiles) {
           !elm.virtual && base_spec_profile(elm);
         }
-        // для всех заполнений контура
         for (const elm of contour.glasses(false, true)) {
           !elm.virtual && base_spec_glass(elm);
         }
-        // для всех разрезов (водоотливов)
         for (const elm of contour.sectionals) {
           !elm.virtual && base_spec_sectional(elm);
         }
-        
         for (const elm of contour.children) {
           if(elm instanceof ProfileGlBead) {
-            // для всех штапиков
             base_spec_profile(elm);
           }
           else if(elm instanceof Compound) {
-            // для всех поверхностей (составных путей)
-            //base_spec_glass(elm);
           }
         }
-
-        // спецификация вставок в контур
         inset_contour_spec(contour);
-
-        // восстанавливаем исходную ссылку объекта спецификации
         spec = spec_tmp;
       }
-
-      // фурнитуру обсчитываем в отдельном цикле, т.к. могут потребоваться свойства соседних слоёв
       for (const contour of contours) {
         prod_row(contour);
         furn_spec(contour);
-        // восстанавливаем исходную ссылку объекта спецификации
         spec = spec_tmp;
       }
-
-      // для всех соединительных профилей
       for (const elm of scheme.l_connective.children) {
         if(elm instanceof ProfileConnective) {
           base_spec_profile(elm);
         }
       }
-
-      // спецификация вставок в изделие
       inset_contour_spec({
         cnstr: 0,
         project: scheme,
@@ -23774,20 +17024,9 @@ class ProductsBuilding {
           return this.project.glasses;
         }
       });
-
     }
-
     this.cnn_add_spec = cnn_add_spec;
-
-    /**
-     * Пересчет спецификации при записи изделия
-     */
     this.recalc = function recalc(scheme, attr) {
-
-      // console.time('base_spec');
-      // console.profile();
-
-      // ссылки для быстрого доступа к свойствам объекта продукции
       ox = scheme.ox;
       spec = ox.specification;
       constructions = ox.constructions;
@@ -23795,31 +17034,14 @@ class ProductsBuilding {
       cnn_elmnts = ox.cnn_elmnts;
       glass_specification = ox.glass_specification;
       params = ox.params;
-
-      // чистим спецификацию и возможные аксессуары
       spec.clear();
       ox.calc_order.accessories('clear', ox);
-
-      // массив продукций к добавлению в заказ
       ox._order_rows = [];
-
-      // рассчитываем базовую сецификацию
       base_spec(scheme);
-
-      // сворачиваем
       this.after_spec_calculated(ox);
-
-      // console.timeEnd('base_spec');
-      // console.profileEnd();
-
-      // информируем мир об окончании расчета координат
       scheme.draw_visualization();
       Promise.resolve()
         .then(() => scheme._scope && !attr.silent && scheme._scope.eve.emit('coordinates_calculated', scheme, attr));
-
-
-      // производим корректировку спецификации с возможным вытягиванием строк в заказ и удалением строк из заказа
-      // внутри корректировки будут рассчитаны цены продажи и плановой себестоимости
       if(ox.calc_order_row) {
         $p.spec_building.specification_adjustment({
           scheme: scheme,
@@ -23829,18 +17051,12 @@ class ProductsBuilding {
         if(attr.save) {
           ox.calc_order_row.s = ox.s;
         }
-        // взводим в заказе признак изменённости продукции, чтобы пересчитать перед записью заказа вставки в заказ
         ox.calc_order._data._sub_recalc = true;
       }
-
-      // действия paper-проекта после расчёта спецификации
       scheme.after_spec_calculated();
-
-      // информируем мир о завершении пересчета
       if(attr.snapshot) {
         scheme.notify(scheme, 'scheme_snapshot', attr);
       }
-
       function finish() {
         delete scheme._attr._saving;
         ox._data._loading = false;
@@ -23848,8 +17064,6 @@ class ProductsBuilding {
           cx._data._loading = false;
         }
       }
-
-      // сохраняем картинку вместе с изделием
       if(attr.svg !== false) {
         ox.svg = scheme.get_svg();
         const {width, height} = scheme.l_dimensions.bounds;
@@ -23880,18 +17094,13 @@ class ProductsBuilding {
           }
         }
       }
-
-      // информируем мир о записи продукции
       if(attr.save) {
         return this.saver({ox, scheme, attr, finish})
           .catch((err) => {
-
             finish();
-
             if(err.msg && err.msg._shown) {
               return;
             }
-
             let text = err.message || err;
             if(ox._data && ox._data._err) {
               if(typeof ox._data._err === 'object') {
@@ -23902,7 +17111,6 @@ class ProductsBuilding {
               text += `\n${ox._data._err}`;
               delete ox._data._err;
             }
-
             if(!attr.silent) {
               if(err.type && err.text && err.title) {
                 $p.md.emit('alert', err);
@@ -23911,21 +17119,13 @@ class ProductsBuilding {
                 $p.md.emit('alert', {type: 'alert-error', obj: ox, text});
               }
             }
-
           });
       }
       else {
         return Promise.resolve(finish());
       }
-
     };
-
   }
-
-  /**
-   * Выделяем сохранялку продукции в отдельный метод
-   * чтобы его было проще переопределить снаружи
-   */
   saver({ox, scheme, attr, finish}) {
     const {calc_order, _order_rows} = ox;
     let res = Promise.resolve();
@@ -23956,11 +17156,6 @@ class ProductsBuilding {
         return ox;
       });
   }
-
-  /**
-   * Обработчик после расчёта спецификации
-   * @param {CatCharacteristics} ox
-   */
   after_spec_calculated(ox) {
     const {specification} = ox;
     const delta = 0.001;
@@ -23994,21 +17189,8 @@ class ProductsBuilding {
     }
     specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
-
-  /**
-   * Проверяет соответствие параметров отбора параметрам изделия
-   * @param params {TabularSection} - табчасть параметров вставки или соединения
-   * @param row_spec {TabularSectionRow}
-   * @param [count_calc_method] {EnumObj.<count_calculating_ways>} - способ расчёта количества
-   * @param elm {BuilderElement}
-   * @param [cnstr] {Number} - номер конструкции или элемента
-   * @return {boolean}
-   */
   static check_params({params, row_spec, count_calc_method, ...other}) {
-
     let ok = true;
-
-    // режем параметры по элементу сначала строим Map ИЛИ
     let {_or} = row_spec;
     if(!_or && row_spec._proto) {
       _or = row_spec._proto._or;
@@ -24027,12 +17209,9 @@ class ProductsBuilding {
         row_spec._proto._or = _or;
       }
     }
-
     for(const grp of _or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
-
-        // перед проверкой условий выясняем, примерима ли проверка к данному способу расчёта
         const {use} = prm_row.param;
         if(count_calc_method && !use.find({count_calc_method})) {
           continue;
@@ -24040,10 +17219,7 @@ class ProductsBuilding {
         if(!count_calc_method && use.count() && !use.find({count_calc_method: $p.enm.count_calculating_ways.get()})) {
           continue;
         }
-
-        // выполнение условия рассчитывает объект CchProperties
         grp_ok = prm_row.param.check_condition({row_spec, prm_row, ...other});
-        // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
         if (!grp_ok) {
           break;
         }
@@ -24053,20 +17229,8 @@ class ProductsBuilding {
         break;
       }
     }
-
     return ok;
   }
-
-  /**
-   * Добавляет или заполняет строку спецификации
-   * @param {CatCharacteristicsSpecificationRow} [row_spec]
-   * @param {BuilderElement} elm
-   * @param {CatInsertsSpecificationRow|CatFurnsSpecificationRow|CatCnnsSpecificationRow} [row_base]
-   * @param {TabularSection} spec
-   * @param {CatNom} [nom]
-   * @param {CatInserts|CatFurns|CatCnns} [origin]
-   * @return {CatCharacteristicsSpecificationRow}
-   */
   static new_spec_row({row_spec, elm, row_base, nom, origin, specify, spec, ox, len_angl, ...other}) {
     const {
       utils: {blank},
@@ -24084,7 +17248,6 @@ class ProductsBuilding {
       CatValues_options,
       CatInserts,
     } = $p;
-    
     if(!row_spec) {
       let {is_order_row} = row_base || {};
       if(is_order_row instanceof CatValues_options) {
@@ -24103,7 +17266,6 @@ class ProductsBuilding {
     if(row_base?.relm) {
       elm = row_base.relm;
     }
-
     if(!row_spec.nom.visualization.empty()) {
       const {cutting_optimization_type} = row_spec.nom;
       if(cutting_optimization_type.empty() || cutting_optimization_type.is('no')) {
@@ -24118,7 +17280,6 @@ class ProductsBuilding {
         specify = elm?.nom?.article;
       }
     }
-
     row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
     if(debug || origin?.[0]?.startsWith?.('n|')) {
@@ -24142,11 +17303,8 @@ class ProductsBuilding {
     if(row_base?.half_stuff) {
       row_spec.half_stuff = row_base.half_stuff;
     }
-
-    // если алгоритм = характеристика по цвету
     if(row_base?.algorithm === cx_clr) {
       const clr = row_base?._clr || row_spec.clr;
-      // перебираем характеристики текущей номенклатуры
       for(const cx of row_spec.nom.characteristics({clr})) {
         row_spec.characteristic = cx;
         break;
@@ -24175,10 +17333,7 @@ class ProductsBuilding {
       if(!row_spec.characteristic.empty() && row_spec.characteristic.owner != row_spec.nom) {
         row_spec.characteristic = blank.guid;
       }
-
-      // цвет по параметру
       clrs.clr_prm({row_base, row_spec, elm, origin : origin instanceof CatInserts ? origin : row_base._owner?._owner, ox});
-
       if(row_base?.algorithm === clr_in) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементИзнутри'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
@@ -24191,7 +17346,6 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
-
       else if(row_base?.algorithm === clr_out) {
         const clr = clrs.by_predefined({predefined_name: 'КакЭлементСнаружи'}, elm.clr, ox.clr, elm);
         if(clr.empty()) {
@@ -24204,12 +17358,9 @@ class ProductsBuilding {
           row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
         }
       }
-
-      // длина штапика
       else if([gb_short, gb_long].includes(row_base?.algorithm) && len_angl) {
         const {curr, next, prev} = len_angl;
         if(curr && next && prev) {
-          // строим эквидистанты от рёбер заполнения
           const curr0 = curr.sub_path.equidistant(row_base.sz, 100);
           const curr1 = curr.sub_path.equidistant(row_base.sz - row_base.nom.width, 100);
           const prev0 = prev.sub_path.equidistant(row_base.sz, 100);
@@ -24233,20 +17384,10 @@ class ProductsBuilding {
         }
       }
     }
-
     return row_spec;
   }
-
-  /**
-   * РассчитатьQtyLen
-   * @param row_spec
-   * @param row_base
-   * @param len
-   */
   static calc_qty_len(row_spec, row_base, len) {
-
     const {nom} = row_spec;
-
     if(!nom.is_procedure && (nom.cutting_optimization_type.is('no') || nom.cutting_optimization_type.empty() || nom.is_pieces)) {
       if(!row_base.coefficient || !len) {
         row_spec.qty = row_base.quantity;
@@ -24280,47 +17421,22 @@ class ProductsBuilding {
       }
     }
   }
-
-  /**
-   * РассчитатьКоличествоПлощадьМассу
-   *
-   * @param {CatCharacteristicsSpecificationRow} row_spec
-   * @param {TabularSection} spec
-   * @param {Object} row_coord
-   * @param {EnmAngle_calculating_ways} [angle_calc_method_prev]
-   * @param {EnmAngle_calculating_ways} [angle_calc_method_next]
-   * @param {Number} [alp1]
-   * @param {Number} [alp2]
-   * @param {Boolean} [totqty0]
-   */
   static calc_count_area_mass(row_spec, spec, row_coord, angle_calc_method_prev, angle_calc_method_next, alp1, alp2, totqty0) {
-
     const {qty, len, nom, _obj} = row_spec;
     if(!qty) {
-      // dop=-1 - визуализация
-      // dop=-2 - техоперация
-      // dop=-3 - обрезь
-      // dop<=-4 - учитывать в потребности
       if(_obj.dop >= 0) {
         spec.del(row_spec, true);
       }
       return;
     }
-
-    // если свойства уже рассчитаны в формуле, пересчет не выполняем
     if(_obj.totqty1 && _obj.totqty) {
       return;
     }
-
-    //TODO: учесть angle_calc_method
     if(!angle_calc_method_next) {
       angle_calc_method_next = angle_calc_method_prev;
     }
-
     if(angle_calc_method_prev && !nom.is_pieces) {
-
       const {Основной, СварнойШов, СоединениеПополам, Соединение, _90, _4590} = $p.enm.angle_calculating_ways;
-
       if(angle_calc_method_prev == Основной || angle_calc_method_prev == СварнойШов) {
         _obj.alp1 = row_coord.alp1;
       }
@@ -24336,7 +17452,6 @@ class ProductsBuilding {
       else if(angle_calc_method_prev == Соединение) {
         _obj.alp1 = (alp1 || row_coord.alp1);
       }
-
       if(angle_calc_method_next == Основной || angle_calc_method_next == СварнойШов) {
         _obj.alp2 = row_coord.alp2;
       }
@@ -24350,7 +17465,6 @@ class ProductsBuilding {
         _obj.alp2 = (alp2 || row_coord.alp2);
       }
     }
-
     if(len) {
       if(_obj.width && !_obj.s) {
         _obj.s = len * _obj.width;
@@ -24359,7 +17473,6 @@ class ProductsBuilding {
     else {
       _obj.s = 0;
     }
-
     if(_obj.s) {
       _obj.totqty = qty * _obj.s;
     }
@@ -24369,70 +17482,32 @@ class ProductsBuilding {
     else {
       _obj.totqty = qty;
     }
-    
-    // при расчёте по площади, в totqty1 пишем площадь bounds вместо площади фигуры
     let {totqty, s, width, _quantity} = row_spec;
     if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
       totqty = qty * len * width;
     }
-
     _obj.totqty1 = totqty0 ? 0 : totqty * nom.loss_factor;
-    
     if(_quantity) {
       _obj.qty *= _quantity;
       _obj.totqty *= _quantity;
       _obj.totqty1 *= _quantity;
     }
-
     ['len', 'width', 's', 'qty', 'alp1', 'alp2'].forEach((fld) => _obj[fld] = _obj[fld]?.round(4) || 0);
     ['totqty', 'totqty1'].forEach((fld) => _obj[fld] = _obj[fld]?.round(6) || 0);
   }
-
 }
-
 ProductsBuilding.cnn_nodes = ['b', 'e', 't', ''];
 if(typeof global !== 'undefined'){
   global.ProductsBuilding = ProductsBuilding;
 }
 $p.ProductsBuilding = ProductsBuilding;
 $p.products_building = new ProductsBuilding(true);
-
-
-/* eslint-disable no-multiple-empty-lines,space-infix-ops */
-/**
- * Аналог УПзП-шного __ФормированиеСпецификацийСервер__
- * Содержит методы расчета спецификации без привязки к построителю. Например, по регистру корректировки спецификации
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module  glob_spec_building
- * Created 26.05.2015
- */
-
 class SpecBuilding {
-
   constructor($p) {
-
   }
-
-  /**
-   * Рассчитывает спецификацию в строке документа Расчет
-   * Аналог УПзП-шного __РассчитатьСпецификациюСтроки__
-   * @param prm
-   * @param cancel
-   */
   calc_row_spec (prm, cancel) {
-
   }
-
-  /**
-   * Аналог УПзП-шного РассчитатьСпецификацию_ПривязкиВставок
-   * Синхронный метод, но возвращает массив промисов
-   * @param attr {Object}
-   * @param with_price {Boolean}
-   */
   specification_adjustment (attr, with_price) {
-
     const {cat, pricing} = $p;
     const {scheme, calc_order_row, spec} = attr;
     const calc_order = calc_order_row._owner._owner;
@@ -24440,22 +17515,11 @@ class SpecBuilding {
     const adel = [];
     const ox = calc_order_row.characteristic;
     const nom = ox.empty() ? calc_order_row.nom : (calc_order_row.nom = ox.owner);
-
-    // типы цен получаем заранее, т.к. они могут пригодиться при расчете корректировки спецификации
     pricing.price_type(attr);
-
-    // подмешаем в параметры дату цены
     attr.date = calc_order.price_date;
-
-    // удаляем из спецификации строки, добавленные предыдущими корректировками
     spec.find_rows({ch: {in: [-1, -2]}}, (row) => adel.push(row));
     adel.forEach((row) => spec.del(row, true));
-
-    // находим привязанные к продукции вставки и выполняем
-    // здесь может быть как расчет допспецификации, так и доппроверки корректности параметров и геометрии
     cat.insert_bind.deposit({ox, scheme, spec});
-
-    // синхронизируем состав строк - сначала удаляем лишние
     if(!ox.empty()){
       adel.length = 0;
       calc_order.production.forEach((row) => {
@@ -24475,10 +17539,7 @@ class SpecBuilding {
       adel.forEach((row) => calc_order.production.del(row.row-1));
       calc_order._data._loading = _loading;
     }
-
     const ax = [];
-
-    // затем, добавляем в заказ строки, назначенные к вытягиванию
     ox._order_rows?.forEach?.((cx) => {
       const row = order_rows.get(cx) || calc_order.production.add({nom: cx.owner, characteristic: cx});
       row.nom = cx.owner;
@@ -24489,11 +17550,9 @@ class SpecBuilding {
       row.s = cx.s;
       row.qty = calc_order_row.qty;
       row.quantity = calc_order_row.quantity;
-      
       ax.push(cx.before_save({force: true}));
       order_rows.set(cx, row);
     });
-    // если существует строка аксессуаров, добавляем её в order_rows
     const kit = calc_order.accessories('clear');
     if(kit) {
       if(kit.specification.count()) {
@@ -24507,38 +17566,16 @@ class SpecBuilding {
     if(order_rows.size){
       attr.order_rows = order_rows;
     }
-
-    // находим привязанные к заказу вставки и выполняем
-    //cat.insert_bind.deposit({ox, order: true});
-
     if(with_price){
-      // подклеим плановую себестоимость
       pricing.calc_first_cost(attr);
-
-      // подклеим стоимость продажи
       pricing.calc_amount(attr);
     }
-
     ax.push(ox);
     ox._manager.emit('specification_adjustment', ox);    
     return ax;
   }
-
 }
-
-// Экспортируем экземпляр модуля
 $p.spec_building = new SpecBuilding($p);
-
-
-/**
- * Составной тип в поле trans документов оплаты и отгрузки
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module glob_value_mgr
- *
- * Created 10.10.2016
- */
-
 (function ({classes: {DataManager, CatObj}, cat}) {
   const {value_mgr} = DataManager.prototype;
   DataManager.prototype.value_mgr = function(row, f, mf, array_enabled, v) {
@@ -24558,26 +17595,8 @@ $p.spec_building = new SpecBuilding($p);
     }
 	}
 })($p);
-
-
-/**
- * Дополнительные методы перечисления Типы соединений
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * Created 23.12.2015
- *
- * @module enm_cnn_types
- */
-
 (function(_mgr){
-
   const {ad, av, ah, long, short, t, ii, i, xt, xx} = _mgr;
-
-  /**
-   * Массивы Типов соединений
-   * @type Array.<EnumObj>
-   */
 	Object.defineProperties(_mgr, {
     acn: {
       value: {
@@ -24589,24 +17608,11 @@ $p.spec_building = new SpecBuilding($p);
       }
     },
   });
-
 })($p.enm.cnn_types);
-
-/**
- * Дополнительные методы перечисления 'Способы расчёта количества'
- *
- * @module enm_count_calculating_ways
- *
- * Created 01.05.2022.
- */
-
 (function({enm, cat: {clrs}, cch}){
-
   const {coloring, len_prm, area, arm, ky} = enm.count_calculating_ways;
   const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
-
   const is_side = (side) => ['_in', '_out'].includes(side);
-
   coloring.calculate = function ({inset, elm, row_spec, row_ins_spec, spec, ox}) {
     let {_clr, _clr_side, quantity, sz, coefficient, angle_calc_method, formula, algorithm} = row_ins_spec;
     if(!_clr) {
@@ -24617,9 +17623,7 @@ $p.spec_building = new SpecBuilding($p);
       const {_row} = elm;
       const nom = elm.inset === inset ? elm.nom : inset.nom(elm);
       const clr = clrs.by_predefined(row_ins_spec.clr, _clr, ox.clr, elm, spec);
-            
       row_spec.clr = clr;
-
       if(is_side(_clr_side)) {
         row_spec.width = nom._extra(prefix + _clr_side);
         if(!row_spec.width && prefix !== 'coloring' && prefix !== 'lam') {
@@ -24637,7 +17641,6 @@ $p.spec_building = new SpecBuilding($p);
         row_spec.qty = quantity;
         row_spec.len = ((elm.length || _row.len) / 1000).round(3);
         row_spec.s = (row_spec.len * row_spec.width * (coefficient || 1)).round(4);
-        
         if(algorithm.is('recipe') && clr.composition.count()) {
           for(const crow of clr.composition) {
             row_ins_spec.nom = crow.nom;
@@ -24663,7 +17666,6 @@ $p.spec_building = new SpecBuilding($p);
     }
     return row_spec;
   };
-
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
     const {_row} = elm;
     const {insert_type} = inset;
@@ -24718,7 +17720,6 @@ $p.spec_building = new SpecBuilding($p);
     }
     return row_spec;
   };
-
   ky.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
     area.calculate({inset, elm, row_spec, row_ins_spec});
     const {coefficient, step} = row_ins_spec;
@@ -24728,10 +17729,8 @@ $p.spec_building = new SpecBuilding($p);
     }
     return row_spec;
   };
-
   len_prm.calculate = function ({inset, elm, row_spec, row_ins_spec, origin}) {
     let len = 0;
-
     inset.selection_params.find_rows({elm: row_ins_spec.elm}, (prm_row) => {
       const {param} = prm_row;
       if(param.type.digits) {
@@ -24746,7 +17745,6 @@ $p.spec_building = new SpecBuilding($p);
     row_spec.s = 0;
     return row_spec;
   };
-
   arm.calculate = function ({elm, row_spec, row_ins_spec, len_angl}) {
     const {nom, rays: {b, e, inner, outer}} = elm;
     const {quantity, sz, coefficient} = row_ins_spec;
@@ -24801,124 +17799,61 @@ $p.spec_building = new SpecBuilding($p);
     row_spec.len = (sub.length - 2 * sz) * coefficient;
     return row_spec;
   }
-
 })($p);
-
-
-/**
- * Дополнительные методы перечисления Типы элементов
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module enm_elm_types
- */
-
 (function(mgr){
-
 	const cache = {};
-
-  /**
-   * Массивы Типов элементов
-   * @type Object
-   */
 	mgr.__define({
-
 		profiles: {
 			get(){
 				return cache.profiles || (cache.profiles = [mgr.rama, mgr.flap, mgr.impost, mgr.shtulp, mgr.tearing, mgr.region]);
 			}
 		},
-
 		profile_items: {
 			get(){
 				return cache.profile_items
 					|| ( cache.profile_items = [...this.profiles, mgr.addition, mgr.linking, mgr.layout, mgr.bundle]);
 			}
 		},
-
 		rama_impost: {
 			get(){
 				return cache.rama_impost || (cache.rama_impost = [mgr.rama, mgr.impost, mgr.shtulp]);
 			}
 		},
-
 		impost_lay: {
 			get(){
         return cache.impost_lay || (cache.impost_lay = [mgr.impost, mgr.layout]);
 			}
 		},
-
 		stvs: {
 			get(){
         return cache.stvs || (cache.stvs = [mgr.flap]);
 			}
 		},
-
 		glasses: {
 			get(){
         return cache.glasses || (cache.glasses = [mgr.glass, mgr.sandwich]);
 			}
 		}
-
 	});
-
   mgr.ОшибкаИнфо.error = true;
   mgr.ОшибкаКритическая.error = true;
-
-
 })($p.enm.elm_types);
-
-
-/**
- * Дополнительные методы перечисления Типы вставок
- *
- * Created 22.02.2018.
- *
- * @module enm_inserts_types
- */
-
-
 (function(_mgr){
-
-  /**
-   * Список групп, задействованных в CalcOrderAdditions
-   * - можно изменить состав и порядок
-   * - в теории, здесь же можно создать новые значения перечислений и добавить их в состав (эксперимент)
-   */
   _mgr.additions_groups = [
-    _mgr.sill,      //Подоконник
-    _mgr.sectional, //Водоотлив
-    _mgr.mosquito,  //МоскитнаяСетка 
-    _mgr.jalousie,  //Жалюзи
-    _mgr.slope,     //Откос
-    _mgr.profile,   //Профиль 
-    _mgr.cut,       //Профиль в нарезку 
-    _mgr.packing,   //Упаковка 
-    _mgr.mount,     //Монтаж 
-    _mgr.delivery,  //Доставка
-    _mgr.set,       //Набор
+    _mgr.sill,     
+    _mgr.sectional,
+    _mgr.mosquito, 
+    _mgr.jalousie, 
+    _mgr.slope,    
+    _mgr.profile,  
+    _mgr.cut,      
+    _mgr.packing,  
+    _mgr.mount,    
+    _mgr.delivery, 
+    _mgr.set,      
   ];
-
-
 })($p.enm.inserts_types);
-
-
-
-/*
- * Модификаторы перечислений
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module enmums
- *
- * Created 22.04.2016
- */
-
 (function({enm}){
-
-	/**
-	 * Дополнительные методы перечисления Типы открывания
-	 */
 	enm.open_types.__define({
     is_opening: {
       value(v) {
@@ -24929,10 +17864,6 @@ $p.spec_building = new SpecBuilding($p);
       }
     },
   });
-
-  /**
-   * Инверсное направление открывания
-   */
   for(const v of enm.open_directions) {
     if(v.is('right')) {
       v.inverse = enm.open_directions.left;
@@ -24944,27 +17875,12 @@ $p.spec_building = new SpecBuilding($p);
       v.inverse = v;
     }
   }
-
   enm.plan_detailing.__define({
     eq_product: {
       value: [enm.plan_detailing.get(), enm.plan_detailing.product, enm.plan_detailing.algorithm]
     }
   })
-
-
 })($p);
-
-
-/*
- * Модуль объекта справочника ХарактеристикиНоменклатуры
- * Обрботчики событий after_create, after_load, before_save, after_save, value_change
- * Методы выполняются в контексте текущего объекта this = DocObj
- *
- *
- * Created 16.03.2016
- */
-
-// переопределяем value_mgr
 (function({cat: {characteristics, nom}}){
   const {value_mgr} = characteristics.constructor.prototype;
   characteristics.value_mgr = function(_obj, f, mf, array_enabled, v) {
@@ -24981,11 +17897,8 @@ $p.spec_building = new SpecBuilding($p);
   };
   characteristics._direct_ram = true;
 })($p);
-
-// при старте приложения, корректируем метаданные формы спецификации с учетом ролей пользователя
 !$p.job_prm.is_node && $p.md.once('predefined_elmnts_inited', () => {
   const _mgr = $p.cat.characteristics;
-
   Promise.resolve()
     .then(() => {
       const {current_user} = $p;
@@ -25002,17 +17915,12 @@ $p.spec_building = new SpecBuilding($p);
       }
     });
 });
-
-// при изменении реквизита табчасти вставок
 $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, value) {
-  // для вложенных вставок перезаполняем параметры
   if(field == 'inset') {
     if (value != this.inset) {
       const {_owner} = this._owner;
       const {cnstr, region} = this;
       const {blank} = $p.utils;
-
-      //Проверяем дубли вставок (их не должно быть, иначе параметры перезаписываются)
       if (value != blank.guid) {
         const res = this._owner.find_rows({cnstr, region, inset: value, row: {not: this.row}});
         if (res.length) {
@@ -25026,29 +17934,16 @@ $p.CatCharacteristicsInsertsRow.prototype.value_change = function (field, type, 
           return false;
         }
       }
-
-      // удаляем параметры старой вставки
       !this.inset.empty() && _owner.params.clear({inset: this.inset, cnstr});
-
-      // устанавливаем значение новой вставки
       this._obj.inset = value.valueOf();
-
-      // устанавливаем ряд по умолчанию
       if(!region && this.inset.region) {
         this._obj.region = this.inset.region;
       }
-
-      // при необходимости, обновим цвет по данным доступных цветов вставки
       this.inset.clr_group.default_clr(this);
-
-      // заполняем параметры по умолчанию
       _owner.add_inset_params(this.inset, cnstr, null, region);
     }
   }
 };
-
-
-// виртуальный Ряд
 Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
   region: {
     get() {
@@ -25070,7 +17965,6 @@ Object.defineProperties($p.CatCharacteristicsGlass_specificationRow.prototype, {
       const own_params = own_row && own_row.inset.product_params;
       const {wsql, utils} = $p;
       const ignForcibly = wsql.get_user_param('glass_composit_ign_forcibly', 'boolean');
-
       const params = {};
       inset.used_params().forEach((param) => {
         if((!param.is_calculated || param.show_calculated)) {
@@ -25108,16 +18002,6 @@ $p.cat.characteristics.metadata('glass_specification').fields.region = {
     types: ['number'],
   }
 };
-
-/**
- * Заполняет себя данными слоя
- * @memberof CatCharacteristicsConstructionsRow
- * @param [bounds] {paper.Bounds}
- * @param is_rectangular {Boolean}
- * @param w {Number}
- * @param h {Number}
- * @param layer {paper.Layer}
- */
 $p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour({bounds, is_rectangular, w, h, layer, parent, sectionals}) {
   this.is_rectangular = is_rectangular;
   if(sectionals.length) {
@@ -25141,19 +18025,7 @@ $p.CatCharacteristicsConstructionsRow.prototype.by_contour = function by_contour
     }
   }
 };
-
-
-
-/*
- * Дополнительные методы справочника _Соединения_
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- * @module cat_cnns
- * Created 23.12.2015
- */
-
 $p.cat.cnns.__define({
-
   sql_selection_list_flds: {
     value(initial_value){
       return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as cnn_type," +
@@ -25161,23 +18033,8 @@ $p.cat.cnns.__define({
         " left outer join enm_cnn_types as _k_ on _k_.ref = _t_.cnn_type %3 %4 LIMIT 300";
     }
   },
-
 });
-
-
-
-/*
- * Дополнительные методы справочника _Договоры контрагентов_
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module cat_contracts
- *
- * Created 23.12.2015
- */
-
 $p.cat.contracts.__define({
-
 	sql_selection_list_flds: {
 		value(initial_value){
 			return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.name as presentation, _k_.synonym as contract_kind, _m_.synonym as mutual_settlements, _o_.name as organization, _p_.name as partner," +
@@ -25188,25 +18045,18 @@ $p.cat.contracts.__define({
 				" left outer join enm_contract_kinds as _k_ on _k_.ref = _t_.contract_kind %3 %4 LIMIT 300";
 		}
 	},
-
 	by_partner_and_org: {
     value(partner, organization, contract_kind, department) {
-
       const {enm: {contract_kinds}, cat: {partners, divisions}} = $p;
       const {main_contract} = partners.get(partner);
-      
       if(!contract_kind) {
         contract_kind = contract_kinds.СПокупателем;
       }
-
-      //Если у контрагента есть основной договор, и он подходит по виду договора и организации,
-      // возвращаем его, не бегая по массиву
       if(main_contract && main_contract.contract_kind == contract_kind && main_contract.organization == organization){
         if(!department || main_contract.department == department) {
           return main_contract;
         }
       }
-
       const selector = {owner: partner, organization: organization, contract_kind: contract_kind};
       const dep = department && divisions.get(department);
       if(dep) {
@@ -25223,67 +18073,26 @@ $p.cat.contracts.__define({
       return res.length ? res[0] : this.get();
     }
 	}
-
-
 });
-
-// перед записью, устанавливаем код, родителя и наименование
-// _mgr.on("before_save", function (attr) {
-//
-//
-//
-// });
-
-
-/**
- * Дополнительные методы справочника Фурнитура
- *
- * Created 23.12.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author Evgeniy Malyarov
- * @module cat_furns
- */
-
-/**
- * корректируем метаданные табчастей фурнитуры
- */
 (({md}) => {
   const {specification_restrictions, specification} = md.get('cat.furns').tabular_sections;
-  // индексы
   specification.index = 'elm';
   specification_restrictions.index = 'elm';
-  // устаревшее поле nom_set для совместимости
   const {fields} = specification;
   fields.nom_set = fields.nom;
 })($p);
-
-/**
- * Методы объекта фурнитуры
- */
 $p.CatFurns = class CatFurns extends $p.CatFurns {
-
-  /**
-   * Перезаполняет табчасть параметров указанного контура
-   */
   refill_prm(layer, force=false) {
-
     const {project, furn_set, cnstr, sys} = layer;
     const {params} = project.ox;
     const {CatNom, job_prm: {properties: {direction, opening}}, utils} = $p;
-
-    // формируем массив требуемых параметров по задействованным в contour.furn_set
     const aprm = furn_set.used_params();
     aprm.sort(utils.sort('presentation'));
-
-    // дозаполняем и приклеиваем значения по умолчанию
     const mprm = [];
     aprm.forEach((v) => {
-
-      // направления в табчасть не добавляем
       if(v == direction || v == opening){
         return;
       }
-
       let prm_row, forcibly = true;
       params.find_rows({param: v, cnstr: cnstr}, (row) => {
         prm_row = row;
@@ -25292,8 +18101,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       if(!prm_row){
         prm_row = params.add({param: v, cnstr: cnstr}, true);
       }
-
-      // умолчания и скрытость по табчасти системы
       const {param} = prm_row;
       const drow = sys.prm_defaults(param, cnstr);
       if(drow && (drow.forcibly || forcibly)) {
@@ -25302,7 +18109,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       prm_row.hide = (drow && drow.hide) || (param.is_calculated && !param.show_calculated);
       mprm.push(prm_row);
     });
-    // умолчания по связям параметров
     for(const prm_row of mprm) {
       const {param} = prm_row;
       param.linked_values(param.params_links({
@@ -25311,8 +18117,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         layer,
       }), prm_row); 
     }
-
-    // удаляем лишние строки, сохраняя параметры допвставок
     const adel = [];
     params.find_rows({cnstr, inset: utils.blank.guid}, (row) => {
       if(!aprm.includes(row.param) || 
@@ -25321,9 +18125,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
       }
     });
     adel.forEach((row) => params.del(row, true));
-
   }
-  
   find_set(layer) {
     const {weight, w, h} = layer;
     const {furn_set, attrs_option} = this;
@@ -25341,22 +18143,13 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     }
     return furn_set;
   }
-
-  /**
-   * Вытягивает массив используемых фурнитурой и вложенными наборами параметров
-   * @return {Array}
-   */
   used_params() {
-
     const {_data} = this;
-    // если параметры этого набора уже обработаны - пропускаем
     if(_data.used_params) {
       return _data.used_params;
     }
-
     const sprms = [];
     const {order, product, nearest} = $p.enm.plan_detailing;
-
     this.selection_params.forEach(({param, origin}) => {
       if(param.empty() || origin === product || origin === order || origin === nearest) {
         return;
@@ -25365,7 +18158,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         sprms.push(param);
       }
     });
-
     const {CatFurns, CatNom, enm: {predefined_formulas: {cx_prm}}} = $p;
     this.specification.forEach(({nom, algorithm}) => {
       if(nom instanceof CatFurns) {
@@ -25377,70 +18169,37 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         sprms.push(nom);
       }
     });
-
     return _data.used_params = sprms;
-
   }
-
-  /**
-   * Аналог УПзП-шного _ПолучитьСпецификациюФурнитурыСФильтром_
-   * @param contour {Contour}
-   * @param cache {Object}
-   * @param [exclude_dop] {Boolean}
-   */
   get_spec(contour, cache, exclude_dop, stack = []) {
-
-    // тихий режим для спецификации
     const res = $p.dp.buyers_order.create({specification: []}, true).specification;
     const {_ox: ox} = contour;
     const {transfer_operations_options: {nea, through, inverse}, open_directions, offset_options} = $p.enm;
-
-    // бежим по всем строкам набора
     this.specification.find_rows({dop: 0}, (row_furn) => {
-
       if(!row_furn.nom && row_furn._obj.nom) {
         throw new Error(`Фурнитура ${this.name} ${this.id} elm ${row_furn.elm} \n
              Не найден объект с uid ${row_furn._obj.nom}`);
       }
-
-      // проверяем, проходит ли строка
       if(row_furn.check_restrictions(contour, cache) !== true){
         return;
       }
-
-      // ищем строки дополнительной спецификации
       if(!exclude_dop){
         this.specification.find_rows({elm: row_furn.elm, dop: {not: 0}}, (dop_row) => {
-
           if(!dop_row.nom && dop_row._obj.nom) {
             throw new Error(`Фурнитура ${this.name} ${this.id} elm ${dop_row.elm} dop ${dop_row.dop} \n
              Не найден объект с uid ${dop_row._obj.nom}`);
           }
-
           if(dop_row.check_restrictions(contour, cache) !== true){
             return;
           }
-
-          // расчет координаты и (или) визуализации
           if(dop_row.is_procedure_row){
-
-            // для правого открывания, инвертируем координату
             const invert = contour.direction == open_directions.Правое;
-            // получаем элемент через сторону фурнитуры
             const elm = contour.profile_by_furn_side(dop_row.side, cache);
-            // profile._len - то, что получится после обработки
-            // row_spec.len - сколько взять (отрезать)
-            // len - геометрическая длина без учета припусков на обработку
             const {len} = elm._row;
-            // свойство номенклатуры размер до фурнпаза
             const {sizefurn} = elm.nom;
-            // в зависимости от значения константы add_d, вычисляем dx1
             const dx1 = $p.job_prm.builder.add_d ? sizefurn : 0;
-            // длина с поправкой на фурнпаз
             const faltz = len - 2 * sizefurn;
-
             let coordin = 0;
-
             if(dop_row.offset_option == offset_options.Формула){
               if(!dop_row.formula.empty()){
                 coordin = dop_row.formula.execute({ox, elm, contour, len, sizefurn, dx1, faltz, invert, dop_row});
@@ -25450,7 +18209,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               coordin = faltz + dop_row.contraction;
             }
             else if(dop_row.offset_option == offset_options.ОтРучки){
-              // строим горизонтальную линию от нижней границы контура, находим пересечение и offset
               const {generatrix} = elm;
               const hor = contour.handle_line(elm);
               coordin = generatrix.getOffsetOf(generatrix.intersect_point(hor)) -
@@ -25458,7 +18216,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 (invert ? dop_row.contraction : -dop_row.contraction);
             }
             else if(dop_row.offset_option == offset_options.ОтСередины){
-              // не мудрствуя, присваиваем половину длины
               coordin = len / 2 + (invert ? dop_row.contraction : -dop_row.contraction);
             }
             else{
@@ -25479,7 +18236,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 }
               }
             }
-
             const proc_row = this.add_with_algorithm(res, ox, contour, dop_row, cache, stack);
             proc_row.handle_height_max = contour.cnstr;
             let elmFlipped = elm;
@@ -25514,7 +18270,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               proc_row.handle_height_min = elm.elm;
               proc_row.coefficient = coordin;
             }
-
             if(elmFlipped.flipped) {
               proc_row.coefficient = elmFlipped._row.len - proc_row.coefficient;
               const c7 = elmFlipped.corns(7);
@@ -25522,18 +18277,14 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 proc_row.coefficient -= c7.getDistance(elmFlipped.corns(1));
               }
             }
-            // если сказано учесть припуск - добавляем dx0
             else if(dop_row.overmeasure){
               proc_row.coefficient +=  elm.dx0;
             }
-
             return;
           }
           else if(!dop_row.quantity){
             return;
           }
-
-          // в зависимости от типа строки, добавляем саму строку или её подчиненную спецификацию
           if(dop_row.is_set_row){
             const {nom} = dop_row;
             nom && nom.get_spec(contour, cache, false, [...stack, `frn|${dop_row._owner._owner.ref}|${dop_row.row}`]).forEach((sub_row) => {
@@ -25552,8 +18303,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
           }
         });
       }
-
-      // в зависимости от типа строки, добавляем саму строку или её подчиненную спецификацию
       if(row_furn.is_set_row){
         const {nom} = row_furn;
         nom && nom.get_spec(contour, cache, exclude_dop, [...stack, `frn|${row_furn._owner._owner.ref}|${row_furn.row}`]).forEach((sub_row) => {
@@ -25573,20 +18322,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         }
       }
     });
-
     return res;
   }
-
-  /**
-   * Добавляет строку в спецификацию с учетом алгоритма
-   * @param {TabularSection} res - временная табчасть спецификации
-   * @param {CatCharacteristics} ox - продукция
-   * @param {Contour} contour - слой
-   * @param {CatFurnsSpecificationRow} row_furn - строка спецификации фурнитуры
-   * @param {Object} cache - кеш размеров и профилей слоя
-   * @param {Array} stack - стек вызовов
-   * @return {DpBuyers_orderSpecificationRow}
-   */
   add_with_algorithm(res, ox, contour, row_furn, cache, stack) {
     const {algorithm, formula, elm, dop, offset_option, _owner, _origin} = row_furn;
     const {CatNom, enm: {comparison_types: {eq}, predefined_formulas: {cx_prm, clr_prm}}} = $p;
@@ -25624,7 +18361,6 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         }
       });
     }
-
     if(row_furn.inset && !row_furn.inset.empty() && row_spec.nom instanceof CatNom) {
       let len = 1000;
       if(!row_spec.nom.is_pieces && row_furn.side) {
@@ -25649,24 +18385,15 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
         elm: row_prm,
         len_angl: {len, cnstr: contour.cnstr, alp1: 0, alp2: 0, angle: 0, origin: this},
         ox,
-        //spec: res,
         clr: row_spec.clr,
         own_row: row_furn
       });
     }
-    
     if(!formula.empty() && !formula.condition_formula && !offset_option.is('Формула')){
-      // Для offset_option = Формула, вызов уже состоялся. Повторно не выполняем
       formula.execute({ox, contour, row_furn, row_spec});
     }
     return row_spec;
   }
-
-  /**
-   * Вычисляет штульповость фурнитуры
-   * 0 - не штульповая, 1 - активная, 2 - пассивная
-   * @return {number}
-   */
   shtulp_kind() {
     let res = 0;
     this.open_tunes.forEach(({shtulp_available, shtulp_fix_here}) => {
@@ -25679,25 +18406,12 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
     });
     return res;
   }
-
 };
-
-/**
- * Методы строки спецификации
- */
 $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurnsSpecificationRow {
-
-  /**
-   * Проверяет ограничения строки фурнитуры
-   * @param contour {Contour}
-   * @param cache {Object}
-   */
   check_restrictions(contour, cache) {
     const {elm, dop, handle_height_min, handle_height_max, handle_base_filter, formula,
       side, flap_weight_min: mmin, flap_weight_max: mmax} = this;
     const {direction, h_ruch, cnstr, _row: {fix_ruch}, project: {_scope}} = contour;
-
-    // проверка по высоте ручки
     if((handle_base_filter === 1 && fix_ruch !== -1) || (handle_base_filter === 2 && fix_ruch === -1) ||
       ((handle_height_min !== -1 && handle_height_max !== -1) && ((h_ruch < handle_height_min) || (handle_height_max > 0 && h_ruch > handle_height_max)))
       ){
@@ -25709,8 +18423,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
     if(handle_height_max === -1 &&  (h_ruch < handle_height_min || h_ruch > cache.height - handle_height_min)) {
       return false;
     }
-
-    // проверка по формуле
     if(!formula.empty() && (formula.condition_formula || formula.parent.predefined_name === 'paths')) {
       const res = formula.execute({ox: cache.ox, contour, row_furn: this});
       if(formula.condition_formula && !res) {
@@ -25723,8 +18435,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
     }
-
-    // по моменту на петлях (в текущей реализации - просто по массе)
     if(mmin || (mmax && mmax < 1000)) {
       if(!cache.hasOwnProperty('weight')) {
         if(contour.sys.flap_weight_max) {
@@ -25745,13 +18455,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return false;
       }
     }
-
-    // получаем связанные табличные части
     const {selection_params, specification_restrictions} = this._owner._owner;
     const prop_direction = $p.job_prm.properties.direction;
-
-
-    // по таблице параметров сначала строим Map ИЛИ
     let {_or} = this;
     if(!_or) {
       _or = new Map();
@@ -25763,13 +18468,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       this._or = _or;
     }
-
     let res = true;
     const profile = contour.profile_by_furn_side(side, cache);
     for(const grp of _or.values()) {
       let grp_ok = true;
       for (const prm_row of grp) {
-        // выполнение условия рассчитывает объект CchProperties
         grp_ok = (prop_direction == prm_row.param) ?
           direction == prm_row.value : prm_row.param.check_condition({
             row_spec: this,
@@ -25779,7 +18482,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             ox: cache.ox,
             layer: contour,
           });
-        // если строка условия в ключе не выполняется, то дальше проверять его условия смысла нет
         if (!grp_ok) {
           break;
         }
@@ -25789,23 +18491,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         break;
       }
     }
-
-    // по таблице ограничений
     if(res) {
-
       specification_restrictions.find_rows({elm, dop}, (row) => {
         const {lmin, lmax, amin, amax, side, for_direct_profile_only} = row;
         const elm = contour.profile_by_furn_side(side, cache);
-
-        // Проверка кривизны
         if(for_direct_profile_only === -1 && elm.is_linear()) {
           return res = false;
         }
         if(for_direct_profile_only === 1 && !elm.is_linear()) {
           return res = false;
         }
-
-        // Проверка длины
         const { side_count } = contour;
         const prev = contour.profile_by_furn_side(row.side === 1 ? side_count : row.side - 1, cache);
         const next = contour.profile_by_furn_side(row.side === side_count ? 1 : row.side + 1, cache);
@@ -25813,8 +18508,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if (len < lmin || len > lmax) {
           return res = false;
         }
-
-        // Проверка угла
         const angle = direction == $p.enm.open_directions.Правое ?
           elm.generatrix.angle_to(prev.generatrix, elm.e) :
           prev.generatrix.angle_to(elm.generatrix, elm.b);
@@ -25823,10 +18516,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       });
     }
-
     return res;
   }
-
   get nom() {
     return this._getter('nom') || this._getter('nom_set');
   }
@@ -25835,51 +18526,29 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       this._setter('nom', v);
     }
   }
-
   get nom_set() {
     return this.nom;
   }
   set nom_set (v) {
     this.nom = v;
   }
-
 };
-
-
-
-
-/**
- * Дополнительные методы справочника Вставки
- *
- * Created 23.12.2015<br />
- * &copy; http://www.oknosoft.ru 2014-2018
- * @author Evgeniy Malyarov
- * @module cat_inserts
- */
-
-// подписываемся на событие после загрузки из pouchdb-ram и готовности предопределенных
 (($p) => {
-
   const {md, cat, enm, cch, dp, utils, adapters: {pouch}, job_prm,
     CatFormulas, CatNom, CatParameters_keys, CatInsertsSpecificationRow, CatCnnsSpecificationRow, CatColor_price_groups} = $p;
-
   const {inserts_types} = enm;
-
   if(job_prm.use_ram !== false){
     md.once('predefined_elmnts_inited', () => {
       cat.scheme_settings && cat.scheme_settings.find_schemas('dp.buyers_order.production');
     });
   }
-
   cat.inserts.__define({
-
     _types_filling: {
       value: [
         inserts_types.Заполнение,
         inserts_types.Стеклопакет,
       ]
     },
-
     _types_main: {
       value: [
         inserts_types.Профиль,
@@ -25887,10 +18556,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         inserts_types.Стеклопакет,
       ]
     },
-
-    /**
-     * возвращает возможные параметры вставок данного типа
-     */
     _prms_by_type: {
       value(insert_type) {
         const prms = new Set();
@@ -25902,30 +18567,19 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return prms;
       }
     },
-
     ItemData: {
       value: class ItemData {
-
         constructor(item, Renderer) {
-
           this.Renderer = Renderer;
           this.count = 0;
           const idata = this;
-
-          // индивидуальные классы строк
           class ItemRow extends $p.DpBuyers_orderProductionRow {
-
-            // корректирует метаданные полей свойств через связи параметров выбора
             tune(ref, mf, column) {
-
               const {inset} = this;
               const param = cch.properties.get(ref);
-              
               if(param && !param.type.is_ref) {
                 Object.assign(mf.type, {}, param.type);
               }
-
-              // удаляем все связи, кроме владельца
               if(mf.choice_params) {
                 const adel = new Set();
                 for(const choice of mf.choice_params) {
@@ -25940,15 +18594,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               else {
                 mf.choice_params = [];
               }
-
-              // если параметр не используется в текущей вставке, делаем ячейку readonly
               const prms = new Set();
               inset.used_params().forEach((param) => {
                 !param.is_calculated && prms.add(param);
               });
               mf.read_only = !prms.has(param);
-
-              // находим связи параметров
               if(!mf.read_only) {
                 const drow = this.inset?.product_params?.find({param});
                 if(drow) {
@@ -25975,11 +18625,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   if(hide) {
                     mf.read_only = true;
                   }
-
-                  // проверим вхождение значения в доступные и при необходимости изменим
                   if(links.length) {
-                    // TODO: подумать про установку умолчаний
-                    //prm.linked_values(links, this);
                     const filter = {}
                     param.filter_params_links(filter, null, links);
                     filter.ref && mf.choice_params.push({
@@ -25990,12 +18636,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 }
               }
             }
-
             get_row(param) {
               const {product_params} = this._owner._owner;
               return product_params.find({elm: this.row, param}) || product_params.add({elm: this.row, param});
             }
-
             value_change(field, type, value) {
               if(field === 'inset') {
                 value = cat.inserts.get(value);
@@ -26005,20 +18649,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
               super.value_change(field, type, value);
             }
-
             get elm() {
               return this.row;
             }
           }
-
           this.ProductionRow = ItemRow;
-
-          // отбор по типу вставки
           this.meta = utils._clone(dp.buyers_order.metadata('production'));
           this.meta.fields.inset.choice_params[0].path = item;
           this.meta.fields.inset.disable_clear = true;
-
-          // получаем возможные параметры вставок данного типа
           if(item !== inserts_types.Параметрик) {
             const changed = this.tune_meta(item);
             const {current_user} = $p;
@@ -26031,13 +18669,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             }
           }
-
         }
-
         tune_meta(item, prototype) {
           const changed = new Set();
           let params, with_scheme, meta;
-
           if(!prototype) {
             prototype = this.ProductionRow.prototype;
             params = cat.inserts._prms_by_type(item);
@@ -26052,8 +18687,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
             meta = prototype._meta;
           }
-
-          // прибиваем лишние параметры прежней вставки
           if(!with_scheme) {
             for(const fld in prototype) {
               if(utils.is_guid(fld, true) && !Array.from(params).some(({ref}) => ref === fld)) {
@@ -26068,14 +18701,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             }
           }
-
           for (const param of params) {
-
-            // корректируем схему
             if(with_scheme && job_prm.addition_scheme) {
               cat.scheme_settings.find_rows({obj: 'dp.buyers_order.production', name: item.name}, (scheme) => {
                 if(!scheme.fields.find({field: param.ref})) {
-                  // добавляем строку с новым полем
                   const row = scheme.fields.add({
                     field: param.ref,
                     caption: param.caption,
@@ -26083,13 +18712,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   });
                   const note = scheme.fields.find({field: 'note'});
                   note && scheme.fields.swap(row, note);
-
                   changed.add(scheme);
                 }
               });
             }
-
-            // корректируем метаданные
             if(!meta.fields[param.ref]) {
               meta.fields[param.ref] = {
                 synonym: param.caption,
@@ -26097,18 +18723,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               };
             }
             const mf = meta.fields[param.ref];
-
-            // специальный редактор поля
             if(param.Editor) {
               mf.Editor = param.Editor;
             }
-
-            // отбор по владельцу
             if(param.type.types.some(type => type === 'cat.property_values')) {
               mf.choice_params = [{name: 'owner', path: param}];
             }
-
-            // учтём дискретный ряд
             const drow = item.product_params && item.product_params.find({param});
             if(drow && drow.list) {
               try{
@@ -26121,8 +18741,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             else {
               delete mf.list;
             }
-
-            // корректируем класс строки
             if(!prototype.hasOwnProperty(param.ref)){
               Object.defineProperty(prototype, param.ref, {
                 get() {
@@ -26143,23 +18761,13 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               });
             }
           }
-
           return changed;
         }
-
       }
     },
-
-    /**
-     * Возвращает массив заполнений в заданном диапазоне толщин
-     * @param min {Number|Array|CatProduction_params}
-     * @param max {Number|undefined}
-     * @return {Array.<CatInserts>}
-     */
     by_thickness: {
       value(min, max) {
         const res = [];
-
         if(!this._by_thickness) {
           this._by_thickness = new Map();
           this.find_rows({insert_type: {in: this._types_filling}, _top: 10000}, (ins) => {
@@ -26172,11 +18780,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           });
         }
-
         if(min instanceof $p.CatProduction_params) {
           const {thicknesses, glass_thickness} = min;
           max = 0;
-
           if(glass_thickness === 0) {
             min = thicknesses;
           }
@@ -26202,7 +18808,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             return res;
           }
         }
-
         for (const [thin, arr] of this._by_thickness) {
           if(!max && Array.isArray(min)) {
             if(min.includes(thin)) {
@@ -26215,14 +18820,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             }
           }
         }
-
         return res;
       }
     },
-
-    /**
-     * Возвращает временную вставку по номенклатуре
-     */
     by_nom: {
       value(nom, insert_type = 'Профиль') {
         if(!this._by_nom) {
@@ -26241,18 +18841,15 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         return this._by_nom.get(nom);
       }
     },
-
     traverse_steps: {
       value({imposts, bounds, add_impost, ox, cnstr, origin, by_x}) {
         const {offsets, do_center, step} = imposts;
-
         if(step) {
           let {height, bottom, width, left} = bounds;
           if(by_x) {
             height = width;
             bottom = left;
           }
-          // высоты поперечин могли задать в интерфейсе
           const prop = $p.cch.properties.predefined('traverse_heights');
           const aprop = prop ? prop.avalue(
             prop.extract_pvalue({ox, cnstr, origin, prm_row: {}})) : [];
@@ -26279,7 +18876,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
     },
-    
     sql_selection_list_flds: {
       value(initial_value) {
         return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id,_t_.note as note,_t_.priority as priority ,_t_.name as presentation, _k_.synonym as insert_type," +
@@ -26287,31 +18883,17 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           " left outer join enm_inserts_types as _k_ on _k_.ref = _t_.insert_type %3 ORDER BY is_initial_value, priority desc, presentation LIMIT 2000 ";
       }
     },
-
     sql_selection_where_flds: {
       value(filter){
         return ` OR _t_.note LIKE '${filter}' OR _t_.id LIKE '${filter}' OR _t_.name LIKE '${filter}'`;
       }
     },
-
   });
-
   cat.inserts.metadata('specification').index = 'is_main_elm';
-
-  // переопределяем прототип
   class CatInserts extends $p.CatInserts {
-
-    /**
-     * Возвращает строки спецификации основной номенклатуры
-     * @param [elm] {BuilderElement}
-     * @param [strict] {Boolean}
-     * @return {Array.<CatInsertsSpecificationRow>}
-     */
     main_rows(elm, strict) {
-
       const {_data} = this;
       let main_rows;
-
       if(strict) {
         if(!_data.main_rows_strict) {
           _data.main_rows_strict = this.specification._obj.filter(({is_main_elm}) => is_main_elm).map(({_row}) => _row);
@@ -26327,7 +18909,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
         main_rows = _data.main_rows;
       }
-
       if(!elm || main_rows.length < 2) {
         return main_rows;
       }
@@ -26345,12 +18926,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       });
       return filtered.length ? filtered : [main_rows[0]];
     }
-
-    /**
-     * Выясняет, зависит ли номенклатура вставки от текущего параметра
-     * @param param {CchProperties}
-     * @return {Boolean}
-     */
     is_depend_of(param) {
       const {_data: {main_rows}, selection_params} = this;
       if(!main_rows || main_rows.length === 1) {
@@ -26362,41 +18937,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
     }
-
-    /**
-     * @summary Выясняет, надо ли вытягивать данную вставку в продукцию
-     *
-     * @example
-     * // Пример формулы:
-     * let {elm, contour} = obj;
-     * if(!contour && elm) {
-     *  contour = elm.layer;
-     * }
-     * const {specification_order_row_types: types} = $p.enm;
-     * return contour ? types.prod : types.no;
-     *
-     * @param {CatCharacteristics} ox
-     * @param {BuilderElement} [elm]
-     * @param {Contour} [contour]
-     * @return {Boolean}
-     */
     is_order_row_prod({ox, elm, contour}) {
       const {prod} = enm.specification_order_row_types;
       const {params} = ox;
       let {is_order_row, insert_type, _manager: {_types_filling}} = this;
-
-      
       if(_types_filling.includes(insert_type)) {
-        // пустоту в продукцию не выносим
         if(this.insert_glass_type.is('blank')) {
           return false;
         }
-        // заполнения в продукцию не выносим, если бит "без заполнений"
         let param = cch.properties.predefined('without_glasses');
         if(param && params?.find({cnstr: 0, param})?.value) {
           return false;
         }
-        // анализируем значение параметра "заполнения отдельно"
         param = cch.properties.predefined('glass_separately');
         param && params?.find_rows({param}, ({cnstr, value}) => {
           if(elm && (cnstr === -elm.elm)) {
@@ -26412,29 +18964,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         });
       }
-
       if(is_order_row instanceof CatFormulas) {
         is_order_row = is_order_row.execute({ox, elm, contour});
       }
       return is_order_row === prod;
     }
-
-    /**
-     * Возвращает номенклатуру вставки в завсисмости от свойств элемента
-     * @param elm {BuilderElement}
-     * @param [strict] {Boolean} - строгий режим
-     */
     nom(elm, strict) {
-
       const {_data} = this;
-
       if(!strict && !elm && _data.nom) {
         return _data.nom;
       }
-
       let _nom;
       const main_rows = this.main_rows(elm, strict);
-
       if(main_rows.length && main_rows[0].nom instanceof CatInserts){
         if(main_rows[0].nom == this) {
           _nom = cat.nom.get();
@@ -26470,15 +19011,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       else {
         _nom = cat.nom.get();
       }
-
       if(main_rows.length < 2){
         _data.nom = typeof _nom == 'string' ? cat.nom.get(_nom) : _nom;
       }
       else{
-        // TODO: реализовать фильтр
         _data.nom = _nom;
       }
-      
       if(strict !== 0 && elm instanceof ProfileItem && elm._row.nom !== _data.nom) {
         elm._row.nom = _data.nom;
         const chnom = elm.layer?._attr?.chnom;
@@ -26487,33 +19025,18 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           elm.project.register_change();
         }
       }
-
       return _data.nom;
     }
-
-    /**
-     * Ширина основной номенклатуры вставки
-     * @param elm {BuilderElement}
-     * @param [strict] {Boolean} - строгий режим
-     * @return {*|number}
-     */
     width(elm, strict) {
       return this.nom(elm, strict).width || 80;
     }
-
-    /**
-     * Возвращает атрибуты характеристики виртуальной продукции по вставке в контур
-     */
     contour_attrs(contour) {
-
       const main_rows = [];
       const res = {calc_order: contour.project.ox.calc_order};
-
       this.specification.find_rows({is_main_elm: true}, (row) => {
         main_rows.push(row);
         return false;
       });
-
       if(main_rows.length){
         const irow = main_rows[0],
           sizes = {},
@@ -26527,11 +19050,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             })
             .filter((prm) => prm);
-
-        // установим номенклатуру продукции
         res.owner = irow.nom instanceof CatInserts ? irow.nom.nom() : irow.nom;
-
-        // если в параметрах вставки задействованы свойства длина и или ширина - габариты получаем из свойств
         contour.project.ox.params.find_rows({
           cnstr: contour.cnstr,
           inset: this,
@@ -26539,7 +19058,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }, (row) => {
           sizes[sz_keys[row.param.ref]] = row.value
         });
-
         if(Object.keys(sizes).length > 0){
           res.x = sizes.length ? (sizes.length + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
           res.y = sizes.width ? (sizes.width + irow.sz) * (irow.coefficient * 1000 || 1) : 0;
@@ -26557,7 +19075,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             });
           }
           if(irow.count_calc_method == enm.count_calculating_ways.area && this.insert_type == inserts_types.МоскитнаяСетка){
-            // получаем габариты смещенного периметра
             const bounds = contour.bounds_inner(irow.sz, this);
             res.x = bounds.width.round(1);
             res.y = bounds.height.round(1);
@@ -26570,23 +19087,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         }
       }
-
       return res;
-
     }
-
-    /**
-     * Проверяет ограничения вставки параметрика
-     * @param elm {BuilderElement}
-     * @param len_angl {Object}
-     * @param params {Array}
-     */
     check_prm_restrictions({elm, len_angl, params}) {
       const {lmin, lmax, hmin, hmax} = this;
       const {len, height, s} = elm;
-
       let name = this.name + ':', err = false;
-
       if(lmin && len < lmin) {
         err = true;
         name += `\nдлина ${len} < ${lmin}`;
@@ -26603,47 +19109,27 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         err = true;
         name += `\nвысота ${height} > ${hmax}`;
       }
-
-      // получаем набор параметров, используемых текущей вставкой
       const used_params = this.used_params();
-
-      // добавляем параметр в характеристику, если используется в текущей вставке
       params.forEach(({param, value}) => {
         if(used_params.includes(param) && param.mandatory && (!value || value.empty())) {
           err = true;
           name += `\nне заполнен обязательный параметр '${param.name}'`;
         }
       });
-
       if(err) {
         throw new Error(name);
       }
     }
-
-    /**
-     * Проверяет ограничения вставки или строки вставки
-     * @param row {CatInserts|CatInsertsSpecificationRow}
-     * @param elm {BuilderElement}
-     * @param [by_perimetr] {Boolean}
-     * @param [len_angl] {Object}
-     * @return {Boolean}
-     */
     check_restrictions(row, elm, by_perimetr, len_angl) {
-
       let text = this.check_base_restrictions(row, elm);
       if(text !== true) {
         return text;
       }
-
       const {_row} = elm;
       const is_row = !utils.is_data_obj(row);
-      
-
-      // Главный элемент с нулевым количеством не включаем
       if(is_row && row.is_main_elm && !row.quantity){
         return false;
       }
-
       if (by_perimetr || !is_row || !row.count_calc_method.is('perim')) {
         if(!(elm instanceof Filling)) {
           if(is_row && row.count_calc_method.is('area') && row.lmin) {
@@ -26657,7 +19143,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             }
             else if(elm.perimeter) {
-              //
             }
           }
           else {
@@ -26680,23 +19165,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         }
       }
-
-      //// Включить проверку размеров и углов, поля "Устанавливать с..." и т.д.
-
       return true;
     }
-
-    /**
-     * Проверяет базовые ограничения вставки или строки вставки
-     * @param {CatInsertsSpecificationRow} row
-     * @param {BuilderElement} elm
-     * @return {Boolean|String}
-     */
     check_base_restrictions(row, elm) {
       const {_row} = elm;
-
       if(elm instanceof Filling) {
-        // проверяем площадь
         const {form_area} = elm
         if(row.smin > form_area){
           return `площадь < ${row.smin}`;
@@ -26704,11 +19177,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(form_area && row.smax && row.smax < form_area){
           return `площадь > ${row.smax}`;
         }
-        // и фильтр по габаритам
         if(row instanceof CatInserts) {
           const {width, height} = elm.bounds;
           const {lmin, lmax, hmin, hmax, can_rotate} = row;
-          // Если можно вращать то проверим 2 направления
           if (can_rotate) {
             const w1 = width > lmin && width < lmax;
             const h1 = height > hmin && height < hmax;
@@ -26725,25 +19196,15 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       else {
         const is_linear = elm.is_linear ? elm.is_linear() : true;
-        // только для прямых или только для кривых профилей
         if((row.for_direct_profile_only > 0 && !is_linear) || (row.for_direct_profile_only < 0 && is_linear)){
           return `изгиб элемента`;
         }
       }
-
       if(row.rmin > _row.r || (_row.r && row.rmax && row.rmax < _row.r)){
         return `радиус изгиба ${row.rmin}-${row.rmax}`;
       }
-
       return true;
     }
-
-    /**
-     * Проверяет ограничения при поиске main_rows
-     * @param {CatInsertsSpecificationRow} row
-     * @param {BuilderElement} elm
-     * @return {boolean}
-     */
     check_main_restrictions(row, elm) {
       if(this.check_base_restrictions(row, elm) !== true) {
         return false;
@@ -26765,31 +19226,14 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return true;
     }
-
-    /**
-     * Возвращает спецификацию вставки с фильтром
-     * @param {BuilderElement|Object} elm - элемент, к которому привязана вставка
-     * @param {BuilderElement|Object} elm2 - соседний элемент, имеет смысл, когда вставка вызвана из соединения
-     * @param {CatCharacteristics} ox - текущая продукция
-     * @param {Boolean} [is_high_level_call] - вызов верхнего уровня - специфично для стеклопакетов
-     * @param {Object} [len_angl] - контекст размеров элемента
-     * @param {CatInsertsSpecificationRow|CatCnnsSpecificationRow} [own_row] - родительская строка для вложенных вставок
-     * @param {CatInsert_bind} [bind] - заполнено, если вызов из привязки вставок
-     * @param {String} [half_stuff] - идентификатор полуфабриката
-     * @return {Array.<CatInsertsSpecificationRow|CatCnnsSpecificationRow>}
-     */
     filtered_spec({elm, elm2, eclr, is_high_level_call, len_angl, own_row, ox, bind, half_stuff}) {
-
       const res = [];
-
       if(this.empty()){
         return res;
       }
-
       const {insert_type, _manager: {_types_filling, _types_main}} = this;
       const {inserts_types: {profile, cut, coloring}, angle_calculating_ways: {Основной}} = enm;
       const {check_params} = ProductsBuilding;
-
       function fake_row(sub_row, row) {
         const fakerow = {_origin: [], _proto: sub_row};
         if(sub_row._metadata) {
@@ -26803,7 +19247,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
         fakerow._owner = sub_row._owner;
         fakerow.row = sub_row.row;
-        
         if(row?._origin) {
           fakerow._origin.push(...row?._origin);
         }
@@ -26828,8 +19271,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(!fakerow._origin.includes(origin)) {
           fakerow._origin.push(origin);
         }
-        
-        // количество по параметру
         if(sub_row instanceof CatInsertsSpecificationRow && sub_row.count_calc_method.is('parameters')) {
           fakerow._owner._owner.selection_params.find_rows({elm: sub_row.elm, origin: 'algorithm'}, (prm_row) => {
             const {rnum} = elm;
@@ -26837,7 +19278,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             return false;
           });
         }
-
         if(row) {
           fakerow.quantity = (fakerow.quantity || (sub_row.count_calc_method.is('parameters') ? 0 : 1)) * (row.quantity || 1);
           fakerow.coefficient = (fakerow.coefficient || row.coefficient) ? fakerow.coefficient * (row.coefficient || 1) : 0;
@@ -26851,29 +19291,20 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             fakerow.sz = row.sz;
           }
         }
-        
         if(half_stuff && !fakerow.half_stuff) {
           fakerow.half_stuff = half_stuff;
         }
-
         return fakerow;
       }
-      
       function check_own_row() {
         return own_row instanceof CatCnnsSpecificationRow && own_row.quantity && own_row.quantity !== 1;
       }
-
-      // для заполнений, можно переопределить состав верхнего уровня
       if(is_high_level_call && _types_filling.includes(insert_type)){
-        
         const fill_regions = $p.job_prm.planning.glass_regions;
-
         const glass_rows = [];
         ox.glass_specification.find_rows({elm: elm.elm, inset: {not: utils.blank.guid}}, (row) => {
           glass_rows.push(row);
         });
-
-        // если спецификация верхнего уровня задана в изделии, используем её, параллельно формируем формулу
         if(glass_rows.length){
           const glr = {
             region: 0,
@@ -26894,7 +19325,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 glr.nom += `|${glr.region}`;
               }
             }            
-            
             for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}, half_stuff})) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
@@ -26911,21 +19341,15 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           return res;
         }
       }
-
       const {flipped} = elm.layer || {};
       this.specification.forEach((row) => {
-
-        // Проверяем ограничения строки вставки
         if(this.check_restrictions(row, elm, (insert_type === profile || insert_type === cut), len_angl) !== true){
           return;
         }
-          
         if(this.insert_type.is('mosquito') && !elm.perimeter 
             && row.count_calc_method.is('perim') && row.nom.elm_type.is('rama')) {
           this.mosquito_perimeter(elm, row);
         }
-
-        // Проверяем параметры изделия, контура или элемента
         if(own_row){
           if(row.clr.empty() && !own_row.clr.empty()) {
             row = fake_row(row);
@@ -26950,11 +19374,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         })){
           return;
         }
-
-        // Добавляем или разузловываем дальше
         if(row.nom instanceof CatInserts){
           if(row.nom.insert_type === coloring) {
-            // добавляем одну или две строки
             if(!eclr) {
               eclr = $p.cat.clrs.by_predefined(row.clr, elm.clr, ox.clr, elm);
             }
@@ -27028,36 +19449,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         else{
           res.push(fake_row(row));
         }
-
       });
-
-      // контроль массы, размеров основной вставки
       if(_types_main.includes(insert_type)){
         const text = this.check_restrictions(this, elm, (insert_type === profile || insert_type === cut), len_angl);
         if(text !== true) {
           elm.err_spec_row(job_prm.nom.critical_error, text, this);
         }
       }
-
       return res;
     }
-
-    /**
-     * Дополняет спецификацию изделия спецификацией текущей вставки  
-     * Ничего не возвращает, создаёт строки в табчасти `spec`
-     * @param {BuilderElement} elm
-     * @param {BuilderElement} [elm2]
-     * @param {Object} [len_angl]
-     * @param {CatCharacteristics} ox
-     * @param {CatCnnsSpecificationRow} own_row
-     * @param {TabularSection} spec
-     * @param {CatClrs} clr
-     * @param {Boolean} [totqty0] - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
-     * @param {CatInsert_bind} [bind] - заполнено, если вызов из привязки вставок
-     * $return {void}
-     */
     calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake}) {
-
       const {_row} = elm;
       const {
         perim,
@@ -27078,14 +19479,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
       const own_angle_calc_method = own_row?.angle_calc_method;
       const half_stuff = own_row && elm && ox.smf_key({row: own_row, elm});
-
       if(!spec){
         spec = ox.specification;
       }
       let alp1, alp2;
-
       this.filtered_spec({elm, elm2, is_high_level_call: true, len_angl, own_row, ox, clr, bind, half_stuff}).forEach((row_ins_spec) => {
-
         const origin = row_ins_spec._origin || this;
         let {count_calc_method, angle_calc_method, sz, offsets, coefficient, formula, specify} = row_ins_spec;
         if(!coefficient) {
@@ -27094,25 +19492,19 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         if(own_angle_calc_method && angle_calc_method == Основной) {
           angle_calc_method = own_angle_calc_method;
         }
-
         let row_spec;
-
-        // добавляем строку спецификации, если профиль или не про шагам
         if(![perim, steps, fillings, spacer].includes(count_calc_method) || profile_items.includes(_row.elm_type)){
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
           row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
-
         if(count_calc_method === formulas && !formula.empty()){
-          // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
           row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
         }
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
         }
-        // для вставок в профиль способ расчета количества не учитывается
         else if(profile_items.includes(_row.elm_type) || [element, len, parameters].includes(count_calc_method)){
           if(count_calc_method.is('arm')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, len_angl});
@@ -27120,7 +19512,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           else {
             calc_qty_len(row_spec, row_ins_spec, len_angl ? len_angl.len : _row.len);
           }
-          // размер может уточняться по соединениям
           if(count_calc_method.is('cnns')){
             const {b, e} = elm.rays;
             for(const node of [b, e]) {
@@ -27137,11 +19528,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
             }
           }
-          // доп вставка
           row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl: row_spec.len ? {...len_angl, len: row_spec.len * 1000} : len_angl, _row});
         }
         else{
-
           if(count_calc_method.is('len_prm') || count_calc_method.is('area') || count_calc_method.is('ky')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
@@ -27168,12 +19557,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 count_calc_method,
               })){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
-                // обогащаем len_angl информацией об углах
                 if (len_angl) {
                   len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
                   len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
                 }
-                // при расчете по периметру, выполняем формулу для каждого ребра периметра
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
@@ -27186,7 +19573,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   len: rib.len,
                   rib,
                 });
-                // если формула не вернула значение, устанавливаем qty_len стандартным способом
                 if(fqty) {
                   if(!row_spec.qty) {
                     row_spec.qty = fqty;
@@ -27197,13 +19583,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 }
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
-                
-                // спецификация по допвставке
                 row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: row_spec.len * 1000 || rib.len, angle: rib.angle}), _row});
               }
               row_spec = null;
-
-              // спецификация по соединениям москитки
               if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
                 elm.is_linear = () => rib.profile.is_linear();
                 elm.angle_hor = rib.angle;
@@ -27218,10 +19600,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 rib.cnn = null;
               }              
             });
-
           }
           else if(count_calc_method === steps){
-
             let bounds;
             if(this.insert_type == enm.inserts_types.mosquito) {
               if(elm instanceof FakeElm || elm.hasOwnProperty('bounds_inner')) {
@@ -27234,12 +19614,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             else {
               bounds = {height: _row.y2 - _row.y1, width: _row.x2 - _row.x1};
             }
-
             const noRotate = !row_ins_spec.step_angle || row_ins_spec.step_angle == 180;
             const h = noRotate ? bounds.height : bounds.width;
             const w = noRotate ? bounds.width : bounds.height;
             if(row_ins_spec.step){
-              // высоты поперечин могли задать в интерфейсе
               const prop = cch.properties.predefined('traverse_heights');
               const aprop = prop ? prop.avalue(
                 prop.extract_pvalue({
@@ -27248,7 +19626,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   elm,
                   origin: len_angl.origin || this,
                   prm_row: {},
-                  //layer,
                 })) : [];
               let qty = Math.floor(h / row_ins_spec.step);
               if(aprop.length === 1 && aprop[0] === 0) {
@@ -27259,7 +19636,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               }
               if(qty){
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
-
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
@@ -27270,13 +19646,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   row_ins: row_ins_spec,
                   len: len_angl?.len || _row.len || w
                 });
-                // TODO: непонятно, надо ли здесь учитывать fqty
                 calc_qty_len(row_spec, row_ins_spec, w);
                 row_spec.qty *= qty;
                 calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
                   angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
-
-                // доп вставка
                 row_ins_spec.inset.dop_spec({row_ins_spec, elm, clr, ox, spec, 
                   len_angl: Object.assign({}, len_angl, {len: row_spec.len * 1000 || w, angle: noRotate ? 90 : 0}), _row});
               }
@@ -27308,14 +19681,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
               row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
-              // виртуальный номер элемента для данного способа расчета количества
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;
               row_spec.width = (bounds.width - sz) * coefficient;
               row_spec.s = (row_spec.len * row_spec.width).round(4);
               calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row, null, null, alp1, alp2, totqty0);
-
               const qty = !formula.empty() && formula.execute({
                 ox: ox,
                 elm: glass,
@@ -27325,7 +19696,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 row_spec: row_spec,
                 clr,
               });
-
               row_spec = null;
             });
           }
@@ -27333,9 +19703,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             throw new Error(`count_calc_method: ${count_calc_method}`);
           }
         }
-
         if(row_spec){
-          // выполняем формулу
           if(!formula.empty()){
             const qty = formula.execute({
               ox: ox,
@@ -27355,7 +19723,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               row_spec.qty = 0;
             }
           }
-          
           if(alp1 === undefined && alp2 === undefined && (angle_calc_method == Соединение || angle_calc_method == СоединениеПополам)) {
             if(elm2 instanceof Filling && len_angl?.curr) {
               const {curr, next, prev} = len_angl;
@@ -27368,10 +19735,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
               alp2 = e.profile?.generatrix?.angle_between(generatrix, e.point); 
             }
           }
-            
           calc_count_area_mass(row_spec, spec, len_angl?.hasOwnProperty('alp1') ? len_angl : _row,
             angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
-          
           if(row_ins_spec.is_order_row?.is?.('compound')) {
             for(const {characteristic} of ox.calc_order.production) {
               if(characteristic !== ox && characteristic.coordinates.count()) {
@@ -27383,8 +19748,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         }
       });
-
-      // скорректируем габариты вытягиваемой конструкции
       if(!fake && spec !== ox.specification) {
         const {_owner} = spec;
         switch (this.insert_type) {
@@ -27415,7 +19778,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         spec.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
       }
     }
-
     dop_spec({row_ins_spec, elm, clr, ox, spec, len_angl, _row}) {
       if(!this.empty()) {
         const {nom, count_calc_method} = row_ins_spec;
@@ -27475,15 +19837,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       }
     }
-    
-    /**
-     * Возвращает толщину вставки
-     * @param elm {BuilderElement}
-     * @param [strict] {Number}
-     * @return {number}
-     */
     thickness(elm, strict) {
-
       if(elm) {
         const nom = this.nom(elm, true);
         if(nom && !nom.empty() && !nom._hierarchy(job_prm.nom.products)) {
@@ -27509,7 +19863,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
         return thickness;
       }
-
       const {_data} = this;
       if(!_data.hasOwnProperty('thickness')) {
         _data.thickness = 0;
@@ -27525,25 +19878,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
         }
       }
-
       return _data.thickness;
     }
-
-    /**
-     * Возвращает массив задействованных во вставке параметров
-     * @return {Array}
-     */
     used_params() {
       const {_data, specification} = this;
-      // если параметры этого набора уже обработаны - пропускаем
       if(_data.used_params) {
         return _data.used_params;
       }
-
       const sprms = [];
       const {order, product, nearest} = enm.plan_detailing;
       const use = cch.properties.predefined('use');
-
       this.selection_params.forEach(({param, origin, elm}) => {
         if(param.empty() || origin === product || origin === order || origin === nearest) {
           return;
@@ -27563,13 +19907,11 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           sprms.push(param);
         }
       });
-
       this.product_params.forEach(({param}) => {
         if(!param.empty() && (!param.is_calculated || param.show_calculated) && !sprms.includes(param)){
           sprms.push(param);
         }
       });
-
       const {cx_prm} = enm.predefined_formulas;
       specification.forEach(({nom, algorithm}) => {
         if(nom instanceof CatInserts) {
@@ -27581,10 +19923,8 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           sprms.push(nom);
         }
       });
-
       return _data.used_params = Object.freeze(sprms);
     }
-
     get split_type(){
       let {split_type} = this._obj;
       if(!split_type) {
@@ -27599,11 +19939,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return split_type;
     }
     set split_type(v){this._setter('split_type',v)}
-
-    /**
-     * Возвращает свойства для рисования москитки
-     * @return {Object}
-     */
     mosquito_props(layer, clr, ox) {
       let sz, nom, imposts;
       const elm = {
@@ -27623,7 +19958,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {check_params} = ProductsBuilding;
       const bounds = layer.bounds_inner();
       let aprop;
-      
       this.specification.forEach((rspec) => {
         if(this.check_restrictions(rspec, elm, false, len_angl) !== true || !check_params({
           params: this.selection_params,
@@ -27641,8 +19975,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
         if (!imposts && rspec.step && rspec.count_calc_method.is('steps') && rspec.nom.elm_type.is('impost')) {
           const h = (!rspec.step_angle || rspec.step_angle == 180) ? bounds.height : bounds.width;
-
-          // высоты поперечин могли задать в интерфейсе
           if(!aprop) {
             const prop = $p.cch.properties.predefined('traverse_heights');
             aprop = prop ? prop.avalue(
@@ -27665,13 +19997,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       });
       return {sz, nom, imposts};
     }
-
-    /**
-     * Рассчитывает периметр москитки и помещает его в элемент
-     * @param elm {BuilderElement|FakeElm}
-     * @param rspec {CatInsertsSpecificationRow}
-     * @return {Array}
-     */
     mosquito_perimeter(elm, rspec) {
       const check_cnn = {};
       const perimeter = elm.layer.perimeter_inner(rspec.sz, rspec.nom, check_cnn);
@@ -27696,7 +20021,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
         }
       });
       if(!check_cnn.cnn) {
-        // строка ошибки в спецификации
         const {cnn_ii_error: nom} = job_prm.nom;
         const {_ox, cnstr} = elm.layer;
         const row = _ox.specification.find({elm: -cnstr, nom}) || ProductsBuilding.new_spec_row({
@@ -27709,7 +20033,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return perimeter;
     }
-
     get available() {
       let {available} = this._obj;
       if(typeof available === 'boolean') {
@@ -27718,12 +20041,6 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       return cat.parameters_keys.get(available);
     }
     set available(v){this._setter('available',v)}
-
-    /**
-     * Возвращает массив рекомендуемых для элемента вставок
-     * @param {BuilderElement} elm
-     * @return {Array.<CatInserts>}
-     */
     offer_insets(elm) {
       const {inserts, _manager} = this;
       const res = new Set();
@@ -27745,38 +20062,21 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return Array.from(res);
     }
-    
     get clr_group() {
-      // values_options
       const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
       return tmp instanceof CatColor_price_groups ? tmp : cat.color_price_groups.get();
     }
     set clr_group(v) {
       this._setter('clr_group',v);
     }
-
     option_clr_group({elm, ...other}) {
       const tmp = utils.is_empty_guid(this._obj.clr_group) ? cat.color_price_groups.get() : super.clr_group;
       return tmp instanceof CatValues_options ? tmp.option_value({elm, ...other}) : tmp;
     }
-
   }
   $p.CatInserts = CatInserts;
-
 })($p);
-
-
-/**
- * Дополнительные методы справочника Номенклатура
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- * @module cat_nom
- * Created 23.12.2015
- */
-
-// определяем модификаторы
 $p.cat.nom.__define({
-
 	sql_selection_list_flds: {
 		value(initial_value){
 			return "SELECT _t_.ref, _t_.`_deleted`, _t_.is_folder, _t_.id, _t_.article, _t_.name as presentation, _u_.name as nom_unit, _k_.name as nom_kind, _t_.thickness," +
@@ -27785,82 +20085,51 @@ $p.cat.nom.__define({
 				" left outer join cat_nom_kinds as _k_ on _k_.ref = _t_.nom_kind %3 %4 LIMIT 300";
 		}
 	},
-
 	sql_selection_where_flds: {
 		value(filter){
 			return " OR _t_.article LIKE '" + filter + "' OR _t_.id LIKE '" + filter + "' OR _t_.name LIKE '" + filter + "'";
 		}
 	},
-
 });
-
-
-
-/*
- * Дополнительные методы справочника Контрагенты
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module cat_partners
- */
-
 $p.cat.partners.__define({
-
 	sql_selection_where_flds: {
 		value(filter){
 			return " OR inn LIKE '" + filter + "' OR name_full LIKE '" + filter + "' OR name LIKE '" + filter + "'";
 		}
 	}
 });
-
 $p.CatPartners.prototype.__define({
-
 	addr: {
 		get() {
-
 			return this.contact_information._obj.reduce(function (val, row) {
-
 				if(row.kind == $p.cat.contact_information_kinds.predefined("ЮрАдресКонтрагента") && row.presentation)
 					return row.presentation;
-
 				else if(val)
 					return val;
-
 				else if(row.presentation && (
 						row.kind == $p.cat.contact_information_kinds.predefined("ФактАдресКонтрагента") ||
 						row.kind == $p.cat.contact_information_kinds.predefined("ПочтовыйАдресКонтрагента")
 					))
 					return row.presentation;
-
 			}, "")
-
 		}
 	},
-
 	phone: {
 		get() {
-
 			return this.contact_information._obj.reduce(function (val, row) {
-
 				if(row.kind == $p.cat.contact_information_kinds.predefined("ТелефонКонтрагента") && row.presentation)
 					return row.presentation;
-
 				else if(val)
 					return val;
-
 				else if(row.kind == $p.cat.contact_information_kinds.predefined("ТелефонКонтрагентаМобильный") && row.presentation)
 					return row.presentation;
-
 			}, "")
 		}
 	},
-
-	// полное наименование с телефоном, адресом и банковским счетом
 	long_presentation: {
 		get() {
 		  const {addr, phone, inn, kpp} = this;
 			let res = this.name_full || this.name;
-
 			if(inn){
         res+= ", ИНН" + inn;
       }
@@ -27877,21 +20146,12 @@ $p.CatPartners.prototype.__define({
 		}
 	}
 });
-
-
-/**
- * Предопределенное поведение параметров
- *
- * Created 05.12.2021.
- */
-
 $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
   const {
     enm: {orientations, positions, elm_types, comparison_types: ect, cnn_sides},
     cch: {properties},
     cat: {formulas, clrs, production_params, property_values}, 
     CatInserts, DocCalc_order, DpBuyers_orderProductionRow, utils, job_prm} = $p;
-  
   function specifyNearest(elm, prm_row) {
     if(prm_row?.origin?.is('parent') || prm_row?.origin?.is('nearest')) {
       const nearest = elm.nearest();
@@ -27901,25 +20161,20 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
     return elm;
   }
-
-  // стандартная часть создания fake-формулы
   function formulate(name) {
     const prm = properties.predefined(name);
     if(prm) {
-      // fake-формула
       if(prm.calculated.empty()) {
         prm.calculated = formulas.create({ref: prm.ref, name: `predefined-${name}`}, false, true);
       }
       const {_data} = prm.calculated;
       if(!_data._formula) {
         switch (name) {
-
         case 'clr_product':
           _data._formula = function (obj) {
             return obj?.ox?.clr || clrs.get();
           };
           break;
-
         case 'clr_inset':
           _data._formula = function ({elm, cnstr, ox}) {
             let clr;
@@ -27932,7 +20187,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return clr;
           };
           break;
-          
         case 'clr_grp':
           _data._formula = function ({elm, clr, layer}) {
             if(!prm.values) {
@@ -27947,11 +20201,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return clr?.grouping || prm.values.find(v => v.name === 'Нет');
           };
           break;
-
         case 'inset':
           _data._formula = function ({elm, elm2, prm_row, ox, row}) {
-
-            // если запросили вставку соседнего элемента состава заполнения, возвращаем массив
             if(prm_row?.origin?.is('nearest')){
               if(elm instanceof Filling) {
                 const res = new Set();
@@ -27972,19 +20223,14 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 }
               }
             }
-            
             return elm?.inset;
           };
           break;
-
         case 'inserts_glass_type':
           _data._formula = function ({elm, elm2, prm_row, ox, row}) {
-            
             if(prm_row?.origin?.is('nearest') && (elm2 instanceof Filling || elm2?.is_glass)) {
               elm = elm2;
             }
-
-            // если запросили згачение вставки состава заполнения, возвращаем массив
             if((elm instanceof Filling || elm?.is_glass) && 
                 (prm_row?.comparison_type?.is('in') || prm_row?.comparison_type?.is('nin'))) {
               const res = new Set();
@@ -27995,11 +20241,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               });
               return Array.from(res);
             }
-
             return elm?.inset?.insert_glass_type;
           };
           break;
-            
         case 'elm_weight':
           _data._formula = function (obj) {
             const {elm, prm_row, ox} = obj || {};
@@ -28010,7 +20254,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return weight;
           };
           break;
-          
         case 'top_glass_weight':
           _data._formula = function (obj) {
             const {elm, elm2} = obj || {};
@@ -28032,7 +20275,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return 0;
           };
           break;
-          
         case 'layer_weight':
             _data._formula = function (obj) {
               let {ox, elm, layer, prm_row} = obj;
@@ -28052,7 +20294,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return Math.max(...weights);
             };
             break;
-          
         case 'up_glasses_weight':
           _data._formula = function ({elm, elm2, ox}) {
             let weight = 0;
@@ -28068,7 +20309,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return weight;
           };
           break;
-          
         case 'has_glasses':
           _data._formula = function ({ox}) {
             for(const row of ox.calc_order.production) {
@@ -28079,7 +20319,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-
         case 'has_glasses_separately':
           _data._formula = function ({ox}) {
             const {glasses} = job_prm.nom;
@@ -28091,7 +20330,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-          
         case 'has_glasses_outer':
           _data._formula = function ({elm, elm2}) {
             if(!(elm instanceof Profile) && (elm2 instanceof Profile)) {
@@ -28109,25 +20347,21 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-          
         case 'has_addition':
           _data._formula = function ({elm, layer}) {
             return Boolean(elm?.addls?.length);
           };
           break;
-          
         case 'thickness':
           _data._formula = function ({elm, prm_row}) {
             return elm.thickness;
           };
           break;
-          
         case 'region_thickness':
           _data._formula = function ({elm, prm_row}) {
             return elm.inset?.thickness(elm) || 0;
           };
           break;
-            
         case 'nearest_gl_thickness':
           _data._formula = function ({elm, elm2}) {
             if(elm instanceof ProfileAdjoining) {
@@ -28141,7 +20375,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return thickness;
           };
           break;
-
         case 'nearest_gl_var':
           _data._formula = function ({elm}) {
             if(elm instanceof ProfileAdjoining) {
@@ -28154,13 +20387,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return set.size > 1;
           };
           break;
-          
         case 'flap_overlay':
           _data._formula = function ({elm, prm_row}) {
             elm = specifyNearest(elm, prm_row);
             if(elm?.joined_nearests) {
               const nearests = {inner: [], outer: []};
-              // учтём сторону
               const {rays, layer} = elm;
               for(const profile of elm.joined_nearests()) {
                 if(elm.cnn_side(profile, null, rays).is('outer')){
@@ -28174,7 +20405,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 for(const test2 of nearests.outer) {
                   const sub = test1.generatrix.get_subpath(test2.b, test2.e);
                   if(sub?.length > consts.sticking) {
-                    // учтём ось поворота
                     return test1.layer.is_rotation_axis(test1) || test2.layer.is_rotation_axis(test2);
                   }
                 }
@@ -28183,13 +20413,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-          
         case 'flap_overlay_axis':
           _data._formula = function ({elm, prm_row}) {
             elm = specifyNearest(elm, prm_row);
             if(elm?.joined_nearests) {
               const nearests = {inner: [], outer: []};
-              // учтём сторону
               const {rays, layer} = elm;
               for(const profile of elm.joined_nearests()) {
                 if(elm.cnn_side(profile, null, rays).is('outer')){
@@ -28203,7 +20431,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
                 for(const test2 of nearests.outer) {
                   const sub = test1.generatrix.get_subpath(test2.b, test2.e);
                   if(sub?.length > consts.sticking) {
-                    // учтём ось поворота
                     return test1.layer.is_rotation_axis(test1) && test2.layer.is_rotation_axis(test2);
                   }
                 }
@@ -28212,7 +20439,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-          
         case 'nearest_flap_z':
           _data._formula = function ({elm}) {
             let res = 0;
@@ -28226,7 +20452,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return res;
           };
           break;
-
         case 'elm_orientation':
           _data._formula = function ({elm, elm2, prm_row, layer}) {
             if(prm_row?.origin?.is('parent')) {
@@ -28244,7 +20469,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.orientation || elm2?.orientation || orientations.get();
           };
           break;
-
         case 'elm_pos':
           _data._formula = function ({elm, elm2}) {
             if(!(elm instanceof ProfileItem) && elm2 instanceof ProfileItem) {
@@ -28253,7 +20477,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.pos || positions.get();
           };
           break;
-          
         case 'node_pos':
           _data._formula = function ({elm, node}) {
             if(elm && node) {
@@ -28274,7 +20497,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return positions.get();
           };
           break;
-
         case 'is_node_last':
           _data._formula = function ({elm, node}) {
             if(elm && node) {
@@ -28293,7 +20515,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-          
         case 'in_virt_layer':
           _data._formula = function ({elm, layer}) {
             if(!layer) {
@@ -28302,7 +20523,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer?.in_virt_layer || false;
           };
           break;         
-          
         case 'joins_last_elm':
           _data._formula = function ({elm, elm2, prm_row, node}) {
             if(!(elm instanceof ProfileItem) && elm2 instanceof ProfileItem) {
@@ -28328,19 +20548,16 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-
         case 'cnn_side':
           _data._formula = function ({elm, elm2}) {
             return (elm && elm2) ? elm2.cnn_side(elm) : cnn_sides.get();
           };
           break;
-
         case 'is_composite':
           _data._formula = function ({elm}) {
             return elm?.clr?.is_composite();
           };
           break;          
-          
         case 'elm_type':
           _data._formula = function ({elm, elm2, row}) {
             if(elm2 && row?.set_specification?.is?.('САртикулом2')) {
@@ -28349,21 +20566,18 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return elm?.elm_type || elm_types.get();
           };
           break;
-
         case 'elm_rectangular':
           _data._formula = function ({elm}) {
             const {is_rectangular} = elm;
             return typeof is_rectangular === 'boolean' ? is_rectangular : true;
           };
           break;
-          
         case 'region':
             _data._formula = function (obj) {
               const region = obj.region || obj.layer?.region;
               return typeof region === 'number' ? region : 0;
             };
             break;
-            
         case 'furn':
           _data._formula = function ({elm, layer, ox, cnstr, prm_row}) {
             if(!layer) {
@@ -28374,7 +20588,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             if(prm_row?.origin?.is('nearest') && layer.layer) {
               for(const other of layer.layer.contours) {
-                // TODO: добавить проверку наличия примыкания слоя к текущему
                 if(other !== layer) {
                   return other.furn;
                 }
@@ -28383,7 +20596,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer.furn;        
           };
           break;
-
         case 'sys':
           _data._formula = function ({elm, layer, ox, cnstr, prm_row}) {
             if(!layer) {
@@ -28392,7 +20604,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             if(layer) {
               if(prm_row?.origin?.is('nearest') && layer.layer) {
                 for(const other of layer.layer.contours) {
-                  // TODO: добавить проверку наличия примыкания слоя к текущему
                   if(other !== layer) {
                     return other.sys;
                   }
@@ -28415,7 +20626,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return ox.sys;
           };
           break;
-          
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {
@@ -28424,13 +20634,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer ? layer.h_ruch : 0;
           };
           break;
-
         case 'width':
           _data._formula = function (obj) {
             return (obj?.elm instanceof Sectional) ? obj.elm.length : obj?.ox?.y || 0;
           };
           break;
-          
         case 'height':
           _data._formula = function ({elm, layer, prm_row, ox, cnstr}) {
             if(!layer && elm) {
@@ -28442,7 +20650,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return layer ? layer.h : (ox.constructions.find({cnstr})?.h || 0);
           };
           break;
-
         case 'rotation_axis':
           _data._formula = function ({elm, layer, prm_row}) {
             if(!layer && elm?.layer) {
@@ -28465,7 +20672,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return res;
           };
           break;
-
         case 'branch':
           _data._formula = function ({elm, layer, ox, calc_order}) {
             if(!calc_order && ox) {
@@ -28477,7 +20683,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             else if(!calc_order && elm) {
               calc_order = elm.ox.calc_order;
             }
-
             const prow = (ox || layer?._ox || elm?.ox).params.find({param: prm});
             if(prow && !prow.value.empty()) {
               return prow.value;  
@@ -28486,7 +20691,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return branch && !branch.empty() ? branch : calc_order.manager.branch;
           };
           break;
-          
         case 'order_category':
             _data._formula = function ({ox, calc_order, calc_order_row}) {
               if(!calc_order) {
@@ -28500,7 +20704,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
               return calc_order.category;
             };
             break;
-            
         case 'has_delivery':
           _data._formula = function ({ox, calc_order, calc_order_row}) {
             if(!calc_order) {
@@ -28521,7 +20724,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           };
           break;
-
         default:
           _data._formula = function () {};
         }
@@ -28529,62 +20731,56 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     }
     return prm;
   }
-
-  // создаём те, где нужна только формула со стандартным check_condition
   for(const name of [
-    'up_glasses_weight',// масса заполнений, опирающихся на профиль
-    'has_glasses',      // бит в заказе есть заполнения
-    'has_glasses_separately',// бит в заказе есть заполнения отдельно
-    'has_glasses_outer',  //  бит к профилю примыкает заполнение с другой стороны
-    'has_addition',     // бит есть добор у текущего профиля
-    'elm_weight',       // масса элемента
-    'top_glass_weight', // масса заполнений сверху
-    'elm_orientation',  // ориентация элемента
-    'elm_pos',          // положение элемента
-    'node_pos',         // положение узла профиля
-    'layer_weight',     // масса слоя с учётом признака 'Фильтр по тяжелой створке'
-    'is_node_last',     // крайний по координатам узел в текущем слое
-    'in_virt_layer',    // элемент находится в иерархии виртуального слоя
-    'joins_last_elm',   // примыкает крайний элемент
-    'flap_overlay',     // есть наложение створок
-    'flap_overlay_axis',// есть наложение створок с осями поворота
-    'cnn_side',         // сторона соединения (изнутри-снаружи)
-    'elm_type',         // тип элемента
-    'elm_rectangular',  // прямоугольность элемента
-    'branch',           // отдел абонента текущего контекста
-    'furn',             // фурнитура текущего контекста
-    'sys',              // система текущего контекста
-    'inset',            // вставка текущего элемента
-    'inserts_glass_type',  // тип вставки заполнения
-    'clr_product',      // цвет изделия
-    'clr_inset',        // цвет вставки в элемент
-    'clr_grp',          // группа цветов с учётом перевёрта сторон (каширование)
-    'handle_height',    // высота ручки
-    'width',            // ширина из параметра
-    'height',           // высота слоя или изделия
-    'region',           // ряд
-    'is_composite',     // у элемента составной цвет
-    'rotation_axis',    // у слоя есть ось поворота
-    'thickness',        // толщина элемента 
-    'region_thickness', // толщина ряда заполнения
-    'nearest_gl_thickness',// толщина примыкающего заполнения
-    'nearest_gl_var',   // бит отличия толщин примыкающих заполнений
-    'nearest_flap_z',   // z-индекс примыкающей створки 
-    'order_category',   // категория заказа
-    'has_delivery',     // есть доставка
+    'up_glasses_weight',
+    'has_glasses',     
+    'has_glasses_separately',
+    'has_glasses_outer', 
+    'has_addition',    
+    'elm_weight',      
+    'top_glass_weight',
+    'elm_orientation', 
+    'elm_pos',         
+    'node_pos',        
+    'layer_weight',    
+    'is_node_last',    
+    'in_virt_layer',   
+    'joins_last_elm',  
+    'flap_overlay',    
+    'flap_overlay_axis',
+    'cnn_side',        
+    'elm_type',        
+    'elm_rectangular', 
+    'branch',          
+    'furn',            
+    'sys',             
+    'inset',           
+    'inserts_glass_type', 
+    'clr_product',     
+    'clr_inset',       
+    'clr_grp',         
+    'handle_height',   
+    'width',           
+    'height',          
+    'region',          
+    'is_composite',    
+    'rotation_axis',   
+    'thickness',       
+    'region_thickness',
+    'nearest_gl_thickness',
+    'nearest_gl_var',  
+    'nearest_flap_z',  
+    'order_category',  
+    'has_delivery',    
   ]) {
     formulate(name);
   }
-
-  // угол к следующему
   ((name) => {
     const prm = formulate(name);
     if(prm) {
-      // fake-признак использования
       if(!prm.use.count()) {
         prm.use.add({count_calc_method: 'ПоПериметру'});
       }
-      // проверка условия
       prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
         if(elm && elm._row && elm._row.hasOwnProperty(name)) {
           return utils.check_compare(elm._row.angle_next, prm_row.value, prm_row.comparison_type, prm_row.comparison_type._manager);
@@ -28593,18 +20789,13 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('angle_next');
-
-  // высоты поперечин
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      // параметр не вычисляемый
       prm.calculated = '';
-      // проверка условия
       prm.check_condition = function () {
         return true;
       };
-      // значение (массив высот)
       prm.avalue = function (raw) {
         const res = [];
         if(raw) {
@@ -28619,12 +20810,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('traverse_heights');
-
-  // уровень слоя
   ((name) => {
     const prm = formulate(name);
     if(prm) {
-      // проверка условия
       prm.check_condition = function ({layer, elm, prm_row}) {
         if(!layer && elm) {
           layer = elm.layer;
@@ -28637,14 +20825,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('layer_level');
-
-  // вхождение элемента в габариты
   ((name) => {
     const prm = formulate(name);
     if(prm) {
-      // проверка условия
       const ne = [ect.ne, ect.nin, ect.ninh, ect.nfilled];
-
       prm.check_condition = function ({elm, layer, prm_row}) {
         if(!prm_row._bounds) {
           try {
@@ -28671,29 +20855,21 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('bounds_contains');
-
-  // способ придания цвета
   ((name) => {
     const prm = formulate(name);
     if(prm) {
-      // проверка условия
       prm.check_condition = function ({elm, eclr, row_spec, prm_row}) {
         const ct = prm_row.comparison_type || ect.eq;
-
-        // если не задан eclr, используем цвет элемента
         const no_eclr = !eclr;
         if(no_eclr) {
           eclr = elm.clr;
         }
-
         const value = this.extract_value(prm_row);
         if(eclr.is_composite()) {
           const {clr_in, clr_out} = eclr;
           return utils.check_compare(clr_in.area_src, value, ct, ect) ||
               utils.check_compare(clr_out.area_src, value, ct, ect);
         }
-
-        // если в "системе" задан список цветов, не требующих покраски, смотрим на него, иначе - не белый
         if(eclr.area_src.empty()) {
           return false;
         }
@@ -28708,29 +20884,22 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return false;
           }
         }
-
         return utils.check_compare(eclr.area_src, value, ct, ect);
       }
     }
   })('coloring_kind');
-
-  // признак использования строки спецификации
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      // проверка условия
       prm.check_condition = function ({row_spec, prm_row, elm, elm2, cnstr, origin, ox}) {
         const value = elm[row_spec.nom.ref];
         return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
       }
     }
   })('use');
-
-  // направление открывания
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      // проверка условия
       prm.check_condition = function ({prm_row, elm, elm2, layer}) {
         if(!layer && elm) {
           layer = elm.layer;
@@ -28750,12 +20919,9 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       }
     }
   })('direction');
-
-  
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      // специфическая фильтрация
       prm.check_condition = function ({prm_row, elm, layer, origin, ox}) {
         if(!ox) {
           ox = (elm || layer)?.project.ox;
@@ -28786,16 +20952,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
       };
     }
   })('prod_compound');
-
-  // "состав" - позволяет обратиться к массиву экземпляров изделий или элементов заказа
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      // данный параметр не используется для фильтрации
       prm.check_condition = function () {
         return true;
       };
-      // состав заполнений
       prm.glasses = function ({elm, ox}) {
         const res = [];
         if(!ox) {
@@ -28807,7 +20969,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             leading_product : row?.characteristic;
           const glasses = leading_product && !leading_product.empty() && leading_elm ?
             [characteristic.glasses.find({elm: leading_elm})] : (characteristic.glasses || []);
-          
           for(const glrow of glasses) {
             const glass = {
               formula: glrow.formula,
@@ -28828,11 +20989,10 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             res.push(glass);
           }
         };
-        
         const calc_order = ox?.calc_order;
         if(Array.isArray(elm?.row_spec?.[prm.ref]?.keys)) {
           elm.row_spec[prm.ref].keys.forEach((key) => {
-            const parts = key.split(':'); // ref:specimen:cnstr
+            const parts = key.split(':');
             push(calc_order.production.find({characteristic: parts[0]}), parts[1]);
           });
         }
@@ -28848,8 +21008,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         }
         return res;
       };
-
-      // состав изделий
       prm.products = function ({elm, ox}) {
         const res = [];
         if(!ox) {
@@ -28857,7 +21015,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
         }
         const calc_order = ox?.calc_order;
         elm?.row_spec[prm.ref]?.keys?.forEach((key) => {
-          const parts = key.split(':'); // ref:specimen:cnstr
+          const parts = key.split(':');
           const row = calc_order.production.find({characteristic: parts[0]});
           if(row) {
             const cx = row.characteristic;
@@ -28872,49 +21030,27 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             });
           }
         });
-
         return res;
       };
     }
   })('compound');
-
-  // наличие связанного профиля ряда
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
-      // проверка условия
       prm.check_condition = function ({prm_row, elm}) {
         const has = elm.joined_nearests().some((elm2) => elm2.rnum === prm_row.value);
         return prm_row.comparison_type.is('ne') ? !has : has;
-        //return utils.check_compare(value, prm_row.value, prm_row.comparison_type, ect);
       }
     }
   })('has_region_elm');
-  
-  // латиница в маркировке
   ((name) => {
     const prm = properties.predefined(name);
     if(prm) {
       prm.fetch_value = job_prm.builder.mark_latin ? utils.translit : (v) => v;
     }
   })('builder/mark_latin');
-  
-
 });
-
-
-/*
- * Модуль объекта документа Расчет-заказ
- * Обрботчики событий after_create, after_load, before_save, after_save, value_change
- * Методы выполняются в контексте текущего объекта this = DocObj
- *
- * &copy; Evgeniy Malyarov http://www.oknosoft.ru 2014-2018
- *
- * @module doc_calc_order
- */
-
 class FakeLenAngl {
-
   constructor({len, inset}) {
     this.len = len;
     this.origin = inset;
@@ -28922,53 +21058,40 @@ class FakeLenAngl {
     this.alp2 = 0;
     this.angle = 0;
   }
-
   get cnstr() {
     return 0;
   }
-
 }
-
 class FakeElm {
-
   constructor(row_spec) {
     this.row_spec = row_spec;
   }
-
   get elm() {
     return 0;
   }
-
   get angle_hor() {
     return 0;
   }
-
   get _row() {
     return this;
   }
-
   get clr() {
     const {row_spec} = this;
     return row_spec instanceof $p.DocCalc_orderProductionRow ? row_spec.characteristic.clr : row_spec.clr;
   }
-
   get len() {
     return this.row_spec.len;
   }
-
   get height() {
     const {height, width} = this.row_spec;
     return height === undefined ? width : height;
   }
-
   get depth() {
     return this.row_spec.depth || 0;
   }
-
   get s() {
     return this.row_spec.s;
   }
-
   get perimeter() {
     const {len, height, width} = this.row_spec;
     return [
@@ -28978,7 +21101,6 @@ class FakeElm {
       {len: height === undefined ? width : height, angle: 270, angle_next: 90},      
     ];
   }
-
   bounds_inner(size = 0) {
     const {len, height} = this;
     return new paper.Rectangle({
@@ -28986,43 +21108,29 @@ class FakeElm {
       to: [len - 2 * size, height - 2 * size]
     });
   }
-
   get x1() {
     return 0;
   }
-
   get y1() {
     return 0;
   }
-
   get x2() {
     return this.height;
   }
-
   get y2() {
     return this.len;
   }
-
   get ox() {
     const {project, row_spec} = this;
     return project ? project.ox : row_spec._owner._owner;
   }
-  
   get orientation() {
     const {orientations} = $p.enm;
     return this.len > this.height ? orientations.hor : orientations.vert;
   }
-
 }
-
-// свойства и методы объекта
 $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
-
-  // подписки на события
-
-  // после создания надо заполнить реквизиты по умолчанию: контрагент, организация, договор
   after_create(user) {
-
     const {enm, cat, job_prm, DocCalc_order} = $p;
     let current_user;
     if(job_prm.is_node) {
@@ -29039,73 +21147,46 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         this._obj.branch = sessionStorage.branch || cat.abonents.current.ref;
       }
     }
-
     if(!current_user || current_user.empty()) {
       current_user = $p.current_user;
     }
     if(!current_user || current_user.empty()) {
       return Promise.resolve(this);
     }
-
     const {acl_objs} = current_user;
-
-    //Менеджер
     this.manager = current_user;
-
-    //Организация
     if(this.organization.empty()) {
       acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
         this.organization = row.acl_obj;
         return false;
       });
     }
-
-    //Подразделение
     DocCalc_order.set_department.call(this);
-
-    //Контрагент
     if(this.partner.empty()) {
       acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
         this.partner = row.acl_obj;
         return false;
       });
     }
-
-    //Склад
     acl_objs.find_rows({by_default: true, type: cat.stores.class_name}, (row) => {
       this.warehouse = row.acl_obj;
       return false;
     });
-
-    //Договор
     if(this.contract.empty() || this.contract.owner !== this.partner 
         || this.contract.organization !== this.organization || this.contract.department !== this.department) {
       this.contract = cat.contracts.by_partner_and_org(this.partner, this.organization, undefined, job_prm.divisions?.in_contracts && this.department);
     }
-
-    //СостояниеТранспорта
     this.obj_delivery_state = enm.obj_delivery_states.Черновик;
-
-    //Номер документа
     return this.number_doc ? Promise.resolve(this) : this.new_number_doc();
-
   }
-
-  // перед записью надо присвоить номер для нового и рассчитать итоги
   before_save(attr) {
-
     const {ui, utils, adapters: {pouch}, wsql, md, enm: {
       obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен, Архив},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
     const  {blank, moment} = utils;
-
-    //Для шаблонов, отклоненных и отозванных проверки выполнять не будем, чтобы возвращалось всегда true
-    //при этом, просто сразу вернуть true не можем, т.к. надо часть кода выполнить - например, сумму документа пересчитать
     const {obj_delivery_state, _obj, _manager, class_name, category, rounding, timestamp, _deleted} = this;
     const must_be_saved = ![Подтвержден, Отправлен].includes(obj_delivery_state);
-
-    // если установлен признак проведения, проверим состояние транспорта
     if(_deleted) {
       this.obj_delivery_state = Архив;
     }
@@ -29124,8 +21205,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else if(obj_delivery_state == Подтвержден) {
       this.obj_delivery_state = Отправлен;
     }
-
-    // проверим заполненность подразделения
     if(obj_delivery_state == Шаблон) {
       this.department = blank.guid;
       this.partner = blank.guid;
@@ -29153,7 +21232,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
         return false || must_be_saved;
       }
-
       const err_prices = this.check_prices();
       if(err_prices) {
         ui?.dialogs?.alert({
@@ -29168,10 +21246,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-
-    // рассчитаем итоговые суммы документа и проверим наличие обычных и критических ошибок
     const errors = _deleted ? new Map() : this.before_save_errors();
-
     if (errors.size) {
       let critical, text = '';
       errors.forEach((errors, characteristic) => {
@@ -29185,7 +21260,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           });
         }
       });
-
       if (critical && !must_be_saved) {
         if(obj_delivery_state == Отправлен) {
           this.obj_delivery_state = Черновик;
@@ -29199,11 +21273,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         });
       }
     }
-
-    // фильтр по статусу
     if(obj_delivery_state == Шаблон) {
       _obj.state = 'template';
-      // Шаблоны имеют дополнительное свойство, в котором можно задать доступные системы
       const permitted_sys = $p.cch.properties.predefined('permitted_sys');
       if(permitted_sys) {
         if(!this.extra_fields.find({property: permitted_sys})) {
@@ -29232,11 +21303,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else {
       _obj.state = 'draft';
     }
-
-    // проверка заполненности полей теперь вызывает runtime-error
     this.check_mandatory();
-    
-    // сохраним связанные заказы
     const rmi = []
     for(const row of this.orders) {
       const {invoice} = row;
@@ -29250,16 +21317,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rmi) {
       this.orders.del(row);
     }
-
-    // массив сырых данных изменённых характеристик
     const sobjs = this.product_rows(true, attr);
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
-    
     return ($p.job_prm.builder?.cx_in_order && obj_delivery_state !== Шаблон) ?
       this.save_with_cx(sobjs, db) : this.save_normal(sobjs, db);
-    
   }
-  
   save_with_cx(sobjs, db) {
     const {utils, wsql, job_prm} = $p;
     const  {moment} = utils;
@@ -29298,7 +21360,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     else {
       tmp.search = ((_obj.number_doc || '') + (_obj.note ? ' ' + _obj.note : '')).toLowerCase();
     }
-    
     return Promise.resolve()
       .then(() => {
         if(!this.is_new() && !tmp._rev) {
@@ -29351,14 +21412,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         _manager.emit_async('svgs', this);
         return null;
       });
-
   }
-
   save_normal(sobjs, db) {
     const {ui, utils, wsql, md, enm: {obj_delivery_states: {Шаблон}}} = $p;
     const  {blank, moment} = utils;
     const {obj_delivery_state, _obj, _manager, class_name, timestamp, _deleted} = this;
-    // если изменился hash заказа, добавим его в sobjs
     if(this._modified || this.is_new()) {
       const hash = this._hash();
       if(timestamp && timestamp.hash === hash) {
@@ -29385,62 +21443,17 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     sobjs = utils._clone(sobjs, true);
-
-    // пометим на удаление неиспользуемые характеристики
-    /*
-    // этот кусок не влияет на возвращаемое before_save значение и выполняется асинхронно
-    const unused = () => db.query('linked', {startkey: [this.ref, 'cat.characteristics'], endkey: [this.ref, 'cat.characteristics\u0fff']})
-      .then(({rows}) => {
-        if(!rows.length) {
-          return 0;
-        }
-        const keys = [];
-        for (const {id} of rows) {
-          const ref = id.substring(20);
-          if(this.production.find({characteristic: ref})) {
-            continue;
-          }
-          keys.push(id);
-        }
-        const  timestamp = {
-          moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'), 
-          user: wsql.get_user_param('user_name')
-        };
-        return db.allDocs({keys, limit: keys.length})
-          .then(({rows}) => {
-            keys.length = 0;
-            for(const {doc, key, error, value} of rows) {
-              if(error || value.deleted) {
-                continue;
-              }
-              keys.push({_id: key, _rev: value.rev, _deleted: true, timestamp});
-            }
-            return db.bulkDocs(keys)
-              .then(() => keys.length);
-          })
-      })
-      .then((res) => {
-        res && _manager.emit_async('svgs', this);
-        // null из before_save, прерывает стандартную обработку
-        return null;
-      })
-      .catch((err) => null);
-    */
-
     const unused = () => utils.sleep(20).then(() => {
       _manager.emit_async('svgs', this);
       return null;
     });
-
     const save_error = (reason, obj) => {
       const note = `Ошибка при записи ${this.presentation}, ${reason}`
       $p.record_log({class: 'save_error', obj, note});
       throw new Error(note);
     };
-
     const bulk = () => {
       const _id = `${class_name}|${_obj.ref}`;
-      // обычные заказы пишем честно - с текущими версиями, версии шаблонов не учитываем
       const rev = Promise.resolve().then(() => {
         if(obj_delivery_state == Шаблон) {
           return db.allDocs({keys: sobjs.map(({_id}) => _id)})
@@ -29470,18 +21483,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       })
         .catch(() => null);
-
       return rev.then(() => {
         sobjs.sort((a, b) => utils.sort('_id'));
         return db.bulkDocs(sobjs);
       });
     };
     let fin = Promise.resolve();
-
     return !sobjs.length ? unused() : this.save_linked(obj_delivery_state, db)
       .then(bulk)
       .then((bres) => {
-        // освежаем ревизии, проверяем успешность записи и вызываем after_save
         for(const row of bres) {
           const [cname, ref] = row.id.split('|');
           const mgr = md.mgr_by_class_name(cname);
@@ -29511,7 +21521,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             throw err;
           }
         }
-        // null из before_save, прерывает стандартную обработку
         return fin.then(unused);
       })
       .catch((err) => {
@@ -29523,7 +21532,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       });
   }
-  
   save_linked(obj_delivery_state, db) {
     return obj_delivery_state.is('Шаблон') ? Promise.resolve() : db
       .query('linked', {startkey: [this.ref, 'doc.calc_order'], endkey: [this.ref, 'doc.calc_order\u0fff']})
@@ -29562,10 +21570,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           })
       });
   }
-
-  /**
-   * Рассчитывает итоговые суммы документа и наличие обычных и критических ошибок
-   */
   before_save_errors() {
     let doc_amount = 0, internal = 0;
     const errors = this._data.errors = new Map();
@@ -29573,10 +21577,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const {cat: {margin_coefficients}, enm: {elm_types: {ОшибкаКритическая, ОшибкаИнфо}}, job_prm} = $p;
     this.production.forEach((calc_order_row) => {
       const {amount, amount_internal, characteristic, nom, discount_percent, discount_percent_internal} = calc_order_row;
-
       doc_amount += amount;
       internal += amount_internal;
-      
       const registerError = ({nom, elm, specify}) => {
         if([ОшибкаКритическая, ОшибкаИнфо].includes(nom.elm_type)) {
           if(!errors.has(characteristic)){
@@ -29585,7 +21587,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           if(!errors.has(nom.elm_type)){
             errors.set(nom.elm_type, new Set());
           }
-          // накапливаем ошибки в разрезе критичности и в разрезе продукций - отдельные массивы
           const text = specify ? `${nom.name} ${specify}` : nom;
           if(!errors.get(characteristic).has(text)){
             errors.get(characteristic).set(text, new Set());
@@ -29594,7 +21595,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           errors.get(nom.elm_type).add(text);
         }
       };
-      
       if(job_prm.pricing.marginality_in_spec === 1) {
         const slice = margin_coefficients.slice({date, kind: 2, calc_order_row});
         const discountMax = slice.coefficient({
@@ -29616,26 +21616,19 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.amount_operation = this.doc_currency.to_currency(doc_amount, date).round(rounding);
     return errors;
   }
-
-  /**
-   * @summary Рассчитывает маршрут репликации
-   */
   set_route() {
     const {enm, cat, CatBranches, CatAbonents, job_prm: {planning}, utils} = $p;
     const current = sessionStorage.branch ? cat.branches.get(sessionStorage.branch) : cat.abonents.current;
     let {branch, route, obj_delivery_state} = this;
-    
     if(obj_delivery_state.is('Шаблон')) {
       if(this.route) {
         this.route = '';
       }
       return;
     }
-    
     if((!branch || branch instanceof CatAbonents) && current instanceof CatBranches) {
       this.branch = branch = current;
     }
-    
     const append = (ref) => {
       if(!route.includes(ref)) {
         if(route.length) {
@@ -29661,13 +21654,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    
     append(branch.ref);
     append2(branch);
-    
     append(current.ref);
     append2(current);
-    
     if(this.route !== route) {
       this.route = route;
     }
@@ -29681,13 +21671,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.obj_delivery_state = enm.obj_delivery_states.Отправлен;
     }
   }
-
-  /**
-   * @summary Чтение объекта
-   * @desc шаблоны читаем из ram, если в данных есть характеристики - создаём
-   * @param attr
-   * @return {*}
-   */
   load(attr = {}) {
     if(this.obj_delivery_state.is('Шаблон')) {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
@@ -29695,17 +21678,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return super.load(attr)
       .then(() => this.load_cx());
   }
-
   _mixin(attr, include, exclude, silent) {
     super._mixin(attr, include, exclude, silent);
     this.load_cx();
   }
-
   _fix_plain() {
     super._fix_plain();
     this.load_cx();
   }
-
   load_cx() {
     if($p.job_prm.builder?.cx_in_order) {
       const calc_order = this.ref;
@@ -29727,16 +21707,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this;
   }
-
-  // шаблоны сохраняем в базу ram
   save(post, operational, attachments, attr = {}) {
     if(this.obj_delivery_state == 'Шаблон') {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
     }
     return super.save(post, operational, attachments, attr);
   }
-
-  // проверяет заполненность цен
   check_prices() {
     const {job_prm, pricing} = $p;
     if(job_prm.pricing.skip_empty_in_spec) {
@@ -29751,8 +21727,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     });
     return err;
   }
-
-  // при изменении реквизита
   value_change(field, type, value) {
     const ads = [];
     const {cat: {contracts}, job_prm: {divisions}} = $p;
@@ -29774,7 +21748,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.contract = contracts.by_partner_and_org(this.partner, this.organization, undefined, value);
       ads.push('contract');
     }
-    // если изменение инициировано человеком, дополним список изменённых полей
     if(field === 'obj_delivery_state' && this.clear_templates_props) {
       ads.push('extra_fields');
       if(value != 'Шаблон') {
@@ -29783,7 +21756,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     ads.length && this._manager.emit_add_fields(this, ads);
   }
-
   accessories(mode='create', ox) {
     const {cat: {characteristics}, job_prm: {nom}} = $p;
     const {production} = this;
@@ -29798,7 +21770,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
       return;
     }
-
     let cx = crow?.characteristic || characteristics.find({calc_order: this, owner: nom.accessories});
     if(!cx) {
       cx = characteristics.create({
@@ -29820,8 +21791,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return cx;
   }
-
-  // удаление строки
   del_row(row) {
     if(row instanceof $p.DocCalc_orderProductionRow) {
       const {nom, characteristic} = row;
@@ -29835,8 +21804,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
       if(!characteristic.empty() && !characteristic.calc_order.empty()) {
         const {production, orders, presentation, _data} = this;
-
-        // запрет удаления подчиненной продукции
         const {leading_elm, leading_product, origin} = characteristic;
         if(!leading_product.empty() && leading_product.calc_order_row && leading_elm) {
           ui?.dialogs?.alert({
@@ -29846,15 +21813,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           });
           return false;
         }
-        
         const {_loading} = _data;
         _data._loading = true;
-        
-        // циклическое удаление ведомых при удалении основного изделия
         production.find_rows({ordn: characteristic}).forEach(({_row}) => {
           production.del(_row.row - 1);
         });
-        // чистим возможные строки аксессуаров
         production.find_rows({nom: job_prm.nom.accessories}, (prow) => {
           const cx = prow.characteristic;
           if(cx.specification.find({specify: characteristic})) {
@@ -29881,8 +21844,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this;
   }
-  
-  // при удалении строки
   after_del_row(name, rows) {
     if(name === 'production'){
       this.product_rows();
@@ -29893,8 +21854,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return this;
   }
-
-  // вместе с заказом выгружаем продукцию
   unload() {
     this.production.forEach(({characteristic}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
@@ -29903,7 +21862,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     });
     return super.unload();
   }
-
   get presentation() {
     if(this.empty()) {
       return '';
@@ -29923,23 +21881,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this._presentation = String(v);
     }
   }
-
-
-  /**
-   * Возвращает валюту документа
-   */
   get doc_currency() {
     const currency = this.contract.settlements_currency;
     return currency.empty() ? $p.job_prm.pricing.main_currency : currency;
   }
   set doc_currency(v) {
-
   }
-
-  /**
-   * Число знаков округления
-   * @type {Number}
-   */
   get rounding() {
     const {pricing} = $p.job_prm;
     if(!pricing.hasOwnProperty('rounding')) {
@@ -29951,11 +21898,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return pricing.rounding;
   }
-
-  /**
-   * Отдел абонента текущего заказа
-   * @type {CatBranches}
-   */
   get branch() {
     if(!this._obj.branch) {
       const {current_user, cat: {branches, abonents}} = $p;
@@ -29968,11 +21910,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   set branch(v) {
     this._setter('branch',v);
   }
-
-  /**
-   * Дата прайса с учётом константы valid_days (Счет действителен N дней)
-   * @type {Date}
-   */
   get price_date() {
     const {utils, job_prm: {pricing}} = $p;
     const {date} = this;
@@ -29982,10 +21919,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     tmp.setHours(23, 59, 59, 999);
     return tmp;
   }
-
-  /**
-   * При установке договора, синхронно устанавливаем параметры НДС
-   */
   get contract() {
     return this._getter('contract');
   }
@@ -29994,14 +21927,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.vat_consider = this.contract.vat_consider;
     this.vat_included = this.contract.vat_included;
   }
-
-  /**
-   * Пересчитывает номера изделий в продукциях,
-   * обновляет контрагента, состояние транспорта и подразделение
-   * @param {Boolean} [save] - если указано, выполняет before_save характеристик
-   * @param {Object} [attr] - дополнительные атрибуты
-   * @return {Array<Object>}
-   */
   product_rows(save, attr) {
     let res = [], weight = 0;
     const {production, partner, obj_delivery_state, route, force_route, exclude_route, department, _deleted} = this;
@@ -30018,7 +21943,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.force_route !== force_route ||
           characteristic.exclude_route !== exclude_route ||
           characteristic.department !== department) {
-
           characteristic.product = row;
           characteristic.obj_delivery_state = obj_delivery_state;
           characteristic.route = route;
@@ -30027,7 +21951,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           characteristic.partner = partner;
           characteristic.department = department;
           characteristic._deleted = _deleted;
-
           if(!characteristic.owner.empty()) {
             if(save) {
               if(characteristic.before_save(attr) === false) {
@@ -30060,15 +21983,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         weight += quantity * characteristic.weight;
       }
     });
-    // масса изделий заказа
     this.weight = weight.round(2);
     return res;
   }
-
-  /**
-   * рассчитывает итоги диспетчеризации
-   * @return {Promise}
-   */
   dispatching_totals() {
     const options = {
       reduce: true,
@@ -30096,18 +22013,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return res;
       });
   }
-
-  /**
-   * Возвращает данные для печати
-   */
   print_data(attr = {}) {
     const {organization, bank_account, partner, contract, manager} = this;
     const {individual_person} = manager;
     const our_bank_account = bank_account && !bank_account.empty() ? bank_account : organization.main_bank_account;
     const get_imgs = [];
     const {cat: {contact_information_kinds}, utils: {blank, blob_as_text, snake_ref}} = $p;
-
-    // заполняем res теми данными, которые доступны синхронно
     const res = {
       АдресДоставки: this.shipping_address,
       ВалютаДокумента: this.doc_currency.presentation,
@@ -30231,16 +22142,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       Комментарий: this.note,
       СоставныеИзделия: new Map(),
     };
-
-    // дополняем значениями свойств
     this.extra_fields.forEach((row) => {
       res['Свойство' + row.property.name.replace(/\s/g, '')] = String(row.value);
     });
-
-    // TODO: дополнить датами доставки и монтажа
     res.МонтажДоставкаСамовывоз = !this.shipping_address ? 'Самовывоз' : 'Монтаж по адресу: ' + this.shipping_address;
-
-    // получаем логотип организации
     for (let key in organization._attachments) {
       if(key.indexOf('logo') != -1) {
         get_imgs.push(organization.get_attachment(key)
@@ -30254,24 +22159,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         break;
       }
     }
-
     return this.load_linked_refs().then(() => {
-
-      // получаем эскизы продукций, параллельно накапливаем количество и площадь изделий
       let editor, imgs = Promise.resolve();
       const builder_props = attr.builder_props && Object.assign({}, $p.CatCharacteristics.builder_props_defaults, attr.builder_props);
       this.production.forEach((row) => {
         const {characteristic, ordn} = row;
         if(!characteristic.empty() && !row.nom.is_procedure && !row.nom.is_service && !row.nom.is_accessory) {
-
           const description = this.row_description(row);
           res.Продукция.push(description);
-
           res.ВсегоИзделий += row.quantity;
           res.ВсегоПлощадьИзделий += row.quantity * characteristic.s;
           res.ВсегоМасса += row.quantity * description.Масса;
           res.ВсегоМассаЗаполнений += row.quantity * description.МассаЗаполнений;
-          
           if(!ordn.empty()) {
             if(!res.СоставныеИзделия.has(ordn)) {
               const {calc_order_row: crow, s} = ordn;
@@ -30308,8 +22207,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
               cmp.СуммаДопов += row.amount;
             }
           }
-
-          // если запросили эскиз без размерных линий или с иными параметрами...
           if(builder_props) {
             if(!editor) {
               editor = new EditorInvisible();
@@ -30362,9 +22259,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       });
       res.ВсегоПлощадьИзделий = res.ВсегоПлощадьИзделий.round(3);
-
       res.qrcode = () => {
-        // https://github.com/soldair/node-qrcode
         return Promise.resolve().then(() => {
           if(typeof QRCode === 'object') {
             const text = `ST00012|Name=${res.Организация}|PersonalAcc=${res.ОрганизацияБанкНомерСчета
@@ -30379,23 +22274,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
         });
       };
-
       return imgs
         .then(() => {
           editor && editor.unload();
           return Promise.all(get_imgs);
         })
         .then(() => res);
-
     });
-
   }
-
-  /**
-   * Возвращает струклуру с описанием строки продукции для печати
-   */
   row_description(row) {
-
     if(!(row instanceof $p.DocCalc_orderProductionRow) && row.characteristic) {
       this.production.find_rows({characteristic: row.characteristic}, (prow) => {
         row = prow;
@@ -30415,7 +22302,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     });
-
     const res = {
       ref: characteristic.ref,
       НомерСтроки: row.row,
@@ -30424,7 +22310,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       Цвет: characteristic.clr.name,
       Размеры: row.len + 'x' + row.width + ', ' + s + 'м²',
       Площадь: s,
-      //Отдельно размеры, общая площадь позиции и комментарий к позиции
       Длина: row.len,
       Ширина: row.width,
       ВсегоПлощадь: s * quantity,
@@ -30449,8 +22334,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       Сумма: row.amount.round(2),
       СуммаВнутр: row.amount_internal.round(2)
     };
-
-    // формируем описание заполнений
     characteristic.glasses.forEach(({nom, formula}) => {
       const {name} = nom;
       if(!res.Заполнения.includes(name)) {
@@ -30466,8 +22349,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         res.ЗаполненияФормулы += formula;
       }
     });
-
-    // наименования фурнитур
     characteristic.constructions.forEach((row) => {
       const {name} = row.furn;
       if(name && res.Фурнитура.indexOf(name) == -1) {
@@ -30477,10 +22358,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         res.Фурнитура += name;
       }
     });
-
-
-
-    // параметры, помеченные к включению в описание
     const params = new Map();
     characteristic.params.forEach((row) => {
       if(row.param.include_to_description) {
@@ -30493,38 +22370,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         value: value.presentation || value
       });
     }
-
     return res;
   }
-
-  /**
-   * Заполняет табчасть планирования запросом к сервису windowbuilder-planning
-   */
   fill_plan() {
-
-    // чистим не стесняясь - при записи всё равно перезаполнять
     this.planning.clear();
-
-    // получаем url сервиса
     const {wsql, aes, adapters: {pouch}, ui, utils} = $p;
     const url = (wsql.get_user_param('windowbuilder_planning', 'string') || '/plan/') + `doc.calc_order/${this.ref}`;
-
-    // сериализуем документ и характеристики
     const post_data = utils._clone(this._obj);
     post_data.characteristics = {};
-
-    // получаем объекты характеристик и подклеиваем их сериализацию к post_data
     this.load_production()
       .then((prod) => {
         for (const cx of prod) {
           post_data.characteristics[cx.ref] = utils._clone(cx._obj);
         }
       })
-      // выполняем запрос к сервису
       .then(() => {
         pouch.fetch(url, {method: 'POST', body: JSON.stringify(post_data)})
           .then(response => response.json())
-          // заполняем табчасть
           .then(json => {
             if (json.rows) {
               this.planning.load(json.rows);
@@ -30542,10 +22404,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           });
       });
   }
-
-  /**
-   * Выясняет, можно ли редактировать данный объект
-   */
   get is_read_only() {
     const {obj_delivery_state, posted, _data} = this;
     let {current_user, cat: {abonents}, enm} = $p;
@@ -30553,14 +22411,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(!current_user) {
       current_user = this.manager;
     }
-
     let ro = false;
-    // технолог может изменять шаблоны
     if(obj_delivery_state == Шаблон) {
       const {no_mdm} = abonents.current;
       ro = !no_mdm || !current_user.role_available('ИзменениеТехнологическойНСИ');
     }
-    // ведущий менеджер может изменять проведенные
     else if(posted || _data._deleted) {
       ro = !current_user.role_available('СогласованиеРасчетовЗаказов');
     }
@@ -30572,11 +22427,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     return ro;
   }
-
-  /**
-   * Площадь изделий заказа
-   * @type {String}
-   */
   get areas() {
     const sum = {prod: 0, all: 0};
     for(const row of this.production) {
@@ -30590,17 +22440,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       sum.prod.round(2).toLocaleString('ru-RU') :
       `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
   }
-
-  /**
-   * Загружает в RAM данные характеристик продукций заказа
-   * @return {Promise}
-   */
   load_production(forse, db) {
     const prod = [];
     const {cat: {characteristics}, adapters: {pouch}} = $p;
     const {partner, production} = this;
     const pre = (partner.empty() || !partner.is_new()) ? Promise.resolve() : partner.load();
-    
     production.forEach(({characteristic}) => {
       if(!characteristic.empty() && (forse || characteristic.is_new())) {
         prod.push(characteristic.ref);
@@ -30620,23 +22464,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return prod;
       });
   }
-
-  /**
-   * Обработчик события `Рассчитана характеристика построителя`
-   * @param scheme
-   * @param sattr
-   */
   characteristic_saved(scheme, sattr) {
     const {ox, _dp} = scheme;
     const row = ox.calc_order_row;
-
     if(!row || ox.calc_order != this) {
       return;
     }
-
-    //nom,characteristic,note,quantity,unit,qty,len,width,s,first_cost,marginality,price,discount_percent,discount_percent_internal,
-    //discount,amount,margin,price_internal,amount_internal,vat_rate,vat_amount,ordn,changed
-
     this._data._loading = true;
     row.nom = ox.owner;
     row.note = _dp.note;
@@ -30653,20 +22486,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     this.spread_min_volume();
     this._data._loading = false;
   }
-
-  /**
-   * Создаёт строку заказа с уникальной характеристикой
-   * @param [row_spec] {DpBuyers_orderProductionRow} - строка - генератор параметрика
-   * @param [elm]
-   * @param [len_angl]
-   * @param [params]
-   * @param [create]
-   * @param [grid]
-   * @param [cx] {CatCharacteristics}
-   * @return {Promise<DocCalc_orderProductionRow>}
-   */
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
-
     const {DpBuyers_orderProductionRow, enm, cat, wsql, utils} = $p;
     const row = row_spec instanceof DpBuyers_orderProductionRow && !row_spec.characteristic.empty() && row_spec.characteristic.calc_order === this ?
       row_spec.characteristic.calc_order_row :
@@ -30675,17 +22495,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         quantity: 1,
         discount_percent_internal: wsql.get_user_param('discount_percent_internal', 'number')
       });
-
     if(grid) {
       this.production.sync_grid(grid);
       grid.selectRowById(row.row);
     }
-
     if(!create) {
       return row;
     }
-
-    // ищем объект продукции в RAM или берём из строки заказа
     const mgr = cat.characteristics;
     function fill_cx(ox) {
       if(ox._deleted){
@@ -30702,33 +22518,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(!cx && !row.characteristic.empty() && !row.characteristic._deleted){
       fill_cx(row.characteristic);
     }
-
-    // если не нашли в RAM, создаём объект продукции, но из базы не читаем и пока не записываем
     return (cx || mgr.create({
       ref: utils.generate_guid(),
       calc_order: this,
       product: row.row
     }, true))
       .then((ox) => {
-        // если указана строка-генератор, заполняем реквизиты
         if(row_spec instanceof DpBuyers_orderProductionRow) {
-
           if(params) {
-
-            // получаем набор параметров, используемых текущей вставкой
             const used_params = row_spec.inset.used_params();
-
-            // добавляем параметр в характеристику, если используется в текущей вставке
             params.find_rows({elm: row_spec.row}, (prow) => {
               if(used_params.includes(prow.param)) {
                 ox.params.add(prow, true).inset = row_spec.inset;
               }
             });
           }
-
           elm.project = {ox};
           elm.fake_origin = row_spec.inset;
-
           const prow = row_spec.inset.specification.find({quantity: 0, is_order_row: enm.specification_order_row_types.prod});
           ox.owner = prow ? prow.nom : row_spec.inset.nom(elm, true);
           ox.origin = row_spec.inset;
@@ -30738,10 +22544,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           ox.s = (row_spec.s || row_spec.len * row_spec.height / 1e6).round(4);
           ox.clr = row_spec.clr;
           ox.note = row_spec.note;
-
         }
-
-        // устанавливаем свойства в строке заказа
         Object.assign(row._obj, {
           characteristic: ox.ref,
           nom: ox.owner.ref,
@@ -30753,54 +22556,35 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           quantity: (row_spec && row_spec.quantity) || 1,
           note: ox.note,
         });
-
         ox.name = ox.prod_name();
-
-        // записываем расчет, если не сделали этого ранее, чтобы не погибла ссылка на расчет в характеристике
         return this.is_new() && !wsql.alasql.utils.isNode ? this.save().then(() => row) : row;
       });
-
   }
-
-  /**
-   * Создаёт продукции заказа по массиву строк и параметров  
-   * если в dp.production заполнены уникальные характеристики - перезаполняет их, а новые не создаёт
-   * @param dp {DpBuyers_order} - экземпляр обработки с заполненными табличными частями
-   */
   process_add_product_list(dp) {
-
     let res = Promise.resolve();
-
     dp.production.forEach((row_dp) => {
       let row_prod;
-
       if(row_dp.inset.empty()) {
         row_prod = this.production.add(row_dp);
         row_prod.unit = row_prod.nom.storage_unit;
         if(!row_dp.clr.empty()) {
-          // ищем цветовую характеристику
           row_dp.nom.characteristics({clr: row_dp.clr}).some((ox) => row_prod.characteristic = ox);
         }
         res = res.then(() => row_prod);
       }
       else {
-        // рассчитываем спецификацию по текущей вставке
         const len_angl = new FakeLenAngl(row_dp);
         const elm = new FakeElm(row_dp);
-        // создаём или получаем строку заказа с уникальной харктеристикой
         res = res
           .then(() => row_dp.inset.check_prm_restrictions({elm, len_angl,
             params: dp.product_params.find_rows({elm: row_dp.elm}).map(({_row}) => _row)}))
           .then(() => this.create_product_row({row_spec: row_dp, elm, len_angl, params: dp.product_params, create: true}))
           .then((row_prod) => {
             row_prod.inset_spec();
-            // помещаем характеристику в текущую строку обработки dp
             row_dp.characteristic = row_prod.characteristic;
             return row_prod;
           });
       }
-
-      // производим дополнительную корректировку спецификации и рассчитываем цены
       res = res.then((row_prod) => {
         return $p.spec_building.specification_adjustment({
           calc_order_row: row_prod,
@@ -30808,23 +22592,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }, true);
       });
     });
-
     return res.then((ax) => {
       this.reset_specify();
       this.spread_min_volume();
       return ax;
     });
   }
-
-  /**
-   * Пересчитывает все изделия заказа по тем же правилам, что и визуальная рисовалка
-   * @param attr {Object} - параметры пересчёта
-   * @param [editor] {EditorInvisible}
-   * @param [restore] {EditorInvisible}
-   */
   recalc(attr = {}, editor, restore) {
-
-    // при необходимости, создаём редактор
     const {CatInserts} = $p;
     const remove = !editor;
     if(remove) {
@@ -30835,43 +22609,32 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       project = editor.create_scheme();
     }
     let tmp = Promise.resolve();
-
-    // если передали ссылку dp, меняем при пересчете свойства в соответствии с полями обработки
     const {dp} = attr;
-
-    // получаем массив продукций в озу
     return this.load_linked_refs()
       .then(() => {
-        // чистим аксессуары
         const accessories = this.accessories('clear');
         if(accessories) {
           accessories.specification.clear();
         }
-        // бежим по табчасти, если продукция, пересчитываем в рисовалке, если материал или paramrtric - пересчитываем строку
         this.production.forEach((row) => {
           const {characteristic: cx} = row;
           if(cx.empty() || cx.calc_order !== this) {
-            // это материал
             row.value_change('quantity', '', row.quantity);
           }
           else if(cx.leading_product.calc_order === this) {
-            // это виртуальное изделие TODO: некоторые из таких, надо пересчитывать
             return;
           }
           else if(cx.coordinates.count()) {
-            // это изделие рисовалки
             tmp = tmp.then(() => {
-              return project.load(cx, true, this)                                                     // читаем изделие в невизуальную рисовалку
-                .then(() => cx.apply_props(project, dp).save_coordinates({svg: true, save: false}))  // выполняем пересчет спецификации
-                .then(() => this.characteristic_saved(project));                                      // выполняем пересчет строки заказа
+              return project.load(cx, true, this)                                                    
+                .then(() => cx.apply_props(project, dp).save_coordinates({svg: true, save: false})) 
+                .then(() => this.characteristic_saved(project));                                     
             });
           }
           else {
             const {origin} = cx;
             if(origin instanceof CatInserts && !origin.empty() && !origin.slave) {
-              // это paramrtric
               cx.specification.clear();
-              // выполняем пересчет
               cx.apply_props(origin, dp).calculate_spec({
                 elm: new FakeElm(row),
                 len_angl: new FakeLenAngl({len: row.len, inset: origin}),
@@ -30899,15 +22662,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         throw err;
       });
   }
-
-  /**
-   * Рисует изделия или фрагмент изделий заказа в Buffer в соответствии с параметрами attr
-   * @param attr
-   * @param editor
-   */
   draw(attr = {}, editor) {
-
-    // при необходимости, создаём редактор
     const remove = !editor;
     if(remove) {
       editor = new EditorInvisible();
@@ -30916,12 +22671,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(!(project instanceof Scheme)) {
       project = editor.create_scheme();
     }
-
     attr.res = {number_doc: this.number_doc};
-
     let tmp = Promise.resolve();
-
-    // получаем массив продукций в озу
     return this.load_production()
       .then((prod) => {
         for(let ox of prod){
@@ -30940,13 +22691,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           return res;
         });
       });
-
   }
-
-  /**
-   * Загружает продукции шаблона из mdm-cache
-   * @return {Promise}
-   */
   load_templates() {
     if(this._data._templates_loaded) {
       return Promise.resolve();
@@ -30996,11 +22741,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         return prod;
       });
   }
-
-  /**
-   * @summary Удаляет распределение обрези и вклад состава 
-   * @desc Из спецификаций всех изделий заказа
-   */
   reset_specify(cond) {
     this._slave_recalc = true;
     const rm = [];
@@ -31021,26 +22761,21 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         else {
           characteristic.specification.clear({dop: {in: [-3, -7]}, s: 0});
         }
-        
       }
     }
     for(const row of rm) {
       this.production.del(row);
     }
-
     const {CatInsert_bind, CatInserts, cat: {insert_bind, characteristics}} = $p;
     const links = [];
     const volumes_map = new Map();
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
-        
-        
         const {origin} = characteristic;
         if(origin instanceof CatInsert_bind && origin.calc_order) {
           continue;
         }
-        // если это следящая вставка, рассчитаем спецификацию
         if(origin && !origin.empty()) {
           if(origin instanceof CatInserts && origin.slave) {
             if(origin.links) {
@@ -31050,8 +22785,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           }
           row.value_change('quantity', 'update', row.quantity);
         }
-        
-        // накапливаем строки с минимальным объёмом
         for(const sub of characteristic.specification) {
           const {nom, totqty1} = sub;
           if(nom.min_volume && totqty1) {
@@ -31072,20 +22805,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     this._slave_recalc = false;
   }
-
-  /**
-   * @summary Округление минимального объёма
-   */
   spread_min_volume() {
-
     const {_slave_recalc} = this;
     this._slave_recalc = true;
-    
     const volumes_map = new Map();
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
-        // накапливаем строки с минимальным объёмом
         for(const sub of characteristic.specification) {
           const {nom, totqty1} = sub;
           if(nom.min_volume && totqty1) {
@@ -31099,12 +22825,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    
     const rows = new Map();
     for(const [nom, {total, prices}] of volumes_map) {
       const k = nom.min_volume / total;
       if(k > 1) {
-        // распределяем
         for(const {row, sub} of prices) {
           if(!rows.has(row)) {
             rows.set(row, {amount: 0, amount_marged: 0});
@@ -31125,15 +22849,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       row.price_internal = (row.price_internal + delta.amount_marged).round(2);
       row.value_change('price', {}, row.price, true);
     }
-
     this._slave_recalc = _slave_recalc;
   }
-
-  /**
-   * @summary Сырая потребность в материалах
-   * @param {DocCalc_orderProductionRow} [prow] - если указано, получаем потребность единственной строки, а не всего заказа
-   * @returns {DpBuyers_order}
-   */
   aggregate_specification(prow) {
     const dp = $p.dp.buyers_order.create();
     if(prow) {
@@ -31151,7 +22868,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     else {
-      // заполняем табчасть потребностью всех продукций заказа
       for(const {nom, characteristic, quantity} of this.production) {
         if(characteristic.calc_order === this) {
           for(const srow of characteristic.specification) {
@@ -31174,11 +22890,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    // сворачиваем
     dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
     return dp;
   }
-  
   agent_order() {
     for(const row of this.orders) {
       if(row.is_supplier && row.is_supplier.empty?.()) {
@@ -31203,13 +22917,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const row = this.orders.add({invoice: invoice.ref});
     invoice.date = new Date;
     invoice.responsible = $p.current_user;
-
     return invoice;
   }
-
-  /**
-   * Устанавливает подразделение по умолчанию
-   */
   static set_department() {
     const {wsql, cat} = $p
     const department = wsql.get_user_param('current_department');
@@ -31229,19 +22938,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
     }
   }
-
 };
-
 $p.DocCalc_order.FakeElm = FakeElm;
-
 $p.DocCalc_order.FakeLenAngl = FakeLenAngl;
-
-// свойства и методы табчасти продукции
 $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocCalc_orderProductionRow {
-
-  // при изменении реквизита
   value_change(field, type, value, no_extra_charge) {
-
     let {_obj, _owner, nom, characteristic, unit} = this;
     const calc_order = _owner._owner;
     let recalc;
@@ -31253,15 +22954,10 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       reset_specify = true;
       characteristic.specification.clear({dop: -3});
     }
-
     if(rfield) {
-
       _obj[field] = rfield === 'n' ? parseFloat(value || 0) : '' + value;
-
       nom = this.nom;
       characteristic = this.characteristic;
-
-      // проверим владельца характеристики
       if(!characteristic.empty()) {
         if(!characteristic.calc_order.empty() && characteristic.owner != nom) {
           characteristic.owner = nom;
@@ -31271,18 +22967,12 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           characteristic = this.characteristic;
         }
       }
-
-      // проверим единицу измерения
       if(unit.owner != nom) {
         _obj.unit = nom.storage_unit.ref;
       }
-      
-      // количество по умолчанию
       if(field === 'nom' && !this.quantity) {
         _obj.quantity = 1;
       }
-
-      // рассчитаем цены
       const {origin} = characteristic;
       const fake_prm = {
         calc_order_row: this,
@@ -31304,47 +22994,34 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         recalc = true;
       }
     }
-
     if(DocCalc_orderProductionRow.pfields.includes(field) || recalc) {
-
       if(!recalc) {
         _obj[field] = parseFloat(value || 0);
       }
-
       isNaN(_obj.price) && (_obj.price = 0);
       isNaN(_obj.extra_charge_external) && (_obj.extra_charge_external = 0);
       isNaN(_obj.price_internal) && (_obj.price_internal = 0);
       isNaN(_obj.discount_percent) && (_obj.discount_percent = 0);
       isNaN(_obj.discount_percent_internal) && (_obj.discount_percent_internal = 0);
-
       _obj.amount = (_obj.price * ((100 - _obj.discount_percent) / 100) * _obj.quantity).round(rounding);
-
-      // если есть внешняя цена дилера, получим текущую дилерскую наценку
       if(!no_extra_charge) {
         const prm = {calc_order_row: this};
         let extra_charge = 0;
         if(job_prm.pricing.use_internal !== false) {
           extra_charge = wsql.get_user_param('surcharge_internal', 'number');
-
-          // если пересчет выполняется менеджером, используем наценку по умолчанию
           if(!manager.partners_uids.length || !extra_charge) {
             pricing.price_type(prm);
             extra_charge = prm.price_type.extra_charge_external;
           }
-          // если есть наценка в строке применим ее
           if (_obj.extra_charge_external !== 0) {
             extra_charge = _obj.extra_charge_external;
           }
         }
-        
         if(field != 'price_internal' && _obj.price) {
           _obj.price_internal = (_obj.price * (100 - _obj.discount_percent) / 100 * (100 + extra_charge) / 100).round(rounding);
         }
       }
-
       _obj.amount_internal = (_obj.price_internal * ((100 - _obj.discount_percent_internal) / 100) * _obj.quantity).round(rounding);
-
-      // ставка и сумма НДС
       if(calc_order.vat_consider) {
         const {НДС5, НДС7, НДС10, НДС18, НДС20, НДС22, НДС0, БезНДС} = enm.vat_rates;
         _obj.vat_rate = (nom.vat_rate.empty() ? НДС22 : nom.vat_rate).ref;
@@ -31382,9 +23059,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _obj.vat_rate = '';
         _obj.vat_amount = 0;
       }
-
-
-      // пересчитываем спецификации и цены в следящих вставках
       if(!_slave_recalc){
         _owner._owner._slave_recalc = true;
         _owner.forEach((row) => {
@@ -31399,10 +23073,6 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         });
         _owner._owner._slave_recalc = false;
       }
-
-      // TODO: учесть валюту документа, которая может отличаться от валюты упр. учета и решить вопрос с amount_operation
-
-      // подчиненные строки
       if(field === 'quantity' && !characteristic.empty() && !characteristic.calc_order.empty()) {
         this._owner.find_rows({ordn: characteristic}, (row) => {
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
@@ -31414,14 +23084,9 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
       delete amount.amount;
       Object.assign(calc_order, amount);
       calc_order._manager.emit_async('update', calc_order, amount);
-
       return false;
     }
   }
-
-  /**
-   * @summary Пересчитывает параметрическую спецификацию по текущей вставке
-   */
   inset_spec() {
     const {characteristic, len, width, s} = this;
     const {origin, calc_order, specification} = characteristic;
@@ -31435,9 +23100,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     origin.calculate_spec({elm, len_angl, ox: characteristic});
     characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
-
 };
-
 $p.DocCalc_orderProductionRow.rfields = {
   nom: 's',
   characteristic: 's',
@@ -31446,17 +23109,7 @@ $p.DocCalc_orderProductionRow.rfields = {
   width: 'n',
   s: 'n',
 };
-
 $p.DocCalc_orderProductionRow.pfields = 'price,price_internal,quantity,discount_percent_internal,extra_charge_external';
-
-
-
-/**
- * Предопределенные дополнительные реквизиты
- *
- * Created by Evgeniy Malyarov on 01.06.2019.
- */
-
 $p.md.once('predefined_elmnts_inited', () => {
   const {DocCalc_order, doc: {calc_order}, cat: {destinations}, cch: {properties}, enm: {obj_delivery_states}, job_prm} = $p;
   const dst = destinations.predefined('Документ_Расчет');
@@ -31499,9 +23152,7 @@ $p.md.once('predefined_elmnts_inited', () => {
     }
   ];
   properties.load_array(predefined);
-
   const templates_props = predefined.map(({ref}) => properties.get(ref));
-
   Object.defineProperties(DocCalc_order.prototype, {
     refill_props: {
       get() {
@@ -31527,14 +23178,12 @@ $p.md.once('predefined_elmnts_inited', () => {
       }
     }
   });
-
   const {extra_fields} = Object.getPrototypeOf(calc_order);
   calc_order.extra_fields = function (obj) {
     const res = extra_fields.call(calc_order, obj);
     return obj.obj_delivery_state === obj_delivery_states.Шаблон ? res.concat(templates_props) : res;
   }
 });
-
  
 return EditorInvisible;
 }
