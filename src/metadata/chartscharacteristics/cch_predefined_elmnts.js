@@ -14,7 +14,7 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
       value: {}
     });
 
-    const {md, doc, adapters} = this._owner.$p;
+    const {md, doc, adapters} = $p;
 
     adapters.pouch.once('pouch_doc_ram_loaded', () => {
       // загружаем предопределенные элементы
@@ -37,7 +37,7 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     }
 
     // дополним автовычисляемыми свойствами, если им не назначены формулы
-    const {job_prm: {properties}} = this._owner.$p;
+    const {job_prm: {properties}} = $p;
     if(properties) {
       const {calculated, width, length} = properties;
       if(width && !width.is_calculated) {
@@ -59,8 +59,8 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
     if(row.is_folder || row._obj?.is_folder) {
       return;
     }
-    const {parents, _owner} = this;
-    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
+    const {parents} = this;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = $p;
     const parent = job_prm[parents[row.parent.valueOf()]];
     const _mgr = row.type.is_ref && row.type.types.length === 1 && md.mgr_by_class_name(row.type.types[0]);
 
@@ -175,8 +175,8 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
    * @override
    */
   load_array(aattr, forse) {
-    const {parents, _owner} = this;
-    const {job_prm} = _owner.$p;
+    const {parents} = this;
+    const {job_prm} = $p;
     const elmnts = [];
     // метод по умолчанию
     super.load_array(aattr, forse);
@@ -194,7 +194,7 @@ exports.CchPredefined_elmntsManager = class CchPredefined_elmntsManager extends 
 exports.CchPredefined_elmnts = class CchPredefined_elmnts extends Object {
   get value() {
     let {_obj, type, parent, synonym, _manager} = this;
-    const {utils, cch} = _manager._owner.$p;
+    const {utils, cch} = $p;
     let override = cch.properties.predefined(`${parent.synonym}/${synonym}`);
     if(override) {
       type = override.type;
@@ -224,7 +224,7 @@ exports.CchPredefined_elmnts = class CchPredefined_elmnts extends Object {
         }
       }
       if(res) {
-        _manager._owner.$p.record_log(['value', type, _obj]);
+        $p.record_log(['value', type, _obj]);
         return null;
       }
     }

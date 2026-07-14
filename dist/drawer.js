@@ -17598,7 +17598,7 @@ class ProductsBuilding {
     if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
       totqty = qty * len * width;
     }
-    _obj.totqty1 = totqty0 ? 0 : totqty * nom.loss_factor;
+    _obj.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
     if(_quantity) {
       _obj.qty *= _quantity;
       _obj.totqty *= _quantity;
@@ -22926,7 +22926,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if (characteristic.calc_order === this) {
         for(const sub of characteristic.specification) {
           const {nom, totqty1} = sub;
-          if(nom.min_volume && totqty1) {
+          if(nom.min_order_volume && totqty1) {
             if(!volumes_map.has(nom)) {
               volumes_map.set(nom, {total: 0, prices: []});
             }
@@ -22939,7 +22939,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     const rows = new Map();
     for(const [nom, {total, prices}] of volumes_map) {
-      const k = nom.min_volume / total;
+      const k = nom.min_order_volume / total;
       if(k > 1) {
         for(const {row, sub} of prices) {
           if(!rows.has(row)) {

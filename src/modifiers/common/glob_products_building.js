@@ -1402,8 +1402,8 @@ class ProductsBuilding {
     if(s && row_coord && s < len * width && row_coord.elm_type?._manager?.glasses?.includes(row_coord.elm_type)) {
       totqty = qty * len * width;
     }
-
-    _obj.totqty1 = totqty0 ? 0 : totqty * nom.loss_factor;
+    
+    _obj.totqty1 = totqty0 ? 0 : Math.max(nom.min_volume, totqty * nom.loss_factor);
     
     if(_quantity) {
       _obj.qty *= _quantity;

@@ -735,7 +735,7 @@ class CchPredefined_elmnts extends CatObj{
 
   get value() {
     let {_obj, type, parent, synonym, _manager} = this;
-    const {utils, cch} = _manager._owner.$p;
+    const {utils, cch} = $p;
     let override = cch.properties.predefined(`${parent.synonym}/${synonym}`);
     if(override) {
       type = override.type;
@@ -765,7 +765,7 @@ class CchPredefined_elmnts extends CatObj{
         }
       }
       if(res) {
-        _manager._owner.$p.record_log(['value', type, _obj]);
+        $p.record_log(['value', type, _obj]);
         return null;
       }
     }
@@ -830,7 +830,7 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
       value: {}
     });
 
-    const {md, doc, adapters} = this._owner.$p;
+    const {md, doc, adapters} = $p;
 
     adapters.pouch.once('pouch_doc_ram_loaded', () => {
       this.job_prms();
@@ -845,7 +845,7 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
       this.job_prm(o);
     }
 
-    const {job_prm: {properties}} = this._owner.$p;
+    const {job_prm: {properties}} = $p;
     if(properties) {
       const {calculated, width, length} = properties;
       if(width && !width.is_calculated) {
@@ -863,8 +863,8 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
     if(row.is_folder || row._obj?.is_folder) {
       return;
     }
-    const {parents, _owner} = this;
-    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = _owner.$p;
+    const {parents} = this;
+    const {job_prm, md, utils, enm: {inserts_glass_types: igt}, cat: {property_values_hierarchy: vh}} = $p;
     const parent = job_prm[parents[row.parent.valueOf()]];
     const _mgr = row.type.is_ref && row.type.types.length === 1 && md.mgr_by_class_name(row.type.types[0]);
 
@@ -973,8 +973,8 @@ class CchPredefined_elmntsManager extends ChartOfCharacteristicManager {
   }
 
   load_array(aattr, forse) {
-    const {parents, _owner} = this;
-    const {job_prm} = _owner.$p;
+    const {parents} = this;
+    const {job_prm} = $p;
     const elmnts = [];
     super.load_array(aattr, forse);
     for (const row of aattr) {
@@ -1852,6 +1852,8 @@ get amount_marged(){return this._getter('amount_marged')}
 set amount_marged(v){this._setter('amount_marged',v)}
 get origin(){return this._getter('origin')}
 set origin(v){this._setter('origin',v)}
+get half_stuff(){return this._getter('half_stuff')}
+set half_stuff(v){this._setter('half_stuff',v)}
 }
 $p.CatSpecificationsCompositionRow = CatSpecificationsCompositionRow;
 class CatSpecificationsProceduresRow extends TabularSectionRow{
@@ -2839,20 +2841,29 @@ set demand(v){this._setter_ts('demand',v)}
   }
 
   get min_volume() {
-    if(!this.hasOwnProperty('_min_volume')){
+    return this.cached_prop('min_volume');
+  }
+
+  get min_order_volume() {
+    return this.cached_prop('min_order_volume');
+  }
+
+    cached_prop(name) {
+    const fld = `_${name}`;
+    if(!this.hasOwnProperty(fld)){
       const {extra_fields, _manager} = this;
-      if(!_manager.hasOwnProperty('_min_volume')) {
-        _manager._min_volume = _manager._owner.$p.cch.properties.predefined('min_volume');
+      if(!_manager.hasOwnProperty(fld)) {
+        _manager[fld] = _manager._owner.$p.cch.properties.predefined(name);
       }
-      if(_manager._min_volume) {
-        const row = extra_fields.find({property: _manager._min_volume});
-        this._min_volume = row ? row.value : 0;
+      if(_manager[fld]) {
+        const row = extra_fields.find({property: _manager[fld]});
+        this[fld] = row ? row.value : 0;
       }
       else {
-        this._min_volume = 0;
+        this[fld] = 0;
       }
     }
-    return this._min_volume;
+    return this[fld];
   }
 
   get presentation() {
@@ -8848,6 +8859,8 @@ get composition(){return this._getter_ts('composition')}
 set composition(v){this._setter_ts('composition',v)}
 get links(){return this._getter_ts('links')}
 set links(v){this._setter_ts('links',v)}
+get struct(){return this._getter_ts('struct')}
+set struct(v){this._setter_ts('struct',v)}
 }
 $p.DocCalc_order = DocCalc_order;
 class DocCalc_orderProductionRow extends TabularSectionRow{
@@ -8964,6 +8977,17 @@ get calc_order(){return this._getter('calc_order')}
 set calc_order(v){this._setter('calc_order',v)}
 }
 $p.DocCalc_orderLinksRow = DocCalc_orderLinksRow;
+class DocCalc_orderStructRow extends TabularSectionRow{
+get parent(){return this._getter('parent')}
+set parent(v){this._setter('parent',v)}
+get smf_key(){return this._getter('smf_key')}
+set smf_key(v){this._setter('smf_key',v)}
+get nom(){return this._getter('nom')}
+set nom(v){this._setter('nom',v)}
+get identifier(){return this._getter('identifier')}
+set identifier(v){this._setter('identifier',v)}
+}
+$p.DocCalc_orderStructRow = DocCalc_orderStructRow;
 class DocCalc_orderManager extends DocManager {
 
   constructor(owner, class_name) {
