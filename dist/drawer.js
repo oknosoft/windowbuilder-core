@@ -4846,9 +4846,13 @@ class Contour extends AbstractFilling(paper.Layer) {
           }
         }
         else {
-          _row.dop = {skylight: null};
+          if(_row.dop.skylight) {
+            _row.dop = {skylight: null};
+          }
           if(prow !== _row) {
-            prow.dop = {skylight};
+            if(prow.dop.skylight) {
+              prow.dop = {skylight: null};
+            }
           }
         }
       }
