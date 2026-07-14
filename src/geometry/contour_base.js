@@ -3865,7 +3865,7 @@ class Contour extends AbstractFilling(paper.Layer) {
    * @desc Если в спецификации есть петли с заданным отступом
    */
   flap_skylight() {
-    const {contours, profiles, prod_ox} = this;
+    const {contours, profiles, prod_ox, _row} = this;
     if(contours.length) {
       let hingeOffset;
       for(const {nom} of profiles) {
@@ -3884,18 +3884,112 @@ class Contour extends AbstractFilling(paper.Layer) {
       }
       // если есть нужные петли
       if(hingeOffset) {
-        const flaps = new Set();
+        const skylight = {};
+        const flaps = new Map();
         for(const layer of contours) {
           const shtulp_kind = layer.furn.shtulp_kind();
           if(!shtulp_kind || shtulp_kind === 1) {
-            flaps.set(layer, []);
+            flaps.set(layer, null);
           }
         }
         for(const layer of contours) {
           if(!flaps.has(layer)) {
-            for(const [active] of flaps) {
-              
+            const {left, right} = layer.profiles_by_side();
+            let shtulp = left.nearest(true);
+            if(!shtulp.nom.elm_type.is('shtulp') && shtulp.nom.width > 3) {
+              shtulp = right.nearest(true);
+              if(!shtulp.nom.elm_type.is('shtulp') && shtulp.nom.width > 3) {
+                continue;
+              }
             }
+            for(const [active] of flaps) {
+              // если примыкает к активной
+              const {left, right} = active.profiles_by_side();
+              if(left.nearest(true) === shtulp) {
+                flaps.set(active, {layer, pos: 'left'});
+              }
+              else if(right.nearest(true) === shtulp) {
+                flaps.set(active, {layer, pos: 'right'});
+              }
+            }
+          }
+        }
+        function calculate({left, right, aLeft, aRight, active}) {
+          const lRib = left.rays[aLeft.is_collinear(left) ? 'inner' : 'outer'];
+          const rRib = right.rays[aRight.is_collinear(right) ? 'inner' : 'outer'];
+          const pt = aLeft.generatrix.getPointAt(aLeft.length / 2);
+          const ptLeft = lRib.getNearestPoint(pt);
+          const ptRight = rRib.getNearestPoint(pt);
+          const full = ptLeft.getDistance(ptRight);
+          const {thickness} = aLeft.nom;
+          skylight[`${active.cnstr}:0`] = {full, thickness, hingeOffset, skylight: full - thickness + hingeOffset};
+        }
+        function calculate2({lRib, rRib, pt, aLeft, aRight, active, passive}) {
+          const ptLeft = lRib.getNearestPoint(pt);
+          const ptRight = rRib.getNearestPoint(pt);
+          const full = ptLeft.getDistance(ptRight);
+          const {thickness: thicknessLeft} = aLeft.nom;
+          const {thickness: thicknessRight} = aRight.nom;
+          skylight[`${active.cnstr}:${passive.cnstr}`] = {
+            full,
+            thicknessLeft,
+            thicknessRight,
+            hingeOffset,
+            skylight: full - thicknessLeft - thicknessRight + hingeOffset * 2,
+          };
+        }
+        for(const [active, passive] of flaps) {
+          const {left: aLeft, right: aRight} = active.profiles_by_side();
+          if(passive) {
+            const {layer, pos} = passive;
+            if(pos === 'right') {
+              const left = aLeft.nearest(true);
+              let {left: right, right: pRight} = layer.profiles_by_side();
+              calculate({left, right, aLeft, aRight, active});
+              right = pRight.nearest(true);
+              calculate2({
+                lRib: left.rays[aLeft.is_collinear(left) ? 'inner' : 'outer'], 
+                rRib: right.rays[pRight.is_collinear(right) ? 'inner' : 'outer'],
+                pt: aLeft.generatrix.getPointAt(aLeft.length / 2),
+                aLeft,
+                aRight: pRight,
+                active,
+                passive: layer,
+              });
+            }
+            else {
+              const right = aRight.nearest(true);
+              let {right: left, left: pLeft} = layer.profiles_by_side();
+              calculate({left, right, aLeft, aRight, active});
+              left = pLeft.nearest(true);
+              calculate2({
+                lRib: left.rays[pLeft.is_collinear(left) ? 'inner' : 'outer'],
+                rRib: right.rays[aRight.is_collinear(right) ? 'inner' : 'outer'],
+                pt: aRight.generatrix.getPointAt(aRight.length / 2),
+                aLeft: pLeft,
+                aRight,
+                active,
+                passive: layer,
+              });
+            }
+          }
+          else {
+            const left = aLeft.nearest(true);
+            const right = aRight.nearest(true);
+            calculate({left, right, aLeft, aRight, active});
+          }
+        }
+        const prow = _row._owner._owner === prod_ox ? _row : prod_ox.coordinates.find({cnstr: _row.cnstr});
+        if(Object.keys(skylight).length) {
+          _row.dop = {skylight};
+          if(prow !== _row) {
+            prow.dop = {skylight};
+          }
+        }
+        else {
+          _row.dop = {skylight: null};
+          if(prow !== _row) {
+            prow.dop = {skylight};
           }
         }
       }
