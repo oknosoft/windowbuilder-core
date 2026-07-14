@@ -2184,7 +2184,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // накапливаем строки с минимальным объёмом
         for(const sub of characteristic.specification) {
           const {nom, totqty1} = sub;
-          if(nom.min_volume && totqty1) {
+          if(nom.min_order_volume && totqty1) {
             if(!volumes_map.has(nom)) {
               volumes_map.set(nom, {total: 0, prices: []});
             }
@@ -2198,7 +2198,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     
     const rows = new Map();
     for(const [nom, {total, prices}] of volumes_map) {
-      const k = nom.min_volume / total;
+      const k = nom.min_order_volume / total;
       if(k > 1) {
         // распределяем
         for(const {row, sub} of prices) {

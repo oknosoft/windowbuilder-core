@@ -98,20 +98,32 @@ exports.CatNom = class CatNom extends Object {
    * Возвращает значение допреквизита минимальный объём
    */
   get min_volume() {
-    if(!this.hasOwnProperty('_min_volume')){
+    return this.cached_prop('min_volume');
+  }
+
+  /**
+   * Возвращает значение допреквизита минимальный объём в заказе
+   */
+  get min_order_volume() {
+    return this.cached_prop('min_order_volume');
+  }
+  
+  cached_prop(name) {
+    const fld = `_${name}`;
+    if(!this.hasOwnProperty(fld)){
       const {extra_fields, _manager} = this;
-      if(!_manager.hasOwnProperty('_min_volume')) {
-        _manager._min_volume = _manager._owner.$p.cch.properties.predefined('min_volume');
+      if(!_manager.hasOwnProperty(fld)) {
+        _manager[fld] = _manager._owner.$p.cch.properties.predefined(name);
       }
-      if(_manager._min_volume) {
-        const row = extra_fields.find({property: _manager._min_volume});
-        this._min_volume = row ? row.value : 0;
+      if(_manager[fld]) {
+        const row = extra_fields.find({property: _manager[fld]});
+        this[fld] = row ? row.value : 0;
       }
       else {
-        this._min_volume = 0;
+        this[fld] = 0;
       }
     }
-    return this._min_volume;
+    return this[fld];
   }
 
   /**
