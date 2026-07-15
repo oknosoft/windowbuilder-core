@@ -2183,35 +2183,68 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if (characteristic.calc_order === this) {
         // накапливаем строки с минимальным объёмом
         for(const sub of characteristic.specification) {
-          const {nom, totqty1} = sub;
+          const {nom, totqty1, clr} = sub;
           if(nom.min_order_volume && totqty1) {
             if(!volumes_map.has(nom)) {
-              volumes_map.set(nom, {total: 0, prices: []});
+              volumes_map.set(nom, new Map());
             }
-            const volumes = volumes_map.get(nom);
+            const clrs = volumes_map.get(nom);
+            if(!clrs.has(clr)) {
+              clrs.set(clr, {total: 0, prices: new Map()});
+            }
+            const volumes = clrs.get(clr);
             volumes.total += row.quantity * totqty1;
-            volumes.prices.push({row, sub});
+            if(!volumes.prices.has(row)) {
+              volumes.prices.set(row, []);
+            }
+            volumes.prices.get(row).push(sub);
           }
         }
       }
     }
     
     const rows = new Map();
-    for(const [nom, {total, prices}] of volumes_map) {
-      const k = nom.min_order_volume / total;
-      if(k > 1) {
-        // распределяем
-        for(const {row, sub} of prices) {
-          if(!rows.has(row)) {
-            rows.set(row, {amount: 0, amount_marged: 0});
+    for(const [nom, clrs] of volumes_map) {
+      for(const [clr, {total, prices}] of clrs) {
+        const add = nom.min_order_volume - total;
+        if(add > 0) {
+          // добавляем строку
+          for(const [row, sub_rows] of prices) {
+            if(!rows.has(row)) {
+              rows.set(row, {amount: 0, amount_marged: 0});
+            }
+            // количество в текущей продукции
+            const current = sub_rows.reduce((sum, curr) => {
+              sum.rows++;
+              sum.totqty1 += row.quantity * curr.totqty1;
+              sum.price += curr.price;
+              sum.amount += row.quantity * curr.amount;
+              sum.amount_marged += row.quantity * curr.amount_marged;
+              sum.characteristic = curr.characteristic;
+              return sum;
+            }, {
+              rows: 0,
+              totqty1: 0,
+              price: 0,
+              amount: 0,
+              amount_marged: 0,
+            });
+            current.price /= current.rows;
+            const {amount, amount_marged} = current;
+            const row_spec = row.characteristic.specification.add({
+              dop: -3,
+              nom, 
+              clr,
+              characteristic: current.characteristic,
+              price: current.price,
+              totqty1: add * current.totqty1 / total,
+            });
+            row_spec.amount = row_spec.totqty1 * current.price;
+            row_spec.amount_marged = current.amount_marged * row_spec.totqty1 / current.totqty1;
+            const delta = rows.get(row);
+            delta.amount += row_spec.amount;
+            delta.amount_marged += row_spec.amount_marged;
           }
-          const {amount, amount_marged} = sub;
-          sub.totqty1 *= k;
-          sub.amount *= k;
-          sub.amount_marged *= k;
-          const delta = rows.get(row);
-          delta.amount += sub.amount - amount;
-          delta.amount_marged += sub.amount_marged - amount_marged;
         }
       }
     }
