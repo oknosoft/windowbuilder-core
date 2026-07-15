@@ -2184,20 +2184,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // накапливаем строки с минимальным объёмом
         for(const sub of characteristic.specification) {
           const {nom, totqty1, clr} = sub;
-          if(nom.min_order_volume && totqty1) {
-            if(!volumes_map.has(nom)) {
-              volumes_map.set(nom, new Map());
+          if(totqty1) {
+            const min_order_volume = nom.min_order_volume(this);
+            if(min_order_volume) {
+              if(!volumes_map.has(nom)) {
+                volumes_map.set(nom, new Map());
+              }
+              const clrs = volumes_map.get(nom);
+              if(!clrs.has(clr)) {
+                clrs.set(clr, {total: 0, min_order_volume, prices: new Map()});
+              }
+              const volumes = clrs.get(clr);
+              volumes.total += row.quantity * totqty1;
+              if(!volumes.prices.has(row)) {
+                volumes.prices.set(row, []);
+              }
+              volumes.prices.get(row).push(sub);
             }
-            const clrs = volumes_map.get(nom);
-            if(!clrs.has(clr)) {
-              clrs.set(clr, {total: 0, prices: new Map()});
-            }
-            const volumes = clrs.get(clr);
-            volumes.total += row.quantity * totqty1;
-            if(!volumes.prices.has(row)) {
-              volumes.prices.set(row, []);
-            }
-            volumes.prices.get(row).push(sub);
           }
         }
       }
@@ -2205,8 +2208,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     
     const rows = new Map();
     for(const [nom, clrs] of volumes_map) {
-      for(const [clr, {total, prices}] of clrs) {
-        const add = nom.min_order_volume - total;
+      for(const [clr, {total, min_order_volume, prices}] of clrs) {
+        const add = min_order_volume - total;
         if(add > 0) {
           // добавляем строку
           for(const [row, sub_rows] of prices) {

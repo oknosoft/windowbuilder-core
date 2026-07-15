@@ -2844,7 +2844,7 @@ set demand(v){this._setter_ts('demand',v)}
     return this.cached_prop('min_volume');
   }
 
-  get min_order_volume() {
+  min_order_volume(order) {
     return this.cached_prop('min_order_volume');
   }
 
