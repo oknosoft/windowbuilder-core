@@ -1075,9 +1075,6 @@ class ProductsBuilding {
           break;
         }
       }
-      if(other?.ox?._prm_filtered) {
-        delete other?.ox?._prm_filtered;
-      }
       ok = grp_ok;
       if(ok) {
         break;
@@ -1149,14 +1146,7 @@ class ProductsBuilding {
       }
     }
 
-    row_spec.clr = clrs.by_predefined(
-      row_base ? row_base.clr : elm.clr,
-      elm.clr || elm._prm_filtered_clr,
-      ox.clr,
-      elm,
-      spec,
-      row_spec,
-      row_base);
+    row_spec.clr = clrs.by_predefined(row_base ? row_base.clr : elm.clr, elm.clr, ox.clr, elm, spec, row_spec, row_base);
     row_spec.elm = elm.elm;
     if(debug || origin?.[0]?.startsWith?.('n|')) {
       if(!Array.isArray(origin) && Array.isArray(row_base._origin)) {

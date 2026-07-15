@@ -66,29 +66,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             return clr?.grouping || prm.values.find(v => v.name === 'Нет');
           };
-          prm.check_condition = function ({prm_row, ox, ...other}) {
-            const {check_condition} = prm.constructor.prototype;
-            if(prm_row?.origin?.is('order') && ox?.calc_order) {
-              const production = ox?._prm_filtered || ox.calc_order.production;
-              const filtered = [];
-              for(const row of production) {
-                if(check_condition.call(prm, {
-                  prm_row,
-                  ...other,
-                  ox: row.characteristic,
-                  clr: row.characteristic.clr,
-                })) {
-                  filtered.push(row);
-                }
-              }
-              ox._prm_filtered = filtered;
-              if(filtered.length && other.elm && !other.elm.clr) {
-                other.elm._prm_filtered_clr = filtered[0].characteristic.clr;
-              }
-              return filtered.length > 0;
-            }
-            return check_condition.call(prm, {prm_row, ox, ...other});
-          }
           break;
 
         case 'inset':
@@ -482,23 +459,6 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           _data._formula = function ({elm}) {
             return elm?.clr?.is_composite();
           };
-          prm.check_condition = function ({prm_row, ox, ...other}) {
-            if(prm_row?.origin?.is('order') && ox?.calc_order) {
-              const production = ox?._prm_filtered || ox.calc_order.production;
-              const filtered = [];
-              for(const row of production) {
-                if(row.characteristic.clr.is_composite()) {
-                  filtered.push(row);
-                }
-              }
-              ox._prm_filtered = filtered;
-              if(filtered.length && other.elm && !other.elm.clr) {
-                other.elm._prm_filtered_clr = filtered[0].characteristic.clr;
-              }
-              return filtered.length > 0;
-            }
-            return prm.constructor.prototype.check_condition.call(prm, {prm_row, ox, ...other});
-          }
           break;          
           
         case 'elm_type':
