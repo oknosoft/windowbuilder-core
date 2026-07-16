@@ -5072,6 +5072,8 @@ set furn_set(v){this._setter('furn_set',v)}
 $p.CatFurnsAttrs_optionRow = CatFurnsAttrs_optionRow;
 $p.cat.create('furns');
 class CatClrs extends CatObj{
+get article(){return this._getter('article')}
+set article(v){this._setter('article',v)}
 get ral(){return this._getter('ral')}
 set ral(v){this._setter('ral',v)}
 get machine_tools_clr(){return this._getter('machine_tools_clr')}
@@ -5088,6 +5090,8 @@ get surface(){return this._getter('surface')}
 set surface(v){this._setter('surface',v)}
 get area_src(){return this._getter('area_src')}
 set area_src(v){this._setter('area_src',v)}
+get transparency(){return this._getter('transparency')}
+set transparency(v){this._setter('transparency',v)}
 get predefined_name(){return this._getter('predefined_name')}
 set predefined_name(v){this._setter('predefined_name',v)}
 get parent(){return this._getter('parent')}
