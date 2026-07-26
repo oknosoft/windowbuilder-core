@@ -5829,6 +5829,8 @@ get type(){return this._getter('type')}
 set type(v){this._setter('type',v)}
 get by_default(){return this._getter('by_default')}
 set by_default(v){this._setter('by_default',v)}
+get exclude(){return this._getter('exclude')}
+set exclude(v){this._setter('exclude',v)}
 }
 $p.CatUsersAcl_objsRow = CatUsersAcl_objsRow;
 class CatUsersIdsRow extends TabularSectionRow{

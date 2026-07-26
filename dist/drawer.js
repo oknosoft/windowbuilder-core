@@ -21265,20 +21265,38 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(!current_user || current_user.empty()) {
       return Promise.resolve(this);
     }
-    const {acl_objs} = current_user;
+    const {acl_objs, branch} = current_user;
     this.manager = current_user;
     if(this.organization.empty()) {
+      let finded;
       acl_objs.find_rows({by_default: true, type: cat.organizations.class_name}, (row) => {
         this.organization = row.acl_obj;
+        finded = true;
         return false;
       });
+      if(!finded) {
+        branch.organizations.find_rows({by_default: true}, (row) => {
+          this.organization = row.acl_obj;
+          finded = true;
+          return false;
+        });
+      }
     }
     DocCalc_order.set_department.call(this);
     if(this.partner.empty()) {
+      let finded;
       acl_objs.find_rows({by_default: true, type: cat.partners.class_name}, (row) => {
         this.partner = row.acl_obj;
+        finded = true;
         return false;
       });
+      if(!finded) {
+        branch.partners.find_rows({by_default: true}, (row) => {
+          this.partners = row.acl_obj;
+          finded = true;
+          return false;
+        });
+      }
     }
     acl_objs.find_rows({by_default: true, type: cat.stores.class_name}, (row) => {
       this.warehouse = row.acl_obj;
@@ -23077,12 +23095,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       if(!manager || manager.empty()) {
         manager = $p.current_user;
       }
-      manager?.acl_objs && manager.acl_objs.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
+      let finded;
+      manager?.acl_objs?.find_rows({by_default: true, type: cat.divisions.class_name}, (row) => {
         if(this.department != row.acl_obj) {
           this.department = row.acl_obj;
         }
+        finded = true;
         return false;
       });
+      if(!finded && manager && !manager.branch.empty()) {
+        manager.branch.divisions.find_rows({by_default: true}, (row) => {
+          if(this.department != row.acl_obj) {
+            this.department = row.acl_obj;
+          }
+          return false;
+        });
+      }
     }
   }
 };
