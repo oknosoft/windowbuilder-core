@@ -96,6 +96,9 @@
           res[class_name] = meta.id; 
           res[meta.id] = class_name; 
         }
+        if(meta?.cachable === 'remote') {
+          meta.cachable = 'doc';
+        }
       }
     }
     return res;
