@@ -10548,13 +10548,37 @@ Object.assign($p, {
   function ids() {
     const res = {};
     const classes = md.classes();
+    const patch = {
+      an: 'abn',
+      c: 'clr',
+      ce: 'cnn',
+      cg: 'clg',
+      cu: 'cou',
+      dp: 'dep',
+      fr: 'frn',
+      i: 'ins',
+      il: 'isl',
+      m2: 'mc2',
+      mm: 'mpt',
+      p: 'pt',
+      pn: 'prc',
+      ph: 'psg',
+      pd: 'p',
+      pj: 'prk',
+      rl: 'prl',
+      sy: 'sys',
+      sr: 'srv',
+      wc: 'wpl',
+      wh: 'str',
+    }
     for(const area in classes) {
       for(const name of classes[area]) {
         const class_name = `${area}.${name}`;
         const meta = md.get(class_name);
         if(meta?.id) {
-          res[class_name] = meta.id; 
-          res[meta.id] = class_name; 
+          const id = patch[meta.id] || meta.id;
+          res[class_name] = id;
+          res[id] = class_name;
         }
         if(meta?.cachable === 'remote') {
           meta.cachable = 'doc';
