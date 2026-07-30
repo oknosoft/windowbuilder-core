@@ -52,7 +52,6 @@
     'cat.clrs',
     'cat.color_price_groups',
     'cat.delivery_areas',
-    'cat.delivery_directions',
     'cat.units',
     'cat.countries',
     'cat.currencies',

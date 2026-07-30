@@ -7852,26 +7852,6 @@ class CatChoice_paramsManager extends CatManager {
   }
 }
 $p.cat.create('choice_params', CatChoice_paramsManager, false);
-class CatDelivery_directions extends CatObj{
-get composition(){return this._getter_ts('composition')}
-set composition(v){this._setter_ts('composition',v)}
-get coordinates(){return this._getter_ts('coordinates')}
-set coordinates(v){this._setter_ts('coordinates',v)}
-}
-$p.CatDelivery_directions = CatDelivery_directions;
-class CatDelivery_directionsCompositionRow extends TabularSectionRow{
-get elm(){return this._getter('elm')}
-set elm(v){this._setter('elm',v)}
-}
-$p.CatDelivery_directionsCompositionRow = CatDelivery_directionsCompositionRow;
-class CatDelivery_directionsCoordinatesRow extends TabularSectionRow{
-get latitude(){return this._getter('latitude')}
-set latitude(v){this._setter('latitude',v)}
-get longitude(){return this._getter('longitude')}
-set longitude(v){this._setter('longitude',v)}
-}
-$p.CatDelivery_directionsCoordinatesRow = CatDelivery_directionsCoordinatesRow;
-$p.cat.create('delivery_directions');
 class DocPurchase extends DocObj{
 get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
@@ -9171,8 +9151,14 @@ get work_shift(){return this._getter('work_shift')}
 set work_shift(v){this._setter('work_shift',v)}
 get work_center(){return this._getter('work_center')}
 set work_center(v){this._setter('work_center',v)}
+get params(){return this._getter('params')}
+set params(v){this._setter('params',v)}
 get power(){return this._getter('power')}
 set power(v){this._setter('power',v)}
+get power1(){return this._getter('power1')}
+set power1(v){this._setter('power1',v)}
+get power2(){return this._getter('power2')}
+set power2(v){this._setter('power2',v)}
 }
 $p.DocWork_centers_performancePlanningRow = DocWork_centers_performancePlanningRow;
 $p.doc.create('work_centers_performance');
@@ -10513,7 +10499,6 @@ Object.assign($p, {
     'cat.clrs',
     'cat.color_price_groups',
     'cat.delivery_areas',
-    'cat.delivery_directions',
     'cat.units',
     'cat.countries',
     'cat.currencies',
