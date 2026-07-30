@@ -178,7 +178,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       });
       if(!finded) {
         branch.partners.find_rows({by_default: true}, (row) => {
-          this.partners = row.acl_obj;
+          this.partner = row.acl_obj;
           finded = true;
           return false;
         });
