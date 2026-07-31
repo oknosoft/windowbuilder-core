@@ -90,18 +90,21 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
    * @return {Map<CatClrs, CatClrs>}
    */
   clrs_map() {
-    const map = new Map();
-    for(const {clr1, clr2} of this.clr_conformity) {
-      if(clr1 instanceof CatColor_price_groups) {
-        for(const [clr0, clr2] of clr1.clrs_map()) {
-          map.set(clr0, clr2);
+    if(!this.hasOwnProperty('_map')) {
+      const value = new Map();
+      for(const {clr1, clr2} of this.clr_conformity) {
+        if(clr1 instanceof CatColor_price_groups) {
+          for(const [clr0, clr2] of clr1.clrs_map()) {
+            value.set(clr0, clr2);
+          }
+        }
+        else {
+          value.set(clr1, clr2);
         }
       }
-      else {
-        map.set(clr1, clr2);
-      }
+      Object.defineProperty(this, '_map', {value, configurable: true});
     }
-    return map;
+    return this._map;
   }
 
   /**
@@ -127,5 +130,10 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
           clrs.includes(clr.clr_in) && clrs.includes(clr.clr_out);  
     }
     return clrs.includes(clr) && !this.exclude.find({side: 'Любая', clr});
+  }
+
+  load(attr = {}) {
+    delete this._map;
+    return super.load(attr);
   }
 };
