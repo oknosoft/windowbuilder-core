@@ -5395,15 +5395,16 @@ class CatClrsManager extends CatManager {
     }
     else if (clr instanceof $p.CatColor_price_groups) {
       const tmp = clr.clr.empty() ? clr_elm : this.by_predefined(clr.clr, clr_elm, clr_sch, elm, spec, row, row_base);
+      const map = clr.clrs_map();
       if(tmp.is_composite()) {
         let {clr_in, clr_out} = tmp;
         let tin, tout;
-        for(const row of clr.clr_conformity) {
-          if(!tin && row.clr1.contains(clr_in)) {
-            tin = row.clr2;
+        for(const [clr1, clr2] of map) {
+          if(!tin && clr1.contains(clr_in)) {
+            tin = clr2;
           }
-          if(!tout && row.clr1.contains(clr_out)) {
-            tout = row.clr2;
+          if(!tout && clr1.contains(clr_out)) {
+            tout = clr2;
           }
           if(tin && tout) {
             break;
@@ -5421,9 +5422,9 @@ class CatClrsManager extends CatManager {
         return this.getter(clr_in.ref + clr_out.ref);
       }
       else {
-        for(const row of clr.clr_conformity) {
-          if(row.clr1.contains(tmp)) {
-            return row.clr2;
+        for(const [clr1, clr2] of map) {
+          if(clr1.contains(tmp)) {
+            return clr2;
           }
         }
       }
@@ -5695,6 +5696,21 @@ set exclude(v){this._setter_ts('exclude',v)}
       }
       return true;
     }) : _data.clrs;
+  }
+
+  clrs_map() {
+    const map = new Map();
+    for(const {clr1, clr2} of this.clr_conformity) {
+      if(clr1 instanceof CatColor_price_groups) {
+        for(const [clr0, clr2] of clr1.clrs_map()) {
+          map.set(clr0, clr2);
+        }
+      }
+      else {
+        map.set(clr1, clr2);
+      }
+    }
+    return map;
   }
 
   contains(clr, clrs, any) {

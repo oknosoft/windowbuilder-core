@@ -86,6 +86,25 @@ exports.CatColor_price_groups = class CatColor_price_groups extends Object {
   }
 
   /**
+   * @summary Возвращает Map цветов с учётом вложенности
+   * @return {Map<CatClrs, CatClrs>}
+   */
+  clrs_map() {
+    const map = new Map();
+    for(const {clr1, clr2} of this.clr_conformity) {
+      if(clr1 instanceof CatColor_price_groups) {
+        for(const [clr0, clr2] of clr1.clrs_map()) {
+          map.set(clr0, clr2);
+        }
+      }
+      else {
+        map.set(clr1, clr2);
+      }
+    }
+    return map;
+  }
+
+  /**
    * Проверяет, подходит ли цвет данной группе
    * @param clr {CatClrs} - цвет, который проверяем
    * @param [clrs] {Array} - массив clrs, если не задан, рассчитываем
