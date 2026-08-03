@@ -84,8 +84,8 @@
     'cch.predefined_elmnts',
   ];
 
-  function ids() {
-    const res = {};
+  function ids(with_old) {
+    const ids = {}, new_ids = {};
     const classes = md.classes();
     const patch = {
       Po:	'po',
@@ -215,26 +215,33 @@
       Tm:	'tm',
       Ph:	'psg',
     }
+    const patched = md.get('cat.abonents').id === 'abn';
     for(const area in classes) {
       for(const name of classes[area]) {
         const class_name = `${area}.${name}`;
         const meta = md.get(class_name);
         if(meta?.id) {
-          const id = patch[meta.id] || meta.id;
-          meta.id = id;
-          res[class_name] = id;
-          res[id] = class_name;
+          let {id} = meta;
+          new_ids[class_name] = id;
+          new_ids[id] = class_name;
+          if(!patched && patch[meta.id]) {
+            id = patch[meta.id];
+            meta.old_id = meta.id;
+            meta.id = id;
+          }          
+          ids[class_name] = id;
+          ids[id] = class_name;
         }
         if(meta?.cachable === 'remote') {
           meta.cachable = 'doc';
         }
       }
     }
-    return res;
+    return with_old ? [ids, new_ids] : ids;
   }
 
   Object.assign(order, {common, by_branch, ids});
-  md.order = order;
-  md._ids = ids();
+  const [_ids, _new_ids] = ids(true);
+  Object.assign(md, {order, _ids, _new_ids});
   
 })($p);
