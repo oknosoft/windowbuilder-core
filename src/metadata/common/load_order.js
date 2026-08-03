@@ -221,6 +221,7 @@
         const meta = md.get(class_name);
         if(meta?.id) {
           const id = patch[meta.id] || meta.id;
+          meta.id = id;
           res[class_name] = id;
           res[id] = class_name;
         }
