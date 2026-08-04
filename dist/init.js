@@ -30,6 +30,7 @@ $p.enm.create('contract_kinds');
 $p.enm.create('inventory_kinds');
 $p.enm.create('product_link_kinds');
 $p.enm.create('layer_kinds');
+$p.enm.create('vat_types');
 $p.enm.create('elm_visualization');
 $p.enm.create('predefined_formulas');
 $p.enm.create('text_aligns');
@@ -3218,6 +3219,8 @@ get kpp(){return this._getter('kpp')}
 set kpp(v){this._setter('kpp',v)}
 get ogrn(){return this._getter('ogrn')}
 set ogrn(v){this._setter('ogrn',v)}
+get vat(){return this._getter('vat')}
+set vat(v){this._setter('vat',v)}
 get main_bank_account(){return this._getter('main_bank_account')}
 set main_bank_account(v){this._setter('main_bank_account',v)}
 get main_cashbox(){return this._getter('main_cashbox')}
@@ -5955,12 +5958,6 @@ set acl_obj(v){this._setter('acl_obj',v)}
 $p.CatProjectsAcl_objsRow = CatProjectsAcl_objsRow;
 $p.cat.create('projects');
 class CatStores extends CatObj{
-get department(){return this._getter('department')}
-set department(v){this._setter('department',v)}
-get note(){return this._getter('note')}
-set note(v){this._setter('note',v)}
-get assembly_days(){return this._getter('assembly_days')}
-set assembly_days(v){this._setter('assembly_days',v)}
 get address(){return this._getter('address')}
 set address(v){this._setter('address',v)}
 get latitude(){return this._getter('latitude')}
@@ -5971,6 +5968,12 @@ get delivery_area(){return this._getter('delivery_area')}
 set delivery_area(v){this._setter('delivery_area',v)}
 get address_fields(){return this._getter('address_fields')}
 set address_fields(v){this._setter('address_fields',v)}
+get department(){return this._getter('department')}
+set department(v){this._setter('department',v)}
+get note(){return this._getter('note')}
+set note(v){this._setter('note',v)}
+get assembly_days(){return this._getter('assembly_days')}
+set assembly_days(v){this._setter('assembly_days',v)}
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
