@@ -8563,7 +8563,7 @@ set set(v){this._setter_ts('set',v)}
     const noms = new Map();
     for(const row of this.cutting) {
       if(!kind || (kind === '1D' && !row.width) || (kind === '2D' && row.width)) {
-        if((nom && row.nom !== nom) || (stick && row.stick !== stick)) {
+        if(row.stick === -1 || (nom && row.nom !== nom) || (stick && row.stick !== stick)) {
           continue;
         }
         if(noms.has(row.nom)) {
@@ -8582,15 +8582,7 @@ set set(v){this._setter_ts('set',v)}
         if(stick && row.stick !== stick) {
           continue;
         }
-        if(row.width) {
-          if(row.quantity === 1) {
-            rm.push(row);
-          }
-          else {
-            row.dop = {svg: ''};
-          }
-        }
-        else if(row.record_kind.is('credit') && noms.get(row.nom).has(row.characteristic)) {
+        if(row.width || row.record_kind.is('credit') && noms.get(row.nom).has(row.characteristic)) {
           rm.push(row);
         }
       }
