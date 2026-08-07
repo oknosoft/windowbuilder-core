@@ -286,9 +286,15 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
                 proc_row.coefficient -= c7.getDistance(elmFlipped.corns(1));
               }
             }
-            // если сказано учесть припуск - добавляем dx0
-            else if(dop_row.overmeasure){
-              proc_row.coefficient +=  elm.dx0;
+            else {
+              // если сказано учесть припуск - добавляем dx0
+              if(dop_row.overmeasure){
+                proc_row.coefficient +=  elm.dx0;
+              }
+              const c7 = elmFlipped.corns(7);
+              if(c7) {
+                proc_row.coefficient += c7.getDistance(elmFlipped.corns(1));
+              }
             }
 
             return;
