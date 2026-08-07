@@ -2224,16 +2224,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
     
-    const rows = new Map();
+    const rows = new Set();
     for(const [nom, clrs] of volumes_map) {
       for(const [clr, {total, min_order_volume, prices}] of clrs) {
         const add = min_order_volume - total;
         if(add > 0) {
           // добавляем строку
           for(const [row, sub_rows] of prices) {
-            if(!rows.has(row)) {
-              rows.set(row, {amount: 0, amount_marged: 0});
-            }
+            rows.add(row);
             // количество в текущей продукции
             const current = sub_rows.reduce((sum, curr) => {
               sum.rows++;
@@ -2262,18 +2260,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
             row_spec.amount = row_spec.totqty1 * current.price;
             row_spec.amount_marged = current.amount_marged * row_spec.totqty1 / current.totqty1;
-            const delta = rows.get(row);
-            delta.amount += row_spec.amount;
-            delta.amount_marged += row_spec.amount_marged;
           }
         }
       }
     }
-    for(const [row, delta] of rows) {
-      row.first_cost = (row.first_cost + delta.amount).round(2);
-      row.price = (row.price + delta.amount_marged).round(2);
-      row.price_internal = (row.price_internal + delta.amount_marged).round(2);
-      row.value_change('price', {}, row.price, true);
+    for(const row of rows) {
+      row.value_change('quantity', 'update', row.quantity);
     }
 
     this._slave_recalc = _slave_recalc;
