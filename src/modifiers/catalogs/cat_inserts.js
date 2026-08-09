@@ -1034,10 +1034,10 @@
             const relm = elm.region(row);
             let region_half_stuff;
             if(fill_regions) {
-              const {region} = row;
+              const {region, inset} = row;
               if(region) {
                 if(!nomMap.has(region)) {
-                  nomMap.set(region, relm.nom);
+                  nomMap.set(region, inset.nom(elm));
                 }
                 region_half_stuff = ox.smf_key({
                   row: {smf_key: enm.smf_keys.elm},
@@ -1051,9 +1051,9 @@
                 }|r${region}`;
               }
               else {
-                glr.nom = `n|${row.inset.nom(elm)?.ref}|r0`;
+                glr.nom = `n|${inset.nom(elm)?.ref}|r0`;
               }
-              const {insert_glass_type} = row.inset;
+              const {insert_glass_type} = inset;
               const is_glass = !insert_glass_type.is('dist') &&
                 !insert_glass_type.is('dists') &&
                 !insert_glass_type.is('gas') &&
