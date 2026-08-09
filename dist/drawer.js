@@ -19427,10 +19427,30 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           const glr = {
             region: 0,
           };
+          const nomMap = new Map();
           glass_rows.forEach((row, index) => {
             const relm = elm.region(row);
+            let region_half_stuff;
             if(fill_regions) {
-              glr.nom = `n|${row.inset.nom(elm)?.ref}`;
+              const {region} = row;
+              if(region) {
+                if(!nomMap.has(region)) {
+                  nomMap.set(region, relm.nom);
+                }
+                region_half_stuff = ox.smf_key({
+                  row: {smf_key: enm.smf_keys.elm},
+                  elm: {elm: region, nom: nomMap.get(region)},
+                  parent: half_stuff
+                });
+                glr.nom = `х|${glass_rows
+                  .filter(v => v.region === region)
+                  .map(v => v.inset.name)
+                  .join('x')
+                }|r${region}`;
+              }
+              else {
+                glr.nom = `n|${row.inset.nom(elm)?.ref}|r0`;
+              }
               const {insert_glass_type} = row.inset;
               const is_glass = !insert_glass_type.is('dist') &&
                 !insert_glass_type.is('dists') &&
@@ -19440,10 +19460,16 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 !insert_glass_type.is('blank');
               if(is_glass) {
                 glr.region++;
-                glr.nom += `|${glr.region}`;
+                glr.nom += `|g${glr.region}`;
               }
-            }            
-            for(const srow of row.inset.filtered_spec({elm: relm, len_angl, ox, own_row: {clr: row.clr}, half_stuff})) {
+            }
+            for(const srow of row.inset.filtered_spec({
+              elm: relm, 
+              len_angl,
+              ox,
+              own_row: {clr: row.clr},
+              half_stuff: region_half_stuff || half_stuff,
+            })) {
               const frow = srow instanceof CatInsertsSpecificationRow ? fake_row(srow) : srow;
               frow.relm = relm;
               if(fill_regions) {
@@ -19596,7 +19622,9 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       const {Основной, Соединение, СоединениеПополам} = enm.angle_calculating_ways;
       const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
       const own_angle_calc_method = own_row?.angle_calc_method;
-      const half_stuff = own_row && elm && ox.smf_key({row: own_row, elm});
+      const half_stuff = own_row ?
+        (elm && ox.smf_key({row: own_row, elm})) : 
+        (elm instanceof Filling && ox.smf_key({row: {smf_key: enm.smf_keys.elm}, elm}));
       if(!spec){
         spec = ox.specification;
       }
