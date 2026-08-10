@@ -18176,7 +18176,15 @@ $p.cat.contracts.__define({
       }
       const res = this.find_rows(selector);
       const filtered = dep && res.filter(v => v.department == dep);
-      const sort = (a, b) => a.date > b.date;
+      const sort = (a, b) => {
+        if (a.parent.empty() && !b.parent.empty()) {
+          return -1;
+        }
+        else if (!a.parent.empty() && b.parent.empty()) {
+          return 1;
+        }
+        return a.date > b.date;
+      };
       if(filtered?.length) {
         filtered.sort(sort);
         return filtered[0];
@@ -21911,6 +21919,27 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.department = value;
       this.contract = contracts.by_partner_and_org(this.partner, this.organization, undefined, value);
       ads.push('contract');
+    }
+    if(field === 'contract' || ads.includes('contract')) {
+      if(field === 'contract') {
+        this.contract = value;
+      } 
+      let {confederate} = this.contract;
+      if(confederate.empty() && !this.contract.parent.empty()) {
+        confederate = this.contract.parent.confederate;
+      }
+      if(this.confederate !== confederate) {
+        this.confederate = confederate;
+        ads.push('confederate');
+      }
+      let main_manager = this.contract._extra('buyer_main_manager');
+      if(main_manager.empty() && !this.contract.parent.empty()) {
+        main_manager = this.contract.parent._extra('buyer_main_manager');
+      }
+      if(this.buyer_main_manager !== main_manager) {
+        this.buyer_main_manager = main_manager;
+        ads.push('extra_fields');
+      }
     }
     if(field === 'obj_delivery_state' && this.clear_templates_props) {
       ads.push('extra_fields');

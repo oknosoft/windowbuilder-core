@@ -888,6 +888,28 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       this.contract = contracts.by_partner_and_org(this.partner, this.organization, undefined, value);
       ads.push('contract');
     }
+    if(field === 'contract' || ads.includes('contract')) {
+      if(field === 'contract') {
+        this.contract = value;
+      } 
+      let {confederate} = this.contract;
+      if(confederate.empty() && !this.contract.parent.empty()) {
+        confederate = this.contract.parent.confederate;
+      }
+      if(this.confederate !== confederate) {
+        this.confederate = confederate;
+        ads.push('confederate');
+      }
+      
+      let main_manager = this.contract._extra('buyer_main_manager');
+      if(main_manager.empty() && !this.contract.parent.empty()) {
+        main_manager = this.contract.parent._extra('buyer_main_manager');
+      }
+      if(this.buyer_main_manager !== main_manager) {
+        this.buyer_main_manager = main_manager;
+        ads.push('extra_fields');
+      }
+    }
     // если изменение инициировано человеком, дополним список изменённых полей
     if(field === 'obj_delivery_state' && this.clear_templates_props) {
       ads.push('extra_fields');

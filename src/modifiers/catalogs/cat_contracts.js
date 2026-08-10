@@ -47,7 +47,16 @@ $p.cat.contracts.__define({
       }
       const res = this.find_rows(selector);
       const filtered = dep && res.filter(v => v.department == dep);
-      const sort = (a, b) => a.date > b.date;
+      const sort = (a, b) => {
+        if (a.parent.empty() && !b.parent.empty()) {
+          return -1;
+        }
+        else if (!a.parent.empty() && b.parent.empty()) {
+          return 1;
+        }
+        return a.date > b.date;
+      };
+      
       if(filtered?.length) {
         filtered.sort(sort);
         return filtered[0];
