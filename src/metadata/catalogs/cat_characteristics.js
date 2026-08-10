@@ -1120,7 +1120,21 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       };
       const smf_row = struct.find(key) || struct.add(key);
       if(!smf_row.identifier || utils.is_empty_guid(smf_row.identifier)) {
-        smf_row.identifier = utils.generate_guid();
+        let cx;
+        if(!parent && smf_key.is('elm')) {
+          const {_manager} = this;
+          _manager.find_rows({
+            leading_product: this,
+            leading_elm: elm.elm,
+            origin: _manager._owner.inserts.get(),
+          }, (obj) => {
+            if(!obj._deleted) {
+              cx = obj;
+              return false;
+            }
+          });
+        }
+        smf_row.identifier = cx?.ref || utils.generate_guid();
       }
       if(smf_key.ref.includes('inset')) {
         smf_row.nom = row.nom.nom(elm, 0);
