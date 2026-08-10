@@ -2435,6 +2435,8 @@ get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
 get department(){return this._getter('department')}
 set department(v){this._setter('department',v)}
+get confederate(){return this._getter('confederate')}
+set confederate(v){this._setter('confederate',v)}
 get contract_kind(){return this._getter('contract_kind')}
 set contract_kind(v){this._setter('contract_kind',v)}
 get date(){return this._getter('date')}
@@ -8776,6 +8778,8 @@ get organization(){return this._getter('organization')}
 set organization(v){this._setter('organization',v)}
 get partner(){return this._getter('partner')}
 set partner(v){this._setter('partner',v)}
+get confederate(){return this._getter('confederate')}
+set confederate(v){this._setter('confederate',v)}
 get department(){return this._getter('department')}
 set department(v){this._setter('department',v)}
 get project(){return this._getter('project')}
