@@ -282,9 +282,9 @@ class ProductsBuilding {
           s: 0,
           x: _row.len,
           y: 0,
-          origin: inset,
+          origin: blank.guid,
         };
-        const cx = Object.assign(ox.find_create_cx(elm.elm, 'any'), attrs);
+        const cx = Object.assign(ox.find_create_cx(elm.elm), attrs);
         ox._order_rows.push(cx);
         cx._data._loading = true;
         spec = cx.specification.clear();

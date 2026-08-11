@@ -320,9 +320,28 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     }
   }
 
+  find_cx(elm, origin) {
+    const {_manager} = this;
+    const selector = {leading_product: this, leading_elm: elm};
+    if(origin !== 'any') {
+      if(!origin) {
+        origin = $p.cat.inserts.get();
+      }
+      selector.origin = origin;
+    }
+    let cx;
+    _manager.find_rows(selector, (obj) => {
+      if(obj._deleted) {
+        obj.mark_deleted(false);
+      }
+      cx = obj;
+      return false;
+    });
+    return cx;
+  }
   /**
    * Ищет характеристику в озу, в indexeddb не лезет, если нет в озу - создаёт
-   * @param elm {Number} - номер элемента или контура
+   * @param elm {Number} - номер элемента или слоя
    * @param [origin] {CatInserts} - порождающая вставка
    * @param [modify] {Boolean} - если false - не изменяем - только поиск
    * @param [order_rows] {Array} - если указано и есть в массиве - не перезаполняем
@@ -330,30 +349,30 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @return {CatCharacteristics}
    */
   find_create_cx(elm, origin, modify, order_rows, loading) {
-    const {_manager, calc_order, params, inserts} = this;
+    const {_manager, calc_order, params, inserts, struct} = this;
     const {job_prm, utils, cat} = $p;
-    if(!origin) {
-      origin = cat.inserts.get();
-    }
-    const selector = {leading_product: this, leading_elm: elm, origin};
+    
     if(origin === 'any') {
       origin = cat.inserts.get();
       delete selector.origin;
     }
-    let cx;
-    _manager.find_rows(selector, (obj) => {
-      if(!obj._deleted) {
-        cx = obj;
-        return false;
-      }
-    });
+    let cx = this.find_cx(elm, origin);
+    if(!origin || origin === 'any') {
+      origin = cat.inserts.get();
+    }
+    
     if(!cx) {
-      cx = cat.characteristics.create({
+      const attr = {
         calc_order,
         leading_product: this,
         leading_elm: elm,
         origin
-      }, false, true)._set_loaded();
+      };
+      const struct_row = struct.find({parent: '', elm, smf_key: 'elm'});
+      if(struct_row) {
+        attr.ref = struct_row.identifier;
+      }
+      cx = cat.characteristics.create(attr, false, true)._set_loaded();
     }
     if(loading) {
       cx._data._loading = true;
@@ -1004,8 +1023,10 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
     if(!isArray && elmno < 0) {
       coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
-          const cx = this.find_create_cx(num, inset, false);
-          weight += cx.elm_weight();
+          const cx = this.find_cx(num);
+          if(cx) {
+            weight += cx.elm_weight();
+          }
         }
       });
     }
@@ -1098,11 +1119,12 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    * @summary Формирует идентификатор полуфабриката
    * @param {CatInsertsSpecificationRow} row
    * @param {BuilderElement} elm
-   * @param {Contour} layer
-   * @param {UID} parent
+   * @param {Contour} [layer]
+   * @param {UID} [parent]
+   * @param {Object} [dop]
    * @return {*}
    */
-  smf_key({row, elm, layer, parent = ''}) {
+  smf_key({row, elm, layer, parent = '', dop}) {
     const {smf_key} = row;
     if(!smf_key.empty()) {
       const {utils} = $p;
@@ -1123,12 +1145,11 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
         let cx;
         if(!parent && smf_key.is('elm')) {
           const {_manager} = this;
-          _manager.find_rows({
-            leading_product: this,
-            leading_elm: elm.elm,
-            origin: _manager._owner.inserts.get(),
-          }, (obj) => {
-            if(!obj._deleted) {
+          _manager.find_rows({leading_product: this, leading_elm: elm.elm}, (obj) => {
+            if(obj.origin.empty() || obj.origin == elm.inset) {
+              if(obj._deleted) {
+                obj.mark_deleted(false);
+              }
               cx = obj;
               return false;
             }
@@ -1144,6 +1165,9 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       else {
         smf_row.nom = this.owner;
+      }
+      if(dop && utils.hasDiff?.(smf_row.dop, dop)) {
+        smf_row.dop = dop;
       }
       return smf_row.identifier;      
     }

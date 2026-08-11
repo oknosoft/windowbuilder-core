@@ -1035,24 +1035,26 @@
             let region_half_stuff;
             if(fill_regions) {
               const {region, inset} = row;
+              const nom = inset.nom(elm);
               if(region) {
                 if(!nomMap.has(region)) {
-                  nomMap.set(region, inset.nom(elm));
+                  nomMap.set(region, nom);
                 }
                 region_half_stuff = ox.smf_key({
                   row: {smf_key: enm.smf_keys.elm},
                   elm: {elm: region, nom: nomMap.get(region)},
-                  parent: half_stuff
+                  parent: half_stuff,
+                  dop: {
+                    formula: glass_rows
+                      .filter(v => v.region === region)
+                      .map(v => v.inset.name)
+                      .join('x'),
+                    region,
+                    elm: elm.elm,
+                  }
                 });
-                glr.nom = `х|${glass_rows
-                  .filter(v => v.region === region)
-                  .map(v => v.inset.name)
-                  .join('x')
-                }|r${region}`;
               }
-              else {
-                glr.nom = `n|${inset.nom(elm)?.ref}|r0`;
-              }
+              glr.nom = `n|${nom.ref}|r${region || 0}`;
               const {insert_glass_type} = inset;
               const is_glass = !insert_glass_type.is('dist') &&
                 !insert_glass_type.is('dists') &&

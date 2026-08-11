@@ -6468,31 +6468,50 @@ set struct(v){this._setter_ts('struct',v)}
     }
   }
 
-  find_create_cx(elm, origin, modify, order_rows, loading) {
-    const {_manager, calc_order, params, inserts} = this;
-    const {job_prm, utils, cat} = $p;
-    if(!origin) {
-      origin = cat.inserts.get();
-    }
-    const selector = {leading_product: this, leading_elm: elm, origin};
-    if(origin === 'any') {
-      origin = cat.inserts.get();
-      delete selector.origin;
+  find_cx(elm, origin) {
+    const {_manager} = this;
+    const selector = {leading_product: this, leading_elm: elm};
+    if(origin !== 'any') {
+      if(!origin) {
+        origin = $p.cat.inserts.get();
+      }
+      selector.origin = origin;
     }
     let cx;
     _manager.find_rows(selector, (obj) => {
-      if(!obj._deleted) {
-        cx = obj;
-        return false;
+      if(obj._deleted) {
+        obj.mark_deleted(false);
       }
+      cx = obj;
+      return false;
     });
-    if(!cx) {
-      cx = cat.characteristics.create({
+    return cx;
+  }
+  find_create_cx(elm, origin, modify, order_rows, loading) {
+    const {_manager, calc_order, params, inserts, struct} = this;
+    const {job_prm, utils, cat} = $p;
+
+        if(origin === 'any') {
+      origin = cat.inserts.get();
+      delete selector.origin;
+    }
+    let cx = this.find_cx(elm, origin);
+    if(!origin || origin === 'any') {
+      origin = cat.inserts.get();
+    }
+
+        if(!cx) {
+      const attr = {
         calc_order,
         leading_product: this,
         leading_elm: elm,
         origin
-      }, false, true)._set_loaded();
+      };
+      const struct_row = struct.find({parent: '', elm, smf_key: 'elm'});
+      if(struct_row) {
+        attr.ref = struct_row.identifier;
+      }
+      cx = cat.characteristics.create(attr, false, true)._set_loaded();
     }
     if(loading) {
       cx._data._loading = true;
@@ -7067,8 +7086,10 @@ set struct(v){this._setter_ts('struct',v)}
     if(!isArray && elmno < 0) {
       coordinates.find_rows({cnstr: -elmno}, ({elm: num, inset}) => {
         if(inset.is_order_row_prod({ox: this, elm: elm || {elm: num}, contour: contour || {cnstr: -elmno}})) {
-          const cx = this.find_create_cx(num, inset, false);
-          weight += cx.elm_weight();
+          const cx = this.find_cx(num);
+          if(cx) {
+            weight += cx.elm_weight();
+          }
         }
       });
     }
@@ -7140,7 +7161,7 @@ set struct(v){this._setter_ts('struct',v)}
     return this._data.frame;
   }
 
-  smf_key({row, elm, layer, parent = ''}) {
+  smf_key({row, elm, layer, parent = '', dop}) {
     const {smf_key} = row;
     if(!smf_key.empty()) {
       const {utils} = $p;
@@ -7161,12 +7182,11 @@ set struct(v){this._setter_ts('struct',v)}
         let cx;
         if(!parent && smf_key.is('elm')) {
           const {_manager} = this;
-          _manager.find_rows({
-            leading_product: this,
-            leading_elm: elm.elm,
-            origin: _manager._owner.inserts.get(),
-          }, (obj) => {
-            if(!obj._deleted) {
+          _manager.find_rows({leading_product: this, leading_elm: elm.elm}, (obj) => {
+            if(obj.origin.empty() || obj.origin == elm.inset) {
+              if(obj._deleted) {
+                obj.mark_deleted(false);
+              }
               cx = obj;
               return false;
             }
@@ -7182,6 +7202,9 @@ set struct(v){this._setter_ts('struct',v)}
       }
       else {
         smf_row.nom = this.owner;
+      }
+      if(dop && utils.hasDiff?.(smf_row.dop, dop)) {
+        smf_row.dop = dop;
       }
       return smf_row.identifier;      
     }
@@ -7360,6 +7383,8 @@ get nom(){return this._getter('nom')}
 set nom(v){this._setter('nom',v)}
 get identifier(){return this._getter('identifier')}
 set identifier(v){this._setter('identifier',v)}
+get dop(){return this._getter('dop')}
+set dop(v){this._setter('dop',v)}
 }
 $p.CatCharacteristicsStructRow = CatCharacteristicsStructRow;
 $p.cat.create('characteristics');

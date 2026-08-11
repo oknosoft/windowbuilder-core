@@ -1014,7 +1014,10 @@ class BuilderElement extends paper.Group {
   get weight() {
     let {ox, elm, inset, layer} = this;
     if(inset.is_order_row_prod({ox, elm: this, contour: layer})) {
-      ox = this.ox.find_create_cx(elm, $p.utils.blank.guid, false);
+      const cx = ox.find_cx(elm);
+      if(cx?.specification.count()) {
+        ox = cx;
+      }
     }
     else {
       ox = layer.prod_ox;
@@ -16764,9 +16767,9 @@ class ProductsBuilding {
           s: 0,
           x: _row.len,
           y: 0,
-          origin: inset,
+          origin: blank.guid,
         };
-        const cx = Object.assign(ox.find_create_cx(elm.elm, 'any'), attrs);
+        const cx = Object.assign(ox.find_create_cx(elm.elm), attrs);
         ox._order_rows.push(cx);
         cx._data._loading = true;
         spec = cx.specification.clear();
@@ -19441,24 +19444,26 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
             let region_half_stuff;
             if(fill_regions) {
               const {region, inset} = row;
+              const nom = inset.nom(elm);
               if(region) {
                 if(!nomMap.has(region)) {
-                  nomMap.set(region, inset.nom(elm));
+                  nomMap.set(region, nom);
                 }
                 region_half_stuff = ox.smf_key({
                   row: {smf_key: enm.smf_keys.elm},
                   elm: {elm: region, nom: nomMap.get(region)},
-                  parent: half_stuff
+                  parent: half_stuff,
+                  dop: {
+                    formula: glass_rows
+                      .filter(v => v.region === region)
+                      .map(v => v.inset.name)
+                      .join('x'),
+                    region,
+                    elm: elm.elm,
+                  }
                 });
-                glr.nom = `х|${glass_rows
-                  .filter(v => v.region === region)
-                  .map(v => v.inset.name)
-                  .join('x')
-                }|r${region}`;
               }
-              else {
-                glr.nom = `n|${inset.nom(elm)?.ref}|r0`;
-              }
+              glr.nom = `n|${nom.ref}|r${region || 0}`;
               const {insert_glass_type} = inset;
               const is_glass = !insert_glass_type.is('dist') &&
                 !insert_glass_type.is('dists') &&
