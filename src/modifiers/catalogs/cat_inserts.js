@@ -1045,10 +1045,7 @@
                   elm: {elm: region, nom: nomMap.get(region)},
                   parent: half_stuff,
                   dop: {
-                    formula: glass_rows
-                      .filter(v => v.region === region)
-                      .map(v => v.inset.name)
-                      .join('x'),
+                    formula: glass_rows.filter(v => v.region === region).map(v => v.inset.name).join('x'),
                     region,
                     elm: elm.elm,
                   }

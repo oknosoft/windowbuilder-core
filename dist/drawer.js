@@ -17083,14 +17083,17 @@ class ProductsBuilding {
           if(!spec.count()) {
             cx.sys = layer.sys;
             cx.clr = ox.clr;
-            const {bounds} = layer;
-            cx.x = bounds.width;
-            cx.y = bounds.height;
-            cx.s = (bounds.area / 1e6).round(4);
-            cx.z = layer.thickness(true);
-            cx.calc_order_row.nom = cx.prod_nom;
-            cx.calc_order_row.ordn = ox;
-            cx.prod_name();
+            const blayer = layer instanceof ContourVirtual ? layer.contours[0] : layer;
+            if(blayer) {
+              const {bounds} = blayer;
+              cx.x = bounds.width;
+              cx.y = bounds.height;
+              cx.s = (bounds.area / 1e6).round(4);
+              cx.z = layer.thickness(true);
+              cx.calc_order_row.nom = cx.prod_nom;
+              cx.calc_order_row.ordn = ox;
+              cx.prod_name();
+            }
           }
         }
       }
@@ -19454,10 +19457,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   elm: {elm: region, nom: nomMap.get(region)},
                   parent: half_stuff,
                   dop: {
-                    formula: glass_rows
-                      .filter(v => v.region === region)
-                      .map(v => v.inset.name)
-                      .join('x'),
+                    formula: glass_rows.filter(v => v.region === region).map(v => v.inset.name).join('x'),
                     region,
                     elm: elm.elm,
                   }
