@@ -21938,12 +21938,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         ads.push('confederate');
       }
       let main_manager = this.contract._extra('buyer_main_manager');
-      if(main_manager.empty() && !this.contract.parent.empty()) {
-        main_manager = this.contract.parent._extra('buyer_main_manager');
-      }
-      if(this.buyer_main_manager !== main_manager) {
-        this.buyer_main_manager = main_manager;
-        ads.push('extra_fields');
+      if(main_manager) {
+        if(main_manager.empty() && !this.contract.parent.empty()) {
+          main_manager = this.contract.parent._extra('buyer_main_manager');
+        }
+        if(this.buyer_main_manager !== main_manager) {
+          this.buyer_main_manager = main_manager;
+          ads.push('extra_fields');
+        }
       }
     }
     if(field === 'obj_delivery_state' && this.clear_templates_props) {
