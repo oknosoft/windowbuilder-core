@@ -14866,12 +14866,15 @@ class Scheme extends paper.Project {
   }
   get_svg(attr = {}) {
     const selectedItems = Object.values(this._selectionItems)
-      .filter(v => v instanceof BuilderElement)
-      .map(item => ({
-        item,
-        b: item.b?.selected,
-        e: item.e?.selected,
-      }));
+      .filter(v => v instanceof BuilderElement || v.parent instanceof BuilderElement)
+      .map(v => {
+        const profile = v instanceof BuilderElement ? v : v.parent;
+        return {
+          item: profile,
+          b: profile.b?.selected,
+          e: profile.e?.selected,
+        };
+      });
     this.deselectAll();
     const options = attr.export_options || {};
     if(!options.precision) {
