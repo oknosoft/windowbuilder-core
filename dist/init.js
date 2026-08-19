@@ -9114,10 +9114,10 @@ class DocCalc_orderManager extends DocManager {
         const tmp = {calc_order: dst.ref};
         const _obj = row.characteristic._obj || row.characteristic;
         if(clone) {
-          utils._mixin(tmp, _obj, null, ['calc_order', 'class_name']);
+          utils._mixin(tmp, _obj, null, ['calc_order', 'class_name', 'struct']);
         }
         else {
-          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev,specification,class_name'.split(','), true);
+          utils._mixin(tmp, _obj, null, 'ref,name,calc_order,timestamp,_rev,specification,class_name,struct'.split(','), true);
         }
         const cx = cat.characteristics.create(tmp, false, true);
         prow.characteristic = cx.ref;
