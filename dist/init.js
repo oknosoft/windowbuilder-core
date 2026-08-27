@@ -6232,7 +6232,7 @@ set struct(v){this._setter_ts('struct',v)}
   }
 
   load(attr = {}) {
-    if(this.obj_delivery_state == 'Шаблон') {
+    if(this.obj_delivery_state.is('Шаблон')) {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
     }
     return super.load(attr);
@@ -7208,6 +7208,14 @@ set struct(v){this._setter_ts('struct',v)}
       }
       return smf_row.identifier;      
     }
+  }
+
+  toJSON() {
+    const json = super.toJSON();
+    if(this instanceof CatCharacteristics && this.obj_delivery_state.is('Шаблон')) {
+      delete json.struct;
+    }
+    return json;
   }
 
   static builder_props_defaults = {

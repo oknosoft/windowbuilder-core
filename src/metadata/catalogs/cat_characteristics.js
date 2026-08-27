@@ -2,9 +2,9 @@
 exports.CatCharacteristics = class CatCharacteristics extends Object {
 
   /**
+   * @summary перед записью надо пересчитать наименование и рассчитать итоги
    * @param attr
-   * @returns {CatCharacteristics|boolean}
-   * перед записью надо пересчитать наименование и рассчитать итоги
+   * @return {CatCharacteristics|boolean}
    */
   before_save(attr) {
 
@@ -55,7 +55,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
   // шаблоны читаем из ram
   load(attr = {}) {
-    if(this.obj_delivery_state == 'Шаблон') {
+    if(this.obj_delivery_state.is('Шаблон')) {
       attr.db = this._manager.adapter.db({cachable: 'ram'});
     }
     return super.load(attr);
@@ -989,7 +989,8 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
 
   /**
    * Рассчитывает массу фрагмента изделия
-   * @param [elmno] {Number|Array|undefined} - номер элемента или массив номеров (с полюсом) или слоя (с минусом)
+   * @param {Number|Array|undefined} [elmno] - номер элемента или массив номеров (с полюсом) или слоя (с минусом)
+   * @param {Object} [context]
    * @return {Number}
    */
   elm_weight(elmno, context = {}) {
@@ -1171,6 +1172,14 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
       }
       return smf_row.identifier;      
     }
+  }
+
+  toJSON() {
+    const json = super.toJSON();
+    if(this instanceof CatCharacteristics && this.obj_delivery_state.is('Шаблон')) {
+      delete json.struct;
+    }
+    return json;
   }
 
   /**
