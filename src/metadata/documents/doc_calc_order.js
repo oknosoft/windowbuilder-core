@@ -75,7 +75,7 @@ exports.DocCalc_orderManager = class DocCalc_orderManager extends Object {
     dst._modified = true;
     if(!clone) {
       utils._mixin(dst._obj, others, null,
-        'ref,date,number_doc,posted,_deleted,number_internal,production,planning,manager,obj_delivery_state'.split(','));
+        'ref,date,number_doc,posted,_deleted,number_internal,production,planning,manager,obj_delivery_state,struct'.split(','));
       dst.extra_fields.load((src._obj || src).extra_fields);
     }
 
