@@ -54,7 +54,7 @@ $p.cat.contracts.__define({
         else if (!a.parent.empty() && b.parent.empty()) {
           return 1;
         }
-        return a.date < b.date;
+        return b.date - a.date;
       };
       
       if(filtered?.length) {
