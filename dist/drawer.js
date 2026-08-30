@@ -18193,7 +18193,7 @@ $p.cat.contracts.__define({
         else if (!a.parent.empty() && b.parent.empty()) {
           return 1;
         }
-        return a.date > b.date;
+        return a.date < b.date;
       };
       if(filtered?.length) {
         filtered.sort(sort);
