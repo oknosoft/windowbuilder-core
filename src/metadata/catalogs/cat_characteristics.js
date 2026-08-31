@@ -104,7 +104,7 @@ exports.CatCharacteristics = class CatCharacteristics extends Object {
    */
   add_inset_params(inset, cnstr, blank_inset, region) {
     const ts_params = this.params;
-    const params = new Set();
+    const params = new Set([$p.job_prm.properties.glass_separately]);
     const filter = region ? {cnstr, region} : {cnstr, inset: blank_inset || inset};
 
     ts_params.find_rows(filter, ({param}) => params.add(param));
