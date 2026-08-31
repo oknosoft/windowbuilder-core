@@ -48,6 +48,9 @@ class SpecBuilding {
     // подмешаем в параметры дату цены
     attr.date = calc_order.price_date;
 
+    // сортируем табчасть продукции
+    calc_order.reorder_prod();
+
     // удаляем из спецификации строки, добавленные предыдущими корректировками
     spec.find_rows({ch: {in: [-1, -2]}}, (row) => adel.push(row));
     adel.forEach((row) => spec.del(row, true));

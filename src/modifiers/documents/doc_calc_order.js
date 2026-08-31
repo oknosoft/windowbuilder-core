@@ -2165,6 +2165,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rm) {
       this.production.del(row);
     }
+    
+    this.reorder_prod();
 
     const {CatInsert_bind, CatInserts, cat: {insert_bind, characteristics}} = $p;
     const links = [];
@@ -2344,7 +2346,61 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     dp.specification.group_by(['nom', 'nom_characteristic', 'clr'], ['quantity']);
     return dp;
   }
-  
+
+  /**
+   * @summary Сортирует табчасть продукции перед дополнительным пересчётом
+   */
+  reorder_prod() {
+    const {job_prm: {lists: {production_order}, nom: {accessories}}, utils} = $p;
+    const pre = [];
+    for(const prow of this.production) {
+      const {row, nom, characteristic} = prow;
+      let order = 0;
+      if (characteristic.calc_order === this) {
+        const {leading_elm, leading_product, origin, coordinates} = characteristic;
+        if(leading_product.empty()) {
+          // основное изделие
+          if(coordinates.count()) {
+            order = -1e9 + row * 1e5;
+          }
+          else if(nom === accessories) {
+            order = -1e3;
+          }
+          else {
+            const index = production_order.indexOf(origin.insert_type) + 1;
+            if(index > 0) {
+              order = index * 1e6;
+            }
+            else if(nom.is_accessory) {
+              order = row; 
+            }
+            else if(nom.is_service) {
+              order = row * 1e3;
+            }
+          }
+        }
+        else {
+          const lrow = leading_product.calc_order_row.row;
+          order = -1e9 + lrow * 1e5 + 1e4 + leading_elm;
+        }
+      }
+      pre.push({prow, order});
+    }
+    pre.sort(utils.sort('order'));
+    const {_obj} = this.production;
+    pre.forEach(({prow}, index) => {
+      const realIndex = _obj.indexOf(prow._obj);
+      if(realIndex != index) {
+        this.production.swap(realIndex, index);
+      }
+    });
+  }
+
+  /**
+   * @summary Находит заказ поставщику-агенту
+   * @desc При необходимости, создаёт
+   * @return {DocPurchaseOrder}
+   */
   agent_order() {
     for(const row of this.orders) {
       if(row.is_supplier && row.is_supplier.empty?.()) {
