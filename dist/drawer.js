@@ -21362,7 +21362,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return this.number_doc ? Promise.resolve(this) : this.new_number_doc();
   }
   before_save(attr) {
-    const {ui, utils, adapters: {pouch}, wsql, md, enm: {
+    const {ui, utils, job_prm, adapters: {pouch}, wsql, md, enm: {
       obj_delivery_states: {Отклонен, Отозван, Черновик, Шаблон, Подтвержден, Отправлен, Архив},
       elm_types: {ОшибкаКритическая, ОшибкаИнфо},
     }} = $p;
@@ -21501,8 +21501,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     }
     const sobjs = this.product_rows(true, attr);
     const db = attr?.db || (obj_delivery_state == Шаблон ?  pouch.remote.ram : pouch.db(_manager));
-    return ($p.job_prm.builder?.cx_in_order && obj_delivery_state !== Шаблон) ?
-      this.save_with_cx(sobjs, db) : this.save_normal(sobjs, db);
+    const {cx_in_order} = job_prm.builder || {};
+    return (cx_in_order && obj_delivery_state != Шаблон) ?
+      (cx_in_order === 'attachments' ? this.save_with_cx_att(sobjs, db) : this.save_with_cx(sobjs, db)) : this.save_normal(sobjs, db);
   }
   save_with_cx(sobjs, db) {
     const {utils, wsql, job_prm} = $p;
@@ -21594,6 +21595,71 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         _manager.emit_async('svgs', this);
         return null;
       });
+  }
+  async save_with_cx_att(sobjs, db) {
+    const {utils, wsql, adapters: {pouch}} = $p;
+    const {_obj, _manager, class_name, production, constructor} = this;
+    const _id = `${class_name}|${_obj.ref}`;
+    const tmp = Object.assign({_id, class_name}, _obj);
+    delete tmp.ref;
+    tmp.timestamp = {
+      moment: utils.moment().format('YYYY-MM-DDTHH:mm:ss ZZ'),
+      user: wsql.get_user_param('user_name'),
+    };
+    tmp._attachments = this._attachments || {};
+    if(_manager.build_search) {
+      _manager.build_search(tmp, this);
+    }
+    else {
+      tmp.search = ((_obj.number_doc || '') + (_obj.note ? ' ' + _obj.note : '')).toLowerCase();
+    }
+    const rm = [];
+    for(const file in tmp._attachments) {
+      const [name, ext] = file.split('.');
+      if(ext === 'json' && name.length === 22) {
+        if(production.find({characteristic: utils.b62.decode(name)})) {
+          continue;
+        }
+        rm.push(file);
+      }
+    }
+    for(const file of rm) {
+      delete tmp._attachments[file];
+    }
+    const {redundantAttFields} = constructor;
+    sobjs.forEach((obj, i) => {
+      const ref = obj._id.substring(20);
+      for(const fld of redundantAttFields) {
+        delete obj[fld];
+      }
+      sobjs[i] = JSON.stringify(obj);
+      const bytes = new TextEncoder().encode(sobjs[i]);
+      const file = `${utils.b62.encode(ref)}.json`;
+      tmp._attachments[file] = {
+        follows: true,
+        content_type: 'application/json',
+        length: bytes.byteLength,
+      };
+    });
+    if(!this.is_new() && !tmp._rev) {
+      const res = await pouch.fetch(`${db.name}/${_id}`, {method: 'HEAD'});
+      tmp._rev = /"([^"]*)"/.exec(res.headers.get('Etag'))[1];
+    }
+    const boundary = `cx-${utils.generate_guid()}`;
+    let body = `--${boundary}\r\n`;
+    body += 'Content-Type: application/json; charset=UTF-8\r\n\r\n';
+    body += JSON.stringify(tmp);
+    for(const cx of sobjs) {
+      body += `\r\n--${boundary}\r\n\r\n`;
+      body += cx;
+    }
+    body += `\r\n--${boundary}--\r\n`;
+    const headers = new Headers();
+    headers.set('Content-Type', `multipart/related;boundary=${boundary}`);
+    const response = await pouch.fetch(`${db.name}/${_id}`, {method: 'PUT', headers, body});
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
   }
   save_normal(sobjs, db) {
     const {ui, utils, wsql, md, enm: {obj_delivery_states: {Шаблон}}} = $p;
@@ -23225,6 +23291,20 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       }
     }
   }
+  static redundantAttFields = [
+    'calc_order',
+    'class_name',
+    'captured',
+    'editor',
+    'timestamp',
+    'partner',
+    'department',
+    'search',
+    'branch',
+    'obj_delivery_states',
+    '_id',
+    '_rev',
+  ];
 };
 $p.DocCalc_order.FakeElm = FakeElm;
 $p.DocCalc_order.FakeLenAngl = FakeLenAngl;
