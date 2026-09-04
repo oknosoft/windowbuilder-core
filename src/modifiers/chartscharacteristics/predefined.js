@@ -536,6 +536,13 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           };
           break;
           
+        case 'sys_hierarchy':
+          _data._formula = function (attr) {
+            const sys = properties.predefined('sys').calculated._data._formula(attr);
+            return sys?._extra(prm) || property_values.get();
+          };
+          break;
+          
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {
@@ -674,6 +681,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',           // отдел абонента текущего контекста
     'furn',             // фурнитура текущего контекста
     'sys',              // система текущего контекста
+    'sys_hierarchy',    // иерархия систем текущего контекста
     'inset',            // вставка текущего элемента
     'inserts_glass_type',  // тип вставки заполнения
     'clr_product',      // цвет изделия

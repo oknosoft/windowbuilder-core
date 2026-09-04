@@ -20790,6 +20790,12 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             return ox.sys;
           };
           break;
+        case 'sys_hierarchy':
+          _data._formula = function (attr) {
+            const sys = properties.predefined('sys').calculated._data._formula(attr);
+            return sys?._extra(prm) || property_values.get();
+          };
+          break;
         case 'handle_height':
           _data._formula = function ({elm, layer}) {
             if(!layer && elm) {
@@ -20918,6 +20924,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'branch',          
     'furn',            
     'sys',             
+    'sys_hierarchy',   
     'inset',           
     'inserts_glass_type', 
     'clr_product',     
@@ -21632,7 +21639,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       for(const fld of redundantAttFields) {
         delete obj[fld];
       }
-      sobjs[i] = JSON.stringify(obj);
+      sobjs[i] = JSON.stringify(Object.assign({ref}, obj));
       const bytes = new TextEncoder().encode(sobjs[i]);
       const file = `${utils.b62.encode(ref)}.json`;
       tmp._attachments[file] = {
@@ -21645,7 +21652,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       const res = await pouch.fetch(`${db.name}/${_id}`, {method: 'HEAD'});
       tmp._rev = /"([^"]*)"/.exec(res.headers.get('Etag'))[1];
     }
-    const boundary = `cx-${utils.generate_guid()}`;
+    const boundary = `cx${utils.generate_guid().replace(/-/g, '')}`;
     let body = `--${boundary}\r\n`;
     body += 'Content-Type: application/json; charset=UTF-8\r\n\r\n';
     body += JSON.stringify(tmp);
@@ -22201,19 +22208,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   product_rows(save, attr) {
     let res = [], weight = 0;
     const {production, partner, obj_delivery_state, route, force_route, exclude_route, department, _deleted} = this;
-    const {utils, wsql} = $p;
-    const user = wsql.get_user_param('user_name');    
+    const {utils, wsql, job_prm: {builder}} = $p;
+    const user = wsql.get_user_param('user_name');
+    const cx_att = builder?.cx_in_order === 'attachments';
     this.production.forEach(({row, characteristic, quantity}) => {
       if(!characteristic.empty() && characteristic.calc_order === this) {
         if(characteristic.product !== row || 
           characteristic._modified ||
           characteristic._deleted !== _deleted ||
-          characteristic.partner !== partner ||
-          characteristic.obj_delivery_state !== obj_delivery_state ||
-          characteristic.route !== route ||
-          characteristic.force_route !== force_route ||
-          characteristic.exclude_route !== exclude_route ||
-          characteristic.department !== department) {
+          (!cx_att && (
+            characteristic.partner !== partner ||
+            characteristic.obj_delivery_state !== obj_delivery_state ||
+            characteristic.route !== route ||
+            characteristic.force_route !== force_route ||
+            characteristic.exclude_route !== exclude_route ||
+            characteristic.department !== department
+          ))) {
           characteristic.product = row;
           characteristic.obj_delivery_state = obj_delivery_state;
           characteristic.route = route;
@@ -23300,8 +23310,11 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     'partner',
     'department',
     'search',
+    'route',
+    'force_route',
+    'exclude_route',
     'branch',
-    'obj_delivery_states',
+    'obj_delivery_state',
     '_id',
     '_rev',
   ];
