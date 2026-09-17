@@ -9036,6 +9036,8 @@ $p.DocCalc_orderLinksRow = DocCalc_orderLinksRow;
 class DocCalc_orderStructRow extends TabularSectionRow{
 get parent(){return this._getter('parent')}
 set parent(v){this._setter('parent',v)}
+get elm(){return this._getter('elm')}
+set elm(v){this._setter('elm',v)}
 get smf_key(){return this._getter('smf_key')}
 set smf_key(v){this._setter('smf_key',v)}
 get nom(){return this._getter('nom')}

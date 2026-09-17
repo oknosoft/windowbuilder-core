@@ -20879,12 +20879,11 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             else if(!calc_order && elm) {
               calc_order = elm.ox.calc_order;
             }
-            const prow = (ox || layer?._ox || elm?.ox).params.find({param: prm});
+            const prow = (ox || layer?._ox || elm?.ox)?.params?.find({param: prm});
             if(prow && !prow.value.empty()) {
               return prow.value;  
             }
-            const branch = calc_order.organization._extra(prm);
-            return branch && !branch.empty() ? branch : calc_order.manager.branch;
+            return calc_order?.branch;
           };
           break;
         case 'order_category':
