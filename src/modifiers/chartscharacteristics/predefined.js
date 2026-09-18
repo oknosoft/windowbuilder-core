@@ -78,7 +78,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             if(clr?.is_composite()) {
               clr = clr.clr_in; 
-            };   
+            }  
             if(clr?.grouping) {
               const name = clr.grouping.name.split(' / ')[0]; 
               for(const v of prm.values) {
@@ -93,7 +93,24 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
 
         case 'clr_out_grp':
           _data._formula = function ({elm, clr, layer}) {
-
+            if(!prm.values) {
+              prm.values = property_values.find_rows({owner: prm});
+            }
+            if(!clr) {
+              clr = elm?.clr || layer?.clr;
+            }
+            if(clr?.is_composite()) {
+              clr = clr.clr_out;
+            }
+            if(clr?.grouping) {
+              const name = clr.grouping.name.split(' / ')[0];
+              for(const v of prm.values) {
+                if(v.name === name) {
+                  return v;
+                }
+              }
+            }
+            return prm.values.find(v => v.name === 'Нет');
           }
           break;
             
@@ -715,7 +732,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'clr_product',      // цвет изделия
     'clr_inset',        // цвет вставки в элемент
     'clr_grp',          // группа цветов с учётом перевёрта сторон (каширование)
-    'clr_in_grp',          // группа цветов с учётом перевёрта сторон (каширование)
+    'clr_in_grp',       // группа цветов изнутри (каширование)
+    'clr_out_grp',      // группа цветов снаружи (каширование)
     'handle_height',    // высота ручки
     'width',            // ширина из параметра
     'height',           // высота слоя или изделия

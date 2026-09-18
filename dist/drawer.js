@@ -20375,7 +20375,7 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
             }
             if(clr?.is_composite()) {
               clr = clr.clr_in; 
-            };   
+            }  
             if(clr?.grouping) {
               const name = clr.grouping.name.split(' / ')[0]; 
               for(const v of prm.values) {
@@ -20389,6 +20389,24 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
           break;
         case 'clr_out_grp':
           _data._formula = function ({elm, clr, layer}) {
+            if(!prm.values) {
+              prm.values = property_values.find_rows({owner: prm});
+            }
+            if(!clr) {
+              clr = elm?.clr || layer?.clr;
+            }
+            if(clr?.is_composite()) {
+              clr = clr.clr_out;
+            }
+            if(clr?.grouping) {
+              const name = clr.grouping.name.split(' / ')[0];
+              for(const v of prm.values) {
+                if(v.name === name) {
+                  return v;
+                }
+              }
+            }
+            return prm.values.find(v => v.name === 'Нет');
           }
           break;
         case 'inset':
@@ -20955,7 +20973,8 @@ $p.adapters.pouch.once('pouch_doc_ram_loaded', () => {
     'clr_product',     
     'clr_inset',       
     'clr_grp',         
-    'clr_in_grp',         
+    'clr_in_grp',      
+    'clr_out_grp',     
     'handle_height',   
     'width',           
     'height',          
