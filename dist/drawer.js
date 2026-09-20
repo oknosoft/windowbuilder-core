@@ -17278,16 +17278,22 @@ class ProductsBuilding {
       });
   }
   after_spec_calculated(ox) {
-    const {specification} = ox;
+    const {specification, calc_order, _manager} = ox;
     const delta = 0.001;
     const byNom = new Map();
-    for(const row of specification) {
-      if(row.len && !row.width) {
-        if(!byNom.has(row.nom)) {
-          byNom.set(row.nom, new Map());
+    const noms = new Map;
+    for(const {nom, len, width, characteristic, clr} of specification) {
+      if(len && !width) {
+        if(!byNom.has(nom)) {
+          byNom.set(nom, new Map());
         }
-        byNom.get(row.nom).set(row.len, row.len);
+        byNom.get(nom).set(len, len);
       }
+      if(!noms.has(nom)) {
+        noms.set(nom, new Set());
+      }
+      noms.get(nom).add(characteristic);
+      noms.get(nom).add(clr);
     }
     for(const [nom, map] of byNom) {
       const lengths = Array.from(map.keys());
@@ -17308,6 +17314,7 @@ class ProductsBuilding {
         row.len = map.get(row.len);
       }
     }
+    _manager._owner.supplier_restrictions.check(specification, noms, calc_order.date);
     specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
   }
   static check_params({params, row_spec, count_calc_method, ...other}) {
