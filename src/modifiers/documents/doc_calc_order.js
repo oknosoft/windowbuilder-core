@@ -1083,8 +1083,29 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         // чистим возможные строки аксессуаров
         production.find_rows({nom: job_prm.nom.accessories}, (prow) => {
           const cx = prow.characteristic;
-          if(cx.specification.find({specify: characteristic})) {
-            cx.specification.clear({specify: characteristic});
+          const noms = new Map();
+          const rm = new Set();
+          for(const row of cx.specification) {
+            if(row.specify === characteristic) {
+              if(!noms.has(row.nom)) {
+                noms.set(row.nom, new Set());
+              }
+              noms.get(row.nom).add(row.clr);
+              rm.add(row);
+            }
+          }
+          for(const [nom, clrs] of noms) {
+            for(const clr of clrs) {
+              const row = cx.specification.find({nom, dop: -3, clr});
+              if(row) {
+                rm.add(row);
+              }
+            }
+          }
+          if(rm.size) {
+            for(const row of rm) {
+              cx.specification.del(row);
+            }
             cx.weight = cx.elm_weight();
             cx.name = cx.prod_name();
           }
@@ -2766,7 +2787,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
   inset_spec() {
     const {characteristic, len, width, s} = this;
     const {origin, calc_order, specification} = characteristic;
-    calc_order.accessories('clear', characteristic);
+    const kit = calc_order.accessories('clear', characteristic);
     specification.clear();
     characteristic.x = len;
     characteristic.y = width;
@@ -2775,6 +2796,9 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const elm = new FakeElm(this);
     origin.calculate_spec({elm, len_angl, ox: characteristic});
     characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
+    if(kit && kit.calc_order_row && !kit.specification.count() ) {
+      calc_order.production.del(kit.calc_order_row);
+    }
   }
 
 };
