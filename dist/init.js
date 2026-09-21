@@ -2223,9 +2223,30 @@ class CatSupplier_restrictionsManager extends CatManager {
   }
 
     check(specification, noms, date) {
+    const {index} = this;
+    const add = new Map();
     for(const [nom, cxs] of noms) {
-
+      if(index.has(nom)) {
+        const rows = index.get(nom).filter(row => date >= row.period);
+        if(rows.length) {
+          for(const cx of cxs) {
+            for(const row of rows) {
+              const {characteristic} = row;
+              if(characteristic === cx) {
+                if(!add.has(row.procedure)) {
+                  add.set(row.procedure, new Set());
+                }
+                add.get(row.procedure).add(nom);
+              }
+            }
           }
+        }
+      }
+    }
+    for(const [nom, noms] of add) {
+      const row = specification.add({nom, dop: -2});
+      row.specify = Array.from(noms).map(v => v.name).join(',');
+    }
   }
 }
 $p.cat.create('supplier_restrictions', CatSupplier_restrictionsManager, false);
