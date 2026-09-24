@@ -4048,6 +4048,10 @@ get region(){return this._getter('region')}
 set region(v){this._setter('region',v)}
 get clr(){return this._getter('clr')}
 set clr(v){this._setter('clr',v)}
+get furn(){return this._getter('furn')}
+set furn(v){this._setter('furn',v)}
+get prefix(){return this._getter('prefix')}
+set prefix(v){this._setter('prefix',v)}
 }
 $p.CatProduction_paramsClr_conformityRow = CatProduction_paramsClr_conformityRow;
 class CatProduction_paramsManager extends CatManager {
