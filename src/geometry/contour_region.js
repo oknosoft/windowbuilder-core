@@ -39,15 +39,27 @@ class ContourRegion extends Contour {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, region, weight} = this;
+    const {cnstr, layer, region, sys, weight} = this;
     const suffix = layer.level ? 'створки' : 'рамы';
-    return `Накладки ${suffix} ${region}-${cnstr}:${layer.cnstr}`  +
+    const crow = sys.clr_conformity.find({region});
+    const prefix = crow?.prefix || 'Накладки'; 
+    return `${prefix} ${suffix} ${region}-${cnstr}:${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
   
   get region() {
     return this.dop.region || 0;
+  }
+
+  /**
+   * @summary Бит, есть ли у данного слоя, фурнитура
+   * @type {Boolean}
+   */
+  get has_furn() {
+    const {region, sys} = this;
+    const crow = sys.clr_conformity.find({region});
+    return !crow?.furn;
   }
 
   /**

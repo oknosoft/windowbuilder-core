@@ -4154,6 +4154,9 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     return this.project.contours.indexOf(this) > 0;
   }
+  get has_furn() {
+    return true;
+  }
   refill_prm() {
     const {_ox: {params}, cnstr, sys: {product_params}} = this;
     const inset = $p.utils.blank.guid;
@@ -5069,14 +5072,21 @@ class ContourRegion extends Contour {
     if(!bounds){
       bounds = this.bounds;
     }
-    const {cnstr, layer, region, weight} = this;
+    const {cnstr, layer, region, sys, weight} = this;
     const suffix = layer.level ? 'створки' : 'рамы';
-    return `Накладки ${suffix} ${region}-${cnstr}:${layer.cnstr}`  +
+    const crow = sys.clr_conformity.find({region});
+    const prefix = crow?.prefix || 'Накладки'; 
+    return `${prefix} ${suffix} ${region}-${cnstr}:${layer.cnstr}`  +
       (bounds ? ` ${bounds.width.toFixed()}х${bounds.height.toFixed()}` : '') +
       (weight ? `, ${weight.toFixed()}кг` : '');
   }
   get region() {
     return this.dop.region || 0;
+  }
+  get has_furn() {
+    const {region, sys} = this;
+    const crow = sys.clr_conformity.find({region});
+    return !crow?.furn;
   }
   get level() {
     return this.layer.level;

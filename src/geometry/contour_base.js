@@ -3076,8 +3076,8 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
 
   /**
-   * Бит, может ли данный слой иметь собственную систему
-   * @return {boolean}
+   * @summary Бит, может ли данный слой иметь собственную систему
+   * @type {Boolean}
    */
   get own_sys() {
     // обычные створки наследуют систему родителя
@@ -3090,6 +3090,14 @@ class Contour extends AbstractFilling(paper.Layer) {
     }
     // второй и более рамные, так же, могут иметь свою систему
     return this.project.contours.indexOf(this) > 0;
+  }
+
+  /**
+   * @summary Бит, есть ли у данного слоя, фурнитура
+   * @type {Boolean}
+   */
+  get has_furn() {
+    return true;
   }
 
   /**
