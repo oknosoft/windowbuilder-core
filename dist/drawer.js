@@ -22209,7 +22209,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(name === 'production'){
       this.product_rows();
       if(!this._slave_recalc) {
-        this.reset_specify();
+        this.recalc_insets();
         this.spread_min_volume();
       }
     }
@@ -22847,6 +22847,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       row.unit = row.nom.storage_unit;
     }
     this.reset_specify();
+    this.recalc_insets();
     this.spread_min_volume();
     this._data._loading = false;
   }
@@ -23130,10 +23131,14 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rm) {
       this.production.del(row);
     }
+    this._slave_recalc = false;
+  }
+  recalc_insets(what) {
+    const {_slave_recalc} = this;
+    this._slave_recalc = true;
     this.reorder_prod();
     const {CatInsert_bind, CatInserts, cat: {insert_bind, characteristics}} = $p;
     const links = [];
-    const volumes_map = new Map();
     for(const row of this.production) {
       const {characteristic} = row;
       if (characteristic.calc_order === this) {
@@ -23143,23 +23148,22 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
         if(origin && !origin.empty()) {
           if(origin instanceof CatInserts && origin.slave) {
+            if(typeof what === 'function') {
+              if(!what(origin)) {
+                continue;
+              }
+            }
+            else if(Array.isArray(what)) {
+              if(!what.includes(origin)) {
+                continue;
+              }
+            }
             if(origin.links) {
               links.push(row);
             }
             row.inset_spec();
           }
           row.value_change('quantity', 'update', row.quantity);
-        }
-        for(const sub of characteristic.specification) {
-          const {nom, totqty1} = sub;
-          if(nom.min_volume && totqty1) {
-            if(!volumes_map.has(nom)) {
-              volumes_map.set(nom, {total: 0, prices: []});
-            }
-            const volumes = volumes_map.get(nom);
-            volumes.total += row.quantity * totqty1;
-            volumes.prices.push({row, sub});
-          }
         }
       }
     }
@@ -23168,7 +23172,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       row.inset_spec();
       row.value_change('quantity', 'update', row.quantity);
     }
-    this._slave_recalc = false;
+    this._slave_recalc = _slave_recalc;
   }
   spread_min_volume() {
     const {_slave_recalc} = this;
@@ -23412,9 +23416,9 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const {rounding, _slave_recalc, manager, price_date: date} = _owner._owner;
     const {DocCalc_orderProductionRow, DocPurchase_order, CatInserts, CatInsert_bind, utils, wsql, pricing, job_prm, enm, cat} = $p;
     const rfield = DocCalc_orderProductionRow.rfields[field];
-    let reset_specify;
+    let reset_spec;
     if(field === 'quantity' && !_slave_recalc) {
-      reset_specify = true;
+      reset_spec = true;
       characteristic.specification.clear({dop: -3});
     }
     if(rfield) {
@@ -23526,11 +23530,11 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
         _owner._owner._slave_recalc = true;
         _owner.forEach((row) => {
           if(row === this) return;
-          if(reset_specify) {
+          if(reset_spec) {
             row.characteristic.specification.clear({dop: -3});
           }
           const {origin} = row.characteristic;
-          if(reset_specify || (origin && !origin.empty() && origin.slave)) {
+          if(reset_spec || (origin && !origin.empty() && origin.slave)) {
             row.value_change('quantity', 'update', row.quantity, no_extra_charge);
           }
         });
