@@ -2275,10 +2275,29 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         
       }
     }
+    const kit = this.accessories('clear', 'xxx');
+    if(kit?.calc_order_row && !kit.specification.count()) {
+      rm.push(kit.calc_order_row);
+    }
     for(const row of rm) {
       this.production.del(row);
     }
+    
     this._slave_recalc = false;
+  }
+
+  /**
+   * @summary Освежает сумму документа
+   * @return {*}
+   */
+  refresh_amount() {
+    const {rounding} = this;
+    const amount = this.production.aggregate([], ['amount', 'amount_internal']);
+    amount.doc_amount = amount.amount.round(rounding);
+    amount.amount_internal = amount.amount_internal.round(rounding);
+    delete amount.amount;
+    Object.assign(this, amount);
+    return amount;
   }
 
   /**
@@ -2412,6 +2431,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rows) {
       row.value_change('quantity', 'update', row.quantity);
     }
+
+    // освежаем сумму документа перед записью
+    this.refresh_amount();
 
     this._slave_recalc = _slave_recalc;
   }
@@ -2777,11 +2799,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
         });
       }
-      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
-      amount.doc_amount = amount.amount.round(rounding);
-      amount.amount_internal = amount.amount_internal.round(rounding);
-      delete amount.amount;
-      Object.assign(calc_order, amount);
+      const amount = calc_order.refresh_amount();
       calc_order._manager.emit_async('update', calc_order, amount);
 
       return false;
@@ -2803,7 +2821,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const elm = new FakeElm(this);
     origin.calculate_spec({elm, len_angl, ox: characteristic});
     characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
-    if(kit && kit.calc_order_row && !kit.specification.count() ) {
+    if(kit?.calc_order_row && !kit.specification.count() ) {
       calc_order.production.del(kit.calc_order_row);
     }
   }

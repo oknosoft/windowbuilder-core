@@ -14738,10 +14738,11 @@ class Scheme extends paper.Project {
   }
   save_coordinates(attr = {}) {
     const {_attr, bounds, ox, contours} = this;
-    _attr._saving = true;
-    ox._data._loading = true;
     const {cnn_nodes} = ProductsBuilding;
-    const {inserts} = ox;
+    const {inserts, _data} = ox;
+    _attr._saving = true;
+    const {_loading} = _data;
+    _data._loading = true;
     ox.cnn_elmnts.clear(({elm1, node1}) => {
       return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
@@ -14830,7 +14831,14 @@ class Scheme extends paper.Project {
       ox.s = 0;
     }
     return res
-      .then(() => attr.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .then(() => {
+        if(attr.no_recalc) {
+          _attr._saving = false;
+          _data._loading = _loading;
+          return this;
+        }
+        return $p.products_building.recalc(this, attr);
+      })
       .catch((err) => {
         const {msg, ui} = $p;
         ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
@@ -23128,10 +23136,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
+    const kit = this.accessories('clear', 'xxx');
+    if(kit?.calc_order_row && !kit.specification.count()) {
+      rm.push(kit.calc_order_row);
+    }
     for(const row of rm) {
       this.production.del(row);
     }
     this._slave_recalc = false;
+  }
+  refresh_amount() {
+    const {rounding} = this;
+    const amount = this.production.aggregate([], ['amount', 'amount_internal']);
+    amount.doc_amount = amount.amount.round(rounding);
+    amount.amount_internal = amount.amount_internal.round(rounding);
+    delete amount.amount;
+    Object.assign(this, amount);
+    return amount;
   }
   recalc_insets(what) {
     const {_slave_recalc} = this;
@@ -23245,6 +23266,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     for(const row of rows) {
       row.value_change('quantity', 'update', row.quantity);
     }
+    this.refresh_amount();
     this._slave_recalc = _slave_recalc;
   }
   aggregate_specification(prow) {
@@ -23545,11 +23567,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
           row.value_change('quantity', type, _obj.quantity, no_extra_charge);
         });
       }
-      const amount = _owner.aggregate([], ['amount', 'amount_internal']);
-      amount.doc_amount = amount.amount.round(rounding);
-      amount.amount_internal = amount.amount_internal.round(rounding);
-      delete amount.amount;
-      Object.assign(calc_order, amount);
+      const amount = calc_order.refresh_amount();
       calc_order._manager.emit_async('update', calc_order, amount);
       return false;
     }
@@ -23566,7 +23584,7 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     const elm = new FakeElm(this);
     origin.calculate_spec({elm, len_angl, ox: characteristic});
     characteristic.specification.group_by('nom,clr,characteristic,len,width,s,elm,alp1,alp2,origin,specify,region,stage,dop,half_stuff', 'qty,totqty,totqty1');
-    if(kit && kit.calc_order_row && !kit.specification.count() ) {
+    if(kit?.calc_order_row && !kit.specification.count() ) {
       calc_order.production.del(kit.calc_order_row);
     }
   }

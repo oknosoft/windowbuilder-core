@@ -1337,12 +1337,13 @@ class Scheme extends paper.Project {
 
     const {_attr, bounds, ox, contours} = this;
 
-    _attr._saving = true;
-    ox._data._loading = true;
-
     // чистим табчасти, которые будут перезаполнены
     const {cnn_nodes} = ProductsBuilding;
-    const {inserts} = ox;
+    const {inserts, _data} = ox;
+    _attr._saving = true;
+    const {_loading} = _data;
+    _data._loading = true;
+    
     ox.cnn_elmnts.clear(({elm1, node1}) => {
       return cnn_nodes.includes(node1) || !inserts.find_rows({cnstr: -elm1, region: {ne: 0}}).length;
     });
@@ -1444,7 +1445,14 @@ class Scheme extends paper.Project {
 
     // пересчет спецификации и цен
     return res
-      .then(() => attr.no_recalc ? this : $p.products_building.recalc(this, attr))
+      .then(() => {
+        if(attr.no_recalc) {
+          _attr._saving = false;
+          _data._loading = _loading;
+          return this;
+        }
+        return $p.products_building.recalc(this, attr);
+      })
       .catch((err) => {
         const {msg, ui} = $p;
         ui && ui.dialogs.alert({text: err.message, title: msg.bld_title});
