@@ -62,7 +62,7 @@ module.exports = function(meta, $p) {
           }
         }
         for(const fld in mgrs[name].tabular_sections) {
-          if(fld !== 'servers') {
+          if(!['servers', 'formulas'].includes(fld)) {
             delete mgrs[name].tabular_sections[fld];
           }
         }

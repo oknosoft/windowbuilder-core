@@ -2306,6 +2306,8 @@ get keys(){return this._getter_ts('keys')}
 set keys(v){this._setter_ts('keys',v)}
 get extra_fields(){return this._getter_ts('extra_fields')}
 set extra_fields(v){this._setter_ts('extra_fields',v)}
+get formulas(){return this._getter_ts('formulas')}
+set formulas(v){this._setter_ts('formulas',v)}
 }
 $p.CatBranches = CatBranches;
 class CatBranchesOrganizationsRow extends TabularSectionRow{
@@ -2339,6 +2341,13 @@ get acl_obj(){return this._getter('acl_obj')}
 set acl_obj(v){this._setter('acl_obj',v)}
 }
 $p.CatBranchesKeysRow = CatBranchesKeysRow;
+class CatBranchesFormulasRow extends TabularSectionRow{
+get acl_obj(){return this._getter('acl_obj')}
+set acl_obj(v){this._setter('acl_obj',v)}
+get exclude(){return this._getter('exclude')}
+set exclude(v){this._setter('exclude',v)}
+}
+$p.CatBranchesFormulasRow = CatBranchesFormulasRow;
 class CatBranchesManager extends CatManager {
 
   constructor (owner, class_name) {
@@ -7545,6 +7554,8 @@ get no_mdm(){return this._getter('no_mdm')}
 set no_mdm(v){this._setter('no_mdm',v)}
 get servers(){return this._getter_ts('servers')}
 set servers(v){this._setter_ts('servers',v)}
+get formulas(){return this._getter_ts('formulas')}
+set formulas(v){this._setter_ts('formulas',v)}
 }
 $p.CatAbonents = CatAbonents;
 class CatAbonentsServersRow extends TabularSectionRow{
@@ -7556,6 +7567,11 @@ get proxy(){return this._getter('proxy')}
 set proxy(v){this._setter('proxy',v)}
 }
 $p.CatAbonentsServersRow = CatAbonentsServersRow;
+class CatAbonentsFormulasRow extends TabularSectionRow{
+get acl_obj(){return this._getter('acl_obj')}
+set acl_obj(v){this._setter('acl_obj',v)}
+}
+$p.CatAbonentsFormulasRow = CatAbonentsFormulasRow;
 class CatAbonentsManager extends CatManager {
 
   get current() {
