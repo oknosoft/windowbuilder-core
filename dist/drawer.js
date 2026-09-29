@@ -19645,7 +19645,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
       }
       return res;
     }
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake, own_specify}) {
       const {_row} = elm;
       const {
         perim,
@@ -19686,10 +19686,10 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
         }
         if(count_calc_method === formulas && !formula.empty()){
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
         }
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
@@ -19745,7 +19745,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 origin: row_ins_spec.origin || this,
                 count_calc_method,
               })){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
                 if (len_angl) {
                   len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
                   len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
@@ -19824,7 +19824,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                 qty = aprop.length;
               }
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
                 const fqty = !formula.empty() && formula.execute({
                   ox,
                   clr,
@@ -19869,7 +19869,7 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
               row_spec.len = (bounds.height - sz) * coefficient;

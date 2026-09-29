@@ -1230,9 +1230,11 @@
      * @param {CatClrs} clr
      * @param {Boolean} [totqty0] - если взведён, в totqty1 пишем 0 (например, для реализации параметра "Без заполнений")
      * @param {CatInsert_bind} [bind] - заполнено, если вызов из привязки вставок
+     * @param {Boolean} [fake] - бит корректировать габариты вытягиваемой конструкции
+     * @param {CatInserts} [own_specify] - принудительно заполнять уточнение происхождения
      * $return {void}
      */
-    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake}) {
+    calculate_spec({elm, elm2, len_angl, own_row, ox, spec, clr, totqty0, bind, fake, own_specify}) {
 
       const {_row} = elm;
       const {
@@ -1280,12 +1282,12 @@
           if(!row_ins_spec.quantity && !row_ins_spec.nom.is_procedure) {
             return;
           }
-          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+          row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
         }
 
         if(count_calc_method === formulas && !formula.empty()){
           // если строка спецификации не добавлена на предыдущем шаге, делаем это сейчас
-          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+          row_spec = new_spec_row({row_spec, elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
         }
         else if(count_calc_method === coloring) {
           count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, spec, ox});
@@ -1345,7 +1347,7 @@
                 origin: row_ins_spec.origin || this,
                 count_calc_method,
               })){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
                 // обогащаем len_angl информацией об углах
                 if (len_angl) {
                   len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
@@ -1436,7 +1438,7 @@
                 qty = aprop.length;
               }
               if(qty){
-                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+                row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
 
                 const fqty = !formula.empty() && formula.execute({
                   ox,
@@ -1485,7 +1487,7 @@
           else if(count_calc_method === fillings){
             (elm.layer ? elm.layer.glasses(false, true) : []).forEach((glass) => {
               const {bounds} = glass;
-              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify, spec, ox, len_angl});
+              row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
               // виртуальный номер элемента для данного способа расчета количества
               row_spec.elm = 11000 + glass.elm;
               row_spec.qty = row_ins_spec.quantity;
