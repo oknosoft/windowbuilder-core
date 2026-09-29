@@ -1899,6 +1899,23 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row.unit.owner != row.nom) {
       row.unit = row.nom.storage_unit;
     }
+    // если в заказе есть монтажные мешки, добавляем в них ошибку 'Нужен пересчёт'
+    const {montage_bag, montage_bag_insets, montage_bag_error} = $p.job_prm.nom;
+    if(montage_bag_insets && montage_bag_error) {
+      for(const row of this.production) {
+        if(row.nom === montage_bag[0]) {
+          const {specification} = row.characteristic;
+          if(!specification.find({nom: montage_bag_error})) {
+            for(const srow of specification) {
+              if(montage_bag_insets.includes(srow.specify)) {
+                specification.add({nom: montage_bag_error, qty: 1, totqty: 1, totqty1: 1});
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
     this.reset_specify();
     this.recalc_insets();
     this.spread_min_volume();
