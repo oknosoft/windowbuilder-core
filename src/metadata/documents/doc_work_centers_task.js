@@ -185,6 +185,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     }
     let last;
     for(let qty = 1;  qty <= row.qty; qty++) {
+      const glrow = opts.c2d && obj.glasses.find({elm: row.elm});
       last = this.cutting.add({
         obj: srow?.obj?.valueOf(),
         production: obj,
@@ -198,6 +199,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         elm_type: coord.elm_type,
         alp1: row.alp1,
         alp2: row.alp2,
+        nonstandard: !glrow?.is_rectangular,
       });
     }
     return last;
@@ -228,9 +230,6 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
               return;
             }
             this.cutting_row({obj, specimen, elm, row, opts});
-            
-            
-            
           });
         });
       });
@@ -279,14 +278,49 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
         }
       }
     }
+    let editor;
     for(const row of this.cutting) {
       if(row.stick || (nom && row.nom != nom)) {
         continue;
       }
       if(row.width && row.len) {
-        getRes(row).products.push({id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row});
+        const product = {id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row};
+        if(row.nonstandard) {
+          const coord = row.production.coordinates.find({elm: row.elm});
+          if(!editor) {
+            editor = new $p.EditorInvisible();
+            editor.create_scheme();
+          }
+          const path = new editor.Path({insert: false, pathData: coord.path_data});
+          product.fig = true;
+          product.segments = [];
+          const min = {x: Infinity, y: Infinity};
+          for(const curve of path.curves) {
+            if(curve.hasHandles()) {
+              editor?.unload();
+              throw new Error('Криволинейные фигуры пока не поддержаны');
+            }
+            else {
+              const x = curve.point1.x;
+              const y = -curve.point1.y;
+              if(x < min.x) {
+                min.x = x;
+              }
+              if(y < min.y) {
+                min.y = y;
+              }
+              product.segments.push([x, y]);
+            }
+          }
+          for(const segm of product.segments) {
+            segm[0] = (segm[0] - min.x).round(1);
+            segm[1] = (segm[1] - min.y).round(1);
+          }         
+        }
+        getRes(row).products.push(product);
       }
     }
+    editor?.unload();
     return byNom;
   }
   
