@@ -294,28 +294,19 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
           const path = new editor.Path({insert: false, pathData: coord.path_data});
           product.fig = true;
           product.segments = [];
-          const min = {x: Infinity, y: Infinity};
+          const {bounds} = path;
           for(const curve of path.curves) {
             if(curve.hasHandles()) {
               editor?.unload();
               throw new Error('Криволинейные фигуры пока не поддержаны');
             }
             else {
-              const x = curve.point1.x;
-              const y = -curve.point1.y;
-              if(x < min.x) {
-                min.x = x;
-              }
-              if(y < min.y) {
-                min.y = y;
-              }
-              product.segments.push([x, y]);
+              const x = curve.point1.x - bounds.centerX;
+              const y = bounds.centerY - curve.point1.y;
+              product.segments.push([x.round(1), y.round(1)]);
             }
           }
-          for(const segm of product.segments) {
-            segm[0] = (segm[0] - min.x).round(1);
-            segm[1] = (segm[1] - min.y).round(1);
-          }         
+          getRes(row).options.fig = true;
         }
         getRes(row).products.push(product);
       }
