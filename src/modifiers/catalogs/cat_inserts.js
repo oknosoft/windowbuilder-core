@@ -597,7 +597,7 @@
       else if(main_rows.length){
         if(elm && !main_rows[0].formula.empty()) {
           try {
-            const fnom = main_rows[0].formula.execute({elm, row_spec: {nom: main_rows[0].nom, characteristic: main_rows[0].characteristic}});
+            const fnom = main_rows[0].formula.execute({elm, row_spec: {nom: main_rows[0].nom, characteristic: main_rows[0].nom_characteristic}});
             _nom = fnom instanceof CatNom ? fnom : main_rows[0].nom;
           }
           catch (e) {
