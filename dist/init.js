@@ -8322,7 +8322,7 @@ set set(v){this._setter_ts('set',v)}
     if((row.width && !opts.bilinear && !opts.c2d) || (!row.width && opts.linear === false)) {
       return;
     }
-    const coord = obj.coordinates.find({elm: row.elm});
+    const coord = obj.coordinates.find({elm: row.elm}) || obj.leading_product.coordinates.find({elm: row.elm});
     if(!coord) {
       return;
     }
@@ -8333,7 +8333,7 @@ set set(v){this._setter_ts('set',v)}
     }
     let last;
     for(let qty = 1;  qty <= row.qty; qty++) {
-      const glrow = opts.c2d && obj.glasses.find({elm: row.elm});
+      const glrow = opts.c2d && (obj.glasses.find({elm: row.elm}) || obj.leading_product.glasses.find({elm: row.elm}));
       last = this.cutting.add({
         obj: srow?.obj?.valueOf(),
         production: obj,
@@ -8422,7 +8422,7 @@ set set(v){this._setter_ts('set',v)}
       if(row.width && row.len) {
         const product = {id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row};
         if(row.nonstandard) {
-          const coord = row.production.coordinates.find({elm: row.elm});
+          const coord = row.production.coordinates.find({elm: row.elm}) || row.production.leading_product.coordinates.find({elm: row.elm});
           if(!editor) {
             editor = new $p.EditorInvisible();
             editor.create_scheme();

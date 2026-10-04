@@ -173,7 +173,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       return;
     }
     // должен существовать элемент
-    const coord = obj.coordinates.find({elm: row.elm});
+    const coord = obj.coordinates.find({elm: row.elm}) || obj.leading_product.coordinates.find({elm: row.elm});
     if(!coord) {
       return;
     }
@@ -185,7 +185,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
     }
     let last;
     for(let qty = 1;  qty <= row.qty; qty++) {
-      const glrow = opts.c2d && obj.glasses.find({elm: row.elm});
+      const glrow = opts.c2d && (obj.glasses.find({elm: row.elm}) || obj.leading_product.glasses.find({elm: row.elm}));
       last = this.cutting.add({
         obj: srow?.obj?.valueOf(),
         production: obj,
@@ -286,7 +286,7 @@ exports.DocWork_centers_task = class DocWork_centers_task extends Object {
       if(row.width && row.len) {
         const product = {id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row};
         if(row.nonstandard) {
-          const coord = row.production.coordinates.find({elm: row.elm});
+          const coord = row.production.coordinates.find({elm: row.elm}) || row.production.leading_product.coordinates.find({elm: row.elm});
           if(!editor) {
             editor = new $p.EditorInvisible();
             editor.create_scheme();
