@@ -2369,6 +2369,20 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
+   * @summary Возвращает значение допреквизита номенклатуры минимальный объём в заказе
+   * @desc Если свойство переопределено в заказе, возвращает его 
+   * @param {DocCalc_order} [order]
+   * @return {Number}
+   */
+  min_order_volume(nom) {
+    const {min_order_volume} = this.extra;
+    if(min_order_volume?.hasOwnProperty(nom?.valueOf())) {
+      return min_order_volume[nom.valueOf()];
+    }
+    return nom?.cached_prop('min_order_volume') || 0;
+  }
+
+  /**
    * @summary Округление минимального объёма
    */
   spread_min_volume() {
@@ -2384,7 +2398,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         for(const sub of characteristic.specification) {
           const {nom, totqty1, clr} = sub;
           if(totqty1) {
-            const min_order_volume = nom.min_order_volume(this);
+            const min_order_volume = this.min_order_volume(nom);
             if(min_order_volume) {
               if(!volumes_map.has(nom)) {
                 volumes_map.set(nom, new Map());
@@ -2586,6 +2600,38 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
     return invoice;
   }
+
+  /**
+   * @summary Этап отправки
+   * @desc [Уточнение информации, Ожидание оплаты, Оплата подтверждена]
+   * @type {EnmOrder_sending_stages}
+   */
+  get sending_stage() {
+    return $p.enm.order_sending_stages.get(this.extra.sending_stage);
+  }
+  set sending_stage(v) {
+    const {extra} = this;
+    if(!extra.sending_stage && (!v || v == '_' || $p.utils.is_empty_guid(v))) {
+      return;
+    }
+    this.extra = {sending_stage: v?.valueOf()};
+  }
+
+  /**
+   * @summary Получено согласие на обработку персональных данных
+   * @type {Boolean}
+   */
+  get approval() {
+    return Boolean(this.extra.approval)
+  }
+  set approval(v) {
+    const {extra} = this;
+    if(extra.approval != Boolean(v)) {
+      this.extra = {approval: Boolean(v)};
+    }
+  }
+
+  
 
   /**
    * Устанавливает подразделение по умолчанию

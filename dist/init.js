@@ -2906,10 +2906,6 @@ set demand(v){this._setter_ts('demand',v)}
     return this.cached_prop('min_volume');
   }
 
-  min_order_volume(order) {
-    return this.cached_prop('min_order_volume');
-  }
-
     cached_prop(name) {
     const fld = `_${name}`;
     if(!this.hasOwnProperty(fld)){
@@ -8980,14 +8976,12 @@ get obj_delivery_state(){return this._getter('obj_delivery_state')}
 set obj_delivery_state(v){this._setter('obj_delivery_state',v)}
 get category(){return this._getter('category')}
 set category(v){this._setter('category',v)}
-get sending_stage(){return this._getter('sending_stage')}
-set sending_stage(v){this._setter('sending_stage',v)}
 get basis(){return this._getter('basis')}
 set basis(v){this._setter('basis',v)}
 get lead(){return this._getter('lead')}
 set lead(v){this._setter('lead',v)}
-get approval(){return this._getter('approval')}
-set approval(v){this._setter('approval',v)}
+get extra(){return this._getter('extra')}
+set extra(v){this._setter('extra',v)}
 get route(){return this._getter('route')}
 set route(v){this._setter('route',v)}
 get force_route(){return this._getter('force_route')}

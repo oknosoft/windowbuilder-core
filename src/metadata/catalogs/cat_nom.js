@@ -100,15 +100,6 @@ exports.CatNom = class CatNom extends Object {
   get min_volume() {
     return this.cached_prop('min_volume');
   }
-
-  /**
-   * Возвращает значение допреквизита минимальный объём в заказе
-   * @param {DocCalc_order} [order]
-   * @return {Number}
-   */
-  min_order_volume(order) {
-    return this.cached_prop('min_order_volume');
-  }
   
   cached_prop(name) {
     const fld = `_${name}`;
