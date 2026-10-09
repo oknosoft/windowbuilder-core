@@ -470,7 +470,7 @@ exports.CatCnns = class CatCnns extends Object {
    */
   size(elm1, elm2, region=0) {
     let {sz, sizes} = this;
-    const {ox, layer} = elm1;
+    let {ox, layer} = elm1;
     for(const prm_row of sizes) {
       let elm = elm1;
       let cnstr = 0;
@@ -485,6 +485,24 @@ exports.CatCnns = class CatCnns extends Object {
         else if(parent.elm) {
           cnstr = -parent.elm;
           elm = parent;
+        }
+      }
+      else if(prm_row.origin.is('layer_active') && layer.layer && layer.furn.shtulp_kind() === 2) {
+        for(const test of layer.layer.contours) {
+          if(test !== layer && test.furn.shtulp_kind() === 1) {
+            layer = test;
+            cnstr = layer.cnstr;
+            break;
+          }
+        }        
+      }
+      else if(prm_row.origin.is('layer_passive') && layer.layer && layer.furn.shtulp_kind() === 1) {
+        for(const test of layer.layer.contours) {
+          if(test !== layer && test.furn.shtulp_kind() === 2) {
+            layer = test;
+            cnstr = layer.cnstr;
+            break;
+          }
         }
       }
       if(prm_row.param.check_condition({row_spec: {}, prm_row, cnstr, elm, elm2, region, layer, ox}) &&
