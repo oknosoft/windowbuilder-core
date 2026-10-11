@@ -17852,6 +17852,20 @@ $p.spec_building = new SpecBuilding($p);
       row_spec.s = (layer.form_area - sz) * coefficient;
     }
     else {
+      if(row_ins_spec.algorithm.is('compound')) {
+        const {calc_order} = row_spec._owner._owner;
+        if(!calc_order.empty()) {
+          row_spec.width = 1;
+          const totals = calc_order.perim_areas(); 
+          row_spec.s = totals.strict;
+          row_spec.len = totals.strict;
+          if(row_spec.nom.is_pieces) {
+            row_spec.totqty = Math.ceil(row_spec.qty * totals.strict);
+            row_spec.totqty1 = row_spec.totqty;
+          }
+          return row_spec;
+        }        
+      }
       let {x1, x2, y1, y2, s} = _row;
       if(elm instanceof Filling && relm?.irow?.region) {
         const path = elm._attr.paths?.get(relm.irow.region);
@@ -19723,72 +19737,86 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           if(count_calc_method.is('len_prm') || count_calc_method.is('area') || count_calc_method.is('ky')) {
             count_calc_method.calculate({inset: this, elm, row_spec, row_ins_spec, origin});
           }
-          else if(count_calc_method === perim || count_calc_method === spacer){
-            let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
-            if(!perimeter) {
-              perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
-            }
-            const row_prm = {
-              clr: elm.clr,
-              layer: elm.layer,
-              _row: {len: 0, angle_hor: 0, s: _row.s}
-            };
-            const {check_params} = ProductsBuilding;
-            perimeter.forEach((rib) => {
-              row_prm._row._mixin(rib);
-              row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
-              if(this.check_restrictions(row_ins_spec, row_prm, true) === true && check_params({
-                params: (row_ins_spec._proto?._owner?._owner || this).selection_params,
-                ox,
-                elm: row_prm,
-                row_spec: row_ins_spec,
-                origin: row_ins_spec.origin || this,
-                count_calc_method,
-              })){
+          else if(count_calc_method === perim || count_calc_method === spacer) {
+            if(row_ins_spec.algorithm.is('compound')) {
+              const totals = ox.calc_order.perim_areas();
+              if(totals.perim) {
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
-                if (len_angl) {
-                  len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
-                  len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
+                row_spec.qty = row_ins_spec.quantity;
+                row_spec.len = totals.perim;
+                if(row_spec.nom.is_pieces) {
+                  row_spec.totqty = Math.ceil(row_spec.qty * row_spec.len);
+                  row_spec.totqty1 = row_spec.totqty; 
                 }
-                const fqty = !formula.empty() && formula.execute({
-                  ox,
-                  clr,
-                  row_spec,
-                  elm: rib.profile || rib,
-                  elm2,
-                  cnstr: len_angl && len_angl.cnstr || 0,
-                  inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
-                  row_ins: row_ins_spec,
-                  len: rib.len,
-                  rib,
-                });
-                if(fqty) {
-                  if(!row_spec.qty) {
-                    row_spec.qty = fqty;
-                  }
-                }
-                else {
-                  calc_qty_len(row_spec, row_ins_spec, rib.len);
-                }
-                calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
-                  angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
-                row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: row_spec.len * 1000 || rib.len, angle: rib.angle}), _row});
               }
-              row_spec = null;
-              if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
-                elm.is_linear = () => rib.profile.is_linear();
-                elm.angle_hor = rib.angle;
-                elm.t_parent = () => rib.profile;
-                rib.cnn.calculate_spec({
-                  elm,
-                  elm2: rib.profile,
-                  len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
+            }
+            else {
+              let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
+              if(!perimeter) {
+                perimeter = this.insert_type.is('mosquito') ? this.mosquito_perimeter(elm, row_ins_spec) : elm.layer.perimeter;
+              }
+              const row_prm = {
+                clr: elm.clr,
+                layer: elm.layer,
+                _row: {len: 0, angle_hor: 0, s: _row.s}
+              };
+              const {check_params} = ProductsBuilding;
+              perimeter.forEach((rib) => {
+                row_prm._row._mixin(rib);
+                row_prm.is_linear = () => rib.profile ? rib.profile.is_linear() : true;
+                if(this.check_restrictions(row_ins_spec, row_prm, true) === true && check_params({
+                  params: (row_ins_spec._proto?._owner?._owner || this).selection_params,
                   ox,
-                  spec
-                });
-                rib.cnn = null;
-              }              
-            });
+                  elm: row_prm,
+                  row_spec: row_ins_spec,
+                  origin: row_ins_spec.origin || this,
+                  count_calc_method,
+                })){
+                  row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
+                  if (len_angl) {
+                    len_angl.alp1 = rib.hasOwnProperty('angle_prev') ? rib.angle_prev : rib.angle_next;
+                    len_angl.alp2 = rib.hasOwnProperty('angle_next') ? rib.angle_next : rib.angle_prev;
+                  }
+                  const fqty = !formula.empty() && formula.execute({
+                    ox,
+                    clr,
+                    row_spec,
+                    elm: rib.profile || rib,
+                    elm2,
+                    cnstr: len_angl && len_angl.cnstr || 0,
+                    inset: (len_angl && len_angl.hasOwnProperty('cnstr')) ? len_angl.origin : utils.blank.guid,
+                    row_ins: row_ins_spec,
+                    len: rib.len,
+                    rib,
+                  });
+                  if(fqty) {
+                    if(!row_spec.qty) {
+                      row_spec.qty = fqty;
+                    }
+                  }
+                  else {
+                    calc_qty_len(row_spec, row_ins_spec, rib.len);
+                  }
+                  calc_count_area_mass(row_spec, spec, len_angl && len_angl.hasOwnProperty('alp1') ? len_angl : _row,
+                    angle_calc_method, angle_calc_method, alp1, alp2, totqty0);
+                  row_ins_spec.inset.dop_spec({row_ins_spec, elm: row_prm, clr, ox, spec, len_angl: Object.assign({}, len_angl, {len: row_spec.len * 1000 || rib.len, angle: rib.angle}), _row});
+                }
+                row_spec = null;
+                if(rib.cnn?.cnn_elmnts?.find({nom1: row_ins_spec.nom}) && this.insert_type.is('mosquito') ) {
+                  elm.is_linear = () => rib.profile.is_linear();
+                  elm.angle_hor = rib.angle;
+                  elm.t_parent = () => rib.profile;
+                  rib.cnn.calculate_spec({
+                    elm,
+                    elm2: rib.profile,
+                    len_angl: Object.assign({}, len_angl, {len: rib.len, angle_hor: rib.angle}),
+                    ox,
+                    spec
+                  });
+                  rib.cnn = null;
+                }
+              });
+            }
           }
           else if(count_calc_method === steps){
             let bounds;
@@ -22800,17 +22828,26 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     return ro;
   }
   get areas() {
-    const sum = {prod: 0, all: 0};
-    for(const row of this.production) {
-      sum.all += row.s * row.quantity;
-      const {leading_product, leading_elm, constructions} = row.characteristic;
-      if(leading_product.calc_order.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
-        sum.prod += row.s * row.quantity;
-      }
-    }
+    const sum = this.perim_areas();
     return sum.prod === sum.all ?
       sum.prod.round(2).toLocaleString('ru-RU') :
       `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
+  }
+  perim_areas() {
+    const sum = {prod: 0, all: 0, strict: 0, perim: 0};
+    for(const row of this.production) {
+      sum.all += row.s * row.quantity;
+      const {leading_product, leading_elm, constructions} = row.characteristic;
+      if(leading_product.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
+        sum.prod += row.s * row.quantity;
+      }
+      if(!leading_elm && constructions.count()) {
+        sum.strict += row.s * row.quantity;
+        const {width, height} = row.characteristic.extra.dimensions;
+        sum.perim += (width + height) * 2 * row.quantity / 1000;
+      }
+    }
+    return sum;
   }
   load_production(forse, db) {
     const prod = [];

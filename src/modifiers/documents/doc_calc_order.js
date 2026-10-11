@@ -1824,21 +1824,35 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
   }
 
   /**
-   * Площадь изделий заказа
+   * @summary Площадь изделий заказа
    * @type {String}
    */
   get areas() {
-    const sum = {prod: 0, all: 0};
-    for(const row of this.production) {
-      sum.all += row.s * row.quantity;
-      const {leading_product, leading_elm, constructions} = row.characteristic;
-      if(leading_product.calc_order.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
-        sum.prod += row.s * row.quantity;
-      }
-    }
+    const sum = this.perim_areas();
     return sum.prod === sum.all ?
       sum.prod.round(2).toLocaleString('ru-RU') :
       `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
+  }
+
+  /**
+   * @summary Периметр и площадь изделий заказа
+   * @return {Object}
+   */
+  perim_areas() {
+    const sum = {prod: 0, all: 0, strict: 0, perim: 0};
+    for(const row of this.production) {
+      sum.all += row.s * row.quantity;
+      const {leading_product, leading_elm, constructions} = row.characteristic;
+      if(leading_product.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
+        sum.prod += row.s * row.quantity;
+      }
+      if(!leading_elm && constructions.count()) {
+        sum.strict += row.s * row.quantity;
+        const {width, height} = row.characteristic.extra.dimensions;
+        sum.perim += (width + height) * 2 * row.quantity / 1000;
+      }
+    }
+    return sum;
   }
 
   /**

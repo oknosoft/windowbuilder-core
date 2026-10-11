@@ -108,6 +108,20 @@
       row_spec.s = (layer.form_area - sz) * coefficient;
     }
     else {
+      if(row_ins_spec.algorithm.is('compound')) {
+        const {calc_order} = row_spec._owner._owner;
+        if(!calc_order.empty()) {
+          row_spec.width = 1;
+          const totals = calc_order.perim_areas(); 
+          row_spec.s = totals.strict;
+          row_spec.len = totals.strict;
+          if(row_spec.nom.is_pieces) {
+            row_spec.totqty = Math.ceil(row_spec.qty * totals.strict);
+            row_spec.totqty1 = row_spec.totqty;
+          }
+          return row_spec;
+        }        
+      }
       let {x1, x2, y1, y2, s} = _row;
       if(elm instanceof Filling && relm?.irow?.region) {
         const path = elm._attr.paths?.get(relm.irow.region);
