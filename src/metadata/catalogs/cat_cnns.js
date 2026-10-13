@@ -487,21 +487,27 @@ exports.CatCnns = class CatCnns extends Object {
           elm = parent;
         }
       }
-      else if(prm_row.origin.is('layer_active') && layer.layer && layer.furn.shtulp_kind() === 2) {
-        for(const test of layer.layer.contours) {
-          if(test !== layer && test.furn.shtulp_kind() === 1) {
-            layer = test;
-            cnstr = layer.cnstr;
-            break;
+      else if(prm_row.origin.is('layer_active')) {
+        cnstr = layer.cnstr;
+        if(layer.layer && layer.furn.shtulp_kind() === 2) {
+          for(const test of layer.layer.contours) {
+            if(test !== layer && test.furn.shtulp_kind() === 1) {
+              layer = test;
+              cnstr = layer.cnstr;
+              break;
+            }
           }
-        }        
+        }
       }
-      else if(prm_row.origin.is('layer_passive') && layer.layer && layer.furn.shtulp_kind() === 1) {
-        for(const test of layer.layer.contours) {
-          if(test !== layer && test.furn.shtulp_kind() === 2) {
-            layer = test;
-            cnstr = layer.cnstr;
-            break;
+      else if(prm_row.origin.is('layer_passive')) {
+        cnstr = layer.cnstr;
+        if(layer.layer && layer.furn.shtulp_kind() === 1) {
+          for(const test of layer.layer.contours) {
+            if(test !== layer && test.furn.shtulp_kind() === 2) {
+              layer = test;
+              cnstr = layer.cnstr;
+              break;
+            }
           }
         }
       }
