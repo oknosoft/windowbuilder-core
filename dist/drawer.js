@@ -22837,14 +22837,16 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     const sum = {prod: 0, all: 0, strict: 0, perim: 0};
     for(const row of this.production) {
       sum.all += row.s * row.quantity;
-      const {leading_product, leading_elm, constructions} = row.characteristic;
+      const {leading_product, leading_elm, constructions, extra} = row.characteristic;
       if(leading_product.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
         sum.prod += row.s * row.quantity;
       }
       if(!leading_elm && constructions.count()) {
         sum.strict += row.s * row.quantity;
-        const {width, height} = row.characteristic.extra.dimensions;
-        sum.perim += (width + height) * 2 * row.quantity / 1000;
+        const {dimensions} = extra;
+        if(dimensions) {
+          sum.perim += (dimensions.width + dimensions.height) * 2 * row.quantity / 1000;
+        }
       }
     }
     return sum;
