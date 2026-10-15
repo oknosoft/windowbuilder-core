@@ -73,7 +73,7 @@
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
     const {_row} = elm;
     const {insert_type} = inset;
-    const {quantity, sz, coefficient, relm} = row_ins_spec;
+    const {quantity, sz, coefficient, relm, _proto} = row_ins_spec;
     row_spec.qty = quantity;
     if(insert_type.is('mosquito')) {
       const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});
@@ -110,11 +110,43 @@
     else {
       if(row_ins_spec.algorithm.is('compound')) {
         const {calc_order} = row_spec._owner._owner;
+        const checks = new Map();
+        if(_proto?._or.size) {
+          for(const [area, prmRows] of _proto?._or) {
+            for(const prmRow of prmRows) {
+              if(prmRow.origin.is('algorithm')) {
+                if(!checks.has(area)) {
+                  checks.set(area, []);
+                }
+                checks.get(area).push(prmRow);
+              }
+            }
+          }          
+        }        
         if(!calc_order.empty()) {
-          row_spec.width = 1;
-          const totals = calc_order.perim_areas(); 
+          const totals = calc_order.perim_areas(docRow => {
+            let ok = true;
+            for(const [area, prmRows] of checks) {
+              ok = true;
+              for(const {param, comparison_type, value, txt_row} of prmRows) {
+                if(!param.check_condition({
+                  row_spec,
+                  prm_row: {param, comparison_type, value, txt_row},
+                  ox: docRow.characteristic,
+                })) {
+                  ok = false;
+                  break;
+                }
+              }
+              if(ok) {
+                break;
+              }
+            }
+            return ok;
+          });
           row_spec.s = totals.strict;
           row_spec.len = totals.strict;
+          row_spec.width = totals.strict ? 1 : 0;
           if(row_spec.nom.is_pieces) {
             row_spec.totqty = Math.ceil(row_spec.qty * totals.strict);
             row_spec.totqty1 = row_spec.totqty;

@@ -1327,7 +1327,40 @@
           }
           else if(count_calc_method === perim || count_calc_method === spacer) {
             if(row_ins_spec.algorithm.is('compound')) {
-              const totals = ox.calc_order.perim_areas();
+              const checks = new Map();
+              const _or = row_ins_spec._proto?._or || row_ins_spec._or; 
+              if(_or?.size) {
+                for(const [area, prmRows] of _or) {
+                  for(const prmRow of prmRows) {
+                    if(prmRow.origin.is('algorithm')) {
+                      if(!checks.has(area)) {
+                        checks.set(area, []);
+                      }
+                      checks.get(area).push(prmRow);
+                    }
+                  }
+                }
+              }
+              const totals = ox.calc_order.perim_areas(docRow => {
+                let ok = true;
+                for(const [area, prmRows] of checks) {
+                  ok = true;
+                  for(const {param, comparison_type, value, txt_row} of prmRows) {
+                    if(!param.check_condition({
+                      row_spec,
+                      prm_row: {param, comparison_type, value, txt_row},
+                      ox: docRow.characteristic,
+                    })) {
+                      ok = false;
+                      break;
+                    }
+                  }
+                  if(ok) {
+                    break;
+                  }
+                }
+                return ok;
+              });
               if(totals.perim) {
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
                 row_spec.qty = row_ins_spec.quantity;

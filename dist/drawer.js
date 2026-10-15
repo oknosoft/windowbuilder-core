@@ -17817,7 +17817,7 @@ $p.spec_building = new SpecBuilding($p);
   area.calculate = function ({inset, elm, row_spec, row_ins_spec}) {
     const {_row} = elm;
     const {insert_type} = inset;
-    const {quantity, sz, coefficient, relm} = row_ins_spec;
+    const {quantity, sz, coefficient, relm, _proto} = row_ins_spec;
     row_spec.qty = quantity;
     if(insert_type.is('mosquito')) {
       const bounds = elm.bounds_inner?.(sz) || (elm.layer ? elm.layer.bounds_inner(sz) : {height: 0, width: 0});
@@ -17854,11 +17854,43 @@ $p.spec_building = new SpecBuilding($p);
     else {
       if(row_ins_spec.algorithm.is('compound')) {
         const {calc_order} = row_spec._owner._owner;
+        const checks = new Map();
+        if(_proto?._or.size) {
+          for(const [area, prmRows] of _proto?._or) {
+            for(const prmRow of prmRows) {
+              if(prmRow.origin.is('algorithm')) {
+                if(!checks.has(area)) {
+                  checks.set(area, []);
+                }
+                checks.get(area).push(prmRow);
+              }
+            }
+          }          
+        }        
         if(!calc_order.empty()) {
-          row_spec.width = 1;
-          const totals = calc_order.perim_areas(); 
+          const totals = calc_order.perim_areas(docRow => {
+            let ok = true;
+            for(const [area, prmRows] of checks) {
+              ok = true;
+              for(const {param, comparison_type, value, txt_row} of prmRows) {
+                if(!param.check_condition({
+                  row_spec,
+                  prm_row: {param, comparison_type, value, txt_row},
+                  ox: docRow.characteristic,
+                })) {
+                  ok = false;
+                  break;
+                }
+              }
+              if(ok) {
+                break;
+              }
+            }
+            return ok;
+          });
           row_spec.s = totals.strict;
           row_spec.len = totals.strict;
+          row_spec.width = totals.strict ? 1 : 0;
           if(row_spec.nom.is_pieces) {
             row_spec.totqty = Math.ceil(row_spec.qty * totals.strict);
             row_spec.totqty1 = row_spec.totqty;
@@ -19739,7 +19771,40 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
           }
           else if(count_calc_method === perim || count_calc_method === spacer) {
             if(row_ins_spec.algorithm.is('compound')) {
-              const totals = ox.calc_order.perim_areas();
+              const checks = new Map();
+              const _or = row_ins_spec._proto?._or || row_ins_spec._or; 
+              if(_or?.size) {
+                for(const [area, prmRows] of _or) {
+                  for(const prmRow of prmRows) {
+                    if(prmRow.origin.is('algorithm')) {
+                      if(!checks.has(area)) {
+                        checks.set(area, []);
+                      }
+                      checks.get(area).push(prmRow);
+                    }
+                  }
+                }
+              }
+              const totals = ox.calc_order.perim_areas(docRow => {
+                let ok = true;
+                for(const [area, prmRows] of checks) {
+                  ok = true;
+                  for(const {param, comparison_type, value, txt_row} of prmRows) {
+                    if(!param.check_condition({
+                      row_spec,
+                      prm_row: {param, comparison_type, value, txt_row},
+                      ox: docRow.characteristic,
+                    })) {
+                      ok = false;
+                      break;
+                    }
+                  }
+                  if(ok) {
+                    break;
+                  }
+                }
+                return ok;
+              });
               if(totals.perim) {
                 row_spec = new_spec_row({elm, row_base: row_ins_spec, origin, specify: specify || own_specify, spec, ox, len_angl});
                 row_spec.qty = row_ins_spec.quantity;
@@ -22833,9 +22898,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       sum.prod.round(2).toLocaleString('ru-RU') :
       `${sum.prod.round(1).toLocaleString('ru-RU')}/${sum.all.round(1).toLocaleString('ru-RU')}`;
   }
-  perim_areas() {
+  perim_areas(filterFn) {
     const sum = {prod: 0, all: 0, strict: 0, perim: 0};
     for(const row of this.production) {
+      if(filterFn && !filterFn(row)) {
+        continue;
+      }
       sum.all += row.s * row.quantity;
       const {leading_product, leading_elm, constructions, extra} = row.characteristic;
       if(leading_product.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {

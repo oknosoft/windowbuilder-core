@@ -1838,9 +1838,12 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
    * @summary Периметр и площадь изделий заказа
    * @return {Object}
    */
-  perim_areas() {
+  perim_areas(filterFn) {
     const sum = {prod: 0, all: 0, strict: 0, perim: 0};
     for(const row of this.production) {
+      if(filterFn && !filterFn(row)) {
+        continue;
+      }
       sum.all += row.s * row.quantity;
       const {leading_product, leading_elm, constructions, extra} = row.characteristic;
       if(leading_product.empty() || (leading_product.calc_order === this && leading_elm < 0 && constructions.find({cnstr: -leading_elm}))) {
