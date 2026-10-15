@@ -1123,6 +1123,8 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
+
+        this.montage_bag_error();
         _data._loading = _loading;
       }
     }
@@ -1918,7 +1920,18 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row.unit.owner != row.nom) {
       row.unit = row.nom.storage_unit;
     }
-    // если в заказе есть монтажные мешки, добавляем в них ошибку 'Нужен пересчёт'
+    
+    this.montage_bag_error();
+    this.reset_specify();
+    this.recalc_insets();
+    this.spread_min_volume();
+    this._data._loading = false;
+  }
+
+  /**
+   * Если в заказе есть монтажные мешки, добавляем в них ошибку 'Нужен пересчёт'
+   */
+  montage_bag_error() {
     const {montage_bag, montage_bag_insets, montage_bag_error} = $p.job_prm.nom;
     if(montage_bag_insets && montage_bag_error) {
       for(const row of this.production) {
@@ -1935,10 +1948,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    this.reset_specify();
-    this.recalc_insets();
-    this.spread_min_volume();
-    this._data._loading = false;
   }
 
   /**

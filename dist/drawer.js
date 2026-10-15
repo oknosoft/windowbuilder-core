@@ -22301,6 +22301,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
             });
           }
         });
+        this.montage_bag_error();
         _data._loading = _loading;
       }
     }
@@ -22961,6 +22962,13 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     if(row.unit.owner != row.nom) {
       row.unit = row.nom.storage_unit;
     }
+    this.montage_bag_error();
+    this.reset_specify();
+    this.recalc_insets();
+    this.spread_min_volume();
+    this._data._loading = false;
+  }
+  montage_bag_error() {
     const {montage_bag, montage_bag_insets, montage_bag_error} = $p.job_prm.nom;
     if(montage_bag_insets && montage_bag_error) {
       for(const row of this.production) {
@@ -22977,10 +22985,6 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
         }
       }
     }
-    this.reset_specify();
-    this.recalc_insets();
-    this.spread_min_volume();
-    this._data._loading = false;
   }
   create_product_row({row_spec, elm, len_angl, params, create, grid, cx}) {
     const {DpBuyers_orderProductionRow, enm, cat, wsql, utils} = $p;
