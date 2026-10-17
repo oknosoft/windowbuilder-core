@@ -17895,6 +17895,9 @@ $p.spec_building = new SpecBuilding($p);
             row_spec.totqty = Math.ceil(row_spec.qty * totals.strict);
             row_spec.totqty1 = row_spec.totqty;
           }
+          if(!totals.strict) {
+            row_spec.qty = 0;
+          }
           return row_spec;
         }        
       }
@@ -19813,6 +19816,12 @@ $p.CatFurnsSpecificationRow = class CatFurnsSpecificationRow extends $p.CatFurns
                   row_spec.totqty = Math.ceil(row_spec.qty * row_spec.len);
                   row_spec.totqty1 = row_spec.totqty; 
                 }
+              }
+              else {
+                row_spec.qty = 0;
+                row_spec.len = 0;
+                row_spec.totqty = 0;
+                row_spec.totqty1 = 0;
               }
             }
             else {

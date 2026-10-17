@@ -151,6 +151,9 @@
             row_spec.totqty = Math.ceil(row_spec.qty * totals.strict);
             row_spec.totqty1 = row_spec.totqty;
           }
+          if(!totals.strict) {
+            row_spec.qty = 0;
+          }
           return row_spec;
         }        
       }

@@ -1370,6 +1370,12 @@
                   row_spec.totqty1 = row_spec.totqty; 
                 }
               }
+              else {
+                row_spec.qty = 0;
+                row_spec.len = 0;
+                row_spec.totqty = 0;
+                row_spec.totqty1 = 0;
+              }
             }
             else {
               let perimeter = count_calc_method === perim ? elm.perimeter : elm.perimeter_spacer(-row_ins_spec.sz);
