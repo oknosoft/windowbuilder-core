@@ -17757,7 +17757,7 @@ $p.spec_building = new SpecBuilding($p);
     },
   });
 })($p.enm.cnn_types);
-(function({enm, cat: {clrs}, cch}){
+(function({enm, cat: {clrs}, cch, job_prm}){
   const {coloring, len_prm, area, arm, ky} = enm.count_calculating_ways;
   const {new_spec_row, calc_qty_len, calc_count_area_mass} = ProductsBuilding;
   const is_side = (side) => ['_in', '_out'].includes(side);
@@ -17902,13 +17902,30 @@ $p.spec_building = new SpecBuilding($p);
         }        
       }
       let {x1, x2, y1, y2, s} = _row;
-      if(elm instanceof Filling && relm?.irow?.region) {
-        const path = elm._attr.paths?.get(relm.irow.region);
-        if(path) {
-          x1 = y1 = 0;
-          x2 = path.bounds.width;
-          y2 = path.bounds.height;
-          s = x2 * y2 / 1e6;
+      if(elm instanceof Filling) {
+        if(relm?.irow?.region) {
+          const path = elm._attr.paths?.get(relm.irow.region);
+          if(path) {
+            x1 = y1 = 0;
+            x2 = path.bounds.width;
+            y2 = path.bounds.height;
+            s = x2 * y2 / 1e6;
+          }
+        }
+        else {
+          const param = job_prm.properties.custom_sizes;
+          if(param) {
+            const prow = (elm.prm_ox || elm.ox).params.find({cnstr: -elm.elm, region: 0, param});
+            if(prow) {
+              const [x, y] = prow.value.split('x');
+              if(x && y) {
+                x1 = y1 = 0;
+                x2 = parseFloat(x);
+                y2 = parseFloat(y);
+                s = x2 * y2 / 1e6;
+              }
+            }
+          }
         }
       }
       row_spec.len = (y2 - y1 - sz) * coefficient;

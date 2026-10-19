@@ -6506,6 +6506,11 @@ set struct(v){this._setter_ts('struct',v)}
           other.push(`${param.caption || param.name}: ${value}`);
         }
       }
+      else if(param.type.types.includes('string')) {
+        if(value && param.predefined_name !== 'custom_sizes') {
+          other.push(`${param.caption || param.name}: ${value}`);
+        }
+      }
       else if(value && !value.empty() && value.toString() !== 'Нет') {
         other.push(value.full_name || value.toString());
       }
