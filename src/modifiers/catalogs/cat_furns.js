@@ -215,7 +215,8 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
             }
             else if(dop_row.offset_option == offset_options.ОтРучки){
               // строим горизонтальную линию от нижней границы контура, находим пересечение и offset
-              const {generatrix} = elm;
+              //const {generatrix} = elm;
+              const generatrix = elm.rays.outer;
               const hor = contour.handle_line(elm);
               coordin = generatrix.getOffsetOf(generatrix.intersect_point(hor)) -
                 generatrix.getOffsetOf(generatrix.getNearestPoint(elm.corns(1))) +

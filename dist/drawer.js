@@ -18434,7 +18434,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               coordin = faltz + dop_row.contraction;
             }
             else if(dop_row.offset_option == offset_options.ОтРучки){
-              const {generatrix} = elm;
+              const generatrix = elm.rays.outer;
               const hor = contour.handle_line(elm);
               coordin = generatrix.getOffsetOf(generatrix.intersect_point(hor)) -
                 generatrix.getOffsetOf(generatrix.getNearestPoint(elm.corns(1))) +
