@@ -4733,6 +4733,9 @@ class Contour extends AbstractFilling(paper.Layer) {
   }
   flap_skylight() {
     const {contours, profiles, prod_ox, _row} = this;
+    for(const layer of contours) {
+      layer.flap_skylight();
+    }
     if(contours.length) {
       let hingeOffset;
       for(const {nom} of profiles) {
