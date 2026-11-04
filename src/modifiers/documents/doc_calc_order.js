@@ -2026,7 +2026,15 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
           elm.fake_origin = row_spec.inset;
 
           const prow = row_spec.inset.specification.find({quantity: 0, is_order_row: enm.specification_order_row_types.prod});
-          ox.owner = prow ? prow.nom : row_spec.inset.nom(elm, true);
+          let nom;
+          if(prow?.algorithm.is('nom_prm')) {
+            const prm_row = prow._owner._owner.selection_params.find({elm: prow.elm, origin: enm.plan_detailing.algorithm});
+            nom = (prm_row && ox.params.find({param: prm_row.param})?.value) || prow?.nom;
+          }
+          else {
+            nom = row_spec.inset.nom(elm, true);
+          }
+          ox.owner = nom; 
           ox.origin = row_spec.inset;
           ox.x = row_spec.len;
           ox.y = row_spec.height;

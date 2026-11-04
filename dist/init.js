@@ -355,6 +355,17 @@ set hide(v){this._setter_ts('hide',v)}
             prow = row;
           }
         });
+        if(!prow && inset === utils.blank.guid && prm_row instanceof CatInsertsSelection_paramsRow) {
+          params.find_rows({
+            param: this,
+            cnstr: (cnstr > 0 || !elm._row) ? (cnstr || 0) : (elm._row ? {in: _in} : 0),
+            inset: prm_row._owner._owner,
+          }, (row) => {
+            if(!prow || (!prow.cnstr && row.cnstr) || (prow.cnstr > 0 && row.cnstr < 0)) {
+              prow = row;
+            }
+          });
+        }
       }
       if(!prow && (cnstr0 || elm0)) {
         params.find_rows({
@@ -378,7 +389,7 @@ set hide(v){this._setter_ts('hide',v)}
       });
     }
     if(prow) {
-      return prow && prow.value;  
+      return prow.value;  
     }
     if(this.inheritance === 4) {
       return this.branch_value({project: elm.project, cnstr, ox});
