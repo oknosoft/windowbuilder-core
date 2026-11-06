@@ -9926,6 +9926,8 @@ get qty(){return this._getter('qty')}
 set qty(v){this._setter('qty',v)}
 get use(){return this._getter('use')}
 set use(v){this._setter('use',v)}
+get nom_group(){return this._getter('nom_group')}
+set nom_group(v){this._setter('nom_group',v)}
 }
 $p.DpBuyers_orderProductionRow = DpBuyers_orderProductionRow;
 class DpBuyers_orderGlass_specificationRow extends TabularSectionRow{

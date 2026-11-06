@@ -2925,6 +2925,20 @@ $p.DocCalc_orderProductionRow = class DocCalc_orderProductionRow extends $p.DocC
     }
   }
 
+  /**
+   * @summary Номгруппа строки заказа
+   * @desc может отличаться от номгруппы продукции
+   * @type {CatNom_groups}
+   */
+  get nom_group() {
+    const {dop: {nom_group}, nom} = this;
+    return nom_group ? $p.cat.nom_groups.get(nom_group) : nom.nom_group;
+  }
+  set nom_group(v) {
+    const {nom_group} = this.nom;
+    this.dop = {nom_group: (v && !v.empty?.() && nom_group != v) ? v.valueOf() : undefined};
+  }
+
 };
 
 $p.DocCalc_orderProductionRow.rfields = {
