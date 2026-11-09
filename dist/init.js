@@ -4068,6 +4068,8 @@ get furn(){return this._getter('furn')}
 set furn(v){this._setter('furn',v)}
 get prefix(){return this._getter('prefix')}
 set prefix(v){this._setter('prefix',v)}
+get slave(){return this._getter('slave')}
+set slave(v){this._setter('slave',v)}
 }
 $p.CatProduction_paramsClr_conformityRow = CatProduction_paramsClr_conformityRow;
 class CatProduction_paramsManager extends CatManager {
