@@ -8428,7 +8428,7 @@ set set(v){this._setter_ts('set',v)}
   }
 
   fragments2D(nom, scrap) {
-    const {debit} = $p.enm.debit_credit_kinds;
+    const {job_prm: {builder: {cut_2dfig}}, enm: {debit_credit_kinds: {debit}}} = $p;
     const byNom = new Map();
     const getRes = (row) => {
       if(!byNom.has(row.nom)) {
@@ -8459,7 +8459,7 @@ set set(v){this._setter_ts('set',v)}
       }
       if(row.width && row.len) {
         const product = {id: row.row, length: row.len, height: row.width, quantity: 1, info: row.row};
-        if(row.nonstandard) {
+        if(row.nonstandard && cut_2dfig) {
           const coord = row.production.coordinates.find({elm: row.elm}) || row.production.leading_product.coordinates.find({elm: row.elm});
           if(!editor) {
             editor = new $p.EditorInvisible();
