@@ -2027,9 +2027,9 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
 
           const prow = row_spec.inset.specification.find({quantity: 0, is_order_row: enm.specification_order_row_types.prod});
           let nom;
-          if(prow?.algorithm.is('nom_prm')) {
-            const prm_row = prow._owner._owner.selection_params.find({elm: prow.elm, origin: enm.plan_detailing.algorithm});
-            nom = (prm_row && ox.params.find({param: prm_row.param})?.value) || prow?.nom;
+          if(prow) {
+            const prm_row = prow.algorithm.is('nom_prm') && prow._owner._owner.selection_params.find({elm: prow.elm, origin: enm.plan_detailing.algorithm});
+            nom = (prm_row && ox.params.find({param: prm_row.param})?.value) || prow.nom;
           }
           else {
             nom = row_spec.inset.nom(elm, true);
