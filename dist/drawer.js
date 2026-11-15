@@ -3488,7 +3488,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {attributes} = visualization;
         if(!attributes?.regions || attributes.regions.includes?.(region)) {
           let offset = this.len * 1000;
-          if(elm.flipped) {
+          if(elm.flipped ^ elm.layer.flipped) {
             offset = elm.length - offset;
           }
           visualization.draw({
@@ -16884,7 +16884,7 @@ class ProductsBuilding {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
         }
-        if([2, 3].includes(inset.flipped)) {
+        if([2, 3].includes(inset.flipped) ^ layer.flipped) {
           [alp1, alp2] = [alp2, alp1];
           [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
         }

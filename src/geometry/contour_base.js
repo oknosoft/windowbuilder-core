@@ -2165,7 +2165,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {attributes} = visualization;
         if(!attributes?.regions || attributes.regions.includes?.(region)) {
           let offset = this.len * 1000;
-          if(elm.flipped) {
+          if(elm.flipped ^ elm.layer.flipped) {
             offset = elm.length - offset;
           }
           visualization.draw({

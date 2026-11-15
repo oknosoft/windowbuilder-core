@@ -280,7 +280,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               proc_row.coefficient = coordin;
             }
 
-            if(elmFlipped.flipped) {
+            if(elmFlipped.flipped) { //^ elmFlipped.layer.flipped
               proc_row.coefficient = elmFlipped._row.len - proc_row.coefficient;
               const c7 = elmFlipped.corns(7);
               if(c7) {

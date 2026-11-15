@@ -394,7 +394,7 @@ class ProductsBuilding {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
         }
-        if([2, 3].includes(inset.flipped)) {
+        if([2, 3].includes(inset.flipped) ^ layer.flipped) {
           [alp1, alp2] = [alp2, alp1];
           [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
         }
