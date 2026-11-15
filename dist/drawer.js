@@ -1747,7 +1747,8 @@ class GroupFillings extends LayerGroup {}
 class GroupText extends LayerGroup {}
 const AbstractFilling = (superclass) => class extends superclass {
   is_pos(pos) {
-    if(this.project.contours.count == 1 || this.parent){
+    const contours = this.project.contours.filter(v => v.visible || v === this); 
+    if(contours.length <= 1 || this.parent) {
       return true;
     }
     let res = Math.abs(this.bounds[pos] - this.project.bounds[pos]) < consts.sticking_l;

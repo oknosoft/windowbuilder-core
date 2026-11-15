@@ -20,7 +20,8 @@ const AbstractFilling = (superclass) => class extends superclass {
    */
   is_pos(pos) {
     // если в изделии один контур или если контур является створкой, он занимает одновременно все положения
-    if(this.project.contours.count == 1 || this.parent){
+    const contours = this.project.contours.filter(v => v.visible || v === this); 
+    if(contours.length <= 1 || this.parent) {
       return true;
     }
 
