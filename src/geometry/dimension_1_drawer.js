@@ -439,13 +439,19 @@ class DimensionDrawer extends paper.Group {
    */
   by_imposts(arr, collection, pos) {
     let {base_offset, dop_offset} = consts;
-    const {project} = this;
+    const {project, parent} = this;
     const {_regions} = project._attr;
     if(_regions) {
       base_offset += 80;
       dop_offset = base_offset + 40;
     }
-    const offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
+    let offset = (pos == 'right' || pos == 'bottom') ? -dop_offset : base_offset;
+    if(pos == 'right' && !parent.is_pos('right')) {
+      offset = offset * 3 - project.bounds.right + parent.bounds.right;
+    }
+    // if(pos == 'bottom' && parent.is_pos('bottom')) {
+    //   offset += (project.bounds.bottom - parent.bounds.bottom);
+    // }
     for (let i = 0; i < arr.length - 1; i++) {
       if(!collection[i]) {
         const prev = collection[i - 1];
@@ -499,7 +505,7 @@ class DimensionDrawer extends paper.Group {
   /**
    * Формирует размерные линии контура
    */
-  by_contour(ihor, ivert, forse, by_side, forceDimensions) {
+  by_contour(ihor, ivert, force, by_side, forceDimensions) {
 
     const {project, parent} = this;
     const {profileBounds: bounds} = parent;
@@ -511,9 +517,9 @@ class DimensionDrawer extends paper.Group {
       dop_offset = base_offset + 40;
     }
 
-    if(project.contours.length > 1 || forse) {
+    if(project.contours.length > 1 || force) {
 
-      if((parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height != bounds.height) || (forceDimensions && !parent.is_pos('left'))) {
+      if((parent.is_pos('left') && !parent.is_pos('right') && projectBounds.height.round() != bounds.height.round()) || (forceDimensions && !parent.is_pos('left'))) {
         if(!this.ihor.has_size(bounds.height)) {
           if(!this.left) {
             this.left = new DimensionLine({
@@ -541,7 +547,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if((parent.is_pos('right') && (projectBounds.height != bounds.height || forse)) || (forceDimensions && !parent.is_pos('right'))) {
+      if((parent.is_pos('right') && (projectBounds.height.round() != bounds.height.round() || force)) || (forceDimensions && !parent.is_pos('right'))) {
         if(!this.ihor.has_size(bounds.height) && (!this.left || Math.abs(bounds.height - this.left.size) > 1)) {
           if(!this.right) {
             this.right = new DimensionLine({
@@ -579,7 +585,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if(parent.is_pos('top') && !parent.is_pos('bottom') && projectBounds.width != bounds.width) {
+      if(parent.is_pos('top') && !parent.is_pos('bottom') && projectBounds.width.round() != bounds.width.round()) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.top) {
             this.top = new DimensionLine({
@@ -607,7 +613,7 @@ class DimensionDrawer extends paper.Group {
         }
       }
 
-      if((parent.is_pos('bottom') || (forceDimensions && !this.top)) && (projectBounds.width != bounds.width || forse)) {
+      if((parent.is_pos('bottom') || (forceDimensions && !this.top)) && (projectBounds.width.round() != bounds.width.round() || force)) {
         if(!this.ivert.has_size(bounds.width)) {
           if(!this.bottom) {
             this.bottom = new DimensionLine({
@@ -637,7 +643,7 @@ class DimensionDrawer extends paper.Group {
 
     }
 
-    if(forse === 'faltz') {
+    if(force === 'faltz') {
       this.by_faltz(ihor, ivert, by_side);
     }
   }
