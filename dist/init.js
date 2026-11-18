@@ -4459,7 +4459,7 @@ set coordinates(v){this._setter_ts('coordinates',v)}
               ray = elm2.rays.inner.clone({insert: false, deep: false});
               ray.reverse();
             }
-            if(elm2.flipped ^ elm2.layer.flipped) {
+            if(elm2.flipped) {
               const pe = elm2.corns(2);
               const offsetE = ray.getOffsetOf(ray.getNearestPoint(pe));
               const pt = len_angl.node === 'b' ? elm.corns(1) : elm.corns(2);

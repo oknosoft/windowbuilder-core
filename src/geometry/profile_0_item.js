@@ -924,8 +924,13 @@ class ProfileItem extends GeneratrixElement {
   }
   
   get flipped() {
-    const {flipped} = this.inset;
-    return flipped === 2 || flipped === 3;
+    const {inset: {flipped}, layer} = this;
+    return flipped & (layer?.flipped ? 8 : 2);
+  }
+
+  get a180() {
+    const {inset: {flipped}, layer} = this;
+    return flipped & (layer?.flipped ? 4 : 1);
   }
 
   /**

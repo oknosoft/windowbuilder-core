@@ -250,7 +250,7 @@ class ProductsBuilding {
      */
     function base_spec_profile(elm, totqty0) {
 
-      const {_row, _attr, rays, layer, segms, inset} = elm;
+      const {_row, _attr, rays, flipped, a180, segms, inset} = elm;
       const {enm: {
         angle_calculating_ways,
         cnn_types,
@@ -390,11 +390,11 @@ class ProductsBuilding {
         if(acmethod_next == s2 || acmethod_next == s1) {
           alp2 = elm.generatrix.angle_between(next?.generatrix, e.point);
         }
-        if([1, 3].includes(inset.flipped)) {
+        if(a180) {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
         }
-        if([2, 3].includes(inset.flipped) ^ layer.flipped) {
+        if(flipped) {
           [alp1, alp2] = [alp2, alp1];
           [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
         }
@@ -1225,7 +1225,7 @@ class ProductsBuilding {
           row_spec.clr = clr;
         }
         else {
-          row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
+          row_spec.clr = `${clr.valueOf()}${row_base.clr.valueOf()}`;
         }
       }
 
@@ -1238,7 +1238,7 @@ class ProductsBuilding {
           row_spec.clr = clr;
         }
         else {
-          row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
+          row_spec.clr = `${clr.valueOf()}${row_base.clr.valueOf()}`;
         }
       }
 

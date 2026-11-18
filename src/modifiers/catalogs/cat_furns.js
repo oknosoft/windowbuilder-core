@@ -266,7 +266,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
               const {outer} = elm.rays;
               const nouter = elmFlipped.rays.outer;
-              const point = outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
+              const point = elm.flipped ?
+                outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(2))) - coordin) :
+                outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
               proc_row.handle_height_min = elmFlipped.elm;
               if(dop_row.transfer_option == inverse){
                 proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(elmFlipped.corns(2))) - nouter.getOffsetOf(nouter.getNearestPoint(point));
@@ -280,7 +282,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               proc_row.coefficient = coordin;
             }
 
-            if(elmFlipped.flipped) { //^ elmFlipped.layer.flipped
+            if(elmFlipped.flipped) {
               proc_row.coefficient = elmFlipped._row.len - proc_row.coefficient;
               const c7 = elmFlipped.corns(7);
               if(c7) {

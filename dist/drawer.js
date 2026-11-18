@@ -3489,7 +3489,7 @@ class Contour extends AbstractFilling(paper.Layer) {
         const {attributes} = visualization;
         if(!attributes?.regions || attributes.regions.includes?.(region)) {
           let offset = this.len * 1000;
-          if(elm.flipped ^ elm.layer.flipped) {
+          if(elm.flipped && !_attr._reflected || !elm.flipped && _attr._reflected) {
             offset = elm.length - offset;
           }
           visualization.draw({
@@ -9742,8 +9742,12 @@ class ProfileItem extends GeneratrixElement {
     return pt;
   }
   get flipped() {
-    const {flipped} = this.inset;
-    return flipped === 2 || flipped === 3;
+    const {inset: {flipped}, layer} = this;
+    return flipped & (layer?.flipped ? 8 : 2);
+  }
+  get a180() {
+    const {inset: {flipped}, layer} = this;
+    return flipped & (layer?.flipped ? 4 : 1);
   }
   unlink() {
     const {generatrix, b, e, rays} = this;
@@ -16766,7 +16770,7 @@ class ProductsBuilding {
       }
     }
     function base_spec_profile(elm, totqty0) {
-      const {_row, _attr, rays, layer, segms, inset} = elm;
+      const {_row, _attr, rays, flipped, a180, segms, inset} = elm;
       const {enm: {
         angle_calculating_ways,
         cnn_types,
@@ -16884,11 +16888,11 @@ class ProductsBuilding {
         if(acmethod_next == s2 || acmethod_next == s1) {
           alp2 = elm.generatrix.angle_between(next?.generatrix, e.point);
         }
-        if([1, 3].includes(inset.flipped)) {
+        if(a180) {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
         }
-        if([2, 3].includes(inset.flipped) ^ layer.flipped) {
+        if(flipped) {
           [alp1, alp2] = [alp2, alp1];
           [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
         }
@@ -17496,7 +17500,7 @@ class ProductsBuilding {
           row_spec.clr = clr;
         }
         else {
-          row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
+          row_spec.clr = `${clr.valueOf()}${row_base.clr.valueOf()}`;
         }
       }
       else if(row_base?.algorithm === clr_out) {
@@ -17508,7 +17512,7 @@ class ProductsBuilding {
           row_spec.clr = clr;
         }
         else {
-          row_spec.clr = `${clr.valueOf()}${row_base.clr,valueOf()}`;
+          row_spec.clr = `${clr.valueOf()}${row_base.clr.valueOf()}`;
         }
       }
       else if([gb_short, gb_long].includes(row_base?.algorithm) && len_angl) {
@@ -18486,7 +18490,9 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
               const {outer} = elm.rays;
               const nouter = elmFlipped.rays.outer;
-              const point = outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
+              const point = elm.flipped ?
+                outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(2))) - coordin) :
+                outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
               proc_row.handle_height_min = elmFlipped.elm;
               if(dop_row.transfer_option == inverse){
                 proc_row.coefficient = nouter.getOffsetOf(nouter.getNearestPoint(elmFlipped.corns(2))) - nouter.getOffsetOf(nouter.getNearestPoint(point));
