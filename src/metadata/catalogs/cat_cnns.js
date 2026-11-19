@@ -696,7 +696,7 @@ exports.CatCnns = class CatCnns extends Object {
               ray.reverse();
             }
             if(elm2.flipped) {
-              const pe = elm2.corns(2);
+              const pe = elm2.corns(8) || elm2.corns(2);
               const offsetE = ray.getOffsetOf(ray.getNearestPoint(pe));
               const pt = len_angl.node === 'b' ? elm.corns(1) : elm.corns(2);
               const offsetPt = ray.getOffsetOf(ray.getNearestPoint(pt));
