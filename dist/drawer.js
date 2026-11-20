@@ -206,7 +206,14 @@ class EditorInvisible extends paper.PaperScope {
       }
     }
     if(name == 'auto'){
-      name = 'width';
+      const {center} = glasses[0].bounds;
+      const diff = [0, 0];
+      for(let i = 1; i < glasses.length; i++) {
+        const delta = glasses[i].bounds.center.subtract(center);
+        diff[0] += Math.abs(delta.x);
+        diff[1] += Math.abs(delta.y);
+      }
+      name = diff[0] > diff[1] ? 'width' : 'height';
     }
     const orientation = name == 'width' ? enm.orientations.vert : enm.orientations.hor;
     const shift = parent_layer
@@ -215,7 +222,7 @@ class EditorInvisible extends paper.PaperScope {
         const {b, e} = impost.rays;
         return impost.orientation == orientation && (b.is_tt || e.is_tt || b.is_i || e.is_i || impost.elm_type.is('impost'));
       });
-    const galign = geometric || Key.modifiers.control || Key.modifiers.shift ||
+    const galign = geometric || Key.modifiers.control || Key.modifiers.alt ||
       project.auto_align == enm.align_types.Геометрически;
     let medium = 0;
     const glmap = new Map();

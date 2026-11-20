@@ -244,7 +244,14 @@ class EditorInvisible extends paper.PaperScope {
 
     // выясняем направление, в котром уравнивать
     if(name == 'auto'){
-      name = 'width';
+      const {center} = glasses[0].bounds;
+      const diff = [0, 0];
+      for(let i = 1; i < glasses.length; i++) {
+        const delta = glasses[i].bounds.center.subtract(center);
+        diff[0] += Math.abs(delta.x);
+        diff[1] += Math.abs(delta.y);
+      }
+      name = diff[0] > diff[1] ? 'width' : 'height';
     }
 
     // собираем в массиве shift все импосты подходящего направления
@@ -259,7 +266,7 @@ class EditorInvisible extends paper.PaperScope {
       });
 
     // признак уравнивания геометрически, а не по заполнению
-    const galign = geometric || Key.modifiers.control || Key.modifiers.shift ||
+    const galign = geometric || Key.modifiers.control || Key.modifiers.alt ||
       project.auto_align == enm.align_types.Геометрически;
     let medium = 0;
 
