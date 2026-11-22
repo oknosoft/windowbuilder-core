@@ -266,7 +266,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
               const {outer} = elm.rays;
               const nouter = elmFlipped.rays.outer;
-              const point = elm.flipped ?
+              const point = contour.flipped ?
                 outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(2))) - coordin) :
                 outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
               proc_row.handle_height_min = elmFlipped.elm;

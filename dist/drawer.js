@@ -16898,6 +16898,9 @@ class ProductsBuilding {
         if(a180) {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
+          if(a180 === 4) {
+            [alp1, alp2] = [alp2, alp1];
+          }
         }
         if(flipped) {
           [alp1, alp2] = [alp2, alp1];
@@ -18497,7 +18500,7 @@ $p.CatFurns = class CatFurns extends $p.CatFurns {
               }
               const {outer} = elm.rays;
               const nouter = elmFlipped.rays.outer;
-              const point = elm.flipped ?
+              const point = contour.flipped ?
                 outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(2))) - coordin) :
                 outer.getPointAt(outer.getOffsetOf(outer.getNearestPoint(elm.corns(1))) + coordin);
               proc_row.handle_height_min = elmFlipped.elm;
@@ -21917,7 +21920,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       throw new Error(note);
     };
     if(sobjs.length > 499) {
-      return Promise.resolve().then(() => save_error(`Попытка записать более 499 записей за раз\n(${sobjs.length} объектов)`, this));
+      return Promise.resolve().then(() => save_error(`Попытка записать более 499 строк за раз\n(${sobjs.length} объектов)`, this));
     }
     const bulk = () => {
       const _id = `${class_name}|${_obj.ref}`;
