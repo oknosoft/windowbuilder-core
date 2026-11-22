@@ -641,7 +641,7 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
     };
     
     if(sobjs.length > 499) {
-      return Promise.resolve().then(() => save_error(`Попытка записать более 499 записей за раз\n(${sobjs.length} объектов)`, this));
+      return Promise.resolve().then(() => save_error(`Попытка записать более 499 строк за раз\n(${sobjs.length} объектов)`, this));
     }
 
     const bulk = () => {
