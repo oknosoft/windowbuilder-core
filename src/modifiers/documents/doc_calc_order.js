@@ -639,6 +639,10 @@ $p.DocCalc_order = class DocCalc_order extends $p.DocCalc_order {
       $p.record_log({class: 'save_error', obj, note});
       throw new Error(note);
     };
+    
+    if(sobjs.length > 499) {
+      return Promise.resolve().then(() => save_error(`Попытка записать более 499 записей за раз\n(${sobjs.length} объектов)`, this));
+    }
 
     const bulk = () => {
       const _id = `${class_name}|${_obj.ref}`;
