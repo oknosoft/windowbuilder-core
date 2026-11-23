@@ -393,11 +393,8 @@ class ProductsBuilding {
         if(a180) {
           alp1 = 180 - alp1;
           alp2 = 180 - alp2;
-          if(a180 === 4 && flipped) {
-            [alp1, alp2] = [alp2, alp1];
-          }
         }
-        if(flipped) {
+        if(flipped && a180 !== 4) {
           [alp1, alp2] = [alp2, alp1];
           [acmethod_prev, acmethod_next] = [acmethod_next, acmethod_prev];
         }
