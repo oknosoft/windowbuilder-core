@@ -889,9 +889,11 @@ class ProductsBuilding {
         ox.extra = {dimensions: {width, height}};
         const root = scheme.separate_frame_root();
         const {contours} = scheme;
+        const lset = new Set();
         for (const contour of scheme.getItems({class: Contour})) {
           const layer = contour.prod_layer();
-          if(layer && layer !== root) {
+          if(layer && layer !== root && !lset.has(layer)) {
+            lset.add(layer);
             const cx = ox.find_create_cx(-layer.cnstr, null, true, ox._order_rows);
             if(!cx.svg) {
               layer.l_dimensions.redraw(true, true);
@@ -907,6 +909,7 @@ class ProductsBuilding {
         }
         else {
           for(const root of contours) {
+            root.l_dimensions.redraw(true, true);
             if(root.dop.svg) {
               root.dop = {svg: undefined};
             }
