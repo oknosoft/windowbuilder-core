@@ -1691,7 +1691,7 @@ class LayerGroup extends paper.Group {
 class GroupVisualization extends LayerGroup {
   constructor({owner, ...attr}) {
     const {l_visualization} = owner.project;
-    attr.layer = attr.parent = l_visualization;
+    attr.parent = l_visualization;
     super(attr);
     new paper.Group({parent: this, name: 'by_insets'});
     new paper.Group({parent: this, name: 'by_spec'});
