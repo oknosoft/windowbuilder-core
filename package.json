@@ -1,16 +1,16 @@
 {
   "name": "windowbuilder-core",
-  "version": "2.1.270",
+  "version": "2.1.271",
   "description": "Order dealer core library",
   "repository": {
     "type": "git",
     "url": "https://github.com/oknosoft/windowbuilder-core.git"
   },
   "engines": {
-    "node": ">=20.19",
+    "node": ">=24.20",
     "pnpm": ">=12"
   },
-  "packageManager": "pnpm@12.16.1",
+  "packageManager": "pnpm@12.23.0",
   "keywords": [
     "metadata",
     "order dealer",
@@ -30,7 +30,7 @@
     "metadata-abstract-ui": "2.0.41-beta.2",
     "metadata-core": "2.0.41-beta.2",
     "metadata-pouchdb": "2.0.41-beta.2",
-    "paper": "0.12.18"
+    "paper": "0.17.0"
   },
   "devDependencies": {
     "foodoc": "github:oknosoft/foodoc#658dc64caca91630839a9a7031ad88f7ab8c8263",
